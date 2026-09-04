@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import sharp from "sharp";
 import { afterEach, expect, test } from "vitest";
-import { ExportSourceUnavailableError, exportEmbeddedJpeg } from "../index.js";
+import { ExportSourceUnavailableError, exportImageAsJpeg } from "../index.js";
 
 const directories: string[] = [];
 
@@ -24,17 +24,21 @@ test("an online orientation-one export preserves the embedded JPEG bytes exactly
   const jpeg = source.subarray(embedded.offset, embedded.offset + embedded.length);
   const outputPath = join(directory, "output.jpg");
 
-  const exported = await exportEmbeddedJpeg({
+  const exported = await exportImageAsJpeg({
     id: "photo-id",
     orientation: 1,
     outputPath,
-    online: {
-      path: sourcePath,
-      offset: embedded.offset,
-      length: embedded.length,
-      w: embedded.width,
-      h: embedded.height,
-    },
+    sources: [
+      {
+        kind: "online-jpeg-range",
+        path: sourcePath,
+        mediaType: "image/jpeg",
+        offset: embedded.offset,
+        length: embedded.length,
+        w: embedded.width,
+        h: embedded.height,
+      },
+    ],
   });
 
   expect(await readFile(outputPath)).toEqual(jpeg);
@@ -59,11 +63,21 @@ test("an online non-identity orientation renders instead of copying un-oriented 
   const outputPath = join(directory, "output.jpg");
   await writeFile(sourcePath, jpeg);
 
-  const exported = await exportEmbeddedJpeg({
+  const exported = await exportImageAsJpeg({
     id: "photo-id",
     orientation: 6,
     outputPath,
-    online: { path: sourcePath, offset: 0, length: jpeg.length, w: 2, h: 3 },
+    sources: [
+      {
+        kind: "online-jpeg-range",
+        path: sourcePath,
+        mediaType: "image/jpeg",
+        offset: 0,
+        length: jpeg.length,
+        w: 2,
+        h: 3,
+      },
+    ],
   });
 
   expect(await sharp(outputPath).metadata()).toMatchObject({ width: 3, height: 2, format: "jpeg" });
@@ -77,23 +91,27 @@ test("an unavailable online source renders the pinned tier with an offline warni
   const pinnedPath = join(directory, "pinned.jpg");
   const outputPath = join(directory, "output.jpg");
   await sharp({
-    create: { width: 2, height: 3, channels: 3, background: "#4080c0" },
+    create: { width: 3, height: 2, channels: 3, background: "#4080c0" },
   })
     .jpeg()
     .toFile(pinnedPath);
 
-  const exported = await exportEmbeddedJpeg({
+  const exported = await exportImageAsJpeg({
     id: "photo-id",
     orientation: 6,
     outputPath,
-    online: {
-      path: join(directory, "unavailable.raw"),
-      offset: 40,
-      length: 100,
-      w: 2,
-      h: 3,
-    },
-    pinnedPath,
+    sources: [
+      {
+        kind: "online-jpeg-range",
+        path: join(directory, "unavailable.raw"),
+        mediaType: "image/jpeg",
+        offset: 40,
+        length: 100,
+        w: 2,
+        h: 3,
+      },
+      { kind: "pinned-preview", path: pinnedPath, mediaType: "image/jpeg", orientation: 1 },
+    ],
   });
 
   expect(await sharp(outputPath).metadata()).toMatchObject({ width: 3, height: 2, format: "jpeg" });
@@ -105,7 +123,7 @@ test("an unavailable online source renders the pinned tier with an offline warni
       {
         code: "source_offline",
         id: "photo-id",
-        message: "Exported from the pinned embedded preview because the original is offline",
+        message: "Exported from the pinned preview because the original is offline",
       },
     ],
   });
@@ -117,10 +135,11 @@ test("an export with no readable original or pinned tier reports file_offline", 
   directories.push(directory);
 
   await expect(
-    exportEmbeddedJpeg({
+    exportImageAsJpeg({
       id: "missing-photo",
       orientation: 1,
       outputPath: join(directory, "output.jpg"),
+      sources: [],
     }),
   ).rejects.toEqual(
     expect.objectContaining<Partial<ExportSourceUnavailableError>>({
@@ -135,12 +154,27 @@ test("an unreadable pinned tier reports file_offline", async () => {
   directories.push(directory);
 
   await expect(
-    exportEmbeddedJpeg({
+    exportImageAsJpeg({
       id: "missing-photo",
       orientation: 1,
       outputPath: join(directory, "output.jpg"),
-      online: { path: join(directory, "offline.raw"), offset: 0, length: 100, w: 3, h: 2 },
-      pinnedPath: join(directory, "missing-pinned.jpg"),
+      sources: [
+        {
+          kind: "online-jpeg-range",
+          path: join(directory, "offline.raw"),
+          mediaType: "image/jpeg",
+          offset: 0,
+          length: 100,
+          w: 3,
+          h: 2,
+        },
+        {
+          kind: "pinned-preview",
+          path: join(directory, "missing-pinned.jpg"),
+          mediaType: "image/jpeg",
+          orientation: 1,
+        },
+      ],
     }),
   ).rejects.toMatchObject({ code: "file_offline", photoId: "missing-photo" });
 });

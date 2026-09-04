@@ -19,6 +19,7 @@
     "typecheck": "tsc -b --pretty false",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
+    "wb": "node apps/workbench/dist/cli.js",
     "verify": "bun run fmt:check && bun run lint && bun run typecheck && bun run build && bun run test",
     "publish:npm": "node scripts/publish-npm.mjs",
     "version": "node scripts/sync-versions.mjs && git add apps/*/package.json packages/*/package.json"

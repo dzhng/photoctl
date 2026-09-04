@@ -1,22 +1,14 @@
-import { open, readFile, writeFile, type FileHandle } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import sharp from "sharp";
 import type { ExifOrientation } from "../coordinates.js";
+import { readImageSource, type ImageSource } from "../decoder.js";
 import { renderPhoto, type Image16 } from "../graph.js";
 
-export interface EmbeddedJpegLocation {
-  path: string;
-  offset: number;
-  length: number;
-  w: number;
-  h: number;
-}
-
-export interface EmbeddedJpegExport {
+export interface ImageExport {
   id: string;
   orientation: ExifOrientation;
   outputPath: string;
-  online?: EmbeddedJpegLocation;
-  pinnedPath?: string;
+  sources: ImageSource[];
 }
 
 export interface ExportWarning {
@@ -25,7 +17,7 @@ export interface ExportWarning {
   message: string;
 }
 
-export interface EmbeddedJpegExportResult {
+export interface ImageExportResult {
   file: string;
   w: number;
   h: number;
@@ -37,19 +29,48 @@ export class ExportSourceUnavailableError extends Error {
   readonly code = "file_offline";
 
   constructor(readonly photoId: string) {
-    super(`No embedded JPEG source is available for ${photoId}`);
+    super(`No usable image source is available for ${photoId}`);
+  }
+}
+
+export class ExportRenderError extends Error {
+  readonly code = "decoder_unavailable";
+
+  constructor(readonly photoId: string) {
+    super(`The embedded JPEG for ${photoId} could not be rendered`);
+  }
+}
+
+export class ExportInputError extends Error {
+  readonly code = "unsupported_file";
+
+  constructor(readonly photoId: string) {
+    super(`The source image for ${photoId} is invalid or unsupported`);
+  }
+}
+
+export class ExportWriteError extends Error {
+  readonly code = "volume_readonly";
+
+  constructor(
+    readonly photoId: string,
+    readonly outputPath: string,
+  ) {
+    super(`Could not write the export for ${photoId}: ${outputPath}`);
   }
 }
 
 /** Writes to `outputPath`; the caller owns its parent directory and collision policy. */
-export async function exportEmbeddedJpeg(
-  request: EmbeddedJpegExport,
-): Promise<EmbeddedJpegExportResult> {
-  const online = request.online;
-  const onlineBytes = online ? await tryReadEmbeddedBytes(online) : undefined;
+export async function exportImageAsJpeg(request: ImageExport): Promise<ImageExportResult> {
+  const online = request.sources.find((source) => source.kind !== "pinned-preview");
+  const onlineBytes = online ? await tryReadSourceBytes(online) : undefined;
   if (online && onlineBytes) {
-    if (request.orientation === 1) {
-      await writeFile(request.outputPath, onlineBytes);
+    if (
+      request.orientation === 1 &&
+      online.copyExact !== false &&
+      (await exactCopyIsJpeg(request, onlineBytes))
+    ) {
+      await writeOutput(request, onlineBytes);
       return {
         file: request.outputPath,
         w: online.w,
@@ -58,34 +79,49 @@ export async function exportEmbeddedJpeg(
         warnings: [],
       };
     }
-    return writeRendered(request, onlineBytes, []);
+    return writeRendered(request, online, [], "online");
   }
-  if (request.pinnedPath) {
-    const pinnedBytes = await tryReadFile(request.pinnedPath);
+  const pinned = request.sources.find((source) => source.kind === "pinned-preview");
+  if (pinned) {
+    const pinnedBytes = await tryReadSourceBytes(pinned);
     if (pinnedBytes) {
-      return writeRendered(request, pinnedBytes, [
-        {
-          code: "source_offline",
-          id: request.id,
-          message: "Exported from the pinned embedded preview because the original is offline",
-        },
-      ]);
+      return writeRendered(
+        request,
+        pinned,
+        [
+          {
+            code: "source_offline",
+            id: request.id,
+            message: "Exported from the pinned preview because the original is offline",
+          },
+        ],
+        "pinned",
+      );
     }
   }
   throw new ExportSourceUnavailableError(request.id);
 }
 
 async function writeRendered(
-  request: EmbeddedJpegExport,
-  source: Uint8Array,
+  request: ImageExport,
+  source: ImageSource,
   warnings: ExportWarning[],
-): Promise<EmbeddedJpegExportResult> {
-  const image = await renderPhoto(
-    { orientation: request.orientation },
-    { source: "embedded", bytes: source },
-  );
-  const bytes = await encodeJpeg(image);
-  await writeFile(request.outputPath, bytes);
+  sourceKind: "online" | "pinned",
+): Promise<ImageExportResult> {
+  let image: Image16;
+  try {
+    image = await renderPhoto({ orientation: request.orientation }, source);
+  } catch {
+    if (sourceKind === "pinned") throw new ExportSourceUnavailableError(request.id);
+    throw new ExportInputError(request.id);
+  }
+  let bytes: Buffer;
+  try {
+    bytes = await encodeJpeg(image);
+  } catch {
+    throw new ExportRenderError(request.id);
+  }
+  await writeOutput(request, bytes);
   return {
     file: request.outputPath,
     w: image.w,
@@ -95,49 +131,40 @@ async function writeRendered(
   };
 }
 
+async function exactCopyIsJpeg(request: ImageExport, bytes: Uint8Array): Promise<boolean> {
+  try {
+    const metadata = await sharp(bytes, { failOn: "error" }).metadata();
+    await sharp(bytes, { failOn: "error" }).stats();
+    return metadata.format === "jpeg";
+  } catch {
+    throw new ExportInputError(request.id);
+  }
+}
+
+async function writeOutput(request: ImageExport, bytes: Uint8Array): Promise<void> {
+  try {
+    await writeFile(request.outputPath, bytes);
+  } catch {
+    throw new ExportWriteError(request.id, request.outputPath);
+  }
+}
+
 async function encodeJpeg(image: Image16): Promise<Buffer> {
-  return sharp(image.data, {
+  const bytes = Buffer.allocUnsafe(image.data.length);
+  for (let index = 0; index < image.data.length; index += 1) {
+    bytes[index] = Math.round(image.data[index] / 257);
+  }
+  return sharp(bytes, {
     raw: { width: image.w, height: image.h, channels: image.channels },
   })
     .jpeg({ quality: 88 })
     .toBuffer();
 }
 
-async function tryReadEmbeddedBytes(location: EmbeddedJpegLocation): Promise<Buffer | undefined> {
+async function tryReadSourceBytes(source: ImageSource): Promise<Buffer | undefined> {
   try {
-    return await readEmbeddedBytes(location);
+    return await readImageSource(source);
   } catch {
     return undefined;
   }
-}
-
-async function tryReadFile(path: string): Promise<Buffer | undefined> {
-  try {
-    return await readFile(path);
-  } catch {
-    return undefined;
-  }
-}
-
-async function readEmbeddedBytes(location: EmbeddedJpegLocation): Promise<Buffer> {
-  const source = await open(location.path, "r");
-  try {
-    const bytes = Buffer.allocUnsafe(location.length);
-    await readRemaining(source, bytes, location.offset, 0);
-    return bytes;
-  } finally {
-    await source.close();
-  }
-}
-
-async function readRemaining(
-  source: FileHandle,
-  bytes: Buffer,
-  offset: number,
-  read: number,
-): Promise<void> {
-  if (read === bytes.length) return;
-  const chunk = await source.read(bytes, read, bytes.length - read, offset + read);
-  if (chunk.bytesRead === 0) throw new Error("Embedded JPEG ended before its recorded length");
-  await readRemaining(source, bytes, offset, read + chunk.bytesRead);
 }

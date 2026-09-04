@@ -6,6 +6,7 @@ import { parseExifOrientation, type ExifOrientation } from "@photoctl/render";
 interface PhotoRow {
   id: string;
   content_key: string;
+  size: string;
   w: number;
   h: number;
   orientation: number;
@@ -25,6 +26,7 @@ interface FileRow {
 export interface StoredPhoto {
   id: string;
   contentKey: string;
+  size: number;
   w: number;
   h: number;
   orientation: ExifOrientation;
@@ -42,7 +44,7 @@ export interface StoredPhoto {
 
 export async function loadPhoto(handle: LibraryHandle, id: string): Promise<StoredPhoto> {
   const photos = await handle.query<PhotoRow>(
-    `SELECT id::text, content_key, w, h, orientation, camera, exposure,
+    `SELECT id::text, content_key, size::text, w, h, orientation, camera, exposure,
             shot_at::text, shot_offset_min
      FROM photos WHERE id = $1`,
     [id],
@@ -58,11 +60,22 @@ export async function loadPhoto(handle: LibraryHandle, id: string): Promise<Stor
   return {
     id: row.id,
     contentKey: row.content_key,
+    size: Number(row.size),
     w: row.w,
     h: row.h,
     orientation: parseExifOrientation(row.orientation),
-    camera: row.camera,
-    exposure: row.exposure,
+    camera: {
+      make: row.camera.make ?? null,
+      model: row.camera.model ?? null,
+      lens: row.camera.lens ?? null,
+    },
+    exposure: {
+      shutter: row.exposure.shutter ?? null,
+      f: row.exposure.f ?? null,
+      iso: row.exposure.iso ?? null,
+      focal_mm: row.exposure.focal_mm ?? null,
+      wb: row.exposure.wb ?? null,
+    },
     shotAt: row.shot_at,
     shotOffsetMin: row.shot_offset_min,
     files: files.rows.map((file) => ({

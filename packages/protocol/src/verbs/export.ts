@@ -7,6 +7,7 @@ export const exportResultSchema = z.object({
   w: z.number().int().positive(),
   h: z.number().int().positive(),
   bytes: z.number().int().positive(),
+  render_hash: z.string().regex(/^r_[0-9a-f]{12}$/),
 });
 
 export type ExportResult = z.infer<typeof exportResultSchema>;

@@ -61,7 +61,17 @@ export class EnvVolumeResolver implements VolumeResolver {
   }
 
   async locate(path: string): Promise<VolumeLocation> {
-    const absolutePath = await realpath(path);
+    let absolutePath: string;
+    try {
+      absolutePath = await realpath(path);
+    } catch (error) {
+      if (this.#volume.online) throw error;
+      const lexicalPath = resolvePath(path);
+      if (relativeWithin(this.#volume.mount, lexicalPath) === null) {
+        throw new PhotoctlError("file_offline", `Path is outside the configured volume: ${path}`);
+      }
+      throw new PhotoctlError("file_offline", `Source volume is offline: ${path}`);
+    }
     const mount = await canonicalMount(this.#volume);
     const relPath = relativeWithin(mount, absolutePath);
     if (relPath === null) {

@@ -15,6 +15,13 @@ describe("shotInstant", () => {
     expect(shot.shotOffsetMin).toBe(120);
     expect(formatShotInstant(shot.shotAt, shot.shotOffsetMin)).toBe("2023-10-02T18:18:37+02:00");
   });
+
+  test("accepts the ISO-8601 offset boundary and rejects values beyond it", () => {
+    expect(shotInstant("2023:10:02 18:18:37", "+14:00").shotOffsetMin).toBe(840);
+    expect(shotInstant("2023:10:02 18:18:37", "-14:00").shotOffsetMin).toBe(-840);
+    expect(() => shotInstant("2023:10:02 18:18:37", "+14:01")).toThrow("Invalid EXIF shot offset");
+    expect(() => shotInstant("2023:10:02 18:18:37", "-15:00")).toThrow("Invalid EXIF shot offset");
+  });
 });
 
 describe("readExif", () => {

@@ -1,13 +1,9 @@
 import sharp, { type Sharp } from "sharp";
 import { orientationTransform, type ExifOrientation } from "./coordinates.js";
+import { readImageSource, type ImageSource } from "./decoder.js";
 
 export interface RenderPhoto {
   orientation: ExifOrientation;
-}
-
-export interface EmbeddedRenderSource {
-  source: "embedded";
-  bytes: Uint8Array;
 }
 
 export interface Image16 {
@@ -19,11 +15,10 @@ export interface Image16 {
   orientationApplied: true;
 }
 
-export async function renderPhoto(
-  photo: RenderPhoto,
-  input: EmbeddedRenderSource,
-): Promise<Image16> {
-  const pipeline = orient(sharp(input.bytes, { failOn: "error" }), photo.orientation)
+export async function renderPhoto(photo: RenderPhoto, source: ImageSource): Promise<Image16> {
+  const bytes = await readImageSource(source);
+  const orientation = source.kind === "pinned-preview" ? source.orientation : photo.orientation;
+  const pipeline = orient(sharp(bytes, { failOn: "error" }), orientation)
     .toColourspace("rgb16")
     .removeAlpha()
     .raw({ depth: "ushort" });

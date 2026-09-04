@@ -5,20 +5,22 @@ import {
   type ExportResult,
   type Warning,
 } from "@photoctl/protocol";
-import { cacheRootForLibrary, type EmbeddedJpeg } from "@photoctl/importer";
+import { cacheRootForLibrary } from "@photoctl/importer";
 import {
   createVolumeResolver,
   resolvePhotoId,
   type LibraryHandle,
   type VolumeResolver,
 } from "@photoctl/library";
-import { exportEmbeddedJpeg } from "@photoctl/render";
+import { exportImageAsJpeg, renderStateHash } from "@photoctl/render";
 import { mkdir } from "node:fs/promises";
 import { basename, extname, join, resolve } from "node:path";
 import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
 import { hasErrorCode } from "../errors.js";
+import { resolveOnlineImageSource } from "../image-source.js";
 import { loadPhoto } from "../photo.js";
+import { runSerially } from "../serial.js";
 
 export async function exportCommand(
   args: string[],
@@ -36,7 +38,13 @@ export async function exportCommand(
     throw new PhotoctlError("unsupported_file", `Unsupported export format: ${format}`);
   }
   const resolvedOutputDirectory = resolve(cwd, outputDirectory);
-  await mkdir(resolvedOutputDirectory, { recursive: true });
+  try {
+    await mkdir(resolvedOutputDirectory, { recursive: true });
+  } catch {
+    throw new PhotoctlError("volume_readonly", `Cannot create export destination`, {
+      path: resolvedOutputDirectory,
+    });
+  }
 
   const handle = await openRequestLibrary(env, cwd);
   try {
@@ -44,10 +52,9 @@ export async function exportCommand(
     const resolver = createVolumeResolver(env.volumeMap);
     const results: Array<ExportResult | ExportFailure> = [];
     const warnings: Warning[] = [];
-    for (const input of parsed.positionals) {
+    await runSerially(parsed.positionals, async (input) => {
       try {
         // Keep result and write order deterministic; output names may collide across inputs.
-        // oxlint-disable-next-line eslint/no-await-in-loop
         const exported = await exportOne(
           handle,
           resolver,
@@ -60,17 +67,17 @@ export async function exportCommand(
       } catch (error) {
         if (error instanceof PhotoctlError) {
           results.push({ id: input, ok: false, code: error.code, ...errorData(error.data) });
-          continue;
+          return;
         }
         throw error;
       }
-    }
+    });
     const failed = results.filter((result) => !result.ok);
     if (failed.length > 0) {
       return {
         schema: 1,
         ok: false,
-        code: failed.length === results.length ? failed[0].code : "partial",
+        code: aggregateFailureCode(failed, results.length),
         summary: { ok: results.length - failed.length, failed: failed.length },
         results,
         warnings,
@@ -86,6 +93,12 @@ export async function exportCommand(
   } finally {
     await handle.close();
   }
+}
+
+function aggregateFailureCode(failures: ExportFailure[], total: number): ErrorCode {
+  if (failures.length < total) return "partial";
+  const codes = new Set(failures.map((failure) => failure.code));
+  return codes.size === 1 ? failures[0].code : "partial";
 }
 
 interface ExportFailure {
@@ -104,49 +117,61 @@ async function exportOne(
 ): Promise<{ result: ExportResult; warnings: Warning[] }> {
   const id = await resolvePhotoId(handle, input);
   const photo = await loadPhoto(handle, id);
-  const file = photo.files[0];
-  if (!file) throw new PhotoctlError("file_offline", `Photo has no source: ${id}`, { id });
-  const source = await resolver.resolve(file.volumeUuid, file.relPath);
-  const full = chooseFullTier(file.embedded);
-  if (!full) {
-    throw new PhotoctlError("unsupported_file", `Photo has no embedded JPEG: ${id}`, { id });
-  }
-  const outputPath = join(outputDirectory, `${basename(file.relPath, extname(file.relPath))}.jpg`);
+  const fallbackFile = photo.files[0];
+  if (!fallbackFile) throw new PhotoctlError("file_offline", `Photo has no source: ${id}`, { id });
+  const selected = await resolveOnlineImageSource(photo, resolver);
+  const outputFile = selected?.file ?? fallbackFile;
+  const outputPath = join(
+    outputDirectory,
+    `${basename(outputFile.relPath, extname(outputFile.relPath))}.jpg`,
+  );
   try {
-    const exported = await exportEmbeddedJpeg({
+    const exported = await exportImageAsJpeg({
       id,
       orientation: photo.orientation,
       outputPath,
-      online:
-        source.online && source.path
-          ? {
-              path: source.path,
-              offset: full.offset,
-              length: full.length,
-              w: full.width,
-              h: full.height,
-            }
-          : undefined,
-      pinnedPath: join(cacheRoot, "emb", `${id}.jpg`),
+      sources: [
+        ...(selected ? [selected.source] : []),
+        {
+          kind: "pinned-preview",
+          path: join(cacheRoot, "emb", `${id}.jpg`),
+          mediaType: "image/jpeg",
+          orientation: 1,
+        },
+      ],
     });
     const { warnings, ...data } = exported;
-    return { result: { id, ok: true, ...data }, warnings };
+    return {
+      result: {
+        id,
+        ok: true,
+        ...data,
+        render_hash: renderStateHash({
+          contentKey: photo.contentKey,
+          orientation: photo.orientation,
+        }),
+      },
+      warnings,
+    };
   } catch (error) {
+    if (hasErrorCode(error, "unsupported_file")) {
+      throw new PhotoctlError("unsupported_file", error.message, { id });
+    }
+    if (hasErrorCode(error, "decoder_unavailable")) {
+      throw new PhotoctlError("decoder_unavailable", error.message, { id });
+    }
+    if (hasErrorCode(error, "volume_readonly")) {
+      throw new PhotoctlError("volume_readonly", error.message, { id, path: outputPath });
+    }
     if (hasErrorCode(error, "file_offline")) {
       throw new PhotoctlError("file_offline", error.message, {
         id,
-        volume: file.volumeUuid,
-        hint: `mount ${file.lastMount}`,
+        volume: fallbackFile.volumeUuid,
+        hint: `mount ${fallbackFile.lastMount}`,
       });
     }
     throw error;
   }
-}
-
-function chooseFullTier(previews: EmbeddedJpeg[]): EmbeddedJpeg | undefined {
-  return previews.toSorted(
-    (left, right) => right.width * right.height - left.width * left.height,
-  )[0];
 }
 
 function errorData(data: unknown): Record<string, unknown> {

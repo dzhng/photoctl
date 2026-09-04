@@ -1,3 +1,6 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import sharp from "sharp";
 import { expect, test } from "vitest";
 import { renderPhoto } from "./index.js";
@@ -10,8 +13,14 @@ test("the embedded source becomes an oriented display-referred 16-bit image", as
     .resize({ width: 20, height: 30, kernel: "nearest" })
     .jpeg({ quality: 100, chromaSubsampling: "4:4:4" })
     .toBuffer();
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-graph-"));
+  const source = join(directory, "source.jpg");
+  await writeFile(source, jpeg);
 
-  const image = await renderPhoto({ orientation: 6 }, { source: "embedded", bytes: jpeg });
+  const image = await renderPhoto(
+    { orientation: 6 },
+    { kind: "online-file", path: source, mediaType: "image/jpeg", w: 20, h: 30 },
+  );
 
   expect(image).toMatchObject({
     w: 30,
@@ -26,6 +35,7 @@ test("the embedded source becomes an oriented display-referred 16-bit image", as
   expectColor(pixelAt(image.data, image.w, 28, 1), [true, false, false]);
   expectColor(pixelAt(image.data, image.w, 1, 18), [false, true, true]);
   expectColor(pixelAt(image.data, image.w, 28, 18), [false, true, false]);
+  await rm(directory, { recursive: true });
 });
 
 function pixelAt(data: Uint16Array, width: number, x: number, y: number): number[] {

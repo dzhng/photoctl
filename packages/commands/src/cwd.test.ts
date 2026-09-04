@@ -30,10 +30,35 @@ test("relative command paths resolve from the request working directory", async 
 
     expect(result).toMatchObject({
       schema: 1,
-      ok: false,
-      code: "unsupported_file",
-      data: { path: sourcePath },
+      ok: true,
+      data: { imported: 0, skipped_unsupported: 1, ids: [] },
     });
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("doctor resolves a relative cache root from the request working directory", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-doctor-cwd-"));
+  const libraryPath = join(directory, "library");
+  try {
+    const initialized = await initializeLibrary(libraryPath);
+    await initialized.handle.close();
+
+    const result = await dispatch(
+      {
+        verb: "doctor",
+        args: [],
+        cwd: directory,
+        env: { noDaemon: true, libraryPath, cacheRoot: "relative-cache" },
+      },
+      { version: "test" },
+    );
+
+    expect(result).toMatchObject({ schema: 1, ok: true });
+    if (!result.ok || !("data" in result)) throw new Error("Expected a successful doctor result");
+    const data = result.data as { library_id: string; cache: { root: string } };
+    expect(data.cache.root).toBe(join(directory, "relative-cache", data.library_id));
   } finally {
     await rm(directory, { recursive: true });
   }

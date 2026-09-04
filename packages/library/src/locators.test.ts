@@ -48,6 +48,19 @@ test("an offline map keeps an existing host directory offline", async () => {
   }
 });
 
+test("an absent mapped mount classifies a contained source as offline", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-volume-absent-"));
+  const mount = join(directory, "unmounted-card");
+  const source = join(mount, "DCIM", "a7c2.ARW");
+  try {
+    const resolver = new EnvVolumeResolver(`${mount}=6A1F-0C3B:offline`);
+
+    await expect(resolver.locate(source)).rejects.toMatchObject({ code: "file_offline" });
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
 test("the mac resolver follows a volume UUID across its mounted path", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-volume-mac-"));
   const mount = await realpath(directory);

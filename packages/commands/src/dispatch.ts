@@ -15,7 +15,7 @@ import {
 import { cacheRootForLibrary } from "@photoctl/importer";
 import { resolve } from "node:path";
 import { parseArguments } from "./arguments.js";
-import { libraryPath, parseLockBudget } from "./context.js";
+import { cacheBase, libraryPath, parseLockBudget } from "./context.js";
 import { exportCommand } from "./handlers/export.js";
 import { importCommand } from "./handlers/import.js";
 import { showCommand } from "./handlers/show.js";
@@ -87,7 +87,7 @@ export async function dispatch(
             db: await databaseDescription(handle),
             vector: { installed: true, version: diagnostics.vectorVersion },
             cache: {
-              root: cacheRootForLibrary(diagnostics.libraryId, request.env.cacheRoot),
+              root: cacheRootForLibrary(diagnostics.libraryId, cacheBase(request.env, request.cwd)),
               max_bytes: diagnostics.cacheMaxBytes,
             },
             lock_holder: null,

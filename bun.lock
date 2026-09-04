@@ -24,6 +24,16 @@
         "@photoctl/protocol": "workspace:*",
       },
     },
+    "apps/workbench": {
+      "name": "@photoctl/workbench",
+      "version": "0.1.0",
+      "bin": {
+        "wb": "dist/cli.js",
+      },
+      "dependencies": {
+        "@photoctl/protocol": "workspace:*",
+      },
+    },
     "packages/commands": {
       "name": "@photoctl/commands",
       "version": "0.1.0",
@@ -39,6 +49,7 @@
       "version": "0.1.0",
       "dependencies": {
         "exifr": "7.1.3",
+        "sharp": "0.35.4",
       },
     },
     "packages/library": {
@@ -265,6 +276,8 @@
     "@photoctl/render": ["@photoctl/render@workspace:packages/render"],
 
     "@photoctl/test-harness": ["@photoctl/test-harness@workspace:packages/test-harness"],
+
+    "@photoctl/workbench": ["@photoctl/workbench@workspace:apps/workbench"],
 
     "@rollup/rollup-android-arm-eabi": ["@rollup/rollup-android-arm-eabi@4.63.1", "", { "os": "android", "cpu": "arm" }, "sha512-UZ8sUxPTiHWYX9QNdJedb1kDZSpS1t/VPWBWGSgqHNi9w3Cu6IXvu2mzbhiTiPvtrqgTQJ+zqiAq2iPIPilpaQ=="],
 

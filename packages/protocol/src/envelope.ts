@@ -18,6 +18,7 @@ export const errorCodes = [
 export type ErrorCode = (typeof errorCodes)[number];
 export const warningCodes = [
   "source_offline",
+  "preview_resolution_limited",
   "layers_stale",
   "vacancy_unfilled",
   "provider_unconfigured",

@@ -1,12 +1,24 @@
-import { PhotoctlError, type Envelope, type ShowData } from "@photoctl/protocol";
-import { formatShotInstant } from "@photoctl/importer";
+import { cacheRootForLibrary, formatShotInstant, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import { createVolumeResolver, resolvePhotoId } from "@photoctl/library";
+import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@photoctl/protocol";
+import {
+  materializePreview,
+  PreviewDestinationError,
+  renderStateHash,
+  viewHash,
+  type ImageSource,
+  type ViewSpec,
+} from "@photoctl/render";
 import { parseArguments } from "../arguments.js";
-import { openRequestLibrary, type RequestEnv } from "../context.js";
-import { loadPhoto } from "../photo.js";
+import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
+import { resolveOnlineImageSource } from "../image-source.js";
+import { loadPhoto, type StoredPhoto } from "../photo.js";
 
 export async function showCommand(args: string[], env: RequestEnv, cwd: string): Promise<Envelope> {
-  const parsed = parseArguments(args, {});
+  const parsed = parseArguments(args, {
+    flags: ["--norm"],
+    options: ["--preview-size", "--region"],
+  });
   if (parsed.positionals.length !== 1) {
     throw new PhotoctlError("usage", "show requires exactly one photo ID or prefix");
   }
@@ -14,13 +26,58 @@ export async function showCommand(args: string[], env: RequestEnv, cwd: string):
   try {
     const id = await resolvePhotoId(handle, parsed.positionals[0]);
     const photo = await loadPhoto(handle, id);
+    const libraryId = await readLibraryId(handle);
     const resolver = createVolumeResolver(env.volumeMap);
+    const cacheRoot = cacheRootForLibrary(libraryId, cacheBase(env, cwd));
     const locators = await Promise.all(
       photo.files.map(async (file) => ({
         volume: file.volumeUuid,
         path: file.relPath,
         online: (await resolver.resolve(file.volumeUuid, file.relPath)).online,
       })),
+    );
+    const warnings: Warning[] = locators.some((locator) => !locator.online)
+      ? [{ code: "source_offline", id, message: "One or more source files are offline" }]
+      : [];
+    const renderHash = renderStateHash({
+      contentKey: photo.contentKey,
+      orientation: photo.orientation,
+    });
+    const view = parseViewSpec(parsed.options, parsed.flags.has("--norm"), photo.w, photo.h);
+    const selected = await resolveOnlineImageSource(photo, resolver);
+    const pinned: ImageSource = {
+      kind: "pinned-preview",
+      path: pinnedEmbeddedJpegPath(cacheRoot, id),
+      mediaType: "image/jpeg",
+      orientation: 1,
+    };
+    const materialized = await materializeWithFallback(
+      { id, cacheRoot, renderHash, photo, view },
+      selected?.source ?? pinned,
+      pinned,
+    );
+    if (
+      (materialized.usedFallback ||
+        (materialized.source.kind === "pinned-preview" && photo.files.length > 0)) &&
+      !warnings.some((warning) => warning.code === "source_offline")
+    ) {
+      warnings.push({
+        code: "source_offline",
+        id,
+        message: "Preview uses the pinned offline source",
+      });
+    }
+    if (materialized.preview.resolutionLimited) {
+      warnings.push({
+        code: "preview_resolution_limited",
+        id,
+        message: "The requested preview resolution exceeds the available source tier",
+      });
+    }
+    const projection = previewProjection(
+      materialized.preview.actualRegion,
+      materialized.preview.w,
+      materialized.preview.h,
     );
     const data: ShowData = {
       id,
@@ -41,15 +98,160 @@ export async function showCommand(args: string[], env: RequestEnv, cwd: string):
       flag: "none",
       label: null,
       tags: [],
+      preview: materialized.preview.path,
+      preview_info: {
+        render_hash: renderHash,
+        view_hash: viewHash(view),
+        requested: { region: view.region, long_edge: view.longEdge },
+        actual: {
+          region: materialized.preview.actualRegion,
+          w: materialized.preview.w,
+          h: materialized.preview.h,
+        },
+        source_tier: materialized.source.kind,
+        source_dimensions: materialized.preview.sourceDimensions,
+        pixel_scale: materialized.preview.pixelScale,
+        resolution_limited: materialized.preview.resolutionLimited,
+        cache_source: materialized.preview.cacheSource,
+        color_space: "srgb",
+        icc: "sRGB2014",
+        ...projection,
+      },
       locators,
       content_key: photo.contentKey,
       develop: {},
       develop_hash: null,
+      render_hash: renderHash,
       layers: { count: 0, stale: 0 },
       xmp: null,
     };
-    return { schema: 1, ok: true, data, warnings: [] };
+    return { schema: 1, ok: true, data, warnings };
   } finally {
     await handle.close();
+  }
+}
+
+function parseViewSpec(
+  options: Map<string, string>,
+  normalized: boolean,
+  width: number,
+  height: number,
+): ViewSpec {
+  const regionValue = options.get("--region");
+  if (normalized && !regionValue) throw new PhotoctlError("usage", "--norm requires --region");
+  const region = regionValue ? parseRegion(regionValue, normalized, width, height) : null;
+  const size = options.get("--preview-size");
+  return {
+    region,
+    longEdge: size === undefined ? (region ? "native" : 1616) : parsePreviewSize(size),
+  };
+}
+
+function parsePreviewSize(value: string): number | "native" {
+  if (value === "native") return value;
+  const size = Number(value);
+  if (!Number.isSafeInteger(size) || size <= 0) {
+    throw new PhotoctlError("usage", "--preview-size must be a positive integer or native");
+  }
+  return size;
+}
+
+function parseRegion(
+  value: string,
+  normalized: boolean,
+  width: number,
+  height: number,
+): [number, number, number, number] {
+  const values = value.split(",").map(Number);
+  if (values.length !== 4 || values.some((item) => !Number.isFinite(item))) {
+    throw new PhotoctlError("usage", "--region must be x,y,w,h");
+  }
+  if (normalized && values.some((item) => item < 0 || item > 1)) {
+    throw new PhotoctlError("usage", "normalized region values must be between 0 and 1");
+  }
+  const region = normalized
+    ? [values[0] * width, values[1] * height, values[2] * width, values[3] * height]
+    : values;
+  if (region[0] < 0 || region[1] < 0 || region[2] <= 0 || region[3] <= 0) {
+    throw new PhotoctlError("usage", "--region must have a non-negative origin and positive size");
+  }
+  if (region[0] >= width || region[1] >= height) {
+    throw new PhotoctlError("usage", "--region does not intersect the visible image");
+  }
+  return [region[0], region[1], region[2], region[3]];
+}
+
+function previewProjection(
+  region: [number, number, number, number],
+  width: number,
+  height: number,
+) {
+  const [x, y, w, h] = region;
+  const scaleX = width / w;
+  const scaleY = height / h;
+  return {
+    base_to_view: { a: scaleX, b: 0, c: 0, d: scaleY, e: -x * scaleX, f: -y * scaleY },
+    view_to_base: { a: 1 / scaleX, b: 0, c: 0, d: 1 / scaleY, e: x, f: y },
+    visible_base_polygon: [
+      [x, y],
+      [x + w, y],
+      [x + w, y + h],
+      [x, y + h],
+    ] as [[number, number], [number, number], [number, number], [number, number]],
+  };
+}
+
+async function materializeWithFallback(
+  context: {
+    id: string;
+    cacheRoot: string;
+    renderHash: string;
+    photo: StoredPhoto;
+    view: ViewSpec;
+  },
+  source: ImageSource,
+  pinned: ImageSource,
+) {
+  try {
+    return {
+      preview: await materializePreview({
+        cacheRoot: context.cacheRoot,
+        photoId: context.id,
+        renderHash: context.renderHash,
+        photo: context.photo,
+        source,
+        view: context.view,
+      }),
+      source,
+      usedFallback: false,
+    };
+  } catch (error) {
+    if (error instanceof PreviewDestinationError) {
+      throw new PhotoctlError("volume_readonly", error.message, { path: error.path });
+    }
+    if (source.kind === "pinned-preview") {
+      throw new PhotoctlError("file_offline", "Pinned preview is unavailable", { id: context.id });
+    }
+    try {
+      return {
+        preview: await materializePreview({
+          cacheRoot: context.cacheRoot,
+          photoId: context.id,
+          renderHash: context.renderHash,
+          photo: context.photo,
+          source: pinned,
+          view: context.view,
+        }),
+        source: pinned,
+        usedFallback: true,
+      };
+    } catch (fallbackError) {
+      if (fallbackError instanceof PreviewDestinationError) {
+        throw new PhotoctlError("volume_readonly", fallbackError.message, {
+          path: fallbackError.path,
+        });
+      }
+      throw new PhotoctlError("file_offline", "No preview source is available", { id: context.id });
+    }
   }
 }
