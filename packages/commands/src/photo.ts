@@ -50,7 +50,10 @@ export interface StoredPhoto {
   }>;
 }
 
-export async function loadPhoto(handle: LibraryHandle, id: string): Promise<StoredPhoto> {
+export async function loadPhoto(
+  handle: Pick<LibraryHandle, "query">,
+  id: string,
+): Promise<StoredPhoto> {
   const photos = await handle.query<PhotoRow>(
     `SELECT id::text, content_key, content_hash, size::text, w, h, orientation, camera, exposure,
             shot_at::text, shot_offset_min, rating, flag, label

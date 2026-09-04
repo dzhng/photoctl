@@ -34,7 +34,8 @@ budget; EPERM → age rule; SIGINT of a holder leaves no file; `kill -9` a holde
 
 ## 01b — contract unlocked
 Keyless, no Rust/Swift/drive: any decodable single-frame still image can be linked, shown, previewed offline, and exported.
-The A7C II fixture proves the embedded-container path and its camera JPEG exact-copy optimization.
+The A7C II fixture proves the embedded-container path; slice 05 supersedes its transitional exact-copy export with the fixed-profile
+delivery encoder.
 
 **Implemented:** commits `238c9b3`, `b511389`, `c4be85e`, and `46bce3e`, followed by the review
 checkpoint that closes source-integrity, cache-repair, error-contract, and workbench gaps. For this

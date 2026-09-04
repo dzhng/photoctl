@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -8,6 +8,7 @@ import { createBackup } from "./backup.js";
 import { acquireLibraryLock, OPEN_LOCK_NAME } from "./lock.js";
 import { openLibrary, initializeLibrary, openLibraryHoldingLock } from "./open.js";
 import { recoverInterruptedRestore, restoreLibrary } from "./restore.js";
+import { LATEST_SCHEMA_VERSION } from "./migrations/runner.js";
 
 const directories: string[] = [];
 
@@ -32,7 +33,11 @@ test("restore replaces changed rows with the validated snapshot", async () => {
   }
 
   const restored = await restoreLibrary(libraryPath, backup);
-  expect(restored).toMatchObject({ library: libraryPath, from: backup, schemaVersion: 5 });
+  expect(restored).toMatchObject({
+    library: libraryPath,
+    from: backup,
+    schemaVersion: LATEST_SCHEMA_VERSION,
+  });
   const verified = await openLibrary(libraryPath);
   try {
     const setting = await verified.query<{ value: string }>(
@@ -42,6 +47,23 @@ test("restore replaces changed rows with the validated snapshot", async () => {
   } finally {
     await verified.close();
   }
+}, 20_000);
+
+test("metadata restore preserves live library presets", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-restore-presets-"));
+  directories.push(parent);
+  const libraryPath = join(parent, "library");
+  const initialized = await initializeLibrary(libraryPath);
+  const backup = (await createBackup(initialized.handle)).path;
+  await initialized.handle.close();
+  const presetPath = join(libraryPath, "presets", "export", "client.json");
+  const preset = '{"format":"tiff","iptc":{"creator":"Studio"}}\n';
+  await mkdir(join(libraryPath, "presets", "export"), { recursive: true });
+  await writeFile(presetPath, preset);
+
+  await restoreLibrary(libraryPath, backup);
+
+  await expect(readFile(presetPath, "utf8")).resolves.toBe(preset);
 }, 20_000);
 
 test("invalid SQL leaves the original library byte-for-byte usable", async () => {

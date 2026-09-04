@@ -9,6 +9,7 @@ export const exportResultSchema = z.object({
   h: z.number().int().positive(),
   bytes: z.number().int().positive(),
   render_hash: fullHashSchema("r"),
+  skipped: z.boolean(),
 });
 
 export type ExportResult = z.infer<typeof exportResultSchema>;

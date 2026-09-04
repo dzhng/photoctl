@@ -1,9 +1,8 @@
-import { mkdtemp, open, readFile, rm, stat, utimes, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { spawnPhotoctl } from "@photoctl/test-harness";
-import { readManifest } from "@photoctl/test-harness";
 import sharp from "sharp";
 
 const directories: string[] = [];
@@ -196,7 +195,7 @@ test("show reports limited offline detail and promotes it when the full source r
   });
 }, 30_000);
 
-test("export copies the full embedded JPEG byte-for-byte", async () => {
+test("export renders the full source as a profiled delivery JPEG", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-export-jpeg-"));
   directories.push(parent);
   const library = join(parent, "library");
@@ -220,27 +219,30 @@ test("export copies the full embedded JPEG byte-for-byte", async () => {
   });
 
   const outputPath = join(outputDirectory, "a7c2.jpg");
-  const manifest = await readManifest();
-  const full = manifest.previews.find((preview) => preview.width === 7008);
-  if (!full) throw new Error("Fixture manifest has no full embedded preview");
-  const source = await open(fixture, "r");
-  const expected = Buffer.allocUnsafe(full.length);
-  try {
-    const { bytesRead } = await source.read(expected, 0, expected.length, full.offset);
-    expect(bytesRead).toBe(expected.length);
-  } finally {
-    await source.close();
-  }
-
   expect(result.code).toBe(0);
   expect(result.json).toMatchObject({
     schema: 1,
     ok: true,
     summary: { ok: 1, failed: 0 },
-    results: [{ id, ok: true, file: outputPath, w: 7008, h: 4672, bytes: full.length }],
+    results: [
+      {
+        id,
+        ok: true,
+        file: outputPath,
+        w: 7008,
+        h: 4672,
+        bytes: expect.any(Number),
+        skipped: false,
+      },
+    ],
     warnings: [],
   });
-  expect(await readFile(outputPath)).toEqual(expected);
+  await expect(sharp(outputPath).metadata()).resolves.toMatchObject({
+    format: "jpeg",
+    width: 7008,
+    height: 4672,
+    hasProfile: true,
+  });
 }, 30_000);
 
 test("offline export renders the pinned preview and warns", async () => {

@@ -1,20 +1,22 @@
-import { writeFile } from "node:fs/promises";
-import sharp from "sharp";
-import type { ExifOrientation } from "../coordinates.js";
-import { readImageSource, type ImageSource } from "../decoder.js";
-import { renderSource, type Image16 } from "../source-render.js";
+import { link, open, rename, unlink } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { dirname } from "node:path";
+import sharp, { type Sharp } from "sharp";
+import { srgb2014ProfilePath } from "../color.js";
+import type { Image16 } from "../source-render.js";
+import { applyDeliveryMetadata, embedTiffMetadata, type DeliveryMetadata } from "./metadata.js";
+
+export type ExportFormat = "jpeg" | "png" | "tiff";
 
 export interface ImageExport {
   id: string;
-  orientation: ExifOrientation;
+  image: Image16;
   outputPath: string;
-  sources: ImageSource[];
-}
-
-export interface ExportWarning {
-  code: "source_offline";
-  id: string;
-  message: string;
+  format: ExportFormat;
+  quality: number;
+  resize?: number;
+  metadata: DeliveryMetadata;
+  replace?: boolean;
 }
 
 export interface ImageExportResult {
@@ -22,36 +24,20 @@ export interface ImageExportResult {
   w: number;
   h: number;
   bytes: number;
-  warnings: ExportWarning[];
-}
-
-export class ExportSourceUnavailableError extends Error {
-  readonly code = "file_offline";
-
-  constructor(readonly photoId: string) {
-    super(`No usable image source is available for ${photoId}`);
-  }
 }
 
 export class ExportRenderError extends Error {
   readonly code = "decoder_unavailable";
-
-  constructor(readonly photoId: string) {
-    super(`The embedded JPEG for ${photoId} could not be rendered`);
-  }
-}
-
-export class ExportInputError extends Error {
-  readonly code = "unsupported_file";
-
-  constructor(readonly photoId: string) {
-    super(`The source image for ${photoId} is invalid or unsupported`);
+  constructor(
+    readonly photoId: string,
+    cause?: unknown,
+  ) {
+    super(`The image for ${photoId} could not be rendered`, { cause });
   }
 }
 
 export class ExportWriteError extends Error {
   readonly code = "volume_readonly";
-
   constructor(
     readonly photoId: string,
     readonly outputPath: string,
@@ -60,111 +46,144 @@ export class ExportWriteError extends Error {
   }
 }
 
-/** Writes to `outputPath`; the caller owns its parent directory and collision policy. */
-export async function exportImageAsJpeg(request: ImageExport): Promise<ImageExportResult> {
-  const online = request.sources.find((source) => source.kind !== "pinned-preview");
-  const onlineBytes = online ? await tryReadSourceBytes(online) : undefined;
-  if (online && onlineBytes) {
-    if (
-      request.orientation === 1 &&
-      online.copyExact !== false &&
-      (await exactCopyIsJpeg(request, onlineBytes))
-    ) {
-      await writeOutput(request, onlineBytes);
-      return {
-        file: request.outputPath,
-        w: online.w,
-        h: online.h,
-        bytes: onlineBytes.length,
-        warnings: [],
-      };
-    }
-    return writeRendered(request, online, [], "online");
-  }
-  const pinned = request.sources.find((source) => source.kind === "pinned-preview");
-  if (pinned) {
-    const pinnedBytes = await tryReadSourceBytes(pinned);
-    if (pinnedBytes) {
-      return writeRendered(
-        request,
-        pinned,
-        [
-          {
-            code: "source_offline",
-            id: request.id,
-            message: "Exported from the pinned preview because the original is offline",
-          },
-        ],
-        "pinned",
-      );
-    }
-  }
-  throw new ExportSourceUnavailableError(request.id);
-}
-
-async function writeRendered(
-  request: ImageExport,
-  source: ImageSource,
-  warnings: ExportWarning[],
-  sourceKind: "online" | "pinned",
-): Promise<ImageExportResult> {
-  let image: Image16;
+/** Encode and publish one evaluated image. Naming, source selection, and collision policy belong to the caller. */
+export async function exportImage(request: ImageExport): Promise<ImageExportResult> {
+  let encoded: Buffer;
   try {
-    image = await renderSource(request.orientation, source);
-  } catch {
-    if (sourceKind === "pinned") throw new ExportSourceUnavailableError(request.id);
-    throw new ExportInputError(request.id);
+    encoded = await encodeDelivery(request.image, request);
+  } catch (error) {
+    throw new ExportRenderError(request.id, error);
   }
-  let bytes: Buffer;
   try {
-    bytes = await encodeJpeg(image);
-  } catch {
-    throw new ExportRenderError(request.id);
-  }
-  await writeOutput(request, bytes);
-  return {
-    file: request.outputPath,
-    w: image.w,
-    h: image.h,
-    bytes: bytes.length,
-    warnings,
-  };
-}
-
-async function exactCopyIsJpeg(request: ImageExport, bytes: Uint8Array): Promise<boolean> {
-  try {
-    const metadata = await sharp(bytes, { failOn: "error" }).metadata();
-    await sharp(bytes, { failOn: "error" }).stats();
-    return metadata.format === "jpeg";
-  } catch {
-    throw new ExportInputError(request.id);
-  }
-}
-
-async function writeOutput(request: ImageExport, bytes: Uint8Array): Promise<void> {
-  try {
-    await writeFile(request.outputPath, bytes);
+    await writeDurable(request.outputPath, encoded, request.replace ?? false);
   } catch {
     throw new ExportWriteError(request.id, request.outputPath);
   }
+  const dimensions = deliveryDimensions(request.image.w, request.image.h, request.resize);
+  return {
+    file: request.outputPath,
+    w: dimensions.w,
+    h: dimensions.h,
+    bytes: encoded.length,
+  };
 }
 
-async function encodeJpeg(image: Image16): Promise<Buffer> {
+async function encodeDelivery(image: Image16, request: ImageExport): Promise<Buffer> {
+  let pipeline =
+    request.format === "tiff"
+      ? sharp16(image)
+      : sharp(toEightBit(image), {
+          raw: { width: image.w, height: image.h, channels: image.channels },
+        });
+  const dimensions = deliveryDimensions(image.w, image.h, request.resize);
+  if (dimensions.w !== image.w || dimensions.h !== image.h) {
+    pipeline = pipeline.resize(dimensions.w, dimensions.h, {
+      fit: "fill",
+      kernel: sharp.kernel.lanczos3,
+    });
+  }
+  pipeline = applyDeliveryMetadata(
+    request.format === "tiff"
+      ? pipeline.withMetadata({ icc: srgb2014ProfilePath })
+      : pipeline.withIccProfile(srgb2014ProfilePath),
+    request.metadata,
+  );
+  if (request.format === "jpeg") {
+    return await pipeline.jpeg({ quality: request.quality, chromaSubsampling: "4:4:4" }).toBuffer();
+  }
+  if (request.format === "png") return await pipeline.png().toBuffer();
+  const tiff = await pipeline
+    .toColourspace("rgb16")
+    .tiff({ compression: "lzw", predictor: "horizontal" })
+    .toBuffer();
+  return embedTiffMetadata(tiff, request.metadata);
+}
+
+function sharp16(image: Image16): Sharp {
+  // Sharp 0.35 derives raw input depth from the typed-array constructor; a Buffer becomes uchar.
+  const ushortPixels: Uint16Array = image.data;
+  return sharp(ushortPixels, {
+    raw: { width: image.w, height: image.h, channels: image.channels },
+  });
+}
+
+function toEightBit(image: Image16): Buffer {
   const bytes = Buffer.allocUnsafe(image.data.length);
   for (let index = 0; index < image.data.length; index += 1) {
     bytes[index] = Math.round(image.data[index] / 257);
   }
-  return sharp(bytes, {
-    raw: { width: image.w, height: image.h, channels: image.channels },
-  })
-    .jpeg({ quality: 88 })
-    .toBuffer();
+  return bytes;
 }
 
-async function tryReadSourceBytes(source: ImageSource): Promise<Buffer | undefined> {
+function deliveryDimensions(
+  width: number,
+  height: number,
+  requested?: number,
+): { w: number; h: number } {
+  if (requested === undefined || requested >= Math.max(width, height))
+    return { w: width, h: height };
+  const scale = requested / Math.max(width, height);
+  return {
+    w: Math.max(1, Math.round(width * scale)),
+    h: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+async function writeDurable(path: string, bytes: Buffer, replace: boolean): Promise<void> {
+  const temporary = `${path}.tmp-${randomUUID()}`;
+  let published = false;
   try {
-    return await readImageSource(source);
-  } catch {
-    return undefined;
+    const file = await open(temporary, "wx");
+    try {
+      await file.writeFile(bytes);
+      await file.sync();
+    } finally {
+      await file.close();
+    }
+    if (replace) {
+      await rename(temporary, path);
+    } else {
+      try {
+        await link(temporary, path);
+      } catch (error) {
+        if (!isUnsupportedLink(error)) throw error;
+        await writeExclusive(path, bytes);
+      }
+    }
+    published = true;
+    if (!replace) await unlink(temporary).catch(() => undefined);
+    const directory = await open(dirname(path), "r");
+    try {
+      await directory.sync();
+    } finally {
+      await directory.close();
+    }
+  } finally {
+    if (!published) await unlink(temporary).catch(() => undefined);
   }
+}
+
+async function writeExclusive(path: string, bytes: Buffer): Promise<void> {
+  let destination: Awaited<ReturnType<typeof open>> | undefined;
+  try {
+    destination = await open(path, "wx");
+    await destination.writeFile(bytes);
+    await destination.sync();
+    await destination.close();
+    destination = undefined;
+  } catch (error) {
+    if (destination) {
+      await destination.close().catch(() => undefined);
+      await unlink(path).catch(() => undefined);
+    }
+    throw error;
+  }
+}
+
+function isUnsupportedLink(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    ["EACCES", "ENOSYS", "ENOTSUP", "EOPNOTSUPP", "EPERM"].includes(String(error.code))
+  );
 }

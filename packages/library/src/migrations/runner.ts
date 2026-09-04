@@ -4,6 +4,7 @@ import { migration0002 } from "./0002-photo-core.js";
 import { migration0003 } from "./0003-tags-and-daemon.js";
 import { migration0004 } from "./0004-import-and-cull.js";
 import { migration0005 } from "./0005-image-graph.js";
+import { migration0006 } from "./0006-export-history.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -17,6 +18,7 @@ const migrations = [
   { version: 3, sql: migration0003 },
   { version: 4, sql: migration0004 },
   { version: 5, sql: migration0005 },
+  { version: 6, sql: migration0006 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
@@ -24,6 +26,7 @@ const latestTables = [
   "cache_index",
   "document_revision_roots",
   "document_revisions",
+  "exports",
   "files",
   "image_artifacts",
   "node_execution_inputs",
@@ -52,6 +55,9 @@ const latestConstraints = [
   "files_pkey",
   "files_volume_uuid_rel_path_key",
   "files_volume_uuid_fkey",
+  "exports_bytes_check",
+  "exports_photo_id_fkey",
+  "exports_pkey",
   "photos_flag_check",
   "image_artifacts_artifact_hash_check",
   "image_artifacts_bytes_check",
@@ -164,6 +170,7 @@ export async function verifyLatestSchema(db: PGlite): Promise<void> {
         "image_nodes_id_idx",
         "node_executions_deterministic_eval_idx",
         "node_executions_node_id_idx",
+        "exports_photo_at_idx",
         "photos_flag_idx",
         "photos_label_idx",
         "photos_promoted_content_hash_idx",

@@ -16,17 +16,13 @@ test("the previous schema upgrades without losing library settings", async () =>
     const libraryId = await db.query<{ value: string }>(
       "SELECT value FROM settings WHERE key = 'library_id'",
     );
-    expect(versions.rows).toEqual([
-      { version: 1 },
-      { version: 2 },
-      { version: 3 },
-      { version: 4 },
-      { version: 5 },
-    ]);
+    expect(versions.rows).toEqual(
+      Array.from({ length: LATEST_SCHEMA_VERSION }, (_, index) => ({ version: index + 1 })),
+    );
     expect(result).toEqual({
       fromVersion: 1,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [2, 3, 4, 5],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 1 }, (_, index) => index + 2),
     });
     expect(libraryId.rows).toEqual([{ value: "0199a7c2-0000-7000-8000-000000000001" }]);
     await expect(
@@ -102,13 +98,9 @@ test("the current schema fixture preserves tags and daemon settings", async () =
     const queueMax = await db.query<{ value: number }>(
       "SELECT value::text::integer AS value FROM settings WHERE key = 'daemon_queue_max'",
     );
-    expect(versions.rows).toEqual([
-      { version: 1 },
-      { version: 2 },
-      { version: 3 },
-      { version: 4 },
-      { version: 5 },
-    ]);
+    expect(versions.rows).toEqual(
+      Array.from({ length: LATEST_SCHEMA_VERSION }, (_, index) => ({ version: index + 1 })),
+    );
     expect(tags.rows).toEqual([
       { photo_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001", tag: "ceremony" },
     ]);
@@ -125,7 +117,11 @@ test("the cull schema upgrades to the graph without losing promoted identity or 
 
     const result = await migrate(db);
 
-    expect(result).toEqual({ fromVersion: 4, toVersion: LATEST_SCHEMA_VERSION, applied: [5] });
+    expect(result).toEqual({
+      fromVersion: 4,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 4 }, (_, index) => index + 5),
+    });
     const photo = await db.query<{
       content_hash: string;
       rating: number;
@@ -176,7 +172,7 @@ test("the current graph fixture preserves its active lazy source revision", asyn
          ON (node.photo_id, node.id) = (root.photo_id, root.node_id)`,
     );
 
-    expect(result).toEqual({ fromVersion: 5, toVersion: LATEST_SCHEMA_VERSION, applied: [] });
+    expect(result).toEqual({ fromVersion: 5, toVersion: LATEST_SCHEMA_VERSION, applied: [6] });
     expect(document.rows).toEqual([
       {
         active_revision_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003",
@@ -186,6 +182,31 @@ test("the current graph fixture preserves its active lazy source revision", asyn
       },
     ]);
     expect((await db.query("SELECT 1 FROM node_executions")).rows).toEqual([]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the current delivery fixture preserves export history", async () => {
+  const db = await PGlite.create();
+  try {
+    await db.exec(await fixture("schema-v6.pgsql"));
+
+    const result = await migrate(db);
+    const history = await db.query<{
+      path: string;
+      render_hash: string;
+      bytes: string;
+    }>("SELECT path, render_hash, bytes::text FROM exports");
+
+    expect(result).toEqual({ fromVersion: 6, toVersion: LATEST_SCHEMA_VERSION, applied: [] });
+    expect(history.rows).toEqual([
+      {
+        path: "/delivery/a7c2.jpg",
+        render_hash: `r_${"3".repeat(64)}`,
+        bytes: "6730200",
+      },
+    ]);
   } finally {
     await db.close();
   }

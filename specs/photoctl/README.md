@@ -13,23 +13,25 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–04, decoder slice 07, and render-DAG slices 08a1–08a2 are implemented.
+*Last updated: 2026-09-05. Status: slices 00–05, decoder slice 07, and render-DAG slices 08a1–08a2 are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
 the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
 recursive import commits through a bounded deterministic pipeline, collision buckets promote to full hashes,
 and culling/list/next/remove remain usable from pinned previews while source volumes are offline. Immutable photo-scoped logical
 nodes, atomic document revisions, full hash identities, canonical artifact publication, graph evaluation/inspection, and
-restore-time artifact reconciliation are now in place. Develop parameters and pixels remain in 08b+.*
+restore-time artifact reconciliation are now in place. Delivery exports snapshot that immutable identity, encode the canonical
+evaluated artifact without unasked clobbering, and record successful writes in schema v6. Develop parameters and pixels remain in
+08b+.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 05 (delivery export) and 08b (develop dictionary/presets as a logical node).
-  Slice 05 inherits the culling catalog and canonical graph-evaluator seam; slice 08b inherits 08a's lazy logical graph,
-  durable artifact owner, and execution metadata seam.
+- **Pickup point:** dependency-ready slices 06 (XMP write/sync) and 08b (develop dictionary/presets as a logical node).
+  Slice 06 inherits delivery metadata and the culling catalog; slice 08b inherits 08a's lazy logical graph, durable artifact
+  owner, and execution metadata seam.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -46,7 +48,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 02b global `--human` envelope renderer — `slices/02-daemon-and-contention.md`
 - [x] 03a preview coordination/index/prune · [x] 03b backup/restore/migrate + fixture — `slices/03-library-lifecycle.md`
 - [x] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
-- [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
+- [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [ ] 8b+ develop nodes/color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
@@ -395,6 +397,14 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   its structural HTML tests, record the visual checkpoint as unavailable rather than claim it green, and leave the non-blocking
   screenshot gate for the next environment with an allowed local browser surface. Needs David: no; no product decision depends
   on this blocked evidence.
+
+- **2026-09-05 — slice 05 delivery publication boundary.** Plan said: export always writes a profiled delivery file and never
+  clobbers an existing path unless overwrite is explicit. Code revealed: checking a filename and later renaming over it leaves
+  a race where another process can create the path between those operations. Call: publish ordinary and renamed deliveries with
+  an atomic no-replace link where supported; filesystems without hard links use exclusive create/write/fsync, preserving
+  no-clobber at the cost of in-progress reader visibility. Only `--on-collision overwrite` uses replacement. The file becomes durable before its history row,
+  so a database failure can leave an unrecorded delivery but never a history row that points to a file not yet published. Needs
+  David: no; this preserves the two explicit safety properties across filesystem/database boundaries.
 
 - **2026-09-05 — slice 08a1 logical/execution split.** Plan said: deterministic node identity included input artifact hashes while
   develop and crop commands could commit a revision without rendering. Code revealed: those requirements cannot share one identity;

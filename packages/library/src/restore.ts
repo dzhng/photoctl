@@ -98,7 +98,7 @@ async function restoreLibraryExclusive(
     stageDb = undefined;
     await preserveBackups(live, stage, source);
     await Promise.all(
-      ["artifacts", "originals", "previews"].map(
+      ["artifacts", "originals", "previews", "presets"].map(
         async (treeName) => await preserveTree(join(live, treeName), join(stage, treeName)),
       ),
     );

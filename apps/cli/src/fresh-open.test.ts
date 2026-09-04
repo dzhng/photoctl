@@ -2,7 +2,7 @@ import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { openLibrary } from "@photoctl/library";
+import { LATEST_SCHEMA_VERSION, openLibrary } from "@photoctl/library";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 
 const directories: string[] = [];
@@ -29,13 +29,9 @@ test("eight fresh init processes create one migrated library without a leaked lo
     "SELECT version FROM schema_version ORDER BY version",
   );
   await handle.close();
-  expect(versions.rows).toEqual([
-    { version: 1 },
-    { version: 2 },
-    { version: 3 },
-    { version: 4 },
-    { version: 5 },
-  ]);
+  expect(versions.rows).toEqual(
+    Array.from({ length: LATEST_SCHEMA_VERSION }, (_, index) => ({ version: index + 1 })),
+  );
   expect(await readdir(parent)).toEqual(["library"]);
   expect(await readdir(library)).not.toContain(".photoctl-open.lock");
 }, 30_000);

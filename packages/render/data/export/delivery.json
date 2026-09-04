@@ -1,0 +1,6 @@
+{
+  "format": "jpeg",
+  "quality": 88,
+  "template": "{stem}",
+  "on-collision": "rename"
+}

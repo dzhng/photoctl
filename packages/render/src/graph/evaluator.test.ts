@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { findOrphanArtifacts, retainedArtifacts } from "../artifacts/availability.js";
-import { evaluateGraphNode } from "./evaluator.js";
+import { evaluateGraphNode, SourceEvaluationError } from "./evaluator.js";
 import { canonicalNodeRecipe, logicalNodeId, recipeHash } from "./recipes.js";
 import { commitRevision } from "./store.js";
 
@@ -14,6 +14,34 @@ const directories: string[] = [];
 
 afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
+});
+
+test("structured sources expose decode failure without masking graph errors", async () => {
+  const { db, library, nodeId } = await sourceGraph();
+  const sourcePath = join(library, "truncated.jpg");
+  await writeFile(sourcePath, Buffer.from([0xff, 0xd8, 0xff]));
+  try {
+    await expect(
+      evaluateGraphNode({
+        database: db,
+        libraryPath: library,
+        photoId,
+        nodeId,
+        source: {
+          orientation: 1,
+          imageSource: {
+            kind: "online-file",
+            path: sourcePath,
+            mediaType: "image/jpeg",
+            copyExact: false,
+          },
+          locator: { kind: "online-file", volume_uuid: "card", rel_path: "truncated.jpg" },
+        },
+      }),
+    ).rejects.toBeInstanceOf(SourceEvaluationError);
+  } finally {
+    await db.close();
+  }
 });
 
 test("evaluation failure before publication or database commit cannot create active missing state", async () => {

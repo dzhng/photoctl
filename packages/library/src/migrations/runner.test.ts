@@ -12,7 +12,7 @@ test("migrations are repeatable and record each version once", async () => {
     expect(first).toEqual({
       fromVersion: 0,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [1, 2, 3, 4, 5],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION }, (_, index) => index + 1),
     });
     expect(second).toEqual({
       fromVersion: LATEST_SCHEMA_VERSION,
@@ -23,13 +23,9 @@ test("migrations are repeatable and record each version once", async () => {
     const applied = await db.query<{ version: number }>(
       "SELECT version FROM schema_version ORDER BY version",
     );
-    expect(applied.rows).toEqual([
-      { version: 1 },
-      { version: 2 },
-      { version: 3 },
-      { version: 4 },
-      { version: 5 },
-    ]);
+    expect(applied.rows).toEqual(
+      Array.from({ length: LATEST_SCHEMA_VERSION }, (_, index) => ({ version: index + 1 })),
+    );
 
     await db.query(
       `INSERT INTO photos
@@ -111,25 +107,26 @@ test("the latest schema supports promoted sampled-key collisions and cull state"
     await db.close();
   }
 });
-test.each([["2"], ["1,3"], ["1,2,3,4,5,6"]])(
-  "rejects the non-prefix migration ledger %s before applying schema",
-  async (ledger) => {
-    const db = await PGlite.create();
-    try {
-      await db.exec(
-        `CREATE TABLE schema_version (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+test.each([
+  ["2"],
+  ["1,3"],
+  [`${Array.from({ length: LATEST_SCHEMA_VERSION + 1 }, (_, index) => index + 1).join(",")}`],
+])("rejects the non-prefix migration ledger %s before applying schema", async (ledger) => {
+  const db = await PGlite.create();
+  try {
+    await db.exec(
+      `CREATE TABLE schema_version (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
          INSERT INTO schema_version (version) VALUES (${ledger.replaceAll(",", "),(")});`,
-      );
-      await expect(migrate(db)).rejects.toThrow(`Invalid schema migration ledger: ${ledger}`);
-      const tables = await db.query<{ name: string }>(
-        "SELECT tablename AS name FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename",
-      );
-      expect(tables.rows).toEqual([{ name: "schema_version" }]);
-    } finally {
-      await db.close();
-    }
-  },
-);
+    );
+    await expect(migrate(db)).rejects.toThrow(`Invalid schema migration ledger: ${ledger}`);
+    const tables = await db.query<{ name: string }>(
+      "SELECT tablename AS name FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename",
+    );
+    expect(tables.rows).toEqual([{ name: "schema_version" }]);
+  } finally {
+    await db.close();
+  }
+});
 
 test.each([
   ["constraint", "ALTER TABLE photos DROP CONSTRAINT photos_rating_check"],

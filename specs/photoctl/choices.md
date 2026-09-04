@@ -2,6 +2,72 @@
 
 ## Sound
 
+### Slice 05/08a2 integration — Source decode failures cross the evaluator as a distinct error
+
+- **When:** Slice 05 canonical-evaluator integration review.
+- **The choice:** Export first asks the graph evaluator to render from the best online locator. If those source bytes cannot be
+  decoded, the evaluator throws `SourceEvaluationError`, so export can retry the same immutable output node from its pinned preview.
+  A different failure—such as reaching a develop node whose pixel operation has not shipped—keeps its original error and becomes
+  `decoder_unavailable`; it never triggers a misleading source fallback. The alternative was to inspect error-message text or retry
+  every evaluator failure as though the original file were offline.
+- **The gap:** The evaluator accepted a structured source locator but did not distinguish failure to decode that source from failure
+  to evaluate the graph above it, while export's offline contract requires different handling for those cases.
+- **The reach:** Preview and export callers can make source-tier fallback decisions without importing the renderer's private source
+  decoder or coupling to error wording. Future evaluator operations remain unable to silently turn into source pixels after failure.
+- **Verdict:** **Sound.** The error class marks the exact component boundary where recovery differs and preserves the private decoder
+  seam.
+- **Confidence:** High.
+
+### Slice 05 review — TIFF delivery metadata is embedded in-process
+
+- **When:** Slice 05 delivery-export correctness review.
+- **The choice:** Sharp asks its underlying image library, libvips, to encode each TIFF. That path keeps the XMP packet—the metadata
+  block used by Adobe-style tools—but drops the native TIFF `Artist` and `Copyright` fields even when Sharp is given both. After
+  encoding, photoctl therefore appends a replacement first image-file directory (IFD), the TIFF table that points to pixels and
+  metadata. It copies every existing table entry and offset unchanged, adds the two standard text tags, and points the TIFF header
+  at the replacement table. The alternative was to invoke a separately installed metadata executable after every export or add a
+  second image-processing dependency solely to rewrite two fields.
+- **The gap:** The slice requires EXIF-compatible creator and copyright metadata in TIFF, but does not choose how to work around the
+  encoder dropping those fields.
+- **The reach:** TIFF export remains one in-process durable write with no machine-level executable dependency. If Sharp/libvips later
+  preserves these native tags itself, the tested metadata owner can remove the directory rewrite without changing the export API.
+- **Verdict:** **Sound.** It repairs the standard TIFF structure before publication and keeps deployment self-contained; round-trip
+  tests verify both native fields, XMP, and 16-bit pixel samples.
+- **Confidence:** High.
+
+### Slice 05 — Delivery publication wins safety over perfectly atomic history
+
+- **When:** Slice 05 delivery export and closeout review.
+- **The choice:** An export crosses two durable systems: the filesystem that holds the JPEG/PNG/TIFF and the PGlite database that
+  records its history. Photoctl first publishes and synchronizes the complete file, then inserts the history row. For example, if
+  the database write fails after `/delivery/client.jpg` reaches disk, the photographer still has a valid but unrecorded file. The
+  reverse order could leave a durable history row pointing at a partial or nonexistent delivery after a crash. Ordinary writes use
+  atomic no-replace publication where hard links are supported, while explicit overwrite is the only path allowed to replace an
+  existing name. Filesystems that reject hard links fall back to exclusive destination creation, followed by write and fsync;
+  failure removes the partial file and an existing name is never replaced. That fallback preserves no-clobber semantics, but a
+  concurrent reader can observe the destination while it is still being written because Node exposes no portable atomic
+  rename-with-no-replace primitive.
+- **The gap:** The plan required durable output, history, and no unasked clobbering, but a filesystem rename and a database insert
+  cannot participate in one shared transaction.
+- **The reach:** Export retries may discover an unrecorded file and apply the requested collision policy, but catalog history never
+  promises a delivery that had not yet been published. Future history reconciliation must preserve this ordering.
+- **Verdict:** **Sound.** It chooses the recoverable orphan over a false durable claim and makes destructive replacement explicit.
+- **Confidence:** High.
+
+### Slice 05 — Library presets shadow package presets and CLI metadata merges by field
+
+- **When:** Slice 05 preset implementation.
+- **The choice:** When both the installed package and a library contain a preset called `delivery`, the library file wins because it
+  is the photographer's local policy. Command-line values then win over that file. Metadata overrides are field-by-field: passing
+  `--iptc creator=Alice` keeps the preset's copyright instead of erasing the whole metadata block. The alternative would either make
+  built-in names impossible to customize or make one small command-line override silently discard unrelated preset values.
+- **The gap:** The plan named package and library preset locations plus CLI precedence, but did not define same-name lookup order or
+  whether the two metadata fields merge together or replace as one object.
+- **The reach:** Libraries can carry portable house delivery policy while one export can change a single value without copying the
+  entire preset. Future preset fields should follow the same specific-over-general precedence.
+- **Verdict:** **Sound.** The closest user-owned configuration wins, and narrow overrides remain narrow.
+- **Confidence:** High.
+
 ### Slice 04 — Sampled identity keeps a narrow relocation inference and an mtime replacement boundary
 
 - **When:** Slice 04 identity integration and collision audit.
@@ -433,9 +499,8 @@
 - **When:** Slice 01b render-owned pass.
 - **The choice:** The render package receives a final output path and a resolved `ImageSource`: an
   online whole file, an online JPEG byte range, or a pinned preview. It never opens the photo catalog
-  or decides where a volume is mounted. In plain control flow: `read preferred online source →
-  exact-copy only when it is a full-frame orientation-1 JPEG → otherwise render; if the online read
-  fails → try pinned preview and warn; if neither can be read → file_offline`.
+  or decides where a volume is mounted. In plain control flow after slice 05: `render preferred online source into the requested
+  delivery format → if the online read fails, render the pinned preview and warn → if neither can be read, file_offline`.
   The command layer creates the output directory and owns collision naming before it calls this API;
   destination write errors still propagate instead of being mislabeled as an offline source. The
   alternative would make rendering depend on PGlite, cache policy, volume resolution, and filename
@@ -615,7 +680,7 @@
 ### Slice 01b review — A matching content key, not modification time, proves source identity
 
 - **When:** Slice 01b export review.
-- **The choice:** Before exact-copy export, photoctl recomputes the fixed content key and byte size for
+- **The choice:** Before using an online source for export, photoctl recomputes the fixed content key and byte size for
   each available locator. A file whose contents match but whose filesystem modification time was
   merely touched remains the same photo and can still supply the 7008×4672 embedded JPEG. Requiring
   the old timestamp would incorrectly downgrade an unchanged online source to a 1616-pixel cache
@@ -1146,13 +1211,13 @@
 ### Slice 08a2 implementation — Restore preserves file trees by staging hard links
 
 - **When:** Slice 08a2 restore integration, 2026-09-05.
-- **The choice:** Before swapping the restored database directory into place, restore recreates `artifacts/`, `originals/`, and
-  `previews/` in the staged sibling using hard links, then fsyncs the staged tree. Unsupported entries and symlinks are refused.
+- **The choice:** Before swapping the restored database directory into place, restore recreates `artifacts/`, `originals/`,
+  `previews/`, and user-authored `presets/` in the staged sibling using hard links, then fsyncs the staged tree. Unsupported entries and symlinks are refused.
   After promotion, the command validates registered canonical artifacts and marks missing or corrupt files unavailable.
 - **The gap:** The plan required database replacement without deleting potentially large library-owned file trees, but did not
   choose byte copying, moving after swap, or hard-link staging.
-- **The reach:** Restore remains rollback-safe and does not duplicate large source/artifact bytes, while SQL metadata cannot claim
-  a missing canonical file is available.
+- **The reach:** Restore remains rollback-safe, does not duplicate large source/artifact bytes, and does not erase export/develop
+  policy that SQL backups intentionally omit, while SQL metadata cannot claim a missing canonical file is available.
 - **Verdict:** **Sound.** Source and stage share a filesystem by construction, so hard links provide an atomic, bounded-storage
   preservation mechanism compatible with the existing directory-swap journal.
 - **Confidence:** High.
@@ -1236,6 +1301,22 @@
 - **Verdict:** **Needs-user.** These isolated limits are safe and reversible, but representative large graphs should determine
   whether 32/64/100 are the right usability/performance tradeoff before release.
 - **Confidence:** Low until measured on real edited libraries.
+
+### Slice 05 — Collision `skip` is a successful no-write result with requested-state identity
+
+- **When:** Slice 05 export protocol.
+- **The choice:** If `client.jpg` already exists and the caller requests `--on-collision skip`, the item returns success with
+  `skipped:true`, the existing file's dimensions and byte count, and the render hash that this command snapshotted. A render hash is
+  a fingerprint of the requested edit state; it is not proof that the pre-existing file contains those pixels. No export-history row
+  is inserted because this invocation wrote nothing. The alternative is to report skip as a failure, omit the required hash, or add
+  a second nullable artifact-provenance field that current files cannot reliably supply.
+- **The gap:** The plan defined skip policy and required a render hash on every successful item, but did not define whether skipping is
+  success or what the hash means when no new artifact is created.
+- **The reach:** Scripts can distinguish completed writes from harmless skips without treating an existing destination as an error;
+  they must not interpret a skipped item's hash as verified provenance for that existing file.
+- **Verdict:** **Needs-user.** Keep the reversible provisional contract because it makes batch retries idempotent and explicit. Before
+  release, change the protocol if `render_hash` must always certify file contents rather than identify the state the command attempted.
+- **Confidence:** Low.
 
 ### Slice 04 — Import and list use fixed bounded-work windows
 

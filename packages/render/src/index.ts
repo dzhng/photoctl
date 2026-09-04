@@ -13,3 +13,7 @@ export * from "./preview.js";
 export * from "./preview-artifact.js";
 export * from "./preview-coordinator.js";
 export * from "./export/run.js";
+export * from "./export/template.js";
+export * from "./export/collision.js";
+export * from "./export/metadata.js";
+export * from "./export/preset.js";

@@ -90,9 +90,15 @@ test("accepted file-source images import and export without descriptive EXIF", a
       return bytes;
     }),
   );
-  expect(outputBytes[0]).toEqual(Buffer.from(encodedImages.jpg, "base64"));
+  expect(outputBytes[0]).not.toEqual(Buffer.from(encodedImages.jpg, "base64"));
   expect(outputBytes[1]).not.toEqual(Buffer.from(encodedImages.png, "base64"));
   expect(outputBytes[2]).not.toEqual(Buffer.from(encodedImages.tiff, "base64"));
+  await Promise.all(
+    ["jpg", "png", "tiff"].map(async (extension) => {
+      const metadata = await sharp(join(output, `image-${extension}.jpg`)).metadata();
+      expect(metadata.hasProfile).toBe(true);
+    }),
+  );
 }, 30_000);
 
 test("an oriented whole-file image is not rotated again from its pinned preview", async () => {

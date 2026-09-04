@@ -26,6 +26,12 @@ export interface EvaluatedNode {
   reused: boolean;
 }
 
+export class SourceEvaluationError extends Error {
+  constructor(cause: unknown) {
+    super("Source bytes could not be decoded", { cause });
+  }
+}
+
 export interface PixelOperationInput {
   artifact: PublishedArtifact;
   evaluationHash: string;
@@ -114,14 +120,19 @@ async function evaluateOne(
   let normalizedSource: Awaited<ReturnType<typeof normalizeArtifact>> | undefined;
   if (node.kind === "source") {
     if (!request.source) throw new Error("Source graph evaluation requires a source producer");
-    source =
-      typeof request.source === "function"
-        ? await request.source()
-        : await renderSourceExecution(
-            request.source.orientation,
-            request.source.imageSource,
-            request.source.locator,
-          );
+    if (typeof request.source === "function") {
+      source = await request.source();
+    } else {
+      try {
+        source = await renderSourceExecution(
+          request.source.orientation,
+          request.source.imageSource,
+          request.source.locator,
+        );
+      } catch (error) {
+        throw new SourceEvaluationError(error);
+      }
+    }
     normalizedSource = await normalizeArtifact(source.image);
   }
   const evaluation = evaluationHash({

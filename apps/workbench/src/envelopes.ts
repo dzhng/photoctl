@@ -72,6 +72,7 @@ const successfulExport = {
   h: 4672,
   bytes: 6_730_200,
   render_hash: "r_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  skipped: false,
 } satisfies ExportResult;
 
 const partialExport = {

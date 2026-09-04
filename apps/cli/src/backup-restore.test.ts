@@ -1,4 +1,4 @@
-import { openLibrary } from "@photoctl/library";
+import { LATEST_SCHEMA_VERSION, openLibrary } from "@photoctl/library";
 import { daemonSocketPath } from "@photoctl/commands";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
@@ -66,7 +66,7 @@ test("the real CLI restores imported photo identities and content keys", async (
   expect(restored.json).toEqual({
     schema: 1,
     ok: true,
-    data: { library, from: backup, schema_version: 5 },
+    data: { library, from: backup, schema_version: LATEST_SCHEMA_VERSION },
     warnings: [],
   });
   expect(await photoIdentities(library)).toEqual(before);
@@ -171,11 +171,21 @@ test("a persistent daemon reports an upgrade once and current schema on repeated
     const second = await spawnPhotoctl(["migrate"], { libraryDir: library, env });
     expect(first.json).toMatchObject({
       ok: true,
-      data: { library, from_version: 1, to_version: 5, applied: [2, 3, 4, 5] },
+      data: {
+        library,
+        from_version: 1,
+        to_version: LATEST_SCHEMA_VERSION,
+        applied: Array.from({ length: LATEST_SCHEMA_VERSION - 1 }, (_, index) => index + 2),
+      },
     });
     expect(second.json).toMatchObject({
       ok: true,
-      data: { library, from_version: 5, to_version: 5, applied: [] },
+      data: {
+        library,
+        from_version: LATEST_SCHEMA_VERSION,
+        to_version: LATEST_SCHEMA_VERSION,
+        applied: [],
+      },
     });
   } finally {
     await spawnPhotoctl(["daemon", "stop"], { libraryDir: library, env });
@@ -224,7 +234,9 @@ test("restore stops a live daemon and performs the directory swap directly", asy
   });
 
   expect(restored.code).toBe(0);
-  expect(restored.json).toMatchObject({ data: { library, from, schema_version: 5 } });
+  expect(restored.json).toMatchObject({
+    data: { library, from, schema_version: LATEST_SCHEMA_VERSION },
+  });
   expect((await spawnPhotoctl(["daemon", "status"], { libraryDir: library, env })).code).toBe(69);
 }, 20_000);
 
@@ -243,7 +255,9 @@ test("restore --path replaces a mismatched Postgres cluster with a current dump"
   const restored = await spawnPhotoctl(["restore", "--path", target, "--from", from]);
 
   expect(restored.code).toBe(0);
-  expect(restored.json).toMatchObject({ data: { library: target, from, schema_version: 5 } });
+  expect(restored.json).toMatchObject({
+    data: { library: target, from, schema_version: LATEST_SCHEMA_VERSION },
+  });
   const targetDoctor = await spawnPhotoctl(["doctor"], { libraryDir: target });
   expect(targetDoctor.json.data).toMatchObject({
     library_id: (sourceDoctor.json as { data: { library_id: string } }).data.library_id,

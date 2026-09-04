@@ -3,8 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { runWorkbench } from "./run.js";
-import { createBackup, initializeLibrary } from "@photoctl/library";
+import { createBackup, initializeLibrary, LATEST_SCHEMA_VERSION } from "@photoctl/library";
 import { commitRevision, type NodeDraft } from "@photoctl/render";
+import sharp from "sharp";
 
 const temporaryDirectories: string[] = [];
 
@@ -78,7 +79,7 @@ test("library renders current schema, row counts, backups, and indexed cache byt
   expect(html).toContain("Library ID</span>");
   expect(html).toContain("Library path</span>");
   expect(html).toContain('<th scope="col">Table</th><th scope="col">Rows</th>');
-  expect(html).toContain("Schema version</span><strong>5</strong>");
+  expect(html).toContain(`Schema version</span><strong>${LATEST_SCHEMA_VERSION}</strong>`);
   expect(html).toContain("Indexed cache</span><strong>42 B</strong>");
   expect(html).toContain("cache_index</td><td>1</td>");
   expect(html).toContain(backup.path.slice(backup.path.lastIndexOf("/") + 1));
@@ -193,4 +194,24 @@ test("graph follows bounded inspection pages through the active output lineage",
   expect(html.match(/<article class="node /gu)).toHaveLength(103);
   expect(html).toContain('class="node source"');
   expect(html).toContain('class="node output"');
+});
+
+test("export renders a self-contained contact sheet for a delivered folder", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-export-"));
+  temporaryDirectories.push(cwd);
+  const delivery = join(cwd, "delivery");
+  await import("node:fs/promises").then(async ({ mkdir }) => await mkdir(delivery));
+  await sharp({ create: { width: 1200, height: 800, channels: 3, background: "#936" } })
+    .jpeg()
+    .toFile(join(delivery, "client-001.jpg"));
+
+  const output = await runWorkbench(["export", delivery], cwd);
+  const html = await readFile(output, "utf8");
+
+  expect(output).toBe(join(cwd, "out", "wb", "export.html"));
+  expect(html).toContain("Export contact sheet");
+  expect(html).toContain("client-001.jpg");
+  expect(html).toContain("1200 × 800");
+  expect(html).toMatch(/src="data:image\/jpeg;base64,/u);
+  expect(html).not.toMatch(/<(?:script|link)[^>]+(?:src|href)=/u);
 });

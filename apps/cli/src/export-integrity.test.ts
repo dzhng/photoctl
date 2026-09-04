@@ -20,7 +20,7 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true })));
 });
 
-test("export refuses exact-copy when linked source content no longer matches the catalogue", async () => {
+test("export refuses a linked source whose content no longer matches the catalogue", async () => {
   const setup = await setupImportedPhoto("mutated-source");
   const before = await stat(setup.source);
   const source = await open(setup.source, "r+");
@@ -49,7 +49,7 @@ test("export refuses exact-copy when linked source content no longer matches the
   expect((await readFile(join(setup.output, "a7c2.jpg"))).length).toBeGreaterThan(0);
 });
 
-test("export exact-copies matching linked content after an mtime-only touch", async () => {
+test("export accepts matching linked content after an mtime-only touch", async () => {
   const setup = await setupImportedPhoto("changed-mtime");
   const before = await stat(setup.source);
   await utimes(setup.source, before.atime, new Date(before.mtimeMs + 2_000));
@@ -63,7 +63,7 @@ test("export exact-copies matching linked content after an mtime-only touch", as
   expect(exported.json).toMatchObject({
     schema: 1,
     ok: true,
-    results: [{ id: setup.id, ok: true, w: 7008, h: 4672, bytes: 6_730_200 }],
+    results: [{ id: setup.id, ok: true, w: 7008, h: 4672, bytes: expect.any(Number) }],
     warnings: [],
   });
 });
@@ -100,7 +100,7 @@ test("export tries later catalogued locators when the first source is gone", asy
         file: join(setup.output, "replacement.jpg"),
         w: 7008,
         h: 4672,
-        bytes: 6_730_200,
+        bytes: expect.any(Number),
       },
     ],
     warnings: [],
