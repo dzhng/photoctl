@@ -1,0 +1,8 @@
+{
+  "name": "@photoctl/img-darwin-arm64",
+  "version": "0.1.0",
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "main": "photoctl-image.darwin-arm64.node",
+  "files": ["photoctl-image.darwin-arm64.node"]
+}

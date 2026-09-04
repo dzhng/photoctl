@@ -8,10 +8,10 @@
   "scripts": {
     "build": "bun run build:ts && bun run build:rust && bun run build:swift",
     "build:ts": "turbo run build",
-    "build:rust": "cargo test --workspace --no-run",
+    "build:rust": "cargo test --workspace --no-run && cargo build -p photoctl-image && node scripts/package-native.mjs",
     "build:swift": "if [ \"$(uname -s)\" = Darwin ] && [ -f helpers/mac/Package.swift ]; then swift build --package-path helpers/mac; else echo 'Swift build skipped (non-macOS)'; fi",
     "test": "bun run test:ts && bun run test:rust && bun run test:functional && bun run test:macos",
-    "test:ts": "vitest run --config vitest.config.ts",
+    "test:ts": "bun run build:rust && vitest run --config vitest.config.ts",
     "test:rust": "cargo test --workspace",
     "test:functional": "docker compose -f test/compose.yaml run --rm functional",
     "test:macos": "if [ \"$(uname -s)\" = Darwin ]; then bun run build:swift && vitest run --config vitest.macos.config.ts; else echo 'macOS tests skipped (non-macOS)'; fi",

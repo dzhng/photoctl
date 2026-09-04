@@ -3,6 +3,12 @@ import { open, mkdtemp, readFile, rm, type FileHandle } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import {
+  NativeImageUnavailableError,
+  decodeLibraw,
+  inspectLibraw,
+  probeLibraw,
+} from "@photoctl/img";
 import sharp, { type Sharp } from "sharp";
 import { displaySrgbToLinearRec2020 } from "./color.js";
 import {
@@ -241,6 +247,61 @@ export class CirawDecoder implements Decoder {
   }
 }
 
+export class LibrawDecoder implements Decoder {
+  readonly id = "libraw" as const;
+
+  async probe(source: ImageSource): Promise<DecoderProbe> {
+    if (source.kind !== "online-file") {
+      return { supported: false, notes: ["LibRaw requires an online whole-file source"] };
+    }
+    try {
+      return probeLibraw(source.path);
+    } catch (error) {
+      if (error instanceof NativeImageUnavailableError) {
+        return { supported: false, notes: [error.message] };
+      }
+      throw error;
+    }
+  }
+
+  async decode(source: ImageSource, options: { scale: DecodeScale }): Promise<LinearImage> {
+    if (source.kind !== "online-file") {
+      throw new DecoderUnavailableError("LibRaw requires an online whole-file source");
+    }
+    try {
+      const image = await decodeLibraw(source.path, options.scale);
+      if (
+        !Number.isSafeInteger(image.width) ||
+        image.width <= 0 ||
+        !Number.isSafeInteger(image.height) ||
+        image.height <= 0 ||
+        image.space !== "camera" ||
+        image.data.length !== image.width * image.height * 3 ||
+        image.camXyz.length !== 9 ||
+        image.asShotWb.length !== 3
+      ) {
+        throw new DecoderUnavailableError("LibRaw returned an incompatible image contract");
+      }
+      return {
+        w: image.width,
+        h: image.height,
+        orientationApplied: true,
+        space: "camera",
+        data: image.data,
+        whiteLevel: image.whiteLevel,
+        blackLevel: image.blackLevel,
+        camXyz: image.camXyz,
+        asShotWb: image.asShotWb,
+        wbPreApplied: image.wbPreApplied,
+      };
+    } catch (error) {
+      if (error instanceof DecoderUnavailableError) throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      throw new DecoderUnavailableError(`LibRaw decode failed: ${message}`);
+    }
+  }
+}
+
 function parseCirawProbe(value: unknown): CirawProbeResult {
   if (
     !value ||
@@ -337,6 +398,10 @@ export async function inspectCirawHelper(helperPath = "photoctl-mac"): Promise<{
   } catch {
     return { available: false, version: null };
   }
+}
+
+export function inspectLibrawDecoder(): { available: boolean; version: string | null } {
+  return inspectLibraw();
 }
 
 export async function readImageSource(source: ImageSource): Promise<Buffer> {

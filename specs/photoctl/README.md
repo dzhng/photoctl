@@ -11,19 +11,20 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-04. Status: slices 00–02, preview-cache pass 03a, and decoder pass 07a are implemented.
+*Last updated: 2026-09-05. Status: slices 00–02, preview-cache pass 03a, and decoder passes 07a–07b are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
-deterministic linear Rec.2020 pixels on macOS; `--human` renders the same envelopes without changing execution.*
+deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
+and `--human` renders the same envelopes without changing execution.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
 Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 03b (backup/restore/migrate) and 07b (vendored LibRaw).
-  Slice 03b now inherits the shared cache/index lifecycle from 03a.
+- **Pickup point:** dependency-ready slices 03b (backup/restore/migrate) and 07c (decoder oracle).
+  Slice 03b inherits the shared cache/index lifecycle from 03a; 07c inherits both full-resolution RAW adapters.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
-  does not block 07b. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
+  does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
   None blocks deterministic work — placeholders are named per slice.
 - **Before ending your pass:** update this section, tick the TODO, run the closeout gate named by the slice.
@@ -39,7 +40,7 @@ Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviatio
 - [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam — `slices/07-decoders.md`
-- [ ] 07b LibRaw + 07c decoder oracle — `slices/07-decoders.md`
+- [x] 07b LibRaw · [ ] 07c decoder oracle — `slices/07-decoders.md`
 - [ ] 08 develop: 8a dict · 8b1–3 color core · 8c1–4 local ops/NR/geometry/filters → **gold exam green** — `slices/08-develop.md`
 - [ ] 09 providers (9a), spikes (9b), embed worker + search (9c) — `slices/09-providers-embed-search.md`
 - [ ] 10 layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`

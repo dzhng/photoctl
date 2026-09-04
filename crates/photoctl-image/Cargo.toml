@@ -5,3 +5,12 @@ edition = "2024"
 license = "MIT"
 [lib]
 path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+libraw-sys = { path = "../libraw-sys" }
+napi = { version = "3.3", default-features = false, features = ["napi8"] }
+napi-derive = "3.2"
+
+[build-dependencies]
+napi-build = "2.4"

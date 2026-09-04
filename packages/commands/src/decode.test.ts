@@ -6,7 +6,7 @@ import { expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
 import { dispatch } from "./dispatch.js";
 
-test("decode writes CIRAW's shared linear image as a 16-bit TIFF", async () => {
+test("decode writes native decoder output through the shared 16-bit TIFF boundary", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-decode-command-"));
   const libraryPath = join(directory, "library");
   const cacheRoot = join(directory, "cache");
@@ -74,6 +74,59 @@ else {
       depth: "ushort",
     });
 
+    const librawOutput = join(directory, "libraw.tif");
+    const libraw = await dispatch(
+      {
+        verb: "decode",
+        args: [id, "--with", "libraw", "--scale", "0.25", "--to", librawOutput],
+        cwd: directory,
+        env: {
+          noDaemon: true,
+          libraryPath,
+          cacheRoot,
+          volumeMap: `${process.cwd()}=fixture-volume:online`,
+        },
+      },
+      daemonContext,
+    );
+    expect(libraw).toMatchObject({
+      schema: 1,
+      ok: true,
+      data: {
+        id,
+        decoder: "libraw",
+        file: librawOutput,
+        w: 1752,
+        h: 1168,
+        space: "camera",
+      },
+      warnings: [],
+    });
+    expect(await sharp(librawOutput).metadata()).toMatchObject({
+      format: "tiff",
+      width: 1752,
+      height: 1168,
+      depth: "ushort",
+      bitsPerSample: 16,
+    });
+
+    const doctor = await dispatch(
+      {
+        verb: "doctor",
+        args: [],
+        cwd: directory,
+        env: { noDaemon: true, libraryPath, cacheRoot },
+      },
+      daemonContext,
+    );
+    expect(doctor).toMatchObject({
+      schema: 1,
+      ok: true,
+      data: {
+        decoders: [{ id: "ciraw" }, { id: "libraw", available: true, version: "0.22.2-Release" }],
+      },
+    });
+
     const fallbackOutput = join(directory, "fallback.tif");
     const fallback = await dispatch(
       {
@@ -93,8 +146,8 @@ else {
     expect(fallback).toMatchObject({
       schema: 1,
       ok: true,
-      data: { id, decoder: "file", file: fallbackOutput, space: "scene-linear-rec2020" },
-      warnings: [{ code: "decoder_fallback", id }],
+      data: { id, decoder: "libraw", file: fallbackOutput, space: "camera" },
+      warnings: [],
     });
     expect(await sharp(fallbackOutput).metadata()).toMatchObject({
       format: "tiff",

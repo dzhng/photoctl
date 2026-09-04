@@ -14,6 +14,11 @@ COPY packages/protocol/package.json packages/protocol/package.json
 COPY packages/commands/package.json packages/commands/package.json
 COPY packages/importer/package.json packages/importer/package.json
 COPY packages/library/package.json packages/library/package.json
+COPY packages/img/package.json packages/img/package.json
+COPY packages/img-darwin-arm64/package.json packages/img-darwin-arm64/package.json
+COPY packages/img-darwin-x64/package.json packages/img-darwin-x64/package.json
+COPY packages/img-linux-arm64-gnu/package.json packages/img-linux-arm64-gnu/package.json
+COPY packages/img-linux-x64-gnu/package.json packages/img-linux-x64-gnu/package.json
 COPY packages/mac-helper/package.json packages/mac-helper/package.json
 COPY packages/render/package.json packages/render/package.json
 COPY packages/test-harness/package.json packages/test-harness/package.json

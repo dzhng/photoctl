@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import sharp from "sharp";
-import { CirawDecoder, FileImageDecoder, type ImageSource } from "./decoder.js";
+import { CirawDecoder, FileImageDecoder, LibrawDecoder, type ImageSource } from "./decoder.js";
 
 test("the CIRAW adapter returns the shared linear-image contract from the helper wire", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-ciraw-adapter-"));
@@ -86,3 +86,34 @@ test("the file adapter decodes content with a wrong extension into linear Rec.20
   expect(image.data[2]).toBeCloseTo(0.0164, 3);
   await rm(directory, { recursive: true });
 });
+
+test("the LibRaw adapter reports compression and returns scaled camera-space pixels", async () => {
+  const fixture = join(process.cwd(), "fixtures/a7c2.ARW");
+  const source: ImageSource = {
+    kind: "online-file",
+    path: fixture,
+    mediaType: "image/x-sony-arw",
+    w: 7008,
+    h: 4672,
+  };
+
+  const decoder = new LibrawDecoder();
+  expect(await decoder.probe(source)).toEqual({
+    supported: true,
+    compression: 1,
+    notes: ["LibRaw 0.22.2-Release"],
+  });
+  const image = await decoder.decode(source, { scale: 0.25 });
+  expect(image).toMatchObject({
+    w: 1752,
+    h: 1168,
+    orientationApplied: true,
+    space: "camera",
+    whiteLevel: 15_871,
+    blackLevel: 0,
+    wbPreApplied: false,
+  });
+  expect(image.camXyz?.[0]).toBeCloseTo(0.746, 4);
+  expect(image.asShotWb?.[0]).toBeCloseTo(2.3164, 3);
+  expect(image.data).toHaveLength(1752 * 1168 * 3);
+}, 30_000);

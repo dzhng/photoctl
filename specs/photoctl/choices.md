@@ -681,6 +681,139 @@
   wrapping would create false colors.
 - **Confidence:** Medium.
 
+### Slice 07b — Camera samples are black-subtracted counts, not display-ready colors
+
+- **When:** Slice 07b LibRaw pixel contract.
+- **The choice:** After LibRaw turns the camera's one-color-per-sensor-site mosaic into three channels
+  with AHD (Adaptive Homogeneity-Directed demosaicing), photoctl subtracts the measured sensor black
+  offset but does not divide by the white level or apply the camera white balance. A sample therefore
+  remains a linear camera count: black is `0`, the adjusted saturation point is `white−black`, and the
+  separate `asShotWb` numbers describe rather than alter the pixels. The alternative would emit values
+  from zero to one or bake white balance into the pixels, either of which would make slice 07c repeat or
+  guess which part of the shared camera front end had already run.
+- **The gap:** The plan required camera space and forbade color conversion, but did not choose the
+  numeric units after black subtraction.
+- **The reach:** The shared develop front end, TIFF probes, histograms, and future decoder comparisons
+  must interpret LibRaw samples with the accompanying black and white levels rather than as display RGB.
+- **Verdict:** **Sound.** It preserves the sensor measurement and leaves every color decision with the
+  one shared develop pipeline.
+- **Confidence:** High.
+
+### Slice 07b — Native decode runs off the JavaScript event loop while LibRaw remains thread-safe
+
+- **When:** Slice 07b napi concurrency boundary.
+- **The choice:** A full AHD decode takes several seconds, so the napi function returns a promise and
+  performs the C++ work on Node's native worker pool. LibRaw keeps its thread-local AHD scratch state;
+  photoctl disables OpenMP by supplying no OpenMP build flags rather than defining
+  `LIBRAW_NOTHREADS`, which would replace that scratch state with shared static memory. The alternative
+  synchronous binding would freeze daemon commands during every decode, while the no-threads build
+  would let two otherwise independent probes or decodes corrupt one another.
+- **The gap:** The plan selected napi and prohibited OpenMP but did not specify scheduling or distinguish
+  internal thread safety from parallel demosaic execution.
+- **The reach:** Multiple daemon requests may safely overlap without blocking unrelated JavaScript work;
+  future native image operations should follow the same worker-boundary rule when they are CPU-heavy.
+- **Verdict:** **Sound.** Parallel Rust tests reproduced corruption with shared AHD scratch state and
+  stayed deterministic after restoring LibRaw's thread-safe mode.
+- **Confidence:** High.
+
+### Slice 07b — LibRaw uses its nominal inset crop before orientation
+
+- **When:** Slice 07b LibRaw adapter.
+- **The choice:** The Sony fixture contains a larger stored sensor rectangle around the photograph.
+  Immediately after unpacking, photoctl asks LibRaw to apply the format's declared raw inset, producing
+  the camera's nominal `7008×4672` image, then maps LibRaw's orientation while copying pixels. Returning
+  the larger storage rectangle would expose optical-black and margin pixels that other decoders never
+  show; inventing a photoctl crop would create a second camera geometry table.
+- **The gap:** The global coordinate rule forbids an artistic crop but does not say whether container
+  sensor margins count as image pixels.
+- **The reach:** Imported dimensions, decoder scale flooring, camera matrices, and the slice 07c oracle
+  all begin from the same oriented camera rectangle.
+- **Verdict:** **Sound.** The decoder's own format metadata owns sensor margins; this is normalization of
+  the stored raster, not a user crop.
+- **Confidence:** High.
+
+### Slice 07b — Fractional decoder scales use bilinear pixel-center sampling in Rust
+
+- **When:** Slice 07b scale implementation.
+- **The choice:** LibRaw always performs AHD at the nominal camera dimensions. For scale `0.5` or `0.25`,
+  photoctl then computes each output pixel from the four surrounding camera pixels at pixel-center
+  coordinates, with dimensions floored exactly as the public decoder contract requires. Nearest-neighbor
+  sampling would alias fine detail; asking LibRaw for half-size would change the demosaic algorithm and
+  make full and scaled calls disagree for reasons beyond resizing.
+- **The gap:** The plan required one Rust resampler and exact scaled dimensions but did not select the
+  interpolation kernel or whether scaling occurs before or after AHD.
+- **The reach:** Slice 10 should promote this implementation as the one shared resampler rather than add
+  a second kernel for previews, layers, or masks.
+- **Verdict:** **Sound.** Post-AHD bilinear sampling gives one deterministic camera decode at every scale
+  and a reusable baseline kernel.
+- **Confidence:** Medium.
+
+### Slice 07b — Explicit camera TIFFs normalize measured levels into real 16-bit samples
+
+- **When:** Slice 07b CLI verification output.
+- **The choice:** `decode --to` maps a camera count with `(sample−black)/(white−black)`, clips the result
+  to zero through one, and writes an uncompressed RGB TIFF whose stored channel samples truly span
+  16 bits. Scene-linear inputs already use zero-to-one values and take the same final saturating write.
+  The previous Sharp path labelled its container 16-bit but numerically clamped float camera counts as
+  though they were zero-to-one, leaving effectively 8-bit values and mostly white LibRaw output.
+- **The gap:** The plan required linear 16-bit output but did not define how unnormalized camera counts
+  reach that file or verify the numeric sample depth independently of TIFF metadata.
+- **The reach:** Decoder probes are inspectable by ordinary TIFF readers without changing the in-memory
+  camera contract; slice 07c still owns the linear Rec.2020 profile and display color transform.
+- **Verdict:** **Sound.** The file preserves relative sensor levels at the requested integer precision
+  while the develop graph retains unclipped floats.
+- **Confidence:** High.
+
+### Slice 07b — Native availability is lazy, but native tests build the host addon first
+
+- **When:** Slice 07b package and test boundary.
+- **The choice:** Importing `@photoctl/img` does not immediately load a `.node` binary. The first LibRaw
+  inspection chooses the package matching the current operating system and CPU, and a missing package
+  becomes an explicit unavailable result instead of crashing every command. Because generated native
+  binaries are not committed, the TypeScript test script builds and copies the current host addon before
+  Vitest starts. The alternative eager import would prevent even non-image commands from starting on an
+  unsupported installation; assuming a pre-existing developer build would make a clean checkout fail.
+- **The gap:** The plan named per-platform packages but did not specify load timing or how source-checkout
+  tests obtain an ignored native artifact.
+- **The reach:** `doctor` and automatic decoder selection share one availability truth, and clean local or
+  Docker tests exercise the same package loader used by the CLI.
+- **Verdict:** **Sound.** Optional native capability remains observable without making it a process-wide
+  startup requirement.
+- **Confidence:** High.
+
+### Slice 07b — Probe answers format capability without reading the whole pixel payload
+
+- **When:** Slice 07b decoder selection.
+- **The choice:** `probe()` opens and parses LibRaw metadata, including the TIFF compression tag, but
+  does not unpack every sensor byte. Thus a deliberately truncated file can identify as a supported Sony
+  RAW and later fail decode with an I/O error. Treating that damaged original as “decoder unavailable”
+  and silently switching to an embedded preview would hide source corruption; fully unpacking during
+  probe would also perform the expensive read twice for every healthy decode.
+- **The gap:** The plan requires a support/compression probe and fallback when an adapter is unavailable,
+  but does not define whether probe is also a whole-file integrity check.
+- **The reach:** Automatic selection distinguishes “this decoder understands the format” from “this
+  particular source decoded successfully”; future source-integrity handling should surface the latter
+  explicitly rather than overload decoder availability.
+- **Verdict:** **Sound.** Capability probing stays cheap and source corruption remains an error instead of
+  becoming a lower-quality silent fallback.
+- **Confidence:** Medium.
+
+### Slice 07b — Recursive source discovery excludes LibRaw's alternate placeholder translation units
+
+- **When:** Slice 07b portable build.
+- **The choice:** The build recursively discovers upstream `src/**/*.cpp`, then excludes the three files
+  ending in `_ph.cpp`. Those files implement no-postprocessing placeholders for a different LibRaw build;
+  compiling them beside the real preprocessing, postprocessing, and writer sources defines the same C++
+  functions twice and ELF linkers reject the library. Listing every desired source by hand would avoid
+  duplicates today but silently omit a new decoder file on a later pinned LibRaw update.
+- **The gap:** The plan required recursive source discovery but did not call out upstream's mutually
+  exclusive placeholder files.
+- **The reach:** Linux and macOS use the same full LibRaw implementation, while a future vendor update
+  remains discoverable through the source glob and checksum review.
+- **Verdict:** **Sound.** It preserves the plan's update-safe discovery rule while selecting exactly one
+  implementation of each LibRaw function.
+- **Confidence:** High.
+
 ## Needs user
 
 ### Slice 02 integration — CLI tags trim boundaries but preserve case and Unicode

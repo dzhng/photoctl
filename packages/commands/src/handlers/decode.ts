@@ -6,6 +6,7 @@ import {
   CirawDecoder,
   DecoderUnavailableError,
   FileImageDecoder,
+  LibrawDecoder,
   selectDecoder,
   encodeLinearTiff,
   type DecodeScale,
@@ -69,6 +70,7 @@ export async function decodeCommand(
         decoders: {
           file: new FileImageDecoder(),
           ciraw: new CirawDecoder(resolveMacHelperPath(env.macHelperPath)),
+          libraw: new LibrawDecoder(),
         },
       });
     } catch (error) {
@@ -82,7 +84,8 @@ export async function decodeCommand(
       warnings.push({
         code: "decoder_fallback",
         id,
-        message: "CIRAW is unavailable; decoded the best file preview instead",
+        message:
+          "A full-resolution RAW decoder is unavailable; decoded the best file preview instead",
       });
     }
     let image;

@@ -16,7 +16,7 @@ import {
 } from "@photoctl/library";
 import { cacheRootForLibrary } from "@photoctl/importer";
 import { resolveMacHelperPath } from "@photoctl/mac-helper";
-import { inspectCirawHelper } from "@photoctl/render";
+import { inspectCirawHelper, inspectLibrawDecoder } from "@photoctl/render";
 import type { PreviewCoordinator } from "@photoctl/render";
 import { resolve } from "node:path";
 import { parseArguments } from "./arguments.js";
@@ -112,6 +112,7 @@ export async function dispatch(
       try {
         const diagnostics = await readLibraryDiagnostics(handle);
         const ciraw = await inspectCirawHelper(resolveMacHelperPath(request.env.macHelperPath));
+        const libraw = inspectLibrawDecoder();
         return {
           schema: 1,
           ok: true,
@@ -135,8 +136,8 @@ export async function dispatch(
               },
               {
                 id: "libraw",
-                available: false,
-                version: null,
+                available: libraw.available,
+                version: libraw.version,
                 requires_window_server: false,
               },
             ],

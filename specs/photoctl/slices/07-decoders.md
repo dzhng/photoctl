@@ -8,7 +8,10 @@
   blocked because Remote Login is disabled; the evidence and rerunnable command live in
   [`../assets/gates/G3-ciraw-headless.md`](../assets/gates/G3-ciraw-headless.md). File-decoder scaling still uses Sharp as a
   transitional decode path; slice 10 must replace it with the one Rust resampler named by the global contract.
-- [ ] **7b LibRaw:** portable decoder, native package, compression probe, and G2.
+- [x] **7b LibRaw:** vendored 0.22.2 builds into the optional per-platform napi package; decode runs
+  AHD into oriented, black-subtracted camera space on a native worker; probe exposes compression and
+  the camera matrix. The fixture, CLI, macOS dependency, and Docker evidence live in
+  [`../assets/gates/G2-libraw-build.md`](../assets/gates/G2-libraw-build.md).
 - [ ] **7c oracle:** shared camera front end/display transform and G4.
 
 ## Contract unlocked
