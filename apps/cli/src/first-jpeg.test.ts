@@ -173,6 +173,27 @@ test("show reports limited offline detail and promotes it when the full source r
   });
   const preview = (online.json as { data: { preview: string } }).data.preview;
   await expect(sharp(preview).metadata()).resolves.toMatchObject({ width: 1000, height: 1000 });
+
+  const cachedOffline = await spawnPhotoctl(["show", id, "--region", "0,0,1000,1000"], {
+    libraryDir: library,
+    env: {
+      PHOTOCTL_CACHE: cache,
+      PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:offline`,
+    },
+  });
+  expect(cachedOffline.code).toBe(0);
+  expect(cachedOffline.json).toMatchObject({
+    data: {
+      preview,
+      preview_info: {
+        source_tier: "online-jpeg-range",
+        source_dimensions: { w: 7008, h: 4672 },
+        resolution_limited: false,
+        cache_source: "exact_view",
+      },
+    },
+    warnings: [{ code: "source_offline", id }],
+  });
 }, 30_000);
 
 test("export copies the full embedded JPEG byte-for-byte", async () => {

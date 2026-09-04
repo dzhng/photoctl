@@ -108,7 +108,7 @@ export async function showCommand(args: string[], env: RequestEnv, cwd: string):
           w: materialized.preview.w,
           h: materialized.preview.h,
         },
-        source_tier: materialized.source.kind,
+        source_tier: materialized.preview.sourceTier,
         source_dimensions: materialized.preview.sourceDimensions,
         pixel_scale: materialized.preview.pixelScale,
         resolution_limited: materialized.preview.resolutionLimited,

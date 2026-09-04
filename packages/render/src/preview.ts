@@ -31,6 +31,12 @@ export function viewHash(spec: ViewSpec): string {
 }
 
 export type PreviewCacheSource = "exact_view" | "sufficient_full_frame" | "render_master";
+export type PreviewSourceTier = ImageSource["kind"];
+
+interface PreviewProvenance {
+  sourceTier: PreviewSourceTier;
+  sourceDimensions: { w: number; h: number };
+}
 
 export class PreviewDestinationError extends Error {
   readonly code = "volume_readonly";
@@ -49,6 +55,7 @@ export interface MaterializedPreview {
   w: number;
   h: number;
   sourceDimensions: { w: number; h: number };
+  sourceTier: PreviewSourceTier;
   pixelScale: number;
   resolutionLimited: boolean;
   cacheSource: PreviewCacheSource;
@@ -84,8 +91,9 @@ export async function materializePreview(request: {
       region,
       exact.w,
       exact.h,
-      exact.w,
-      exact.h,
+      exact.sourceDimensions.w,
+      exact.sourceDimensions.h,
+      exact.sourceTier,
       requestedScale,
       "exact_view",
     );
@@ -99,8 +107,9 @@ export async function materializePreview(request: {
         region,
         master.w,
         master.h,
-        master.w,
-        master.h,
+        master.sourceDimensions.w,
+        master.sourceDimensions.h,
+        master.sourceTier,
         requestedScale,
         "exact_view",
       );
@@ -128,14 +137,19 @@ export async function materializePreview(request: {
       request.photo,
       region,
       requestedScale,
+      request.source.kind,
       "render_master",
     );
   }
 
   const image = await renderPhoto({ orientation: request.photo.orientation }, request.source);
   const masterBytes = await encodeJpeg(image);
-  await writeAtomically(masterPath, directory, masterBytes);
-  const renderedMaster = { bytes: masterBytes, w: image.w, h: image.h };
+  const provenance = {
+    sourceTier: request.source.kind,
+    sourceDimensions: { w: image.w, h: image.h },
+  };
+  await writePreviewArtifact(masterPath, directory, masterBytes, provenance);
+  const renderedMaster = { bytes: masterBytes, w: image.w, h: image.h, ...provenance };
   if (nativeFullFrame) {
     return result(
       masterPath,
@@ -144,6 +158,7 @@ export async function materializePreview(request: {
       image.h,
       image.w,
       image.h,
+      request.source.kind,
       requestedScale,
       "render_master",
     );
@@ -168,6 +183,7 @@ async function deriveRenderedView(
   photo: { w: number; h: number },
   region: [number, number, number, number],
   requestedScale: number,
+  sourceTier: PreviewSourceTier,
   cacheSource: PreviewCacheSource,
 ): Promise<MaterializedPreview> {
   const bytes = image8BitBytes(image);
@@ -176,7 +192,13 @@ async function deriveRenderedView(
     path,
     path,
     directory,
-    { w: image.w, h: image.h, rawChannels: image.channels },
+    {
+      w: image.w,
+      h: image.h,
+      rawChannels: image.channels,
+      sourceTier,
+      sourceDimensions: { w: image.w, h: image.h },
+    },
     photo,
     region,
     requestedScale,
@@ -189,7 +211,13 @@ async function deriveView(
   sourcePath: string,
   outputPath: string,
   directory: string,
-  source: { w: number; h: number; rawChannels?: 3 },
+  source: {
+    w: number;
+    h: number;
+    rawChannels?: 3;
+    sourceTier: PreviewSourceTier;
+    sourceDimensions: { w: number; h: number };
+  },
   photo: { w: number; h: number },
   region: [number, number, number, number],
   requestedScale: number,
@@ -212,9 +240,19 @@ async function deriveView(
     .withIccProfile(srgb2014ProfilePath)
     .toBuffer();
   if (outputPath !== sourcePath || source.rawChannels) {
-    await writeAtomically(outputPath, directory, output);
+    await writePreviewArtifact(outputPath, directory, output, source);
   }
-  return result(outputPath, region, width, height, source.w, source.h, requestedScale, cacheSource);
+  return result(
+    outputPath,
+    region,
+    width,
+    height,
+    source.sourceDimensions.w,
+    source.sourceDimensions.h,
+    source.sourceTier,
+    requestedScale,
+    cacheSource,
+  );
 }
 
 function result(
@@ -224,6 +262,7 @@ function result(
   h: number,
   sourceWidth: number,
   sourceHeight: number,
+  sourceTier: PreviewSourceTier,
   requestedScale: number,
   cacheSource: PreviewCacheSource,
 ): MaterializedPreview {
@@ -234,6 +273,7 @@ function result(
     w,
     h,
     sourceDimensions: { w: sourceWidth, h: sourceHeight },
+    sourceTier,
     pixelScale,
     resolutionLimited: pixelScale + 1 / Math.max(actualRegion[2], actualRegion[3]) < requestedScale,
     cacheSource,
@@ -284,14 +324,25 @@ function clampRegion(
   return [x, y, w, h];
 }
 
-async function readValidJpeg(
-  path: string,
-): Promise<{ bytes: Buffer; w: number; h: number } | undefined> {
+async function readValidJpeg(path: string): Promise<
+  | {
+      bytes: Buffer;
+      w: number;
+      h: number;
+      sourceTier: PreviewSourceTier;
+      sourceDimensions: { w: number; h: number };
+    }
+  | undefined
+> {
   try {
     const bytes = await readFile(path);
     const metadata = await sharp(bytes, { failOn: "error" }).metadata();
     await sharp(bytes, { failOn: "error" }).stats();
-    const expectedProfile = await readFile(srgb2014ProfilePath);
+    const [expectedProfile, provenanceBytes] = await Promise.all([
+      readFile(srgb2014ProfilePath),
+      readFile(`${path}.json`),
+    ]);
+    const provenance = parseProvenance(provenanceBytes);
     if (
       metadata.format !== "jpeg" ||
       !metadata.width ||
@@ -300,7 +351,7 @@ async function readValidJpeg(
     ) {
       return undefined;
     }
-    return { bytes, w: metadata.width, h: metadata.height };
+    return { bytes, w: metadata.width, h: metadata.height, ...provenance };
   } catch {
     return undefined;
   }
@@ -323,6 +374,51 @@ function image8BitBytes(image: Image16): Buffer {
     bytes[index] = Math.round(image.data[index] / 257);
   }
   return bytes;
+}
+
+function parseProvenance(bytes: Buffer): PreviewProvenance {
+  const value = JSON.parse(bytes.toString("utf8")) as {
+    schema?: unknown;
+    source_tier?: unknown;
+    source_dimensions?: { w?: unknown; h?: unknown };
+  };
+  if (
+    value.schema !== 1 ||
+    !["online-file", "online-jpeg-range", "pinned-preview"].includes(value.source_tier as string) ||
+    !Number.isSafeInteger(value.source_dimensions?.w) ||
+    !Number.isSafeInteger(value.source_dimensions?.h) ||
+    Number(value.source_dimensions?.w) <= 0 ||
+    Number(value.source_dimensions?.h) <= 0
+  ) {
+    throw new Error("Invalid preview provenance");
+  }
+  return {
+    sourceTier: value.source_tier as PreviewSourceTier,
+    sourceDimensions: {
+      w: Number(value.source_dimensions?.w),
+      h: Number(value.source_dimensions?.h),
+    },
+  };
+}
+
+async function writePreviewArtifact(
+  path: string,
+  directory: string,
+  bytes: Uint8Array,
+  provenance: PreviewProvenance,
+): Promise<void> {
+  await writeAtomically(path, directory, bytes);
+  await writeAtomically(
+    `${path}.json`,
+    directory,
+    Buffer.from(
+      `${JSON.stringify({
+        schema: 1,
+        source_tier: provenance.sourceTier,
+        source_dimensions: provenance.sourceDimensions,
+      })}\n`,
+    ),
+  );
 }
 
 async function writeAtomically(path: string, directory: string, bytes: Uint8Array): Promise<void> {
