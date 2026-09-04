@@ -2,6 +2,81 @@
 
 ## Sound
 
+### Slice 08b integration — Develop batches reuse the shared failure owner and classify revision races as contention
+
+- **When:** Slice 08b review after the shared Slice 06 batch owner landed.
+- **The choice:** Resolution, result aggregation, partial-envelope construction, and error-data copying now come from
+  `packages/commands/src/batch.ts`. Each resolved photo encloses its own load, graph read, mutation validation, and revision commit.
+  Invalid requested values become per-item `usage` results; malformed stored graph state becomes `catalog_unreadable`; and the typed
+  graph compare-and-swap conflict becomes retryable `library_locked` with `reason:"revision_conflict"`. The alternative was to keep a
+  develop-specific envelope implementation or let one photo abort later items.
+- **The gap:** The batch contract requires partial progress but did not select existing public error codes for graph validation and
+  a concurrent revision change.
+- **The reach:** Multi-photo develop scripts retain ordered outcomes and can retry a raced photo without replaying successful items.
+  Future batch handlers inherit one result/error envelope owner instead of another near-copy.
+- **Verdict:** **Sound.** The classifications preserve the closed protocol code set and separate corrupt durable state from transient
+  write contention.
+- **Confidence:** Medium; a dedicated revision-conflict code would be clearer if the public error vocabulary is expanded later.
+
+### Slice 08b — Copy selects the mutation base before the other develop operations
+
+- **When:** Slice 08b command integration.
+- **The choice:** One `develop` invocation may copy another photo's settings and refine them. The command first selects its base—the
+  source photo for `--copy-from`, otherwise the target's current state—then applies `--reset`, the named preset overlay, explicit
+  `--set` assignments, and finally `--unset` paths. For example, `--copy-from A --preset people --set contrast=9 --unset cast`
+  produces one before/after classification and at most one immutable revision. If the fully resolved dictionary, including
+  provenance, already equals the target state, the command returns its current hashes without adding undo history. The alternative
+  was to reject combinations, make behavior depend on argument order, or record duplicate no-op revisions.
+- **The gap:** The contract says a preset precedes explicit sets, but does not fully order copy, reset, and unset when options compose.
+- **The reach:** Scripts, retries, undo history, and future layer-staleness classification receive one deterministic result
+  independent of CLI spelling order; idempotent replay cannot manufacture edits a photographer never made.
+- **Verdict:** **Sound.** A copied state is naturally an input, destructive reset is explicit, and the most specific requested edits
+  win last.
+- **Confidence:** Medium.
+
+### Slice 08b — Preset provenance is stored in the node recipe but excluded from the develop hash
+
+- **When:** Slice 08b immutable-node integration.
+- **The choice:** The resolved develop settings and the selected preset name are stored together in the typed develop node. The
+  `develop_hash` excludes that name, as required, so two identical settings dictionaries share one `h_…` identity. The logical node
+  recipe still records the name: applying an alias with identical values can therefore create a different output `render_hash` even
+  though its `develop_hash` matches. The alternative was to discard provenance or add a second revision-metadata schema solely for
+  preset names.
+- **The gap:** The plan requires retaining the preset name while excluding it from the develop hash, but does not choose where that
+  provenance belongs relative to the DAG recipe.
+- **The reach:** Inspection and undo retain what the photographer requested. Identical pixels selected through differently named
+  presets may occupy separate logical recipes until a later metadata owner exists.
+- **Verdict:** **Sound.** It keeps the requested provenance inside the already typed immutable state without duplicating mutable
+  photo columns.
+- **Confidence:** Medium; the harmless cache split is an architectural tradeoff worth revisiting if preset aliases become common.
+
+### Slice 08b — Saved develop presets contain resolved settings and replace atomically by name
+
+- **When:** Slice 08b library preset implementation.
+- **The choice:** `presets save <name> --from <photo>` writes the photo's resolved settings, excluding any prior preset-name
+  provenance, to `<library>/presets/develop/<name>.json`. Publication uses a same-directory temporary file, file sync, rename, and
+  directory sync; saving the same name replaces that library-owned preset. A library preset shadows a package preset with the same
+  name, following the existing preset-precedence rule. The alternatives were to save an inheritance reference, refuse replacement,
+  or expose partially written JSON.
+- **The gap:** The slice names package and library locations but does not define save collisions, inheritance, or crash ordering.
+- **The reach:** Presets remain portable snapshots rather than aliases into another photo's history, and a daemon cannot observe a
+  half-written file.
+- **Verdict:** **Sound.** Resolved data is self-contained, while atomic replacement matches an explicit save action.
+- **Confidence:** High.
+
+### Slice 08b — Structured develop values use one normalized JSON vocabulary
+
+- **When:** Slice 08b dictionary-schema implementation.
+- **The choice:** Curves are per-channel ordered `[input,output]` points normalized to 0–1; levels use
+  `{black,midpoint,white}`; selective color uses named hue bands with bounded channel adjustments; crop remains base-pixel
+  `{x,y,w,h}`; aspect is positive `W:H`; and filters are fixed names plus bounded strength. The alternative was to leave nested
+  values as arbitrary JSON or create a second shape for presets.
+- **The gap:** The operator table fixes the keys and math owners but does not completely specify the nested JSON representation.
+- **The reach:** CLI parsing, presets, canonical hashes, future Rust operators, XMP mapping, and graph validation all inherit these
+  shapes.
+- **Verdict:** **Sound.** One strict normalized representation makes invalid recipes unrepresentable and keeps hashes portable.
+- **Confidence:** Medium; future operator evidence may justify extending the fixed filter names or selective-color vocabulary.
+
 ### Slice 05/08a2 integration — Source decode failures cross the evaluator as a distinct error
 
 - **When:** Slice 05 canonical-evaluator integration review.

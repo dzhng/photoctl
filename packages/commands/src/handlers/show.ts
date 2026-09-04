@@ -8,11 +8,12 @@ import {
 } from "@photoctl/library";
 import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@photoctl/protocol";
 import {
+  developHash,
   materializePreview,
-  ensurePhotoDocument,
   evaluateGraphNode,
   PreviewDestinationError,
   PreviewCoordinator,
+  readActiveDevelopState,
   readArtifactImage,
   viewHash,
   type ImageSource,
@@ -57,7 +58,7 @@ export async function showCommand(
     const warnings: Warning[] = locators.some((locator) => !locator.online)
       ? [{ code: "source_offline", id, message: "One or more source files are offline" }]
       : [];
-    const document = await ensurePhotoDocument(handle, {
+    const document = await readActiveDevelopState(handle, {
       photoId: id,
       orientation: photo.orientation,
     });
@@ -191,8 +192,8 @@ export async function showCommand(
       },
       locators,
       content_key: photo.contentKey,
-      develop: {},
-      develop_hash: null,
+      develop: document.develop,
+      develop_hash: document.hasDevelopNode ? developHash(document.develop) : null,
       render_hash: renderHash,
       layers: { count: 0, stale: 0 },
       xmp: xmpRow

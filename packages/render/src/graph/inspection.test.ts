@@ -41,7 +41,7 @@ test("history pagination is bounded, duplicate-free, and remains bound to its st
     const newer = await commitRevision(db, {
       photoId,
       expectedRevisionId: revision.revisionId,
-      nodes: [develop("newer", { nodeId: revision.roots.output! }, 99)],
+      nodes: [develop("newer", { nodeId: revision.roots.output! }, -1)],
       rootUpdates: [{ root: "output", node: { localKey: "newer" } }],
     });
     const pages = [first];

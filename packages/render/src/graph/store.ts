@@ -43,6 +43,12 @@ export interface CommitRevisionResult {
   renderHash: string | null;
 }
 
+export class RevisionConflictError extends Error {
+  constructor() {
+    super("The document changed before this revision could be committed");
+  }
+}
+
 export async function ensurePhotoDocument(
   database: GraphDatabase,
   request: { photoId: string; orientation: number },
@@ -77,10 +83,7 @@ export async function ensurePhotoDocument(
       rootUpdates: [{ root: "output", node: { localKey: "output" } }],
     });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === "The document changed before this revision could be committed"
-    ) {
+    if (error instanceof RevisionConflictError) {
       const winner = await loadActiveOutput(database, request.photoId);
       if (winner) return winner;
     }
@@ -131,7 +134,7 @@ export async function commitRevision(
   return await database.transaction(async (transaction) => {
     const activeRevisionId = await lockDocument(transaction, request.photoId);
     if (activeRevisionId !== request.expectedRevisionId) {
-      throw new Error("The document changed before this revision could be committed");
+      throw new RevisionConflictError();
     }
 
     const drafts = new Map(request.nodes.map((node) => [node.localKey, node]));

@@ -168,7 +168,7 @@ test("graph follows bounded inspection pages through the active output lineage",
       localKey,
       kind: "develop" as const,
       recipeVersion: 1,
-      parameters: { step: index },
+      parameters: { exposure: index / 10 - 5 },
       inputs: [{ localKey: previous }],
     });
     previous = localKey;
@@ -194,6 +194,20 @@ test("graph follows bounded inspection pages through the active output lineage",
   expect(html.match(/<article class="node /gu)).toHaveLength(103);
   expect(html).toContain('class="node source"');
   expect(html).toContain('class="node output"');
+});
+
+test("presets renders the shipped dictionaries and their full develop identities", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-presets-"));
+  temporaryDirectories.push(cwd);
+
+  const output = await runWorkbench(["presets"], cwd);
+  const html = await readFile(output, "utf8");
+
+  expect(output).toBe(join(cwd, "out", "wb", "presets.html"));
+  expect(html).toContain("Develop presets");
+  expect(html).toContain("People");
+  expect(html).toMatch(/h_[0-9a-f]{64}/u);
+  expect(html).not.toMatch(/<(?:script|link|img)[^>]+(?:src|href)=/u);
 });
 
 test("export renders a self-contained contact sheet for a delivered folder", async () => {

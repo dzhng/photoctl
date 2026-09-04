@@ -46,6 +46,14 @@ test("logical recipes canonicalize parameters but preserve ordered node inputs",
       inputNodeIds: [inputs[0]],
     }),
   ).toThrow("Unrecognized key");
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "develop",
+      recipeVersion: 1,
+      parameters: { exposure: 6 },
+      inputNodeIds: [inputs[0]],
+    }),
+  ).toThrow();
   expect(Object.keys(imageNodeRegistry)).toHaveLength(11);
 });
 

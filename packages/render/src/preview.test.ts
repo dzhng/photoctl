@@ -4,20 +4,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
 import { expect, test } from "vitest";
-import { materializePreview, sourceRenderHash, viewHash } from "./preview.js";
+import { materializePreview, viewHash } from "./preview.js";
 import { PreviewCoordinator, type PreviewIndexAdapter } from "./preview-coordinator.js";
 import { srgb2014ProfilePath } from "./color.js";
 
-test("render and view hashes are stable canonical identities", () => {
-  const renderHash = sourceRenderHash({ orientation: 1 });
-  const otherPhoto = {
-    contentKey: "ck_2222222222222222",
-    contentHash: "sha256_other-source",
-    orientation: 1 as const,
-  };
-  expect(renderHash).toBe(sourceRenderHash({ orientation: 1 }));
-  expect(renderHash).toBe(sourceRenderHash(otherPhoto));
-  expect(renderHash).toMatch(/^r_[0-9a-f]{64}$/);
+function testRenderHash(hex: string): `r_${string}` {
+  return `r_${hex.repeat(64)}`;
+}
+
+test("view hashes are stable canonical identities", () => {
   expect(viewHash({ region: null, longEdge: 1616 })).toBe(
     `v_${createHash("sha256")
       .update('{"kind":"view","long_edge":1616,"recipe_version":1,"region":null}')
@@ -32,7 +27,7 @@ test("native full-frame creates a master and later regions reuse it without the 
   const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-master-"));
   const sourcePath = join(directory, "source.png");
   const photo = { contentKey: "ck_1111111111111111", orientation: 1 as const, w: 80, h: 60 };
-  const renderHash = sourceRenderHash(photo);
+  const renderHash = testRenderHash("1");
   const index: PreviewIndexAdapter = {
     recordCompleted: async () => {},
     touch: async () => {},
@@ -112,7 +107,7 @@ test("native full-frame creates a master and later regions reuse it without the 
 test("overview, native, and overlapping regions share one full-frame master artifact", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-wave-"));
   const photo = { contentKey: "ck_2222222222222222", orientation: 1 as const, w: 80, h: 60 };
-  const renderHash = sourceRenderHash(photo);
+  const renderHash = testRenderHash("2");
   const records: string[] = [];
   const index: PreviewIndexAdapter = {
     recordCompleted: async (artifact) => {

@@ -17,3 +17,5 @@ export * from "./verbs/show.js";
 export * from "./verbs/graph.js";
 export * from "./verbs/xmp.js";
 export * from "./verbs/version.js";
+export * from "./verbs/develop.js";
+export * from "./verbs/presets.js";

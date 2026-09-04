@@ -6,6 +6,7 @@ import type {
   LogicalNodeRecipeInput,
   SourceExecutionProvenance,
 } from "./types.js";
+import { developDictSchema } from "../develop/dict.js";
 
 const jsonSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
@@ -40,7 +41,7 @@ export const imageNodeRegistry = {
     0,
     true,
   ),
-  develop: definition(z.record(z.string(), jsonSchema), 1, 1, true),
+  develop: definition(developDictSchema, 1, 1, true),
   generate: definition(
     z
       .object({

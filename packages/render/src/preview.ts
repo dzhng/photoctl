@@ -4,13 +4,7 @@ import sharp from "sharp";
 import type { ExifOrientation } from "./coordinates.js";
 import { srgb2014ProfilePath } from "./color.js";
 import type { ImageSource } from "./decoder.js";
-import {
-  canonicalNodeRecipe,
-  canonicalJson,
-  logicalNodeId,
-  recipeHash,
-  renderHashForNode,
-} from "./graph/recipes.js";
+import { canonicalJson } from "./graph/recipes.js";
 import {
   readValidPreviewArtifact,
   writePreviewArtifact,
@@ -22,25 +16,9 @@ import { renderSource, type Image16 } from "./source-render.js";
 
 export { PreviewDestinationError } from "./preview-artifact.js";
 
-export interface SourceRenderState {
-  orientation: ExifOrientation;
-}
-
 export interface ViewSpec {
   region: [number, number, number, number] | null;
   longEdge: number | "native";
-}
-
-export function sourceRenderHash(state: SourceRenderState): `r_${string}` {
-  const recipe = recipeHash(
-    canonicalNodeRecipe({
-      kind: "source",
-      recipeVersion: 1,
-      parameters: { orientation: state.orientation },
-      inputNodeIds: [],
-    }),
-  );
-  return renderHashForNode(logicalNodeId(recipe));
 }
 
 export function viewHash(spec: ViewSpec): `v_${string}` {
@@ -75,7 +53,7 @@ export async function materializePreview(request: {
   cacheRoot: string;
   photoId: string;
   renderHash: string;
-  photo: SourceRenderState & { w: number; h: number };
+  photo: { orientation: ExifOrientation; w: number; h: number };
   source: ImageSource;
   render?: () => Promise<Image16>;
   sourceTier?: PreviewSourceTier;

@@ -1,7 +1,13 @@
 import { PGlite } from "@electric-sql/pglite";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { expect, test } from "vitest";
-import { commitRevision, ensurePhotoDocument, setRevisionPinned, undoRevision } from "./store.js";
+import {
+  commitRevision,
+  ensurePhotoDocument,
+  RevisionConflictError,
+  setRevisionPinned,
+  undoRevision,
+} from "./store.js";
 
 const firstPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
 const secondPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
@@ -93,14 +99,14 @@ test("logical mutations are immutable, lazy, CAS-protected, and undoable", async
         )
       ).rows,
     ).toEqual([{ pinned: true }]);
-    await expect(
-      commitRevision(db, {
-        photoId: firstPhoto,
-        expectedRevisionId: original.revisionId,
-        nodes: [develop("stale", { nodeId: original.nodes.source.id }, 2)],
-        rootUpdates: [{ root: "output", node: { localKey: "stale" } }],
-      }),
-    ).rejects.toThrow("document changed");
+    const stale = commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: original.revisionId,
+      nodes: [develop("stale", { nodeId: original.nodes.source.id }, 2)],
+      rootUpdates: [{ root: "output", node: { localKey: "stale" } }],
+    });
+    await expect(stale).rejects.toThrow(RevisionConflictError);
+    await expect(stale).rejects.toThrow("document changed");
     const undone = await undoRevision(db, {
       photoId: firstPhoto,
       expectedRevisionId: edited.revisionId,

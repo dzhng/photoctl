@@ -9,6 +9,7 @@ import { buildOracleReport } from "./oracle.js";
 import { buildSheetReport } from "./sheet.js";
 import { buildGraphReport } from "./graph.js";
 import { buildExportReport } from "./export.js";
+import { renderPresetsReport } from "./presets.js";
 
 export async function runWorkbench(
   args: string[],
@@ -18,9 +19,11 @@ export async function runWorkbench(
   const [command, ...rest] = args;
   if (
     !command ||
-    !["envelope", "race", "library", "oracle", "sheet", "graph", "export"].includes(command)
+    !["envelope", "race", "library", "oracle", "sheet", "graph", "export", "presets"].includes(
+      command,
+    )
   )
-    throw new Error("usage: wb envelope|race|library|oracle|sheet|graph|export");
+    throw new Error("usage: wb envelope|race|library|oracle|sheet|graph|export|presets");
   if (command === "graph") {
     if (rest.length !== 1) throw new Error("usage: wb graph <photo-id>");
     const library = env.PHOTOCTL_LIBRARY
@@ -60,13 +63,15 @@ export async function runWorkbench(
     await writeFile(output, await buildSheetReport(resolve(cwd, library), filter, cwd), "utf8");
     return output;
   }
-  if (rest.length > 0) throw new Error("usage: wb envelope|race|library|oracle|graph <photo-id>");
+  if (rest.length > 0)
+    throw new Error("usage: wb envelope|race|library|oracle|graph <photo-id>|presets");
 
   const outputDirectory = join(cwd, "out", "wb");
   await mkdir(outputDirectory, { recursive: true });
   const output = join(outputDirectory, `${command}.html`);
   let html: string;
   if (command === "envelope") html = renderEnvelopeReport(envelopeExamples);
+  else if (command === "presets") html = renderPresetsReport();
   else if (command === "race") {
     html = renderRaceReport(
       JSON.parse(await readFile(join(outputDirectory, "race.json"), "utf8")) as RaceEvidence,

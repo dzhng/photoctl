@@ -47,7 +47,8 @@ artifact publication, evaluator, graph inspection · **8b** develop dict/presets
   `selective_color`. **Tier table**: Tier-1 = `exposure brightness contrast saturation vibrance black_point` and `white_balance`
   iff |Δtemp| ≤ 300 K; Tier-2 = all else. Presets = session D1–D3 verbatim (package data; `<lib>/presets/develop/` overrides).
   Develop state is the typed `develop` node's parameters, not duplicate `photos.develop` columns. The command inserts a replacement
-  node/revision and returns `{develop_hash,render_hash,layers:{delta_applied:[],stale:[]}}`.
+  node/revision and returns `{develop_hash,render_hash,layers:{delta_applied:[],stale:[]}}`; an already-resolved no-op returns the
+  active hashes without adding a duplicate revision.
 - **8c/8d** `crates/photoctl-image::develop` on f32 linear Rec.2020 (D22) → display 16-bit; deterministic node artifacts replace a
   separate `dev/<id>/<hash>.<tier>.tif16` identity scheme;
   the graph evaluator; export uses the develop render for every source format. Full-resolution decoding is preferred;
@@ -123,7 +124,7 @@ via `render --linear`; crop-last test; Rust unit tests per operator on ramps. Vi
 ## Delegated: normalized table/column names within the named ownership split; operator constants (data); NLM parameters.
 ## Checkpoints: 8a2 `wb graph <id>` shows a source→develop→output chain plus revision/identity facts (structure only); one visual
 variable per later sub-slice as listed. Any shot runs `screenshot-critique` last and `compare-screenshots` when it has a prior/reference
-target. Checkpoints are non-blocking per the root rule. The 8a2 report was generated and structurally tested, but the 2026-09-05
-visual capture was unavailable: the in-app browser was disabled and the enabled Chrome surface rejected local-file navigation;
-no indirect workaround was permitted, so no screenshot or visual-green claim was made.
+target. Checkpoints are non-blocking per the root rule. The 8a2 graph report and 8b preset report were generated and structurally
+tested. Visual capture was unavailable on 2026-09-05: the in-app browser was disabled for subagent display and its hidden surface
+rejected local-file navigation; no indirect workaround was permitted, so no screenshot or visual-green claim was made.
 ## Must stay green: 01–07. Deps: 7b (functional), 7a (macos). Firewall: no layers, no providers, no learned NR, no CoreML, no VLM.

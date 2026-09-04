@@ -68,7 +68,7 @@ export const showDataSchema = z.object({
   locators: z.array(z.object({ volume: z.string(), path: z.string(), online: z.boolean() })),
   content_key: z.string().regex(/^ck_[0-9a-f]{16}$/),
   develop: z.record(z.string(), z.unknown()),
-  develop_hash: z.string().nullable(),
+  develop_hash: fullHashSchema("h").nullable(),
   render_hash: fullHashSchema("r"),
   layers: z.object({
     count: z.number().int().nonnegative(),

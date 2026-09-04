@@ -37,6 +37,8 @@ import { tagCommand } from "./handlers/tag.js";
 import { backupCommand, migrateCommand, restoreCommand } from "./handlers/library-lifecycle.js";
 import { graphCommand } from "./handlers/graph.js";
 import { xmpCommand } from "./handlers/xmp.js";
+import { developCommand } from "./handlers/develop.js";
+import { presetsCommand } from "./handlers/presets.js";
 import {
   flagCommand,
   labelCommand,
@@ -92,6 +94,10 @@ export async function dispatch(
       return await graphCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "xmp")
       return await xmpCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "develop")
+      return await developCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "presets")
+      return await presetsCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "list")
