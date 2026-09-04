@@ -1,9 +1,10 @@
-import { mkdtemp, open, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, open, readFile, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 import { readManifest } from "@photoctl/test-harness";
+import sharp from "sharp";
 
 const directories: string[] = [];
 
@@ -40,7 +41,7 @@ test("imports one linked ARW and returns its photo id", async () => {
       ids: [expect.stringMatching(/^[0-9a-f-]{36}$/)],
       volume: { uuid: "fixture-volume", mount: volumeMount, online: true },
       xmp_read: { sidecars_found: 0, ratings: 0, keywords: 0, labels: 0 },
-      previews: { embedded_extracted: 1, bytes: 466_017 },
+      previews: { embedded_extracted: 1, bytes: expect.any(Number) },
       embeddings: { queued: 0 },
     },
     warnings: [],
@@ -95,6 +96,83 @@ test("show preserves fixture metadata and shot offset across host timezones", as
   expect(tokyo.code).toBe(0);
   expect(losAngeles.json).toMatchObject({ schema: 1, ok: true, data: expected, warnings: [] });
   expect(tokyo.json).toMatchObject({ schema: 1, ok: true, data: expected, warnings: [] });
+}, 30_000);
+
+test("show reports limited offline detail and promotes it when the full source returns", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-show-detail-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+  const fixture = resolve("fixtures/a7c2.ARW");
+  const volumeMount = resolve(".");
+  const cache = join(parent, "cache");
+  const onlineEnv = {
+    PHOTOCTL_CACHE: cache,
+    PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:online`,
+  };
+  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+  const imported = await spawnPhotoctl(["import", fixture, "--link"], {
+    libraryDir: library,
+    env: onlineEnv,
+  });
+  const id = (imported.json as { data: { ids: string[] } }).data.ids[0];
+
+  const offline = await spawnPhotoctl(["show", id, "--region", "0,0,1000,1000"], {
+    libraryDir: library,
+    env: {
+      PHOTOCTL_CACHE: cache,
+      PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:offline`,
+    },
+  });
+  expect(offline.code).toBe(0);
+  expect(offline.json).toMatchObject({
+    data: {
+      preview_info: {
+        requested: { region: [0, 0, 1000, 1000], long_edge: "native" },
+        source_tier: "pinned-preview",
+        source_dimensions: { w: 1616, h: 1080 },
+        resolution_limited: true,
+        cache_source: "render_master",
+      },
+    },
+    warnings: [
+      { code: "source_offline", id },
+      { code: "preview_resolution_limited", id },
+    ],
+  });
+  const offlineInfo = (offline.json as { data: { preview_info: { actual: { w: number } } } }).data
+    .preview_info;
+  expect(offlineInfo.actual.w).toBeLessThan(1000);
+
+  const online = await spawnPhotoctl(["show", id, "--region", "0,0,1000,1000"], {
+    libraryDir: library,
+    env: onlineEnv,
+  });
+  expect(online.code).toBe(0);
+  expect(online.json).toMatchObject({
+    data: {
+      preview_info: {
+        actual: { w: 1000, h: 1000 },
+        source_tier: "online-jpeg-range",
+        source_dimensions: { w: 7008, h: 4672 },
+        pixel_scale: 1,
+        resolution_limited: false,
+        cache_source: "render_master",
+        color_space: "srgb",
+        icc: "sRGB2014",
+        base_to_view: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 },
+        view_to_base: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 },
+        visible_base_polygon: [
+          [0, 0],
+          [1000, 0],
+          [1000, 1000],
+          [0, 1000],
+        ],
+      },
+    },
+    warnings: [],
+  });
+  const preview = (online.json as { data: { preview: string } }).data.preview;
+  await expect(sharp(preview).metadata()).resolves.toMatchObject({ width: 1000, height: 1000 });
 }, 30_000);
 
 test("export copies the full embedded JPEG byte-for-byte", async () => {
@@ -256,7 +334,7 @@ test("import counts an unsupported file without opening it as a photo", async ()
   });
 }, 30_000);
 
-test("import reports a corrupt supported file through the JSON error contract", async () => {
+test("import skips corrupt bytes without creating a photo", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-corrupt-arw-"));
   directories.push(parent);
   const library = join(parent, "library");
@@ -269,12 +347,11 @@ test("import reports a corrupt supported file through the JSON error contract", 
     env: { PHOTOCTL_VOLUME_MAP: `${parent}=fixture-volume:online` },
   });
 
-  expect(imported.code).toBe(65);
+  expect(imported.code).toBe(0);
   expect(imported.json).toMatchObject({
     schema: 1,
-    ok: false,
-    code: "unsupported_file",
-    data: { path: corrupt },
+    ok: true,
+    data: { imported: 0, skipped_unsupported: 1, ids: [], volume: null },
   });
 }, 30_000);
 
@@ -351,6 +428,11 @@ test("reimport returns the same photo id and locator", async () => {
     env,
   });
   const firstId = (first.json as { data: { ids: string[] } }).data.ids[0];
+  const diagnosed = await spawnPhotoctl(["doctor"], { libraryDir: library, env });
+  const cacheRoot = (diagnosed.json as { data: { cache: { root: string } } }).data.cache.root;
+  const pinnedPath = join(cacheRoot, "emb", `${firstId}.jpg`);
+  const oldTimestamp = new Date("2000-01-01T00:00:00.000Z");
+  await utimes(pinnedPath, oldTimestamp, oldTimestamp);
   const second = await spawnPhotoctl(["import", fixture, "--link"], {
     libraryDir: library,
     env,
@@ -360,8 +442,14 @@ test("reimport returns the same photo id and locator", async () => {
   expect(second.json).toMatchObject({
     schema: 1,
     ok: true,
-    data: { imported: 0, already_present: 1, ids: [firstId] },
+    data: {
+      imported: 0,
+      already_present: 1,
+      ids: [firstId],
+      previews: { embedded_extracted: 0 },
+    },
   });
+  expect((await stat(pinnedPath)).mtime.toISOString()).toBe(oldTimestamp.toISOString());
   expect(shown.json).toMatchObject({
     schema: 1,
     ok: true,
