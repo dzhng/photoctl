@@ -9,6 +9,15 @@ captured start time, the 30-minute grace, an exclusive path lease, and a conditi
 touch wins. It protects `emb/` and `models/` by both the pinned flag and tier, removes sidecars with their JPEGs,
 and isolates a failed deletion so later LRU candidates still run.
 
+**03b implemented:** backups are durable plain-SQL pgDump snapshots. The daemon serializes one automatic
+snapshot through its operation lane after open, deduplicates snapshots within five minutes, and retains the
+newest ten under a 200 MiB pool while always preserving the newest file. Restore stops the daemon, builds and
+verifies a fresh current-PG sibling, then swaps it into place behind an operation lock and a durable journal.
+Recovery derives the safe action from the actual live/stage/rollback directories while holding their locks;
+a committed journal can only finish rollback cleanup. Migration accepts only an exact contiguous prefix of the
+known forward migrations, verifies required constraints and indexes, and a persistent handle reports each startup
+upgrade once. Backup recency is encoded in its filename, so preserved copies cannot reorder retention.
+
 ## Contract unlocked
 A broken, old, or PG-major-mismatched library is recovered by `restore`, never recreated silently (D36/D37); every later
 schema change has a proven upgrade path from a committed pgDump. Preview artifacts become safe to share and inspect before
@@ -27,7 +36,7 @@ later render graphs add more producers.
   `last_used` within the preceding 30 minutes are also excluded. The clock and grace interval are injected in tests; pruning
   works from one captured `prune_started_at`, so a long prune cannot age a returned preview into eligibility mid-run.
 - **3b** `packages/library/src/backup.ts`: `photoctl backup` → `<lib>/backups/<iso>.sql` via `@electric-sql/pglite-tools` `pgDump`;
-  the daemon takes a snapshot in the background after a successful open (dedupe window 5 min, keep 10 by bytes ≤ 200 MB);
+  the daemon takes a snapshot after a successful open without racing command dispatch (dedupe window 5 min, keep 10 by bytes ≤ 200 MB);
   `--no-daemon` never auto-snapshots. `photoctl restore [--from f]`: stops the daemon (or refuses `library_locked`), loads the
   snapshot into a fresh cluster under the current PG, swaps directories. `photoctl migrate`: forward-only schema migrations;
   `migrate_required` (PG major mismatch) is resolved by `restore`, which `migrate`'s message points to.
@@ -48,6 +57,15 @@ and bounded LRU paging/conditional-claim tests; prune pinned-tier, lease, captur
 command-level `show` index and `cache prune --max` tests. The TypeScript build, typecheck, formatter, and linter are
 green; focused preview consumers and the persistent-daemon journey pass. A broad changed-test sweep exposed existing
 process-contention timing failures under its full parallel load, so it is not recorded as a passing gate.
+
+03b evidence: real CLI import/backup/mutate/restore preserves photo IDs and content keys; invalid SQL, a live
+holder, future or gapped migration ledgers, both rename-before-journal crash windows, first-journal publication
+failure, and interruption during rollback deletion have dedicated regressions. Backup tests exercise real pgDump
+output, five-minute deduplication, count/byte rotation, the oversized-newest warning, and pre/post-publication
+failures. The committed `schema-v1.pgsql` pgDump upgrades through `LATEST_SCHEMA_VERSION` without changing its
+known settings. `wb library` was captured from a real schema-v3 library at 1440×1100; the accepted checkpoint has
+explicit library ID/path labels, one-line identity, Table/Rows headings, and no clipping or alignment defects.
+Fresh critique retained only non-blocking density and wide-column polish notes.
 
 ## Delegated: pgDump compression.
 ## Must stay green: 01–02. Deps: 3a ← 02; 3b ← 3a.

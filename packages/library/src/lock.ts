@@ -22,10 +22,11 @@ export interface LockPayload {
 }
 
 export interface LibraryLock {
-  path: string;
+  readonly path: string;
   readonly fd: number;
   readonly payload: LockPayload;
   rewrite(payload: LockPayload): Promise<void>;
+  moveTo(path: string): void;
   detach(): Promise<void>;
   release(): Promise<void>;
 }
@@ -145,9 +146,12 @@ async function fileStillOwnsPath(file: FileHandle, path: string): Promise<boolea
 
 function libraryLock(path: string, state: HeldLock): LibraryLock {
   heldLocks.set(path, state);
+  let currentPath = path;
   let attached = true;
   return {
-    path,
+    get path() {
+      return currentPath;
+    },
     fd: state.fd,
     get payload() {
       return state.payload;
@@ -159,16 +163,22 @@ function libraryLock(path: string, state: HeldLock): LibraryLock {
       fsyncSync(state.fd);
       state.payload = payload;
     },
+    moveTo: (nextPath) => {
+      if (!attached) throw new Error("Cannot move a detached library lock");
+      if (heldLocks.get(currentPath) === state) heldLocks.delete(currentPath);
+      currentPath = nextPath;
+      heldLocks.set(currentPath, state);
+    },
     detach: async () => {
       if (!attached) return;
       attached = false;
-      heldLocks.delete(path);
+      heldLocks.delete(currentPath);
       await state.close();
     },
     release: async () => {
       if (!attached) return;
       attached = false;
-      await releaseLibraryLock(path, state);
+      await releaseLibraryLock(currentPath, state);
     },
   };
 }

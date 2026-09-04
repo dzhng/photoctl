@@ -28,6 +28,7 @@ import { decodeCommand } from "./handlers/decode.js";
 import { importCommand } from "./handlers/import.js";
 import { showCommand } from "./handlers/show.js";
 import { tagCommand } from "./handlers/tag.js";
+import { backupCommand, migrateCommand, restoreCommand } from "./handlers/library-lifecycle.js";
 export interface DispatchContext {
   version: string;
   library?: LibraryHandle;
@@ -66,6 +67,12 @@ export async function dispatch(
       return await decodeCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "backup")
+      return await backupCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "restore")
+      return await restoreCommand(request.args, request.env, request.cwd);
+    if (request.verb === "migrate")
+      return await migrateCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "init") {
       const parsed = parseArguments(request.args, { options: ["--path", "--cache-max"] });
       if (parsed.positionals.length > 0) {

@@ -44,6 +44,7 @@
         "wb": "dist/cli.js",
       },
       "dependencies": {
+        "@photoctl/library": "workspace:*",
         "@photoctl/protocol": "workspace:*",
       },
     },
@@ -99,6 +100,7 @@
       "dependencies": {
         "@electric-sql/pglite": "0.5.8",
         "@electric-sql/pglite-pgvector": "0.0.9",
+        "@electric-sql/pglite-tools": "0.4.8",
         "@photoctl/protocol": "workspace:*",
         "fs-ext": "2.1.1",
         "uuid": "14.0.2",
@@ -142,6 +144,8 @@
     "@electric-sql/pglite": ["@electric-sql/pglite@0.5.8", "", {}, "sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q=="],
 
     "@electric-sql/pglite-pgvector": ["@electric-sql/pglite-pgvector@0.0.9", "", { "peerDependencies": { "@electric-sql/pglite": "0.5.8" } }, "sha512-ue4iBW651gDQwBwn97Ekv1lYGPvXa1ymHbRbTCSL0Ib286PRDD1VDOwzwEoekZuO/wctMbTzKzlwdgDwYrqZ8A=="],
+
+    "@electric-sql/pglite-tools": ["@electric-sql/pglite-tools@0.4.8", "", { "peerDependencies": { "@electric-sql/pglite": "0.5.8" } }, "sha512-WjgS8US6xfuE0wLYn5m9WrZ/+8dQWoQuQSRkpe7eYcxxx1UjZjvq30rpYSHfGrGtTke/zNiCd9ijVGeRUD8ukg=="],
 
     "@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
 

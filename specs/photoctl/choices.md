@@ -2,6 +2,60 @@
 
 ## Sound
 
+### Slice 03b — Restore recovery trusts durable topology, not the last journal phase
+
+- **When:** Slice 03b restore implementation and crash-window review.
+- **The choice:** Restore writes absolute live, stage, rollback, and source paths whose stage and rollback names share one UUIDv4 token. Recovery rejects any other path grammar or non-directory/symlink target, locks every surviving tree, and chooses rollback from the trees that actually exist rather than assuming the last journal phase reached disk. A `committed` phase is published before rollback deletion, so recovery after that boundary only finishes cleanup and never replaces the promoted library. The shared lock-holding open path also rejects a journal, so an adopted daemon lock cannot bypass this boundary; only restore's own post-promotion verification opts into the journaled tree.
+- **The gap:** The plan required a durable journal and rollback but did not define write/rename crash ordering or how stale phase data is reconciled with filesystem state.
+- **The reach:** Every process interruption between journal writes, directory renames, verification, and recursive cleanup has a single bounded recovery action without authorizing deletion of arbitrary siblings.
+- **Verdict:** **Sound.** The filesystem is the observable truth after a crash, while the committed marker separates rollback-safe work from cleanup-only work.
+- **Confidence:** High.
+
+### Slice 03b — Successful restore returns only durable public facts
+
+- **When:** Slice 03b protocol review.
+- **The choice:** The success envelope is `{library,from,schema_version}`. It omits the proposed `previous_library` and `rollback_removed` fields because successful verification deliberately removes the rollback directory; returning that dead path would imply a usable artifact that no longer exists.
+- **The gap:** Early implementation guidance suggested exposing the rollback path even though the lifecycle contract removes it.
+- **The reach:** Automation can rely on every returned path existing for its documented purpose and does not mistake internal crash-recovery machinery for retained history.
+- **Verdict:** **Sound.** The protocol describes the committed postcondition rather than implementation residue.
+- **Confidence:** High.
+
+### Slice 03b — Migration history must be the exact known prefix
+
+- **When:** Slice 03b migration runner.
+- **The choice:** Before applying anything, the runner sorts the recorded versions and accepts only `[]`, `[1]`, `[1,2]`, through the current complete prefix. Future, duplicate, missing, or gapped ledgers fail. Current-schema verification also requires the named tables, constraints, and explicit locator index, so a dump truncated before post-data constraints cannot be promoted. A persistent handle consumes its startup migration result once; later `migrate` actions query current state and report no newly applied versions.
+- **The gap:** Merely comparing the maximum recorded version with `LATEST_SCHEMA_VERSION` makes a gapped catalog look current, and caching the startup result makes repeated daemon commands lie.
+- **The reach:** Restore validation, direct migration, and repeated daemon migration share one truthful forward-only contract.
+- **Verdict:** **Sound.** Exact-prefix validation prevents partially known schemas from being blessed and keeps command results action-scoped.
+- **Confidence:** High.
+
+### Slice 03b — pgDump cleanup is part of the narrow backup capability
+
+- **When:** Slice 03b backup integration.
+- **The choice:** `LibraryHandle.dumpSql()` exposes text rather than the raw PGlite object. It uses `pgDump` and then commits in a `finally` block because the tool leaves the shared session in a read-only transaction; callers receive `file.text()` only after the session is returned to writable operation.
+- **The gap:** The package API supplies `pgDump` but no restore function and does not clean up the shared session for the daemon's next command.
+- **The reach:** Manual and automatic backup can share the daemon handle without making subsequent imports or tags fail, while the database implementation remains private to the library package.
+- **Verdict:** **Sound.** The capability is narrow and restores the session invariant even when dumping throws.
+- **Confidence:** High.
+
+### Slice 03b — Backup durability precedes retention
+
+- **When:** Slice 03b backup publication.
+- **The choice:** A snapshot is written to a unique temporary file, fsynced, renamed, timestamped, and followed by a backup-directory fsync before rotation. Removals receive another directory fsync. Recency comes from the ISO creation time and collision suffix encoded in photoctl's filename rather than mutable mtimes, so copying history during restore cannot reorder it. The newest snapshot survives even when it alone exceeds 200 MiB, with a typed warning, and restore copies SQL history into the staged library with per-file durability rather than cloning a database directory.
+- **The gap:** The plan fixed the retention numbers but did not specify publication ordering, oversized-newest behavior, or how backup history crosses a restore swap.
+- **The reach:** Power loss cannot expose a half-written snapshot or lose a newly published directory entry merely because retention started, and restored libraries keep their SQL recovery history.
+- **Verdict:** **Sound.** Publication establishes the replacement artifact before optional cleanup and preserves the no-directory-clone firewall.
+- **Confidence:** High.
+
+### Slice 03b — Restore fault hooks are test-only lifecycle seams
+
+- **When:** Slice 03b crash testing.
+- **The choice:** The library restore options expose callbacks immediately before initial journal publication, after each directory rename, and during rollback cleanup. CLI users and environment variables cannot select them; tests use them to terminate a real child process at exact durability boundaries.
+- **The gap:** Ordinary exception injection cannot prove behavior after an uncatchable process exit between two filesystem operations.
+- **The reach:** Crash regressions can falsify journal ordering without adding production flags or parsing special environment state.
+- **Verdict:** **Sound.** Narrow programmatic seams make the destructive boundaries testable without broadening the public CLI contract.
+- **Confidence:** High.
+
 ### Slice 02b — Human output neutralizes terminal controls and row delimiters
 
 - **When:** Slice 02b human renderer.

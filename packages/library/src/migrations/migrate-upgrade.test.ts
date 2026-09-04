@@ -1,14 +1,14 @@
 import { PGlite } from "@electric-sql/pglite";
 import { readFile } from "node:fs/promises";
 import { expect, test } from "vitest";
-import { migrate } from "./runner.js";
+import { LATEST_SCHEMA_VERSION, migrate } from "./runner.js";
 
 test("the previous schema upgrades without losing library settings", async () => {
   const db = await PGlite.create();
   try {
     await db.exec(await fixture("schema-v1.pgsql"));
 
-    await migrate(db);
+    const result = await migrate(db);
 
     const versions = await db.query<{ version: number }>(
       "SELECT version FROM schema_version ORDER BY version",
@@ -17,6 +17,7 @@ test("the previous schema upgrades without losing library settings", async () =>
       "SELECT value FROM settings WHERE key = 'library_id'",
     );
     expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }]);
+    expect(result).toEqual({ fromVersion: 1, toVersion: LATEST_SCHEMA_VERSION, applied: [2, 3] });
     expect(libraryId.rows).toEqual([{ value: "0199a7c2-0000-7000-8000-000000000001" }]);
     await expect(
       db.query(

@@ -33,6 +33,10 @@ export async function execute(
     const path = commandLibraryPath(request);
     if (request.verb === "daemon")
       return await executeDaemonControl(request, context.version, path);
+    if (request.verb === "restore") {
+      await stopDaemon(path);
+      return { envelope: await dispatch(request, context), events: [] };
+    }
     if (request.env.noDaemon) {
       await stopDaemon(path);
       return { envelope: await dispatch(request, context), events: [] };
@@ -132,7 +136,9 @@ async function executeDaemonControl(
 }
 
 function commandLibraryPath(request: CommandRequest): string {
-  if (request.verb !== "init") return libraryPath(request.env, request.cwd);
+  if (request.verb !== "init" && request.verb !== "restore") {
+    return libraryPath(request.env, request.cwd);
+  }
   for (let index = 0; index < request.args.length; index += 1) {
     if (request.args[index] === "--path" && request.args[index + 1]) {
       return libraryPath({ libraryPath: request.args[index + 1] }, request.cwd);

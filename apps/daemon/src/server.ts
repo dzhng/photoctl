@@ -1,6 +1,7 @@
 import { dispatch } from "@photoctl/commands";
 import {
   adoptLibraryLock,
+  createBackup,
   OPEN_LOCK_NAME,
   openLibraryHoldingLock,
   type LibraryHandle,
@@ -49,6 +50,7 @@ export class DaemonServer {
   private watcher: FSWatcher | undefined;
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
   private drainTimer: ReturnType<typeof setTimeout> | undefined;
+  private automaticBackup: Promise<void> | undefined;
   private idleMs = 900_000;
   private queueMax = 8;
   private running = false;
@@ -93,6 +95,7 @@ export class DaemonServer {
     });
     await chmod(this.socketPath, 0o600);
     this.watchLibrary();
+    this.startAutomaticBackup();
     this.armIdleTimer();
   }
 
@@ -106,6 +109,7 @@ export class DaemonServer {
       this.server.close(() => resolveClose());
     });
     if (this.running || this.pending.length > 0) return;
+    await this.automaticBackup;
     await this.finishStop();
   }
 
@@ -158,6 +162,7 @@ export class DaemonServer {
     }
     this.running = true;
     try {
+      await this.automaticBackup;
       const budget = parseBudget(item.request.env.lockBudgetMs);
       const waited = item.enqueuedAt === null ? 0 : Date.now() - item.enqueuedAt;
       if (waited > budget) {
@@ -190,6 +195,29 @@ export class DaemonServer {
       queue: this.pending.length + Number(this.running),
       version: this.version,
     };
+  }
+
+  private startAutomaticBackup(): void {
+    const library = this.library;
+    if (!library) throw new Error("Cannot back up a daemon before its library is open");
+    const task = createBackup(library, { automatic: true })
+      .then((backup) => {
+        if (backup.exceedsMaxBytes) {
+          console.error(
+            `Automatic backup ${backup.path} exceeds the 200 MiB retention budget; keeping the newest backup`,
+          );
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(
+          `Automatic backup failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      })
+      .finally(() => {
+        if (this.automaticBackup === task) this.automaticBackup = undefined;
+      });
+    this.automaticBackup = task;
+    this.registerBackground("automatic-backup", () => this.automaticBackup !== undefined);
   }
 
   private respond(socket: Socket, envelope: Envelope): void {

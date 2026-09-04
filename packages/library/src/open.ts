@@ -1,16 +1,18 @@
-import { PGlite } from "@electric-sql/pglite";
-import { vector } from "@electric-sql/pglite-pgvector";
+import type { PGlite } from "@electric-sql/pglite";
+import { pgDump } from "@electric-sql/pglite-tools/pg_dump";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { PhotoctlError } from "@photoctl/protocol";
 import { newLibraryEntityId } from "./identity.js";
+import { installLibraryExtensions, startDatabase } from "./database.js";
 import {
   acquireLibraryLock,
   DEFAULT_LOCK_BUDGET_MS,
   OPEN_LOCK_NAME,
   type LibraryLock,
 } from "./lock.js";
-import { migrate } from "./migrations/runner.js";
+import { migrate, verifyLatestSchema, type MigrationResult } from "./migrations/runner.js";
+import { assertNoRestoreJournal } from "./restore-journal.js";
 
 export const DEFAULT_CACHE_MAX_BYTES = 20 * 1024 ** 3;
 
@@ -22,6 +24,8 @@ const pgliteVersion = dependencies["@electric-sql/pglite"];
 export interface LibraryHandle {
   path: string;
   query: PGlite["query"];
+  migrate(): Promise<MigrationResult>;
+  dumpSql(): Promise<string>;
   close(): Promise<void>;
 }
 
@@ -100,6 +104,7 @@ export async function openLibrary(
   options: { noDaemon?: boolean; lockBudgetMs?: number; initialize?: boolean } = {},
 ): Promise<LibraryHandle> {
   const libraryPath = resolve(path);
+  await assertNoRestoreJournal(libraryPath);
   let lock;
   try {
     lock = await acquireLibraryLock(
@@ -110,6 +115,12 @@ export async function openLibrary(
     if (error instanceof PhotoctlError) throw error;
     throw catalogUnreadable(libraryPath);
   }
+  try {
+    await assertNoRestoreJournal(libraryPath);
+  } catch (error) {
+    await lock.release();
+    throw error;
+  }
   return await openLibraryHoldingLock(libraryPath, lock, options.initialize ?? false);
 }
 
@@ -117,27 +128,42 @@ export async function openLibraryHoldingLock(
   libraryPath: string,
   lock: LibraryLock,
   initialize = false,
+  allowRestoreJournal = false,
 ): Promise<LibraryHandle> {
   let db: PGlite | undefined;
   try {
+    if (!allowRestoreJournal) await assertNoRestoreJournal(libraryPath);
     if (!initialize) await validatePGliteVersion(libraryPath);
     try {
-      db = await PGlite.create({
-        dataDir: libraryPath,
-        extensions: { vector },
-        startParams: PGlite.defaultStartParams.filter((argument) => argument !== "-F"),
-      });
+      db = await startDatabase(libraryPath);
     } catch (error) {
       if (error instanceof PhotoctlError) throw error;
       throw catalogUnreadable(libraryPath);
     }
-    await db.exec("CREATE EXTENSION IF NOT EXISTS vector");
-    await db.exec("SET synchronous_commit = on");
-    await assertDurability(db);
-    await migrate(db);
+    await installLibraryExtensions(db);
+    const openDb = db;
+    let pendingMigration: MigrationResult | undefined = await migrate(openDb);
+    await verifyLatestSchema(openDb);
     return {
       path: libraryPath,
-      query: db.query.bind(db),
+      query: openDb.query.bind(openDb),
+      migrate: async () => {
+        if (pendingMigration) {
+          const result = pendingMigration;
+          pendingMigration = undefined;
+          return result;
+        }
+        return await migrate(openDb);
+      },
+      dumpSql: async () => {
+        let file: Awaited<ReturnType<typeof pgDump>>;
+        try {
+          file = await pgDump({ pg: openDb });
+        } finally {
+          await openDb.exec("COMMIT");
+        }
+        return await file.text();
+      },
       close: async () => {
         try {
           await db?.close();
@@ -154,16 +180,6 @@ export async function openLibraryHoldingLock(
     }
     if (error instanceof PhotoctlError) throw error;
     throw catalogUnreadable(libraryPath);
-  }
-}
-
-async function assertDurability(db: PGlite): Promise<void> {
-  const fsync = await db.query<{ fsync: string }>("SHOW fsync");
-  const synchronousCommit = await db.query<{ synchronous_commit: string }>(
-    "SHOW synchronous_commit",
-  );
-  if (fsync.rows[0]?.fsync !== "on" || synchronousCommit.rows[0]?.synchronous_commit !== "on") {
-    throw new Error("PGlite durability settings are not enabled");
   }
 }
 

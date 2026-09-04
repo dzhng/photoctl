@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { runWorkbench } from "./run.js";
+import { createBackup, initializeLibrary } from "@photoctl/library";
 
 const temporaryDirectories: string[] = [];
 
@@ -55,5 +56,30 @@ test("race renders observed contention and retry wording from the latest probe",
   expect(html).toContain("225 / 225 accepted rows persisted");
   expect(html).toContain("Library busy — retry this command.");
   expect(html).toContain("library_locked");
+  expect(html).not.toMatch(/<(?:script|link|img)[^>]+(?:src|href)=/u);
+});
+
+test("library renders current schema, row counts, backups, and indexed cache bytes", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-library-"));
+  temporaryDirectories.push(cwd);
+  const library = join(cwd, "library");
+  const initialized = await initializeLibrary(library);
+  await initialized.handle.query(
+    "INSERT INTO cache_index (path, bytes, last_used, pinned) VALUES ('emb/example.jpg', 42, now(), true)",
+  );
+  const backup = await createBackup(initialized.handle);
+  await initialized.handle.close();
+
+  const output = await runWorkbench(["library"], cwd, { PHOTOCTL_LIBRARY: library });
+  const html = await readFile(output, "utf8");
+
+  expect(output).toBe(join(cwd, "out", "wb", "library.html"));
+  expect(html).toContain("Library ID</span>");
+  expect(html).toContain("Library path</span>");
+  expect(html).toContain('<th scope="col">Table</th><th scope="col">Rows</th>');
+  expect(html).toContain("Schema version</span><strong>3</strong>");
+  expect(html).toContain("Indexed cache</span><strong>42 B</strong>");
+  expect(html).toContain("cache_index</td><td>1</td>");
+  expect(html).toContain(backup.path.slice(backup.path.lastIndexOf("/") + 1));
   expect(html).not.toMatch(/<(?:script|link|img)[^>]+(?:src|href)=/u);
 });

@@ -1,12 +1,19 @@
 import { PGlite } from "@electric-sql/pglite";
 import { expect, test } from "vitest";
-import { migrate } from "./runner.js";
+import { LATEST_SCHEMA_VERSION, migrate, verifyLatestSchema } from "./runner.js";
 
 test("migrations are repeatable and record each version once", async () => {
   const db = await PGlite.create();
   try {
-    await migrate(db);
-    await migrate(db);
+    const first = await migrate(db);
+    const second = await migrate(db);
+
+    expect(first).toEqual({ fromVersion: 0, toVersion: LATEST_SCHEMA_VERSION, applied: [1, 2, 3] });
+    expect(second).toEqual({
+      fromVersion: LATEST_SCHEMA_VERSION,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [],
+    });
 
     const applied = await db.query<{ version: number }>(
       "SELECT version FROM schema_version ORDER BY version",
@@ -55,6 +62,40 @@ test("migrations are repeatable and record each version once", async () => {
     );
     const tags = await db.query<{ tag: string }>("SELECT tag FROM tags");
     expect(tags.rows).toEqual([{ tag: "ceremony" }]);
+  } finally {
+    await db.close();
+  }
+});
+
+test.each([["2"], ["1,3"], ["1,2,3,4"]])(
+  "rejects the non-prefix migration ledger %s before applying schema",
+  async (ledger) => {
+    const db = await PGlite.create();
+    try {
+      await db.exec(
+        `CREATE TABLE schema_version (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+         INSERT INTO schema_version (version) VALUES (${ledger.replaceAll(",", "),(")});`,
+      );
+      await expect(migrate(db)).rejects.toThrow(`Invalid schema migration ledger: ${ledger}`);
+      const tables = await db.query<{ name: string }>(
+        "SELECT tablename AS name FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename",
+      );
+      expect(tables.rows).toEqual([{ name: "schema_version" }]);
+    } finally {
+      await db.close();
+    }
+  },
+);
+
+test.each([
+  ["constraint", "ALTER TABLE photos DROP CONSTRAINT photos_content_key_key"],
+  ["index", "DROP INDEX files_photo_id_idx"],
+])("latest-schema verification rejects a missing required %s", async (_kind, statement) => {
+  const db = await PGlite.create();
+  try {
+    await migrate(db);
+    await db.exec(statement);
+    await expect(verifyLatestSchema(db)).rejects.toThrow("Library schema is incomplete");
   } finally {
     await db.close();
   }
