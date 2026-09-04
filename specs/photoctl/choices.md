@@ -2,6 +2,36 @@
 
 ## Sound
 
+### Slice 02b — Human output neutralizes terminal controls and row delimiters
+
+- **When:** Slice 02b human renderer.
+- **The choice:** Suppose a tag, path, error message, or warning contains a newline, tab, or terminal
+  escape byte. The human renderer writes a visible escaped spelling such as `\\n` or `\\u001b`, and a
+  pipe inside a table cell becomes `\\|`. One logical value therefore stays on one table row and cannot
+  inject a new column or a terminal control sequence. The JSON envelope is untouched; this applies only
+  when a person explicitly asks for `--human`.
+- **The gap:** The plan required deterministic readable text but did not say how to display control
+  characters originating in user or filesystem data.
+- **The reach:** Every current and future command can safely reuse the generic renderer without each verb
+  sanitizing its own values or changing its machine-readable result.
+- **Verdict:** **Sound.** Escaping preserves the information while protecting row boundaries and terminals.
+- **Confidence:** High.
+
+### Slice 02b — Failures without a supplied message get a label derived from their code
+
+- **When:** Slice 02b human renderer.
+- **The choice:** Some failures, such as a mixed batch returning `code:"partial"`, have result rows and a
+  summary but no top-level message. Human output prints `Error [partial]: Partial failure`; when a command
+  does supply a message, that exact message wins. The alternative would print a bare code for some
+  failures even though the human-output contract promises both a stable code and an explanation.
+- **The gap:** The plan required failure messages, while the envelope permits failure `data` and therefore
+  its `message` field to be absent.
+- **The reach:** Future error codes automatically receive a readable label without adding presentation
+  branches to command handlers or widening the protocol.
+- **Verdict:** **Sound.** Presentation fills a presentation-only gap while the typed envelope remains the
+  sole machine contract.
+- **Confidence:** High.
+
 ### Slice 02 — Daemon startup transfers the already-held kernel lock
 
 - **When:** Slice 02 daemon lifecycle.

@@ -1,6 +1,7 @@
 # 02 — daemon contention and human CLI output
 
-Sub-slices: **2a** daemon runs `dispatch`, real N-process contention, `tag` (implemented) · **2b** global human renderer.
+Sub-slices: **2a** daemon runs `dispatch`, real N-process contention, `tag` (implemented) · **2b** global human renderer
+(implemented).
 
 ## Contract unlocked
 D6 on Node 24: every command reaches an auto-started daemon that executes `commands.dispatch` unless `--no-daemon`;
@@ -70,3 +71,9 @@ with p50 below 250 ms; lock and poll budgets are derived from a measured Node pr
 The `wb race` report uses the retry copy “Library busy — retry this command.” Browser security blocked
 opening its local `file:` URL during closeout, so the wording is test-pinned but the visual checkpoint
 remains pending in an environment that can open the generated report.
+
+The CLI removes `--human` before constructing a command request, then renders the returned envelope at
+the stdout boundary. Single results use flattened field/value rows; batches preserve input order in one
+row per result and retain their aggregate summary. Errors and warnings keep their stable machine codes,
+while stderr daemon events remain the original NDJSON stream. The same invocations without the flag still
+emit the unchanged JSON envelope and use the same exit mapping.

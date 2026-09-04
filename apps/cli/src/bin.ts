@@ -2,7 +2,10 @@
 import { execute } from "@photoctl/commands";
 import { exitCodeFor } from "@photoctl/protocol";
 import { readFileSync } from "node:fs";
-const args = process.argv.slice(2);
+import { renderHuman } from "./output.js";
+const rawArgs = process.argv.slice(2);
+const human = rawArgs.includes("--human");
+const args = rawArgs.filter((argument) => argument !== "--human");
 const noDaemon = args.includes("--no-daemon");
 if (noDaemon) args.splice(args.indexOf("--no-daemon"), 1);
 const { version } = JSON.parse(
@@ -28,5 +31,5 @@ const execution = await execute(
 );
 for (const event of execution.events) process.stderr.write(`${JSON.stringify(event)}\n`);
 const { envelope } = execution;
-process.stdout.write(`${JSON.stringify(envelope)}\n`);
+process.stdout.write(human ? renderHuman(envelope) : `${JSON.stringify(envelope)}\n`);
 process.exitCode = envelope.ok ? 0 : exitCodeFor(envelope.code);
