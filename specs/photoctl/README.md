@@ -264,3 +264,9 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
 ## Implementation notes
 
 *(append-only; one entry per deviation: plan said / code revealed / call made / needs David?)*
+
+- **2026-09-03 — commit `0cd23c0`.** Plan said: a README-only edit (precedent-repos table). Code revealed: a
+  concurrent Codex session was implementing slice 00 in this working tree; a `git add -A` swept its
+  in-progress work (protocol, commands, test-harness, fixtures/tools, Docker seam, `choices.md`) into that
+  commit under the wrong message. Call: leave history as is (David's decision); slice-00 authorship is Codex's;
+  agents in this repo `git add` only the paths they changed.
