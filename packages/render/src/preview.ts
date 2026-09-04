@@ -317,11 +317,12 @@ function clampRegion(
   imageWidth: number,
   imageHeight: number,
 ): [number, number, number, number] {
-  const x = Math.max(0, Math.min(imageWidth - 1, Math.floor(region[0])));
-  const y = Math.max(0, Math.min(imageHeight - 1, Math.floor(region[1])));
-  const w = Math.max(1, Math.min(imageWidth - x, Math.ceil(region[2])));
-  const h = Math.max(1, Math.min(imageHeight - y, Math.ceil(region[3])));
-  return [x, y, w, h];
+  const left = Math.max(0, Math.floor(region[0]));
+  const top = Math.max(0, Math.floor(region[1]));
+  const right = Math.min(imageWidth, Math.ceil(region[0] + region[2]));
+  const bottom = Math.min(imageHeight, Math.ceil(region[1] + region[3]));
+  if (right <= left || bottom <= top) throw new Error("Preview region is outside the image");
+  return [left, top, right - left, bottom - top];
 }
 
 async function readValidJpeg(path: string): Promise<

@@ -27,6 +27,22 @@
   makes every later crop cheap, while the sufficiency check prevents a small overview from masquerading as full-resolution detail.
 - **Confidence:** High.
 
+### Preview clipping intersects pixel edges instead of moving the requested rectangle
+
+- **When:** Slice 01b preview-contract correction.
+- **The choice:** A pixel viewport is treated as an interval with an inclusive left/top edge and an exclusive right/bottom edge.
+  For example, `[-50,0,100,100]` asks for pixels spanning from 50 pixels left of the image through pixel 49 inside it, so the
+  returned region is `[0,0,50,100]`. Fractional outer edges round outward (`floor` at left/top, `ceil` at right/bottom) before
+  the interval is intersected with the image. The rejected alternative was to clamp a negative origin to zero while retaining
+  the original width; that silently moves the request and returns pixels the caller never selected.
+- **The gap:** The contract required clipping and reporting partial intersections but did not define fractional pixel-edge
+  rounding.
+- **The reach:** `show.preview_info.actual.region`, projection matrices, visible polygons, and later crop/mask consumers inherit
+  the same honest intersection rather than a shifted viewport.
+- **Verdict:** **Sound.** Outward edge rounding preserves every pixel touched by the requested continuous rectangle, while
+  intersecting endpoints makes the returned geometry a subset of the request.
+- **Confidence:** High.
+
 ### Lossless tiled masters and progressive UI delivery are later optimizations
 
 - **When:** User-directed preview scope decision, 2026-09-04.

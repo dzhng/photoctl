@@ -172,10 +172,15 @@ function parseRegion(
   const region = normalized
     ? [values[0] * width, values[1] * height, values[2] * width, values[3] * height]
     : values;
-  if (region[0] < 0 || region[1] < 0 || region[2] <= 0 || region[3] <= 0) {
-    throw new PhotoctlError("usage", "--region must have a non-negative origin and positive size");
+  if (region[2] <= 0 || region[3] <= 0) {
+    throw new PhotoctlError("usage", "--region must have a positive size");
   }
-  if (region[0] >= width || region[1] >= height) {
+  if (
+    region[0] >= width ||
+    region[1] >= height ||
+    region[0] + region[2] <= 0 ||
+    region[1] + region[3] <= 0
+  ) {
     throw new PhotoctlError("usage", "--region does not intersect the visible image");
   }
   return [region[0], region[1], region[2], region[3]];

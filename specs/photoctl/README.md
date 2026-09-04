@@ -12,7 +12,8 @@ prompt, open-questions list, or the session sample disagree with this README, **
 ## Next Agent Prompt
 
 *Last updated: 2026-09-04. Status: slices 00 and 01 implemented; the first linked-photo workflow now
-imports metadata and previews, shows the catalog record, and exports an online or pinned JPEG.*
+imports metadata and previews, preserves cached-preview provenance across source availability changes,
+clips partially visible pixel viewports, and exports an online or pinned JPEG.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`

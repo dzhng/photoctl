@@ -40,6 +40,20 @@ test("show normalizes empty stored metadata to the public nullable shape", async
       },
       warnings: [],
     });
+    const clipped = await dispatch(
+      {
+        verb: "show",
+        args: [id, "--region", "-1,0,2,1"],
+        cwd: directory,
+        env: { noDaemon: true, libraryPath, cacheRoot },
+      },
+      { version: "test" },
+    );
+    expect(clipped).toMatchObject({
+      schema: 1,
+      ok: true,
+      data: { preview_info: { actual: { region: [0, 0, 1, 1], w: 1, h: 1 } } },
+    });
     const outside = await dispatch(
       {
         verb: "show",
