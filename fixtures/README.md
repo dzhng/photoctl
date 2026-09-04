@@ -1,6 +1,6 @@
 # fixtures/
 
-Known-good and known-bad assets, committed to git (binary assets via **Git LFS** — `brew install git-lfs && git lfs install`; CI checks out with `lfs: true`), used by the functional test suite.
+Known-good and known-bad assets, committed to git, used by the functional test suite.
 Every file here has one line saying what it proves. Add a line when you add a file.
 
 | File | Kind | Proves |
