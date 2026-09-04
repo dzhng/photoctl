@@ -235,7 +235,7 @@ with verdict files G1–G6 · C's no-env-skip Docker gate + real-HTTP fake gatew
 with the race (02) · `generate` lands once (13a) · fixture manifest from an independent tool · strict never
 fails on geometry (D27) · `migrate_required` → `restore` (pgDump is the cross-PG-version path) · prune by a
 cache index, never atime · IPTC delivered as XMP `dc:*` + EXIF `Artist/Copyright` through sharp · Swift helper
-packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift from".
+packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift from" · **License: MIT** (repo public 2026-09-03; LibRaw under CDDL, OpenColorIO math BSD-3, SAM 2.1 Apache-2.0 all compatible; GPL code never linked).
 
 ## Supersedes
 
