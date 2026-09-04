@@ -2,6 +2,39 @@
 
 ## Sound
 
+### Slice 01b importer — EXIF parsing returns source dimensions and leaves orientation geometry to render
+
+- **When:** Slice 01b importer pass.
+- **The choice:** A portrait photo can store pixels as a landscape-shaped rectangle plus an EXIF
+  orientation number that says how a viewer must rotate or mirror it. The importer reports that stored
+  rectangle and the orientation number separately. The import command then asks render's coordinate
+  module for the oriented dimensions before writing the photo row. The alternative was for importer and
+  render to each decide that orientations 5–8 swap width and height; those two copies could later
+  disagree on the same photo.
+- **The gap:** The plan says database dimensions are oriented and names render as the coordinate owner,
+  but it does not define whether the EXIF reader returns stored or already-oriented dimensions.
+- **The reach:** The 01b integration must call render's `orientedDimensions` once. Future decoders,
+  crops, and masks then inherit one orientation rule instead of recreating it at every metadata edge.
+- **Verdict:** **Sound.** It keeps parsing at the file boundary and geometry in the module that owns
+  coordinate transforms.
+- **Confidence:** High.
+
+### Slice 01b importer — Missing descriptive EXIF is nullable, but missing dimensions refuse import
+
+- **When:** Slice 01b importer pass.
+- **The choice:** A supported JPEG or TIFF may have pixels but no lens name, camera name, exposure, or
+  timezone. The EXIF reader represents those descriptive facts as `null`, allowing the photo to remain
+  useful. Width and height are different: without them photoctl cannot establish the base coordinate
+  space used by render, crop, masks, and export, so the reader rejects that file. Treating every absent
+  tag as fatal would refuse ordinary stripped images; treating dimensions as optional would push an
+  unusable photo into every later command.
+- **The gap:** The plan lists accepted extensions and the metadata columns but does not say which tags
+  are required when a supported non-RAW image has sparse metadata.
+- **The reach:** Import error mapping must turn the missing-dimensions failure into the per-file
+  unsupported result, while `show` can serialize absent descriptive metadata consistently as `null`.
+- **Verdict:** **Sound.** Pixel geometry is a functional requirement; camera annotations are not.
+- **Confidence:** Medium.
+
 ### Slice 01a — A successful `doctor` reports no foreign lock holder
 
 - **When:** Slice 01a.
