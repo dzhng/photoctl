@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08b, and provider-contract slice 09a are
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08b, and provider slices 09a–09b are
 implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -35,9 +35,10 @@ point and follow it exactly. Do not re-decide anything in the original decision 
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** slice 08c1 (global develop pixel operators).
+- **Pickup point:** slice 08c1 (global develop pixel operators), followed by slice 09c (embed worker/search).
   Slice 08c1 inherits 08b's canonical dictionary, preset precedence, typed immutable develop node, lazy logical graph, durable
-  artifact owner, and execution metadata seam.
+  artifact owner, and execution metadata seam. Slice 09c inherits 09a's provider contracts and 09b's measured UPSERT verdict; the
+  live multimodal request remains manual until its explicit-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -58,7 +59,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [ ] 8c+ color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
-- [ ] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [ ] 9b non-blocking spikes · [ ] 9c embed worker + search — `slices/09-providers-embed-search.md`
+- [ ] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [ ] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [ ] 10 DAG-backed layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG, optional density-matching upscale, strict composite, person-move flow — `slices/12-fill.md`
@@ -396,6 +397,22 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
 ## Implementation notes
 
 *(append-only; one entry per deviation: plan said / code revealed / call made / needs David?)*
+
+- **2026-09-05 — slice 09b live evidence gates.** Plan said: settle the multimodal embedding request and live upscaler model and
+  controls only from configured calls. Code revealed: this checkout has neither a purpose-specific smoke key nor an explicitly
+  configured live upscaler adapter; the general Gateway key, if ambient, is not consent for either experiment. Call: ship
+  rerunnable probes that record `not_run:unconfigured`, leave accepted-request/model/control fields empty, and produce no live
+  visual artifact rather than fabricating provider evidence. The upscaler runner accepts explicitly registered adapters plus
+  caller-owned source crops and controls, and its configured fake regression proves both comparison arms and contact-sheet output.
+  Needs David: rerun `smoke:embed-shape` with
+  `PHOTOCTL_EMBED_SMOKE_API_KEY`, and configure a real `UpscaleAdapter` before the live comparison can settle those OPEN choices;
+  neither blocks deterministic 09c work.
+
+- **2026-09-05 — slice 09b halfvec update strategy.** Plan said: reproduce the historical PGlite TOAST failure with 5,000
+  `halfvec(3072)` rows updated through 20 UPSERT cycles, and require DELETE+INSERT only if it occurs. Code revealed: all 20 cycles
+  completed, and all 5,000 high-entropy final vectors remained readable and equal to the last written value; the failure did not
+  reproduce. Call: 09c may use UPSERT on the pinned PGlite/vector versions, while keeping `probe:toast` as rerunnable machine
+  evidence if either dependency changes. Needs David: no; this follows the predeclared G5 fork.
 
 - **2026-09-05 — slice 08a2 checkpoint capture.** Plan said: open the structure-only `wb graph` checkpoint and run the
   unprimed visual critique. Code revealed: the available in-app browser was disabled and the enabled Chrome surface rejected

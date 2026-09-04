@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "status": "not_run",
+  "reason": "unconfigured",
+  "model": "google/gemini-embedding-2",
+  "endpoint": "https://ai-gateway.vercel.sh/v1/embeddings",
+  "requestShape": "openai-compatible-content-parts-candidate-v1",
+  "acceptedRequest": null,
+  "dimensions": null,
+  "observed": null,
+  "requestId": null,
+  "sources": [
+    "https://vercel.com/docs/ai-gateway",
+    "https://vercel.com/ai-gateway/models/gemini-embedding-2",
+    "https://ai.google.dev/gemini-api/docs/embeddings"
+  ]
+}

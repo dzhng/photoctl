@@ -1,0 +1,13 @@
+PASS (TOAST not reproduced)
+status=not_reproduced
+rows=5000
+cycles=20
+completed_cycles=20
+dimensions=3072
+vector_pattern=lcg-per-dimension-per-cycle
+vector_extension=0.8.1
+runtime=v24.14.0 darwin-arm64
+write_strategy=upsert
+verified_rows=5000
+cycle_ms=124,152,157,194,179,177,171,384,185,151,165,149,141,183,231,140,145,155,151,140
+failure=none

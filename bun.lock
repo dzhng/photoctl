@@ -46,6 +46,7 @@
       "dependencies": {
         "@photoctl/library": "workspace:*",
         "@photoctl/protocol": "workspace:*",
+        "@photoctl/providers": "workspace:*",
         "@photoctl/render": "workspace:*",
         "sharp": "0.35.4",
       },

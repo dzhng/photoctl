@@ -1520,6 +1520,87 @@
   libraries.
 - **Confidence:** High.
 
+### Slice 09b — G5 changes one high-entropy wide value per cycle
+
+- **When:** Slice 09b TOAST probe implementation.
+- **The choice:** Each G5 cycle creates one deterministic but hard-to-compress 3,072-number vector and UPSERTs that value into all
+  5,000 rows. The next cycle changes the vector, so PostgreSQL must replace every row's out-of-line TOAST payload; TOAST is the
+  PostgreSQL storage mechanism that moves a value too wide for an ordinary table page into separately stored chunks. After the
+  twentieth cycle, the probe does not merely count rows: it reads every vector, verifies its dimension, and compares it with the
+  exact final value. Using one vector per cycle controls the experiment around the update/storage mechanism. Generating unrelated
+  random vectors per row would add CPU and transfer volume without making any individual stored value wider. If the database
+  cannot start, run, verify, close, or clean up for an unexpected reason, the probe first replaces any earlier PASS file with
+  `status=unsettled` and an unsettled write strategy, then propagates the failure. Keeping the previous PASS would make the evidence
+  directory claim a decision that the latest invocation did not actually establish. Its diagnostic is flattened to one line and
+  capped at 500 characters so an upstream error cannot turn this small gate file into an unbounded log sink.
+- **The gap:** The plan fixed row count, vector width, cycle count, and UPSERT semantics, but did not define vector contents or the
+  readback needed to distinguish intact rows from rows whose external chunks were corrupt.
+- **The reach:** The G5 result is credible evidence for 09c's write strategy only while the probe really creates wide external
+  values and forces a final read. Dependency upgrades can rerun the same controlled workload and compare a strategy verdict rather
+  than a timing anecdote.
+- **Verdict:** **Sound.** High-entropy per-dimension values exercise the failure class, while deterministic per-cycle inputs make a
+  complete value check possible.
+- **Confidence:** High.
+
+### Slice 09b — The embedding smoke records one aggregated-vector contract, not merely HTTP success
+
+- **When:** Slice 09b multimodal embedding smoke implementation.
+- **The choice:** The smoke sends one candidate item containing a text part and an inline JPEG part and calls the existing
+  OpenAI-compatible `/embeddings` route. It calls that candidate accepted only when the response contains exactly one finite
+  3,072-number vector. This represents the product need: one searchable vector for one photo plus its text, not two unrelated
+  vectors or a provider's smaller default. On success, the evidence keeps the request structure but replaces the JPEG bytes with
+  their SHA-256 digest; on HTTP or transport rejection, it keeps no request fixture. The exact content-part dialect is explicitly
+  labelled a candidate until a live Gateway call accepts it.
+- **The gap:** Vercel's current model page says Gemini Embedding 2 supports interleaved image and text, while its public Gateway
+  example and current AI SDK embedding interface remain text-only and do not specify the raw OpenAI-compatible multimodal body.
+  The plan required a live smoke to settle that gap but did not define what qualifies as acceptance or what may be persisted.
+- **The reach:** 09c cannot silently ship a request that yields separate or wrong-width vectors. Once a keyed run succeeds, the
+  redacted evidence becomes the exact fixture its worker must follow; until then, the production embedding shape remains OPEN.
+- **Verdict:** **Sound.** The candidate is isolated to the probe, the acceptance test matches the catalog contract, and no
+  unaccepted dialect leaks into production code. A 200 response with the wrong shape records `response_shape`, the response's
+  scalar item count, and only the first eight observed vector widths. This diagnoses contract drift without copying an unbounded
+  provider response into durable evidence.
+- **Confidence:** Medium; only the still-missing live Gateway response can validate the candidate dialect.
+
+### Slice 09b — Live probes require purpose-specific invocation credentials
+
+- **When:** Slice 09b embedding and upscaler evidence surfaces.
+- **The choice:** An ordinary `AI_GATEWAY_API_KEY` in the shell does not start either experiment. The embedding smoke requires the
+  operator to set `PHOTOCTL_EMBED_SMOKE_API_KEY` for that invocation; with no such key, it exits successfully and writes a
+  machine-readable `not_run:unconfigured` record. The upscaler workbench likewise writes empty adapter, model, controls, and
+  comparisons until an `UpscaleAdapter` is supplied through the existing registry and its model is marked configured. That
+  invocation must also supply source crops and controls; the spike never fills in resemblance or creativity values itself. It then
+  passes each PNG crop's original bytes to the adapter, executes the inherited guarded prompt and a single-sentence “preserve
+  without changing content” prompt through the registry, writes both outputs and a contact sheet, and records dimensions, latency,
+  cost, resolved controls, and pixel drift. The fake adapter includes the prompt in its deterministic output hash so the regression
+  can observe two distinct arms without pretending the pixels are vendor evidence. A failed explicitly requested embedding call
+  exits nonzero but still writes a rejected evidence record, so automation can distinguish “not authorized to run” from “authorized
+  but failed.”
+- **The gap:** The plan prohibited ambient credentials from becoming consent but did not choose the operator-facing key name or
+  the exit/evidence behavior for configured failures.
+- **The reach:** Developers can keep general provider credentials in their environment without accidentally uploading a photo or
+  spending money during routine gates. CI can treat an absent optional experiment as green while still noticing a broken experiment
+  that someone explicitly asked to run. Future live adapters retain ownership of color/profile conversion because the workbench does
+  not normalize the supplied PNG before invocation.
+- **Verdict:** **Sound.** Purpose-specific credentials make consent observable, and the exit split preserves failure visibility.
+- **Confidence:** High.
+
+### Slice 09b review — Pixel drift is normalized telemetry, not the visual verdict
+
+- **When:** Slice 09b configured-upscaler review.
+- **The choice:** For each source crop, the spike decodes the guarded and minimal outputs to opaque RGB and records their mean
+  absolute per-channel difference on a zero-to-one scale. A zero means the two returned pixel buffers look identical; one means
+  every channel is maximally different. Different output sizes record maximal drift because pixels cannot be aligned honestly.
+  The contact sheet remains the review surface: the number proves the two arms differed and locates a suspicious no-op, but never
+  chooses a vendor or claims that larger drift is better.
+- **The gap:** The slice required visible drift telemetry but did not define a metric or how it should behave for incomparable
+  dimensions.
+- **The reach:** Later live comparisons inherit a bounded, provider-independent diagnostic while keeping aesthetic judgment in the
+  required screenshot review.
+- **Verdict:** **Sound.** Normalization makes different crops comparable, and explicitly refusing to turn the metric into a quality
+  score avoids an automated product choice.
+- **Confidence:** Medium until live outputs show whether a perceptual metric would be more useful.
+
 ## Needs user
 
 ### Slice 09a — The fake upscaler is the provisional release default

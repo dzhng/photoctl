@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "status": "not_run",
+  "reason": "unconfigured",
+  "releaseDecision": "deferred",
+  "selectedAdapter": null,
+  "selectedModel": null,
+  "controls": null,
+  "contactSheet": null,
+  "comparisons": []
+}

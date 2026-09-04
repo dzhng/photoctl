@@ -10,20 +10,41 @@ import { buildSheetReport } from "./sheet.js";
 import { buildGraphReport } from "./graph.js";
 import { buildExportReport } from "./export.js";
 import { renderPresetsReport } from "./presets.js";
+import { runUpscaleSpike, type UpscaleSpikeDependencies } from "./upscale-spike.js";
 
 export async function runWorkbench(
   args: string[],
   cwd: string,
-  env: { PHOTOCTL_LIBRARY?: string } = process.env,
+  env: NodeJS.ProcessEnv = process.env,
+  dependencies: UpscaleSpikeDependencies = {},
 ): Promise<string> {
   const [command, ...rest] = args;
   if (
     !command ||
-    !["envelope", "race", "library", "oracle", "sheet", "graph", "export", "presets"].includes(
-      command,
-    )
+    ![
+      "envelope",
+      "race",
+      "library",
+      "oracle",
+      "sheet",
+      "graph",
+      "export",
+      "presets",
+      "upscale-spike",
+    ].includes(command)
   )
-    throw new Error("usage: wb envelope|race|library|oracle|sheet|graph|export|presets");
+    throw new Error(
+      "usage: wb envelope|race|library|oracle|sheet|graph|export|presets|upscale-spike",
+    );
+  if (command === "upscale-spike") {
+    const outputDirectory = join(cwd, "out", "wb");
+    await mkdir(outputDirectory, { recursive: true });
+    return await runUpscaleSpike(
+      rest.map((path) => resolve(cwd, path)),
+      outputDirectory,
+      dependencies,
+    );
+  }
   if (command === "graph") {
     if (rest.length !== 1) throw new Error("usage: wb graph <photo-id>");
     const library = env.PHOTOCTL_LIBRARY

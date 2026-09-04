@@ -6,6 +6,7 @@ import { runWorkbench } from "./run.js";
 import { createBackup, initializeLibrary, LATEST_SCHEMA_VERSION } from "@photoctl/library";
 import { commitRevision, type NodeDraft } from "@photoctl/render";
 import sharp from "sharp";
+import { FakeUpscaleAdapter, UpscaleRegistry } from "@photoctl/providers";
 
 const temporaryDirectories: string[] = [];
 
@@ -228,4 +229,87 @@ test("export renders a self-contained contact sheet for a delivered folder", asy
   expect(html).toContain("1200 × 800");
   expect(html).toMatch(/src="data:image\/jpeg;base64,/u);
   expect(html).not.toMatch(/<(?:script|link)[^>]+(?:src|href)=/u);
+});
+
+test("upscale spike records an unconfigured verdict without treating ambient credentials as consent", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-upscale-"));
+  temporaryDirectories.push(cwd);
+
+  const output = await runWorkbench(["upscale-spike"], cwd, {
+    AI_GATEWAY_API_KEY: "ambient-must-not-select-an-upscaler",
+  });
+  const evidence = JSON.parse(await readFile(output, "utf8"));
+
+  expect(output).toBe(join(cwd, "out", "wb", "upscale-spike.json"));
+  expect(evidence).toMatchObject({
+    status: "not_run",
+    reason: "unconfigured",
+    releaseDecision: "deferred",
+    selectedAdapter: null,
+    selectedModel: null,
+    controls: null,
+    comparisons: [],
+  });
+  expect(JSON.stringify(evidence)).not.toContain("ambient-must-not-select-an-upscaler");
+});
+
+test("upscale spike runs both prompt arms through an explicitly configured adapter", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-upscale-configured-"));
+  temporaryDirectories.push(cwd);
+  const source = join(cwd, "portrait-crop.png");
+  await sharp({ create: { width: 3, height: 2, channels: 3, background: "#936" } })
+    .png()
+    .toFile(source);
+  const registry = new UpscaleRegistry("photoctl/fake-upscale-v1");
+  registry.register(new FakeUpscaleAdapter());
+
+  const output = await runWorkbench(
+    ["upscale-spike", source],
+    cwd,
+    {},
+    {
+      upscaleRegistry: registry,
+      upscaleSettings: {
+        models: { upscale: "photoctl/fake-upscale-v1" },
+        providers: { upscale: { "photoctl/fake-upscale-v1": { configured: true } } },
+      },
+      upscaleControls: {
+        scale: 2,
+        fidelity: 0.7,
+        creativity: 0.3,
+        seed: 1,
+        originalOperation: "denoise",
+      },
+    },
+  );
+  const evidence = JSON.parse(await readFile(output, "utf8"));
+
+  expect(evidence).toMatchObject({
+    status: "completed",
+    selectedAdapter: "photoctl/fake-upscale-v1",
+    selectedModel: "photoctl/fake-upscale-v1",
+    controls: { scale: 2, fidelity: 0.7, creativity: 0.3, seed: 1 },
+  });
+  expect(evidence.comparisons).toHaveLength(1);
+  expect(evidence.comparisons[0]).toMatchObject({
+    source: "portrait-crop.png",
+    sourceDimensions: { w: 3, h: 2 },
+    guarded: {
+      dimensions: { w: 6, h: 4 },
+      costUsd: 0,
+      resolvedControls: { scale: 2, fidelity: 0.7, creativity: 0.3, seed: 1 },
+    },
+    minimal: {
+      dimensions: { w: 6, h: 4 },
+      costUsd: 0,
+      resolvedControls: { scale: 2, fidelity: 0.7, creativity: 0.3, seed: 1 },
+    },
+  });
+  expect(evidence.comparisons[0].drift.meanAbsoluteError).toBeGreaterThan(0);
+  expect(evidence.comparisons[0].guarded.latencyMs).toBeGreaterThanOrEqual(0);
+  expect(evidence.comparisons[0].minimal.latencyMs).toBeGreaterThanOrEqual(0);
+  expect(evidence.contactSheet).toBe("upscale-spike-contact-sheet.png");
+  expect(await sharp(join(cwd, "out", "wb", evidence.contactSheet)).metadata()).toMatchObject({
+    format: "png",
+  });
 });

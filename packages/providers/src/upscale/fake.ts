@@ -45,7 +45,11 @@ export class FakeUpscaleAdapter implements UpscaleAdapter {
         : this.mode === "too-small"
           ? { w: Math.max(1, source.w - 1), h: Math.max(1, source.h - 1) }
           : { w: source.w * scale, h: source.h * scale };
-    const color = createHash("sha256").update(input.artifact.bytes).digest().subarray(0, 3);
+    const color = createHash("sha256")
+      .update(input.artifact.bytes)
+      .update(input.prompt ?? "")
+      .digest()
+      .subarray(0, 3);
     const bytes = await sharp({
       create: {
         width: dimensions.w,
