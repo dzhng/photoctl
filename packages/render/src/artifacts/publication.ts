@@ -4,7 +4,7 @@ import { link, mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { displaySrgbToLinearRec2020, linearRec2020ToDisplaySrgb } from "../color.js";
 import type { LinearImage } from "../decoder.js";
-import { decodeLinearTiff, encodeLinearTiff } from "../linear-tiff.js";
+import { decodeArtifactLinearTiff, encodeArtifactLinearTiff } from "../linear-tiff.js";
 import type { Image16 } from "../source-render.js";
 
 export interface NormalizedArtifact {
@@ -51,7 +51,7 @@ export async function normalizeArtifact(image: LinearImage | Image16): Promise<N
   ) {
     throw new Error("Canonical artifacts require oriented scene-linear Rec.2020 RGB f32 pixels");
   }
-  const bytes = await encodeLinearTiff(linear);
+  const bytes = await encodeArtifactLinearTiff(linear);
   return {
     artifactHash: `a_${createHash("sha256").update(bytes).digest("hex")}`,
     bytes,
@@ -153,7 +153,7 @@ export async function readArtifactLinear(
   if (expectedHash && `a_${createHash("sha256").update(bytes).digest("hex")}` !== expectedHash) {
     throw new Error(`Canonical artifact content hash mismatch: ${path}`);
   }
-  return await decodeLinearTiff(bytes);
+  return await decodeArtifactLinearTiff(bytes);
 }
 
 /** Converts a canonical linear artifact to clamped display pixels for view and delivery only. */

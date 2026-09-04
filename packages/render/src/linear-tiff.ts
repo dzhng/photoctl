@@ -20,11 +20,29 @@ export async function encodeLinearTiff(image: LinearImage): Promise<Buffer> {
   }
   const range = image.whiteLevel - image.blackLevel;
   if (!(range > 0)) throw new Error("Linear image has an invalid black/white range");
+  const samples = new Uint16Array(image.data.length);
+  for (let index = 0; index < image.data.length; index += 1) {
+    samples[index] = Math.round(Math.max(0, Math.min(1, image.data[index])) * 65_535);
+  }
+  return encodeRgb16Tiff(image.w, image.h, samples, await readFile(linearRec2020ProfilePath));
+}
+
+/** Encodes exact working pixels for the internal content-addressed graph artifact. */
+export async function encodeArtifactLinearTiff(image: LinearImage): Promise<Buffer> {
+  if (
+    image.space !== "scene-linear-rec2020" ||
+    !image.orientationApplied ||
+    image.data.length !== image.w * image.h * 3
+  ) {
+    throw new Error("Artifact TIFF accepts only oriented scene-linear Rec.2020 samples");
+  }
+  const range = image.whiteLevel - image.blackLevel;
+  if (!(range > 0)) throw new Error("Linear image has an invalid black/white range");
   return encodeRgbFloatTiff(image.w, image.h, image.data, await readFile(linearRec2020ProfilePath));
 }
 
-/** Reads photoctl's deterministic uncompressed IEEE-f32 linear Rec.2020 TIFF. */
-export async function decodeLinearTiff(bytes: Buffer): Promise<LinearImage> {
+/** Reads photoctl's deterministic uncompressed IEEE-f32 graph artifact TIFF. */
+export async function decodeArtifactLinearTiff(bytes: Buffer): Promise<LinearImage> {
   if (bytes.toString("ascii", 0, 2) !== "II" || bytes.readUInt16LE(2) !== 42) {
     throw new Error("Linear TIFF has an invalid header");
   }
