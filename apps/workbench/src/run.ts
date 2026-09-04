@@ -6,6 +6,7 @@ import { renderRaceReport, type RaceEvidence } from "./race.js";
 import { inspectLibrary, renderLibraryReport } from "./library.js";
 import { homedir } from "node:os";
 import { buildOracleReport } from "./oracle.js";
+import { buildSheetReport } from "./sheet.js";
 
 export async function runWorkbench(
   args: string[],
@@ -13,11 +14,27 @@ export async function runWorkbench(
   env: { PHOTOCTL_LIBRARY?: string } = process.env,
 ): Promise<string> {
   const [command, ...rest] = args;
-  if (!command || !["envelope", "race", "library", "oracle"].includes(command))
-    throw new Error("usage: wb envelope|race|library|oracle <photo-id>");
+  if (!command || !["envelope", "race", "library", "oracle", "sheet"].includes(command))
+    throw new Error("usage: wb envelope|race|library|oracle|sheet");
   if (command === "oracle") {
     if (rest.length !== 1) throw new Error("usage: wb oracle <photo-id>");
     return await buildOracleReport(rest[0], cwd);
+  }
+  if (command === "sheet") {
+    const library = rest[0];
+    if (!library) throw new Error("usage: wb sheet <library> [--filter expression]");
+    let filter: string | null = null;
+    if (rest.length > 1) {
+      if (rest.length !== 3 || rest[1] !== "--filter") {
+        throw new Error("usage: wb sheet <library> [--filter expression]");
+      }
+      filter = rest[2];
+    }
+    const outputDirectory = join(cwd, "out", "wb");
+    await mkdir(outputDirectory, { recursive: true });
+    const output = join(outputDirectory, "sheet.html");
+    await writeFile(output, await buildSheetReport(resolve(cwd, library), filter, cwd), "utf8");
+    return output;
   }
   if (rest.length > 0) throw new Error("usage: wb envelope|race|library|oracle <photo-id>");
 

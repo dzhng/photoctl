@@ -9,6 +9,7 @@ export interface SpawnResult {
   code: number;
   json: Envelope;
   events: StderrEvent[];
+  stream: unknown[];
 }
 export async function spawnPhotoctl(
   args: string[],
@@ -31,15 +32,26 @@ export async function spawnPhotoctl(
     child.on("error", reject);
     child.on("close", (code) => {
       try {
+        const streamMode = code === 0 && args.includes("--stream");
+        const stream = streamMode
+          ? stdout
+              .trim()
+              .split("\n")
+              .filter(Boolean)
+              .map((line) => JSON.parse(line) as unknown)
+          : [];
         resolveResult({
           code: code ?? 1,
-          json: JSON.parse(stdout),
+          json: streamMode
+            ? { schema: 1, ok: true, data: { rows: stream }, warnings: [] }
+            : JSON.parse(stdout),
           events: stderr.trim()
             ? stderr
                 .trim()
                 .split("\n")
                 .map((line) => JSON.parse(line))
             : [],
+          stream,
         });
       } catch (error) {
         reject(error);

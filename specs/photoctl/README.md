@@ -13,11 +13,12 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–03 and decoder slice 07 are implemented.
+*Last updated: 2026-09-05. Status: slices 00–04 and decoder slice 07 are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
 the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
-`--human` renders the same envelopes without changing execution. The pre-implementation DAG/upscaling
+recursive import commits through a bounded deterministic pipeline, collision buckets promote to full hashes,
+and culling/list/next/remove remain usable from pinned previews while source volumes are offline. The pre-implementation DAG/upscaling
 unknowns walk is now incorporated into slices 08–13 and the choices ledger; no DAG/provider implementation
 has landed yet.*
 
@@ -26,8 +27,8 @@ point and follow it exactly. Do not re-decide anything in the original decision 
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 04 (import/cull) and 08a (immutable render-DAG foundation).
-  Slice 04 inherits the durable catalog and restore boundary; slice 08a inherits the completed decoder/color
+- **Pickup point:** dependency-ready slices 05 (delivery export) and 08a (immutable render-DAG foundation).
+  Slice 05 inherits the culling catalog and fixture-drive workflow; slice 08a inherits the completed decoder/color
   front and must land before 08b+ develop nodes or later layer work.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
@@ -44,7 +45,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 02a daemon (runs `dispatch`), contention race, `tag` — `slices/02-daemon-and-contention.md`
 - [x] 02b global `--human` envelope renderer — `slices/02-daemon-and-contention.md`
 - [x] 03a preview coordination/index/prune · [x] 03b backup/restore/migrate + fixture — `slices/03-library-lifecycle.md`
-- [ ] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
+- [x] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
 - [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
@@ -385,6 +386,19 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
 ## Implementation notes
 
 *(append-only; one entry per deviation: plan said / code revealed / call made / needs David?)*
+
+- **2026-09-05 — slice 04 sampled relocation boundary.** Plan said: sampled-key collisions require full proof, while a rename on
+  the same online volume retains its ID after the old path disappears. Code revealed: once that old path is gone, its bytes are
+  unavailable for a full comparison; treating every missing locator alike either breaks the required rename or aliases offline
+  uncertainty. Call: keep the inference only for a missing old path on the candidate's confirmed-mounted volume; refuse
+  offline/unknown volumes, compare full hashes whenever an old locator is readable, and refuse exact-locator unpromoted matches
+  when stored mtime changed. Needs David: no; this is the narrow reconciliation of the two explicit slice clauses, with the
+  residual adversarial ambiguity recorded in `choices.md`.
+- **2026-09-05 — slice 04 internal copy volume.** Plan said: `--copy` stores originals under the library and all locators use a
+  volume UUID plus relative path. Code revealed: library-owned files have no independent hardware UUID and must resolve after the
+  source mapping disappears or the whole library moves. Call: reserve catalog-local UUID `photoctl-library`, resolve it relative
+  to the current library root, and still derive the physical macOS mount before Trash selection. Needs David: no; the locator is
+  stable within its only namespace and removes a test-environment dependency from ordinary copy libraries.
 
 - **2026-09-03 — commit `0cd23c0`.** Plan said: a README-only edit (precedent-repos table). Code revealed: a
   concurrent Codex session was implementing slice 00 in this working tree; a `git add -A` swept its

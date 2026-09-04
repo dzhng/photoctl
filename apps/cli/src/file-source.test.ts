@@ -161,7 +161,7 @@ test("a missing extensionless source is not reported as a skipped format", async
   expect(imported.json).toMatchObject({ schema: 1, ok: false, code: "not_found" });
 }, 30_000);
 
-test("directory import is refused until the slice-04 scanner owns its batch semantics", async () => {
+test("directory import admits supported top-level files", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-directory-scope-"));
   temporaryDirectories.push(parent);
   const sourceDirectory = join(parent, "source");
@@ -175,8 +175,12 @@ test("directory import is refused until the slice-04 scanner owns its batch sema
     env: { PHOTOCTL_VOLUME_MAP: `${parent}=fixture-volume:online` },
   });
 
-  expect(imported.code).toBe(2);
-  expect(imported.json).toMatchObject({ schema: 1, ok: false, code: "usage" });
+  expect(imported.code).toBe(0);
+  expect(imported.json).toMatchObject({
+    schema: 1,
+    ok: true,
+    data: { imported: 1, already_present: 0, skipped_unsupported: 0 },
+  });
 }, 30_000);
 
 test("a PNG with a JPEG extension is rendered instead of copied into a false JPEG", async () => {

@@ -37,6 +37,7 @@ export interface DaemonConnection {
 interface ExchangeResult {
   envelope: Envelope;
   events: StderrEvent[];
+  stream: unknown[];
 }
 
 export function daemonSocketPath(libraryPath: string, version: string): string {
@@ -166,8 +167,16 @@ export async function ensureDaemon(
 export async function requestDaemon(
   socket: string,
   request: CommandRequest,
+  stream?: (row: unknown) => void | Promise<void>,
+  emit?: (event: StderrEvent) => void | Promise<void>,
 ): Promise<ExchangeResult> {
-  return await exchange(socket, { type: "request", request }, requestTimeout(request));
+  return await exchange(
+    socket,
+    { type: "request", request },
+    requestTimeout(request),
+    stream,
+    emit,
+  );
 }
 
 export async function inspectDaemon(libraryPath: string): Promise<DaemonStatus | null> {
@@ -249,16 +258,22 @@ async function exchange(
   socketPath: string,
   frame: DaemonClientFrame,
   timeoutMs: number,
+  onStream?: (row: unknown) => void | Promise<void>,
+  onEvent?: (event: StderrEvent) => void | Promise<void>,
 ): Promise<ExchangeResult> {
   return await new Promise((resolveResult, reject) => {
     const socket = createConnection(socketPath);
     const decoder = new FrameDecoder();
     const events: StderrEvent[] = [];
+    const stream: unknown[] = [];
     let settled = false;
-    const timeout = setTimeout(
-      () => finish(new Error(`Daemon timed out at ${socketPath}`)),
-      timeoutMs,
-    );
+    let ended = false;
+    let processing = Promise.resolve();
+    let timeout: ReturnType<typeof setTimeout>;
+    const armTimeout = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => finish(new Error(`Daemon timed out at ${socketPath}`)), timeoutMs);
+    };
     const finish = (error?: unknown, result?: ExchangeResult) => {
       if (settled) return;
       settled = true;
@@ -267,23 +282,44 @@ async function exchange(
       if (error) reject(error);
       else if (result) resolveResult(result);
     };
+    armTimeout();
     socket.once("connect", () => socket.write(encodeFrame(frame)));
     socket.on("data", (chunk) => {
-      try {
+      socket.pause();
+      processing = processing.then(async () => {
+        armTimeout();
         for (const value of decoder.push(chunk)) {
           const response = value as DaemonServerFrame;
-          if (response.type === "event") events.push(response.event);
+          if (response.type === "event") {
+            if (onEvent) await onEvent(response.event);
+            else events.push(response.event);
+          }
+          if (response.type === "stream") {
+            if (onStream) await onStream(response.row);
+            else stream.push(response.row);
+          }
+          armTimeout();
           if (response.type === "response")
-            finish(undefined, { envelope: response.envelope, events });
+            finish(undefined, { envelope: response.envelope, events, stream });
         }
-      } catch (error) {
-        finish(error);
-      }
+      });
+      void processing
+        .then(() => {
+          if (ended && !settled)
+            finish(new Error(`Daemon closed without a response at ${socketPath}`));
+          else if (!settled) socket.resume();
+        })
+        .catch(finish);
     });
     socket.once("error", finish);
-    socket.once("end", () =>
-      finish(new Error(`Daemon closed without a response at ${socketPath}`)),
-    );
+    socket.once("end", () => {
+      ended = true;
+      void processing
+        .then(() => {
+          if (!settled) finish(new Error(`Daemon closed without a response at ${socketPath}`));
+        })
+        .catch(finish);
+    });
   });
 }
 
@@ -305,7 +341,10 @@ function processState(pid: number): "alive" | "dead" | "unknown" {
   }
 }
 
-function requestTimeout(request: CommandRequest): number {
+export function requestTimeout(request: CommandRequest): number {
+  // Import reports progress as each prepared candidate commits. This is an idle
+  // ceiling, reset by every daemon frame, rather than a cap on total drive time.
+  if (request.verb === "import") return 10 * 60 * 1_000;
   const budget = Number(request.env.lockBudgetMs);
   return Number.isSafeInteger(budget) && budget >= 0 ? Math.max(1_000, budget + 1_000) : 31_000;
 }

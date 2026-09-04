@@ -32,8 +32,43 @@ export interface VolumeResolver {
   resolve(volumeUuid: string, relPath: string): Promise<ResolvedLocator>;
 }
 
-export function createVolumeResolver(mapping = process.env.PHOTOCTL_VOLUME_MAP): VolumeResolver {
-  return mapping ? new EnvVolumeResolver(mapping) : new MacVolumeResolver();
+export const LIBRARY_VOLUME_UUID = "photoctl-library";
+
+export function createVolumeResolver(
+  mapping = process.env.PHOTOCTL_VOLUME_MAP,
+  libraryPath?: string,
+): VolumeResolver {
+  const external = mapping ? new EnvVolumeResolver(mapping) : new MacVolumeResolver();
+  if (!libraryPath) return external;
+  return new LibraryVolumeResolver(external, libraryPath);
+}
+
+export class LibraryVolumeResolver implements VolumeResolver {
+  readonly #libraryMount: string;
+
+  constructor(
+    private readonly external: VolumeResolver,
+    libraryPath: string,
+  ) {
+    this.#libraryMount = resolvePath(libraryPath);
+  }
+
+  async locate(path: string): Promise<VolumeLocation> {
+    return await this.external.locate(path);
+  }
+
+  async resolve(volumeUuid: string, relPath: string): Promise<ResolvedLocator> {
+    if (volumeUuid !== LIBRARY_VOLUME_UUID) {
+      return await this.external.resolve(volumeUuid, relPath);
+    }
+    const path = joinWithin(this.#libraryMount, relPath);
+    try {
+      await access(path);
+      return { mount: this.#libraryMount, path, online: true };
+    } catch {
+      return { mount: this.#libraryMount, path: null, online: false };
+    }
+  }
 }
 
 interface EnvVolume {

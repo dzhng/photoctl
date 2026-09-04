@@ -33,10 +33,19 @@ import { importCommand } from "./handlers/import.js";
 import { showCommand } from "./handlers/show.js";
 import { tagCommand } from "./handlers/tag.js";
 import { backupCommand, migrateCommand, restoreCommand } from "./handlers/library-lifecycle.js";
+import {
+  flagCommand,
+  labelCommand,
+  listCommand,
+  nextCommand,
+  removeCommand,
+  rateCommand,
+} from "./handlers/cull.js";
 export interface DispatchContext {
   version: string;
   library?: LibraryHandle;
-  emit?: (event: StderrEvent) => void;
+  emit?: (event: StderrEvent) => void | Promise<void>;
+  stream?: (row: unknown) => void | Promise<void>;
   previewCoordinator?: PreviewCoordinator;
 }
 export async function dispatch(
@@ -48,7 +57,13 @@ export async function dispatch(
       return { schema: 1, ok: true, data: { version: context.version }, warnings: [] };
     }
     if (request.verb === "import")
-      return await importCommand(request.args, request.env, request.cwd, context.library);
+      return await importCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.emit,
+      );
     if (request.verb === "show")
       return await showCommand(
         request.args,
@@ -71,6 +86,24 @@ export async function dispatch(
       return await decodeCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "list")
+      return await listCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.stream,
+      );
+    if (request.verb === "next")
+      return await nextCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "remove")
+      return await removeCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "rate")
+      return await rateCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "flag")
+      return await flagCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "label")
+      return await labelCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "backup")
       return await backupCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "restore")

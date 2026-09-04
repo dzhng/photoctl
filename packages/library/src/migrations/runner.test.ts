@@ -8,7 +8,11 @@ test("migrations are repeatable and record each version once", async () => {
     const first = await migrate(db);
     const second = await migrate(db);
 
-    expect(first).toEqual({ fromVersion: 0, toVersion: LATEST_SCHEMA_VERSION, applied: [1, 2, 3] });
+    expect(first).toEqual({
+      fromVersion: 0,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [1, 2, 3, 4],
+    });
     expect(second).toEqual({
       fromVersion: LATEST_SCHEMA_VERSION,
       toVersion: LATEST_SCHEMA_VERSION,
@@ -18,7 +22,7 @@ test("migrations are repeatable and record each version once", async () => {
     const applied = await db.query<{ version: number }>(
       "SELECT version FROM schema_version ORDER BY version",
     );
-    expect(applied.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }]);
+    expect(applied.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }]);
 
     await db.query(
       `INSERT INTO photos
@@ -67,7 +71,41 @@ test("migrations are repeatable and record each version once", async () => {
   }
 });
 
-test.each([["2"], ["1,3"], ["1,2,3,4"]])(
+test("the latest schema supports promoted sampled-key collisions and cull state", async () => {
+  const db = await PGlite.create();
+  try {
+    await migrate(db);
+    const first = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
+    const second = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
+    await db.query(
+      `INSERT INTO photos
+         (id, content_key, content_hash, size, w, h, orientation, rating, flag, label)
+       VALUES ($1, 'ck_collision', 'sha256_a', 1, 1, 1, 1, 5, 'pick', 'green'),
+              ($2, 'ck_collision', 'sha256_b', 1, 1, 1, 1, 0, 'none', NULL)`,
+      [first, second],
+    );
+    await db.query(
+      `INSERT INTO xmp_state (photo_id, sidecar_path, read_at, sidecar_mtime)
+       VALUES ($1, '/volume/a.xmp', now(), '2025-01-02T03:04:05Z')`,
+      [first],
+    );
+
+    const photos = await db.query<{
+      content_hash: string;
+      rating: number;
+      flag: string;
+      label: string | null;
+    }>("SELECT content_hash, rating, flag, label FROM photos ORDER BY content_hash");
+    expect(photos.rows).toEqual([
+      { content_hash: "sha256_a", rating: 5, flag: "pick", label: "green" },
+      { content_hash: "sha256_b", rating: 0, flag: "none", label: null },
+    ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test.each([["2"], ["1,3"], ["1,2,3,4,5"]])(
   "rejects the non-prefix migration ledger %s before applying schema",
   async (ledger) => {
     const db = await PGlite.create();
@@ -88,7 +126,7 @@ test.each([["2"], ["1,3"], ["1,2,3,4"]])(
 );
 
 test.each([
-  ["constraint", "ALTER TABLE photos DROP CONSTRAINT photos_content_key_key"],
+  ["constraint", "ALTER TABLE photos DROP CONSTRAINT photos_rating_check"],
   ["index", "DROP INDEX files_photo_id_idx"],
 ])("latest-schema verification rejects a missing required %s", async (_kind, statement) => {
   const db = await PGlite.create();

@@ -2,6 +2,7 @@ import type { PGlite } from "@electric-sql/pglite";
 import { migration0001 } from "./0001-init.js";
 import { migration0002 } from "./0002-photo-core.js";
 import { migration0003 } from "./0003-tags-and-daemon.js";
+import { migration0004 } from "./0004-import-and-cull.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -13,6 +14,7 @@ const migrations = [
   { version: 1, sql: migration0001 },
   { version: 2, sql: migration0002 },
   { version: 3, sql: migration0003 },
+  { version: 4, sql: migration0004 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
@@ -24,6 +26,7 @@ const latestTables = [
   "settings",
   "tags",
   "volumes",
+  "xmp_state",
 ] as const;
 const latestConstraints = [
   "cache_index_bytes_check",
@@ -32,10 +35,12 @@ const latestConstraints = [
   "files_pkey",
   "files_volume_uuid_rel_path_key",
   "files_volume_uuid_fkey",
-  "photos_content_key_key",
+  "photos_flag_check",
   "photos_h_check",
+  "photos_label_check",
   "photos_orientation_check",
   "photos_pkey",
+  "photos_rating_check",
   "photos_shot_offset_min_check",
   "photos_size_check",
   "photos_w_check",
@@ -45,6 +50,8 @@ const latestConstraints = [
   "tags_pkey",
   "tags_tag_check",
   "volumes_pkey",
+  "xmp_state_photo_id_fkey",
+  "xmp_state_pkey",
 ] as const;
 
 export async function migrate(db: PGlite): Promise<MigrationResult> {
@@ -98,7 +105,18 @@ export async function verifyLatestSchema(db: PGlite): Promise<void> {
   const missing = [
     ...missingNames(latestTables, tables.rows),
     ...missingNames(latestConstraints, constraints.rows),
-    ...missingNames(["files_photo_id_idx"], indexes.rows),
+    ...missingNames(
+      [
+        "files_photo_id_idx",
+        "photos_flag_idx",
+        "photos_label_idx",
+        "photos_promoted_content_hash_idx",
+        "photos_rating_idx",
+        "photos_shot_id_idx",
+        "photos_unpromoted_content_key_idx",
+      ],
+      indexes.rows,
+    ),
   ];
   if (missing.length > 0) throw new Error(`Library schema is incomplete: ${missing.join(",")}`);
 }

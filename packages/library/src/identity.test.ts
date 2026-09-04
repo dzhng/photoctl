@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
-import { identifyFile, newLibraryEntityId } from "./identity.js";
+import { fullFileHash, identifyFile, newLibraryEntityId } from "./identity.js";
 
 test("the fixture identity matches the independent manifest", async () => {
   const identity = await identifyFile(
@@ -44,6 +44,26 @@ test("a small file is hashed once after its little-endian size", async () => {
 
     expect(identity.contentKey).toBe("ck_7d31418a565fb99b");
     expect(identity.size).toBe(26);
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("the full hash disambiguates files whose sampled identity matches", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-identity-collision-"));
+  const firstPath = join(directory, "first.bin");
+  const secondPath = join(directory, "second.bin");
+  const first = Buffer.alloc(2 * 1024 * 1024 + 32, 7);
+  const second = Buffer.from(first);
+  second.fill(11, 1024 * 1024, 1024 * 1024 + 32);
+  try {
+    await writeFile(firstPath, first);
+    await writeFile(secondPath, second);
+
+    expect((await identifyFile(firstPath)).contentKey).toBe(
+      (await identifyFile(secondPath)).contentKey,
+    );
+    expect(await fullFileHash(firstPath)).not.toBe(await fullFileHash(secondPath));
   } finally {
     await rm(directory, { recursive: true });
   }

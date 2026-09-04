@@ -20,6 +20,8 @@
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
     "wb": "node apps/workbench/dist/cli.js",
+    "fixtures:drive": "node fixtures/tools/drive.mjs",
+    "fixtures:volume": "node fixtures/tools/volume.mjs",
     "probe:headless-ciraw": "scripts/probe-headless-ciraw.sh",
     "probe:race": "bun run build:ts && node scripts/probe-race.mjs",
     "verify": "bun run fmt:check && bun run lint && bun run typecheck && bun run build && bun run test",

@@ -175,8 +175,10 @@ export class DaemonServer {
             version: this.version,
             library: this.library,
             previewCoordinator: this.previewCoordinator,
-            emit: (event) =>
-              item.socket.write(encodeFrame({ type: "event", event } satisfies DaemonServerFrame)),
+            emit: async (event) =>
+              await writeFrame(item.socket, { type: "event", event } satisfies DaemonServerFrame),
+            stream: async (row) =>
+              await writeFrame(item.socket, { type: "stream", row } satisfies DaemonServerFrame),
           }),
         );
       }
@@ -255,6 +257,27 @@ export class DaemonServer {
       if (!hasCode(error, "ENOENT")) throw error;
     }
   }
+}
+
+async function writeFrame(socket: Socket, frame: DaemonServerFrame): Promise<void> {
+  const bytes = encodeFrame(frame);
+  if (socket.write(bytes)) return;
+  await new Promise<void>((resolveDrain, reject) => {
+    const cleanup = () => {
+      socket.off("drain", drained);
+      socket.off("error", failed);
+    };
+    const drained = () => {
+      cleanup();
+      resolveDrain();
+    };
+    const failed = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+    socket.once("drain", drained);
+    socket.once("error", failed);
+  });
 }
 
 function success(data: unknown): Envelope {

@@ -17,6 +17,7 @@ export { PreviewDestinationError } from "./preview-artifact.js";
 
 export interface RenderState {
   contentKey: string;
+  contentHash?: string | null;
   orientation: ExifOrientation;
 }
 
@@ -28,6 +29,7 @@ export interface ViewSpec {
 export function renderStateHash(state: RenderState): string {
   const canonical = JSON.stringify({
     content_key: state.contentKey,
+    content_hash: state.contentHash ?? null,
     orientation: state.orientation,
   });
   return `r_${createHash("sha256").update(canonical).digest("hex").slice(0, 12)}`;

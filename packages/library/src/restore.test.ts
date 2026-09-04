@@ -32,7 +32,7 @@ test("restore replaces changed rows with the validated snapshot", async () => {
   }
 
   const restored = await restoreLibrary(libraryPath, backup);
-  expect(restored).toMatchObject({ library: libraryPath, from: backup, schemaVersion: 3 });
+  expect(restored).toMatchObject({ library: libraryPath, from: backup, schemaVersion: 4 });
   const verified = await openLibrary(libraryPath);
   try {
     const setting = await verified.query<{ value: string }>(

@@ -3,7 +3,13 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
-import { EnvVolumeResolver, MacVolumeResolver, resolvePhotoId } from "./locators.js";
+import {
+  EnvVolumeResolver,
+  LIBRARY_VOLUME_UUID,
+  LibraryVolumeResolver,
+  MacVolumeResolver,
+  resolvePhotoId,
+} from "./locators.js";
 import { migrate } from "./migrations/runner.js";
 
 test("the environment resolver stores a mount-relative locator", async () => {
@@ -92,6 +98,32 @@ test("the mac resolver follows a volume UUID across its mounted path", async () 
     expect(resolved).toEqual({ mount, path: source, online: true });
   } finally {
     await rm(directory, { recursive: true });
+  }
+});
+
+test("the internal library volume resolves without consulting platform volume discovery", async () => {
+  const libraryPath = await mkdtemp(join(tmpdir(), "photoctl-library-volume-"));
+  const original = join(libraryPath, "originals", "frame.jpg");
+  const external = {
+    locate: async () => {
+      throw new Error("platform volume discovery must not run");
+    },
+    resolve: async () => {
+      throw new Error("platform volume discovery must not run");
+    },
+  };
+  try {
+    await mkdir(join(libraryPath, "originals"));
+    await writeFile(original, "image");
+    const resolver = new LibraryVolumeResolver(external, libraryPath);
+
+    await expect(resolver.resolve(LIBRARY_VOLUME_UUID, "originals/frame.jpg")).resolves.toEqual({
+      mount: libraryPath,
+      path: original,
+      online: true,
+    });
+  } finally {
+    await rm(libraryPath, { recursive: true });
   }
 });
 

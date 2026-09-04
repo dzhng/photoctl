@@ -4,6 +4,7 @@ export * from "./request.js";
 export * from "./frames.js";
 export * from "./verbs/doctor.js";
 export * from "./verbs/cache.js";
+export * from "./verbs/cull.js";
 export * from "./verbs/backup.js";
 export * from "./verbs/restore.js";
 export * from "./verbs/migrate.js";

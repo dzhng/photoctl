@@ -12,7 +12,9 @@ export function renderHuman(envelope: Envelope): string {
   if ("results" in envelope && envelope.results !== undefined) {
     lines.push(renderResults(envelope.results));
   } else if ("data" in envelope && envelope.ok) {
-    lines.push(renderFields(envelope.data));
+    const list = asListData(envelope.data);
+    if (list) lines.push(renderList(list.rows), `Total: ${list.total}`);
+    else lines.push(renderFields(envelope.data));
   } else if ("data" in envelope) {
     const details = withoutMessage(envelope.data);
     if (Object.keys(details).length > 0) lines.push(renderFields(details));
@@ -24,6 +26,25 @@ export function renderHuman(envelope: Envelope): string {
 
   for (const warning of envelope.warnings ?? []) lines.push(renderWarning(warning));
   return `${lines.join("\n")}\n`;
+}
+
+function asListData(value: unknown): { rows: unknown[]; total: number } | undefined {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  return Array.isArray(record.rows) && typeof record.total === "number"
+    ? { rows: record.rows, total: record.total }
+    : undefined;
+}
+
+function renderList(rows: unknown[]): string {
+  const columns = ["id", "file", "rating", "flag", "label", "shot", "online"];
+  return renderTable(
+    columns.map((column) => column.toUpperCase()),
+    rows.map((value) => {
+      const row = asRecord(value);
+      return columns.map((column) => formatValue(row[column]));
+    }),
+  );
 }
 
 function renderFields(value: unknown): string {

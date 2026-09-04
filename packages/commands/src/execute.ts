@@ -20,6 +20,7 @@ import { libraryPath, parseLockBudget } from "./context.js";
 export interface CommandExecution {
   envelope: Envelope;
   events: StderrEvent[];
+  stream: unknown[];
 }
 
 export async function execute(
@@ -28,25 +29,45 @@ export async function execute(
 ): Promise<CommandExecution> {
   try {
     if (request.verb === "version") {
-      return { envelope: await dispatch(request, context), events: [] };
+      return { envelope: await dispatch(request, context), events: [], stream: [] };
     }
     const path = commandLibraryPath(request);
     if (request.verb === "daemon")
       return await executeDaemonControl(request, context.version, path);
     if (request.verb === "restore") {
       await stopDaemon(path);
-      return { envelope: await dispatch(request, context), events: [] };
+      return { envelope: await dispatch(request, context), events: [], stream: [] };
     }
     if (request.env.noDaemon) {
       await stopDaemon(path, { ignoreDirectHolder: true });
-      return { envelope: await dispatch(request, context), events: [] };
+      const events: StderrEvent[] = [];
+      const stream: unknown[] = [];
+      return {
+        envelope: await dispatch(request, {
+          ...context,
+          emit: async (event) => {
+            if (context.emit) await context.emit(event);
+            else events.push(event);
+          },
+          stream: async (row) => {
+            if (context.stream) await context.stream(row);
+            else stream.push(row);
+          },
+        }),
+        events,
+        stream,
+      };
     }
     if (request.verb === "init") {
       const envelope = await dispatch(request, context);
-      if (!envelope.ok) return { envelope, events: [] };
+      if (!envelope.ok) return { envelope, events: [], stream: [] };
       try {
         const connection = await ensureDaemon(path, context.version, daemonOptions(request));
-        return { envelope, events: [daemonEvent(connection.action, connection.endpoint)] };
+        return {
+          envelope,
+          events: [daemonEvent(connection.action, connection.endpoint)],
+          stream: [],
+        };
       } catch (error) {
         if (!(error instanceof PhotoctlError) || error.code !== "daemon_unavailable") throw error;
         return {
@@ -61,13 +82,19 @@ export async function execute(
             ],
           },
           events: [],
+          stream: [],
         };
       }
     }
     let connection = await ensureDaemon(path, context.version, daemonOptions(request));
     let result;
     try {
-      result = await requestDaemon(connection.endpoint.socket, request);
+      result = await requestDaemon(
+        connection.endpoint.socket,
+        request,
+        context.stream,
+        context.emit,
+      );
     } catch {
       const recovered = await ensureDaemon(path, context.version, {
         ...daemonOptions(request),
@@ -75,7 +102,12 @@ export async function execute(
       });
       connection = recovered;
       try {
-        result = await requestDaemon(recovered.endpoint.socket, request);
+        result = await requestDaemon(
+          recovered.endpoint.socket,
+          request,
+          context.stream,
+          context.emit,
+        );
       } catch (error) {
         throw new PhotoctlError("daemon_unavailable", "The photoctl daemon did not respond", {
           library: path,
@@ -86,6 +118,7 @@ export async function execute(
     return {
       envelope: result.envelope,
       events: [daemonEvent(connection.action, connection.endpoint), ...result.events],
+      stream: result.stream,
     };
   } catch (error) {
     if (error instanceof PhotoctlError) {
@@ -97,6 +130,7 @@ export async function execute(
           data: error.data ?? { message: error.message },
         },
         events: [],
+        stream: [],
       };
     }
     throw error;
@@ -120,18 +154,20 @@ async function executeDaemonControl(
     return {
       envelope: success(status),
       events: [daemonEvent(connection.action, status)],
+      stream: [],
     };
   }
   if (action === "status") {
     const status = await inspectDaemon(path);
     if (!status)
       throw new PhotoctlError("daemon_unavailable", "The photoctl daemon is not running");
-    return { envelope: success(status), events: [daemonEvent("connected", status)] };
+    return { envelope: success(status), events: [daemonEvent("connected", status)], stream: [] };
   }
   const stopped = await stopDaemon(path);
   return {
     envelope: success(stopped ?? stoppedStatus(path, version)),
     events: stopped ? [daemonEvent("stopped", stopped)] : [],
+    stream: [],
   };
 }
 

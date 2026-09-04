@@ -2,6 +2,61 @@
 
 ## Sound
 
+### Slice 04 — Sampled identity keeps a narrow relocation inference and an mtime replacement boundary
+
+- **When:** Slice 04 identity integration and collision audit.
+- **The choice:** A second path with the same sampled key reuses an unpromoted photo only when its old path is absent on the
+  same confirmed-mounted volume, which is the explicit rename case. An offline or unknown old volume refuses the import because
+  the old bytes cannot be compared. At the exact same locator, unchanged stored mtime remains idempotent; changed mtime refuses
+  an unpromoted match rather than blessing a replacement whose middle bytes may differ. When an old source is readable, both
+  files receive full hashes and the bucket is promoted before identity is decided.
+- **The gap:** Collision safety says not to infer equality from the sample, while the required `mv` contract says a missing old
+  path on the same online volume retains its ID. Exact-locator replacement had a similar ambiguity that the stored mtime can
+  distinguish without hashing every initial import.
+- **The reach:** Rescans preserve IDs for the named same-volume rename and ordinary unchanged file, but refuse every unavailable
+  case outside that boundary; promoted buckets use cryptographic equality thereafter.
+- **Verdict:** **Sound.** The inference is no broader than the explicit relocation contract and uncertainty elsewhere fails safe.
+- **Confidence:** Medium; a same-volume delete followed by an adversarial sampled collision is indistinguishable without an
+  always-full-hash policy.
+
+### Slice 04 — Copy mode has one catalog-local volume identity
+
+- **When:** Slice 04 copy/import integration.
+- **The choice:** Library-owned originals use the stable volume UUID `photoctl-library`, scoped by the library database, and paths
+  remain relative to that library root. Resolution handles this UUID directly, so list/show/export do not need
+  `PHOTOCTL_VOLUME_MAP`; on macOS the resolved path is still mapped to its physical mount before Trash selection. Reusing a copy
+  destination compares the full hash whenever the identity bucket is promoted.
+- **The gap:** External volumes have hardware UUIDs, but a library-owned original needs a durable locator that survives moving
+  the whole library and cannot depend on a test-only mapping.
+- **The reach:** Copy import, offline source removal, display, export, and volume-aware Trash share one stable locator rule.
+- **Verdict:** **Sound.** The identity is stable where it must be and deliberately local where a global UUID would be misleading.
+- **Confidence:** High.
+
+### Slice 04 — Streams retain only bounded pages and honor consumer backpressure
+
+- **When:** Slice 04 drive-scale and daemon transport review.
+- **The choice:** Import retains at most four prepared candidates and commits them in scan order. List reads 64-photo pages,
+  emits one row frame at a time, and awaits socket then stdout consumption. Progress events use the same live path. The terminal
+  stream envelope contains `{rows:[],total}` so neither daemon client nor CLI accumulates a second copy. Frame encoding and
+  decoding both enforce 16 MiB, and import uses a ten-minute activity-reset idle timeout rather than the ordinary 31-second cap.
+- **The gap:** Capping worker count alone still retained every preview buffer; similarly, framing rows without awaiting writes
+  merely moved an unbounded queue into Node streams. A fixed ordinary timeout also abandoned the authoritative 56-second import.
+- **The reach:** Drive-size affects total work, not retained preview/row/event memory, while a silent hung daemon still fails.
+- **Verdict:** **Sound.** Ordering, bounded memory, live telemetry, and failure detection now agree across direct and daemon paths.
+- **Confidence:** High.
+
+### Slice 04 — Disk removal stages reversible receipts before catalog commit
+
+- **When:** Slice 04 removal implementation and failure audit.
+- **The choice:** Source and cache paths move first and return rollback receipts; only then does the catalog transaction delete
+  the photo. A pre-commit failure restores receipts in reverse order. Any rollback failure becomes a typed unavailable error with
+  every unrestored path instead of being swallowed; after database commit, cleanup failure cannot roll the catalog backward.
+- **The gap:** A filesystem move and PGlite transaction cannot be one atomic operation, and silent rollback errors falsely claim
+  the source still exists.
+- **The reach:** `remove --from-disk`, cache cleanup, partial batches, and removable-volume failures expose the truthful durable state.
+- **Verdict:** **Sound.** The only irreversible boundary is the catalog commit, with recovery evidence on every earlier move.
+- **Confidence:** High.
+
 ### Slice 03b — Restore recovery trusts durable topology, not the last journal phase
 
 - **When:** Slice 03b restore implementation and crash-window review.
@@ -1079,6 +1134,19 @@
 - **Confidence:** High.
 
 ## Needs user
+
+### Slice 04 — Import and list use fixed bounded-work windows
+
+- **When:** Slice 04 performance implementation.
+- **The choice:** Import prepares four files concurrently, list pages 64 photos at a time, and an active import may remain silent
+  for ten minutes before the daemon client declares it hung. These values bound memory and avoid the old 31-second total timeout;
+  none changes ordering or persisted results.
+- **The gap:** The slice delegates scan concurrency and requires bounded streaming but does not select concrete window sizes or
+  an idle ceiling for very slow removable media.
+- **The reach:** Peak memory, filesystem parallelism, first-row latency, and hung-daemon detection inherit these defaults.
+- **Verdict:** **Needs-user.** The values are isolated reversible performance policy; tune them after a real large-drive import if
+  four workers overload the disk or ten silent minutes is too short.
+- **Confidence:** Low until measured on the founder drive.
 
 ### Slice 02 integration — CLI tags trim boundaries but preserve case and Unicode
 

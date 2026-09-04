@@ -1,5 +1,5 @@
 import { probeImage, type EmbeddedJpeg, type ImageProbe } from "@photoctl/importer";
-import { identifyFile, type VolumeResolver } from "@photoctl/library";
+import { fullFileHash, identifyFile, type VolumeResolver } from "@photoctl/library";
 import type { ImageSource } from "@photoctl/render";
 import type { StoredPhoto } from "./photo.js";
 
@@ -32,7 +32,10 @@ export async function resolveOnlineOriginalSource(
   try {
     const resolved = await resolver.resolve(file.volumeUuid, file.relPath);
     const path = resolved.online ? resolved.path : undefined;
-    if (path && (await matchesCataloguedIdentity(path, photo.contentKey, photo.size))) {
+    if (
+      path &&
+      (await matchesCataloguedIdentity(path, photo.contentKey, photo.contentHash, photo.size))
+    ) {
       const probe = await probeImage(path);
       if (probe) {
         return {
@@ -89,7 +92,10 @@ async function selectFileSource(
   } catch {
     return undefined;
   }
-  if (!path || !(await matchesCataloguedIdentity(path, photo.contentKey, photo.size))) {
+  if (
+    !path ||
+    !(await matchesCataloguedIdentity(path, photo.contentKey, photo.contentHash, photo.size))
+  ) {
     return undefined;
   }
   const probe = await probeImage(path);
@@ -132,11 +138,13 @@ async function selectFileSource(
 async function matchesCataloguedIdentity(
   path: string,
   contentKey: string,
+  contentHash: string | null,
   size: number,
 ): Promise<boolean> {
   try {
     const current = await identifyFile(path);
-    return current.contentKey === contentKey && current.size === size;
+    if (current.contentKey !== contentKey || current.size !== size) return false;
+    return contentHash === null || (await fullFileHash(path)) === contentHash;
   } catch {
     return false;
   }

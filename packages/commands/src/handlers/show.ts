@@ -3,6 +3,7 @@ import {
   CacheIndex,
   createVolumeResolver,
   resolvePhotoId,
+  xmpStateIsStale,
   type LibraryHandle,
 } from "@photoctl/library";
 import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@photoctl/protocol";
@@ -40,7 +41,7 @@ export async function showCommand(
     const id = await resolvePhotoId(handle, parsed.positionals[0]);
     const photo = await loadPhoto(handle, id);
     const libraryId = await readLibraryId(handle);
-    const resolver = createVolumeResolver(env.volumeMap);
+    const resolver = createVolumeResolver(env.volumeMap, handle.path);
     const cacheRoot = cacheRootForLibrary(libraryId, cacheBase(env, cwd));
     const index = new CacheIndex(handle, cacheRoot);
     const coordinator = providedCoordinator ?? new PreviewCoordinator();
@@ -56,6 +57,7 @@ export async function showCommand(
       : [];
     const renderHash = renderStateHash({
       contentKey: photo.contentKey,
+      contentHash: photo.contentHash,
       orientation: photo.orientation,
     });
     const view = parseViewSpec(parsed.options, parsed.flags.has("--norm"), photo.w, photo.h);
@@ -75,6 +77,21 @@ export async function showCommand(
       "SELECT tag FROM tags WHERE photo_id = $1 ORDER BY tag",
       [id],
     );
+    const xmpRows = await handle.query<{
+      sidecar_path: string;
+      read_at: string;
+      sidecar_mtime: string;
+    }>(
+      `SELECT sidecar_path, read_at::text, sidecar_mtime::text
+       FROM xmp_state WHERE photo_id = $1`,
+      [id],
+    );
+    const xmpRow = xmpRows.rows[0];
+    const xmpStale = xmpRow
+      ? await xmpStateIsStale(xmpRow.sidecar_path, xmpRow.sidecar_mtime)
+      : false;
+    if (xmpStale)
+      warnings.push({ code: "xmp_stale", id, message: "The source XMP changed after it was read" });
     if (
       (materialized.usedFallback ||
         (materialized.source.kind === "pinned-preview" && photo.files.length > 0)) &&
@@ -113,9 +130,9 @@ export async function showCommand(
         photo.shotAt && photo.shotOffsetMin !== null
           ? formatShotInstant(new Date(photo.shotAt), photo.shotOffsetMin)
           : null,
-      rating: 0,
-      flag: "none",
-      label: null,
+      rating: photo.rating,
+      flag: photo.flag,
+      label: photo.label,
       tags: tags.rows.map((row) => row.tag),
       preview: materialized.preview.path,
       preview_info: {
@@ -142,7 +159,14 @@ export async function showCommand(
       develop_hash: null,
       render_hash: renderHash,
       layers: { count: 0, stale: 0 },
-      xmp: null,
+      xmp: xmpRow
+        ? {
+            sidecar_path: xmpRow.sidecar_path,
+            read_at: xmpRow.read_at,
+            sidecar_mtime: xmpRow.sidecar_mtime,
+            stale: xmpStale,
+          }
+        : null,
     };
     return { schema: 1, ok: true, data, warnings };
   } finally {

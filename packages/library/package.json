@@ -11,6 +11,7 @@
     "@electric-sql/pglite-pgvector": "0.0.9",
     "@electric-sql/pglite-tools": "0.4.8",
     "@photoctl/protocol": "workspace:*",
+    "fast-xml-parser": "5.2.5",
     "fs-ext": "2.1.1",
     "uuid": "14.0.2"
   },

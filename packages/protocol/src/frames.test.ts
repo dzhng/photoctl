@@ -15,3 +15,12 @@ test("length-prefixed frames survive arbitrary socket chunk boundaries", () => {
     { type: "response", envelope: { schema: 1, ok: true } },
   ]);
 });
+
+test("both sides refuse a daemon frame above the protocol ceiling", () => {
+  expect(() => encodeFrame({ row: "x".repeat(16 * 1024 * 1024) })).toThrow(
+    "Daemon frame exceeds 16 MiB",
+  );
+  const header = Buffer.alloc(4);
+  header.writeUInt32BE(16 * 1024 * 1024 + 1);
+  expect(() => new FrameDecoder().push(header)).toThrow("Daemon frame exceeds 16 MiB");
+});

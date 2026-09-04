@@ -51,7 +51,7 @@ export async function exportCommand(
   const { handle } = lease;
   try {
     const libraryId = await readLibraryId(handle);
-    const resolver = createVolumeResolver(env.volumeMap);
+    const resolver = createVolumeResolver(env.volumeMap, handle.path);
     const results: Array<ExportResult | ExportFailure> = [];
     const warnings: Warning[] = [];
     await runSerially(parsed.positionals, async (input) => {
@@ -150,6 +150,7 @@ async function exportOne(
         ...data,
         render_hash: renderStateHash({
           contentKey: photo.contentKey,
+          contentHash: photo.contentHash,
           orientation: photo.orientation,
         }),
       },

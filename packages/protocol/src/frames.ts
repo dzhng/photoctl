@@ -2,6 +2,8 @@ import type { Envelope } from "./envelope.js";
 import type { StderrEvent } from "./events.js";
 import type { CommandRequest } from "./request.js";
 
+const MAX_FRAME_BYTES = 16 * 1024 * 1024;
+
 export type DaemonControlAction = "status" | "stop";
 
 export type DaemonClientFrame =
@@ -10,10 +12,12 @@ export type DaemonClientFrame =
 
 export type DaemonServerFrame =
   | { type: "event"; event: StderrEvent }
+  | { type: "stream"; row: unknown }
   | { type: "response"; envelope: Envelope };
 
 export function encodeFrame(value: unknown): Buffer {
   const body = Buffer.from(JSON.stringify(value));
+  if (body.length > MAX_FRAME_BYTES) throw new Error("Daemon frame exceeds 16 MiB");
   const frame = Buffer.allocUnsafe(4 + body.length);
   frame.writeUInt32BE(body.length, 0);
   body.copy(frame, 4);
@@ -28,7 +32,7 @@ export class FrameDecoder {
     const frames: unknown[] = [];
     while (this.bytes.length >= 4) {
       const length = this.bytes.readUInt32BE(0);
-      if (length > 16 * 1024 * 1024) throw new Error("Daemon frame exceeds 16 MiB");
+      if (length > MAX_FRAME_BYTES) throw new Error("Daemon frame exceeds 16 MiB");
       if (this.bytes.length < 4 + length) break;
       frames.push(JSON.parse(this.bytes.subarray(4, 4 + length).toString("utf8")));
       this.bytes = this.bytes.subarray(4 + length);

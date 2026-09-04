@@ -16,8 +16,12 @@ test("the previous schema upgrades without losing library settings", async () =>
     const libraryId = await db.query<{ value: string }>(
       "SELECT value FROM settings WHERE key = 'library_id'",
     );
-    expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }]);
-    expect(result).toEqual({ fromVersion: 1, toVersion: LATEST_SCHEMA_VERSION, applied: [2, 3] });
+    expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }]);
+    expect(result).toEqual({
+      fromVersion: 1,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [2, 3, 4],
+    });
     expect(libraryId.rows).toEqual([{ value: "0199a7c2-0000-7000-8000-000000000001" }]);
     await expect(
       db.query(
@@ -92,11 +96,47 @@ test("the current schema fixture preserves tags and daemon settings", async () =
     const queueMax = await db.query<{ value: number }>(
       "SELECT value::text::integer AS value FROM settings WHERE key = 'daemon_queue_max'",
     );
-    expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }]);
+    expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }]);
     expect(tags.rows).toEqual([
       { photo_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001", tag: "ceremony" },
     ]);
     expect(queueMax.rows).toEqual([{ value: 8 }]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the current schema fixture preserves promoted identity and cull state", async () => {
+  const db = await PGlite.create();
+  try {
+    await db.exec(await fixture("schema-v4.pgsql"));
+
+    const result = await migrate(db);
+
+    expect(result).toEqual({ fromVersion: 4, toVersion: LATEST_SCHEMA_VERSION, applied: [] });
+    const photo = await db.query<{
+      content_hash: string;
+      rating: number;
+      flag: string;
+      label: string;
+      tag: string;
+      sidecar_path: string;
+    }>(
+      `SELECT p.content_hash, p.rating, p.flag, p.label, t.tag, x.sidecar_path
+       FROM photos p
+       JOIN tags t ON t.photo_id = p.id
+       JOIN xmp_state x ON x.photo_id = p.id`,
+    );
+    expect(photo.rows).toEqual([
+      {
+        content_hash: "sha256_3dac5c943a33dcc4",
+        rating: 5,
+        flag: "pick",
+        label: "green",
+        tag: "ceremony",
+        sidecar_path: "/Volumes/A7C2/a7c2.xmp",
+      },
+    ]);
   } finally {
     await db.close();
   }

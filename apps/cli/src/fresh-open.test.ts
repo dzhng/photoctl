@@ -29,7 +29,7 @@ test("eight fresh init processes create one migrated library without a leaked lo
     "SELECT version FROM schema_version ORDER BY version",
   );
   await handle.close();
-  expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }]);
+  expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }]);
   expect(await readdir(parent)).toEqual(["library"]);
   expect(await readdir(library)).not.toContain(".photoctl-open.lock");
 }, 30_000);

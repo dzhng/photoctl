@@ -6,6 +6,7 @@ import { parseExifOrientation, type ExifOrientation } from "@photoctl/render";
 interface PhotoRow {
   id: string;
   content_key: string;
+  content_hash: string | null;
   size: string;
   w: number;
   h: number;
@@ -14,6 +15,9 @@ interface PhotoRow {
   exposure: ShowData["exposure"];
   shot_at: string | null;
   shot_offset_min: number | null;
+  rating: number;
+  flag: StoredPhoto["flag"];
+  label: StoredPhoto["label"];
 }
 
 interface FileRow {
@@ -26,6 +30,7 @@ interface FileRow {
 export interface StoredPhoto {
   id: string;
   contentKey: string;
+  contentHash: string | null;
   size: number;
   w: number;
   h: number;
@@ -34,6 +39,9 @@ export interface StoredPhoto {
   exposure: ShowData["exposure"];
   shotAt: string | null;
   shotOffsetMin: number | null;
+  rating: number;
+  flag: "pick" | "reject" | "none";
+  label: "red" | "yellow" | "green" | "blue" | "purple" | null;
   files: Array<{
     volumeUuid: string;
     relPath: string;
@@ -44,8 +52,8 @@ export interface StoredPhoto {
 
 export async function loadPhoto(handle: LibraryHandle, id: string): Promise<StoredPhoto> {
   const photos = await handle.query<PhotoRow>(
-    `SELECT id::text, content_key, size::text, w, h, orientation, camera, exposure,
-            shot_at::text, shot_offset_min
+    `SELECT id::text, content_key, content_hash, size::text, w, h, orientation, camera, exposure,
+            shot_at::text, shot_offset_min, rating, flag, label
      FROM photos WHERE id = $1`,
     [id],
   );
@@ -60,6 +68,7 @@ export async function loadPhoto(handle: LibraryHandle, id: string): Promise<Stor
   return {
     id: row.id,
     contentKey: row.content_key,
+    contentHash: row.content_hash,
     size: Number(row.size),
     w: row.w,
     h: row.h,
@@ -78,6 +87,9 @@ export async function loadPhoto(handle: LibraryHandle, id: string): Promise<Stor
     },
     shotAt: row.shot_at,
     shotOffsetMin: row.shot_offset_min,
+    rating: row.rating,
+    flag: row.flag,
+    label: row.label,
     files: files.rows.map((file) => ({
       volumeUuid: file.volume_uuid,
       relPath: file.rel_path,

@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, expect, test } from "vitest";
+import { renderHuman } from "./output.js";
 
 interface CliResult {
   code: number;
@@ -56,6 +57,32 @@ test("human failures retain the stable code and explain the error", async () => 
     stdout: "Error [usage]: Unknown command: unknown-command\n",
     stderr: json.stderr,
   });
+});
+
+test("human list output renders one culling row per photo", () => {
+  const output = renderHuman({
+    schema: 1,
+    ok: true,
+    data: {
+      rows: [
+        {
+          id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001",
+          file: "DSC00001.ARW",
+          rating: 5,
+          flag: "pick",
+          label: "green",
+          shot: "2025-01-01T10:00:00+00:00",
+          online: true,
+        },
+      ],
+      total: 1,
+    },
+    warnings: [],
+  });
+
+  expect(output).toContain("ID | FILE | RATING | FLAG | LABEL | SHOT | ONLINE");
+  expect(output).toContain("DSC00001.ARW | 5 | pick | green");
+  expect(output).toContain("Total: 1");
 });
 
 test("human values cannot inject rows or terminal controls", async () => {

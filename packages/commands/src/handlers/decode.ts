@@ -44,7 +44,7 @@ export async function decodeCommand(
   try {
     const id = await resolvePhotoId(handle, parsed.positionals[0]);
     const photo = await loadPhoto(handle, id);
-    const resolver = createVolumeResolver(env.volumeMap);
+    const resolver = createVolumeResolver(env.volumeMap, handle.path);
     const original = await resolveOnlineOriginalSource(photo, resolver);
     const libraryId = await readLibraryId(handle);
     const pinned: ImageSource = {

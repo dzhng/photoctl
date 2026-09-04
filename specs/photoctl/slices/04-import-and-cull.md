@@ -6,9 +6,10 @@ reading originals works with the drive unplugged (D1/D17/D18). The slice-01 inva
 every id counted as imported or already present has a valid pinned offline preview, regardless of source format.
 
 ## API seam
-- `packages/importer/src/{scan.ts,pipeline.ts}`: recursive candidate scan → content probe registry → identity → EXIF → preview
+- `packages/importer/src/{scan.ts,pipeline.ts}`: top-level candidate scan (`--recursive` descends) → content probe registry → identity → EXIF → preview
   producer → rows. Scanning must not discard a candidate solely because its extension is absent, unknown, or incorrect;
-  progress events; `--copy` into `<lib>/originals/<date>/` (collision → `<stem>_<id8>`); result = session A2.
+  progress events; preparation is bounded while commits remain in scan order and release each preview before admitting another;
+  `--copy` into `<lib>/originals/<date>/` (collision → `<stem>_<id8>`); result = session A2.
 - `packages/library/src/identity.ts` + migration (next number): the fast `content_key` remains
   `size + hash(head 1 MiB + tail 1 MiB)`, but is no longer sufficient proof of equality when two candidates share it. On the
   second candidate for a sampled key, compute and persist a full-file hash for both candidates before deciding duplicate versus
@@ -28,6 +29,8 @@ every id counted as imported or already present has a valid pinned offline previ
   --pick|--reject|--none`, `label <color|none>` (multi-id → `summary`/`results`, `partial` 65); `remove <id...> [--from-disk --yes]`
   (multi-id without `--yes` → `usage` 2; `packages/library/src/trash.ts` `Trash` interface: `MacTrash` = move to
   `<volume>/.Trashes/<uid>/` on external volumes, `~/.Trash` on the boot volume; `DirTrash` = `<dir>/.trash/` under the env resolver).
+  Stream mode emits bounded row frames as the stdout consumer accepts them; its terminal daemon envelope is the typed count
+  summary `{rows:[],total}` rather than a second buffered copy of every row. Progress events follow the same live path.
 - `fixtures:drive -- --count N --out DIR` (tail-padded copies + Classic-style sidecars); `fixtures:volume` (Mac hdiutil).
 - `wb sheet <lib> [--filter]` (1616 tiers, badges, online dot; click → `show`).
 
@@ -47,3 +50,13 @@ and different middles, proves stable distinct ids, then reimports both without d
 ## Delegated: scan concurrency.
 ## Checkpoint: `wb sheet` — badge legibility only.
 ## Must stay green: 01–03. Deps: 03. Firewall: no XMP write; no develop; no `.lrcat` parsing.
+
+## Implementation result
+
+Implemented as schema v4. The focused behavioral suite covers deterministic bounded import, sampled-key promotion,
+same-volume relocation/offline refusal, XMP precedence, paged daemon and direct streaming, cull cursors and partial batches,
+trash rollback, copy verification, fixtures, and the CLI-driven sheet. The badge-legibility checkpoint used four real
+fixture imports at 1440px: ratings, pick/reject, all exercised label colors, and online state remain distinguishable at card
+density. A fresh unprimed reviewer inspected the actual 1429px CSS frame and passed the
+checkpoint: amber ratings, Pick/Reject, Green/Yellow/Red labels, and the Online indicator were all readable and
+distinguishable. No durable reference capture existed, so comparative screenshot telemetry was not applicable.
