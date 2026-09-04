@@ -17,6 +17,10 @@ const jsonSchema: z.ZodType<JsonValue> = z.lazy(() =>
     z.record(z.string(), jsonSchema),
   ]),
 );
+const concreteModelSchema = z
+  .string()
+  .min(1)
+  .refine((model) => model !== "auto" && model !== "latest" && !model.endsWith("/latest"));
 
 export interface ImageNodeDefinition {
   parameters: z.ZodType<Record<string, JsonValue>>;
@@ -40,7 +44,10 @@ export const imageNodeRegistry = {
   generate: definition(
     z
       .object({
-        model: z.string().min(1),
+        adapter: z.string().min(1),
+        adapter_version: z.string().min(1).nullable(),
+        model: concreteModelSchema,
+        model_version: z.string().min(1).nullable(),
         prompt: z.string(),
         prompt_version: z.number().int().positive(),
         request: z.record(z.string(), jsonSchema),
@@ -53,7 +60,10 @@ export const imageNodeRegistry = {
   upscale: definition(
     z
       .object({
-        model: z.string().min(1),
+        adapter: z.string().min(1),
+        adapter_version: z.string().min(1).nullable(),
+        model: concreteModelSchema,
+        model_version: z.string().min(1).nullable(),
         scale: z.number().positive(),
         controls: z.record(z.string(), jsonSchema),
       })

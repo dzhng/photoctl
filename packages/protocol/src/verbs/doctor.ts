@@ -20,6 +20,23 @@ export const doctorDataSchema = z.object({
       requires_window_server: z.boolean().nullable(),
     }),
   ),
+  providers: z.object({
+    gateway: z.object({
+      configured: z.boolean(),
+      base_url: z.url(),
+      models: z.object({
+        edit: z.string(),
+        generate: z.string(),
+        structured: z.string(),
+        embed: z.string(),
+      }),
+    }),
+    upscale: z.object({
+      release_default: z.string(),
+      selected: z.string(),
+      configured: z.boolean(),
+    }),
+  }),
   lock_holder: z.null(),
 });
 

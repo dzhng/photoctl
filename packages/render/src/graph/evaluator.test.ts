@@ -108,7 +108,7 @@ test("deterministic evaluations reuse while nondeterministic attempts retain dis
     const operations = {
       generate: async () => {
         operationRuns += 1;
-        return sourceEvaluation().image;
+        return providerResult();
       },
     };
     const firstAttempt = await evaluateGraphNode({
@@ -162,6 +162,54 @@ test("deterministic evaluations reuse while nondeterministic attempts retain dis
         )
       ).rows.map((row) => row.execution_id),
     ).toEqual([firstAttempt.executionId, secondAttempt.executionId].toSorted());
+  } finally {
+    await db.close();
+  }
+});
+
+test("external nodes cannot commit a successful execution without provider provenance", async () => {
+  const { db, library, nodeId: sourceId } = await sourceGraph();
+  try {
+    const generatedId = await insertGeneratedNode(db, sourceId);
+    await expect(
+      evaluateGraphNode({
+        database: db,
+        libraryPath: library,
+        photoId,
+        nodeId: generatedId,
+        source: async () => sourceEvaluation(),
+        operations: { generate: async () => sourceEvaluation().image },
+      }),
+    ).rejects.toThrow("Generate evaluation requires provider execution provenance");
+    expect(
+      (
+        await db.query("SELECT 1 FROM node_executions WHERE photo_id = $1 AND node_id = $2", [
+          photoId,
+          generatedId,
+        ])
+      ).rows,
+    ).toEqual([]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("provider provenance cannot disagree with the immutable node recipe", async () => {
+  const { db, library, nodeId: sourceId } = await sourceGraph();
+  try {
+    const generatedId = await insertGeneratedNode(db, sourceId);
+    const result = providerResult();
+    result.externalExecution.model = "other-model";
+    await expect(
+      evaluateGraphNode({
+        database: db,
+        libraryPath: library,
+        photoId,
+        nodeId: generatedId,
+        source: async () => sourceEvaluation(),
+        operations: { generate: async () => result },
+      }),
+    ).rejects.toThrow("generate provider execution does not match its immutable recipe");
   } finally {
     await db.close();
   }
@@ -253,7 +301,7 @@ test("a requested execution id belongs only to the top nondeterministic node", a
       nodeId: requestedId,
       executionId,
       source: async () => sourceEvaluation(),
-      operations: { generate: async () => sourceEvaluation().image },
+      operations: { generate: async () => providerResult() },
     });
 
     expect(evaluated.executionId).toBe(executionId);
@@ -342,6 +390,28 @@ function sourceEvaluation() {
   };
 }
 
+function providerResult() {
+  return {
+    image: sourceEvaluation().image,
+    externalExecution: {
+      adapter: "fake-gateway-v1",
+      adapterVersion: "1",
+      service: "fake-gateway",
+      model: "fake-v1",
+      modelVersion: null,
+      providerRequestId: "req_fixture",
+      seed: null,
+      durationMs: 0,
+      costUsd: 0,
+      inputPx: 1,
+      targetPx: 1,
+      attempt: 1,
+      densityVerdict: "not-applicable" as const,
+      warnings: [],
+    },
+  };
+}
+
 async function sourceGraph(): Promise<{ db: PGlite; library: string; nodeId: string }> {
   const db = await PGlite.create();
   await migrate(db);
@@ -370,7 +440,15 @@ async function sourceGraph(): Promise<{ db: PGlite; library: string; nodeId: str
 }
 
 async function insertGeneratedNode(db: PGlite, sourceId: string, prompt = ""): Promise<string> {
-  const parameters = { model: "fake-v1", prompt, prompt_version: 1, request: {} };
+  const parameters = {
+    adapter: "fake-gateway-v1",
+    adapter_version: "1",
+    model: "fake-v1",
+    model_version: null,
+    prompt,
+    prompt_version: 1,
+    request: {},
+  };
   const recipe = recipeHash(
     canonicalNodeRecipe({
       kind: "generate",

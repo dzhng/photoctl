@@ -1287,7 +1287,83 @@
 - **Verdict:** **Sound.** It keeps the intentionally simple backup while preventing recovery from causing media loss.
 - **Confidence:** High.
 
+### Slice 09a — Gateway rate limiting has a short bounded retry window
+
+- **When:** Slice 09a provider transport implementation.
+- **The choice:** Gateway calls make three total attempts for HTTP 429 only. A valid `Retry-After` value wins but is capped at two
+  seconds; without one, retries wait 100 then 200 milliseconds. Each attempt has a 30-second abort ceiling. Tests may inject a
+  one-to-five-attempt ceiling and a fake clock. Other HTTP failures remain immediate because the contract does not prove they are
+  safe to repeat: 400/401/403/404 map to unconfigured input or credentials, while other statuses and transport failures map to
+  temporary provider failure. URL-returned images have the same 30-second ceiling and a 64 MiB streaming cap. The fake gateway
+  separately rejects request bodies above 32 MiB so malformed fixtures cannot consume unbounded memory.
+- **The gap:** The slice delegated the retry policy and required only that rate-limit retries be bounded.
+- **The reach:** All four gateway routes share the same latency ceiling and attempt provenance; a real deployment with sustained
+  rate limits may fail sooner than a vendor SDK would.
+- **Verdict:** **Sound.** It gives brief provider throttling a chance to recover without hiding prolonged unavailability or
+  retrying unspecified failures.
+- **Confidence:** Low to medium; live 09b timings and provider error bodies may justify different isolated ceilings or status
+  classification.
+
+### Slice 09a — Provider settings use purpose-scoped rows and explicit per-upscaler consent
+
+- **When:** Slice 09a doctor and selection implementation.
+- **The choice:** The existing settings table stores three JSON objects: `models` for purpose-to-model overrides, `generation` for
+  the `auto|off` upscale preference, and `providers.upscale[model].configured` for explicit consent. Unknown fields are ignored so
+  later slices can extend those objects. A command model override still implies a request to upscale, but it cannot bypass the
+  configured bit.
+- **The gap:** The plan fixed precedence and consent semantics but not the durable JSON shape that represents them.
+- **The reach:** Doctor, future generation verbs, migrations, and configuration tooling inherit one explicit distinction between
+  choosing a model and authorizing an external service.
+- **Verdict:** **Sound.** Purpose-specific model choice stays independent from provider authorization, and ambient credentials
+  cannot become consent.
+- **Confidence:** Medium until a settings-writing command exercises the shape in a later slice.
+
+### Slice 09a — External execution details extend the existing DAG execution record
+
+- **When:** Slice 09a provenance integration.
+- **The choice:** Schema v7 adds one nullable, object-constrained JSON column to `node_executions`. The JSON contains only a bounded
+  whitelist of external facts; graph inspection composes it with canonical node parameters, ordered input node/artifact hashes,
+  and output artifact facts already owned by relational tables. Unknown transport/debug/auth fields are stripped at ingestion,
+  while missing or recipe-mismatched provenance prevents a generate/upscale success from committing.
+- **The gap:** The slice required complete bounded provenance but did not choose between a new parallel record model, many nullable
+  columns, or an extension of the existing execution owner.
+- **The reach:** External operations remain part of ordinary graph lineage, secrets do not enter the catalog, and future provenance
+  additions must fit the bounded whitelist rather than create another execution identity.
+- **Verdict:** **Sound.** One owner preserves the logical/execution split while the relational graph remains authoritative for
+  facts it already stores.
+- **Confidence:** High.
+
+### Slice 09a — Provider geometry normalizes once at the adapter boundary
+
+- **When:** Slice 09a image and structured adapter implementation.
+- **The choice:** Structured `box_2d` values are interpreted as Gemini-style `[top,left,bottom,right]` coordinates on a 0–1000
+  scale, rounded into integer `[x,y,w,h]` pixels against the first supplied image. Image responses decode to display-sRGB RGB16,
+  reuse the shared Rust pixel-center resampler when dimensions differ, and encode the normalized result as an 8-bit PNG. Sharp
+  only decodes and encodes; it does not own the resize.
+- **The gap:** The contract assigned frame conversion and adapter-internal color conversion but did not spell out coordinate order,
+  rounding, or the normalized PNG sample depth.
+- **The reach:** Callers see canonical pixel geometry regardless of provider dialect, while future non-Gemini structured adapters
+  may need their own coordinate converter and later delivery work may revisit the intermediate PNG depth.
+- **Verdict:** **Sound.** Provider-specific conventions terminate at the provider boundary and the repository keeps one resize
+  kernel.
+- **Confidence:** Medium; the geometry is pinned by fixtures, while live-provider color/sample evidence remains for 09b.
+
 ## Needs user
+
+### Slice 09a — The fake upscaler is the provisional release default
+
+- **When:** Slice 09a fixed-model table implementation.
+- **The choice:** Until the 09b comparison selects a live service, `photoctl/fake-upscale-v1` occupies the release-default slot.
+  It is deterministic and still requires explicit configuration, so ordinary `auto` operation reports unconfigured instead of
+  synthesizing pixels or selecting from ambient credentials. 09b must replace this placeholder with the evidence-selected adapter
+  and model before a generative release.
+- **The gap:** The slice requires a fixed release default and a complete fake contract, while explicitly leaving the first live
+  adapter/model open to the later spike.
+- **The reach:** Selection and doctor have a concrete non-magical identifier today, but any downstream code that mistakes the fake
+  for a shippable model would expose fixture behavior.
+- **Verdict:** **Needs-user.** The placeholder is safe and reversible for contract work, but only the 09b visual/cost evidence can
+  authorize a real release default.
+- **Confidence:** Low by design.
 
 ### Slice 08a2 — Graph inspection uses provisional response bounds
 

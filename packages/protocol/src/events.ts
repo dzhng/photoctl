@@ -17,12 +17,14 @@ export type DaemonEvent = {
 };
 export type ProviderEvent = {
   event: "provider";
-  gateway: string;
+  execution_id: string;
+  node_kind: "generate" | "upscale";
+  adapter: string;
+  service: string;
   model: string;
-  op: string;
-  mask: boolean;
-  sent_px: number;
-  format: string;
+  input_px: number;
+  target_px: number;
+  attempt: number;
 };
 export type WarnEvent = { event: "warn"; code: WarningCode; id?: string; message: string };
 export type StderrEvent = ProgressEvent | DaemonEvent | ProviderEvent | WarnEvent;

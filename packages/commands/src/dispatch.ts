@@ -22,6 +22,7 @@ import {
   inspectNativeImageRuntime,
 } from "@photoctl/render";
 import type { PreviewCoordinator } from "@photoctl/render";
+import { providerDiagnostics, readProviderSettings } from "@photoctl/providers";
 import { resolve } from "node:path";
 import { parseArguments } from "./arguments.js";
 import { cacheBase, libraryPath, parseLockBudget } from "./context.js";
@@ -161,6 +162,7 @@ export async function dispatch(
         const ciraw = await inspectCirawHelper(resolveMacHelperPath(request.env.macHelperPath));
         const libraw = inspectLibrawDecoder();
         const nativeImage = inspectNativeImageRuntime();
+        const providers = providerDiagnostics(await readProviderSettings(handle), request.env);
         return {
           schema: 1,
           ok: true,
@@ -190,6 +192,7 @@ export async function dispatch(
                 requires_window_server: false,
               },
             ],
+            providers,
             lock_holder: null,
           } satisfies DoctorData,
           warnings: [],

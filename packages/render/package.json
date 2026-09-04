@@ -4,6 +4,6 @@
   "type": "module",
   "exports": "./dist/index.js",
   "scripts": { "build": "tsc -p tsconfig.json" },
-  "dependencies": { "@photoctl/img": "workspace:*", "sharp": "0.35.4", "zod": "^4.0.0" },
+  "dependencies": { "@photoctl/img": "workspace:*", "@photoctl/protocol": "workspace:*", "sharp": "0.35.4", "zod": "^4.0.0" },
   "devDependencies": { "exifr": "7.1.3" }
 }

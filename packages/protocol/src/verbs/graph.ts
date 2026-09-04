@@ -1,11 +1,42 @@
 import { z } from "zod";
 import { fullHashSchema } from "../hash.js";
+import { warningCodes } from "../envelope.js";
 
 const nodeId = fullHashSchema("node");
 const recipeHash = fullHashSchema("recipe");
 const executionId = fullHashSchema("exec");
 const evaluationHash = fullHashSchema("eval");
 const artifactHash = fullHashSchema("a");
+
+const providerProvenanceSchema = z.object({
+  parameters: z.unknown().nullable(),
+  parameters_truncated: z.boolean(),
+  input_node_ids: z.array(nodeId).max(64),
+  input_artifact_hashes: z.array(artifactHash).max(64),
+  recipe_version: z.number().int().positive(),
+  execution_id: executionId,
+  adapter: z.string().max(256),
+  adapter_version: z.string().max(256).nullable(),
+  service: z.string().max(256),
+  model: z.string().max(256),
+  model_version: z.string().max(256).nullable(),
+  provider_request_id: z.string().max(256).nullable(),
+  seed: z.number().int().nullable(),
+  duration_ms: z.number().nonnegative(),
+  cost_usd: z.number().nonnegative(),
+  input_px: z.number().int().nonnegative(),
+  target_px: z.number().int().nonnegative(),
+  attempt: z.number().int().positive().max(5),
+  density_verdict: z.enum(["satisfied", "limited", "not-applicable"]),
+  warnings: z
+    .array(z.object({ code: z.enum(warningCodes), message: z.string().max(1_024) }))
+    .max(16),
+  output: z.object({
+    dimensions: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+    artifact_hash: artifactHash,
+    available: z.boolean(),
+  }),
+});
 
 const graphNodeSummarySchema = z.object({
   id: nodeId,
@@ -58,6 +89,7 @@ export const graphNodeDataSchema = graphNodeSummarySchema.extend({
         output_artifact_hash: artifactHash,
         artifact_available: z.boolean(),
         source_provenance: z.unknown().nullable(),
+        provider_provenance: providerProvenanceSchema.nullable(),
       }),
     )
     .max(64),

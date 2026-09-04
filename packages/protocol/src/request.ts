@@ -10,5 +10,7 @@ export interface CommandRequest {
     pollCeilingMs?: string;
     volumeMap?: string;
     macHelperPath?: string;
+    gatewayUrl?: string;
+    gatewayApiKey?: string;
   };
 }

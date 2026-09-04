@@ -1,5 +1,17 @@
 # 09 — 9a provider + upscaler contracts · 9b non-blocking spikes · 9c embed worker + hybrid search
 
+## Implementation status
+
+**9a is complete. 9b and 9c remain open.** The implemented boundary includes the four-route Vercel gateway,
+fixed model resolution, structured/image adapters, an independent explicitly configured upscaler registry and deterministic fake,
+doctor diagnostics, placeholder cost reporting, the shared Rust display-sRGB resampler, and bounded external-execution events and
+provenance on the existing DAG execution owner. Successful generate/upscale evaluations cannot commit without provenance matching
+their immutable adapter/model recipe.
+
+Evidence: provider, upscaler, fake-gateway, doctor, graph-event/inspection, recipe, evaluator, store, and migration suites pass
+together; the Rust resampler unit passes independently. The 9b live model/control comparison and TOAST/embed-shape probes were not
+run, no contact sheet was produced, and no embedding/search consumer from 9c is implemented.
+
 ## API seam
 - **9a** `packages/providers/src/{gateway.ts,adapters/*.ts,table.ts,prompts/*.ts,cost.ts}`: all calls are OpenAI-compatible
   routes under `PHOTOCTL_GATEWAY_URL/v1` (default Vercel): `chat/completions` (+`response_format:json_schema`, D29),

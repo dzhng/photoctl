@@ -13,6 +13,9 @@ import {
   newExecutionId,
 } from "./recipes.js";
 import type { ImageNodeKind, JsonValue, SourceExecutionProvenance } from "./types.js";
+import type { ExternalExecutionProvenance } from "./types.js";
+import { warningCodes, type ProviderEvent } from "@photoctl/protocol";
+import { z } from "zod";
 import type { Image16 } from "../source-render.js";
 import { renderSourceExecution } from "../source-render.js";
 import type { ExifOrientation } from "../coordinates.js";
@@ -58,13 +61,14 @@ export interface EvaluateGraphNodeRequest {
         nodeId: string;
         parameters: JsonValue;
         inputs: PixelOperationInput[];
-      }) => Promise<Image16>
+      }) => Promise<Image16 | { image: Image16; externalExecution: ExternalExecutionProvenance }>
     >
   >;
   hooks?: {
     beforePublish?: () => void | Promise<void>;
     beforeCommit?: () => void | Promise<void>;
   };
+  emit?: (event: ProviderEvent) => void | Promise<void>;
 }
 
 export async function evaluateGraphNode(request: EvaluateGraphNodeRequest): Promise<EvaluatedNode> {
@@ -160,16 +164,34 @@ async function evaluateOne(
     ? deterministicExecutionId(evaluation)
     : (requestedExecutionId ?? newExecutionId());
   let artifact: PublishedArtifact;
+  let externalExecution: ExternalExecutionProvenance | undefined;
   if (node.kind === "output") {
     if (inputs.length !== 1) throw new Error("Output evaluation requires one input artifact");
     artifact = inputs[0].artifact;
   } else {
-    const normalized =
+    const operation =
       node.kind === "source"
-        ? normalizedSource!
-        : await normalizeArtifact(
-            await runOperation(request, node.kind, nodeId, node.parameters, inputs),
-          );
+        ? undefined
+        : await runOperation(request, node.kind, nodeId, node.parameters, inputs);
+    externalExecution = operation?.externalExecution;
+    if (externalExecution) {
+      if (node.kind !== "generate" && node.kind !== "upscale") {
+        throw new Error(`Provider execution is not valid for ${node.kind}`);
+      }
+      await request.emit?.({
+        event: "provider",
+        execution_id: executionId,
+        node_kind: node.kind,
+        adapter: externalExecution.adapter,
+        service: externalExecution.service,
+        model: externalExecution.model,
+        input_px: externalExecution.inputPx,
+        target_px: externalExecution.targetPx,
+        attempt: externalExecution.attempt,
+      });
+    }
+    const normalized =
+      node.kind === "source" ? normalizedSource! : await normalizeArtifact(operation!.image);
     await request.hooks?.beforePublish?.();
     artifact = await publishArtifact(request.libraryPath, normalized);
   }
@@ -180,8 +202,8 @@ async function evaluateOne(
       `INSERT INTO node_executions (
          photo_id, execution_id, node_id, evaluation_hash, deterministic,
          output_artifact_hash, source_locator, source_tier, source_w, source_h,
-         decoder_id, decoder_version
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12)
+         decoder_id, decoder_version, provider_execution
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13::jsonb)
        ON CONFLICT (photo_id, execution_id) DO NOTHING`,
       [
         request.photoId,
@@ -196,6 +218,7 @@ async function evaluateOne(
         source?.provenance.h ?? null,
         source?.provenance.decoderId ?? null,
         source?.provenance.decoderVersion ?? null,
+        externalExecution ? JSON.stringify(storeExternalExecution(externalExecution)) : null,
       ],
     );
     for (const [index, input] of inputs.entries()) {
@@ -231,10 +254,84 @@ async function runOperation(
   nodeId: string,
   parameters: JsonValue,
   inputs: EvaluatedNode[],
-): Promise<Image16> {
+): Promise<{ image: Image16; externalExecution?: ExternalExecutionProvenance }> {
   const operation = request.operations?.[kind];
   if (!operation) throw new Error(`No pixel evaluator is registered for ${kind}`);
-  return await operation({ nodeId, parameters, inputs });
+  const result = await operation({ nodeId, parameters, inputs });
+  if ("image" in result) {
+    const externalExecution = externalExecutionSchema.parse(result.externalExecution);
+    if (kind === "generate" || kind === "upscale") {
+      assertExternalExecutionMatchesRecipe(kind, parameters, externalExecution);
+    }
+    return {
+      image: result.image,
+      externalExecution,
+    };
+  }
+  if (kind === "generate" || kind === "upscale") {
+    throw new Error(
+      `${kind[0].toUpperCase()}${kind.slice(1)} evaluation requires provider execution provenance`,
+    );
+  }
+  return { image: result };
+}
+
+function assertExternalExecutionMatchesRecipe(
+  kind: "generate" | "upscale",
+  parameters: JsonValue,
+  execution: ExternalExecutionProvenance,
+): void {
+  if (!parameters || typeof parameters !== "object" || Array.isArray(parameters)) {
+    throw new Error(`${kind} recipe parameters are invalid`);
+  }
+  if (
+    execution.adapter !== parameters.adapter ||
+    execution.adapterVersion !== parameters.adapter_version ||
+    execution.model !== parameters.model ||
+    execution.modelVersion !== parameters.model_version
+  ) {
+    throw new Error(`${kind} provider execution does not match its immutable recipe`);
+  }
+}
+
+const externalExecutionSchema = z
+  .object({
+    adapter: z.string().min(1).max(256),
+    adapterVersion: z.string().min(1).max(256).nullable(),
+    service: z.string().min(1).max(256),
+    model: z.string().min(1).max(256),
+    modelVersion: z.string().min(1).max(256).nullable(),
+    providerRequestId: z.string().min(1).max(256).nullable(),
+    seed: z.number().int().safe().nullable(),
+    durationMs: z.number().finite().nonnegative(),
+    costUsd: z.number().finite().nonnegative(),
+    inputPx: z.number().int().nonnegative(),
+    targetPx: z.number().int().nonnegative(),
+    attempt: z.number().int().positive().max(5),
+    densityVerdict: z.enum(["satisfied", "limited", "not-applicable"]),
+    warnings: z
+      .array(z.object({ code: z.enum(warningCodes), message: z.string().max(1_024) }).strict())
+      .max(16),
+  })
+  .strip();
+
+function storeExternalExecution(execution: ExternalExecutionProvenance): JsonValue {
+  return {
+    adapter: execution.adapter,
+    adapter_version: execution.adapterVersion,
+    attempt: execution.attempt,
+    cost_usd: execution.costUsd,
+    density_verdict: execution.densityVerdict,
+    duration_ms: execution.durationMs,
+    input_px: execution.inputPx,
+    model: execution.model,
+    model_version: execution.modelVersion,
+    provider_request_id: execution.providerRequestId,
+    seed: execution.seed,
+    service: execution.service,
+    target_px: execution.targetPx,
+    warnings: execution.warnings,
+  };
 }
 
 async function registerArtifact(

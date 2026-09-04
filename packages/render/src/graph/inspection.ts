@@ -43,6 +43,7 @@ export interface GraphNodeRecord extends GraphNodeSummary {
     outputArtifactHash: string;
     artifactAvailable: boolean;
     sourceProvenance: unknown | null;
+    providerProvenance: unknown | null;
   }>;
   executionCount: number;
   recordTruncated: boolean;
@@ -229,11 +230,24 @@ export async function inspectGraphNode(
       source_h: number | null;
       decoder_id: string | null;
       decoder_version: string | null;
+      provider_execution: Record<string, unknown> | null;
+      input_artifact_hashes: string[];
+      output_w: number;
+      output_h: number;
     }>(
       `SELECT execution.execution_id, execution.evaluation_hash, execution.deterministic,
          execution.output_artifact_hash, artifact.artifact_available,
          execution.source_locator, execution.source_tier, execution.source_w,
-         execution.source_h, execution.decoder_id, execution.decoder_version
+         execution.source_h, execution.decoder_id, execution.decoder_version,
+         execution.provider_execution,
+         ARRAY(
+           SELECT input.input_artifact_hash
+           FROM node_execution_inputs AS input
+           WHERE input.photo_id = execution.photo_id
+             AND input.execution_id = execution.execution_id
+           ORDER BY input.input_index
+         ) AS input_artifact_hashes,
+         artifact.w AS output_w, artifact.h AS output_h
        FROM node_executions AS execution
        JOIN image_artifacts AS artifact
          ON artifact.artifact_hash = execution.output_artifact_hash
@@ -277,6 +291,22 @@ export async function inspectGraphNode(
             h: execution.source_h,
             decoder_id: execution.decoder_id,
             decoder_version: execution.decoder_version,
+          }
+        : null,
+      providerProvenance: execution.provider_execution
+        ? {
+            parameters: parametersTruncated ? null : node.parameters,
+            parameters_truncated: parametersTruncated,
+            input_node_ids: inputRows.map((input) => input.input_node_id),
+            input_artifact_hashes: execution.input_artifact_hashes,
+            recipe_version: node.recipe_version,
+            execution_id: execution.execution_id,
+            ...execution.provider_execution,
+            output: {
+              dimensions: { w: execution.output_w, h: execution.output_h },
+              artifact_hash: execution.output_artifact_hash,
+              available: execution.artifact_available,
+            },
           }
         : null,
     })),

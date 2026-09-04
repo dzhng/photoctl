@@ -54,3 +54,20 @@ export interface SourceExecutionProvenance {
   decoderId: string;
   decoderVersion: string;
 }
+
+export interface ExternalExecutionProvenance {
+  adapter: string;
+  adapterVersion: string | null;
+  service: string;
+  model: string;
+  modelVersion: string | null;
+  providerRequestId: string | null;
+  seed: number | null;
+  durationMs: number;
+  costUsd: number;
+  inputPx: number;
+  targetPx: number;
+  attempt: number;
+  densityVerdict: "satisfied" | "limited" | "not-applicable";
+  warnings: Array<{ code: import("@photoctl/protocol").WarningCode; message: string }>;
+}

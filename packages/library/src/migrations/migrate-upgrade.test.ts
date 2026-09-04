@@ -172,7 +172,7 @@ test("the current graph fixture preserves its active lazy source revision", asyn
          ON (node.photo_id, node.id) = (root.photo_id, root.node_id)`,
     );
 
-    expect(result).toEqual({ fromVersion: 5, toVersion: LATEST_SCHEMA_VERSION, applied: [6] });
+    expect(result).toEqual({ fromVersion: 5, toVersion: LATEST_SCHEMA_VERSION, applied: [6, 7] });
     expect(document.rows).toEqual([
       {
         active_revision_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003",
@@ -199,7 +199,7 @@ test("the current delivery fixture preserves export history", async () => {
       bytes: string;
     }>("SELECT path, render_hash, bytes::text FROM exports");
 
-    expect(result).toEqual({ fromVersion: 6, toVersion: LATEST_SCHEMA_VERSION, applied: [] });
+    expect(result).toEqual({ fromVersion: 6, toVersion: LATEST_SCHEMA_VERSION, applied: [7] });
     expect(history.rows).toEqual([
       {
         path: "/delivery/a7c2.jpg",
@@ -207,6 +207,25 @@ test("the current delivery fixture preserves export history", async () => {
         bytes: "6730200",
       },
     ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the current provider fixture has the bounded external-execution seam", async () => {
+  const db = await PGlite.create();
+  try {
+    await db.exec(await fixture("schema-v7.pgsql"));
+
+    const result = await migrate(db);
+    const column = await db.query<{ is_nullable: string; data_type: string }>(
+      `SELECT is_nullable, data_type FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'node_executions'
+         AND column_name = 'provider_execution'`,
+    );
+
+    expect(result).toEqual({ fromVersion: 7, toVersion: LATEST_SCHEMA_VERSION, applied: [] });
+    expect(column.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
   } finally {
     await db.close();
   }

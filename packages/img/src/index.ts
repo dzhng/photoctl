@@ -42,6 +42,13 @@ interface NativeBinding {
   ): Promise<DevelopedImage>;
   convertDisplaySrgbToLinearRec2020(data: Uint16Array): Promise<Float32Array>;
   convertLinearRec2020ToDisplaySrgb(data: Float32Array): Promise<Float32Array>;
+  resampleDisplaySrgb(
+    data: Uint16Array,
+    sourceWidth: number,
+    sourceHeight: number,
+    outputWidth: number,
+    outputHeight: number,
+  ): Uint16Array;
 }
 
 export class NativeImageUnavailableError extends Error {}
@@ -90,6 +97,22 @@ export async function displaySrgbToLinearRec2020(data: Uint16Array): Promise<Flo
 
 export async function linearRec2020ToDisplaySrgb(data: Float32Array): Promise<Float32Array> {
   return asFloat32Array(await requiredBinding().convertLinearRec2020ToDisplaySrgb(data));
+}
+
+export function resampleDisplaySrgb(
+  data: Uint16Array,
+  sourceWidth: number,
+  sourceHeight: number,
+  outputWidth: number,
+  outputHeight: number,
+): Uint16Array {
+  return requiredBinding().resampleDisplaySrgb(
+    data,
+    sourceWidth,
+    sourceHeight,
+    outputWidth,
+    outputHeight,
+  );
 }
 
 let loaded: NativeBinding | null | undefined;

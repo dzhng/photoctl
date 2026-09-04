@@ -110,6 +110,46 @@ test("non-source evaluation refuses source provenance", () => {
   ).toThrow("Source provenance is only valid for source evaluation");
 });
 
+test("an upscaler adapter version is part of immutable recipe identity", () => {
+  const input = `node_${"1".repeat(64)}`;
+  const recipe = (adapterVersion: string) =>
+    recipeHash(
+      canonicalNodeRecipe({
+        kind: "upscale",
+        recipeVersion: 1,
+        parameters: {
+          adapter: "purpose-built",
+          adapter_version: adapterVersion,
+          model: "vendor/model",
+          model_version: null,
+          scale: 2,
+          controls: {},
+        },
+        inputNodeIds: [input],
+      }),
+    );
+
+  expect(recipe("1")).not.toBe(recipe("2"));
+});
+
+test("external node recipes reject moving symbolic model ids", () => {
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "upscale",
+      recipeVersion: 1,
+      parameters: {
+        adapter: "purpose-built",
+        adapter_version: "1",
+        model: "vendor/latest",
+        model_version: null,
+        scale: 2,
+        controls: {},
+      },
+      inputNodeIds: [`node_${"1".repeat(64)}`],
+    }),
+  ).toThrow();
+});
+
 test("source fallback changes evaluation identity without changing logical render state", () => {
   const recipe = recipeHash(
     canonicalNodeRecipe({

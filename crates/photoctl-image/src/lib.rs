@@ -126,6 +126,30 @@ pub fn convert_linear_rec2020_to_display_srgb(data: Float32Array) -> AsyncTask<D
     })
 }
 
+#[napi]
+pub fn resample_display_srgb(
+    data: Uint16Array,
+    source_width: u32,
+    source_height: u32,
+    output_width: u32,
+    output_height: u32,
+) -> napi::Result<Uint16Array> {
+    if source_width == 0 || source_height == 0 || output_width == 0 || output_height == 0 {
+        return Err(Error::new(Status::InvalidArg, "image dimensions must be positive"));
+    }
+    if data.len() != source_width as usize * source_height as usize * 3 {
+        return Err(Error::new(Status::InvalidArg, "display image must contain RGB16 samples"));
+    }
+    Ok(resample_rgb16(
+        &data,
+        source_width,
+        source_height,
+        output_width,
+        output_height,
+    )
+    .into())
+}
+
 pub struct CameraFrontTask {
     data: Vec<f32>,
     white_level: f32,
@@ -298,6 +322,25 @@ fn resample_rgb(
     output
 }
 
+fn resample_rgb16(
+    input: &[u16],
+    source_width: u32,
+    source_height: u32,
+    output_width: u32,
+    output_height: u32,
+) -> Vec<u16> {
+    resample_rgb(
+        &input.iter().map(|sample| f32::from(*sample)).collect::<Vec<_>>(),
+        source_width,
+        source_height,
+        output_width,
+        output_height,
+    )
+    .into_iter()
+    .map(|sample| sample.round().clamp(0.0, 65_535.0) as u16)
+    .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -307,6 +350,13 @@ mod tests {
         let input = vec![0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0, 6.0, 6.0];
 
         assert_eq!(resample_rgb(&input, 2, 2, 1, 1), vec![3.0, 3.0, 3.0]);
+    }
+
+    #[test]
+    fn resamples_display_rgb16_through_the_shared_pixel_center_kernel() {
+        let input = vec![0, 0, 0, 65_535, 65_535, 65_535];
+
+        assert_eq!(resample_rgb16(&input, 2, 1, 1, 1), vec![32_768, 32_768, 32_768]);
     }
 
     #[test]

@@ -227,7 +227,15 @@ test("a paid nondeterministic ancestor cannot become active before artifact publ
             localKey: "generated",
             kind: "generate",
             recipeVersion: 1,
-            parameters: { model: "paid-v1", prompt: "restore", prompt_version: 1, request: {} },
+            parameters: {
+              adapter: "gateway-image-v1",
+              adapter_version: "1",
+              model: "paid-v1",
+              model_version: null,
+              prompt: "restore",
+              prompt_version: 1,
+              request: {},
+            },
             inputs: [{ localKey: "source" }],
           },
           {

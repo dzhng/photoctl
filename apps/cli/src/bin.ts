@@ -26,6 +26,8 @@ const execution = await execute(
       pollCeilingMs: process.env.PHOTOCTL_POLL_CEILING_MS,
       volumeMap: process.env.PHOTOCTL_VOLUME_MAP,
       macHelperPath: process.env.PHOTOCTL_MAC_HELPER_PATH,
+      gatewayUrl: process.env.PHOTOCTL_GATEWAY_URL,
+      gatewayApiKey: process.env.AI_GATEWAY_API_KEY,
     },
   },
   {

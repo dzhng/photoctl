@@ -13,14 +13,16 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–05, decoder slice 07, and render-DAG slices 08a1–08a2 are implemented.
+*Last updated: 2026-09-05. Status: slices 00–05, decoder slice 07, render-DAG slices 08a1–08a2, and provider-contract
+slice 09a are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
 the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
 recursive import commits through a bounded deterministic pipeline, collision buckets promote to full hashes,
 and culling/list/next/remove remain usable from pinned previews while source volumes are offline. Immutable photo-scoped logical
 nodes, atomic document revisions, full hash identities, canonical artifact publication, graph evaluation/inspection, and
-restore-time artifact reconciliation are now in place. Delivery exports snapshot that immutable identity, encode the canonical
+restore-time artifact reconciliation are now in place. Gateway and independent upscaler contracts now resolve fixed models,
+require explicit provider consent, and attach bounded external-execution provenance to the existing DAG execution record. Delivery exports snapshot that immutable identity, encode the canonical
 evaluated artifact without unasked clobbering, and record successful writes in schema v6. Develop parameters and pixels remain in
 08b+.*
 
@@ -52,7 +54,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [ ] 8b+ develop nodes/color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
-- [ ] 09 providers: gateway contracts + dedicated upscaler adapter (9a), non-blocking spikes (9b), embed worker + search (9c) — `slices/09-providers-embed-search.md`
+- [ ] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [ ] 9b non-blocking spikes · [ ] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [ ] 10 DAG-backed layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG, optional density-matching upscale, strict composite, person-move flow — `slices/12-fill.md`

@@ -5,6 +5,7 @@ import { migration0003 } from "./0003-tags-and-daemon.js";
 import { migration0004 } from "./0004-import-and-cull.js";
 import { migration0005 } from "./0005-image-graph.js";
 import { migration0006 } from "./0006-export-history.js";
+import { migration0007 } from "./0007-provider-execution.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -19,6 +20,7 @@ const migrations = [
   { version: 4, sql: migration0004 },
   { version: 5, sql: migration0005 },
   { version: 6, sql: migration0006 },
+  { version: 7, sql: migration0007 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
@@ -88,6 +90,7 @@ const latestConstraints = [
   "node_executions_source_h_check",
   "node_executions_source_provenance_check",
   "node_executions_source_w_check",
+  "node_executions_provider_execution_check",
   "photo_documents_photo_id_active_revision_id_fkey",
   "photo_documents_photo_id_fkey",
   "photo_documents_pkey",

@@ -12,6 +12,7 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `libraries/schema-v4.pgsql` | known-good | Promoted sampled identity, cull state, tags, and XMP read state survive the graph migration. |
 | `libraries/schema-v5.pgsql` | known-good | The immutable graph schema preserves a pinned active source revision without requiring an execution artifact. |
 | `libraries/schema-v6.pgsql` | known-good | Export history preserves delivered paths, immutable render identities, timestamps, and byte counts. |
+| `libraries/schema-v7.pgsql` | known-good | Provider executions extend immutable graph provenance without replacing the graph owner. |
 | `xmp/classic.xmp` | known-good | A Classic-style sidecar exercises rating, label, flat and hierarchical keywords, and photoctl's namespaced flag. |
 | `tools/drive.mjs` | generator | `fixtures:drive -- --count N --out DIR` creates deterministic tail-distinct ARW copies and matching Classic-style sidecars. |
 | `tools/volume.mjs` | host generator | `fixtures:volume -- --path FILE --mount DIR` creates and attaches a macOS APFS disk image for real offline-volume checks. |
