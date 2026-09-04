@@ -1,37 +1,25 @@
-# 10 — layers, full transforms, composite, vacancy, A′ delta/stale (no SAM, no gateway)
-
-## Contract unlocked
-Real layer rows with masks and editor transforms, composited in display-referred 16-bit above develop;
-`fill --move` and the magenta vacancy; export flattens; the strict-composite primitive exists and is
-bit-exact; Tier-1 keys delta-apply, Tier-2 mark stale.
+# 10 — layers, transforms, composite, vacancy, A′ delta/stale (no SAM, no gateway)
 
 ## API seam
-- Migration `0005-layers.ts`: `layers(id, photo_id, z, name, role subject|vacancy|reimagine|retouch, state
-  selected|moved|filled|stale, of_layer, mask_path, pixels_path, develop_hash, transform jsonb, opacity, blend,
-  created_at)` + schema-v5 fixture. Blobs under `<lib>/layers/<photo>/<layer>.{mask.png,pixels.tif}` (paid
-  state, not the deletable cache).
-- `packages/render/src/layers/{model.ts,ops.ts}`, `packages/render/src/transforms.ts`: `Transform{dx,dy,scale,
-  rotate,flip,anchor}` absolute by default, `--relative`; S→R→T about anchor (default mask centroid) computed
-  once as a matrix; coords via `coordinates.ts` (oriented uncropped base; crop last). Verbs `segment --box|--brush`
-  (geometry only), `layer list|show|transform|reorder|set|duplicate|remove|clear`, `fill --move --to|--by`
-  (D11: emits vacancy = full original silhouette, D15; magenta placeholder, D16).
-- `crates/photoctl-image::{mask,composite}`: dilate/erode/feather, `resample(layer, T, lanczos3|bilinear)` with
-  exact flips/quarter-turns, `overlay(base16, layer16, mask, blend, opacity)`, `lift(base16, mask)`. Render graph
-  gains the composite node. `develop` computes `delta_applied` (Tier-1 kernels applied to pinned pixels in
-  display space) vs `stale` (Tier-2). Export writes with `warnings[]` (`layers_stale`, `vacancy_unfilled`).
-- `wb layers <id>`: base, masks, transformed outlines, composite, and `|composite − base|` outside the mask
-  union (must be black).
-
-## Human can run
-`segment <id> --box 2210,940,1380,3120 && fill <id> --layer 1 --move --by 1200,0 && layer list --human && export`.
+- Migration (next number): `layers(id, photo_id, z, name, role subject|vacancy|reimagine|retouch, state selected|moved|filled|stale,
+  of_layer, mask_path, pixels_path, pixels_origin jsonb {x,y}, develop_hash, transform jsonb, opacity real 0..1, blend
+  normal|multiply|screen, fill_params jsonb, created_at)`. Blobs: `<lib>/layers/<photo>/<layer>.mask.png` (8-bit), `.pixels.tif`
+  (16-bit bbox crop + origin).
+- `packages/render/src/{layers,transforms}`: `Transform{dx,dy,scale,rotate,flip,anchor}`, absolute default, `--relative`, S→R→T
+  about anchor (mask centroid) as one matrix; `--norm` accepted. Verbs `segment --box x,y,w,h | --brush '[[x,y],…]'` (permanent
+  geometric masks), `layer list|show|transform|reorder --to N|--up|--down|--front|--back|set --name --opacity --blend|duplicate|
+  remove|clear`, `fill --move --to x,y|--by dx,dy` (vacancy layer = full silhouette at lift; magenta placeholder).
+- `crates/photoctl-image::{mask,composite,delta}`: dilate/erode/feather, `resample`, `overlay`, `lift`; **delta kernels** =
+  inverse display transform → the 8b operator → display transform on pinned pixels. Render graph composite node. `develop` →
+  `delta_applied` (Tier-1) / `stale` (Tier-2; `layers_stale` warning); export warns `vacancy_unfilled`.
+- `wb layers <id>`.
 
 ## Verification
-`strict-composite.test.ts` (case 7 half: every pixel outside the mask equals the pre-composite render byte-for-
-byte on the 16-bit export; falsify by feathering); `layer-transform.test.ts` (absolute idempotence; `flip h`
-twice = identity; `rotate 90`×4 = identity; 2×3 fixture exact pixels); `vacancy.test.ts` (layer 2 role vacancy,
-`mask_px` equals layer 1's at lift; export exit 0 + warning); `tier-delta.test.ts` (`exposure=0.5` →
-`delta_applied:[1,2]`; `shadows=40` → `stale:[1,2]`, driven by `tiers.ts`).
+`strict-composite.test.ts` (outside the mask byte-equal on the 16-bit export; falsify by feathering); `layer-transform.test.ts`
+(absolute idempotence; `flip h`×2 and `rotate 90`×4 identity; 2×3 fixture exact); `vacancy.test.ts`; `tier-delta.test.ts`
+(`exposure=0.5` → `delta_applied:[1,2]` and a pinned untouched layer equals the base re-render within ±1 LSB; `shadows=40` → stale;
+`temp_offset_k=200` Tier-1, `=400` Tier-2).
 
-## Delegated: mask/pixel blob formats; blend subset (normal/multiply/screen v1).
-## Checkpoint: `wb layers` — placeholder legibility, transform defaults; Tier placement of `white_balance`/`vibrance`.
+## Delegated: nothing beyond blob compression.
+## Checkpoint: `wb layers` — placeholder legibility only.
 ## Must stay green: 01–09. Deps: 08. Firewall: no SAM; no gateway pixels; no `--refresh`.

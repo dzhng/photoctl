@@ -1,23 +1,15 @@
 # 14 — real-drive gold exam + packed-install release gate
 
-## Contract unlocked
-The gold exam passes on David's Mac against the real external drive, with `photoctl` installed from a
-packed artifact, not the dev tree. Evidence report committed.
-
 ## API seam
-`scripts/gold-exam.sh <arw-dir>`: import --link → list → rate 10 → develop 3 `--preset people` → export →
-writes `specs/photoctl/assets/gold-exam/<date>/{report.html, *.jpg sha256}`. Packaging: `bun run pack` →
-tarballs for `apps/cli` + `packages/img-darwin-arm64` (+ `-darwin-x64` sub-slice); install into a clean
-prefix; `otool -L` audit of the `.node`; `photoctl doctor` from the packed install. Real sidecars from Classic
-(when they arrive) copied into `fixtures/xmp/` with provenance lines in `fixtures/README.md`. One frame per ARW
-compression mode added to `fixtures/` (OPEN Lossless-L) and `decoder-libraw.test.ts` parametrized over them.
-
-## Human can run
-`bun run pack && bash scripts/install-clean.sh && photoctl doctor && bash scripts/gold-exam.sh /Volumes/<drive>/<folder>`.
+`bun run pack` → tarballs for `apps/cli`, `packages/img-darwin-arm64`, `packages/mac-helper-darwin-arm64` (ships
+`photoctl-mac`; `-darwin-x64` as a sub-slice); `scripts/install-clean.sh` (`npm install -g ./*.tgz --prefix <clean>`);
+`otool -L` audit; `photoctl doctor` from the packed install must report `ciraw` and `libraw`. `scripts/gold-exam.sh
+/Volumes/<drive>/<folder>` → `assets/gold-exam/<date>/report.html` + sha256s. Real Classic sidecars → `fixtures/xmp/`; one frame
+per ARW compression mode → `fixtures/` with manifest rows; `decoder-libraw.test.ts` is parametrized over manifest rows (absence is
+not a skip).
 
 ## Verification
-The gold exam itself (human accepts JPEGs as deliverable); `packed-install.test.ts` (mac): the packed CLI
-runs the fixture gold exam; linkage audit passes.
+The gold exam (human accepts JPEGs as deliverable); `packed-install.test.ts` (macos): packed CLI runs the fixture gold exam; linkage audit.
 
-## Checkpoint (real input): three real JPEGs — professional "not broken" acceptance; `people` retune is data-only.
-## Must stay green: everything. Deps: 08 (min), 13 (full). Firewall: taste edits touch preset/prompt data only; architecture changes reslice.
+## Checkpoint (real input): three real JPEGs — professional "not broken"; `people` retune is data-only.
+## Must stay green: everything. Deps: 08 (min), 13 (full). Firewall: taste edits touch preset/prompt data only.

@@ -1,43 +1,42 @@
-# 00 — repo skeleton, Docker seam, `protocol`, `photoctl --version`
+# 00 — repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool
 
 ## Contract unlocked
-`bun run verify` is a real gate from commit 1. `photoctl --version` prints a valid envelope. One
-functional test spawns the **built** CLI inside `test:functional` and the run fails if zero tests
-executed. The fake gateway service exists (returns 501 for everything) so later slices only add
-handlers.
+`bun run verify` is a real gate from commit 1. `photoctl --version` prints a valid envelope. One functional
+test spawns the **built** CLI inside `test:functional`; the harness fails the run if zero tests executed
+(permanent self-test). The fake gateway service exists (501 for every route). The fixture manifest is
+produced by a tool independent of the code under test.
 
 ## API seam
-- `packages/protocol/src/envelope.ts`: `Envelope`, `ErrorCode` (closed union: `usage not_found partial
-  library_locked daemon_unavailable file_offline catalog_unreadable migrate_required unsupported_file
-  provider_unconfigured provider_dims_mismatch provider_unverified_mask layers_stale`), `exitCodeFor(code)`
-  → 0/2/65/69/75, `Warning{code,id?,message}`, stderr `Event` union (`progress|daemon|provider|warn`).
-- `packages/protocol/src/dispatch.ts`: `dispatch(req: CommandRequest, ctx) → Promise<Envelope>` — the ONE
-  command API. `apps/cli` serializes it; `apps/daemon` (02) transports it; `--no-daemon` calls it in-process.
-- `packages/protocol/src/verbs/version.ts`: first Zod data shape (`{version, node, pglite}`).
-- `packages/test-harness/src/{spawn.ts,library.ts,gateway-fixture.ts,fixtures.ts}`: `spawnPhotoctl(args,
-  {libraryDir, env}) → {code, json, events}` (always `node apps/cli/dist/bin.js`); `withLibrary()`;
-  `readFixtureManifest()` (parses `fixtures/README.md` table + `fixtures/a7c2.json`).
-- Layout, root scripts, `turbo.json` (`test` dependsOn `^build`), `bunfig.toml` (`linker = "hoisted"`),
-  `Cargo.toml` workspace with empty `crates/photoctl-image`, `.oxlintrc.json`/`.oxfmtrc.json` copied from
-  `~/dev/duet`, `packages/typescript-config` copied from `~/dev/duet/packages/typescript-config`.
-- `test/Dockerfile` (node:24-bookworm + bun for install + rustup + clang), `test/compose.yaml` with
-  services `functional` and `gateway-fixture` (`packages/test-harness/src/gateway-fixture.ts`, plain
-  `http.createServer`).
-- `fixtures/a7c2.json`: `{content_key, size, embedded:[{w,h,offset,length}×3], shot:"2023-10-02T18:18:37+02:00",
-  shot_offset_min:120, dims:{w:7008,h:4672}}` — measured values from the map; slice 01's tests read them.
+- `packages/protocol/src/envelope.ts`: `Envelope`, `Warning{code:WarningCode,id?,message}`, closed unions
+  `ErrorCode = usage|not_found|partial|unsupported_file|library_locked|daemon_unavailable|file_offline|volume_readonly|
+  catalog_unreadable|migrate_required|decoder_unavailable|provider_unconfigured|provider_unverified_mask|provider_whole_frame|provider_busy`
+  and `WarningCode = source_offline|layers_stale|vacancy_unfilled|provider_unconfigured|provider_warning|xmp_stale|label_unknown`;
+  `exitCodeFor`: usage→2; not_found/partial/unsupported_file/provider_whole_frame→65; file_offline/volume_readonly/
+  catalog_unreadable/migrate_required/decoder_unavailable/provider_unconfigured/provider_unverified_mask/daemon_unavailable→69;
+  library_locked/provider_busy→75. Later slices say "extends ErrorCode/WarningCode with …".
+- `packages/protocol/src/events.ts`: `{"event":"progress",phase,done,total,per_sec?,eta_s?}`, `{"event":"daemon",action,pid,socket,version,schema}`,
+  `{"event":"provider",gateway,model,op,mask,sent_px,format}`, `{"event":"warn",code,id?,message}`.
+- `packages/protocol/src/request.ts`: `CommandRequest{verb, args, cwd, env:{noDaemon}}`; `verbs/version.ts` first Zod data shape.
+- `packages/commands/src/dispatch.ts`: `dispatch(req, ctx) → Promise<Envelope>` — the ONE command API. `apps/cli`
+  serializes it; `apps/daemon` (02) runs it; `--no-daemon` calls it in-process. Library helpers throw `PhotoctlError{code}`;
+  dispatch maps once.
+- `packages/test-harness/src/{spawn.ts,library.ts,gateway-fixture.ts,manifest.ts,hold-lock.ts}`: `spawnPhotoctl(args,{libraryDir,env})
+  → {code,json,events}` (always `node apps/cli/dist/bin.js`; honours `PHOTOCTL_NO_DAEMON`); `withLibrary()`; fake gateway
+  `http.createServer` on `PHOTOCTL_GATEWAY_URL`; `readManifest()`; `hold-lock.js <lib> <ms>` (opens the library and sleeps).
+- `fixtures/tools/manifest.py` (stdlib only): TIFF IFD walk for embedded JPEG `{w,h,offset,length}`, `size`, `sha256` content key
+  per the 01b formula, `DateTimeOriginal`/`OffsetTimeOriginal` raw strings → writes `fixtures/a7c2.json`; `fixtures/README.md`
+  records the command. Tests read the manifest; they never call importer code to derive expectations.
+- Layout per README; `turbo.json` (`test` dependsOn `^build`); `bunfig.toml` (`linker = "hoisted"`); Cargo workspace with
+  empty `crates/photoctl-image`; `.oxlintrc.json`/`.oxfmtrc.json` + `packages/typescript-config` copied from `~/dev/duet`.
+- `test/Dockerfile` (node:24-bookworm, bun for install, rustup, clang), `test/compose.yaml` (`functional`, `gateway-fixture`).
 
 ## Human can run
-`bun run build && node apps/cli/dist/bin.js --version` → `{"schema":1,"ok":true,"data":{"version":"0.1.0",...}}`;
-`bun run test:functional` → 1 test passed inside Docker; `bun run verify` green.
+`bun run build && node apps/cli/dist/bin.js --version`; `bun run test:functional`; `bun run verify`.
 
 ## Verification
-- `test/cli-version.test.ts` (functional): spawn → envelope shape, exit 0; unknown verb → exit 2 `usage`.
-- Harness self-test: `test:functional` with zero discovered tests exits non-zero (assert via a
-  deliberately empty include pattern in a throwaway run, then remove).
-- `cargo test --workspace` passes on an empty crate; `swift build` no-op off Mac.
+`cli-version.test.ts` (envelope shape, exit 0; unknown verb → 2 `usage`); `harness-self.test.ts` (vitest with an empty include
+→ non-zero); `manifest.test.ts` (`fixtures/a7c2.json` matches `fixtures/README.md` rows). Build gates (not tests): `cargo test`
+on the empty crate, `swift build` no-op off Mac.
 
-## Delegated to the implementer
-Argument-parser library; vitest config details; Dockerfile layer order; oxlint rule tweaks.
-
-## Must stay green
-Itself. **Deps:** none. **Firewall:** no domain code, no PGlite yet.
+## Delegated: argument-parser library; vitest config; Dockerfile layer order.
+## Must stay green: itself. Deps: none. Firewall: no domain code, no PGlite.

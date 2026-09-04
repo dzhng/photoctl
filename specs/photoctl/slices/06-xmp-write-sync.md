@@ -1,21 +1,16 @@
 # 06 — explicit sidecar writes, divergence detection
 
 ## Contract unlocked
-Ratings/flags/labels/tags round-trip to Classic-compatible sidecars only when asked (D19); external
-edits are detectable and pullable (D20). RAW bytes are never touched.
+Ratings/flags/labels/tags round-trip to Classic-compatible sidecars only when asked (D19); foreign nodes (`crs:*`) survive;
+external edits are detectable and pullable (D20). RAW bytes never touched.
 
 ## API seam
-`packages/library/src/xmp/{write.ts,sync.ts,diff.ts}`; `photoctl xmp write <id...>` (writes `<stem>.xmp`
-beside the original; refuses if the volume is read-only → `file_offline`-style code `volume_readonly` 69);
-`photoctl xmp sync --read <id...>`; `list --xmp-stale`; `doctor` counts stale sidecars. Flags go under a
-`photoctl:` namespace; ratings/labels/keywords in standard fields.
-
-## Human can run
-`xmp write`, edit the sidecar, `list --xmp-stale`, `xmp sync --read`; `wb xmp` diff table.
+`packages/library/src/xmp/{write.ts,sync.ts}`: `xmp write <id...>` parse-merges into an existing sidecar (all foreign nodes
+preserved) or creates `<stem>.xmp`; read-only volume → `volume_readonly` 69. `xmp sync --read <id...>`: sidecar replaces
+rating/label/keywords; flags untouched unless `photoctl:flag` present. `list --xmp-stale`, `doctor` stale count (`xmp_stale` warning).
 
 ## Verification
-`xmp-roundtrip.test.ts` (rate 4 + tag + label → write → wipe DB rows → import fresh → same values; ARW
-sha256 unchanged); `xmp-stale.test.ts` (touch sidecar → stale; sync → updated, `read_at` advanced).
+`xmp-roundtrip.test.ts` (rate/tag/label → write → wipe → import fresh → same values; `crs:*` nodes survive byte-for-byte;
+ARW sha256 unchanged); `xmp-stale.test.ts`.
 
-## Delegated: hierarchical keyword mapping detail.
 ## Must stay green: 01–05. Deps: 04. Firewall: no embedded-XMP; no develop in XMP.

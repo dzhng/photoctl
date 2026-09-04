@@ -1,42 +1,38 @@
 # 04 — import at scale, locators/offline, cull verbs, XMP read
 
 ## Contract unlocked
-Import a drive's worth of files idempotently; cull with three axes (stars/flag/label) plus tags,
-`next`, `remove`; everything except reading originals works with the drive unplugged (D1/D17/D18).
+Import a drive's worth of files idempotently; cull on three axes plus tags with `next`; `remove`; everything except
+reading originals works with the drive unplugged (D1/D17/D18).
 
 ## API seam
-- `packages/importer/src/{scan.ts,pipeline.ts}`: recursive scan → identity → EXIF → embedded index →
-  rows; progress events `{"event":"progress",phase:"scan|import",done,total,per_sec,eta_s}`; `--copy`
-  into `<lib>/originals/<date>/`; result = session-sample A2 (`imported, already_present, volume, xmp_read,
-  previews, embeddings:{queued:0,note}`).
-- `packages/library/src/locators.ts`: relocation on rescan when `content_key` matches a new path (same id,
-  new `files` row); `online` = volume mounted && stat ok, refreshed on every open.
-- `packages/library/src/xmp/read.ts`: `xmp:Rating`, `xmp:Label`, `dc:subject`, `lr:hierarchicalSubject`
-  (flattened: last path segment; document it); flags are library-only (Classic writes no pick flag);
-  store `xmp_state(photo_id, sidecar_path, read_at, sidecar_mtime)` (D20). PGlite wins on re-import.
-- Migration `0002-cull-and-xmp.ts` (+ `fixtures/libraries/schema-v2.pgsql`).
-- `packages/protocol/src/verbs/{list,next,rate,flag,label,tag,remove}.ts`: multi-id → top-level
-  `summary`/`results` with `code:"partial"` (65); range grammar `--rating ">=4"`; `--flag pick|reject|none`;
-  `--label red|yellow|green|blue|purple|none`; `--stream` NDJSON rows; `next [--unrated|--unflagged] [--folder]`
-  advances a per-library cursor in `settings`; `remove <id...> [--from-disk --yes]` (D34: refuses multi-id
-  without `--yes`; Trash on Mac via `packages/library/src/trash.ts`, `.trash/` dir under `EnvVolumeResolver`).
-- `fixtures:drive -- --count N --out DIR`: N copies of `a7c2.ARW` with distinct 64-byte tail padding
-  (changes content key, keeps TIFF readable) into `YYYY-MM-DD_<shoot>/DSC0NNNN.ARW` + Classic-style
-  sidecars. `fixtures:volume` (Mac): `hdiutil` image with a real volume UUID.
-- `wb sheet <lib> [--filter]`: contact sheet of 1616 tiers with stars/flag/label badges and an online dot;
-  click → `show` JSON. This is the standing asset workbench.
+- `packages/importer/src/{scan.ts,pipeline.ts}`: recursive scan (format table) → identity → EXIF → embedded index → rows;
+  progress events; `--copy` into `<lib>/originals/<date>/` (collision → `<stem>_<id8>`); result = session A2.
+- `packages/library/src/locators.ts`: relocation — a rescan that finds `content_key` at a new path adds a `files` row; the old row
+  is removed when its volume is online and the path is gone, kept when the volume is offline. `online` refreshed on every open.
+- `packages/library/src/xmp/read.ts` (`fast-xml-parser`): `xmp:Rating`, `xmp:Label` (case-insensitive map of the five English
+  names; unknown → null + `label_unknown` warning), `dc:subject` ∪ `lr:hierarchicalSubject` last segment (exact-string dedupe),
+  `photoctl:flag` under `xmlns:photoctl="http://photoctl.dev/xmp/1.0/"`; `xmp_state(photo_id, sidecar_path, read_at, sidecar_mtime)`.
+  PGlite wins on re-import (D20).
+- Migration (next number): `rating int default 0`, `flag text default 'none'`, `label text`, `xmp_state`, cursor rows in `settings`.
+- Verbs (`packages/protocol/src/verbs/*`, handlers in `packages/commands`): `list [--rating "4"|">=4"|"3..5"] [--flag] [--label]
+  [--tag] [--folder] [--xmp-stale] [--stream] [--limit]` → `data:{rows:[A3 row],total}` ordered `shot_at,id`; `next [--unrated|
+  --unflagged] [--folder] [--reset]` → cursor keyed by the filter hash, ordered `shot_at,id`, `remaining`; `rate`, `flag
+  --pick|--reject|--none`, `label <color|none>` (multi-id → `summary`/`results`, `partial` 65); `remove <id...> [--from-disk --yes]`
+  (multi-id without `--yes` → `usage` 2; `packages/library/src/trash.ts` `Trash` interface: `MacTrash` = move to
+  `<volume>/.Trashes/<uid>/` on external volumes, `~/.Trash` on the boot volume; `DirTrash` = `<dir>/.trash/` under the env resolver).
+- `fixtures:drive -- --count N --out DIR` (tail-padded copies + Classic-style sidecars); `fixtures:volume` (Mac hdiutil).
+- `wb sheet <lib> [--filter]` (1616 tiers, badges, online dot; click → `show`).
 
 ## Human can run
-Session-sample A2/A3/A4 verbatim against `/tmp/drive`; `hdiutil detach` → `list` shows `online:false`.
+Session A2/A3/A4 against `/tmp/drive`; `hdiutil detach` → `list` shows `online:false`.
 
 ## Verification
-`reimport-idempotent.test.ts` (case 4: second import → `already_present == N`; `mv` inside the volume →
-same id, new locator); `offline.test.ts` (case 5 via `PHOTOCTL_VOLUME_MAP=…:offline`: `list` online:false,
-`rate` works, `show.preview` from cache); `cull.test.ts` (partial results: exit 65, `results[2].code ==
-"not_found"`; `remove` multi-id without `--yes` → exit 2); `xmp-read.test.ts` (sidecar rating 4 + keywords
-land; a PGlite edit survives re-import); `next.test.ts` (cursor advances; `remaining` counts down);
-`migrate-upgrade.test.ts` extended with v2.
+`reimport-idempotent.test.ts` (second import → `already_present == N` **and** ids unchanged; `mv` inside the volume → same id,
+new locator, old removed); `offline.test.ts` (`…:offline` → `online:false`, `rate` works, `show.preview` from cache);
+`cull.test.ts` (partial → 65 with `results[2].code=="not_found"`; `remove` multi-id without `--yes` → 2); `next.test.ts`
+(order, cursor per filter, `--reset`); `xmp-read.test.ts` (rating/label/keywords land incl. hierarchical union; PGlite edit
+survives re-import; unknown label → warning); `migrate-upgrade` extended.
 
-## Delegated: scan concurrency; `--human` widths; XML parser (owner fixed).
-## Checkpoint: `wb sheet` + `list --human` — columns, badges, `next` semantics.
+## Delegated: scan concurrency; `--human` widths.
+## Checkpoint: `wb sheet` — badge legibility only.
 ## Must stay green: 01–03. Deps: 03. Firewall: no XMP write; no develop; no `.lrcat` parsing.

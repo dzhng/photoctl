@@ -1,29 +1,24 @@
-# 05 — delivery export: resize, template, collision, IPTC, presets; warn-never-refuse
+# 05 — delivery export; `scripts/gold-exam.sh` (keyless dry run)
 
 ## Contract unlocked
-A photographer can deliver: `export` always writes (D28), names by template, never clobbers unasked,
-embeds `sRGB2014.icc` + IPTC. Keyless gold-exam **dry run** (develop as a no-op) passes.
+`export` always writes (D28), names by template, never clobbers unasked, embeds `sRGB2014.icc` + creator/copyright.
+`scripts/gold-exam.sh` exists and passes without `develop` (added in 08).
 
 ## API seam
-- `packages/render/src/export/{template.ts,collision.ts,iptc.ts,run.ts}`: grammar `{date} {seq:03} {stem}
-  {id8} {rating}` — `{date}` = shot-local date (timezone owner), `{seq}` scoped to the batch;
-  `--on-collision skip|overwrite|rename` (`_2`, `_3`…); `--resize N` long edge; `--quality`; `--iptc k=v…`;
-  `--format jpeg|tiff|png`; `--preset <name>` from `<lib>/export-presets/<name>.json`. **sharp** is the
-  permanent encoder/resizer/ICC/IPTC writer. `exports(photo_id, path, at, develop_hash, bytes)` history —
-  migration `0003-exports.ts` (+ schema-v3 fixture).
-- Offline rule (README): fallback source exists → write + `warnings[{code:"source_offline"}]`; nothing → `file_offline` 69.
-- `wb export <dir>`: what was written, dims/bytes/ICC/IPTC read back.
-
-## Human can run
-Session-sample A6 verbatim against `/tmp/drive` then unplug and re-run.
+- `packages/render/src/export/{template.ts,collision.ts,metadata.ts,run.ts}`: template grammar `{date} {seq:03} {stem} {id8}
+  {rating}`; default template `{stem}`; `{date}` = shot-local date; `{seq}` = argument order within the batch; `--on-collision
+  skip|overwrite|rename` default **rename** (`_2`, `_3`…); `--resize N` long edge, never upscales; `--quality` default 88;
+  `--format jpeg|tiff|png` (TIFF 16-bit); `--iptc creator=… copyright=…` written as XMP `dc:creator`/`dc:rights` + EXIF
+  `Artist`/`Copyright` via sharp `withXmp`/`withExif`; `--preset <name>` = any export flag by CLI name from package data or
+  `<lib>/presets/export/<name>.json`, CLI overrides. `exports(photo_id, path, at, develop_hash, bytes)` history (migration, next number).
+- Offline precedence per README. `scripts/gold-exam.sh <dir> [--out]`: import --link → list → rate 10 → export; writes a report; 08 adds the develop step.
+- `wb export <dir>`.
 
 ## Verification
-`export-template.test.ts` (`2023-10-02_001_a7c2.jpg` under any `TZ`; rename yields `_2`);
-`export-warns.test.ts` (offline with cached tier → exit 0 + warning; no cache → 69);
-`export-iptc.test.ts` (creator/copyright read back with exifr); `export-resize.test.ts` (2048×1365);
-`gold-exam.test.ts` (case 1 on a 10-file `fixtures:drive` set with `--preset people` accepted as a no-op
-until 08 — the test's expectation flips in 08).
+`export-template.test.ts` (`2023-10-02_001_a7c2.jpg` under any `TZ`; rename → `_2`); `export-warns.test.ts` (offline with a cached
+tier → exit 0 + `source_offline`; none → 69); `export-metadata.test.ts` (creator/rights and Artist/Copyright read back with exifr);
+`export-resize.test.ts` (2048×1365; `--resize 9000` → 7008); `gold-exam-dry.test.ts` runs `scripts/gold-exam.sh` on a 10-file set.
 
-## Delegated: IPTC writer path inside sharp; chroma subsampling default.
-## Checkpoint: delivered folder + `wb export` — template default and IPTC field set.
-## Must stay green: 01–04. Deps: 04. Firewall: identity path only; no watermark; no cloud delivery.
+## Delegated: chroma subsampling; report HTML layout.
+## Checkpoint: delivered folder — template default only.
+## Must stay green: 01–04. Deps: 04. Firewall: identity path only; no watermark.
