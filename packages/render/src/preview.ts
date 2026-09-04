@@ -4,7 +4,13 @@ import sharp from "sharp";
 import type { ExifOrientation } from "./coordinates.js";
 import { srgb2014ProfilePath } from "./color.js";
 import type { ImageSource } from "./decoder.js";
-import { renderPhoto, type Image16 } from "./graph.js";
+import {
+  canonicalNodeRecipe,
+  canonicalJson,
+  logicalNodeId,
+  recipeHash,
+  renderHashForNode,
+} from "./graph/recipes.js";
 import {
   readValidPreviewArtifact,
   writePreviewArtifact,
@@ -12,12 +18,11 @@ import {
   type ValidPreviewArtifact,
 } from "./preview-artifact.js";
 import { PreviewCoordinator, type PreviewIndexAdapter } from "./preview-coordinator.js";
+import { renderSource, type Image16 } from "./source-render.js";
 
 export { PreviewDestinationError } from "./preview-artifact.js";
 
-export interface RenderState {
-  contentKey: string;
-  contentHash?: string | null;
+export interface SourceRenderState {
   orientation: ExifOrientation;
 }
 
@@ -26,18 +31,26 @@ export interface ViewSpec {
   longEdge: number | "native";
 }
 
-export function renderStateHash(state: RenderState): string {
-  const canonical = JSON.stringify({
-    content_key: state.contentKey,
-    content_hash: state.contentHash ?? null,
-    orientation: state.orientation,
-  });
-  return `r_${createHash("sha256").update(canonical).digest("hex").slice(0, 12)}`;
+export function sourceRenderHash(state: SourceRenderState): `r_${string}` {
+  const recipe = recipeHash(
+    canonicalNodeRecipe({
+      kind: "source",
+      recipeVersion: 1,
+      parameters: { orientation: state.orientation },
+      inputNodeIds: [],
+    }),
+  );
+  return renderHashForNode(logicalNodeId(recipe));
 }
 
-export function viewHash(spec: ViewSpec): string {
-  const canonical = JSON.stringify({ region: spec.region, long_edge: spec.longEdge });
-  return `v_${createHash("sha256").update(canonical).digest("hex").slice(0, 12)}`;
+export function viewHash(spec: ViewSpec): `v_${string}` {
+  const canonical = canonicalJson({
+    kind: "view",
+    long_edge: spec.longEdge,
+    recipe_version: 1,
+    region: spec.region,
+  });
+  return `v_${createHash("sha256").update(canonical).digest("hex")}`;
 }
 
 export type PreviewCacheSource = "exact_view" | "sufficient_full_frame" | "render_master";
@@ -62,7 +75,7 @@ export async function materializePreview(request: {
   cacheRoot: string;
   photoId: string;
   renderHash: string;
-  photo: RenderState & { w: number; h: number };
+  photo: SourceRenderState & { w: number; h: number };
   source: ImageSource;
   view: ViewSpec;
 }): Promise<MaterializedPreview> {
@@ -120,7 +133,7 @@ export async function materializePreview(request: {
 
       // The default overview is deliberately cheap and does not create a full-frame master.
       if (cheapOverview) {
-        const image = await renderPhoto({ orientation: request.photo.orientation }, request.source);
+        const image = await renderSource(request.photo.orientation, request.source);
         return await deriveRenderedView(
           image,
           exactPath,
@@ -176,7 +189,7 @@ async function ensureMaster(
       ) {
         return { path: masterPath, artifact: existing, created: false };
       }
-      const image = await renderPhoto({ orientation: request.photo.orientation }, request.source);
+      const image = await renderSource(request.photo.orientation, request.source);
       const bytes = await encodeJpeg(image);
       const provenance = {
         sourceTier: request.source.kind,

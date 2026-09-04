@@ -7,11 +7,12 @@ test("migrations are repeatable and record each version once", async () => {
   try {
     const first = await migrate(db);
     const second = await migrate(db);
+    await expect(verifyLatestSchema(db)).resolves.toBeUndefined();
 
     expect(first).toEqual({
       fromVersion: 0,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [1, 2, 3, 4],
+      applied: [1, 2, 3, 4, 5],
     });
     expect(second).toEqual({
       fromVersion: LATEST_SCHEMA_VERSION,
@@ -22,7 +23,13 @@ test("migrations are repeatable and record each version once", async () => {
     const applied = await db.query<{ version: number }>(
       "SELECT version FROM schema_version ORDER BY version",
     );
-    expect(applied.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }]);
+    expect(applied.rows).toEqual([
+      { version: 1 },
+      { version: 2 },
+      { version: 3 },
+      { version: 4 },
+      { version: 5 },
+    ]);
 
     await db.query(
       `INSERT INTO photos
@@ -104,8 +111,7 @@ test("the latest schema supports promoted sampled-key collisions and cull state"
     await db.close();
   }
 });
-
-test.each([["2"], ["1,3"], ["1,2,3,4,5"]])(
+test.each([["2"], ["1,3"], ["1,2,3,4,5,6"]])(
   "rejects the non-prefix migration ledger %s before applying schema",
   async (ledger) => {
     const db = await PGlite.create();
@@ -134,6 +140,110 @@ test.each([
     await migrate(db);
     await db.exec(statement);
     await expect(verifyLatestSchema(db)).rejects.toThrow("Library schema is incomplete");
+  } finally {
+    await db.close();
+  }
+});
+
+test("the graph schema separates logical nodes from reusable and attempted executions", async () => {
+  const db = await PGlite.create();
+  const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
+  const artifact = `a_${"1".repeat(64)}`;
+  const recipe = `recipe_${"2".repeat(64)}`;
+  const inputId = `node_${"3".repeat(64)}`;
+  const compositeId = `node_${"4".repeat(64)}`;
+  const foreignOnlyId = `node_${"5".repeat(64)}`;
+  const secondPhotoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
+  try {
+    await migrate(db);
+    await db.query(
+      `INSERT INTO photos (id, content_key, size, w, h, orientation)
+       VALUES ($1, 'ck_3dac5c943a33dcc4', 1, 1, 1, 1),
+              ($2, 'ck_aaaaaaaaaaaaaaaa', 1, 1, 1, 1)`,
+      [photoId, secondPhotoId],
+    );
+    await db.query(
+      `INSERT INTO image_nodes
+         (photo_id, id, kind, recipe_version, parameters, recipe_hash)
+       VALUES ($1, $2, 'source', 1, '{}', $3),
+              ($1, $4, 'composite', 1, '{"opacity":1,"blend":"normal"}', $5)`,
+      [photoId, inputId, recipe, compositeId, `recipe_${"6".repeat(64)}`],
+    );
+    await expect(
+      db.query(
+        `INSERT INTO image_nodes
+           (photo_id, id, kind, recipe_version, parameters, recipe_hash)
+         VALUES ($1, $2, 'source', 1, '{}', $3),
+                ($1, $4, 'source', 1, '{}', $5)`,
+        [secondPhotoId, inputId, recipe, foreignOnlyId, `recipe_${"5".repeat(64)}`],
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      db.query(
+        `INSERT INTO image_nodes
+           (photo_id, id, kind, recipe_version, parameters, recipe_hash)
+         VALUES ($1, $2, 'source', 2, '{}', $3)`,
+        [photoId, `node_${"f".repeat(64)}`, `recipe_${"f".repeat(64)}`],
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.query(
+        `INSERT INTO image_node_inputs (node_id, photo_id, input_index, input_node_id)
+         VALUES ($1, $2, 0, $3), ($1, $2, 1, $3)`,
+        [compositeId, photoId, inputId],
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      db.query(
+        `INSERT INTO image_node_inputs (node_id, photo_id, input_index, input_node_id)
+         VALUES ($1, $2, 2, $3)`,
+        [compositeId, photoId, foreignOnlyId],
+      ),
+    ).rejects.toThrow();
+
+    await expect(
+      db.query(
+        `INSERT INTO node_executions
+           (photo_id, execution_id, node_id, evaluation_hash, deterministic, output_artifact_hash)
+         VALUES ($1, $2, $3, $4, true, $5)`,
+        [photoId, `exec_${"7".repeat(64)}`, inputId, `eval_${"8".repeat(64)}`, artifact],
+      ),
+    ).rejects.toThrow();
+    await db.query(
+      `INSERT INTO image_artifacts
+         (artifact_hash, media_type, bytes, w, h, artifact_available)
+       VALUES ($1, 'application/x-photoctl-test', 1, 1, 1, true)`,
+      [artifact],
+    );
+    await db.query(
+      `INSERT INTO node_executions
+         (photo_id, execution_id, node_id, evaluation_hash, deterministic, output_artifact_hash)
+       VALUES ($1, $2, $3, $4, true, $5)`,
+      [photoId, `exec_${"7".repeat(64)}`, inputId, `eval_${"8".repeat(64)}`, artifact],
+    );
+    await expect(
+      db.query(
+        `INSERT INTO node_executions
+           (photo_id, execution_id, node_id, evaluation_hash, deterministic, output_artifact_hash)
+         VALUES ($1, $2, $3, $4, true, $5)`,
+        [photoId, `exec_${"9".repeat(64)}`, inputId, `eval_${"8".repeat(64)}`, artifact],
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.query(
+        `INSERT INTO node_executions
+           (photo_id, execution_id, node_id, evaluation_hash, deterministic, output_artifact_hash)
+         VALUES ($1, $2, $3, $4, false, $5), ($1, $6, $3, $4, false, $5)`,
+        [
+          photoId,
+          `exec_${"a".repeat(64)}`,
+          inputId,
+          `eval_${"8".repeat(64)}`,
+          artifact,
+          `exec_${"b".repeat(64)}`,
+        ],
+      ),
+    ).resolves.toBeDefined();
   } finally {
     await db.close();
   }

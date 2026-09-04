@@ -1,10 +1,6 @@
 import type { ExifOrientation } from "./coordinates.js";
 import { FileImageDecoder, type ImageSource } from "./decoder.js";
 
-export interface RenderPhoto {
-  orientation: ExifOrientation;
-}
-
 export interface Image16 {
   w: number;
   h: number;
@@ -14,9 +10,15 @@ export interface Image16 {
   orientationApplied: true;
 }
 
-export async function renderPhoto(photo: RenderPhoto, source: ImageSource): Promise<Image16> {
-  const orientation = source.kind === "pinned-preview" ? source.orientation : photo.orientation;
-  const image = await new FileImageDecoder().decodeDisplay(source, { scale: 1, orientation });
+export async function renderSource(
+  orientation: ExifOrientation,
+  source: ImageSource,
+): Promise<Image16> {
+  const appliedOrientation = source.kind === "pinned-preview" ? source.orientation : orientation;
+  const image = await new FileImageDecoder().decodeDisplay(source, {
+    scale: 1,
+    orientation: appliedOrientation,
+  });
   return {
     w: image.w,
     h: image.h,

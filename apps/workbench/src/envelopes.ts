@@ -25,8 +25,8 @@ const successfulShow = {
     tags: [],
     preview: `/tmp/cache/emb/${photoId}.jpg`,
     preview_info: {
-      render_hash: "r_0123456789ab",
-      view_hash: "v_0123456789ab",
+      render_hash: "r_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      view_hash: "v_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
       requested: { region: null, long_edge: 1616 },
       actual: { region: [0, 0, 7008, 4672], w: 1616, h: 1077 },
       source_tier: "pinned-preview",
@@ -49,7 +49,7 @@ const successfulShow = {
     content_key: "ck_0123456789abcdef",
     develop: {},
     develop_hash: null,
-    render_hash: "r_0123456789ab",
+    render_hash: "r_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
     layers: { count: 0, stale: 0 },
     xmp: null,
   },
@@ -71,7 +71,7 @@ const successfulExport = {
   w: 7008,
   h: 4672,
   bytes: 6_730_200,
-  render_hash: "r_0123456789ab",
+  render_hash: "r_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 } satisfies ExportResult;
 
 const partialExport = {

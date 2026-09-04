@@ -24,6 +24,7 @@ const pgliteVersion = dependencies["@electric-sql/pglite"];
 export interface LibraryHandle {
   path: string;
   query: PGlite["query"];
+  transaction: PGlite["transaction"];
   migrate(): Promise<MigrationResult>;
   dumpSql(): Promise<string>;
   close(): Promise<void>;
@@ -147,6 +148,7 @@ export async function openLibraryHoldingLock(
     return {
       path: libraryPath,
       query: openDb.query.bind(openDb),
+      transaction: openDb.transaction.bind(openDb),
       migrate: async () => {
         if (pendingMigration) {
           const result = pendingMigration;

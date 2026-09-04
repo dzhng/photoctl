@@ -117,11 +117,29 @@ function errorLabel(code: ErrorCode): string {
 }
 
 function formatValue(value: unknown): string {
-  if (typeof value === "string") return escapeText(value);
+  if (typeof value === "string") return escapeText(abbreviateHash(value));
   if (value === undefined) return "";
   if (value === true) return "yes";
   if (value === false) return "no";
-  return JSON.stringify(value) ?? "";
+  return JSON.stringify(abbreviateHashes(value)) ?? "";
+}
+
+function abbreviateHashes(value: unknown): unknown {
+  if (typeof value === "string") return abbreviateHash(value);
+  if (Array.isArray(value)) return value.map(abbreviateHashes);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [key, abbreviateHashes(nested)]),
+    );
+  }
+  return value;
+}
+
+function abbreviateHash(value: string): string {
+  return value.replace(
+    /^(r|v|recipe|node|eval|exec|a|h)_([0-9a-f]{64})$/,
+    (_match, prefix: string, digest: string) => `${prefix}_${digest.slice(0, 12)}`,
+  );
 }
 
 function escapeText(value: string): string {

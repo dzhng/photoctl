@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import sharp from "sharp";
 import type { ExifOrientation } from "../coordinates.js";
 import { readImageSource, type ImageSource } from "../decoder.js";
-import { renderPhoto, type Image16 } from "../graph.js";
+import { renderSource, type Image16 } from "../source-render.js";
 
 export interface ImageExport {
   id: string;
@@ -110,7 +110,7 @@ async function writeRendered(
 ): Promise<ImageExportResult> {
   let image: Image16;
   try {
-    image = await renderPhoto({ orientation: request.orientation }, source);
+    image = await renderSource(request.orientation, source);
   } catch {
     if (sourceKind === "pinned") throw new ExportSourceUnavailableError(request.id);
     throw new ExportInputError(request.id);

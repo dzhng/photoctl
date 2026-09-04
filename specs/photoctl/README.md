@@ -13,23 +13,23 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–04 and decoder slice 07 are implemented.
+*Last updated: 2026-09-05. Status: slices 00–04, decoder slice 07, and render-DAG slice 08a1 are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
 the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
 recursive import commits through a bounded deterministic pipeline, collision buckets promote to full hashes,
-and culling/list/next/remove remain usable from pinned previews while source volumes are offline. The pre-implementation DAG/upscaling
-unknowns walk is now incorporated into slices 08–13 and the choices ledger; no DAG/provider implementation
-has landed yet.*
+and culling/list/next/remove remain usable from pinned previews while source volumes are offline. Immutable photo-scoped logical
+nodes, atomic document revisions, full hash identities, and the separate pixel-execution schema are now in place; artifact
+publication, graph evaluation, and inspection remain in 08a2.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 05 (delivery export) and 08a (immutable render-DAG foundation).
-  Slice 05 inherits the culling catalog and fixture-drive workflow; slice 08a inherits the completed decoder/color
-  front and must land before 08b+ develop nodes or later layer work.
+- **Pickup point:** dependency-ready slices 05 (delivery export) and 08a2 (artifact publication, evaluation, and graph inspection).
+  Slice 05 inherits the culling catalog and fixture-drive workflow; slice 08a2 inherits 08a1's lazy logical graph and
+  execution metadata seam, and must land before 08b+ develop nodes or later layer work.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -49,7 +49,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [ ] 08 immutable render DAG: 8a graph/artifacts/revisions · 8b+ develop nodes/color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
+- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [ ] 8a2 artifacts/evaluator/inspection · [ ] 8b+ develop nodes/color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
 - [ ] 09 providers: gateway contracts + dedicated upscaler adapter (9a), non-blocking spikes (9b), embed worker + search (9c) — `slices/09-providers-embed-search.md`
 - [ ] 10 DAG-backed layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
@@ -272,9 +272,10 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 | Markup model + flatten | `packages/render/markup` | 13c |
 | Fixture manifest + generator | `fixtures/README.md`, `fixtures/a7c2.json`, `fixtures/tools/` | 00 |
 
-**Transitional seams (each named with its end):** (1) 01b's linear `renderPhoto` and 12-hex render/view hashes are
-unshipped scaffolding: 08a hard-cuts them to the immutable DAG evaluator and full SHA-256 protocol/path identities;
-there is no compatibility alias. Source resolution and the pinned-preview fallback remain permanent. (2) 05's gold-exam
+**Transitional seams (each named with its end):** (1) 08a1 removed 01b's public linear `renderPhoto` state owner and
+hard-cut render/view protocol and path identities to full SHA-256 values; there is no compatibility alias. The private
+source decoder bridge, source resolution, and pinned-preview fallback remain permanent, while 8a2 wires the graph evaluator.
+(2) 05's gold-exam
 dry run omits `develop`; 08 adds it to the script — no stub verb exists. (3) 08's `develop` result carries
 empty `layers:{delta_applied:[],stale:[]}` until 10 fills it — shape fixed, no rewrite. Nothing else is
 temporary; the fake gateway, volume map and hold-lock helper are permanent test edges.
@@ -387,6 +388,12 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
 
 *(append-only; one entry per deviation: plan said / code revealed / call made / needs David?)*
 
+- **2026-09-05 — slice 08a1 logical/execution split.** Plan said: deterministic node identity included input artifact hashes while
+  develop and crop commands could commit a revision without rendering. Code revealed: those requirements cannot share one identity;
+  the input artifacts do not exist at mutation time, and source fallback would rewrite document history. Call: make logical node
+  identity depend on ordered input node identities, and give pixel executions a separate evaluation identity over actual ordered
+  artifacts plus source provenance. Nondeterministic roots additionally require a published artifact anywhere in their reachable
+  paid ancestry before activation. Needs David: no; the architecture audit confirmed this reconciliation before the schema landed.
 - **2026-09-05 — slice 04 sampled relocation boundary.** Plan said: sampled-key collisions require full proof, while a rename on
   the same online volume retains its ID after the old path disappears. Code revealed: once that old path is gone, its bytes are
   unavailable for a full comparison; treating every missing locator alike either breaks the required rename or aliases offline

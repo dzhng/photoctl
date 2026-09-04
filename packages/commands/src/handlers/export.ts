@@ -12,7 +12,7 @@ import {
   type LibraryHandle,
   type VolumeResolver,
 } from "@photoctl/library";
-import { exportImageAsJpeg, renderStateHash } from "@photoctl/render";
+import { exportImageAsJpeg, sourceRenderHash } from "@photoctl/render";
 import { mkdir } from "node:fs/promises";
 import { basename, extname, join, resolve } from "node:path";
 import { parseArguments } from "../arguments.js";
@@ -148,9 +148,7 @@ async function exportOne(
         id,
         ok: true,
         ...data,
-        render_hash: renderStateHash({
-          contentKey: photo.contentKey,
-          contentHash: photo.contentHash,
+        render_hash: sourceRenderHash({
           orientation: photo.orientation,
         }),
       },

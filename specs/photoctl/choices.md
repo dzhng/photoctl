@@ -1051,22 +1051,55 @@
   onto generated layers.
 - **Confidence:** High.
 
-### Pre-slice 08 — DAG identity separates recipes, executions, and artifact bytes
+### Slice 08a1 architecture audit — Logical edit identity is separate from pixel execution identity
 
-- **When:** DAG/upscaling unknowns walk, 2026-09-05.
-- **The choice:** Canonical recipe, artifact, render, and view hashes retain all 256 SHA-256 bits; only human
-  presentation abbreviates them. Deterministic nodes reuse by canonical recipe plus input artifact hashes.
-  Nondeterministic generation/upscale nodes also record a distinct execution identity and actual output hash,
-  so rerunning identical parameters remains a new lineage. Canonical artifact bytes publish durably before the
-  graph/root transaction; the opposite order could expose active missing pixels. Active revisions, bounded undo,
-  and pinned snapshots are reachability roots. Numeric retention stays OPEN until artifact sizes are measured,
-  and automatic canonical-artifact collection remains off until then.
-- **The gap:** The implemented preview protocol truncates hashes to 48 bits and disposable preview publication
-  tolerates a temporarily incomplete image/sidecar pair. Neither contract is safe for canonical paid state.
+- **When:** DAG/upscaling unknowns walk, corrected by the Slice 08a1 architecture audit on 2026-09-05.
+- **The choice:** A logical image node says what edit should happen; an execution says which pixels were actually used and produced.
+  For example, changing exposure inserts a logical node and revision immediately, so the CLI can return the new render hash without
+  decoding the photo. Later, preview may evaluate that same node from an online full-resolution artifact or from the pinned offline
+  preview. Those runs share the document edit and render hash, but their evaluation keys differ because the ordered input artifact
+  hashes differ. Source runs additionally record the actual locator, tier, dimensions, and decoder id/version. A deterministic run
+  reuses its evaluation key; a generative run keeps a distinct full execution id even if another attempt returns identical bytes.
+  Canonical recipe, execution, artifact, render, and view hashes retain all 256 SHA-256 bits; only human presentation abbreviates them.
+  The rejected single-level model put the output artifact hash on the logical node: it could not create a revision until rendering,
+  contradicting lazy preview, and it made online and fallback source choice change document history.
+- **The gap:** The initial DAG plan used input artifact hashes directly in node identity without reconciling that with the existing
+  contract that edit commands commit state before pixels exist. It also did not say whether source fallback changes edit history.
 - **The reach:** Cache reuse, refresh, undo, graph pagination, artifact GC, preview paths, and export correlation
   inherit collision-safe identities and crash-safe publication.
-- **Verdict:** **Sound.** It distinguishes “same request” from “same pixels” without making all nodes UUID-only.
+- **Verdict:** **Sound.** Edit history stays stable and cheap while cache correctness still follows the exact pixels used; paid
+  nondeterministic attempts keep distinct lineage.
 - **Confidence:** High.
+
+### Slice 08a1 implementation — Revision batches use local node keys and must be root-complete
+
+- **When:** Slice 08a1 implementation review, 2026-09-05.
+- **The choice:** `commitRevision` accepts caller-chosen batch-local keys for new nodes, and inputs or roots reference either one
+  of those keys or an existing full node id. Draft order is irrelevant. The writer resolves the graph from the final typed root,
+  refuses cycles and missing/cross-photo references, and rolls back if any supplied draft is not reachable. For example, a caller
+  can submit output → develop → source in any array order, but cannot quietly attach a second unused crop node to the revision.
+- **The gap:** The requested atomic batch contract did not define how nodes created in the same transaction refer to one another,
+  or whether extra unrooted drafts are legal.
+- **The reach:** Develop, crop, layers, and future multi-node mutations get one stable request shape without provisional node ids,
+  while failed or malformed requests cannot accumulate unreachable graph metadata.
+- **Verdict:** **Sound.** Local keys are transaction-scoped addresses, not a second persistent identity, and root-completeness keeps
+  the immutable store honest.
+- **Confidence:** High.
+
+### Slice 08a1 implementation — Unowned future node parameters start strict and minimal
+
+- **When:** Slice 08a1 registry implementation, 2026-09-05.
+- **The choice:** Every node kind has a distinct strict v1 parameter schema now. Kinds whose command/evaluator arrives later expose
+  only their minimal explicit structural fields; unknown top-level fields fail instead of silently entering a recipe. `develop` is
+  the deliberate exception requested by the architecture owner: its parameters are a direct generic JSON object in 8a1, so 8b can
+  replace validation with the real develop dictionary without introducing or removing a wrapper. For example, crop accepts exactly
+  `{x,y,w,h}`, while develop accepts `{exposure:1}` directly rather than `{values:{exposure:1}}`. The same registry owns each
+  kind's supported recipe versions; both the application and v5 schema admit only version 1 until a later migration adds another.
+- **The gap:** The architecture required typed per-kind ownership before several later slices have specified their complete payloads.
+- **The reach:** Canonical recipe stability and malformed-input refusal are available now; each later owner must deliberately revise
+  its kind schema alongside its evaluator and recipe version instead of relying on an open catch-all by accident.
+- **Verdict:** **Sound.** It preserves the direct parameter shape and makes uncertainty visible at the registry boundary.
+- **Confidence:** Medium; later slices still own the final fields and version transitions for their kinds.
 
 ### Pre-slice 12 — Generated pixels optionally match destination density through a generative node
 

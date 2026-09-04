@@ -1,30 +1,34 @@
 # 08 — immutable render DAG → develop → gold exam green
 
-Sub-slices, one seam or judged variable each: **8a1** immutable DAG/schema/full hashes · **8a2** canonical artifacts,
-revisions, evaluator, graph inspection · **8b** develop dict/presets as a node (no pixels) · **8c1** global per-pixel ops ·
+Sub-slices, one seam or judged variable each: **8a1** immutable logical DAG/schema/revisions/full hashes · **8a2** canonical
+artifact publication, evaluator, graph inspection · **8b** develop dict/presets as a node (no pixels) · **8c1** global per-pixel ops ·
 **8c2** masked ops (highlights/shadows/vibrance; skin crop) · **8c3** curves/levels · **8d1** local contrast
 (brilliance/definition/sharpen) · **8d2** NR (texture crop) · **8d3** geometry (exact tests) · **8d4** filters + B&W (data).
 
 ## API seam
-- **8a1** replaces the current linear `renderPhoto` state model with `packages/render/src/graph/{types,recipes,store,evaluate}.ts`.
+- **8a1** replaces the current linear `renderPhoto` state model with `packages/render/src/graph/{types,recipes,store}.ts`.
   Typed immutable nodes cover `source|develop|generate|upscale|resample|transform|mask_composite|composite|crop|markup|output`;
-  a registry owns each kind's parameter schema, input arity, recipe canonicalization, and evaluator. PGlite stores normalized
+  a registry owns each kind's supported recipe versions, parameter schema, input arity, recipe canonicalization, and determinism
+  declaration. PGlite stores normalized
   `image_nodes`, ordered `image_node_inputs`, `node_executions`, `image_artifacts`, `document_revisions`, and revision roots;
   Slice 10 adds user-visible `layers.output_node_id` roots rather than a second graph. Node parameters are validated JSON, but
   topology is relational: one transactional writer verifies input existence, same-photo ownership where required, and acyclicity.
-  No mutable-node update path exists.
-- **8a1 identity:** recipe, artifact, render, and view hashes are full SHA-256 (`<prefix>_<64 hex>`); `--human` alone abbreviates.
-  Deterministic node identity derives from `{kind,recipe_version,canonical_parameters,input_artifact_hashes}`. External generative
-  executions add a distinct `execution_id`, and their node/output identity includes the bytes actually returned. Slice 08 hard-cuts
-  the existing 12-hex preview protocol and paths; no compatibility alias or dual hash survives.
-  A `source` evaluation also records the actual locator/tier, dimensions, and decoded artifact hash: an online full-resolution source
-  and its pinned-preview fallback can share photo identity but can never share an output artifact or descendant cache key.
+  No mutable-node update path exists. One compare-and-swap transaction inserts a mutation's whole node chain, copies untouched roots,
+  redirects typed roots, and advances the document revision; logical nodes may remain unevaluated.
+- **8a1 identity:** recipe, execution, artifact, render, and versioned view hashes are full SHA-256 (`<prefix>_<64 hex>`); `--human` alone
+  abbreviates. Logical node identity derives from `{kind,recipe_version,canonical_parameters,ordered_input_node_ids}`, so a mutation
+  can commit its revision and `render_hash` without rendering pixels. Deterministic evaluation identity separately combines the node
+  recipe with ordered input artifact hashes; nondeterministic attempts retain distinct `execution_id`s even when output bytes match.
+  Slice 08 hard-cuts the existing 12-hex preview protocol and paths; no compatibility alias or dual hash survives. A `source` node is
+  stable photo state; each source execution records its actual locator/tier, dimensions, decoder id/version, and decoded artifact hash.
+  Online full resolution and pinned fallback therefore keep one document render state while using distinct evaluation/cache identity.
 - **8a2 artifacts:** `packages/render/src/artifacts` is the sole canonical pixel-artifact owner under
   `<lib>/artifacts/sha256/<prefix>/<artifact_hash>.<ext>`. Normalize and hash bytes, publish/fsync without overwriting differing
-  content, then commit node + edges + provenance + revision/root in one database transaction. A failed publish creates no node;
-  a crash before the DB commit leaves an unreferenced file for the orphan sweep. Provenance lives in PGlite, not a second canonical
+  content, then commit the execution + provenance in one database transaction. Logical nodes and revisions already exist before
+  evaluation; a failed publish cannot activate an execution. A crash before the DB commit leaves an unreferenced file for the orphan sweep.
+  Provenance lives in PGlite, not a second canonical
   sidecar. Preview/cache artifacts remain disposable and use the existing coordinator/index lifecycle.
-- **8a2 revisions/inspection:** active output, retained undo revisions, and pinned snapshots are GC roots. Reachability and
+- **8a1 revisions / 8a2 inspection:** active output, retained undo revisions, and pinned snapshots are GC roots. Reachability and
   `artifact_available` land now, but automatic canonical-artifact deletion remains disabled until the OPEN retention measurement
   chooses count/age/storage limits. `graph show <id> [--layer L] [--history] [--limit N] [--cursor C]` returns bounded pages;
   its opaque cursor is bound to the inspected document revision so concurrent edits cannot mix pages. `graph node <id> <node>`
@@ -46,7 +50,7 @@ revisions, evaluator, graph inspection · **8b** develop dict/presets as a node 
   node/revision and returns `{develop_hash,render_hash,layers:{delta_applied:[],stale:[]}}`.
 - **8c/8d** `crates/photoctl-image::develop` on f32 linear Rec.2020 (D22) → display 16-bit; deterministic node artifacts replace a
   separate `dev/<id>/<hash>.<tier>.tif16` identity scheme;
-  `renderPhoto({source:"develop"})`; export uses the develop render for every source format. Full-resolution decoding is preferred;
+  the graph evaluator; export uses the develop render for every source format. Full-resolution decoding is preferred;
   an embedded or pinned-preview fallback runs the same graph at its available dimensions and returns a source warning.
   `render <id> --linear --to out.tif` probe. Geometry keys
   `crop:{x,y,w,h}`, `straighten_deg`, `rotate ∈ {0,90,180,270}` applied last; `show.crop` mirrors them. `auto_straighten`: Hough
@@ -83,9 +87,10 @@ revisions, evaluator, graph inspection · **8b** develop dict/presets as a node 
 - `scripts/gold-exam.sh` gains the develop step. `wb presets`, `wb ab`.
 
 ## Verification
-`graph-schema.test.ts` proves ordered shared inputs, immutable replacement, cycle refusal, revision undo, and a root redirect in one
-transaction; `graph-dedup.test.ts` distinguishes deterministic recipe reuse from two equal generative requests with distinct
-execution/output identities; `artifact-publication.test.ts` injects failure before publish and before DB commit, proving no active
+8a1's recipe/store/migration tests prove strict kind schemas, ordered shared inputs, photo scoping, immutable lazy replacement,
+cycle refusal, CAS revision undo, deterministic evaluation uniqueness, distinct nondeterministic attempt ids, and a root redirect in
+one transaction. Protocol and human-output tests prove full identities on machine seams and presentation-only abbreviation.
+8a2's `artifact-publication.test.ts` injects failure before publish and before DB commit, proving no active
 missing reference and a collectible orphan; `graph-pagination.test.ts` walks a history larger than one page without duplication and
 keeps each daemon frame bounded; `restore-artifacts.test.ts` restores corrupt PGlite metadata while canonical artifact bytes remain
 unchanged; protocol tests require full hashes and human output abbreviates them.

@@ -11,7 +11,7 @@ import {
   materializePreview,
   PreviewDestinationError,
   PreviewCoordinator,
-  renderStateHash,
+  sourceRenderHash,
   viewHash,
   type ImageSource,
   type ViewSpec,
@@ -55,9 +55,7 @@ export async function showCommand(
     const warnings: Warning[] = locators.some((locator) => !locator.online)
       ? [{ code: "source_offline", id, message: "One or more source files are offline" }]
       : [];
-    const renderHash = renderStateHash({
-      contentKey: photo.contentKey,
-      contentHash: photo.contentHash,
+    const renderHash = sourceRenderHash({
       orientation: photo.orientation,
     });
     const view = parseViewSpec(parsed.options, parsed.flags.has("--norm"), photo.w, photo.h);

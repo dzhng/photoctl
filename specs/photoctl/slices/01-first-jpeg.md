@@ -75,11 +75,11 @@ Every successfully imported decodable still image also becomes independently vie
 - `packages/render/src/decoder.ts` defines the permanent resolved-source seam:
   `ImageSource = {kind:"online-file",path,mediaType}|{kind:"online-jpeg-range",path,offset,length}|{kind:"pinned-preview",path}`.
   Library/importer resolves catalog and volume state into this value; render never opens PGlite or discovers mounts.
-- `packages/render/src/graph.ts`: `renderPhoto(photo,{source:ImageSource}) → Image16`; both whole-file and JPEG-range sources enter
+- `packages/render/src/source-render.ts`: the private source decoder bridge; both whole-file and JPEG-range sources enter
   the same oriented display pipeline. `packages/render/src/export/run.ts` may copy bytes exactly only when the resolved online
   source is itself a full-frame, orientation-1 JPEG; every other format uses the same decode/render/encode path. If an online
   source cannot be read, it uses `pinned-preview` with a `source_offline` warning.
-- `packages/render/src/preview.ts` initially establishes `renderStateHash(photo) → "r_"+sha256(canonical pixel-affecting state).slice(0,12)`
+- `packages/render/src/preview.ts` establishes the source-root `render_hash`; slice 08a1 hard-cuts it to the full logical-node identity
   and `ViewSpec{region:null|bbox,longEdge:number|"native"}`. `viewHash(ViewSpec)` canonicalizes base-pixel coordinates and output
   size separately from edit state, so changing zoom never changes `render_hash` and changing edits never reuses stale view pixels.
   It also reserves the full-frame native `ViewSpec` as the display master for a render state; later slices make region and smaller

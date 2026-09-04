@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { fullHashSchema } from "../hash.js";
 
 const affineSchema = z.object({
   a: z.number(),
@@ -39,8 +40,8 @@ export const showDataSchema = z.object({
   tags: z.array(z.string()),
   preview: z.string(),
   preview_info: z.object({
-    render_hash: z.string().regex(/^r_[0-9a-f]{12}$/),
-    view_hash: z.string().regex(/^v_[0-9a-f]{12}$/),
+    render_hash: fullHashSchema("r"),
+    view_hash: fullHashSchema("v"),
     requested: z.object({
       region: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable(),
       long_edge: z.union([z.number().int().positive(), z.literal("native")]),
@@ -68,7 +69,7 @@ export const showDataSchema = z.object({
   content_key: z.string().regex(/^ck_[0-9a-f]{16}$/),
   develop: z.record(z.string(), z.unknown()),
   develop_hash: z.string().nullable(),
-  render_hash: z.string().regex(/^r_[0-9a-f]{12}$/),
+  render_hash: fullHashSchema("r"),
   layers: z.object({
     count: z.number().int().nonnegative(),
     stale: z.number().int().nonnegative(),

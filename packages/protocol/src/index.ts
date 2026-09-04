@@ -2,6 +2,7 @@ export * from "./envelope.js";
 export * from "./events.js";
 export * from "./request.js";
 export * from "./frames.js";
+export * from "./hash.js";
 export * from "./verbs/doctor.js";
 export * from "./verbs/cache.js";
 export * from "./verbs/cull.js";

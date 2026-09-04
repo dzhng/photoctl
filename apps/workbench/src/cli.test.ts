@@ -77,7 +77,7 @@ test("library renders current schema, row counts, backups, and indexed cache byt
   expect(html).toContain("Library ID</span>");
   expect(html).toContain("Library path</span>");
   expect(html).toContain('<th scope="col">Table</th><th scope="col">Rows</th>');
-  expect(html).toContain("Schema version</span><strong>3</strong>");
+  expect(html).toContain("Schema version</span><strong>5</strong>");
   expect(html).toContain("Indexed cache</span><strong>42 B</strong>");
   expect(html).toContain("cache_index</td><td>1</td>");
   expect(html).toContain(backup.path.slice(backup.path.lastIndexOf("/") + 1));
