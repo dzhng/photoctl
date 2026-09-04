@@ -29,6 +29,12 @@ produced by a tool independent of the code under test.
 - Layout per README; `turbo.json` (`test` dependsOn `^build`); `bunfig.toml` (`linker = "hoisted"`); Cargo workspace with
   empty `crates/photoctl-image`; `.oxlintrc.json`/`.oxfmtrc.json` + `packages/typescript-config` copied from `~/dev/duet`.
 - `test/Dockerfile` (node:24-bookworm, bun for install, rustup, clang), `test/compose.yaml` (`functional`, `gateway-fixture`).
+- **CI + tag releases, lifted from `~/dev/duet-agent/.github/workflows/`** (already committed at `.github/workflows/{ci,publish}.yml`):
+  `ci.yml` runs install → build → lint → test on every push/PR; `publish.yml` runs the same gates on `v*` tags, creates a GitHub
+  Release with generated notes, then `bun run publish:npm`. This slice makes both green: root `package.json` gets `version`,
+  `publish:npm` (publishes `apps/cli` + `packages/img-*` + `packages/mac-helper-*` with `--provenance`; a no-op until those exist),
+  and `npm version` bumps the root + workspace versions together. A release = `npm version <bump> && git push --follow-tags`.
+  `NPM_TOKEN` is a repo secret David adds before the first tag.
 
 ## Human can run
 `bun run build && node apps/cli/dist/bin.js --version`; `bun run test:functional`; `bun run verify`.

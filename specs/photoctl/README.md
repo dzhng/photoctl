@@ -110,6 +110,7 @@ wb               node apps/workbench/dist/cli.js
 fixtures:drive   N padded copies of a7c2.ARW + Classic-style sidecars       fixtures:volume  hdiutil image (Mac)
 probe:*          keyless, machine-specific: race, headless-ciraw, toast     smoke:*  with-key: mask-polarity, embed-shape
 pack             tarballs for apps/cli, packages/img-*, packages/mac-helper-*
+publish:npm      used by .github/workflows/publish.yml on v* tags; release = `npm version <bump> && git push --follow-tags`
 ```
 
 ## Global rules every slice inherits
