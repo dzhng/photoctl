@@ -403,6 +403,92 @@
   against the owning package.
 - **Confidence:** Medium.
 
+### Slice 07a — Swift sends raw RGB floats through a validated temporary file
+
+- **When:** Slice 07a CIRAW boundary.
+- **The choice:** A quarter-scale camera decode contains more than six million channel samples, so
+  `photoctl-mac` does not turn pixels into JSON or mix binary bytes into its status stream. The caller
+  gives it a unique temporary output path; Swift writes row-major RGB 32-bit little-endian floats
+  there and prints a small JSON description to stdout. TypeScript checks that description and the
+  exact expected byte count before constructing `LinearImage`, then removes the temporary directory
+  whether decoding succeeds or fails. The alternative—base64 in JSON—would enlarge every decode and
+  hold another full copy in memory; a mixed stdout protocol would make partial failures hard to parse.
+- **The gap:** The plan delegated the f32 Swift-to-TypeScript wire format but did not choose framing or
+  lifecycle.
+- **The reach:** CIRAW has a bounded, inspectable process boundary that future helper operations can
+  follow without putting platform frameworks in Node. LibRaw remains an in-process native decoder and
+  does not have to adopt this transport.
+- **Verdict:** **Sound.** Metadata and pixels each use the representation suited to them, and failed
+  calls cannot leave library-owned artifacts behind.
+- **Confidence:** High.
+
+### Slice 07a — Helper discovery never compiles Swift at command time
+
+- **When:** Slice 07a mac-helper packaging seam.
+- **The choice:** When a command needs CIRAW, `@photoctl/mac-helper` first honors the explicit
+  `PHOTOCTL_MAC_HELPER_PATH`, then looks for a packaged binary, then the workspace's already-built
+  debug binary, and finally asks the operating system `PATH`. For example, a source checkout works
+  after the normal build, while a release package can ship its own binary at the same API seam. The
+  rejected alternative ran `swift build` from `decode`, which would turn a photographer's runtime
+  command into a compiler/toolchain operation and make installed packages depend on source code.
+- **The gap:** The repo shape required a wrapper and platform packages but did not define development
+  lookup order before the release-packaging slice exists.
+- **The reach:** Slice 14 can add per-platform binaries without changing commands or decoder selection;
+  tests and unusual installations retain one explicit override.
+- **Verdict:** **Sound.** Build-time and runtime responsibilities stay separate, and the lookup order
+  converges on the packaged artifact rather than a development path.
+- **Confidence:** Medium.
+
+### Slice 07a — An unrun headless gate is represented as unknown
+
+- **When:** Slice 07a G3 verification.
+- **The choice:** `doctor` reports `requires_window_server:null` while the CIRAW helper itself is
+  available. The normal host process decoded the camera fixture twice identically, but this machine
+  refused the SSH connection needed to prove operation without a window server. Reporting `false`
+  would turn “not tested” into a promise; reporting `true` would turn an SSH configuration problem
+  into a decoder failure. The checked-in probe changes the field only after it produces real G3
+  evidence.
+- **The gap:** The plan defined pass and fail behavior for G3 but not the state where the required host
+  environment cannot launch the exam.
+- **The reach:** Agents can distinguish installed CIRAW support from the still-open headless property,
+  and 07b can proceed without silently closing the risk.
+- **Verdict:** **Sound.** A nullable capability records the evidence actually available and prevents a
+  false architecture decision.
+- **Confidence:** High.
+
+### Slice 07a — Decoder fallback has its own warning code
+
+- **When:** Slice 07a automatic selection.
+- **The choice:** Suppose an online ARW is intact but the preferred native decoder is unavailable.
+  `decode --with auto` succeeds from the full embedded JPEG or pinned preview and returns
+  `decoder_fallback`; it uses `source_offline` only when the original file itself cannot be read. The
+  alternative reused `source_offline` for both cases, which would tell an agent to reconnect a drive
+  even though installing or repairing a decoder is the real way to regain RAW pixels.
+- **The gap:** The plan required a warning on automatic decoder fallback, while the closed warning-code
+  union had no member describing that reason.
+- **The reach:** Future show, render, and export integration can preserve the difference between storage
+  availability and decoder capability without parsing human messages.
+- **Verdict:** **Sound.** The machine-readable warning identifies the condition an automated caller can
+  act on while preserving the successful fallback.
+- **Confidence:** High.
+
+### Slice 07a — Linear float output clamps to the representable 16-bit TIFF range
+
+- **When:** Slice 07a decode probe output.
+- **The choice:** The neutral CIRAW configuration disables extended dynamic range, and `decode --to`
+  stores each linear sample as an unsigned integer from 0 through 65,535. A negative numerical fringe
+  becomes 0 and a value above 1 becomes 65,535 instead of wrapping around to an unrelated brightness.
+  The float `LinearImage` remains unchanged in memory; only the explicitly requested integer TIFF is
+  clipped. The alternative would need a floating-point TIFF contract or a scene-referred exposure
+  normalization that the plan did not request.
+- **The gap:** The plan says “linear 16-bit output” without spelling out how out-of-range floating-point
+  samples map to an unsigned file representation.
+- **The reach:** Decoder probes remain comparable and safe to open, while the render graph and later
+  color core retain unclipped floats for actual processing.
+- **Verdict:** **Sound.** Saturating conversion is deterministic and preserves ordering at both bounds;
+  wrapping would create false colors.
+- **Confidence:** Medium.
+
 ## Needs user
 
 ### Slice 01b — Rendered JPEG fallback uses quality 88

@@ -8,5 +8,6 @@ export interface CommandRequest {
     cacheRoot?: string;
     lockBudgetMs?: string;
     volumeMap?: string;
+    macHelperPath?: string;
   };
 }

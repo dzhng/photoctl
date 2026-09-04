@@ -13,10 +13,13 @@ import {
   readLibraryDiagnostics,
 } from "@photoctl/library";
 import { cacheRootForLibrary } from "@photoctl/importer";
+import { resolveMacHelperPath } from "@photoctl/mac-helper";
+import { inspectCirawHelper } from "@photoctl/render";
 import { resolve } from "node:path";
 import { parseArguments } from "./arguments.js";
 import { cacheBase, libraryPath, parseLockBudget } from "./context.js";
 import { exportCommand } from "./handlers/export.js";
+import { decodeCommand } from "./handlers/decode.js";
 import { importCommand } from "./handlers/import.js";
 import { showCommand } from "./handlers/show.js";
 export interface DispatchContext {
@@ -35,6 +38,8 @@ export async function dispatch(
     if (request.verb === "show") return await showCommand(request.args, request.env, request.cwd);
     if (request.verb === "export")
       return await exportCommand(request.args, request.env, request.cwd);
+    if (request.verb === "decode")
+      return await decodeCommand(request.args, request.env, request.cwd);
     if (request.verb === "init") {
       const parsed = parseArguments(request.args, { options: ["--path", "--cache-max"] });
       if (parsed.positionals.length > 0) {
@@ -77,6 +82,7 @@ export async function dispatch(
       });
       try {
         const diagnostics = await readLibraryDiagnostics(handle);
+        const ciraw = await inspectCirawHelper(resolveMacHelperPath(request.env.macHelperPath));
         return {
           schema: 1,
           ok: true,
@@ -90,6 +96,21 @@ export async function dispatch(
               root: cacheRootForLibrary(diagnostics.libraryId, cacheBase(request.env, request.cwd)),
               max_bytes: diagnostics.cacheMaxBytes,
             },
+            decoders: [
+              {
+                id: "ciraw",
+                available: ciraw.available,
+                version: ciraw.version,
+                // G3 remains unknown until the SSH/headless probe can run on this host.
+                requires_window_server: null,
+              },
+              {
+                id: "libraw",
+                available: false,
+                version: null,
+                requires_window_server: false,
+              },
+            ],
             lock_holder: null,
           } satisfies DoctorData,
           warnings: [],

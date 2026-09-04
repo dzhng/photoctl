@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
@@ -41,7 +41,10 @@ test("relative command paths resolve from the request working directory", async 
 test("doctor resolves a relative cache root from the request working directory", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-doctor-cwd-"));
   const libraryPath = join(directory, "library");
+  const helper = join(directory, "photoctl-mac");
   try {
+    await writeFile(helper, "#!/bin/sh\necho 'photoctl-mac 9.1'\n");
+    await chmod(helper, 0o755);
     const initialized = await initializeLibrary(libraryPath);
     await initialized.handle.close();
 
@@ -50,15 +53,30 @@ test("doctor resolves a relative cache root from the request working directory",
         verb: "doctor",
         args: [],
         cwd: directory,
-        env: { noDaemon: true, libraryPath, cacheRoot: "relative-cache" },
+        env: {
+          noDaemon: true,
+          libraryPath,
+          cacheRoot: "relative-cache",
+          macHelperPath: helper,
+        },
       },
       { version: "test" },
     );
 
     expect(result).toMatchObject({ schema: 1, ok: true });
     if (!result.ok || !("data" in result)) throw new Error("Expected a successful doctor result");
-    const data = result.data as { library_id: string; cache: { root: string } };
+    const data = result.data as {
+      library_id: string;
+      cache: { root: string };
+      decoders: unknown[];
+    };
     expect(data.cache.root).toBe(join(directory, "relative-cache", data.library_id));
+    expect(data.decoders).toContainEqual({
+      id: "ciraw",
+      available: true,
+      version: "9.1",
+      requires_window_server: null,
+    });
   } finally {
     await rm(directory, { recursive: true });
   }

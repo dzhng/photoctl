@@ -25,6 +25,7 @@ export const warningCodes = [
   "provider_warning",
   "xmp_stale",
   "label_unknown",
+  "decoder_fallback",
 ] as const;
 export type WarningCode = (typeof warningCodes)[number];
 export interface Warning {

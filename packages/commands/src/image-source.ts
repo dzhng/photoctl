@@ -1,4 +1,4 @@
-import { probeImage, type EmbeddedJpeg } from "@photoctl/importer";
+import { probeImage, type EmbeddedJpeg, type ImageProbe } from "@photoctl/importer";
 import { identifyFile, type VolumeResolver } from "@photoctl/library";
 import type { ImageSource } from "@photoctl/render";
 import type { StoredPhoto } from "./photo.js";
@@ -8,6 +8,7 @@ export type StoredFile = StoredPhoto["files"][number];
 export interface SelectedSource {
   file: StoredFile;
   source: Exclude<ImageSource, { kind: "pinned-preview" }>;
+  probe: ImageProbe;
 }
 
 export async function resolveOnlineImageSource(
@@ -19,6 +20,61 @@ export async function resolveOnlineImageSource(
   if (!file) return undefined;
   const selected = await selectFileSource(photo, file, resolver);
   return selected ?? (await resolveOnlineImageSource(photo, resolver, index + 1));
+}
+
+export async function resolveOnlineOriginalSource(
+  photo: StoredPhoto,
+  resolver: VolumeResolver,
+  index = 0,
+): Promise<SelectedSource | undefined> {
+  const file = photo.files[index];
+  if (!file) return undefined;
+  try {
+    const resolved = await resolver.resolve(file.volumeUuid, file.relPath);
+    const path = resolved.online ? resolved.path : undefined;
+    if (path && (await matchesCataloguedIdentity(path, photo.contentKey, photo.size))) {
+      const probe = await probeImage(path);
+      if (probe) {
+        return {
+          file,
+          probe,
+          source: {
+            kind: "online-file",
+            path,
+            mediaType: probe.mediaType,
+            w: probe.dimensions.w,
+            h: probe.dimensions.h,
+            orientation: photo.orientation,
+            copyExact: probe.copyExact,
+          },
+        };
+      }
+    }
+  } catch {
+    // Another locator may still be online and valid.
+  }
+  return await resolveOnlineOriginalSource(photo, resolver, index + 1);
+}
+
+export function fileDecodeSource(
+  photo: StoredPhoto,
+  selected: SelectedSource,
+): Exclude<ImageSource, { kind: "pinned-preview" }> | undefined {
+  if (selected.probe.kind === "image") return selected.source;
+  const full = chooseFullTier(selected.file.embedded);
+  return full
+    ? {
+        kind: "online-jpeg-range",
+        path: selected.source.path,
+        mediaType: "image/jpeg",
+        offset: full.offset,
+        length: full.length,
+        w: full.width,
+        h: full.height,
+        orientation: photo.orientation,
+        copyExact: true,
+      }
+    : undefined;
 }
 
 async function selectFileSource(
@@ -41,12 +97,14 @@ async function selectFileSource(
   if (probe.kind === "image") {
     return {
       file,
+      probe,
       source: {
         kind: "online-file",
         path,
         mediaType: probe.mediaType,
         w: photo.w,
         h: photo.h,
+        orientation: photo.orientation,
         copyExact: probe.copyExact,
       },
     };
@@ -55,6 +113,7 @@ async function selectFileSource(
   return full
     ? {
         file,
+        probe,
         source: {
           kind: "online-jpeg-range",
           path,
@@ -63,6 +122,7 @@ async function selectFileSource(
           length: full.length,
           w: full.width,
           h: full.height,
+          orientation: photo.orientation,
           copyExact: true,
         },
       }

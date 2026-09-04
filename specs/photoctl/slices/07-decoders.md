@@ -1,5 +1,15 @@
 # 07 — full-resolution decoders behind one interface: file images, CIRAW, and LibRaw
 
+## Status
+
+- [x] **7a CIRAW seam:** `photoctl-mac` performs the neutral Core Image/ImageIO decode, the TypeScript
+  decoder boundary consumes its RGB-f32 wire format, `decode --with ciraw` writes linear 16-bit TIFF,
+  and `doctor` exposes availability. The normal macOS host test is deterministic. G3 itself remains
+  blocked because Remote Login is disabled; the evidence and rerunnable command live in
+  [`../assets/gates/G3-ciraw-headless.md`](../assets/gates/G3-ciraw-headless.md).
+- [ ] **7b LibRaw:** portable decoder, native package, compression probe, and G2.
+- [ ] **7c oracle:** shared camera front end/display transform and G4.
+
 ## Contract unlocked
 Every imported photo can enter the same develop/render graph. A whole-file decoder handles every format admitted through
 `previewProducer:"decoded-file"`; CIRAW and LibRaw are specialized adapters behind the same seam. Verdict files G2

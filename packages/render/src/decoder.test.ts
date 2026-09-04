@@ -1,0 +1,88 @@
+import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { expect, test } from "vitest";
+import sharp from "sharp";
+import { CirawDecoder, FileImageDecoder, type ImageSource } from "./decoder.js";
+
+test("the CIRAW adapter returns the shared linear-image contract from the helper wire", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-ciraw-adapter-"));
+  const helper = join(directory, "fake-helper.mjs");
+  const input = join(directory, "source.raw");
+  await writeFile(input, "raw");
+  await writeFile(
+    helper,
+    `#!/usr/bin/env node
+import { writeFileSync } from "node:fs";
+const args = process.argv.slice(2);
+if (args[0] === "probe") {
+  console.log(JSON.stringify({supported:true,supportedDecoderVersions:["8"],decoderVersion:"8",nativeWidth:8,nativeHeight:4}));
+} else {
+  const output = args[args.indexOf("--output") + 1];
+  writeFileSync(output, Buffer.from(new Float32Array([0, 0.5, 1, 1, 0.5, 0]).buffer));
+  console.log(JSON.stringify({width:2,height:1,channels:3,space:"scene-linear-rec2020",orientationApplied:true,wireFormat:"rgb-f32le",decoderVersion:"8"}));
+}
+`,
+  );
+  await chmod(helper, 0o755);
+  const source: ImageSource = {
+    kind: "online-file",
+    path: input,
+    mediaType: "image/x-sony-arw",
+    w: 8,
+    h: 4,
+  };
+
+  const decoder = new CirawDecoder(helper);
+  expect(await decoder.probe(source)).toEqual({
+    supported: true,
+    compression: undefined,
+    notes: ["Core Image RAW decoder 8"],
+  });
+  const image = await decoder.decode(source, { scale: 0.25 });
+  expect(image).toMatchObject({
+    w: 2,
+    h: 1,
+    orientationApplied: true,
+    space: "scene-linear-rec2020",
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  });
+  expect(Array.from(image.data)).toEqual([0, 0.5, 1, 1, 0.5, 0]);
+  await rm(directory, { recursive: true });
+});
+
+test("the file adapter decodes content with a wrong extension into linear Rec.2020", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-file-adapter-"));
+  const input = join(directory, "source.unknown");
+  await sharp(new Uint8Array([255, 0, 0, 0, 255, 0]), {
+    raw: { width: 2, height: 1, channels: 3 },
+  })
+    .png()
+    .toFile(input);
+  const source: ImageSource = {
+    kind: "online-file",
+    path: input,
+    mediaType: "image/png",
+    w: 2,
+    h: 1,
+  };
+
+  const decoder = new FileImageDecoder();
+  expect(await decoder.probe(source)).toEqual({ supported: true, notes: [] });
+  const image = await decoder.decode(source, { scale: 1 });
+  expect(image).toMatchObject({
+    w: 2,
+    h: 1,
+    orientationApplied: true,
+    space: "scene-linear-rec2020",
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  });
+  expect(image.data[0]).toBeCloseTo(0.6274, 3);
+  expect(image.data[1]).toBeCloseTo(0.0691, 3);
+  expect(image.data[2]).toBeCloseTo(0.0164, 3);
+  await rm(directory, { recursive: true });
+});

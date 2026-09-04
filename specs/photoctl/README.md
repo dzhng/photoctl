@@ -11,17 +11,18 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-04. Status: slices 00 and 01 implemented; the first linked-photo workflow now
-imports metadata and previews, preserves cached-preview provenance across source availability changes,
-clips partially visible pixel viewports, and exports an online or pinned JPEG.*
+*Last updated: 2026-09-04. Status: slices 00, 01, and decoder pass 07a are implemented. The linked-photo
+workflow preserves cached provenance and clips partial viewports; the CIRAW helper and shared decoder seam
+produce deterministic linear Rec.2020 pixels on macOS.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
 Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 02 (daemon and contention) and 07a (CIRAW decoder seam).
-- **Blockers:** none for 00–08. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
+- **Pickup point:** dependency-ready slices 02 (daemon and contention) and 07b (vendored LibRaw).
+- **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
+  does not block 07b. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
   None blocks deterministic work — placeholders are named per slice.
 - **Before ending your pass:** update this section, tick the TODO, run the closeout gate named by the slice.
@@ -35,7 +36,8 @@ Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviatio
 - [ ] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
 - [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
-- [ ] 07 decoders: 7a CIRAW, 7b LibRaw, 7c oracle — `slices/07-decoders.md`
+- [x] 07a CIRAW helper + shared decoder seam — `slices/07-decoders.md`
+- [ ] 07b LibRaw + 07c decoder oracle — `slices/07-decoders.md`
 - [ ] 08 develop: 8a dict · 8b1–3 color core · 8c1–4 local ops/NR/geometry/filters → **gold exam green** — `slices/08-develop.md`
 - [ ] 09 providers (9a), spikes (9b), embed worker + search (9c) — `slices/09-providers-embed-search.md`
 - [ ] 10 layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
@@ -362,3 +364,9 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   a batch with no admitted image has no source volume to summarize. Call: add `ids:string[]` and use `volume:null` when skipped;
   both are additive fields in the typed result. Needs David: no; the result now exposes the catalog
   identity it created without weakening existing fields.
+- **2026-09-04 — slice 07a G3 host gate.** Plan said: prove CIRAW under SSH with no window server and
+  record a two-run checksum. Code revealed: the helper produces byte-identical output in the normal
+  host test, but this Mac refuses connections to `localhost:22` because Remote Login is disabled.
+  Call: keep the rerunnable SSH probe, record the local evidence separately, and report
+  `requires_window_server:null` rather than guessing pass or fail. Needs David: enable Remote Login or
+  provide another SSH-capable Mac session to settle G3; 07b remains unblocked.
