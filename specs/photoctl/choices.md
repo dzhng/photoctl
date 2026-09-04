@@ -814,6 +814,20 @@
   implementation of each LibRaw function.
 - **Confidence:** High.
 
+### Slice 07b integration — Git preserves vendored LibRaw whitespace verbatim
+
+- **When:** Slice 07b integration review.
+- **The choice:** Git whitespace diagnostics are disabled only for `crates/libraw-sys/vendor/**`.
+  LibRaw's upstream archive contains trailing whitespace and mixed line endings; normalizing those files
+  would make photoctl's vendored bytes diverge from the pinned, checksummed release. Project-owned Rust,
+  C++, TypeScript, scripts, and documentation keep the repository's normal whitespace checks.
+- **The gap:** The plan required an exact vendored source release and a clean diff gate, but did not say
+  how the gate should treat formatting already present in third-party source.
+- **The reach:** Future LibRaw updates remain auditable against their upstream archive without weakening
+  whitespace review anywhere photoctl owns the code.
+- **Verdict:** **Sound.** The exception is path-scoped to immutable third-party provenance.
+- **Confidence:** High.
+
 ## Needs user
 
 ### Slice 02 integration — CLI tags trim boundaries but preserve case and Unicode
