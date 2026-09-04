@@ -1,5 +1,6 @@
 import type { PGlite } from "@electric-sql/pglite";
 import { migration0001 } from "./0001-init.js";
+import { migration0002 } from "./0002-photo-core.js";
 
 export async function migrate(db: PGlite): Promise<void> {
   await db.exec(`
@@ -10,7 +11,10 @@ export async function migrate(db: PGlite): Promise<void> {
   `);
   const recorded = await db.query<{ version: number }>("SELECT version FROM schema_version");
   const applied = new Set(recorded.rows.map((row) => row.version));
-  const migrations = [{ version: 1, sql: migration0001 }];
+  const migrations = [
+    { version: 1, sql: migration0001 },
+    { version: 2, sql: migration0002 },
+  ];
   async function applyMigration(index: number): Promise<void> {
     const migration = migrations[index];
     if (!migration) return;

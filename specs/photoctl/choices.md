@@ -91,6 +91,39 @@
   with their declared owners while preserving the stable offline outcome.
 - **Confidence:** High.
 
+### Slice 01b — Photo rows represent absent metadata without inventing values
+
+- **When:** Slice 01b library pass.
+- **The choice:** A photo always has `camera` and `exposure` JSON objects, but either object may be
+  empty when a JPEG or TIFF carries no corresponding EXIF fields. Capture time and its UTC offset may
+  be null for the same reason. Structural facts are stricter: byte size cannot be negative, displayed
+  width and height must be positive, and EXIF orientation must be one of 1 through 8. The alternative
+  would either reject otherwise valid photographs with sparse metadata or make every reader handle
+  three states for the JSON objects: missing, null, and empty.
+- **The gap:** The plan named the columns but did not specify nullability, defaults, or database checks.
+- **The reach:** Every import format and every `show` response inherits the distinction between an
+  unknown descriptive fact and an invalid structural fact.
+- **Verdict:** **Sound.** Empty objects preserve a stable response shape while nullable scalar facts
+  remain honestly unknown.
+- **Confidence:** Medium.
+
+### Slice 01b — One open file produces identity and locator stat facts
+
+- **When:** Slice 01b library pass.
+- **The choice:** `identifyFile` opens the source once, reads the contracted head and tail samples from
+  that open descriptor, and returns its size and modification time alongside the content key. It
+  checks size and modification time again before returning. If a copy is still writing the file while
+  photoctl samples it, the operation fails instead of combining the beginning of one state with the
+  end of another. A caller does not reopen the path to obtain locator metadata, because the path could
+  point at a replacement by then.
+- **The gap:** The plan fixed the hash bytes but did not define the API result or concurrent source-file
+  behavior.
+- **The reach:** Import and later relocation logic receive one coherent set of file facts; callers must
+  retry a file that changes during inspection.
+- **Verdict:** **Sound.** It makes the content key describe one observed file state rather than a race
+  between independent path reads.
+- **Confidence:** High.
+
 ### Slice 01a — A successful `doctor` reports no foreign lock holder
 
 - **When:** Slice 01a.
@@ -194,6 +227,22 @@
 - **Confidence:** High.
 
 ## Needs user
+
+### Slice 01b — An ambiguous photo prefix uses `not_found` with an explicit reason
+
+- **When:** Slice 01b library pass.
+- **The choice:** Suppose two photo IDs begin with `0199a7c2`. `photoctl show 0199a7c2` must not pick
+  whichever database row sorts first. The library rejects it with the existing `not_found` data-error
+  code and adds `reason:"ambiguous"`; a longer prefix then resolves normally. The alternative is to add
+  a new `ambiguous_id` member to the public error-code union, which is clearer but expands a protocol
+  the plan declared closed without naming that code.
+- **The gap:** The plan requires unambiguous prefixes but defines neither the ambiguous response nor a
+  dedicated error code.
+- **The reach:** Every verb that accepts photo IDs will expose this error shape, so scripts may branch
+  on the code and reason.
+- **Verdict:** **Needs-user.** The reversible provisional call keeps the closed code list and exit 65;
+  before release, add `ambiguous_id` if callers should distinguish ambiguity at the top-level code.
+- **Confidence:** Low.
 
 ### Slice 01a — The provisional daemon idle timeout is fifteen minutes
 

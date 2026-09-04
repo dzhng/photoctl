@@ -2,8 +2,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { vector } from "@electric-sql/pglite-pgvector";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { v7 as uuidv7 } from "uuid";
 import { PhotoctlError } from "@photoctl/protocol";
+import { newLibraryEntityId } from "./identity.js";
 import { acquireLibraryLock, DEFAULT_LOCK_BUDGET_MS, OPEN_LOCK_NAME } from "./lock.js";
 import { migrate } from "./migrations/runner.js";
 
@@ -67,7 +67,7 @@ export async function initializeLibrary(
   let handle: LibraryHandle | undefined;
   try {
     handle = await openLibrary(libraryPath, { initialize: true });
-    const libraryId = uuidv7();
+    const libraryId = newLibraryEntityId();
     await handle.query(
       "INSERT INTO settings (key, value) VALUES ($1, $2::jsonb), ($3, $4::jsonb), ($5, $6::jsonb)",
       [
