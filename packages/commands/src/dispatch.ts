@@ -17,9 +17,12 @@ import {
 import { cacheRootForLibrary } from "@photoctl/importer";
 import { resolveMacHelperPath } from "@photoctl/mac-helper";
 import { inspectCirawHelper } from "@photoctl/render";
+import type { PreviewCoordinator } from "@photoctl/render";
 import { resolve } from "node:path";
 import { parseArguments } from "./arguments.js";
 import { cacheBase, libraryPath, parseLockBudget } from "./context.js";
+import { parseByteSize } from "./byte-size.js";
+import { cacheCommand } from "./handlers/cache.js";
 import { exportCommand } from "./handlers/export.js";
 import { decodeCommand } from "./handlers/decode.js";
 import { importCommand } from "./handlers/import.js";
@@ -29,6 +32,7 @@ export interface DispatchContext {
   version: string;
   library?: LibraryHandle;
   emit?: (event: StderrEvent) => void;
+  previewCoordinator?: PreviewCoordinator;
 }
 export async function dispatch(
   request: CommandRequest,
@@ -41,7 +45,21 @@ export async function dispatch(
     if (request.verb === "import")
       return await importCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "show")
-      return await showCommand(request.args, request.env, request.cwd, context.library);
+      return await showCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.previewCoordinator,
+      );
+    if (request.verb === "cache")
+      return await cacheCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.previewCoordinator,
+      );
     if (request.verb === "export")
       return await exportCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "decode")
@@ -141,15 +159,4 @@ export async function dispatch(
       };
     throw error;
   }
-}
-
-function parseByteSize(value: string): number {
-  const match = /^(\d+(?:\.\d+)?)(B|KiB|MiB|GiB|TiB)$/i.exec(value);
-  if (!match) throw new PhotoctlError("usage", `Invalid byte size: ${value}`);
-  const units = { b: 1, kib: 1024, mib: 1024 ** 2, gib: 1024 ** 3, tib: 1024 ** 4 };
-  const bytes = Number(match[1]) * units[match[2].toLowerCase() as keyof typeof units];
-  if (!Number.isSafeInteger(bytes) || bytes <= 0) {
-    throw new PhotoctlError("usage", `Invalid byte size: ${value}`);
-  }
-  return bytes;
 }

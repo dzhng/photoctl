@@ -2,6 +2,13 @@
 
 Sub-slices: **3a** preview coordination/index/prune · **3b** backup/restore/migrate + fixture.
 
+**03a implemented:** the daemon owns one preview coordinator and direct dispatch owns one request-local
+coordinator. Master and view keys are single-flight, every waiter revalidates the JPEG plus SHA-bound provenance,
+and completed storage (JPEG plus sidecar bytes) is indexed before a returned path is touched. Prune uses one
+captured start time, the 30-minute grace, an exclusive path lease, and a conditional database claim so a concurrent
+touch wins. It protects `emb/` and `models/` by both the pinned flag and tier, removes sidecars with their JPEGs,
+and isolates a failed deletion so later LRU candidates still run.
+
 ## Contract unlocked
 A broken, old, or PG-major-mismatched library is recovered by `restore`, never recreated silently (D36/D37); every later
 schema change has a proven upgrade path from a committed pgDump. Preview artifacts become safe to share and inspect before
@@ -35,6 +42,12 @@ later render graphs add more producers.
 deleted); `preview-single-flight.test.ts` launches overview, native, and overlapping region requests, proves one master graph
 evaluation and one artifact per key, then injects a failed writer and proves retry plus no temp residue;
 `backup-dedupe.test.ts` (second open inside the window → no new file).
+
+03a evidence: coordinator retry/provenance and overview/native/overlapping-view tests; PGlite cache-index ordering
+and bounded LRU paging/conditional-claim tests; prune pinned-tier, lease, captured-clock touch race, and failure-isolation tests;
+command-level `show` index and `cache prune --max` tests. The TypeScript build, typecheck, formatter, and linter are
+green; focused preview consumers and the persistent-daemon journey pass. A broad changed-test sweep exposed existing
+process-contention timing failures under its full parallel load, so it is not recorded as a passing gate.
 
 ## Delegated: pgDump compression.
 ## Must stay green: 01–02. Deps: 3a ← 02; 3b ← 3a.

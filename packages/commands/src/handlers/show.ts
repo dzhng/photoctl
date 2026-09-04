@@ -1,9 +1,15 @@
 import { cacheRootForLibrary, formatShotInstant, pinnedEmbeddedJpegPath } from "@photoctl/importer";
-import { createVolumeResolver, resolvePhotoId, type LibraryHandle } from "@photoctl/library";
+import {
+  CacheIndex,
+  createVolumeResolver,
+  resolvePhotoId,
+  type LibraryHandle,
+} from "@photoctl/library";
 import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@photoctl/protocol";
 import {
   materializePreview,
   PreviewDestinationError,
+  PreviewCoordinator,
   renderStateHash,
   viewHash,
   type ImageSource,
@@ -19,6 +25,7 @@ export async function showCommand(
   env: RequestEnv,
   cwd: string,
   provided?: LibraryHandle,
+  providedCoordinator?: PreviewCoordinator,
 ): Promise<Envelope> {
   const parsed = parseArguments(args, {
     flags: ["--norm"],
@@ -35,6 +42,8 @@ export async function showCommand(
     const libraryId = await readLibraryId(handle);
     const resolver = createVolumeResolver(env.volumeMap);
     const cacheRoot = cacheRootForLibrary(libraryId, cacheBase(env, cwd));
+    const index = new CacheIndex(handle, cacheRoot);
+    const coordinator = providedCoordinator ?? new PreviewCoordinator();
     const locators = await Promise.all(
       photo.files.map(async (file) => ({
         volume: file.volumeUuid,
@@ -58,7 +67,7 @@ export async function showCommand(
       orientation: 1,
     };
     const materialized = await materializeWithFallback(
-      { id, cacheRoot, renderHash, photo, view },
+      { id, cacheRoot, renderHash, photo, view, coordinator, index },
       selected?.source ?? pinned,
       pinned,
     );
@@ -223,6 +232,8 @@ async function materializeWithFallback(
     renderHash: string;
     photo: StoredPhoto;
     view: ViewSpec;
+    coordinator: PreviewCoordinator;
+    index: CacheIndex;
   },
   source: ImageSource,
   pinned: ImageSource,
@@ -230,6 +241,8 @@ async function materializeWithFallback(
   try {
     return {
       preview: await materializePreview({
+        coordinator: context.coordinator,
+        index: context.index,
         cacheRoot: context.cacheRoot,
         photoId: context.id,
         renderHash: context.renderHash,
@@ -250,6 +263,8 @@ async function materializeWithFallback(
     try {
       return {
         preview: await materializePreview({
+          coordinator: context.coordinator,
+          index: context.index,
           cacheRoot: context.cacheRoot,
           photoId: context.id,
           renderHash: context.renderHash,

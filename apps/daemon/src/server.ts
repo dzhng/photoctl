@@ -13,6 +13,7 @@ import {
   type DaemonServerFrame,
   type Envelope,
 } from "@photoctl/protocol";
+import { PreviewCoordinator } from "@photoctl/render";
 import { watch, type FSWatcher } from "node:fs";
 import { access, chmod, unlink } from "node:fs/promises";
 import { createServer, type Server, type Socket } from "node:net";
@@ -44,6 +45,7 @@ export class DaemonServer {
   private readonly lock;
   private server: Server | undefined;
   private library: LibraryHandle | undefined;
+  private previewCoordinator: PreviewCoordinator | undefined;
   private watcher: FSWatcher | undefined;
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
   private drainTimer: ReturnType<typeof setTimeout> | undefined;
@@ -71,6 +73,7 @@ export class DaemonServer {
       startedAt: this.lockStartedAt,
     });
     this.library = await openLibraryHoldingLock(this.libraryPath, this.lock);
+    this.previewCoordinator = new PreviewCoordinator();
     const settings = await this.library.query<{ key: string; value: number }>(
       "SELECT key, value::text::integer AS value FROM settings WHERE key IN ('daemon_idle_ms', 'daemon_queue_max')",
     );
@@ -166,6 +169,7 @@ export class DaemonServer {
           await dispatch(item.request, {
             version: this.version,
             library: this.library,
+            previewCoordinator: this.previewCoordinator,
             emit: (event) =>
               item.socket.write(encodeFrame({ type: "event", event } satisfies DaemonServerFrame)),
           }),

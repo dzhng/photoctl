@@ -32,6 +32,73 @@
   sole machine contract.
 - **Confidence:** High.
 
+### Slice 03a — Preview provenance is cryptographically bound to the JPEG bytes
+
+- **When:** Slice 03a preview-cache lifecycle.
+- **The choice:** A derived preview is two files: the JPEG an agent opens and a small JSON sidecar explaining which
+  source tier and source dimensions produced it. The sidecar now also stores the JPEG's SHA-256 digest, a compact
+  fingerprint of the exact bytes. On read, photoctl recomputes that fingerprint and rejects the pair if it differs.
+  For example, if power fails after a new JPEG is renamed but before its new sidecar is renamed, the old explanation
+  cannot accidentally bless the new pixels; the next `show` repairs the pair. Cache accounting charges both files,
+  because both are required for one usable artifact.
+- **The gap:** The plan required atomic artifact writes and provenance validation but did not define how two separately
+  renamed files prove they belong to the same completed write, or whether sidecar bytes count toward the cache limit.
+- **The reach:** Every later develop, layer, fill, and markup preview can trust cached provenance after a crash, and
+  `cache prune --max` measures all bytes that must survive together rather than hiding metadata overhead.
+- **Verdict:** **Sound.** Content binding turns a two-file crash window into a detectable cache miss, which is safely
+  regenerated from canonical state.
+- **Confidence:** High.
+
+### Slice 03a — Prune claims each path before deleting and lets a concurrent touch win
+
+- **When:** Slice 03a cache-prune pass.
+- **The choice:** Pruning takes one clock snapshot, pages old rows in bounded least-recently-used order, then asks the shared
+  preview coordinator for an exclusive lease on each path. It conditionally deletes the database row only if
+  `last_used` is still older than the snapshot's 30-minute cutoff. If `show` validated and touched the preview after
+  the list was captured, that condition fails and the file stays. If prune claims first, a new materializer waits;
+  after deletion it regenerates instead of receiving a disappearing path. A filesystem failure restores the row,
+  records the first error, and continues with later candidates before reporting failure.
+- **The gap:** The plan named leases, a captured prune time, and a concurrent-touch test, but did not choose the
+  database/filesystem ordering or specify whether one undeletable file stops the entire LRU pass.
+- **The reach:** Agents can inspect a returned path without a simultaneous cleanup invalidating it, and a permanently
+  bad cache entry cannot starve every newer candidate on repeated prune runs.
+- **Verdict:** **Sound.** The lease closes the file race, the conditional claim closes the stale-query race, and
+  per-item failure isolation preserves forward progress.
+- **Confidence:** High.
+
+### Slice 03a — `cache prune` reports budget movement and accepts zero as an explicit purge target
+
+- **When:** Slice 03a command contract.
+- **The choice:** A successful prune returns four integer byte counters: artifacts removed, bytes freed, bytes still
+  indexed, and the requested maximum. `--max` uses the same binary byte units as library initialization, but explicitly
+  accepts `0B`; that means “remove every eligible derived artifact” while still protecting pinned, recent, and leased
+  files. Without `--max`, the command uses the library's stored cache budget.
+- **The gap:** The slice named `cache prune [--max]` but did not define its result envelope or whether zero is a valid
+  operator-requested budget.
+- **The reach:** Scripts can verify whether cleanup actually made progress and can deliberately clear regenerable
+  previews without deleting offline source previews or model assets.
+- **Verdict:** **Sound.** The counters expose the result without requiring filesystem inspection, and zero is a useful,
+  reversible operation on explicitly prunable data.
+- **Confidence:** Medium.
+
+### Slice 03a — Cache-index paths are relative to the active per-library cache root
+
+- **When:** Slice 03a integration review.
+- **The choice:** The database stores `view/<photo>/<render>/<artifact>` rather than the machine's absolute cache
+  directory. A `CacheIndex` adapter receives the active per-library root and translates at its boundary. If an operator
+  changes `PHOTOCTL_CACHE`, the same logical rows point into the new root: `show` recreates missing artifacts there and
+  prune can remove stale accounting for files that are absent. The abandoned physical files under the old override are
+  outside the newly selected cache and are no longer managed until that old root is selected again or removed directly.
+  Storing absolute paths instead would let one catalog accumulate rows for multiple overrides and make the current
+  budget impossible to satisfy because prune must not delete outside its active root.
+- **The gap:** The plan made the cache base overrideable and the database portable, but did not define whether cache
+  index identities include a machine-specific root or how switching the override reconciles soft cache state.
+- **The reach:** Backup/restore in 03b does not bake one machine's cache directory into the catalog, while every cache
+  producer and pruner resolves paths through the same current-root adapter.
+- **Verdict:** **Sound.** Cache files are regenerable local state, so portable logical identities are safer than
+  permanently accounting for an inactive machine path.
+- **Confidence:** Medium.
+
 ### Slice 02 — Daemon startup transfers the already-held kernel lock
 
 - **When:** Slice 02 daemon lifecycle.

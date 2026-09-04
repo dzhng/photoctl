@@ -11,7 +11,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-04. Status: slices 00–02 and decoder pass 07a are implemented.
+*Last updated: 2026-09-04. Status: slices 00–02, preview-cache pass 03a, and decoder pass 07a are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS; `--human` renders the same envelopes without changing execution.*
 
@@ -20,7 +20,8 @@ point and follow it exactly. Do not re-decide anything in the decision ledger (`
 Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 03a (preview cache lifecycle) and 07b (vendored LibRaw).
+- **Pickup point:** dependency-ready slices 03b (backup/restore/migrate) and 07b (vendored LibRaw).
+  Slice 03b now inherits the shared cache/index lifecycle from 03a.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block 07b. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -33,7 +34,7 @@ Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviatio
 - [x] 01b universal image source → show → offline preview → export (A7C II embedded-container proof) — `slices/01-first-jpeg.md`
 - [x] 02a daemon (runs `dispatch`), contention race, `tag` — `slices/02-daemon-and-contention.md`
 - [x] 02b global `--human` envelope renderer — `slices/02-daemon-and-contention.md`
-- [ ] 03a preview coordination/index/prune · 03b backup/restore/migrate + fixture — `slices/03-library-lifecycle.md`
+- [x] 03a preview coordination/index/prune · [ ] 03b backup/restore/migrate + fixture — `slices/03-library-lifecycle.md`
 - [ ] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
 - [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`

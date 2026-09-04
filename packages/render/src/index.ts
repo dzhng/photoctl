@@ -4,4 +4,6 @@ export * from "./decoder.js";
 export * from "./linear-tiff.js";
 export * from "./graph.js";
 export * from "./preview.js";
+export * from "./preview-artifact.js";
+export * from "./preview-coordinator.js";
 export * from "./export/run.js";

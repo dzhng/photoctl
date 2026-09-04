@@ -9,6 +9,7 @@
   "dependencies": {
     "@photoctl/commands": "workspace:*",
     "@photoctl/library": "workspace:*",
-    "@photoctl/protocol": "workspace:*"
+    "@photoctl/protocol": "workspace:*",
+    "@photoctl/render": "workspace:*"
   }
 }

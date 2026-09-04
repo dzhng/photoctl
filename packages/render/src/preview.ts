@@ -1,11 +1,19 @@
-import { createHash, randomUUID } from "node:crypto";
-import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import sharp from "sharp";
 import type { ExifOrientation } from "./coordinates.js";
 import { srgb2014ProfilePath } from "./color.js";
 import type { ImageSource } from "./decoder.js";
 import { renderPhoto, type Image16 } from "./graph.js";
+import {
+  readValidPreviewArtifact,
+  writePreviewArtifact,
+  type PreviewSourceTier,
+  type ValidPreviewArtifact,
+} from "./preview-artifact.js";
+import { PreviewCoordinator, type PreviewIndexAdapter } from "./preview-coordinator.js";
+
+export { PreviewDestinationError } from "./preview-artifact.js";
 
 export interface RenderState {
   contentKey: string;
@@ -31,23 +39,7 @@ export function viewHash(spec: ViewSpec): string {
 }
 
 export type PreviewCacheSource = "exact_view" | "sufficient_full_frame" | "render_master";
-export type PreviewSourceTier = ImageSource["kind"];
-
-interface PreviewProvenance {
-  sourceTier: PreviewSourceTier;
-  sourceDimensions: { w: number; h: number };
-}
-
-export class PreviewDestinationError extends Error {
-  readonly code = "volume_readonly";
-
-  constructor(
-    readonly path: string,
-    readonly reason: unknown,
-  ) {
-    super(`Could not write preview cache: ${path}`);
-  }
-}
+export type { PreviewSourceTier } from "./preview-artifact.js";
 
 export interface MaterializedPreview {
   path: string;
@@ -63,6 +55,8 @@ export interface MaterializedPreview {
 
 /** Materializes one view while preserving a single graph-evaluated full-frame master. */
 export async function materializePreview(request: {
+  coordinator: PreviewCoordinator;
+  index: PreviewIndexAdapter;
   cacheRoot: string;
   photoId: string;
   renderHash: string;
@@ -84,102 +78,124 @@ export async function materializePreview(request: {
   const nativeFullFrame = request.view.region === null && request.view.longEdge === "native";
   const cheapOverview = request.view.region === null && request.view.longEdge === 1616;
 
-  const exact = nativeFullFrame ? undefined : await readValidJpeg(exactPath);
-  if (exact && exact.w >= requestedWidth && exact.h >= requestedHeight) {
+  if (nativeFullFrame) {
+    const master = await ensureMaster(request, masterPath, region, requestedWidth, requestedHeight);
     return result(
-      exactPath,
+      master.path,
       region,
-      exact.w,
-      exact.h,
-      exact.sourceDimensions.w,
-      exact.sourceDimensions.h,
-      exact.sourceTier,
+      master.artifact.w,
+      master.artifact.h,
+      master.artifact.sourceDimensions.w,
+      master.artifact.sourceDimensions.h,
+      master.artifact.sourceTier,
       requestedScale,
-      "exact_view",
+      master.created ? "render_master" : "exact_view",
     );
   }
 
-  const master = await readValidJpeg(masterPath);
-  if (master && isSufficient(master, request.photo, region, requestedWidth, requestedHeight)) {
-    if (nativeFullFrame) {
-      return result(
+  return await request.coordinator.materialize(
+    {
+      photoId: request.photoId,
+      renderHash: request.renderHash,
+      artifact: `view:${viewHash(request.view)}`,
+      path: exactPath,
+    },
+    async () => {
+      const exact = await readValidPreviewArtifact(exactPath);
+      if (exact && exact.w >= requestedWidth && exact.h >= requestedHeight) {
+        return result(
+          exactPath,
+          region,
+          exact.w,
+          exact.h,
+          exact.sourceDimensions.w,
+          exact.sourceDimensions.h,
+          exact.sourceTier,
+          requestedScale,
+          "exact_view",
+        );
+      }
+
+      // The default overview is deliberately cheap and does not create a full-frame master.
+      if (cheapOverview) {
+        const image = await renderPhoto({ orientation: request.photo.orientation }, request.source);
+        return await deriveRenderedView(
+          image,
+          exactPath,
+          request.photo,
+          region,
+          requestedScale,
+          request.source.kind,
+          "render_master",
+        );
+      }
+
+      const master = await ensureMaster(
+        request,
         masterPath,
         region,
-        master.w,
-        master.h,
-        master.sourceDimensions.w,
-        master.sourceDimensions.h,
-        master.sourceTier,
-        requestedScale,
-        "exact_view",
+        requestedWidth,
+        requestedHeight,
       );
-    }
-    return await deriveView(
-      master.bytes,
-      masterPath,
-      exactPath,
-      directory,
-      master,
-      request.photo,
-      region,
-      requestedScale,
-      "sufficient_full_frame",
-    );
-  }
+      return await deriveView(
+        master.artifact.bytes,
+        master.path,
+        exactPath,
+        master.artifact,
+        request.photo,
+        region,
+        requestedScale,
+        master.created ? "render_master" : "sufficient_full_frame",
+      );
+    },
+    request.index,
+  );
+}
 
-  // The default overview is deliberately cheap and does not create a full-frame master.
-  if (cheapOverview) {
-    const image = await renderPhoto({ orientation: request.photo.orientation }, request.source);
-    return await deriveRenderedView(
-      image,
-      exactPath,
-      directory,
-      request.photo,
-      region,
-      requestedScale,
-      request.source.kind,
-      "render_master",
-    );
-  }
-
-  const image = await renderPhoto({ orientation: request.photo.orientation }, request.source);
-  const masterBytes = await encodeJpeg(image);
-  const provenance = {
-    sourceTier: request.source.kind,
-    sourceDimensions: { w: image.w, h: image.h },
-  };
-  await writePreviewArtifact(masterPath, directory, masterBytes, provenance);
-  const renderedMaster = { bytes: masterBytes, w: image.w, h: image.h, ...provenance };
-  if (nativeFullFrame) {
-    return result(
-      masterPath,
-      region,
-      image.w,
-      image.h,
-      image.w,
-      image.h,
-      request.source.kind,
-      requestedScale,
-      "render_master",
-    );
-  }
-  return await deriveView(
-    masterBytes,
-    masterPath,
-    exactPath,
-    directory,
-    renderedMaster,
-    request.photo,
-    region,
-    requestedScale,
-    "render_master",
+async function ensureMaster(
+  request: Parameters<typeof materializePreview>[0],
+  masterPath: string,
+  region: [number, number, number, number],
+  requestedWidth: number,
+  requestedHeight: number,
+): Promise<{ path: string; artifact: ValidPreviewArtifact; created: boolean }> {
+  return await request.coordinator.materialize(
+    {
+      photoId: request.photoId,
+      renderHash: request.renderHash,
+      artifact: "master",
+      path: masterPath,
+    },
+    async () => {
+      const existing = await readValidPreviewArtifact(masterPath);
+      if (
+        existing &&
+        isSufficient(existing, request.photo, region, requestedWidth, requestedHeight)
+      ) {
+        return { path: masterPath, artifact: existing, created: false };
+      }
+      const image = await renderPhoto({ orientation: request.photo.orientation }, request.source);
+      const bytes = await encodeJpeg(image);
+      const provenance = {
+        sourceTier: request.source.kind,
+        sourceDimensions: { w: image.w, h: image.h },
+      };
+      await writePreviewArtifact(masterPath, bytes, provenance);
+      const artifact = await readValidPreviewArtifact(masterPath);
+      if (!artifact) throw new Error(`Preview artifact failed validation: ${masterPath}`);
+      return {
+        path: masterPath,
+        artifact,
+        created: true,
+      };
+    },
+    request.index,
   );
 }
 
 async function deriveRenderedView(
   image: Image16,
   path: string,
-  directory: string,
   photo: { w: number; h: number },
   region: [number, number, number, number],
   requestedScale: number,
@@ -191,7 +207,6 @@ async function deriveRenderedView(
     bytes,
     path,
     path,
-    directory,
     {
       w: image.w,
       h: image.h,
@@ -210,7 +225,6 @@ async function deriveView(
   bytes: Buffer,
   sourcePath: string,
   outputPath: string,
-  directory: string,
   source: {
     w: number;
     h: number;
@@ -240,7 +254,7 @@ async function deriveView(
     .withIccProfile(srgb2014ProfilePath)
     .toBuffer();
   if (outputPath !== sourcePath || source.rawChannels) {
-    await writePreviewArtifact(outputPath, directory, output, source);
+    await writePreviewArtifact(outputPath, output, source);
   }
   return result(
     outputPath,
@@ -325,39 +339,6 @@ function clampRegion(
   return [left, top, right - left, bottom - top];
 }
 
-async function readValidJpeg(path: string): Promise<
-  | {
-      bytes: Buffer;
-      w: number;
-      h: number;
-      sourceTier: PreviewSourceTier;
-      sourceDimensions: { w: number; h: number };
-    }
-  | undefined
-> {
-  try {
-    const bytes = await readFile(path);
-    const metadata = await sharp(bytes, { failOn: "error" }).metadata();
-    await sharp(bytes, { failOn: "error" }).stats();
-    const [expectedProfile, provenanceBytes] = await Promise.all([
-      readFile(srgb2014ProfilePath),
-      readFile(`${path}.json`),
-    ]);
-    const provenance = parseProvenance(provenanceBytes);
-    if (
-      metadata.format !== "jpeg" ||
-      !metadata.width ||
-      !metadata.height ||
-      !metadata.icc?.equals(expectedProfile)
-    ) {
-      return undefined;
-    }
-    return { bytes, w: metadata.width, h: metadata.height, ...provenance };
-  } catch {
-    return undefined;
-  }
-}
-
 async function encodeJpeg(image: Image16): Promise<Buffer> {
   return await sharp(image8BitBytes(image), {
     raw: { width: image.w, height: image.h, channels: image.channels },
@@ -375,68 +356,4 @@ function image8BitBytes(image: Image16): Buffer {
     bytes[index] = Math.round(image.data[index] / 257);
   }
   return bytes;
-}
-
-function parseProvenance(bytes: Buffer): PreviewProvenance {
-  const value = JSON.parse(bytes.toString("utf8")) as {
-    schema?: unknown;
-    source_tier?: unknown;
-    source_dimensions?: { w?: unknown; h?: unknown };
-  };
-  if (
-    value.schema !== 1 ||
-    !["online-file", "online-jpeg-range", "pinned-preview"].includes(value.source_tier as string) ||
-    !Number.isSafeInteger(value.source_dimensions?.w) ||
-    !Number.isSafeInteger(value.source_dimensions?.h) ||
-    Number(value.source_dimensions?.w) <= 0 ||
-    Number(value.source_dimensions?.h) <= 0
-  ) {
-    throw new Error("Invalid preview provenance");
-  }
-  return {
-    sourceTier: value.source_tier as PreviewSourceTier,
-    sourceDimensions: {
-      w: Number(value.source_dimensions?.w),
-      h: Number(value.source_dimensions?.h),
-    },
-  };
-}
-
-async function writePreviewArtifact(
-  path: string,
-  directory: string,
-  bytes: Uint8Array,
-  provenance: PreviewProvenance,
-): Promise<void> {
-  await writeAtomically(path, directory, bytes);
-  await writeAtomically(
-    `${path}.json`,
-    directory,
-    Buffer.from(
-      `${JSON.stringify({
-        schema: 1,
-        source_tier: provenance.sourceTier,
-        source_dimensions: provenance.sourceDimensions,
-      })}\n`,
-    ),
-  );
-}
-
-async function writeAtomically(path: string, directory: string, bytes: Uint8Array): Promise<void> {
-  const temporary = `${path}.${process.pid}.${randomUUID()}.tmp`;
-  try {
-    await mkdir(directory, { recursive: true });
-    const output = await open(temporary, "w");
-    try {
-      await output.writeFile(bytes);
-      await output.sync();
-    } finally {
-      await output.close();
-    }
-    await rename(temporary, path);
-  } catch (error) {
-    throw new PreviewDestinationError(path, error);
-  } finally {
-    await rm(temporary, { force: true }).catch(() => undefined);
-  }
 }
