@@ -1,5 +1,7 @@
 # 00 — repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool
 
+Read the README's **Precedent repos** table before touching anything in this slice.
+
 ## Contract unlocked
 `bun run verify` is a real gate from commit 1. `photoctl --version` prints a valid envelope. One functional
 test spawns the **built** CLI inside `test:functional`; the harness fails the run if zero tests executed

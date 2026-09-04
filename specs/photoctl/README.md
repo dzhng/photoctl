@@ -62,6 +62,23 @@ real drive in 14.
                                         14 ─ 15
 ```
 
+## Precedent repos — where to look before designing anything
+
+David's sibling repos have already solved most of the infrastructure here. **Look first, lift and
+cite, then adapt** — never re-derive. Each row names the pattern, the source, and the mistake found
+there that photoctl must not repeat (details on the map's Quadrant 4 cards).
+
+| Pattern | Precedent | Lift from | Do not repeat |
+|---|---|---|---|
+| Bun workspaces + dependency catalog, turbo, oxlint/oxfmt, `bunfig.toml`, `typescript-config`, docker-gated checks | `~/dev/duet` | `package.json`, `turbo.json`, `bunfig.toml`, `.oxlintrc.json`, `packages/typescript-config/`, `scripts/` | Bun as the *runtime* — here Node executes all project code |
+| Root Cargo workspace beside TS packages; thin root scripts spanning both (`test:rust`, `test:web`, `verify`); `throwaway/` + `dbg*` test buckets | `~/dev/game` | `Cargo.toml`, `package.json`, `.gitignore` | — |
+| PGlite single-writer lock, session lifetime, refuse-vs-recover, migrations runner | `~/dev/duet-agent` | `src/file-lock.ts`, `src/memory/pglite.ts`, `src/memory/session.ts`, `src/memory/migrations.ts` | two lock models with opposite staleness rules; `EPERM` treated as alive; no SIGINT/SIGTERM handler; lock leaked on a throwing open; `withDb` returning `undefined` on timeout (silent write drop); auto-quarantine that starts an empty library; `cpSync` assumed to clone; `@electric-sql/pglite/vector` import (gone in 0.5.x); seven-step migration churn; `storage.ts` dragging in the whole agent runtime |
+| Background embedding worker that yields the lock between batches | `~/dev/duet-agent` | `src/memory/embedding-worker.ts` | yield/poll constants tuned independently (the code admits the pairing is unsound); Bun-derived timing budgets |
+| Hybrid retrieval: tsvector + vector fused with RRF | `~/dev/duet-agent` | `src/memory/recall.ts` | vector(3072) without an index — use `halfvec` + HNSW |
+| Functional tests through the real CLI as real OS processes; the Docker seam | `~/dev/duet-agent` | `test/memory-embedding-worker-lock-starvation.test.ts`, `test/memory-session-concurrent-fresh-open.test.ts`, `test/memory-pglite.test.ts`, `evals/memory-multi-cli-lock.eval.ts`, `test/helpers/docker-only.ts`, `package.json` `test` script | env-gated skips (`testIfDocker`) that leave CI green with zero assertions; workers spawned with `bun` importing `.ts` (Node won't remap `./x.js` → `.ts`); `PEER_LOCK_BUDGET_MS` derived from Bun's spawn time |
+| CI on every push; tag-based release (`v*` → GitHub Release + npm publish) | `~/dev/duet-agent` | `.github/workflows/{ci,publish}.yml` (already lifted) | — |
+| `AGENTS.md` / `CLAUDE.md` conventions | `~/dev/duet` | copied verbatim, then only deletions | paraphrasing or restructuring it |
+
 ## Repo shape (decided)
 
 Bun 1.3.x is the package manager, workspace/catalog resolver, script runner and Turbo launcher (the
