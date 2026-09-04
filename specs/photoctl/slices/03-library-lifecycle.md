@@ -11,7 +11,9 @@ schema change has a proven upgrade path from a committed pgDump.
   snapshot into a fresh cluster under the current PG, swaps directories. `photoctl migrate`: forward-only schema migrations;
   `migrate_required` (PG major mismatch) is resolved by `restore`, which `migrate`'s message points to.
 - `packages/importer/src/cache.ts`: `cache prune [--max]` by `cache_index.last_used` (never atime); pinned rows (`emb/` tier,
-  `models/`) are excluded.
+  `models/`) are excluded. Preview artifacts whose materialization is in flight or whose successful `show` updated
+  `last_used` within the preceding 30 minutes are also excluded. The clock and grace interval are injected in tests;
+  pruning works from one captured `prune_started_at`, so a long prune cannot age a returned preview into eligibility mid-run.
 - `fixtures/libraries/schema-v1.pgsql` (a slice-01b library with the fixture). Every later schema slice adds `schema-vN.pgsql`
   and extends `migrate-upgrade.test.ts`.
 - `wb library`.
@@ -19,7 +21,8 @@ schema change has a proven upgrade path from a committed pgDump.
 ## Verification
 `restore.test.ts` (import 3 fixtures:drive files → backup → wipe rows → restore → same ids and `content_key`s);
 `migrate-upgrade.test.ts` (open `schema-v1.pgsql` → `LATEST`, fixture row values intact); `cache-prune.test.ts` (oldest
-`last_used` gone, pinned kept, total ≤ max); `backup-dedupe.test.ts` (second open inside the window → no new file).
+`last_used` gone, pinned kept, leased/recent previews kept, total ≤ max; a preview touched concurrently with the prune is not
+deleted); `backup-dedupe.test.ts` (second open inside the window → no new file).
 
 ## Delegated: pgDump compression.
 ## Must stay green: 01–02. Deps: 02. Firewall: no directory clones; no auto-quarantine; no down migrations.

@@ -1,4 +1,4 @@
-# 01 — 01a library open + ONE lock + refuse-to-open + `init`/`doctor`; 01b import a7c2.ARW → show → export
+# 01 — 01a library open + ONE lock + refuse-to-open + `init`/`doctor`; 01b universal image source → show → export
 
 ## 01a — contract unlocked
 `photoctl init` creates a library; `doctor` reports it; opening is safe under one lock model; a broken or
@@ -33,7 +33,14 @@ timeout contract remain unchanged.
 budget; EPERM → age rule; SIGINT of a holder leaves no file; `kill -9` a holder → next open succeeds); `init.test.ts`.
 
 ## 01b — contract unlocked
-Keyless, no Rust/Swift/drive: one ARW is linked, its metadata is readable, the camera's embedded 7008×4672 JPEG is written.
+Keyless, no Rust/Swift/drive: any decodable single-frame still image can be linked, shown, previewed offline, and exported.
+The A7C II fixture proves the embedded-container path and its camera JPEG exact-copy optimization.
+
+**Implemented:** commits `238c9b3`, `b511389`, `c4be85e`, and `46bce3e`, followed by the review
+checkpoint that closes source-integrity, cache-repair, error-contract, and workbench gaps. For this
+slice, `import` accepts exactly one file; folder traversal and its batch semantics remain owned by
+slice 04, as permitted by the non-recursive scope below.
+Every successfully imported decodable still image also becomes independently viewable after its source disappears.
 
 ### Seam
 - Migration (next number) adds `photos(id uuid /*v7*/ pk, content_key text unique, size bigint, w int, h int /*oriented*/,
@@ -45,7 +52,7 @@ Keyless, no Rust/Swift/drive: one ARW is linked, its metadata is readable, the c
   incorrect extensions remain valid when bytes probe successfully. Corrupt bytes, animated/multipage media, or a format with no
   registered full-frame preview producer → `skipped_unsupported` on import / `unsupported_file` 65 when addressed directly, and
   create no `photos` row. This registry—not an extension allowlist—is the sole format/capability owner for all slices; slice 07
-  adds RAW decoders behind it without changing import semantics.
+  adds full-resolution source adapters behind it without changing which verbs a photo supports.
 - `packages/library/src/identity.ts`: `contentKey = "ck_" + hex(sha256(size as u64 LE ‖ head 1 MiB ‖ tail 1 MiB)).slice(0,16)`;
   files < 2 MiB hash the whole file once. Fixed; not delegated.
 - `packages/library/src/locators.ts`: `VolumeResolver` (`MacVolumeResolver` via `diskutil info -plist`; `EnvVolumeResolver` via
@@ -56,7 +63,7 @@ Keyless, no Rust/Swift/drive: one ARW is linked, its metadata is readable, the c
 - `packages/importer/src/embedded.ts`: `indexEmbeddedJpegs(path)` (TIFF IFD walk) must equal the manifest's three tuples.
   `packages/importer/src/cache.ts` owns the universal offline-preview invariant: every successful import pins a JPEG representing
   the full image at the 1616 tier under `emb/<id>.jpg` and upserts its `cache_index(path, bytes, last_used, pinned=true)` row.
-  For RAW or another container format, use a suitable full-frame embedded JPEG when available (the fixture's 1616×1080 tier).
+  For a container source, use a suitable full-frame embedded JPEG when available (the fixture's 1616×1080 tier).
   For any whole-file image, derive the tier through its registered preview producer, with longest edge at most 1616 px and no
   upscaling. This derived cache artifact does **not** enter
   `files.embedded`, which remains a list of genuine container byte ranges. Cache root is
@@ -65,11 +72,26 @@ Keyless, no Rust/Swift/drive: one ARW is linked, its metadata is readable, the c
   and repairs a missing/corrupt preview and independently repairs a missing index row before returning `already_present`.
 - `packages/render/src/coordinates.ts`: `toBase/fromBase` implemented for EXIF orientation (crop-last arrives in 08c3);
   `bbox=[x,y,w,h]`. `photos.w/h` are oriented dims.
-- `packages/render/src/graph.ts`: `renderPhoto(photo,{source:"embedded"}) → Image16` (embedded JPEG decoded by sharp);
-  `packages/render/src/export/run.ts`: identity fast path copies the full-size embedded bytes when online, else `renderPhoto` from
-  the pinned tier + `source_offline` warning.
+- `packages/render/src/decoder.ts` defines the permanent resolved-source seam:
+  `ImageSource = {kind:"online-file",path,mediaType}|{kind:"online-jpeg-range",path,offset,length}|{kind:"pinned-preview",path}`.
+  Library/importer resolves catalog and volume state into this value; render never opens PGlite or discovers mounts.
+- `packages/render/src/graph.ts`: `renderPhoto(photo,{source:ImageSource}) → Image16`; both whole-file and JPEG-range sources enter
+  the same oriented display pipeline. `packages/render/src/export/run.ts` may copy bytes exactly only when the resolved online
+  source is itself a full-frame, orientation-1 JPEG; every other format uses the same decode/render/encode path. If an online
+  source cannot be read, it uses `pinned-preview` with a `source_offline` warning.
+- `packages/render/src/preview.ts` establishes `renderStateHash(photo) → "r_"+sha256(canonical pixel-affecting state).slice(0,12)`
+  and `ViewSpec{region:null|bbox,longEdge:number|"native"}`. `viewHash(ViewSpec)` canonicalizes base-pixel coordinates and output
+  size separately from edit state, so changing zoom never changes `render_hash` and changing edits never reuses stale view pixels.
+  It also reserves the full-frame native `ViewSpec` as the display master for a render state; later slices make region and smaller
+  view materialization select that master or another resolution-sufficient full-frame cache entry rather than reevaluating edits.
+  In 01b the state is source `content_key` plus orientation; later slices extend the same canonical input with develop, geometry,
+  layers, and markup. `show` returns this non-null `render_hash`; while state is visually identical to the pinned source preview,
+  `data.preview` may point directly at that immutable file without creating a duplicate derived artifact.
 - Verbs: `import <file|folder> --link` (single file, non-recursive OK; result = A2 shape with `xmp_read` and `embeddings` zeroed),
-  `show <id|prefix>` (A5 shape from day one: `develop:{}`, `develop_hash:null`, `layers:{count:0,stale:0}`, `xmp:null`, `crop:null`),
+  `show <id|prefix>` (A5 shape from day one: `preview` is a readable absolute JPEG path;
+  `preview_info:{render_hash,view_hash,requested,actual,source_tier,source_dimensions,pixel_scale,resolution_limited,cache_source,
+  color_space:"srgb",icc:"sRGB2014",base_to_view,view_to_base,visible_base_polygon}`;
+  `develop:{}`, `develop_hash:null`, `render_hash:"r_…"`, `layers:{count:0,stale:0}`, `xmp:null`, `crop:null`),
   `export <id...> --to <dir> --format jpeg`. IDs UUIDv7, unambiguous prefix accepted.
 - `wb envelope`.
 
@@ -88,5 +110,13 @@ single-frame decodable bytes are accepted, and corrupt/animated/multipage/undeco
 `exif.timezone.test.ts`, `coordinates.orientation.test.ts`.
 
 ## Delegated: UUIDv7 lib; `--human` table renderer; JSON key order.
-## Checkpoint (01b): `/tmp/out/a7c2.jpg` opens, correctly oriented + `wb envelope` — variable: envelope shape.
+## Checkpoint (01b)
+
+- Export: `/tmp/photoctl-01b-checkpoint.SB0j4J/out/a7c2.jpg`, 7008×4672, 6,730,200 bytes,
+  SHA-256 `6bc3c13c9183f6ad2ed5761525abf65ec838cd2f49ad7bf85c81883f168a7fc6`. The unprimed visual
+  review accepted its orientation, framing, and lack of visible artifacts.
+- Envelope: `wb envelope` rendered the typed success, locked, and partial states and the unprimed
+  review accepted the contract presentation. Non-blocking notes for a later styling pass: exits 65
+  and 75 currently share amber, and the partial example begins below the initial viewport.
+
 ## Must stay green: 00. Deps: 00 (01b needs 01a). Firewall: no daemon, no cull verbs, no resize, no XMP, no develop.

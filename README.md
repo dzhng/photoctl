@@ -7,7 +7,7 @@ without a screen. If a GUI ever exists it is a client of the same verbs, never a
 Principles that shape everything here:
 
 - **The library is canonical.** PGlite holds the truth; XMP sidecars are written only on
-  request, and RAW bytes are never modified.
+  request, and original image bytes are never modified, regardless of format.
 - **Warn, never refuse.** Soft state (a stale layer, an unplugged drive) becomes a warning in
   the output, not a failed command — the caller looked.
 - **Generation is a general model plus a prompt; restoration is a specific local solution.**

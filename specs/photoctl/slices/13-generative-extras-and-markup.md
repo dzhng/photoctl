@@ -14,4 +14,8 @@
 - **13d** `retouch <id> --at x,y [--radius]` (default 2 % long edge) → `photoctl-image::heal` (Telea) as a `role:"retouch"` layer with a
   circular mask; idempotency key `(at, radius)`. Test: outside bit-exact; inside differs; repeat → one layer. Deps 10.
 
+Every 13a/13c/13d pixel mutation contributes its provider output or local artifact content hash plus parameters to
+`renderStateHash`, returns the new hash without eager preview work, and extends `agent-preview-loop.test.ts` with at least one
+representative mutation. The next `show` remains the only required preview-materialization step.
+
 ## Checkpoints: one artifact per sub-slice, one variable each. Firewall: `unblur` cut; no local generative runners.

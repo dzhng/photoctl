@@ -11,15 +11,15 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-04. Status: slices 00 and 01a implemented; library creation, diagnostics,
-durable PGlite open, migrations, and single-writer locking are in place.*
+*Last updated: 2026-09-04. Status: slices 00 and 01 implemented; the first linked-photo workflow now
+imports metadata and previews, shows the catalog record, and exports an online or pinned JPEG.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
 Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** `slices/01-first-jpeg.md`, pass 01b (import, show, and embedded-JPEG export).
+- **Pickup point:** dependency-ready slices 02 (daemon and contention) and 07a (CIRAW decoder seam).
 - **Blockers:** none for 00–08. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
   None blocks deterministic work — placeholders are named per slice.
@@ -28,7 +28,7 @@ Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviatio
 ### Global TODO
 - [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
 - [x] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
-- [ ] 01b import a7c2.ARW → show → export embedded JPEG — `slices/01-first-jpeg.md`
+- [x] 01b universal image source → show → offline preview → export (A7C II embedded-container proof) — `slices/01-first-jpeg.md`
 - [ ] 02 daemon (runs `dispatch`), contention race, `tag` — `slices/02-daemon-and-contention.md`
 - [ ] 03 backup/restore/migrate/prune + schema fixture — `slices/03-library-lifecycle.md`
 - [ ] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
@@ -141,14 +141,49 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 - **Two buckets:** generation = SOTA general model + versioned prompt; restoration/geometry = specific local solution (D26).
 - **CoreML EP** is a constraint, not a plan item: no slice enables it in v1; if ever enabled it must be per
   model, static shapes, ≥2× measured, output-equivalent within tolerance; CPU is the reference (D40).
-- **Never write RAW bytes; never write into source folders except explicit `xmp write`** (D19).
-- **Every library photo has an offline preview:** a successful import (including whole-file JPEG/PNG/TIFF
-  and generated images) leaves a pinned, source-independent 1616-tier JPEG plus its `cache_index` row.
+- **Never write original image bytes, regardless of format; never write into source folders except
+  explicit `xmp write`, which writes or merges a sidecar only** (D19).
+- **Every library photo has an offline preview:** a successful import leaves a pinned,
+  source-independent 1616-tier JPEG plus its `cache_index` row.
   Re-import repairs either half if it is missing or corrupt. A `photos` row without that preview is not
   a successful import state; `files.embedded` remains reserved for genuine embedded JPEG byte ranges.
+- **Source and rendered previews are distinct:** the pinned import preview is immutable fallback input.
+  The current edited preview is a derived, prunable JPEG keyed by the canonical `render_hash`. Pixel-affecting
+  mutations change render state but do not synchronously render a preview. The next `show <id>` lazily and
+  atomically materializes the requested view before returning its absolute path in `data.preview`; with no
+  edits and the default overview it may return the pinned source-preview path directly.
+- **One full-frame render feeds detail views:** preview owns a prunable, full-frame display master at
+  `view/<id>/<render_hash>/master.jpg`, materialized lazily at the best available source resolution. A native
+  full-frame `show` returns that master; later crops and smaller views at the same `render_hash` are pixel
+  projections of it and must not reevaluate the edit graph. Before creating the master, the planner may use an
+  existing full-frame view only when its real pixel density covers the requested crop/output; otherwise it
+  promotes once to the master. The default 1616 overview remains cheap and does not force a full-resolution
+  render. Any pixel edit creates a new `render_hash`, so it can never reuse a master containing old edits.
+- **Preview materialization is single-flight and inspection-safe:** concurrent requests that need the same
+  `{photo_id,render_hash,artifact}` join one materialization; only one graph evaluation or view derivation runs,
+  every waiter receives the same validated artifact, and a failed attempt clears the flight so a later request can
+  retry. `show` updates `cache_index.last_used` only after the returned file is readable. `cache prune` must not
+  remove an in-flight artifact or one returned within the preceding 30 minutes, so an agent can inspect and compare
+  paths without a concurrent prune invalidating them.
+- **Preview viewport is explicit:** `show <id> [--preview-size <long-edge-px|native>]
+  [--region x,y,w,h] [--norm]` renders the current `render_hash` for a canonical `ViewSpec`. With no region,
+  size defaults to a 1616px-long-edge overview. With a region and no size, it defaults to `native`: one output
+  pixel per oriented base-image pixel. A region view is rendered from the best full-resolution source and
+  current graph before cropping/downscaling; it must never enlarge the 1616px source preview and call that
+  full-resolution detail. `data.preview_info` reports requested/actual region, dimensions, source tier,
+  pixel scale, `render_hash`, `view_hash`, and whether resolution was limited. It also reports `base_to_view`,
+  `view_to_base`, and the visible base-image polygon so UI clicks and agent-selected regions share the global
+  oriented, uncropped coordinate system even after crop/rotate/straighten. A fully non-visible region is a usage
+  error; a partially visible region is clipped and reported as such rather than silently moved.
+- **Preview color is fixed:** every source preview, display master, and derived view is an orientation-applied,
+  opaque JPEG tagged with the bundled `sRGB2014.icc`; `preview_info` reports `color_space:"srgb"` and
+  `icc:"sRGB2014"`. Export may use a different requested format/profile, but inspection never depends on an
+  application guessing the preview profile.
 - **Image imports are capability-based, not extension-gated:** `import --link` and `import --copy` accept
-  every decodable single-frame still image by probing file contents. The original format does not change
-  catalog, metadata, culling, preview, offline, or export semantics. Extensions are filename hints only;
+  every decodable single-frame still image by probing file contents. Once imported, every photo is
+  eligible for the same catalog, metadata, culling, develop, search, layer, segmentation, editing,
+  preview, offline, and export verbs. Format selects only the source adapter and lossless-copy
+  optimizations; it never changes command availability or result shapes. Extensions are filename hints only;
   an unknown or incorrect extension is not a refusal. Corrupt bytes, animated/multipage media, and formats
   for which no registered preview producer can decode or extract a full-frame image return
   `unsupported_file`/`skipped_unsupported` and create no `photos` row.
@@ -181,9 +216,10 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 | Library handle, ONE lock (`{pid,socket,startedAt}`), refuse-to-open, `settings` (only per-library config), migrations, pgDump backup/restore | `packages/library` | 01a/03 |
 | Identity (content key), locators (`files` 1:N), volume/online, Trash | `packages/library/{identity,locators,trash}` | 01b/04 |
 | Content-based image probe registry; EXIF + timezone; embedded-preview index; cache tiers + index + prune | `packages/importer` | 01b/03 |
-| Decoder interface + `LinearImage{space}`; decoder selection | `packages/render/decoder` | 07 |
+| Generic `ImageSource`; decoder interface + `LinearImage{space}`; source/decoder selection | `packages/render/decoder` | 01b/07 |
 | Color core (levels→WB→matrix→ops→TRC), delta kernels, NR | `crates/photoctl-image::develop` | 07c/08/10 |
-| Render graph `renderPhoto() → Image16` (embedded source day one; develop node 08; composite 10; draw 13c) | `packages/render/graph` | 01b |
+| Render graph `renderPhoto() → Image16` (resolved image source day one; develop node 08; composite 10; draw 13c) | `packages/render/graph` | 01b |
+| Canonical `render_hash` + `ViewSpec`; single-flight full-frame display master, cache leases, coordinate transforms, color, and versioned view paths | `packages/render/preview` | 01b/03/08/10/13 |
 | Coordinate space (`toBase/fromBase`, bbox, letterbox mapping) | `packages/render/coordinates` | 01b |
 | Develop dict, hash, presets (package data + `<lib>/presets/develop/`), **operator table**, **tier table** | `packages/render/develop` | 08 |
 | Export planning (template, collision, IPTC-as-XMP/EXIF, presets `<lib>/presets/export/`, history); sharp encode | `packages/render/export` | 01b/05 |
@@ -197,8 +233,8 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 | Markup model + flatten | `packages/render/markup` | 13c |
 | Fixture manifest + generator | `fixtures/README.md`, `fixtures/a7c2.json`, `fixtures/tools/` | 00 |
 
-**Transitional seams (each named with its end):** (1) 01b's `renderPhoto` has one source node; 08 adds
-develop, 10 composite, 13c draw — the embedded source is permanent (offline/identity). (2) 05's gold-exam
+**Transitional seams (each named with its end):** (1) 01b's `renderPhoto` has one generic source node; 08 adds
+develop, 10 composite, 13c draw — source resolution and the pinned-preview fallback are permanent. (2) 05's gold-exam
 dry run omits `develop`; 08 adds it to the script — no stub verb exists. (3) 08a's `develop` result carries
 empty `layers:{delta_applied:[],stale:[]}` until 10 fills it — shape fixed, no rewrite. Nothing else is
 temporary; the fake gateway, volume map and hold-lock helper are permanent test edges.
@@ -221,6 +257,24 @@ locators are offline. Export fallback precedence = develop render with matching 
 tier > pinned 1616 tier; any of them → write + `source_offline` warning, exit 0. `file_offline` 69 is
 reserved for source-dependent work when the required cached artifact is missing or corrupt; ordinary
 preview availability is an import invariant, not a best-effort cache hit.
+
+**Agent preview/export flow:** `show <id>` is the synchronization point for visual inspection: it must
+return only after `data.preview` names a readable absolute JPEG for the current `render_hash` and requested
+`ViewSpec`. Editing
+commands may return immediately after committing render state; the agent then calls `show`, views that
+path, and decides whether to edit again or `export`. Export renders at the requested output tier from the
+same `render_hash` and includes it in the result, so preview and export cannot silently refer to different
+edit states. Preview pixels are review-sized, not the export source of truth.
+
+The mandatory functional journey is: **make an overall edit → request and inspect the full-frame native
+preview → zoom into a native-resolution detail cropped from that cached master → make a local edit → inspect
+the same detail from the new render state's master → adjust it → inspect the updated detail → inspect the
+final zoomed-out view derived from that final master → export**. Slice 12 owns the deterministic end-to-end test;
+individual editing slices extend its mutation matrix rather than substituting isolated command tests.
+
+Lossless/random-access master storage and progressive, cancellable UI delivery are deliberately deferred to
+[`../preview-rendering-optimizations.md`](../preview-rendering-optimizations.md); they must preserve this `show`
+contract rather than introduce a second rendering model.
 
 ## Spec amendments carried from the map
 
@@ -290,8 +344,20 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   required durability invariant expressed at the only lifecycle where Postgres permits it.
 - **2026-09-04 — slice 01a lock reclamation.** Plan said: reclaim a dead PID's `wx` lockfile by
   unlinking it. Code revealed: two contenders can both inspect the dead file, then one can unlink the
-  other's newly-created live lock; a real 20-process probe reproduced overlapping holders. Call: keep
+  other's newly-created live lock; a synchronized concurrent probe reproduced overlapping holders. Call: keep
   the same external payload file, but hold a kernel advisory lock on its open descriptor for the whole
   library session. A killed process releases the kernel lock atomically, so no stale unlink is needed;
   `fs-ext` is a trusted native install dependency on the supported macOS/Linux targets. Needs David: no;
   this replaces a racy mechanism with the single-writer invariant the decision requires.
+- **2026-09-04 — slice 01b import scope.** Plan said: `import <file|folder> --link`, while explicitly
+  allowing a single-file, non-recursive implementation in 01b. Code revealed: accepting a folder now
+  would require inventing slice-04 scanning, aggregation, and partial-failure semantics. Call: 01b
+  accepts exactly one file and returns a usage error for a directory; slice 04 remains the sole owner
+  of recursive folder import. Needs David: no; this takes the plan's stated narrow path without adding
+  a temporary scanner.
+- **2026-09-04 — slice 01b import result.** Plan said: return the A2 envelope, but A2 did not provide a
+  durable way for the next `show` or `export` command to learn the imported photo ID and did not define
+  the volume value when every input is unsupported. Code revealed: command composition needs the IDs and
+  a batch with no admitted image has no source volume to summarize. Call: add `ids:string[]` and use `volume:null` when skipped;
+  both are additive fields in the typed result. Needs David: no; the result now exposes the catalog
+  identity it created without weakening existing fields.
