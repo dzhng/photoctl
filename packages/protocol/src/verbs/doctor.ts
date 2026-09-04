@@ -7,6 +7,7 @@ export const doctorDataSchema = z.object({
   db: z.string(),
   vector: z.object({ installed: z.literal(true), version: z.string() }),
   cache: z.object({ root: z.string(), max_bytes: z.number().int().positive() }),
+  xmp: z.object({ stale: z.number().int().nonnegative() }),
   native_image: z.object({
     available: z.boolean(),
     package: z.string(),

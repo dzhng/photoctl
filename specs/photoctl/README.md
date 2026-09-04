@@ -13,8 +13,8 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–05, decoder slice 07, render-DAG slices 08a1–08a2, and provider-contract
-slice 09a are implemented.
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08a2, and provider-contract slice 09a are
+implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
 the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
@@ -22,18 +22,20 @@ recursive import commits through a bounded deterministic pipeline, collision buc
 and culling/list/next/remove remain usable from pinned previews while source volumes are offline. Immutable photo-scoped logical
 nodes, atomic document revisions, full hash identities, canonical artifact publication, graph evaluation/inspection, and
 restore-time artifact reconciliation are now in place. Gateway and independent upscaler contracts now resolve fixed models,
-require explicit provider consent, and attach bounded external-execution provenance to the existing DAG execution record. Delivery exports snapshot that immutable identity, encode the canonical
-evaluated artifact without unasked clobbering, and record successful writes in schema v6. Develop parameters and pixels remain in
-08b+.*
+require explicit provider consent, and attach bounded external-execution provenance to the existing DAG execution record. Delivery
+exports snapshot that immutable identity, encode the canonical evaluated artifact without unasked clobbering, and record successful
+writes in schema v6. Explicit XMP writes now merge catalog cull metadata into sidecars without touching originals or foreign
+metadata; pull sync and mtime divergence reporting share that owner. Opened-file snapshots and a strong pre-publication identity
+check followed by atomic displacement and no-clobber installation keep external editors from pairing old XML with new metadata or
+silently losing an observed edit. Develop parameters and pixels remain in 08b+.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 06 (XMP write/sync) and 08b (develop dictionary/presets as a logical node).
-  Slice 06 inherits delivery metadata and the culling catalog; slice 08b inherits 08a's lazy logical graph, durable artifact
-  owner, and execution metadata seam.
+- **Pickup point:** slice 08b (develop dictionary/presets as a logical node), which inherits 08a's lazy logical graph, durable
+  artifact owner, and execution metadata seam.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -51,7 +53,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 03a preview coordination/index/prune · [x] 03b backup/restore/migrate + fixture — `slices/03-library-lifecycle.md`
 - [x] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
-- [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
+- [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [ ] 8b+ develop nodes/color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
 - [ ] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [ ] 9b non-blocking spikes · [ ] 9c embed worker + search — `slices/09-providers-embed-search.md`

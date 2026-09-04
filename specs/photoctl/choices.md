@@ -1348,6 +1348,103 @@
   kernel.
 - **Confidence:** Medium; the geometry is pinned by fixtures, while live-provider color/sample evidence remains for 09b.
 
+### Slice 06 — XMP writes target one verified online original locator
+
+- **When:** Slice 06 XMP command implementation, 2026-09-05.
+- **The choice:** A photo can have several locators, meaning several catalog records that point to identical original bytes on
+  different volumes. When `xmp write` runs, photoctl walks those locators in catalog order, verifies that an online file still
+  has the catalogued content identity, and writes one sidecar beside the first match. For example, if the camera card is offline
+  but a verified library copy is online, the library copy receives the sidecar; photoctl does not fan the same write out to every
+  copy. `xmp sync --read` chooses its sidecar by the same rule, so the read and write commands cannot silently target a path whose
+  image bytes were replaced after import.
+- **The gap:** The plan required `<stem>.xmp` beside a source but did not say which source wins when one photo has several
+  locators, whether every copy should receive a sidecar, or whether mere path existence was enough.
+- **The reach:** Multi-volume workflows now have one deterministic XMP target per invocation. A caller that wants another copy's
+  sidecar must make that locator the first verified online source rather than expecting automatic replication.
+- **Verdict:** **Sound.** One identity-verified target avoids writing metadata beside an unrelated replacement file and avoids a
+  partial multi-volume replication protocol that the command contract never promised.
+- **Confidence:** Medium; photographers who intentionally maintain mirrored sidecars may eventually want an explicit all-locators
+  operation rather than changing this default.
+
+### Slice 06 — Sidecars publish atomically before their catalog observation is recorded
+
+- **When:** Slice 06 XMP write implementation, 2026-09-05.
+- **The choice:** The writer reads the current sidecar, merges catalog fields into memory, writes a uniquely named sibling file,
+  preserves the old permission mode, fsyncs the file, and then re-reads the pathname. The comparison includes file identity,
+  permissions/owner, size, nanosecond modification time, and a SHA-256 digest. Publication then atomically moves the pathname's
+  current file to a private sibling and validates those displaced bytes against the snapshot. Change time is deliberately not part
+  of this cross-publication identity because the displacement itself changes it; the opened-file reader still compares change time
+  before and after reading to detect an in-progress mutation. If an editor replaced the sidecar in the tiny interval after
+  verification, photoctl restores that replacement and retries from it. If validation succeeds, photoctl
+  hard-links the prepared file into the now-vacant sidecar name; hard-link creation is atomic and refuses to overwrite a new file
+  that another editor created in the meantime. Three consecutive conflicts refuse that item. Recoverable conflict paths restore
+  the external file and remove private siblings; if a second editor makes restoration impossible, photoctl leaves the displaced
+  bytes at the named recovery path and returns a typed failure rather than deleting either version. Pull reads use the same
+  opened-file snapshot discipline: bytes and timestamps come from one handle, and pathname replacement causes a retry. After a
+  successful publication photoctl fsyncs the directory; only then does PGlite record the written file's modification time.
+- **The gap:** The plan required parse-merge and read-only-volume behavior but did not choose a crash boundary or file publication
+  mechanism.
+- **The reach:** Every future XMP field inherits the same no-partial-file and no-known-lost-update guarantees, including the exact
+  post-verification race. Stale reporting remains the recovery seam between filesystem publication and database bookkeeping. The
+  three-attempt contention budget is a reversible latency policy; a continuously active external editor gets a typed per-item
+  refusal instead of an unbounded loop. A filesystem that does not support same-volume hard links refuses the write rather than
+  falling back to a clobbering rename.
+- **Verdict:** **Sound.** The ordering preserves the only irreplaceable state—the existing sidecar—until a complete replacement is
+  durable, without adding a second journal or schema.
+- **Confidence:** High in the conflict-preservation ordering; medium in the unmeasured three-attempt retry budget and the decision
+  to fail closed on filesystems without hard-link support.
+
+### Slice 06 — Keyword writes flatten the catalog's tags and refuse conflicting standard prefixes
+
+- **When:** Slice 06 XMP parse-merge implementation, 2026-09-05.
+- **The choice:** The catalog stores flat tag strings, not Lightroom's full keyword tree. A write therefore replaces both prior
+  flat and hierarchical keyword properties with one `dc:subject` bag containing exactly those flat strings; it cannot reconstruct
+  a hierarchy that was deliberately discarded on import. Rating, color label, and the photoctl flag are the other owned
+  properties across every `rdf:Description`, then emits the catalog values exactly once. Camera Raw settings and every unrelated
+  XML node remain byte-for-byte in place. Namespace validation follows XML scope through ancestor elements and each Description,
+  rather than looking only at a local opening tag. If the document binds a standard prefix such as `rdf`, `xmp`, `dc`, or
+  `photoctl` to a different namespace URL, the merge refuses that item instead of shadowing the binding and silently
+  reinterpreting preserved XML. Lightroom hierarchy is removed only when `lr` actually denotes Lightroom's namespace.
+- **The gap:** The plan named the round-tripped values and required foreign-node preservation, but did not define how a flat
+  catalog should rewrite Lightroom hierarchy or how to handle a sidecar that reuses a standard prefix for another vocabulary.
+- **The reach:** Tag removal is a real replacement—an old hierarchical leaf cannot reappear on the next import—while develop
+  metadata remains outside this writer. Nonstandard documents fail per item and leave their bytes untouched.
+- **Verdict:** **Sound.** The serialized form matches the information the catalog actually owns, and refusal is safer than
+  assigning new meaning to preserved foreign nodes.
+- **Confidence:** High because slice 04 already made exact flat leaf tags the catalog contract.
+
+### Slice 06 — Filesystem shape failures use the existing per-item data-error channel
+
+- **When:** Slice 06 independent-review remediation, 2026-09-05.
+- **The choice:** The XMP library wraps only its own filesystem operations in a typed error. A disappearing pathname maps to
+  `file_offline`; permission and read-only failures map to `volume_readonly`; other item-local path-shape failures such as an XMP
+  pathname that is a directory map to the existing `unsupported_file` result. Database and programming errors remain unwrapped
+  and abort normally instead of being mislabeled as item failures.
+- **The gap:** The batch contract required isolation but the closed protocol did not name an error code for every POSIX filesystem
+  condition.
+- **The reach:** One malformed sidecar path cannot starve later IDs, while callers do not need a new public error-code variant for
+  uncommon filesystem shapes. The native cause code remains in result details for diagnosis.
+- **Verdict:** **Sound.** It preserves the closed protocol and draws the isolation boundary at the library operation that knows the
+  failure came from an item-local path.
+- **Confidence:** Medium; `unsupported_file` is the closest existing data-error category, but a future protocol revision could add
+  a more specific filesystem-shape code if automation needs it.
+
+### Slice 06 — Doctor reports XMP divergence as a grouped count and one soft warning
+
+- **When:** Slice 06 doctor integration, 2026-09-05.
+- **The choice:** Doctor adds `data.xmp.stale`, a nonnegative count, and emits one `xmp_stale` warning when that count is nonzero.
+  For example, three externally edited sidecars produce `xmp:{stale:3}` plus one warning rather than three warning records. The
+  command still exits successfully because divergence is soft state; `list --xmp-stale` is the surface for retrieving individual
+  photo rows. To keep a very large library from loading every stored path or issuing every filesystem check at once, the count
+  reads 128 catalog rows at a time and checks only that page concurrently before advancing.
+- **The gap:** The plan required a doctor stale count and named the warning code but did not define the response nesting or whether
+  warnings were per photo or aggregated; it also did not choose a bounded scan shape.
+- **The reach:** Monitoring can cheaply read one stable health metric, while callers that need IDs use the already paged list
+  command instead of expanding doctor output without a bound.
+- **Verdict:** **Sound.** It follows doctor's existing grouped diagnostics and keeps the warning payload bounded for large
+  libraries.
+- **Confidence:** High.
+
 ## Needs user
 
 ### Slice 09a — The fake upscaler is the provisional release default

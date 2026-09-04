@@ -3,7 +3,6 @@ import {
   createVolumeResolver,
   DirTrash,
   MacTrash,
-  resolvePhotoId,
   stageFileRemoval,
   xmpStateIsStale,
   type LibraryHandle,
@@ -14,7 +13,6 @@ import {
   type CullFlag,
   type CullLabel,
   type Envelope,
-  type ErrorCode,
   type ListData,
   type ListRow,
   type NextData,
@@ -24,14 +22,8 @@ import { createHash } from "node:crypto";
 import { access } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { parseArguments } from "../arguments.js";
+import { batchEnvelope, resolveBatchInputs } from "../batch.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
-
-interface CullFailure {
-  id: string;
-  ok: false;
-  code: ErrorCode;
-  [key: string]: unknown;
-}
 
 export async function rateCommand(
   args: string[],
@@ -100,7 +92,7 @@ async function updateCull(
 ): Promise<Envelope> {
   const lease = await openRequestLibrary(env, cwd, provided);
   try {
-    const resolved = await resolveInputs(lease.handle, inputs);
+    const resolved = await resolveBatchInputs(lease.handle, inputs);
     const ids = resolved.filter((item) => item.ok).map((item) => item.id);
     if (ids.length > 0) {
       await lease.handle.query(`UPDATE photos SET ${column} = $2 WHERE id = ANY($1::uuid[])`, [
@@ -268,7 +260,7 @@ export async function removeCommand(
   const receipts: TrashReceipt[] = [];
   let databaseCommitted = false;
   try {
-    const resolved = await resolveInputs(lease.handle, parsed.positionals);
+    const resolved = await resolveBatchInputs(lease.handle, parsed.positionals);
     const ids = resolved.filter((item) => item.ok).map((item) => item.id);
     const warnings: Warning[] = [];
     const resolver = createVolumeResolver(env.volumeMap, lease.handle.path);
@@ -536,53 +528,4 @@ function ratingSql(value: string, add: (value: unknown) => string): string {
   const comparison = /^(>=|<=|>|<)([0-5])$/.exec(value);
   if (comparison) return `p.rating ${comparison[1]} ${add(Number(comparison[2]))}`;
   return `p.rating = ${add(Number(value))}`;
-}
-
-async function resolveInputs(
-  handle: LibraryHandle,
-  inputs: string[],
-): Promise<Array<{ id: string; ok: true } | CullFailure>> {
-  return await Promise.all(
-    inputs.map(async (input) => {
-      try {
-        return { id: await resolvePhotoId(handle, input), ok: true } as const;
-      } catch (error) {
-        if (!(error instanceof PhotoctlError)) throw error;
-        return { id: input, ok: false, code: error.code, ...errorData(error.data) } as const;
-      }
-    }),
-  );
-}
-
-function batchEnvelope(results: Array<{ id: string; ok: true } | CullFailure>): Envelope {
-  const failures = results.filter((item): item is CullFailure => !item.ok);
-  if (failures.length === 0) {
-    return {
-      schema: 1,
-      ok: true,
-      summary: { ok: results.length, failed: 0 },
-      results,
-      warnings: [],
-    };
-  }
-  const codes = new Set(failures.map((failure) => failure.code));
-  return {
-    schema: 1,
-    ok: false,
-    code:
-      failures.length < results.length
-        ? "partial"
-        : codes.size === 1
-          ? failures[0].code
-          : "partial",
-    summary: { ok: results.length - failures.length, failed: failures.length },
-    results,
-    warnings: [],
-  };
-}
-
-function errorData(data: unknown): Record<string, unknown> {
-  return data !== null && typeof data === "object" && !Array.isArray(data)
-    ? (data as Record<string, unknown>)
-    : {};
 }

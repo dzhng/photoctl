@@ -7,4 +7,7 @@ export * from "./backup.js";
 export * from "./restore.js";
 export * from "./migrations/runner.js";
 export * from "./xmp/read.js";
+export * from "./xmp/write.js";
+export * from "./xmp/errors.js";
+export * from "./xmp/sync.js";
 export * from "./trash.js";

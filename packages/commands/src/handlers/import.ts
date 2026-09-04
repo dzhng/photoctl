@@ -1,5 +1,6 @@
 import {
   LIBRARY_VOLUME_UUID,
+  applyImportedXmp,
   createVolumeResolver,
   fullFileHash,
   identifyFile,
@@ -346,7 +347,9 @@ async function commitCandidate(options: {
        SET bytes = EXCLUDED.bytes, last_used = EXCLUDED.last_used, pinned = true`,
       [`emb/${resolved.photoId}.jpg`, candidate.preview.length],
     );
-    await applyXmp(handle, resolved.photoId, candidate.xmp, !alreadyPresent);
+    if (candidate.xmp) {
+      await applyImportedXmp(handle, resolved.photoId, candidate.xmp, !alreadyPresent);
+    }
     const after = await stat(storedPath);
     if (
       after.size !== storedIdentity.size ||
@@ -364,37 +367,6 @@ async function commitCandidate(options: {
     await previousPreview?.rollback();
     throw error;
   }
-}
-
-async function applyXmp(
-  handle: LibraryHandle,
-  photoId: string,
-  xmp: ReadXmp | undefined,
-  applyMetadata: boolean,
-): Promise<void> {
-  if (!xmp) return;
-  if (applyMetadata) {
-    await handle.query("UPDATE photos SET rating = $2, flag = $3, label = $4 WHERE id = $1", [
-      photoId,
-      xmp.rating ?? 0,
-      xmp.flag ?? "none",
-      xmp.label ?? null,
-    ]);
-    for (const tag of xmp.tags) {
-      await handle.query(
-        "INSERT INTO tags (photo_id, tag) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-        [photoId, tag],
-      );
-    }
-  }
-  await handle.query(
-    `INSERT INTO xmp_state (photo_id, sidecar_path, read_at, sidecar_mtime)
-     VALUES ($1, $2, now(), $3)
-     ON CONFLICT (photo_id) DO UPDATE
-     SET sidecar_path = EXCLUDED.sidecar_path, read_at = EXCLUDED.read_at,
-         sidecar_mtime = EXCLUDED.sidecar_mtime`,
-    [photoId, xmp.path, xmp.mtime.toISOString()],
-  );
 }
 
 async function removeMissingLocators(

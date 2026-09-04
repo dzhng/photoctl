@@ -1,5 +1,8 @@
+import { mkdtemp, rename, rm, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, test } from "vitest";
-import { parseXmp } from "./read.js";
+import { parseXmp, readXmpPath } from "./read.js";
 
 test("Classic XMP fields map to cull state and exact-deduped leaf keywords", () => {
   const parsed = parseXmp(`<?xml version="1.0"?>
@@ -33,4 +36,29 @@ test("photoctl flag is accepted only from the owned namespace", () => {
       `<rdf:Description xmlns:rdf="rdf" xmlns:photoctl="https://other.invalid" photoctl:flag="reject"/>`,
     ),
   ).toEqual({ tags: [] });
+});
+
+test("path reads never pair old XML with metadata from a replacement file", async () => {
+  const root = await mkdtemp(join(tmpdir(), "photoctl-xmp-read-race-"));
+  const path = join(root, "frame.xmp");
+  const replacement = join(root, "replacement.xmp");
+  await writeFile(path, `<rdf:Description xmp:Rating="1"/>`);
+  await writeFile(replacement, `<rdf:Description xmp:Rating="5"/>`);
+  let replaced = false;
+  try {
+    const read = await readXmpPath(path, {
+      afterRead: async () => {
+        if (replaced) return;
+        replaced = true;
+        await rename(replacement, path);
+      },
+    });
+    const replacementMtime = (await stat(path)).mtime;
+
+    expect(replaced).toBe(true);
+    expect(read).toMatchObject({ rating: 5 });
+    expect(read?.mtime.getTime()).toBe(replacementMtime.getTime());
+  } finally {
+    await rm(root, { recursive: true });
+  }
 });

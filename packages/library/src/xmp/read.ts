@@ -1,6 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
-import { readFile, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { extname } from "node:path";
+import { readFileSnapshot, type SnapshotHooks } from "./snapshot.js";
 
 export type CullLabel = "red" | "yellow" | "green" | "blue" | "purple";
 export type CullFlag = "pick" | "reject" | "none";
@@ -55,15 +56,21 @@ export function parseXmp(xml: string): ParsedXmp {
 }
 
 export async function readXmpSidecar(imagePath: string): Promise<ReadXmp | undefined> {
+  return await readXmpPath(sidecarPathForImage(imagePath));
+}
+
+export async function readXmpPath(
+  path: string,
+  hooks: SnapshotHooks = {},
+): Promise<ReadXmp | undefined> {
+  const snapshot = await readFileSnapshot(path, hooks);
+  if (!snapshot) return undefined;
+  return { ...parseXmp(snapshot.text), path, mtime: snapshot.mtime };
+}
+
+export function sidecarPathForImage(imagePath: string): string {
   const extension = extname(imagePath);
-  const path = `${imagePath.slice(0, imagePath.length - extension.length)}.xmp`;
-  try {
-    const [xml, metadata] = await Promise.all([readFile(path, "utf8"), stat(path)]);
-    return { ...parseXmp(xml), path, mtime: metadata.mtime };
-  } catch (error) {
-    if (hasCode(error, "ENOENT")) return undefined;
-    throw error;
-  }
+  return `${imagePath.slice(0, imagePath.length - extension.length)}.xmp`;
 }
 
 export async function xmpStateIsStale(path: string, storedMtime: string | Date): Promise<boolean> {
@@ -109,8 +116,4 @@ function isCullLabel(value: string | undefined): value is CullLabel {
 
 function isCullFlag(value: string | undefined): value is CullFlag {
   return value !== undefined && ["pick", "reject", "none"].includes(value);
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
 }

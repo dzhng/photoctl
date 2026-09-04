@@ -12,6 +12,7 @@ import {
   initializeLibrary,
   openLibrary,
   readLibraryDiagnostics,
+  countStaleXmp,
   type LibraryHandle,
 } from "@photoctl/library";
 import { cacheRootForLibrary } from "@photoctl/importer";
@@ -35,6 +36,7 @@ import { showCommand } from "./handlers/show.js";
 import { tagCommand } from "./handlers/tag.js";
 import { backupCommand, migrateCommand, restoreCommand } from "./handlers/library-lifecycle.js";
 import { graphCommand } from "./handlers/graph.js";
+import { xmpCommand } from "./handlers/xmp.js";
 import {
   flagCommand,
   labelCommand,
@@ -88,6 +90,8 @@ export async function dispatch(
       return await decodeCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "graph")
       return await graphCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "xmp")
+      return await xmpCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "list")
@@ -163,6 +167,7 @@ export async function dispatch(
         const libraw = inspectLibrawDecoder();
         const nativeImage = inspectNativeImageRuntime();
         const providers = providerDiagnostics(await readProviderSettings(handle), request.env);
+        const xmpStale = await countStaleXmp(handle);
         return {
           schema: 1,
           ok: true,
@@ -176,6 +181,7 @@ export async function dispatch(
               root: cacheRootForLibrary(diagnostics.libraryId, cacheBase(request.env, request.cwd)),
               max_bytes: diagnostics.cacheMaxBytes,
             },
+            xmp: { stale: xmpStale },
             native_image: { ...nativeImage, required: true },
             decoders: [
               {
@@ -195,7 +201,10 @@ export async function dispatch(
             providers,
             lock_holder: null,
           } satisfies DoctorData,
-          warnings: [],
+          warnings:
+            xmpStale > 0
+              ? [{ code: "xmp_stale", message: `${xmpStale} XMP sidecar(s) changed on disk` }]
+              : [],
         };
       } finally {
         if (ownsHandle) await handle.close();
