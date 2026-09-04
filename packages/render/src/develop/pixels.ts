@@ -1,0 +1,81 @@
+import {
+  applyGlobalDevelop,
+  applyGlobalDevelopArtifact as applyGlobalDevelopArtifactNative,
+  type GlobalDevelopParameters,
+} from "@photoctl/img";
+import type { SceneLinearImage } from "../decoder.js";
+import { inspectArtifactLinearTiff } from "../linear-tiff.js";
+import { developDictSchema, type DevelopDict } from "./dict.js";
+
+const GLOBAL_KEYS = new Set([
+  "preset",
+  "exposure",
+  "brightness",
+  "contrast",
+  "black_point",
+  "saturation",
+  "white_balance",
+  "cast",
+]);
+
+/** Runs the deterministic global grade in Rust; TypeScript owns only color-space transport. */
+export async function applyDevelop(
+  image: SceneLinearImage,
+  unparsed: DevelopDict,
+): Promise<SceneLinearImage> {
+  if (image.space !== "scene-linear-rec2020") {
+    throw new Error("Develop requires oriented scene-linear Rec.2020 pixels");
+  }
+  const parameters = developDictSchema.parse(unparsed);
+  const unsupported = Object.keys(parameters).find((key) => !GLOBAL_KEYS.has(key));
+  if (unsupported) throw new Error(`Develop operation is not implemented: ${unsupported}`);
+
+  if (Object.keys(parameters).every((key) => key === "preset")) {
+    return image;
+  }
+  const data = await applyGlobalDevelop(image.data, nativeParameters(parameters));
+  return {
+    ...image,
+    data,
+  };
+}
+
+/** Validates and grades canonical TIFF samples in one asynchronous native worker allocation. */
+export async function applyDevelopArtifact(
+  bytes: Buffer,
+  dimensions: { w: number; h: number },
+  unparsed: DevelopDict,
+): Promise<{ bytes: Buffer; w: number; h: number; pixelOffset: number }> {
+  const parameters = developDictSchema.parse(unparsed);
+  const unsupported = Object.keys(parameters).find((key) => !GLOBAL_KEYS.has(key));
+  if (unsupported) throw new Error(`Develop operation is not implemented: ${unsupported}`);
+  const layout = await inspectArtifactLinearTiff(bytes);
+  if (layout.width !== dimensions.w || layout.height !== dimensions.h) {
+    throw new Error("Develop artifact dimensions do not match graph metadata");
+  }
+  const developed = await applyGlobalDevelopArtifactNative(
+    bytes,
+    layout.pixelOffset,
+    layout.pixelBytes,
+    nativeParameters(parameters),
+  );
+  return {
+    bytes: Buffer.from(developed.buffer, developed.byteOffset, developed.byteLength),
+    w: layout.width,
+    h: layout.height,
+    pixelOffset: layout.pixelOffset,
+  };
+}
+
+function nativeParameters(parameters: DevelopDict): GlobalDevelopParameters {
+  return {
+    exposure: parameters.exposure,
+    brightness: parameters.brightness,
+    contrast: parameters.contrast,
+    blackPoint: parameters.black_point,
+    saturation: parameters.saturation,
+    temperatureOffsetK: parameters.white_balance?.temp_offset_k,
+    tint: parameters.white_balance?.tint,
+    cast: parameters.cast,
+  };
+}

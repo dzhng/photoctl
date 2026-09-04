@@ -22,5 +22,6 @@ export * from "./develop/dict.js";
 export * from "./develop/hash.js";
 export * from "./develop/keys.js";
 export * from "./develop/presets.js";
+export * from "./develop/pixels.js";
 export * from "./develop/state.js";
 export * from "./develop/tiers.js";

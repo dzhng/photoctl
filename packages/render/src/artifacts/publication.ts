@@ -4,7 +4,12 @@ import { link, mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { displaySrgbToLinearRec2020, linearRec2020ToDisplaySrgb } from "../color.js";
 import type { LinearImage } from "../decoder.js";
-import { decodeArtifactLinearTiff, encodeArtifactLinearTiff } from "../linear-tiff.js";
+import {
+  decodeArtifactLinearTiff,
+  encodeArtifactLinearTiff,
+  inspectArtifactLinearTiff,
+  validateArtifactLinearTiff,
+} from "../linear-tiff.js";
 import type { Image16 } from "../source-render.js";
 
 export interface NormalizedArtifact {
@@ -154,6 +159,68 @@ export async function readArtifactLinear(
     throw new Error(`Canonical artifact content hash mismatch: ${path}`);
   }
   return await decodeArtifactLinearTiff(bytes);
+}
+
+/** Reads verified canonical bytes without decoding a duplicate f32 pixel array. */
+export async function readArtifactBytes(
+  path: string,
+  expectedHash: string,
+  expectedDimensions: { w: number; h: number },
+): Promise<Buffer> {
+  const bytes = await readVerifiedArtifactBytes(path, expectedHash);
+  const dimensions = await validateArtifactLinearTiff(bytes);
+  assertDimensions(path, dimensions, expectedDimensions);
+  return bytes;
+}
+
+/** Reads hash/metadata-verified bytes; the native develop worker must validate every sample. */
+export async function readArtifactBytesForNativeDevelop(
+  path: string,
+  expectedHash: string,
+  expectedDimensions: { w: number; h: number },
+): Promise<Buffer> {
+  const bytes = await readVerifiedArtifactBytes(path, expectedHash);
+  const layout = await inspectArtifactLinearTiff(bytes);
+  assertDimensions(path, { w: layout.width, h: layout.height }, expectedDimensions);
+  return bytes;
+}
+
+async function readVerifiedArtifactBytes(path: string, expectedHash: string): Promise<Buffer> {
+  const bytes = await readFile(path);
+  if (`a_${createHash("sha256").update(bytes).digest("hex")}` !== expectedHash) {
+    throw new Error(`Canonical artifact content hash mismatch: ${path}`);
+  }
+  return bytes;
+}
+
+function assertDimensions(
+  path: string,
+  dimensions: { w: number; h: number },
+  expectedDimensions: { w: number; h: number },
+): void {
+  if (dimensions.w !== expectedDimensions.w || dimensions.h !== expectedDimensions.h) {
+    throw new Error(`Canonical artifact dimensions mismatch: ${path}`);
+  }
+}
+
+/** Wraps bytes whose samples a native worker has already validated. */
+export async function normalizeValidatedArtifactBytes(
+  bytes: Buffer,
+  expectedDimensions: { w: number; h: number },
+): Promise<NormalizedArtifact> {
+  const layout = await inspectArtifactLinearTiff(bytes);
+  assertDimensions(
+    "native develop output",
+    { w: layout.width, h: layout.height },
+    expectedDimensions,
+  );
+  return {
+    artifactHash: `a_${createHash("sha256").update(bytes).digest("hex")}`,
+    bytes,
+    extension: "tif",
+    mediaType: "image/tiff",
+    ...expectedDimensions,
+  };
 }
 
 /** Converts a canonical linear artifact to clamped display pixels for view and delivery only. */

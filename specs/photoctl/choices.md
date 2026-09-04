@@ -2,6 +2,84 @@
 
 ## Sound
 
+### Slice 08c1b — Global develop has one native owner and a fixed scene-linear order
+
+- **When:** Slice 08c1b pixel implementation, 2026-09-05.
+- **The choice:** Rust receives the exact linear artifact samples and applies Bradford white balance and opponent cast, then
+  brightness/black point, exposure, contrast about 0.18, and saturation that preserves Rec.2020 Y using the Y row of the existing
+  Rec.2020→XYZ matrix. OpenColorIO's BSD-3 scene-linear formulas were ported rather than linked. TypeScript validates the dictionary
+  and transports the f32 buffer; it owns no parallel grade.
+- **The gap:** The operator table delegated cross-operator order and UI normalization constants.
+- **The reach:** Show, export, the linear probe, and later masked operators inherit one deterministic implementation and insertion
+  order.
+- **Verdict:** **Sound.** It follows the named math and preserves one owner for pixel behavior.
+- **Confidence:** High for exposure and primary math; medium for product feel until broader preset fixtures land.
+
+### Slice 08c1b — White balance uses a bounded Planckian/Bradford model
+
+- **When:** Slice 08c1b pixel implementation, 2026-09-05.
+- **The choice:** Neutral is D65. Positive temperature means visually warmer, so it lowers target CCT from 6504 K; offsets use the
+  delta from the Planckian 6504 K point applied to the exact D65 chromaticity, bounded to 1667–25000 K. This anchors zero exactly
+  and continuously. Positive tint and cast move toward magenta through separate target-y and opponent-gain controls.
+- **The gap:** The table selected Bradford and an opponent axis but delegated conversion constants and sign conventions.
+- **The reach:** Valid extremes stay finite and platform-independent; later UI clients must use these same directions.
+- **Verdict:** **Sound.** The convention matches established editor controls and keeps constants in the native operator.
+- **Confidence:** Medium until gray-card and skin fixtures exercise the full allowed range.
+
+### Slice 08c1b — The linear probe publishes the actual graph artifact without replacement
+
+- **When:** Slice 08c1b graph integration, 2026-09-05.
+- **The choice:** `render <id> --linear --to out.tif` evaluates the active graph, reads its exact scene-linear artifact, and emits the
+  same hash-verified IEEE-f32 linear Rec.2020 TIFF bytes after validation without a decoded f32 allocation. It uses delivery's durable atomic no-replace primitive, so an occupied path,
+  the source itself, or a hard-link alias is rejected without changing bytes. There is no probe overwrite option.
+- **The gap:** The command shape did not specify publication behavior, and the superseded implementation inverted a clamped display
+  artifact instead of reading the working pixels.
+- **The reach:** Values below zero and above one remain observable, byte determinism describes the real production DAG, and probes
+  cannot truncate originals.
+- **Verdict:** **Sound.** The probe is an output edge over the canonical artifact, not a second render or approximation.
+- **Confidence:** High; a falsified regression proves display-style clamping would fail the three-stop (`8×`) ratio/highlight assertions.
+
+### Slice 08c1b review — Native global develop owns one asynchronous worker buffer
+
+- **When:** Slice 08c1b bounded-memory review, 2026-09-05.
+- **The choice:** N-API copies the JavaScript `Float32Array` once before scheduling because JavaScript may mutate its backing store
+  while the worker runs. Rust grades that owned `Vec<f32>` in place and returns the same allocation; it never captures or mutates
+  JavaScript memory off-thread. Graph develop takes the stronger canonical-byte seam: it copies the verified TIFF once into the
+  asynchronous native task, validates and grades its f32 pixel span in place, then publishes the returned canonical bytes without
+  ever materializing or iterating a full-frame `Float32Array` on the daemon event loop.
+- **The gap:** N-API's asynchronous safety boundary requires one input copy, but the initial implementation also allocated a full
+  Rust output frame.
+- **The reach:** A 7008×4672 RGB f32 frame is 392.9 MB (374.7 MiB). Peak pixel storage during the native call is bounded to the
+  JavaScript input plus one Rust frame (785.8 MB / 749.4 MiB), down from three frames (1.18 GB / 1.10 GiB), while CPU work remains
+  off the daemon thread.
+- **Verdict:** **Sound.** The single unavoidable safety copy is explicit and the native operator reuses it.
+- **Confidence:** High; a native pointer-stability test proves the owned allocation is unchanged by the grade.
+
+### Slice 08c1b review — No-replace publication is one native atomic install
+
+- **When:** Slice 08c1b no-clobber review, 2026-09-05.
+- **The choice:** Photoctl writes and fsyncs a sibling temporary, then asks the native image package to install it with the
+  platform's atomic no-replace rename: `renamex_np(RENAME_EXCL)` on macOS and `renameat2(RENAME_NOREPLACE)` on Linux. The native
+  boundary returns installed, occupied, or unsupported; I/O errors remain errors. Occupied and unsupported outcomes fail closed,
+  preserve the destination, and let the caller remove only its temporary. Explicit replacement remains a separate ordinary rename.
+- **The gap:** Node has no portable rename-without-replacement API. Direct exclusive writes expose partial final files, while a
+  user-space recovery protocol cannot atomically establish ownership across crashes and contenders.
+- **The reach:** Linear probes and delivery exports have one constant-space, crash-safe publication boundary with no marker,
+  polling, or stale-owner state. Filesystems or kernels lacking the primitive refuse publication safely.
+- **Verdict:** **Sound.** The filesystem kernel, not application bookkeeping, owns the atomic name transition.
+- **Confidence:** High on the packaged macOS and Linux targets; native tests pin successful moves and occupied destinations.
+
+### Slice 08c1b — Workbench A/B verifies dimensions, not provenance
+
+- **When:** Slice 08c1b visual checkpoint, 2026-09-05.
+- **The choice:** `wb ab` accepts two equal-sized images and one named variable, embeds their pixels and hashes, and labels neutral
+  versus edited. It explicitly says only dimensions were verified; source, framing, and encoding must come from capture provenance.
+- **The gap:** Pixel dimensions alone cannot prove two inputs share a source or crop.
+- **The reach:** Later visual passes reuse the report without turning a convenient A/B layout into a false provenance claim or an
+  aesthetic endorsement.
+- **Verdict:** **Sound.** The report states exactly what it can establish.
+- **Confidence:** High.
+
 ### Slice 08b integration — Develop batches reuse the shared failure owner and classify revision races as contention
 
 - **When:** Slice 08b review after the shared Slice 06 batch owner landed.
@@ -117,11 +195,9 @@
   records its history. Photoctl first publishes and synchronizes the complete file, then inserts the history row. For example, if
   the database write fails after `/delivery/client.jpg` reaches disk, the photographer still has a valid but unrecorded file. The
   reverse order could leave a durable history row pointing at a partial or nonexistent delivery after a crash. Ordinary writes use
-  atomic no-replace publication where hard links are supported, while explicit overwrite is the only path allowed to replace an
-  existing name. Filesystems that reject hard links fall back to exclusive destination creation, followed by write and fsync;
-  failure removes the partial file and an existing name is never replaced. That fallback preserves no-clobber semantics, but a
-  concurrent reader can observe the destination while it is still being written because Node exposes no portable atomic
-  rename-with-no-replace primitive.
+  a native atomic no-replace rename, while explicit overwrite is the only path allowed to replace an existing name. Unsupported
+  filesystems fail closed after removing the unpublished sibling temporary. This supersedes the earlier direct exclusive-write
+  fallback: a reader can now observe either no destination or the complete fsynced file, never a partially written final path.
 - **The gap:** The plan required durable output, history, and no unasked clobbering, but a filesystem rename and a database insert
   cannot participate in one shared transaction.
 - **The reach:** Export retries may discover an unrecorded file and apply the requested collision policy, but catalog history never

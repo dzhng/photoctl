@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { findOrphanArtifacts, retainedArtifacts } from "../artifacts/availability.js";
+import { readArtifactLinear } from "../artifacts/publication.js";
 import { evaluateGraphNode, SourceEvaluationError } from "./evaluator.js";
 import { canonicalNodeRecipe, logicalNodeId, recipeHash } from "./recipes.js";
 import { commitRevision } from "./store.js";
@@ -283,6 +284,93 @@ test("changed source pixels at the same locator create a new source evaluation",
     expect(second.evaluationHash).not.toBe(first.evaluationHash);
     expect(second.executionId).not.toBe(first.executionId);
     expect(second.artifact.artifactHash).not.toBe(first.artifact.artifactHash);
+  } finally {
+    await db.close();
+  }
+});
+
+test("develop nodes run the native global grade without caller-supplied operations", async () => {
+  const { db, library, nodeId: sourceId } = await sourceGraph();
+  try {
+    const document = await db.query<{ active_revision_id: string }>(
+      "SELECT active_revision_id FROM photo_documents WHERE photo_id = $1",
+      [photoId],
+    );
+    const revision = await commitRevision(db, {
+      photoId,
+      expectedRevisionId: document.rows[0].active_revision_id,
+      nodes: [
+        {
+          localKey: "develop",
+          kind: "develop",
+          recipeVersion: 1,
+          parameters: { exposure: 1 },
+          inputs: [{ nodeId: sourceId }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "develop" } }],
+    });
+    const evaluated = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId: revision.roots.output!,
+      source: async () => ({
+        ...sourceEvaluation(),
+        image: { ...sourceEvaluation().image, data: new Float32Array([0.1, 0.15, 0.2]) },
+      }),
+    });
+    expect((await readArtifactLinear(evaluated.artifact.path)).data).toEqual(
+      new Float32Array([0.2, 0.3, 0.4]),
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("develop exposure acts on preserved scene-linear values above the display ceiling", async () => {
+  const { db, library, nodeId: sourceId } = await sourceGraph();
+  try {
+    const document = await db.query<{ active_revision_id: string }>(
+      "SELECT active_revision_id FROM photo_documents WHERE photo_id = $1",
+      [photoId],
+    );
+    const revision = await commitRevision(db, {
+      photoId,
+      expectedRevisionId: document.rows[0].active_revision_id,
+      nodes: [
+        {
+          localKey: "develop",
+          kind: "develop",
+          recipeVersion: 1,
+          parameters: { exposure: 1 },
+          inputs: [{ nodeId: sourceId }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "develop" } }],
+    });
+    const evaluated = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId: revision.roots.output!,
+      source: async () => ({
+        ...sourceEvaluation(),
+        image: {
+          w: 1,
+          h: 1,
+          orientationApplied: true,
+          space: "scene-linear-rec2020",
+          data: new Float32Array([0.75, 1.25, -0.125]),
+          whiteLevel: 1,
+          blackLevel: 0,
+          wbPreApplied: true,
+        },
+      }),
+    });
+    expect((await readArtifactLinear(evaluated.artifact.path)).data).toEqual(
+      new Float32Array([1.5, 2.5, -0.25]),
+    );
   } finally {
     await db.close();
   }

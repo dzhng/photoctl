@@ -29,6 +29,7 @@ export interface DevelopedImage {
 }
 
 interface NativeBinding {
+  atomicRenameNoReplace(source: string, destination: string): AtomicRenameOutcome;
   librawVersion(): string;
   probeLibraw(path: string): NativeProbe;
   decodeLibrawImage(path: string, scale: number): Promise<NativeLinearImage>;
@@ -49,9 +50,42 @@ interface NativeBinding {
     outputWidth: number,
     outputHeight: number,
   ): Uint16Array;
+  applyGlobalDevelop(
+    data: Float32Array,
+    parameters: GlobalDevelopParameters,
+  ): Promise<Float32Array>;
+  applyGlobalDevelopArtifact(
+    data: Uint8Array,
+    pixelOffset: number,
+    pixelBytes: number,
+    parameters: GlobalDevelopParameters,
+  ): Promise<Uint8Array>;
+  validateLinearArtifactSamples(
+    data: Uint8Array,
+    pixelOffset: number,
+    pixelBytes: number,
+  ): Promise<void>;
+}
+
+export type AtomicRenameOutcome = "installed" | "exists" | "unsupported";
+
+export interface GlobalDevelopParameters {
+  exposure?: number;
+  brightness?: number;
+  contrast?: number;
+  blackPoint?: number;
+  saturation?: number;
+  temperatureOffsetK?: number;
+  tint?: number;
+  cast?: number;
 }
 
 export class NativeImageUnavailableError extends Error {}
+
+/** Atomically moves a sibling file into an unoccupied destination. */
+export function atomicRenameNoReplace(source: string, destination: string): AtomicRenameOutcome {
+  return requiredBinding().atomicRenameNoReplace(source, destination);
+}
 
 export function inspectLibraw(): { available: boolean; version: string | null } {
   const binding = loadBinding();
@@ -113,6 +147,35 @@ export function resampleDisplaySrgb(
     outputWidth,
     outputHeight,
   );
+}
+
+export async function applyGlobalDevelop(
+  data: Float32Array,
+  parameters: GlobalDevelopParameters,
+): Promise<Float32Array> {
+  return asFloat32Array(await requiredBinding().applyGlobalDevelop(data, parameters));
+}
+
+export async function applyGlobalDevelopArtifact(
+  data: Uint8Array,
+  pixelOffset: number,
+  pixelBytes: number,
+  parameters: GlobalDevelopParameters,
+): Promise<Uint8Array> {
+  return await requiredBinding().applyGlobalDevelopArtifact(
+    data,
+    pixelOffset,
+    pixelBytes,
+    parameters,
+  );
+}
+
+export async function validateLinearArtifactSamples(
+  data: Uint8Array,
+  pixelOffset: number,
+  pixelBytes: number,
+): Promise<void> {
+  await requiredBinding().validateLinearArtifactSamples(data, pixelOffset, pixelBytes);
 }
 
 let loaded: NativeBinding | null | undefined;

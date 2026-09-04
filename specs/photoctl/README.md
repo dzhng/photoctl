@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08b, and provider slices 09a–09b are
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08c1b, and provider slices 09a–09b are
 implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -28,16 +28,17 @@ writes in schema v6. Explicit XMP writes now merge catalog cull metadata into si
 metadata; pull sync and mtime divergence reporting share that owner. Opened-file snapshots and a strong pre-publication identity
 check followed by atomic displacement and no-clobber installation keep external editors from pairing old XML with new metadata or
 silently losing an observed edit. Develop dictionaries and package/library presets now live in typed immutable nodes with full
-hashes; pixel operators remain in 08c+.*
+hashes. Exact scene-linear Rec.2020 f32 artifacts now remain canonical through the DAG, and the first deterministic pixel pass
+applies global exposure, brightness, contrast, black point, saturation, white balance, and cast in the native Rust owner.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** slice 08c1 (global develop pixel operators), followed by slice 09c (embed worker/search).
-  Slice 08c1 inherits 08b's canonical dictionary, preset precedence, typed immutable develop node, lazy logical graph, durable
-  artifact owner, and execution metadata seam. Slice 09c inherits 09a's provider contracts and 09b's measured UPSERT verdict; the
+- **Pickup point:** slice 08c2 (masked highlights/shadows/vibrance), followed by slice 09c (embed worker/search).
+  Slice 08c2 inherits 08c1a's exact scene-linear artifact boundary and 08c1b's fixed-order native global pipeline. Slice 09c
+  inherits 09a's provider contracts and 09b's measured UPSERT verdict; the
   live multimodal request remains manual until its explicit-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
@@ -58,7 +59,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [ ] 8c+ color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
+- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [ ] 8c2+ masked/color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
 - [ ] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [ ] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [ ] 10 DAG-backed layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`

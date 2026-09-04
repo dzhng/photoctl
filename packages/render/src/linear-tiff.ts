@@ -1,5 +1,6 @@
 import type { LinearImage } from "./decoder.js";
 import { readFile } from "node:fs/promises";
+import { validateLinearArtifactSamples } from "@photoctl/img";
 import { linearRec2020ProfilePath, srgb2014ProfilePath } from "./color.js";
 import type { Image16 } from "./source-render.js";
 
@@ -43,6 +44,38 @@ export async function encodeArtifactLinearTiff(image: LinearImage): Promise<Buff
 
 /** Reads photoctl's deterministic uncompressed IEEE-f32 graph artifact TIFF. */
 export async function decodeArtifactLinearTiff(bytes: Buffer): Promise<LinearImage> {
+  const { width, height, pixelOffset } = await inspectArtifactLinearTiff(bytes);
+  const data = new Float32Array(width * height * 3);
+  for (let index = 0; index < data.length; index += 1) {
+    const sample = bytes.readFloatLE(pixelOffset + index * Float32Array.BYTES_PER_ELEMENT);
+    if (!Number.isFinite(sample)) throw new Error("Linear TIFF contains a non-finite sample");
+    data[index] = sample;
+  }
+  return {
+    w: width,
+    h: height,
+    orientationApplied: true,
+    space: "scene-linear-rec2020",
+    data,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+}
+
+/** Validates canonical metadata and samples without materializing a second pixel array. */
+export async function validateArtifactLinearTiff(bytes: Buffer): Promise<{ w: number; h: number }> {
+  const { width, height, pixelOffset, pixelBytes } = await inspectArtifactLinearTiff(bytes);
+  await validateLinearArtifactSamples(bytes, pixelOffset, pixelBytes);
+  return { w: width, h: height };
+}
+
+export async function inspectArtifactLinearTiff(bytes: Buffer): Promise<{
+  width: number;
+  height: number;
+  pixelOffset: number;
+  pixelBytes: number;
+}> {
   if (bytes.toString("ascii", 0, 2) !== "II" || bytes.readUInt16LE(2) !== 42) {
     throw new Error("Linear TIFF has an invalid header");
   }
@@ -79,20 +112,7 @@ export async function decodeArtifactLinearTiff(bytes: Buffer): Promise<LinearIma
   ) {
     throw new Error("Linear TIFF has the wrong color profile");
   }
-  const data = new Float32Array(width * height * 3);
-  for (let index = 0; index < data.length; index += 1) {
-    data[index] = bytes.readFloatLE(pixelOffset + index * Float32Array.BYTES_PER_ELEMENT);
-  }
-  return {
-    w: width,
-    h: height,
-    orientationApplied: true,
-    space: "scene-linear-rec2020",
-    data,
-    whiteLevel: 1,
-    blackLevel: 0,
-    wbPreApplied: true,
-  };
+  return { width, height, pixelOffset, pixelBytes };
 }
 
 export async function encodeDisplayTiff(image: Image16): Promise<Buffer> {

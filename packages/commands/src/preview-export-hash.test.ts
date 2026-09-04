@@ -117,7 +117,7 @@ test("export evaluates the snapped output node to a canonical artifact", async (
   }
 });
 
-test("export refuses an active develop root until its pixel operation exists", async () => {
+test("export consumes the active global develop node", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-export-edited-root-"));
   const source = join(directory, "photo.jpg");
   const output = join(directory, "out");
@@ -175,11 +175,16 @@ test("export refuses an active develop root until its pixel operation exists", a
 
     expect(exported).toMatchObject({
       schema: 1,
-      ok: false,
-      code: "decoder_unavailable",
-      results: [{ id, ok: false, code: "decoder_unavailable" }],
+      ok: true,
+      results: [{ id, ok: true, render_hash: expect.stringMatching(/^r_[0-9a-f]{64}$/u) }],
     });
-    await expect(access(join(output, "photo.jpg"))).rejects.toMatchObject({ code: "ENOENT" });
+    const outputPath = join(output, "photo.jpg");
+    await expect(access(outputPath)).resolves.toBeUndefined();
+    const [sourceStats, outputStats] = await Promise.all([
+      sharp(source).stats(),
+      sharp(outputPath).stats(),
+    ]);
+    expect(imageMean(outputStats)).toBeGreaterThan(imageMean(sourceStats) * 1.2);
   } finally {
     await initialized.handle.close();
     await rm(directory, { recursive: true });

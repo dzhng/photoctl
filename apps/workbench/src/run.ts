@@ -10,6 +10,7 @@ import { buildSheetReport } from "./sheet.js";
 import { buildGraphReport } from "./graph.js";
 import { buildExportReport } from "./export.js";
 import { renderPresetsReport } from "./presets.js";
+import { buildAbReport } from "./ab.js";
 import { runUpscaleSpike, type UpscaleSpikeDependencies } from "./upscale-spike.js";
 
 export async function runWorkbench(
@@ -30,11 +31,12 @@ export async function runWorkbench(
       "graph",
       "export",
       "presets",
+      "ab",
       "upscale-spike",
     ].includes(command)
   )
     throw new Error(
-      "usage: wb envelope|race|library|oracle|sheet|graph|export|presets|upscale-spike",
+      "usage: wb envelope|race|library|oracle|sheet|graph|export|presets|ab|upscale-spike",
     );
   if (command === "upscale-spike") {
     const outputDirectory = join(cwd, "out", "wb");
@@ -44,6 +46,20 @@ export async function runWorkbench(
       outputDirectory,
       dependencies,
     );
+  }
+  if (command === "ab") {
+    if (rest.length !== 4 || rest[2] !== "--variable") {
+      throw new Error("usage: wb ab <neutral-image> <edited-image> --variable <name=value>");
+    }
+    const outputDirectory = join(cwd, "out", "wb");
+    await mkdir(outputDirectory, { recursive: true });
+    const output = join(outputDirectory, "ab.html");
+    await writeFile(
+      output,
+      await buildAbReport(resolve(cwd, rest[0]), resolve(cwd, rest[1]), rest[3]),
+      "utf8",
+    );
+    return output;
   }
   if (command === "graph") {
     if (rest.length !== 1) throw new Error("usage: wb graph <photo-id>");

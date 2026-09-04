@@ -39,6 +39,7 @@ import { graphCommand } from "./handlers/graph.js";
 import { xmpCommand } from "./handlers/xmp.js";
 import { developCommand } from "./handlers/develop.js";
 import { presetsCommand } from "./handlers/presets.js";
+import { renderCommand } from "./handlers/render.js";
 import {
   flagCommand,
   labelCommand,
@@ -98,6 +99,8 @@ export async function dispatch(
       return await developCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "presets")
       return await presetsCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "render")
+      return await renderCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "list")

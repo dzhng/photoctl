@@ -2,8 +2,11 @@
 import {
   artifactPath,
   normalizeArtifact,
+  normalizeValidatedArtifactBytes,
   publishArtifact,
-  readArtifactLinear,
+  readArtifactBytes,
+  readArtifactBytesForNativeDevelop,
+  type NormalizedArtifact,
   type PublishedArtifact,
 } from "../artifacts/publication.js";
 import {
@@ -21,6 +24,8 @@ import type { ExifOrientation } from "../coordinates.js";
 import type { ImageSource, LinearImage } from "../decoder.js";
 import type { Image16 } from "../source-render.js";
 import type { GraphDatabase, GraphTransaction } from "./store.js";
+import { applyDevelopArtifact } from "../develop/pixels.js";
+import { developDictSchema } from "../develop/dict.js";
 
 export interface EvaluatedNode {
   artifact: PublishedArtifact;
@@ -194,8 +199,11 @@ async function evaluateOne(
         attempt: externalExecution.attempt,
       });
     }
-    const normalized =
-      node.kind === "source" ? normalizedSource! : await normalizeArtifact(operation!.image);
+    let normalized: NormalizedArtifact;
+    if (node.kind === "source") normalized = normalizedSource!;
+    else if (!operation) throw new Error(`Pixel operation did not produce output for ${node.kind}`);
+    else if ("artifact" in operation) normalized = operation.artifact;
+    else normalized = await normalizeArtifact(operation.image);
     await request.hooks?.beforePublish?.();
     artifact = await publishArtifact(request.libraryPath, normalized);
   }
@@ -258,9 +266,33 @@ async function runOperation(
   nodeId: string,
   parameters: JsonValue,
   inputs: EvaluatedNode[],
-): Promise<{ image: LinearImage | Image16; externalExecution?: ExternalExecutionProvenance }> {
+): Promise<
+  | { image: LinearImage | Image16; externalExecution?: ExternalExecutionProvenance }
+  | { artifact: NormalizedArtifact; externalExecution?: undefined }
+> {
   const operation = request.operations?.[kind];
-  if (!operation) throw new Error(`No pixel evaluator is registered for ${kind}`);
+  if (!operation) {
+    if (kind === "develop") {
+      if (inputs.length !== 1) throw new Error("Develop evaluation requires one input artifact");
+      const input = inputs[0].artifact;
+      const bytes = await readArtifactBytesForNativeDevelop(input.path, input.artifactHash, {
+        w: input.w,
+        h: input.h,
+      });
+      const developed = await applyDevelopArtifact(
+        bytes,
+        { w: input.w, h: input.h },
+        developDictSchema.parse(parameters),
+      );
+      return {
+        artifact: await normalizeValidatedArtifactBytes(developed.bytes, {
+          w: developed.w,
+          h: developed.h,
+        }),
+      };
+    }
+    throw new Error(`No pixel evaluator is registered for ${kind}`);
+  }
   const result = await operation({ nodeId, parameters, inputs });
   if ("image" in result) {
     const externalExecution = externalExecutionSchema.parse(result.externalExecution);
@@ -450,7 +482,7 @@ async function loadByExecutionId(
     throw new Error(`Unsupported artifact media type: ${row.media_type}`);
   const path = artifactPath(libraryPath, row.output_artifact_hash, "tif");
   try {
-    await readArtifactLinear(path, row.output_artifact_hash);
+    await readArtifactBytes(path, row.output_artifact_hash, { w: row.w, h: row.h });
   } catch {
     await database.query(
       "UPDATE image_artifacts SET artifact_available = false WHERE artifact_hash = $1",

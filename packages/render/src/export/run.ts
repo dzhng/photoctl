@@ -1,6 +1,7 @@
-import { link, open, rename, unlink } from "node:fs/promises";
+import { open, rename, unlink } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { dirname } from "node:path";
+import { atomicRenameNoReplace } from "@photoctl/img";
 import sharp, { type Sharp } from "sharp";
 import { srgb2014ProfilePath } from "../color.js";
 import type { Image16 } from "../source-render.js";
@@ -55,7 +56,7 @@ export async function exportImage(request: ImageExport): Promise<ImageExportResu
     throw new ExportRenderError(request.id, error);
   }
   try {
-    await writeDurable(request.outputPath, encoded, request.replace ?? false);
+    await publishFile(request.outputPath, encoded, request.replace ?? false);
   } catch {
     throw new ExportWriteError(request.id, request.outputPath);
   }
@@ -129,7 +130,8 @@ function deliveryDimensions(
   };
 }
 
-async function writeDurable(path: string, bytes: Buffer, replace: boolean): Promise<void> {
+/** Durably publishes bytes without replacing an existing path unless replacement is explicit. */
+export async function publishFile(path: string, bytes: Buffer, replace = false): Promise<void> {
   const temporary = `${path}.tmp-${randomUUID()}`;
   let published = false;
   try {
@@ -143,47 +145,23 @@ async function writeDurable(path: string, bytes: Buffer, replace: boolean): Prom
     if (replace) {
       await rename(temporary, path);
     } else {
-      try {
-        await link(temporary, path);
-      } catch (error) {
-        if (!isUnsupportedLink(error)) throw error;
-        await writeExclusive(path, bytes);
-      }
+      const outcome = atomicRenameNoReplace(temporary, path);
+      if (outcome === "exists") throw new Error(`Destination already exists: ${path}`);
+      if (outcome === "unsupported")
+        throw new Error(`Atomic no-replace publication is unsupported: ${path}`);
     }
     published = true;
-    if (!replace) await unlink(temporary).catch(() => undefined);
-    const directory = await open(dirname(path), "r");
-    try {
-      await directory.sync();
-    } finally {
-      await directory.close();
-    }
+    await syncDirectory(dirname(path));
   } finally {
     if (!published) await unlink(temporary).catch(() => undefined);
   }
 }
 
-async function writeExclusive(path: string, bytes: Buffer): Promise<void> {
-  let destination: Awaited<ReturnType<typeof open>> | undefined;
+async function syncDirectory(path: string): Promise<void> {
+  const directory = await open(path, "r");
   try {
-    destination = await open(path, "wx");
-    await destination.writeFile(bytes);
-    await destination.sync();
-    await destination.close();
-    destination = undefined;
-  } catch (error) {
-    if (destination) {
-      await destination.close().catch(() => undefined);
-      await unlink(path).catch(() => undefined);
-    }
-    throw error;
+    await directory.sync();
+  } finally {
+    await directory.close();
   }
-}
-
-function isUnsupportedLink(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    ["EACCES", "ENOSYS", "ENOTSUP", "EOPNOTSUPP", "EPERM"].includes(String(error.code))
-  );
 }

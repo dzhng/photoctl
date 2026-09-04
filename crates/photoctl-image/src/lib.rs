@@ -1,16 +1,21 @@
 //! Native image operations for photoctl.
 
 mod develop;
+mod publication;
 
 use std::path::Path;
 
 use napi::{
     Error, Status, Task,
-    bindgen_prelude::{AsyncTask, Float32Array, Uint16Array},
+    bindgen_prelude::{AsyncTask, Float32Array, Uint8Array, Uint16Array},
 };
 use napi_derive::napi;
 
-use develop::{camera_front, display_srgb_to_linear_rec2020, linear_rec2020_to_display_srgb};
+use develop::{
+    GlobalDevelop, apply_global_artifact_in_place, apply_global_in_place, camera_front,
+    display_srgb_to_linear_rec2020, linear_rec2020_to_display_srgb, validate_artifact_samples,
+};
+use publication::{AtomicRenameOutcome, atomic_rename_no_replace as rename_no_replace};
 
 #[derive(Debug)]
 pub struct CameraImage {
@@ -93,6 +98,30 @@ pub struct DevelopedImageResult {
     pub wb_pre_applied: bool,
 }
 
+#[napi(object)]
+pub struct GlobalDevelopParameters {
+    pub exposure: Option<f64>,
+    pub brightness: Option<f64>,
+    pub contrast: Option<f64>,
+    pub black_point: Option<f64>,
+    pub saturation: Option<f64>,
+    pub temperature_offset_k: Option<f64>,
+    pub tint: Option<f64>,
+    pub cast: Option<f64>,
+}
+
+#[napi]
+pub fn atomic_rename_no_replace(source: String, destination: String) -> napi::Result<String> {
+    let outcome = rename_no_replace(Path::new(&source), Path::new(&destination))
+        .map_err(|error| Error::new(Status::GenericFailure, error.to_string()))?;
+    Ok(match outcome {
+        AtomicRenameOutcome::Installed => "installed",
+        AtomicRenameOutcome::Exists => "exists",
+        AtomicRenameOutcome::Unsupported => "unsupported",
+    }
+    .to_owned())
+}
+
 #[napi]
 pub fn develop_camera_front(
     data: Float32Array,
@@ -135,10 +164,16 @@ pub fn resample_display_srgb(
     output_height: u32,
 ) -> napi::Result<Uint16Array> {
     if source_width == 0 || source_height == 0 || output_width == 0 || output_height == 0 {
-        return Err(Error::new(Status::InvalidArg, "image dimensions must be positive"));
+        return Err(Error::new(
+            Status::InvalidArg,
+            "image dimensions must be positive",
+        ));
     }
     if data.len() != source_width as usize * source_height as usize * 3 {
-        return Err(Error::new(Status::InvalidArg, "display image must contain RGB16 samples"));
+        return Err(Error::new(
+            Status::InvalidArg,
+            "display image must contain RGB16 samples",
+        ));
     }
     Ok(resample_rgb16(
         &data,
@@ -148,6 +183,63 @@ pub fn resample_display_srgb(
         output_height,
     )
     .into())
+}
+
+#[napi]
+pub fn apply_global_develop(
+    data: Float32Array,
+    parameters: GlobalDevelopParameters,
+) -> AsyncTask<GlobalDevelopTask> {
+    AsyncTask::new(GlobalDevelopTask {
+        data: data.to_vec(),
+        parameters: GlobalDevelop {
+            exposure: parameters.exposure.unwrap_or_default() as f32,
+            brightness: parameters.brightness.unwrap_or_default() as f32,
+            contrast: parameters.contrast.unwrap_or_default() as f32,
+            black_point: parameters.black_point.unwrap_or_default() as f32,
+            saturation: parameters.saturation.unwrap_or_default() as f32,
+            temperature_offset_k: parameters.temperature_offset_k.unwrap_or_default() as f32,
+            tint: parameters.tint.unwrap_or_default() as f32,
+            cast: parameters.cast.unwrap_or_default() as f32,
+        },
+    })
+}
+
+#[napi]
+pub fn apply_global_develop_artifact(
+    data: Uint8Array,
+    pixel_offset: u32,
+    pixel_bytes: u32,
+    parameters: GlobalDevelopParameters,
+) -> AsyncTask<GlobalDevelopArtifactTask> {
+    AsyncTask::new(GlobalDevelopArtifactTask {
+        data: data.to_vec(),
+        pixel_offset: pixel_offset as usize,
+        pixel_bytes: pixel_bytes as usize,
+        parameters: GlobalDevelop {
+            exposure: parameters.exposure.unwrap_or_default() as f32,
+            brightness: parameters.brightness.unwrap_or_default() as f32,
+            contrast: parameters.contrast.unwrap_or_default() as f32,
+            black_point: parameters.black_point.unwrap_or_default() as f32,
+            saturation: parameters.saturation.unwrap_or_default() as f32,
+            temperature_offset_k: parameters.temperature_offset_k.unwrap_or_default() as f32,
+            tint: parameters.tint.unwrap_or_default() as f32,
+            cast: parameters.cast.unwrap_or_default() as f32,
+        },
+    })
+}
+
+#[napi]
+pub fn validate_linear_artifact_samples(
+    data: Uint8Array,
+    pixel_offset: u32,
+    pixel_bytes: u32,
+) -> AsyncTask<ValidateLinearArtifactTask> {
+    AsyncTask::new(ValidateLinearArtifactTask {
+        data: data.to_vec(),
+        pixel_offset: pixel_offset as usize,
+        pixel_bytes: pixel_bytes as usize,
+    })
 }
 
 pub struct CameraFrontTask {
@@ -192,6 +284,76 @@ pub struct DisplayFrontTask {
 
 pub struct DisplayBackTask {
     data: Vec<f32>,
+}
+
+pub struct GlobalDevelopTask {
+    data: Vec<f32>,
+    parameters: GlobalDevelop,
+}
+
+pub struct GlobalDevelopArtifactTask {
+    data: Vec<u8>,
+    pixel_offset: usize,
+    pixel_bytes: usize,
+    parameters: GlobalDevelop,
+}
+
+pub struct ValidateLinearArtifactTask {
+    data: Vec<u8>,
+    pixel_offset: usize,
+    pixel_bytes: usize,
+}
+
+impl Task for GlobalDevelopTask {
+    type Output = Vec<f32>;
+    type JsValue = Float32Array;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        // N-API typed arrays may still be mutated by JavaScript, so the entry point makes one
+        // owned copy before scheduling. Mutate that copy in place: peak pixel storage is the JS
+        // input plus one Rust frame, never the previous second Rust output frame.
+        apply_global_in_place(&mut self.data, self.parameters)
+            .map_err(|message| Error::new(Status::InvalidArg, message))?;
+        Ok(std::mem::take(&mut self.data))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(data.into())
+    }
+}
+
+impl Task for GlobalDevelopArtifactTask {
+    type Output = Vec<u8>;
+    type JsValue = Uint8Array;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        apply_global_artifact_in_place(
+            &mut self.data,
+            self.pixel_offset,
+            self.pixel_bytes,
+            self.parameters,
+        )
+        .map_err(|message| Error::new(Status::InvalidArg, message))?;
+        Ok(std::mem::take(&mut self.data))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(data.into())
+    }
+}
+
+impl Task for ValidateLinearArtifactTask {
+    type Output = ();
+    type JsValue = ();
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        validate_artifact_samples(&self.data, self.pixel_offset, self.pixel_bytes)
+            .map_err(|message| Error::new(Status::InvalidArg, message))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, _data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(())
+    }
 }
 
 impl Task for DisplayFrontTask {
@@ -330,7 +492,10 @@ fn resample_rgb16(
     output_height: u32,
 ) -> Vec<u16> {
     resample_rgb(
-        &input.iter().map(|sample| f32::from(*sample)).collect::<Vec<_>>(),
+        &input
+            .iter()
+            .map(|sample| f32::from(*sample))
+            .collect::<Vec<_>>(),
         source_width,
         source_height,
         output_width,
@@ -356,7 +521,10 @@ mod tests {
     fn resamples_display_rgb16_through_the_shared_pixel_center_kernel() {
         let input = vec![0, 0, 0, 65_535, 65_535, 65_535];
 
-        assert_eq!(resample_rgb16(&input, 2, 1, 1, 1), vec![32_768, 32_768, 32_768]);
+        assert_eq!(
+            resample_rgb16(&input, 2, 1, 1, 1),
+            vec![32_768, 32_768, 32_768]
+        );
     }
 
     #[test]

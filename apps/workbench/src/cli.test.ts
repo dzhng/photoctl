@@ -211,6 +211,30 @@ test("presets renders the shipped dictionaries and their full develop identities
   expect(html).not.toMatch(/<(?:script|link|img)[^>]+(?:src|href)=/u);
 });
 
+test("ab renders exactly one named develop variable across a comparable image pair", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-ab-"));
+  temporaryDirectories.push(cwd);
+  const neutral = join(cwd, "neutral.png");
+  const edited = join(cwd, "edited.png");
+  await sharp({ create: { width: 64, height: 48, channels: 3, background: "#456" } })
+    .png()
+    .toFile(neutral);
+  await sharp({ create: { width: 64, height: 48, channels: 3, background: "#789" } })
+    .png()
+    .toFile(edited);
+
+  const output = await runWorkbench(["ab", neutral, edited, "--variable", "exposure=1"], cwd);
+  const html = await readFile(output, "utf8");
+
+  expect(output).toBe(join(cwd, "out", "wb", "ab.html"));
+  expect(html).toContain("Exposure=1");
+  expect(html.match(/src="data:image\/png;base64,/gu)).toHaveLength(2);
+  expect(html).toContain("64 × 48");
+  expect(html).toContain("Only equal pixel dimensions are verified");
+  expect(html).not.toContain("Framing, source, dimensions, and encoding are held constant");
+  expect(html).not.toMatch(/<(?:script|link)[^>]+(?:src|href)=/u);
+});
+
 test("export renders a self-contained contact sheet for a delivered folder", async () => {
   const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-export-"));
   temporaryDirectories.push(cwd);

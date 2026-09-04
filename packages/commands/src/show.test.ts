@@ -7,6 +7,10 @@ import { initializeLibrary } from "@photoctl/library";
 import { PreviewCoordinator } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
 
+function imageMean(channels: Array<{ mean: number }>): number {
+  return channels.slice(0, 3).reduce((sum, channel) => sum + channel.mean, 0) / 3;
+}
+
 test("show normalizes empty stored metadata to the public nullable shape", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-show-metadata-"));
   const libraryPath = join(directory, "library");
@@ -232,6 +236,58 @@ test("show indexes a derived preview only after returning a readable artifact", 
         )
       ).rows,
     ).toEqual([{ count: "2" }]);
+  } finally {
+    await initialized.handle.close();
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("show materializes pixels from the active global develop node", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-show-develop-"));
+  const libraryPath = join(directory, "library");
+  const cacheRoot = join(directory, "cache");
+  const source = join(directory, "photo.png");
+  const initialized = await initializeLibrary(libraryPath);
+  try {
+    await sharp({ create: { width: 32, height: 24, channels: 3, background: "#45566a" } })
+      .png()
+      .toFile(source);
+    const env = {
+      noDaemon: true,
+      libraryPath,
+      cacheRoot,
+      volumeMap: `${directory}=fixture-volume:online`,
+    };
+    const imported = await dispatch(
+      { verb: "import", args: [source, "--link"], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    if (!imported.ok || !("data" in imported)) throw new Error("import failed");
+    const id = (imported.data as { ids: string[] }).ids[0];
+    const neutral = await dispatch(
+      { verb: "show", args: [id], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    await dispatch(
+      { verb: "develop", args: [id, "--set", "exposure=1"], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    const edited = await dispatch(
+      { verb: "show", args: [id], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    if (!neutral.ok || !("data" in neutral) || !edited.ok || !("data" in edited)) {
+      throw new Error("show failed");
+    }
+    const neutralData = neutral.data as { preview: string; render_hash: string };
+    const editedData = edited.data as { preview: string; render_hash: string };
+    const [neutralStats, editedStats] = await Promise.all([
+      sharp(neutralData.preview).stats(),
+      sharp(editedData.preview).stats(),
+    ]);
+    expect(editedData.render_hash).not.toBe(neutralData.render_hash);
+    expect(editedData.preview).not.toBe(neutralData.preview);
+    expect(imageMean(editedStats.channels)).toBeGreaterThan(imageMean(neutralStats.channels) * 1.2);
   } finally {
     await initialized.handle.close();
     await rm(directory, { recursive: true });

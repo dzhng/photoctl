@@ -134,6 +134,13 @@ variable per later sub-slice as listed. Any shot runs `screenshot-critique` last
 target. Checkpoints are non-blocking per the root rule. The 8a2 graph report and 8b preset report were generated and structurally
 tested. Visual capture was unavailable on 2026-09-05: the in-app browser was disabled for subagent display and its hidden surface
 rejected local-file navigation; no indirect workaround was permitted, so no screenshot or visual-green claim was made.
+The later 8c1b production-route check used the same 7008×4672 LibRaw source and crop with exposure as the sole variable
+(`0` versus `+0.7`). The neutral and edited JPEG hashes are respectively
+`ae279c7aa917a50893bf22a604d82420f1592da847a56792ab352397d23c5b26` and
+`bec8207afb24753f5ec6de00827eb2a74d1129bdfa119e74c28f6fcd52106d6e`; comparison measured mean luminance
+`61.19→78.04`, MAE `16.90`, and unchanged framing. Fresh unprimed critique found a spatially global luminance lift with
+preserved structure and no obvious clipping, banding, blur, or halos. Existing edge fringing was only made easier to see.
+This verifies production pixel consumption, not that the brighter grade is aesthetically preferable.
 
 ## Must stay green: 01–07. Deps: 7b (functional), 7a (macos). Firewall: no layers, no providers, no learned NR, no CoreML, no VLM.
 
@@ -151,3 +158,38 @@ rejected local-file navigation; no indirect workaround was permitted, so no scre
   graph. Call: one command-layer owner resolves ordered native whole-file, embedded, and pinned linear producers plus exact
   execution provenance for show and export; fallback reasons map centrally to `decoder_fallback` or `source_offline`. Needs David:
   no; this restores the specified decoder contract before pixel operators land.
+
+- **2026-09-05 — 8c1b global operators.** The develop evaluator reads the canonical f32 linear artifact directly, runs the
+  fixed-order Rust owner (white balance/cast, brightness/black point, exposure, contrast, saturation), and publishes the exact
+  linear result. `render --linear` serializes that artifact without a display round-trip and publishes with atomic no-replace,
+  including rejection of original and hard-link aliases. A deliberate clamp made the `+3 EV` regression fall from the expected
+  `8×` mean ratio to `3.515×`, demonstrating that the test detects pre-output highlight loss; the unclamped route passes with
+  negative, greater-than-one, and out-of-gamut samples intact. Needs David: no; masked, curve, local, geometry, and filter operators
+  remain in their named later slices.
+
+- **2026-09-05 — 8c1b bounded-memory review.** The asynchronous N-API boundary must copy a JavaScript typed array because its
+  backing memory remains mutable by JavaScript. The worker now grades that one owned Rust buffer in place, bounding a 7008×4672
+  RGB call to two pixel frames (785.8 MB / 749.4 MiB) instead of three (1.18 GB / 1.10 GiB). The linear probe now hash-verifies and validates
+  the canonical TIFF in its byte buffer and atomically publishes those identical bytes; it does not decode another f32 array or
+  re-encode a second TIFF. Needs David: no; both changes remove redundant full-frame allocations without making native CPU work
+  synchronous.
+
+- **2026-09-05 — 8c1b event-loop review.** Reused-artifact validation and develop initially decoded every TIFF sample into a
+  `Float32Array` synchronously on the persistent daemon's JavaScript thread. The artifact owner now limits JavaScript work to
+  asynchronous file reads, native SHA-256, and bounded TIFF metadata/ICC checks. Full-frame finiteness validation and global grading
+  run together on the N-API worker over one owned canonical-byte buffer; reuse validation also scans samples asynchronously. A
+  768×512 tracer observes repeated JavaScript timer heartbeats during grading. Needs David: no; exact samples, corruption rejection,
+  two-frame peak memory, and byte-identical linear probe publication remain unchanged.
+
+- **2026-09-05 — 8c1b publication/type review.** No-replace publication now writes and fsyncs only a sibling temporary, then uses
+  the native platform primitive (`renamex_np(RENAME_EXCL)` on macOS, `renameat2(RENAME_NOREPLACE)` on Linux) for one atomic install.
+  Occupied and unsupported outcomes preserve the destination and clean the temporary; there are no claim files, stale-owner
+  takeovers, or partial final writes. The public
+  in-memory develop helper also narrows to scene-linear Rec.2020 and rejects camera-space input at runtime. Needs David: no; these
+  make the existing no-clobber and color-space contracts honest without changing command schemas.
+
+- **2026-09-05 — 8c1b color review.** Directly substituting the Planckian 6504 K chromaticity for D65 made temperature discontinuous
+  around zero, and saturation used display-oriented Rec.709 luminance weights on Rec.2020 pixels. Temperature now applies the
+  Planckian-locus delta relative to 6504 K onto the exact D65 anchor; near-zero, warm, and cool tests pin continuity and direction.
+  Saturation uses the Rec.2020→XYZ Y row and tests preserve Y for both grayscale and boosted chroma. Needs David: no; these correct
+  the declared working-space math without changing control ranges or order.

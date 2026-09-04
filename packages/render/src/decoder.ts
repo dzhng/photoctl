@@ -62,6 +62,10 @@ export interface LinearImage {
   wbPreApplied: boolean;
 }
 
+export type SceneLinearImage = Omit<LinearImage, "space"> & {
+  space: "scene-linear-rec2020";
+};
+
 export interface Decoder {
   readonly id: "file" | "ciraw" | "libraw";
   probe(source: ImageSource): Promise<DecoderProbe>;
