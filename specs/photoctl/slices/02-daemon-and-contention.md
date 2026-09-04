@@ -33,3 +33,20 @@ no lock left). Budgets via `PHOTOCTL_LOCK_BUDGET_MS`/`PHOTOCTL_POLL_CEILING_MS`,
 ## Delegated: frame encoding detail; log file location.
 ## Checkpoint: `wb race` — refusal wording only.
 ## Must stay green: 01 (harness runs it with and without `PHOTOCTL_NO_DAEMON`). Deps: 01b. Firewall: no background workers yet.
+
+## Implemented
+
+The daemon owns one inherited advisory lock and one persistent PGlite handle. Commands use four-byte
+big-endian length-prefixed JSON frames; request events stream before the final envelope. `tag` resolves
+the complete input batch before its transaction and commits every resolvable item with idempotent
+add/remove semantics. Version mismatch, dead/stale sockets, unclean daemon death, explicit no-daemon
+execution, idle suppression hooks, and library removal all have real-process coverage.
+
+`bun run probe:race -- --clients 8 --rows 25` produced the committed G1 PASS verdict with 200 accepted
+and 200 persisted exact tag values. The 24-client overload test proves every refusal is
+`library_locked`/75 and accepted batches commit in full. Host performance covers 20 warm `show` calls
+with p50 below 250 ms; lock and poll budgets are derived from a measured Node process spawn.
+
+The `wb race` report uses the retry copy “Library busy — retry this command.” Browser security blocked
+opening its local `file:` URL during closeout, so the wording is test-pinned but the visual checkpoint
+remains pending in an environment that can open the generated report.

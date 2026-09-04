@@ -16,7 +16,7 @@ test("the previous schema upgrades without losing library settings", async () =>
     const libraryId = await db.query<{ value: string }>(
       "SELECT value FROM settings WHERE key = 'library_id'",
     );
-    expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }]);
+    expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }]);
     expect(libraryId.rows).toEqual([{ value: "0199a7c2-0000-7000-8000-000000000001" }]);
     await expect(
       db.query(
@@ -29,7 +29,7 @@ test("the previous schema upgrades without losing library settings", async () =>
   }
 });
 
-test("the current schema fixture preserves known photo and locator facts", async () => {
+test("the previous schema fixture gains daemon and tag state without losing photo facts", async () => {
   const db = await PGlite.create();
   try {
     await db.exec(await fixture("schema-v2.pgsql"));
@@ -66,6 +66,36 @@ test("the current schema fixture preserves known photo and locator facts", async
         ],
       },
     ]);
+    const queueMax = await db.query<{ value: number }>(
+      "SELECT value::text::integer AS value FROM settings WHERE key = 'daemon_queue_max'",
+    );
+    expect(queueMax.rows).toEqual([{ value: 8 }]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the current schema fixture preserves tags and daemon settings", async () => {
+  const db = await PGlite.create();
+  try {
+    await db.exec(await fixture("schema-v3.pgsql"));
+
+    await migrate(db);
+
+    const versions = await db.query<{ version: number }>(
+      "SELECT version FROM schema_version ORDER BY version",
+    );
+    const tags = await db.query<{ photo_id: string; tag: string }>(
+      "SELECT photo_id::text, tag FROM tags ORDER BY photo_id, tag",
+    );
+    const queueMax = await db.query<{ value: number }>(
+      "SELECT value::text::integer AS value FROM settings WHERE key = 'daemon_queue_max'",
+    );
+    expect(versions.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }]);
+    expect(tags.rows).toEqual([
+      { photo_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001", tag: "ceremony" },
+    ]);
+    expect(queueMax.rows).toEqual([{ value: 8 }]);
   } finally {
     await db.close();
   }

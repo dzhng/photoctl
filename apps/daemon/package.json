@@ -1,0 +1,14 @@
+{
+  "name": "@photoctl/daemon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": { "photoctl-daemon": "dist/bin.js" },
+  "files": ["dist"],
+  "scripts": { "build": "tsc -p tsconfig.json" },
+  "dependencies": {
+    "@photoctl/commands": "workspace:*",
+    "@photoctl/library": "workspace:*",
+    "@photoctl/protocol": "workspace:*"
+  }
+}

@@ -29,12 +29,14 @@ import {
   readLibraryId,
   type RequestEnv,
 } from "../context.js";
+import type { LibraryHandle } from "@photoctl/library";
 import { cacheWriteError, sourceChangedError, sourceReadError } from "../errors.js";
 
 export async function importCommand(
   args: string[],
   env: RequestEnv,
   cwd: string,
+  provided?: LibraryHandle,
 ): Promise<Envelope> {
   const startedAt = performance.now();
   const parsed = parseArguments(args, { flags: ["--link", "--copy"] });
@@ -60,7 +62,7 @@ export async function importCommand(
   const modes = Number(parsed.flags.has("--link")) + Number(parsed.flags.has("--copy"));
   if (modes !== 1)
     throw new PhotoctlError("usage", "import requires exactly one of --link or --copy");
-  return await importFile(sourcePath, parsed.flags.has("--copy"), env, cwd, startedAt);
+  return await importFile(sourcePath, parsed.flags.has("--copy"), env, cwd, startedAt, provided);
 }
 
 async function importFile(
@@ -69,6 +71,7 @@ async function importFile(
   env: RequestEnv,
   cwd: string,
   startedAt: number,
+  provided?: LibraryHandle,
 ): Promise<Envelope<ImportData>> {
   const resolver = createVolumeResolver(env.volumeMap);
   const sourceVolume = await locateSource(sourcePath, resolver);
@@ -82,7 +85,8 @@ async function importFile(
   const orientation = parseExifOrientation(exif.orientation);
   const dimensions = orientedDimensions(exif.dimensions, orientation);
 
-  const handle = await openRequestLibrary(env, cwd);
+  const lease = await openRequestLibrary(env, cwd, provided);
+  const { handle } = lease;
   let pinnedPath: string | undefined;
   let copiedPath: string | undefined;
   try {
@@ -210,7 +214,7 @@ async function importFile(
     if (copiedPath) await rm(copiedPath, { force: true });
     throw error;
   } finally {
-    await handle.close();
+    await lease.release();
   }
 }
 

@@ -4,6 +4,7 @@ import {
   type DoctorData,
   type Envelope,
   type InitData,
+  type StderrEvent,
 } from "@photoctl/protocol";
 import {
   databaseDescription,
@@ -11,6 +12,7 @@ import {
   initializeLibrary,
   openLibrary,
   readLibraryDiagnostics,
+  type LibraryHandle,
 } from "@photoctl/library";
 import { cacheRootForLibrary } from "@photoctl/importer";
 import { resolveMacHelperPath } from "@photoctl/mac-helper";
@@ -22,8 +24,11 @@ import { exportCommand } from "./handlers/export.js";
 import { decodeCommand } from "./handlers/decode.js";
 import { importCommand } from "./handlers/import.js";
 import { showCommand } from "./handlers/show.js";
+import { tagCommand } from "./handlers/tag.js";
 export interface DispatchContext {
   version: string;
+  library?: LibraryHandle;
+  emit?: (event: StderrEvent) => void;
 }
 export async function dispatch(
   request: CommandRequest,
@@ -34,12 +39,15 @@ export async function dispatch(
       return { schema: 1, ok: true, data: { version: context.version }, warnings: [] };
     }
     if (request.verb === "import")
-      return await importCommand(request.args, request.env, request.cwd);
-    if (request.verb === "show") return await showCommand(request.args, request.env, request.cwd);
+      return await importCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "show")
+      return await showCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "export")
-      return await exportCommand(request.args, request.env, request.cwd);
+      return await exportCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "decode")
-      return await decodeCommand(request.args, request.env, request.cwd);
+      return await decodeCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "tag")
+      return await tagCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "init") {
       const parsed = parseArguments(request.args, { options: ["--path", "--cache-max"] });
       if (parsed.positionals.length > 0) {
@@ -76,10 +84,13 @@ export async function dispatch(
         throw new PhotoctlError("usage", `Unexpected argument: ${parsed.positionals[0]}`);
       }
       const path = libraryPath(request.env, request.cwd);
-      const handle = await openLibrary(path, {
-        noDaemon: request.env.noDaemon,
-        lockBudgetMs: parseLockBudget(request.env.lockBudgetMs),
-      });
+      const ownsHandle = context.library === undefined;
+      const handle =
+        context.library ??
+        (await openLibrary(path, {
+          noDaemon: request.env.noDaemon,
+          lockBudgetMs: parseLockBudget(request.env.lockBudgetMs),
+        }));
       try {
         const diagnostics = await readLibraryDiagnostics(handle);
         const ciraw = await inspectCirawHelper(resolveMacHelperPath(request.env.macHelperPath));
@@ -116,7 +127,7 @@ export async function dispatch(
           warnings: [],
         };
       } finally {
-        await handle.close();
+        if (ownsHandle) await handle.close();
       }
     }
     throw new PhotoctlError("usage", `Unknown command: ${request.verb}`);

@@ -9,6 +9,7 @@ WORKDIR /workspace
 COPY package.json bun.lock* bunfig.toml ./
 COPY apps/cli/package.json apps/cli/package.json
 COPY apps/workbench/package.json apps/workbench/package.json
+COPY apps/daemon/package.json apps/daemon/package.json
 COPY packages/protocol/package.json packages/protocol/package.json
 COPY packages/commands/package.json packages/commands/package.json
 COPY packages/importer/package.json packages/importer/package.json

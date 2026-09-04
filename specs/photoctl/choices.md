@@ -2,6 +2,42 @@
 
 ## Sound
 
+### Slice 02 — Daemon startup transfers the already-held kernel lock
+
+- **When:** Slice 02 daemon lifecycle.
+- **The choice:** The starting CLI inherits its locked file descriptor into the detached daemon as fd 3;
+  the daemon rewrites the same lock payload and keeps that descriptor for its full PGlite lifetime.
+- **The gap:** The plan required the client to take the lock and the daemon to own it, but did not define
+  an atomic handoff mechanism.
+- **The reach:** Every auto-start, version replacement, direct-mode transition, and crash recovery keeps
+  the one-writer guarantee without a release/reacquire window.
+- **Verdict:** **Sound.** Descriptor inheritance preserves continuous kernel ownership.
+- **Confidence:** High.
+
+### Slice 02 — Initialization is the sole in-process bootstrap command
+
+- **When:** Slice 02 command routing.
+- **The choice:** `init` dispatches directly because its target is not yet a library, closes that handle,
+  then starts the daemon. All commands against an existing library use the daemon unless explicitly
+  passed `--no-daemon`.
+- **The gap:** A daemon cannot lock or open a PGlite directory before `init` creates it.
+- **The reach:** The public init result remains unchanged while a successful init immediately leaves the
+  new library daemon-served.
+- **Verdict:** **Sound.** It is a bootstrap boundary, not a parallel database access path.
+- **Confidence:** High.
+
+### Slice 02 — Daemon transport has a bounded length-prefixed frame
+
+- **When:** Slice 02 transport implementation.
+- **The choice:** Frames use a four-byte big-endian JSON byte length and reject payloads above 16 MiB.
+  The daemon log is a socket-identity-derived file in the OS temporary directory, beside neither the
+  library nor its source photos.
+- **The gap:** Frame encoding and log location were explicitly delegated.
+- **The reach:** Request, streamed-event, response, and control messages share one decoder that tolerates
+  arbitrary socket chunking; runaway lengths cannot allocate unbounded memory.
+- **Verdict:** **Sound.** The format is deterministic, dependency-free, and safely bounded.
+- **Confidence:** High.
+
 ### Rendered previews are lazy, versioned views of committed edit state
 
 - **When:** User-directed preview workflow amendment, 2026-09-04.

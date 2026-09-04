@@ -1,0 +1,8 @@
+PASS
+clients=8
+rows_per_client=25
+attempted=200
+accepted=200
+persisted=200
+failures=0
+failure_codes=none

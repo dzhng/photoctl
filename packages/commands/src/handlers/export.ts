@@ -26,6 +26,7 @@ export async function exportCommand(
   args: string[],
   env: RequestEnv,
   cwd: string,
+  provided?: LibraryHandle,
 ): Promise<Envelope> {
   const parsed = parseArguments(args, { options: ["--to", "--format"] });
   if (parsed.positionals.length === 0) {
@@ -46,7 +47,8 @@ export async function exportCommand(
     });
   }
 
-  const handle = await openRequestLibrary(env, cwd);
+  const lease = await openRequestLibrary(env, cwd, provided);
+  const { handle } = lease;
   try {
     const libraryId = await readLibraryId(handle);
     const resolver = createVolumeResolver(env.volumeMap);
@@ -91,7 +93,7 @@ export async function exportCommand(
       warnings,
     };
   } finally {
-    await handle.close();
+    await lease.release();
   }
 }
 

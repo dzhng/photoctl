@@ -11,16 +11,17 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-04. Status: slices 00, 01, and decoder pass 07a are implemented. The linked-photo
-workflow preserves cached provenance and clips partial viewports; the CIRAW helper and shared decoder seam
-produce deterministic linear Rec.2020 pixels on macOS.*
+*Last updated: 2026-09-04. Status: slices 00–02 and decoder pass 07a are implemented. Commands share one
+persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces deterministic
+linear Rec.2020 pixels on macOS.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
 Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 02 (daemon and contention) and 07b (vendored LibRaw).
+- **Pickup point:** dependency-ready slices 03a (preview cache lifecycle) and 07b (vendored LibRaw), plus the
+  CLI-only D10 `--human` renderer checkpoint.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block 07b. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -31,7 +32,7 @@ Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviatio
 - [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
 - [x] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
 - [x] 01b universal image source → show → offline preview → export (A7C II embedded-container proof) — `slices/01-first-jpeg.md`
-- [ ] 02 daemon (runs `dispatch`), contention race, `tag` — `slices/02-daemon-and-contention.md`
+- [x] 02 daemon (runs `dispatch`), contention race, `tag` — `slices/02-daemon-and-contention.md`
 - [ ] 03 backup/restore/migrate/prune + schema fixture — `slices/03-library-lifecycle.md`
 - [ ] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
 - [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
@@ -370,3 +371,13 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   Call: keep the rerunnable SSH probe, record the local evidence separately, and report
   `requires_window_server:null` rather than guessing pass or fail. Needs David: enable Remote Login or
   provide another SSH-capable Mac session to settle G3; 07b remains unblocked.
+- **2026-09-04 — slice 02 daemon bootstrap.** Plan said: every command reaches an auto-started daemon.
+  Code revealed: `init` must create and migrate the library before a daemon can acquire its lock or open
+  its PGlite directory. Call: `init` alone dispatches in-process, closes its bootstrap handle, then starts
+  the daemon; every subsequent library command dispatches through that daemon. Needs David: no; the
+  resulting lifecycle and public envelope are the planned contract without a second initialization path.
+- **2026-09-04 — slice 02 transferred lock.** Plan said: a client takes the free library lock, spawns the
+  daemon, and the daemon rewrites the payload. Code revealed: releasing and reacquiring between those steps
+  creates a second-writer window. Call: inherit the locked descriptor as daemon fd 3, close only the parent's
+  copy, and rewrite the payload through the inherited descriptor. Needs David: no; OS descriptor inheritance
+  makes ownership continuous through startup and `kill -9` still releases it atomically.

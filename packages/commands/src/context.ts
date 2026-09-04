@@ -5,11 +5,22 @@ import { join, resolve } from "node:path";
 
 export type RequestEnv = CommandRequest["env"];
 
-export async function openRequestLibrary(env: RequestEnv, cwd: string): Promise<LibraryHandle> {
-  return await openLibrary(libraryPath(env, cwd), {
+export interface RequestLibraryLease {
+  handle: LibraryHandle;
+  release(): Promise<void>;
+}
+
+export async function openRequestLibrary(
+  env: RequestEnv,
+  cwd: string,
+  provided?: LibraryHandle,
+): Promise<RequestLibraryLease> {
+  if (provided) return { handle: provided, release: async () => {} };
+  const handle = await openLibrary(libraryPath(env, cwd), {
     noDaemon: env.noDaemon,
     lockBudgetMs: parseLockBudget(env.lockBudgetMs),
   });
+  return { handle, release: async () => await handle.close() };
 }
 
 export function libraryPath(env: Pick<RequestEnv, "libraryPath">, cwd: string): string {

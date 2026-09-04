@@ -1,4 +1,12 @@
-import { closeSync, fstatSync, statSync, unlinkSync } from "node:fs";
+import {
+  closeSync,
+  fstatSync,
+  fsyncSync,
+  ftruncateSync,
+  statSync,
+  unlinkSync,
+  writeSync,
+} from "node:fs";
 import { open, readFile, stat, unlink, type FileHandle } from "node:fs/promises";
 import { flockSync } from "fs-ext";
 import { PhotoctlError } from "@photoctl/protocol";
@@ -15,13 +23,17 @@ export interface LockPayload {
 
 export interface LibraryLock {
   path: string;
-  payload: LockPayload;
+  readonly fd: number;
+  readonly payload: LockPayload;
+  rewrite(payload: LockPayload): Promise<void>;
+  detach(): Promise<void>;
   release(): Promise<void>;
 }
 
 interface HeldLock {
-  file: FileHandle;
+  fd: number;
   payload: LockPayload;
+  close(): Promise<void>;
 }
 
 const heldLocks = new Map<string, HeldLock>();
@@ -36,7 +48,7 @@ export async function acquireLibraryLock(
   let holderPid = 0;
   let attempt = 0;
   async function acquireAttempt(): Promise<LibraryLock> {
-    if (Date.now() - beganAt > budgetMs) throwLockTimeout(holderPid, budgetMs);
+    if (attempt > 0 && Date.now() - beganAt >= budgetMs) throwLockTimeout(holderPid, budgetMs);
     const payload = { pid: process.pid, socket: null, startedAt: Date.now() } satisfies LockPayload;
     let file: FileHandle;
     try {
@@ -71,12 +83,7 @@ export async function acquireLibraryLock(
       await file.close();
       throw error;
     }
-    heldLocks.set(path, { file, payload });
-    return {
-      path,
-      payload,
-      release: async () => releaseLibraryLock(path, payload, file),
-    };
+    return libraryLock(path, { fd: file.fd, payload, close: async () => await file.close() });
 
     async function waitAndRetry(): Promise<LibraryLock> {
       const elapsed = Date.now() - beganAt;
@@ -87,6 +94,16 @@ export async function acquireLibraryLock(
     }
   }
   return acquireAttempt();
+}
+
+export function adoptLibraryLock(path: string, fd: number): LibraryLock {
+  installCleanup();
+  const payload = { pid: process.pid, socket: null, startedAt: Date.now() } satisfies LockPayload;
+  return libraryLock(path, {
+    fd,
+    payload,
+    close: async () => closeSync(fd),
+  });
 }
 
 function throwLockTimeout(holderPid: number, budgetMs: number): never {
@@ -126,26 +143,62 @@ async function fileStillOwnsPath(file: FileHandle, path: string): Promise<boolea
   }
 }
 
-async function releaseLibraryLock(
-  path: string,
-  payload: LockPayload,
-  file: FileHandle,
-): Promise<void> {
+function libraryLock(path: string, state: HeldLock): LibraryLock {
+  heldLocks.set(path, state);
+  let attached = true;
+  return {
+    path,
+    fd: state.fd,
+    get payload() {
+      return state.payload;
+    },
+    rewrite: async (payload) => {
+      if (!attached) throw new Error("Cannot rewrite a detached library lock");
+      ftruncateSync(state.fd, 0);
+      writeSync(state.fd, JSON.stringify(payload), 0, "utf8");
+      fsyncSync(state.fd);
+      state.payload = payload;
+    },
+    detach: async () => {
+      if (!attached) return;
+      attached = false;
+      heldLocks.delete(path);
+      await state.close();
+    },
+    release: async () => {
+      if (!attached) return;
+      attached = false;
+      await releaseLibraryLock(path, state);
+    },
+  };
+}
+
+async function releaseLibraryLock(path: string, state: HeldLock): Promise<void> {
   const held = heldLocks.get(path);
-  if (held?.payload === payload) heldLocks.delete(path);
+  if (held === state) heldLocks.delete(path);
   try {
     const current = await readLock(path);
     if (
-      current?.pid === payload.pid &&
-      current.startedAt === payload.startedAt &&
-      (await fileStillOwnsPath(file, path))
+      current?.pid === state.payload.pid &&
+      current.startedAt === state.payload.startedAt &&
+      fileDescriptorStillOwnsPath(state.fd, path)
     ) {
       await unlink(path);
     }
   } catch (error) {
     if (!hasCode(error, "ENOENT")) throw error;
   } finally {
-    await file.close();
+    await state.close();
+  }
+}
+
+function fileDescriptorStillOwnsPath(fd: number, path: string): boolean {
+  try {
+    const opened = fstatSync(fd);
+    const current = statSync(path);
+    return opened.dev === current.dev && opened.ino === current.ino;
+  } catch {
+    return false;
   }
 }
 
@@ -155,14 +208,12 @@ function installCleanup(): void {
   const cleanup = () => {
     for (const [path, held] of heldLocks) {
       try {
-        const opened = fstatSync(held.file.fd);
-        const current = statSync(path);
-        if (opened.dev === current.dev && opened.ino === current.ino) unlinkSync(path);
+        if (fileDescriptorStillOwnsPath(held.fd, path)) unlinkSync(path);
       } catch {
         // Exit cleanup is best-effort; a missing lock is already released.
       }
       try {
-        closeSync(held.file.fd);
+        closeSync(held.fd);
       } catch {
         // The descriptor may already be closed after an interrupted operation.
       }

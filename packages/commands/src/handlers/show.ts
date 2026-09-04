@@ -1,5 +1,5 @@
 import { cacheRootForLibrary, formatShotInstant, pinnedEmbeddedJpegPath } from "@photoctl/importer";
-import { createVolumeResolver, resolvePhotoId } from "@photoctl/library";
+import { createVolumeResolver, resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@photoctl/protocol";
 import {
   materializePreview,
@@ -14,7 +14,12 @@ import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from ".
 import { resolveOnlineImageSource } from "../image-source.js";
 import { loadPhoto, type StoredPhoto } from "../photo.js";
 
-export async function showCommand(args: string[], env: RequestEnv, cwd: string): Promise<Envelope> {
+export async function showCommand(
+  args: string[],
+  env: RequestEnv,
+  cwd: string,
+  provided?: LibraryHandle,
+): Promise<Envelope> {
   const parsed = parseArguments(args, {
     flags: ["--norm"],
     options: ["--preview-size", "--region"],
@@ -22,7 +27,8 @@ export async function showCommand(args: string[], env: RequestEnv, cwd: string):
   if (parsed.positionals.length !== 1) {
     throw new PhotoctlError("usage", "show requires exactly one photo ID or prefix");
   }
-  const handle = await openRequestLibrary(env, cwd);
+  const lease = await openRequestLibrary(env, cwd, provided);
+  const { handle } = lease;
   try {
     const id = await resolvePhotoId(handle, parsed.positionals[0]);
     const photo = await loadPhoto(handle, id);
@@ -55,6 +61,10 @@ export async function showCommand(args: string[], env: RequestEnv, cwd: string):
       { id, cacheRoot, renderHash, photo, view },
       selected?.source ?? pinned,
       pinned,
+    );
+    const tags = await handle.query<{ tag: string }>(
+      "SELECT tag FROM tags WHERE photo_id = $1 ORDER BY tag",
+      [id],
     );
     if (
       (materialized.usedFallback ||
@@ -97,7 +107,7 @@ export async function showCommand(args: string[], env: RequestEnv, cwd: string):
       rating: 0,
       flag: "none",
       label: null,
-      tags: [],
+      tags: tags.rows.map((row) => row.tag),
       preview: materialized.preview.path,
       preview_info: {
         render_hash: renderHash,
@@ -127,7 +137,7 @@ export async function showCommand(args: string[], env: RequestEnv, cwd: string):
     };
     return { schema: 1, ok: true, data, warnings };
   } finally {
-    await handle.close();
+    await lease.release();
   }
 }
 

@@ -11,7 +11,7 @@ test("migrations are repeatable and record each version once", async () => {
     const applied = await db.query<{ version: number }>(
       "SELECT version FROM schema_version ORDER BY version",
     );
-    expect(applied.rows).toEqual([{ version: 1 }, { version: 2 }]);
+    expect(applied.rows).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }]);
 
     await db.query(
       `INSERT INTO photos
@@ -48,6 +48,13 @@ test("migrations are repeatable and record each version once", async () => {
         rel_path: "DCIM/a7c2.ARW",
       },
     ]);
+
+    await db.query(
+      `INSERT INTO tags (photo_id, tag)
+       VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', 'ceremony')`,
+    );
+    const tags = await db.query<{ tag: string }>("SELECT tag FROM tags");
+    expect(tags.rows).toEqual([{ tag: "ceremony" }]);
   } finally {
     await db.close();
   }

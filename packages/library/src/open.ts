@@ -4,7 +4,12 @@ import { mkdir, readFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { PhotoctlError } from "@photoctl/protocol";
 import { newLibraryEntityId } from "./identity.js";
-import { acquireLibraryLock, DEFAULT_LOCK_BUDGET_MS, OPEN_LOCK_NAME } from "./lock.js";
+import {
+  acquireLibraryLock,
+  DEFAULT_LOCK_BUDGET_MS,
+  OPEN_LOCK_NAME,
+  type LibraryLock,
+} from "./lock.js";
 import { migrate } from "./migrations/runner.js";
 
 export const DEFAULT_CACHE_MAX_BYTES = 20 * 1024 ** 3;
@@ -105,9 +110,17 @@ export async function openLibrary(
     if (error instanceof PhotoctlError) throw error;
     throw catalogUnreadable(libraryPath);
   }
+  return await openLibraryHoldingLock(libraryPath, lock, options.initialize ?? false);
+}
+
+export async function openLibraryHoldingLock(
+  libraryPath: string,
+  lock: LibraryLock,
+  initialize = false,
+): Promise<LibraryHandle> {
   let db: PGlite | undefined;
   try {
-    if (!options.initialize) await validatePGliteVersion(libraryPath);
+    if (!initialize) await validatePGliteVersion(libraryPath);
     try {
       db = await PGlite.create({
         dataDir: libraryPath,

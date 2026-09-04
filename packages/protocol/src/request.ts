@@ -7,6 +7,7 @@ export interface CommandRequest {
     libraryPath?: string;
     cacheRoot?: string;
     lockBudgetMs?: string;
+    pollCeilingMs?: string;
     volumeMap?: string;
     macHelperPath?: string;
   };

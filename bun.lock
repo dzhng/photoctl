@@ -24,6 +24,18 @@
         "@photoctl/protocol": "workspace:*",
       },
     },
+    "apps/daemon": {
+      "name": "@photoctl/daemon",
+      "version": "0.1.0",
+      "bin": {
+        "photoctl-daemon": "dist/bin.js",
+      },
+      "dependencies": {
+        "@photoctl/commands": "workspace:*",
+        "@photoctl/library": "workspace:*",
+        "@photoctl/protocol": "workspace:*",
+      },
+    },
     "apps/workbench": {
       "name": "@photoctl/workbench",
       "version": "0.1.0",
@@ -272,6 +284,8 @@
     "@photoctl/cli": ["@photoctl/cli@workspace:apps/cli"],
 
     "@photoctl/commands": ["@photoctl/commands@workspace:packages/commands"],
+
+    "@photoctl/daemon": ["@photoctl/daemon@workspace:apps/daemon"],
 
     "@photoctl/importer": ["@photoctl/importer@workspace:packages/importer"],
 

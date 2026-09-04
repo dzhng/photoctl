@@ -1,5 +1,5 @@
 import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
-import { createVolumeResolver, resolvePhotoId } from "@photoctl/library";
+import { createVolumeResolver, resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import { resolveMacHelperPath } from "@photoctl/mac-helper";
 import { PhotoctlError, type DecodeData, type Envelope, type Warning } from "@photoctl/protocol";
 import {
@@ -22,6 +22,7 @@ export async function decodeCommand(
   args: string[],
   env: RequestEnv,
   cwd: string,
+  provided?: LibraryHandle,
 ): Promise<Envelope> {
   const parsed = parseArguments(args, { options: ["--with", "--scale", "--to"] });
   if (parsed.positionals.length !== 1) {
@@ -36,7 +37,8 @@ export async function decodeCommand(
   if (!outputValue) throw new PhotoctlError("usage", "decode requires --to <output.tif>");
   const output = resolve(cwd, outputValue);
 
-  const handle = await openRequestLibrary(env, cwd);
+  const lease = await openRequestLibrary(env, cwd, provided);
+  const { handle } = lease;
   try {
     const id = await resolvePhotoId(handle, parsed.positionals[0]);
     const photo = await loadPhoto(handle, id);
@@ -124,7 +126,7 @@ export async function decodeCommand(
       warnings,
     };
   } finally {
-    await handle.close();
+    await lease.release();
   }
 }
 
