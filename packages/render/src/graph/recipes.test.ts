@@ -104,6 +104,7 @@ test("non-source evaluation refuses source provenance", () => {
         h: 1077,
         decoderId: "sharp",
         decoderVersion: "0.35.4",
+        outputArtifactHash: `a_${"4".repeat(64)}`,
       },
     }),
   ).toThrow("Source provenance is only valid for source evaluation");
@@ -134,6 +135,7 @@ test("source fallback changes evaluation identity without changing logical rende
       h: 4672,
       decoderId: "libraw",
       decoderVersion: "0.22.2",
+      outputArtifactHash: `a_${"4".repeat(64)}`,
     },
   });
   const fallback = evaluationHash({
@@ -145,9 +147,24 @@ test("source fallback changes evaluation identity without changing logical rende
       h: 1077,
       decoderId: "sharp",
       decoderVersion: "0.35.4",
+      outputArtifactHash: `a_${"4".repeat(64)}`,
     },
   });
 
   expect(full).not.toBe(fallback);
+  expect(
+    evaluationHash({
+      ...common,
+      source: {
+        locator: { kind: "online-file", volume_uuid: "camera", rel_path: "frame.ARW" },
+        tier: "online-file",
+        w: 7008,
+        h: 4672,
+        decoderId: "libraw",
+        decoderVersion: "0.22.2",
+        outputArtifactHash: `a_${"5".repeat(64)}`,
+      },
+    }),
+  ).not.toBe(full);
   expect(renderHashForNode(node)).toBe(renderHashForNode(node));
 });

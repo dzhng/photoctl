@@ -90,10 +90,13 @@ artifact publication, evaluator, graph inspection · **8b** develop dict/presets
 8a1's recipe/store/migration tests prove strict kind schemas, ordered shared inputs, photo scoping, immutable lazy replacement,
 cycle refusal, CAS revision undo, deterministic evaluation uniqueness, distinct nondeterministic attempt ids, and a root redirect in
 one transaction. Protocol and human-output tests prove full identities on machine seams and presentation-only abbreviation.
-8a2's `artifact-publication.test.ts` injects failure before publish and before DB commit, proving no active
-missing reference and a collectible orphan; `graph-pagination.test.ts` walks a history larger than one page without duplication and
-keeps each daemon frame bounded; `restore-artifacts.test.ts` restores corrupt PGlite metadata while canonical artifact bytes remain
-unchanged; protocol tests require full hashes and human output abbreviates them.
+8a2's `artifact-publication.test.ts` proves byte-normalized, full-hash, no-overwrite publication;
+`evaluator.test.ts` injects failure before publish and before DB commit, proving no active missing reference and a collectible
+orphan, deterministic reuse, distinct nondeterministic attempts, idempotent execution retries, and source-fallback provenance;
+the same evaluator test deletes and corrupts indexed canonical files and proves reevaluation repairs both at the same content address;
+`inspection.test.ts` walks revision-bound history larger than one page without duplication and rejects malformed cursors before
+database casts; `restore-artifacts.test.ts` preserves canonical bytes while restore reconciles missing references to
+`artifact_available:false`. Command/protocol tests require full hashes, and the workbench test follows a graph beyond one page.
 
 `gold-exam.test.ts` (runs the script on a 10-file set; 3 people-preset JPEGs; people's `highlights=-20` lowers p98 vs neutral);
 `develop-format-matrix.test.ts` applies the same develop dict to representative whole-file, embedded-container, and
@@ -120,5 +123,7 @@ via `render --linear`; crop-last test; Rust unit tests per operator on ramps. Vi
 ## Delegated: normalized table/column names within the named ownership split; operator constants (data); NLM parameters.
 ## Checkpoints: 8a2 `wb graph <id>` shows a source→develop→output chain plus revision/identity facts (structure only); one visual
 variable per later sub-slice as listed. Any shot runs `screenshot-critique` last and `compare-screenshots` when it has a prior/reference
-target. Checkpoints are non-blocking per the root rule.
+target. Checkpoints are non-blocking per the root rule. The 8a2 report was generated and structurally tested, but the 2026-09-05
+visual capture was unavailable: the in-app browser was disabled and the enabled Chrome surface rejected local-file navigation;
+no indirect workaround was permitted, so no screenshot or visual-green claim was made.
 ## Must stay green: 01–07. Deps: 7b (functional), 7a (macos). Firewall: no layers, no providers, no learned NR, no CoreML, no VLM.

@@ -200,6 +200,38 @@ test("show indexes a derived preview only after returning a readable artifact", 
     expect(indexed.rows[0]).toMatchObject({ bytes: String(bytes), pinned: false });
     expect(new Date(indexed.rows[0]!.last_used).getTime()).toBeGreaterThanOrEqual(before);
     await expect(access(`${path}.json`)).resolves.toBeUndefined();
+    const graphState = await initialized.handle.query<{
+      executions: string;
+      artifacts: string;
+      available: boolean;
+    }>(
+      `SELECT
+         (SELECT count(*)::text FROM node_executions) AS executions,
+         (SELECT count(*)::text FROM image_artifacts) AS artifacts,
+         bool_and(artifact_available) AS available
+       FROM image_artifacts`,
+    );
+    expect(graphState.rows).toEqual([{ executions: "2", artifacts: "1", available: true }]);
+    const repeated = await dispatch(
+      {
+        verb: "show",
+        args: [id],
+        cwd: directory,
+        env: { noDaemon: true, libraryPath, cacheRoot },
+      },
+      { version: "test", library: initialized.handle, previewCoordinator: coordinator },
+    );
+    expect(repeated).toMatchObject({
+      ok: true,
+      data: { render_hash: (result.data as { render_hash: string }).render_hash },
+    });
+    expect(
+      (
+        await initialized.handle.query<{ count: string }>(
+          "SELECT count(*)::text AS count FROM node_executions",
+        )
+      ).rows,
+    ).toEqual([{ count: "2" }]);
   } finally {
     await initialized.handle.close();
     await rm(directory, { recursive: true });

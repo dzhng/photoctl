@@ -3,5 +3,8 @@
   "compilerOptions": { "rootDir": "src", "outDir": "dist" },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"],
-  "references": [{ "path": "../../packages/library" }]
+  "references": [
+    { "path": "../../packages/library" },
+    { "path": "../../packages/render" }
+  ]
 }

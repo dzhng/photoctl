@@ -147,7 +147,7 @@ export function evaluationHash(input: {
   kind: ImageNodeKind;
   recipeVersion: number;
   inputArtifactHashes: string[];
-  source?: SourceExecutionProvenance;
+  source?: SourceExecutionProvenance & { outputArtifactHash: string };
 }): `eval_${string}` {
   assertHash(input.nodeRecipeHash, "recipe");
   assertRecipeVersion(input.kind, input.recipeVersion);
@@ -198,7 +198,9 @@ export function assertHash(value: string, prefix: string): void {
   }
 }
 
-function canonicalSourceProvenance(source: SourceExecutionProvenance): JsonValue {
+function canonicalSourceProvenance(
+  source: SourceExecutionProvenance & { outputArtifactHash: string },
+): JsonValue {
   return z
     .object({
       locator: z.discriminatedUnion("kind", [
@@ -225,6 +227,7 @@ function canonicalSourceProvenance(source: SourceExecutionProvenance): JsonValue
       h: z.number().int().positive(),
       decoderId: z.string().min(1),
       decoderVersion: z.string().min(1),
+      outputArtifactHash: z.string().regex(/^a_[0-9a-f]{64}$/),
     })
     .strict()
     .refine((value) => value.locator.kind === value.tier, "source locator and tier must agree")
@@ -233,6 +236,7 @@ function canonicalSourceProvenance(source: SourceExecutionProvenance): JsonValue
       decoder_version: value.decoderVersion,
       h: value.h,
       locator: value.locator,
+      output_artifact_hash: value.outputArtifactHash,
       tier: value.tier,
       w: value.w,
     }))

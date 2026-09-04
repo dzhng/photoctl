@@ -9,9 +9,11 @@ import {
 import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@photoctl/protocol";
 import {
   materializePreview,
+  ensurePhotoDocument,
+  evaluateGraphNode,
   PreviewDestinationError,
   PreviewCoordinator,
-  sourceRenderHash,
+  readArtifactImage,
   viewHash,
   type ImageSource,
   type ViewSpec,
@@ -55,9 +57,11 @@ export async function showCommand(
     const warnings: Warning[] = locators.some((locator) => !locator.online)
       ? [{ code: "source_offline", id, message: "One or more source files are offline" }]
       : [];
-    const renderHash = sourceRenderHash({
+    const document = await ensurePhotoDocument(handle, {
+      photoId: id,
       orientation: photo.orientation,
     });
+    const renderHash = document.renderHash;
     const view = parseViewSpec(parsed.options, parsed.flags.has("--norm"), photo.w, photo.h);
     const selected = await resolveOnlineImageSource(photo, resolver);
     const pinned: ImageSource = {
@@ -67,9 +71,43 @@ export async function showCommand(
       orientation: 1,
     };
     const materialized = await materializeWithFallback(
-      { id, cacheRoot, renderHash, photo, view, coordinator, index },
-      selected?.source ?? pinned,
-      pinned,
+      {
+        id,
+        cacheRoot,
+        renderHash,
+        photo,
+        view,
+        coordinator,
+        index,
+        handle,
+        outputNodeId: document.outputNodeId,
+      },
+      selected
+        ? {
+            source: selected.source,
+            locator:
+              selected.source.kind === "online-jpeg-range"
+                ? {
+                    kind: "online-jpeg-range" as const,
+                    volume_uuid: selected.file.volumeUuid,
+                    rel_path: selected.file.relPath,
+                    offset: selected.source.offset,
+                    length: selected.source.length,
+                  }
+                : {
+                    kind: "online-file" as const,
+                    volume_uuid: selected.file.volumeUuid,
+                    rel_path: selected.file.relPath,
+                  },
+          }
+        : {
+            source: pinned,
+            locator: { kind: "pinned-preview" as const, cache_path: `emb/${id}.jpg` },
+          },
+      {
+        source: pinned,
+        locator: { kind: "pinned-preview" as const, cache_path: `emb/${id}.jpg` },
+      },
     );
     const tags = await handle.query<{ tag: string }>(
       "SELECT tag FROM tags WHERE photo_id = $1 ORDER BY tag",
@@ -256,9 +294,17 @@ async function materializeWithFallback(
     view: ViewSpec;
     coordinator: PreviewCoordinator;
     index: CacheIndex;
+    handle: LibraryHandle;
+    outputNodeId: string;
   },
-  source: ImageSource,
-  pinned: ImageSource,
+  selected: {
+    source: ImageSource;
+    locator: import("@photoctl/render").SourceExecutionProvenance["locator"];
+  },
+  pinned: {
+    source: ImageSource;
+    locator: import("@photoctl/render").SourceExecutionProvenance["locator"];
+  },
 ) {
   try {
     return {
@@ -269,17 +315,19 @@ async function materializeWithFallback(
         photoId: context.id,
         renderHash: context.renderHash,
         photo: context.photo,
-        source,
+        source: selected.source,
+        sourceTier: selected.source.kind,
+        render: async () => await evaluatePreviewGraph(context, selected.source, selected.locator),
         view: context.view,
       }),
-      source,
+      source: selected.source,
       usedFallback: false,
     };
   } catch (error) {
     if (error instanceof PreviewDestinationError) {
       throw new PhotoctlError("volume_readonly", error.message, { path: error.path });
     }
-    if (source.kind === "pinned-preview") {
+    if (selected.source.kind === "pinned-preview") {
       throw new PhotoctlError("file_offline", "Pinned preview is unavailable", { id: context.id });
     }
     try {
@@ -291,10 +339,12 @@ async function materializeWithFallback(
           photoId: context.id,
           renderHash: context.renderHash,
           photo: context.photo,
-          source: pinned,
+          source: pinned.source,
+          sourceTier: pinned.source.kind,
+          render: async () => await evaluatePreviewGraph(context, pinned.source, pinned.locator),
           view: context.view,
         }),
-        source: pinned,
+        source: pinned.source,
         usedFallback: true,
       };
     } catch (fallbackError) {
@@ -306,4 +356,24 @@ async function materializeWithFallback(
       throw new PhotoctlError("file_offline", "No preview source is available", { id: context.id });
     }
   }
+}
+
+async function evaluatePreviewGraph(
+  context: {
+    id: string;
+    photo: StoredPhoto;
+    handle: LibraryHandle;
+    outputNodeId: string;
+  },
+  source: ImageSource,
+  locator: import("@photoctl/render").SourceExecutionProvenance["locator"],
+) {
+  const evaluated = await evaluateGraphNode({
+    database: context.handle,
+    libraryPath: context.handle.path,
+    photoId: context.id,
+    nodeId: context.outputNodeId,
+    source: { orientation: context.photo.orientation, imageSource: source, locator },
+  });
+  return await readArtifactImage(evaluated.artifact.path);
 }

@@ -43,6 +43,86 @@ export interface CommitRevisionResult {
   renderHash: string | null;
 }
 
+export async function ensurePhotoDocument(
+  database: GraphDatabase,
+  request: { photoId: string; orientation: number },
+): Promise<{
+  revisionId: string;
+  outputNodeId: `node_${string}`;
+  renderHash: `r_${string}`;
+}> {
+  const existing = await loadActiveOutput(database, request.photoId);
+  if (existing) return existing;
+  let committed: CommitRevisionResult;
+  try {
+    committed = await commitRevision(database, {
+      photoId: request.photoId,
+      expectedRevisionId: null,
+      nodes: [
+        {
+          localKey: "source",
+          kind: "source",
+          recipeVersion: 1,
+          parameters: { orientation: request.orientation },
+          inputs: [],
+        },
+        {
+          localKey: "output",
+          kind: "output",
+          recipeVersion: 1,
+          parameters: { format: "display-rgb", color_space: "srgb" },
+          inputs: [{ localKey: "source" }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "output" } }],
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "The document changed before this revision could be committed"
+    ) {
+      const winner = await loadActiveOutput(database, request.photoId);
+      if (winner) return winner;
+    }
+    throw error;
+  }
+  return {
+    revisionId: committed.revisionId,
+    outputNodeId: committed.roots.output! as `node_${string}`,
+    renderHash: committed.renderHash! as `r_${string}`,
+  };
+}
+
+async function loadActiveOutput(
+  database: GraphTransaction,
+  photoId: string,
+): Promise<{
+  revisionId: string;
+  outputNodeId: `node_${string}`;
+  renderHash: `r_${string}`;
+} | null> {
+  const existing = await database.query<{
+    active_revision_id: string | null;
+    node_id: string | null;
+  }>(
+    `SELECT document.active_revision_id, root.node_id
+     FROM photo_documents AS document
+     LEFT JOIN document_revision_roots AS root
+       ON root.photo_id = document.photo_id
+      AND root.revision_id = document.active_revision_id
+      AND root.root_name = 'output'
+     WHERE document.photo_id = $1`,
+    [photoId],
+  );
+  const row = existing.rows[0];
+  if (!row?.active_revision_id || !row.node_id) return null;
+  return {
+    revisionId: row.active_revision_id,
+    outputNodeId: row.node_id as `node_${string}`,
+    renderHash: renderHashForNode(row.node_id),
+  };
+}
+
 export async function commitRevision(
   database: GraphDatabase,
   request: CommitRevisionRequest,
@@ -165,6 +245,20 @@ export async function undoRevision(
       renderHash: roots.output ? renderHashForNode(roots.output) : null,
     };
   });
+}
+
+export async function setRevisionPinned(
+  database: GraphTransaction,
+  request: { photoId: string; revisionId: string; pinned: boolean },
+): Promise<void> {
+  const result = await database.query<{ id: string }>(
+    `UPDATE document_revisions SET pinned = $3
+     WHERE photo_id = $1 AND id = $2 RETURNING id::text`,
+    [request.photoId, request.revisionId, request.pinned],
+  );
+  if (result.rows.length !== 1) {
+    throw new Error(`Document revision does not exist for photo: ${request.revisionId}`);
+  }
 }
 
 async function lockDocument(

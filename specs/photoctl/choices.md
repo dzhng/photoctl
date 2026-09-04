@@ -1101,6 +1101,62 @@
 - **Verdict:** **Sound.** It preserves the direct parameter shape and makes uncertainty visible at the registry boundary.
 - **Confidence:** Medium; later slices still own the final fields and version transitions for their kinds.
 
+### Slice 08a2 implementation — Current display artifacts are canonical RGB16 TIFFs
+
+- **When:** Slice 08a2 artifact-publication implementation, 2026-09-05.
+- **The choice:** The artifact owner normalizes oriented display-sRGB RGB pixels to an uncompressed 16-bit TIFF carrying the
+  bundled `sRGB2014` profile, hashes those exact bytes, and stores them beneath a two-hex shard. Publication fsyncs the temporary
+  file, installs it with an atomic no-replace link, verifies an already-present valid object byte-for-byte, atomically repairs a file
+  whose bytes no longer match its content-addressed path, and fsyncs directory entries.
+  This decision covers the source/output display artifacts that exist now; it does not settle the OPEN provider/upscale encoding.
+- **The gap:** The plan required one normalized content-addressed representation and durable no-overwrite publication, but did not
+  choose an encoding or shard width for the first executable graph.
+- **The reach:** Source evaluation, deterministic reuse, restore validation, orphan discovery, and downstream preview production
+  now agree on one byte identity. Future linear, mask, or provider artifact classes must add deliberate formats rather than silently
+  reinterpret this display-RGB contract.
+- **Verdict:** **Sound.** Lossless tagged TIFF makes the current pixels independently verifiable and keeps the unresolved provider
+  size/round-trip measurement open.
+- **Confidence:** Medium; storage cost is intentionally unoptimized until representative artifacts are measured.
+
+### Slice 08a2 implementation — Existing photos acquire their initial graph on first graph-aware use
+
+- **When:** Slice 08a2 preview integration, 2026-09-05.
+- **The choice:** A migrated photo without a document gets one immutable source→output revision when `show`, `graph`, or the graph
+  workbench first needs it. Concurrent initializers converge on the winner's revision. The alternative was a data migration that
+  eagerly inserted graph history for every pre-08 photo before any graph consumer existed.
+- **The gap:** Schema v5 introduced graph tables but deliberately did not backfill one logical graph per existing photo.
+- **The reach:** Old libraries enter the graph model without a second compatibility renderer or a potentially large eager migration;
+  after initialization every preview follows the same active-root/evaluator contract.
+- **Verdict:** **Sound.** Lazy creation is deterministic from stable photo orientation, CAS-protected, and removes the legacy pixel
+  path instead of preserving it beside the graph.
+- **Confidence:** High.
+
+### Slice 08a2 implementation — Revision-bound cursors finish the snapshot they started
+
+- **When:** Slice 08a2 graph-inspection implementation, 2026-09-05.
+- **The choice:** The opaque cursor carries and checks the photo, inspected revision, history mode, and last full node identity.
+  If a newer revision becomes active between pages, later pages continue the original revision rather than fail or switch state.
+  Invalid cursor structure is rejected before any database cast.
+- **The gap:** The contract required revision binding so edits cannot mix pages, but did not choose snapshot continuation versus
+  stale-cursor refusal.
+- **The reach:** Agents can finish a consistent inspection while editing continues, and each request remains independently bounded.
+- **Verdict:** **Sound.** Immutable revisions make continuation both simpler and more useful than invalidating a safe snapshot.
+- **Confidence:** High.
+
+### Slice 08a2 implementation — Restore preserves file trees by staging hard links
+
+- **When:** Slice 08a2 restore integration, 2026-09-05.
+- **The choice:** Before swapping the restored database directory into place, restore recreates `artifacts/`, `originals/`, and
+  `previews/` in the staged sibling using hard links, then fsyncs the staged tree. Unsupported entries and symlinks are refused.
+  After promotion, the command validates registered canonical artifacts and marks missing or corrupt files unavailable.
+- **The gap:** The plan required database replacement without deleting potentially large library-owned file trees, but did not
+  choose byte copying, moving after swap, or hard-link staging.
+- **The reach:** Restore remains rollback-safe and does not duplicate large source/artifact bytes, while SQL metadata cannot claim
+  a missing canonical file is available.
+- **Verdict:** **Sound.** Source and stage share a filesystem by construction, so hard links provide an atomic, bounded-storage
+  preservation mechanism compatible with the existing directory-swap journal.
+- **Confidence:** High.
+
 ### Pre-slice 12 — Generated pixels optionally match destination density through a generative node
 
 - **When:** DAG/upscaling unknowns walk, 2026-09-05.
@@ -1167,6 +1223,19 @@
 - **Confidence:** High.
 
 ## Needs user
+
+### Slice 08a2 — Graph inspection uses provisional response bounds
+
+- **When:** Slice 08a2 graph-inspection implementation, 2026-09-05.
+- **The choice:** `graph show` returns at most 100 nodes per page (50 by default) and includes at most 32 ordered inputs in a node
+  summary. `graph node` includes at most 64 inputs, consumers, and executions plus 64 KiB of parameter JSON, while returning exact
+  counts and explicit truncation flags. The tests keep a serialized page below 1 MiB, well under the daemon's 16 MiB frame cap.
+- **The gap:** The contract required bounded records and pagination but did not set product-facing numeric limits.
+- **The reach:** Very wide composites or highly reused nodes require follow-up inspection tooling to reach records beyond the
+  detailed cap; ordinary lineage pagination remains complete.
+- **Verdict:** **Needs-user.** These isolated limits are safe and reversible, but representative large graphs should determine
+  whether 32/64/100 are the right usability/performance tradeoff before release.
+- **Confidence:** Low until measured on real edited libraries.
 
 ### Slice 04 — Import and list use fixed bounded-work windows
 

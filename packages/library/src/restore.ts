@@ -1,5 +1,6 @@
+/* eslint-disable no-await-in-loop -- Restore preserves large trees with bounded filesystem pressure. */
 import { randomUUID } from "node:crypto";
-import { lstat, mkdir, readFile, readdir, rename, rm, stat } from "node:fs/promises";
+import { link, lstat, mkdir, readFile, readdir, rename, rm, stat } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { PhotoctlError } from "@photoctl/protocol";
 import { latestBackup } from "./backup.js";
@@ -96,6 +97,12 @@ async function restoreLibraryExclusive(
     await stageDb.close();
     stageDb = undefined;
     await preserveBackups(live, stage, source);
+    await Promise.all(
+      ["artifacts", "originals", "previews"].map(
+        async (treeName) => await preserveTree(join(live, treeName), join(stage, treeName)),
+      ),
+    );
+    await syncDirectory(stage);
   } catch (error) {
     await stageDb?.close();
     await stageLock?.release();
@@ -154,6 +161,33 @@ async function restoreLibraryExclusive(
     if (error instanceof PhotoctlError) throw error;
     throw unreadableBackup(live, source, error);
   }
+}
+
+async function preserveTree(source: string, target: string): Promise<void> {
+  let details;
+  try {
+    details = await lstat(source);
+  } catch (error) {
+    if (hasCode(error, "ENOENT")) return;
+    throw error;
+  }
+  if (!details.isDirectory() || details.isSymbolicLink()) {
+    throw new Error(`Preserved library path is not a directory: ${source}`);
+  }
+  await mkdir(target);
+  for (const name of await readdir(source)) {
+    const sourcePath = join(source, name);
+    const targetPath = join(target, name);
+    const child = await lstat(sourcePath);
+    if (child.isDirectory() && !child.isSymbolicLink()) {
+      await preserveTree(sourcePath, targetPath);
+    } else if (child.isFile()) {
+      await link(sourcePath, targetPath);
+    } else {
+      throw new Error(`Preserved library tree contains an unsupported entry: ${sourcePath}`);
+    }
+  }
+  await syncDirectory(target);
 }
 
 export async function recoverInterruptedRestore(

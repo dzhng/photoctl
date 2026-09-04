@@ -77,6 +77,8 @@ export async function materializePreview(request: {
   renderHash: string;
   photo: SourceRenderState & { w: number; h: number };
   source: ImageSource;
+  render?: () => Promise<Image16>;
+  sourceTier?: PreviewSourceTier;
   view: ViewSpec;
 }): Promise<MaterializedPreview> {
   const region = clampRegion(
@@ -133,14 +135,14 @@ export async function materializePreview(request: {
 
       // The default overview is deliberately cheap and does not create a full-frame master.
       if (cheapOverview) {
-        const image = await renderSource(request.photo.orientation, request.source);
+        const image = await renderPreviewSource(request);
         return await deriveRenderedView(
           image,
           exactPath,
           request.photo,
           region,
           requestedScale,
-          request.source.kind,
+          request.sourceTier ?? request.source.kind,
           "render_master",
         );
       }
@@ -189,7 +191,7 @@ async function ensureMaster(
       ) {
         return { path: masterPath, artifact: existing, created: false };
       }
-      const image = await renderSource(request.photo.orientation, request.source);
+      const image = await renderPreviewSource(request);
       const bytes = await encodeJpeg(image);
       const provenance = {
         sourceTier: request.source.kind,
@@ -206,6 +208,14 @@ async function ensureMaster(
     },
     request.index,
   );
+}
+
+async function renderPreviewSource(
+  request: Parameters<typeof materializePreview>[0],
+): Promise<Image16> {
+  return request.render
+    ? await request.render()
+    : await renderSource(request.photo.orientation, request.source);
 }
 
 async function deriveRenderedView(

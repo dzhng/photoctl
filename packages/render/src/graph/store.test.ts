@@ -1,7 +1,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { expect, test } from "vitest";
-import { commitRevision, undoRevision } from "./store.js";
+import { commitRevision, ensurePhotoDocument, setRevisionPinned, undoRevision } from "./store.js";
 
 const firstPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
 const secondPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
@@ -44,6 +44,24 @@ test("one revision atomically stores a chain with ordered shared inputs and redi
   }
 });
 
+test("concurrent source document initialization converges on one active revision", async () => {
+  const db = await graphDatabase();
+  try {
+    const initialized = await Promise.all([
+      ensurePhotoDocument(db, { photoId: firstPhoto, orientation: 1 }),
+      ensurePhotoDocument(db, { photoId: firstPhoto, orientation: 1 }),
+    ]);
+
+    expect(initialized[0]).toEqual(initialized[1]);
+    expect(
+      (await db.query<{ count: string }>("SELECT count(*)::text AS count FROM document_revisions"))
+        .rows,
+    ).toEqual([{ count: "1" }]);
+  } finally {
+    await db.close();
+  }
+});
+
 test("logical mutations are immutable, lazy, CAS-protected, and undoable", async () => {
   const db = await graphDatabase();
   try {
@@ -62,6 +80,19 @@ test("logical mutations are immutable, lazy, CAS-protected, and undoable", async
 
     expect(edited.renderHash).not.toBe(original.renderHash);
     expect((await db.query("SELECT 1 FROM node_executions")).rows).toEqual([]);
+    await setRevisionPinned(db, {
+      photoId: firstPhoto,
+      revisionId: original.revisionId,
+      pinned: true,
+    });
+    expect(
+      (
+        await db.query<{ pinned: boolean }>(
+          "SELECT pinned FROM document_revisions WHERE photo_id = $1 AND id = $2",
+          [firstPhoto, original.revisionId],
+        )
+      ).rows,
+    ).toEqual([{ pinned: true }]);
     await expect(
       commitRevision(db, {
         photoId: firstPhoto,

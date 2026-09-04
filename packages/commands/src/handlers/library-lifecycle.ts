@@ -1,4 +1,5 @@
-import { createBackup, restoreLibrary, type LibraryHandle } from "@photoctl/library";
+import { createBackup, openLibrary, restoreLibrary, type LibraryHandle } from "@photoctl/library";
+import { reconcileArtifactAvailability } from "@photoctl/render";
 import {
   PhotoctlError,
   type BackupData,
@@ -78,6 +79,15 @@ export async function restoreCommand(
   const restored = await restoreLibrary(path, from ? resolve(cwd, from) : undefined, {
     lockBudgetMs: parseLockBudget(env.lockBudgetMs),
   });
+  const handle = await openLibrary(restored.library, {
+    noDaemon: true,
+    lockBudgetMs: parseLockBudget(env.lockBudgetMs),
+  });
+  try {
+    await reconcileArtifactAvailability(handle, restored.library);
+  } finally {
+    await handle.close();
+  }
   return {
     schema: 1,
     ok: true,

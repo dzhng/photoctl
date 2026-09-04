@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { runWorkbench } from "./run.js";
 import { createBackup, initializeLibrary } from "@photoctl/library";
+import { commitRevision, type NodeDraft } from "@photoctl/render";
 
 const temporaryDirectories: string[] = [];
 
@@ -82,4 +83,114 @@ test("library renders current schema, row counts, backups, and indexed cache byt
   expect(html).toContain("cache_index</td><td>1</td>");
   expect(html).toContain(backup.path.slice(backup.path.lastIndexOf("/") + 1));
   expect(html).not.toMatch(/<(?:script|link|img)[^>]+(?:src|href)=/u);
+});
+
+test("graph renders a source to develop to output structure with revision identities", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-graph-"));
+  temporaryDirectories.push(cwd);
+  const library = join(cwd, "library");
+  const initialized = await initializeLibrary(library);
+  const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c051";
+  await initialized.handle.query(
+    `INSERT INTO photos (id, content_key, size, w, h, orientation)
+     VALUES ($1, 'ck_567890abcdef1234', 1, 1, 1, 1)`,
+    [photoId],
+  );
+  const revision = await commitRevision(initialized.handle, {
+    photoId,
+    expectedRevisionId: null,
+    nodes: [
+      {
+        localKey: "source",
+        kind: "source",
+        recipeVersion: 1,
+        parameters: { orientation: 1 },
+        inputs: [],
+      },
+      {
+        localKey: "develop",
+        kind: "develop",
+        recipeVersion: 1,
+        parameters: { exposure: 1 },
+        inputs: [{ localKey: "source" }],
+      },
+      {
+        localKey: "output",
+        kind: "output",
+        recipeVersion: 1,
+        parameters: { format: "display-rgb", color_space: "srgb" },
+        inputs: [{ localKey: "develop" }],
+      },
+    ],
+    rootUpdates: [{ root: "output", node: { localKey: "output" } }],
+  });
+  await initialized.handle.close();
+
+  const output = await runWorkbench(["graph", photoId], cwd, { PHOTOCTL_LIBRARY: library });
+  const html = await readFile(output, "utf8");
+
+  expect(output).toBe(join(cwd, "out", "wb", "graph.html"));
+  expect(html).toContain("source");
+  expect(html).toContain("develop");
+  expect(html).toContain("output");
+  expect(html.indexOf('class="node source"')).toBeLessThan(html.indexOf('class="node develop"'));
+  expect(html.indexOf('class="node develop"')).toBeLessThan(html.indexOf('class="node output"'));
+  expect(html).toContain(revision.revisionId);
+  expect(html).toContain(revision.renderHash!);
+  expect(html).not.toMatch(/<(?:script|link|img)[^>]+(?:src|href)=/u);
+});
+
+test("graph follows bounded inspection pages through the active output lineage", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-large-graph-"));
+  temporaryDirectories.push(cwd);
+  const library = join(cwd, "library");
+  const initialized = await initializeLibrary(library);
+  const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c052";
+  await initialized.handle.query(
+    `INSERT INTO photos (id, content_key, size, w, h, orientation)
+     VALUES ($1, 'ck_67890abcdef12345', 1, 1, 1, 1)`,
+    [photoId],
+  );
+  const nodes: NodeDraft[] = [
+    {
+      localKey: "source",
+      kind: "source" as const,
+      recipeVersion: 1,
+      parameters: { orientation: 1 },
+      inputs: [],
+    },
+  ];
+  let previous = "source";
+  for (let index = 0; index < 101; index += 1) {
+    const localKey = `develop-${index}`;
+    nodes.push({
+      localKey,
+      kind: "develop" as const,
+      recipeVersion: 1,
+      parameters: { step: index },
+      inputs: [{ localKey: previous }],
+    });
+    previous = localKey;
+  }
+  nodes.push({
+    localKey: "output",
+    kind: "output" as const,
+    recipeVersion: 1,
+    parameters: { format: "display-rgb", color_space: "srgb" },
+    inputs: [{ localKey: previous }],
+  });
+  await commitRevision(initialized.handle, {
+    photoId,
+    expectedRevisionId: null,
+    nodes,
+    rootUpdates: [{ root: "output", node: { localKey: "output" } }],
+  });
+  await initialized.handle.close();
+
+  const output = await runWorkbench(["graph", photoId], cwd, { PHOTOCTL_LIBRARY: library });
+  const html = await readFile(output, "utf8");
+
+  expect(html.match(/<article class="node /gu)).toHaveLength(103);
+  expect(html).toContain('class="node source"');
+  expect(html).toContain('class="node output"');
 });

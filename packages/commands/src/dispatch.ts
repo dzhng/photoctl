@@ -33,6 +33,7 @@ import { importCommand } from "./handlers/import.js";
 import { showCommand } from "./handlers/show.js";
 import { tagCommand } from "./handlers/tag.js";
 import { backupCommand, migrateCommand, restoreCommand } from "./handlers/library-lifecycle.js";
+import { graphCommand } from "./handlers/graph.js";
 import {
   flagCommand,
   labelCommand,
@@ -84,6 +85,8 @@ export async function dispatch(
       return await exportCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "decode")
       return await decodeCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "graph")
+      return await graphCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "list")
