@@ -39,8 +39,13 @@ Keyless, no Rust/Swift/drive: one ARW is linked, its metadata is readable, the c
 - Migration (next number) adds `photos(id uuid /*v7*/ pk, content_key text unique, size bigint, w int, h int /*oriented*/,
   orientation int, camera jsonb, exposure jsonb, shot_at timestamptz, shot_offset_min int, created_at)`, `volumes(uuid pk, label,
   last_mount, last_seen)`, `files(id pk, photo_id, volume_uuid, rel_path, mtime, embedded jsonb, unique(volume_uuid, rel_path))`.
-- `packages/importer/src/formats.ts`: accepted = `.arw` (RAW) and `.jpg/.jpeg/.png/.tif/.tiff` (non-RAW, `source:"file"`); others
-  → `skipped_unsupported` (import) / `unsupported_file` 65 (`show`/`export`). Owner of the extension table for all slices.
+- `packages/importer/src/formats.ts` owns a content-based `probeImage(path) → ImageProbe` registry. `ImageProbe` identifies the
+  media type, stored dimensions, frame count, and a preview producer (`embedded-jpeg` with byte ranges or `decoded-file`), without
+  trusting the extension. Every decodable single-frame still image is accepted by `import --link` and `import --copy`; unknown or
+  incorrect extensions remain valid when bytes probe successfully. Corrupt bytes, animated/multipage media, or a format with no
+  registered full-frame preview producer → `skipped_unsupported` on import / `unsupported_file` 65 when addressed directly, and
+  create no `photos` row. This registry—not an extension allowlist—is the sole format/capability owner for all slices; slice 07
+  adds RAW decoders behind it without changing import semantics.
 - `packages/library/src/identity.ts`: `contentKey = "ck_" + hex(sha256(size as u64 LE ‖ head 1 MiB ‖ tail 1 MiB)).slice(0,16)`;
   files < 2 MiB hash the whole file once. Fixed; not delegated.
 - `packages/library/src/locators.ts`: `VolumeResolver` (`MacVolumeResolver` via `diskutil info -plist`; `EnvVolumeResolver` via
@@ -48,9 +53,16 @@ Keyless, no Rust/Swift/drive: one ARW is linked, its metadata is readable, the c
 - `packages/importer/src/exif.ts`: exifr `reviveValues:false`; **timezone owner** `shotInstant(DateTimeOriginal, OffsetTimeOriginal)`
   → `shot_at` + `shot_offset_min`; `show.shot` serializes with the offset (`2023-10-02T18:18:37+02:00`); `exposure.shutter` =
   `1/N` when < 1 s else `Ns`.
-- `packages/importer/src/embedded.ts`: `indexEmbeddedJpegs(path)` (TIFF IFD walk) must equal the manifest's three tuples; pin the
-  1616×1080 tier to `emb/<id>.jpg`; `packages/importer/src/cache.ts`: root `~/Library/Caches/photoctl/<library_id>`
-  (`PHOTOCTL_CACHE` override) + `cache_index(path, bytes, last_used, pinned)` table.
+- `packages/importer/src/embedded.ts`: `indexEmbeddedJpegs(path)` (TIFF IFD walk) must equal the manifest's three tuples.
+  `packages/importer/src/cache.ts` owns the universal offline-preview invariant: every successful import pins a JPEG representing
+  the full image at the 1616 tier under `emb/<id>.jpg` and upserts its `cache_index(path, bytes, last_used, pinned=true)` row.
+  For RAW or another container format, use a suitable full-frame embedded JPEG when available (the fixture's 1616×1080 tier).
+  For any whole-file image, derive the tier through its registered preview producer, with longest edge at most 1616 px and no
+  upscaling. This derived cache artifact does **not** enter
+  `files.embedded`, which remains a list of genuine container byte ranges. Cache root is
+  `~/Library/Caches/photoctl/<library_id>` (`PHOTOCTL_CACHE` overrides only the base directory).
+- Import reports an item as successful only after both the pinned preview bytes and cache-index row exist. Re-import byte-validates
+  and repairs a missing/corrupt preview and independently repairs a missing index row before returning `already_present`.
 - `packages/render/src/coordinates.ts`: `toBase/fromBase` implemented for EXIF orientation (crop-last arrives in 08c3);
   `bbox=[x,y,w,h]`. `photos.w/h` are oriented dims.
 - `packages/render/src/graph.ts`: `renderPhoto(photo,{source:"embedded"}) → Image16` (embedded JPEG decoded by sharp);
@@ -66,8 +78,14 @@ Keyless, no Rust/Swift/drive: one ARW is linked, its metadata is readable, the c
 
 ### Verification
 `first-jpeg.test.ts` (exported bytes == fixture bytes at manifest offset/length; `show.shot`, `dims`, `content_key` equal the
-manifest; unchanged under `TZ=America/Los_Angeles` and `Asia/Tokyo`); `identity.test.ts` (last 64 bytes changed → key changes);
-`formats.test.ts` (a `.txt` → `skipped_unsupported:1`); unit `exif.timezone.test.ts`, `coordinates.orientation.test.ts`.
+manifest; unchanged under `TZ=America/Los_Angeles` and `Asia/Tokyo`); `offline-preview.test.ts` imports a fixture matrix covering
+embedded-container and whole-file preview producers (including JPEG, PNG, TIFF, and at least one valid image with an unknown or
+incorrect extension), marks every source locator offline, and proves `show.preview` resolves identically for every returned id
+from a pinned ≤1616 px JPEG; it also
+deletes/corrupts preview bytes and deletes the index row in separate cases, then proves re-import repairs each before returning
+`already_present`; `identity.test.ts` (last 64 bytes changed → key changes); `formats.test.ts` proves content wins over extension,
+single-frame decodable bytes are accepted, and corrupt/animated/multipage/undecodable bytes are skipped; unit
+`exif.timezone.test.ts`, `coordinates.orientation.test.ts`.
 
 ## Delegated: UUIDv7 lib; `--human` table renderer; JSON key order.
 ## Checkpoint (01b): `/tmp/out/a7c2.jpg` opens, correctly oriented + `wb envelope` — variable: envelope shape.

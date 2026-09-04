@@ -2,10 +2,12 @@
 
 ## Contract unlocked
 Import a drive's worth of files idempotently; cull on three axes plus tags with `next`; `remove`; everything except
-reading originals works with the drive unplugged (D1/D17/D18).
+reading originals works with the drive unplugged (D1/D17/D18). The slice-01 invariant applies to the entire scan:
+every id counted as imported or already present has a valid pinned offline preview, regardless of source format.
 
 ## API seam
-- `packages/importer/src/{scan.ts,pipeline.ts}`: recursive scan (format table) → identity → EXIF → embedded index → rows;
+- `packages/importer/src/{scan.ts,pipeline.ts}`: recursive candidate scan → content probe registry → identity → EXIF → preview
+  producer → rows. Scanning must not discard a candidate solely because its extension is absent, unknown, or incorrect;
   progress events; `--copy` into `<lib>/originals/<date>/` (collision → `<stem>_<id8>`); result = session A2.
 - `packages/library/src/locators.ts`: relocation — a rescan that finds `content_key` at a new path adds a `files` row; the old row
   is removed when its volume is online and the path is gone, kept when the volume is offline. `online` refreshed on every open.
@@ -28,7 +30,9 @@ Session A2/A3/A4 against `/tmp/drive`; `hdiutil detach` → `list` shows `online
 
 ## Verification
 `reimport-idempotent.test.ts` (second import → `already_present == N` **and** ids unchanged; `mv` inside the volume → same id,
-new locator, old removed); `offline.test.ts` (`…:offline` → `online:false`, `rate` works, `show.preview` from cache);
+new locator, old removed; a mixed-format folder, including a decodable image with an unknown extension, leaves one pinned preview
+per id); `offline.test.ts`
+(`…:offline` → `online:false`, `rate` works, `show.preview` from cache for every imported format);
 `cull.test.ts` (partial → 65 with `results[2].code=="not_found"`; `remove` multi-id without `--yes` → 2); `next.test.ts`
 (order, cursor per filter, `--reset`); `xmp-read.test.ts` (rating/label/keywords land incl. hierarchical union; PGlite edit
 survives re-import; unknown label → warning); `migrate-upgrade` extended.

@@ -97,7 +97,7 @@ photoctl/
     protocol/         LEAF. Envelope, closed ErrorCode + WarningCode unions, exit mapping, stderr events, per-verb Zod shapes, CommandRequest.
     commands/         dispatcher + verb handlers + daemon client (socket path, ensureDaemon). Imports the domain packages.
     library/          PGlite open/lock/session, migrations, backup (pgDump), identity, locators, settings, xmp, search fusion.
-    importer/         scan, format table, EXIF (timezone owner), embedded-preview index, cache tiers/index/prune.
+    importer/         scan, content-based image probe registry, EXIF (timezone owner), embedded-preview index, cache tiers/index/prune.
     render/           decoder interface, render graph, coordinates, develop dict + operator/tier tables, layers, transforms, fill pipeline, markup, export planning.
     providers/        gateway adapter, model adapters (image + structured), fixed model table, versioned prompts.
     img/              napi loader for crates/photoctl-image; per-platform packages.
@@ -142,6 +142,16 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 - **CoreML EP** is a constraint, not a plan item: no slice enables it in v1; if ever enabled it must be per
   model, static shapes, ≥2× measured, output-equivalent within tolerance; CPU is the reference (D40).
 - **Never write RAW bytes; never write into source folders except explicit `xmp write`** (D19).
+- **Every library photo has an offline preview:** a successful import (including whole-file JPEG/PNG/TIFF
+  and generated images) leaves a pinned, source-independent 1616-tier JPEG plus its `cache_index` row.
+  Re-import repairs either half if it is missing or corrupt. A `photos` row without that preview is not
+  a successful import state; `files.embedded` remains reserved for genuine embedded JPEG byte ranges.
+- **Image imports are capability-based, not extension-gated:** `import --link` and `import --copy` accept
+  every decodable single-frame still image by probing file contents. The original format does not change
+  catalog, metadata, culling, preview, offline, or export semantics. Extensions are filename hints only;
+  an unknown or incorrect extension is not a refusal. Corrupt bytes, animated/multipage media, and formats
+  for which no registered preview producer can decode or extract a full-frame image return
+  `unsupported_file`/`skipped_unsupported` and create no `photos` row.
 - **One resampler:** every pixel-space resample (layers, provider normalize, SAM letterbox) is
   `photoctl-image::resample`; **sharp** does encode/ICC/XMP/EXIF + the final delivery downscale only.
 - **Determinism:** no float atomics, fixed rayon chunking; the same dict + decoder → byte-identical 16-bit output.
@@ -170,7 +180,7 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 | Command dispatcher + verb handlers; daemon client (`socketPath`, `ensureDaemon`) | `packages/commands` | 00/02 |
 | Library handle, ONE lock (`{pid,socket,startedAt}`), refuse-to-open, `settings` (only per-library config), migrations, pgDump backup/restore | `packages/library` | 01a/03 |
 | Identity (content key), locators (`files` 1:N), volume/online, Trash | `packages/library/{identity,locators,trash}` | 01b/04 |
-| Input format table; EXIF + timezone; embedded-preview index; cache tiers + index + prune | `packages/importer` | 01b/03 |
+| Content-based image probe registry; EXIF + timezone; embedded-preview index; cache tiers + index + prune | `packages/importer` | 01b/03 |
 | Decoder interface + `LinearImage{space}`; decoder selection | `packages/render/decoder` | 07 |
 | Color core (levels→WB→matrix→ops→TRC), delta kernels, NR | `crates/photoctl-image::develop` | 07c/08/10 |
 | Render graph `renderPhoto() → Image16` (embedded source day one; develop node 08; composite 10; draw 13c) | `packages/render/graph` | 01b |
@@ -206,8 +216,11 @@ Session-sample A4/A6 (accepted by David) is the contract: `results`/`summary` at
 Exit classes: 0 ok · 2 usage · 65 data · 69 unavailable (don't retry) · 75 temporary (retry). The
 per-code mapping is `protocol.exitCodeFor` (slice 00) — the only place it is written down.
 
-**Offline export:** fallback precedence = develop render with matching hash > cached full-size tier >
-pinned 1616 tier; any of them → write + `source_offline` warning, exit 0; none → `file_offline` 69.
+**Offline behavior:** every catalogued photo remains viewable from its pinned 1616 tier when all source
+locators are offline. Export fallback precedence = develop render with matching hash > cached full-size
+tier > pinned 1616 tier; any of them → write + `source_offline` warning, exit 0. `file_offline` 69 is
+reserved for source-dependent work when the required cached artifact is missing or corrupt; ordinary
+preview availability is an import invariant, not a best-effort cache hit.
 
 ## Spec amendments carried from the map
 

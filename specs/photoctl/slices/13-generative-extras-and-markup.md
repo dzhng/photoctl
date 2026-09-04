@@ -2,7 +2,7 @@
 
 - **13a** `reimagine`/`relight` run the fill pipeline with `scope:"full-frame"`, land as a `role:"reimagine"` layer (never overwrite),
   `drift:"full-frame"`; C3 template. `generate --prompt [--ref] [--size 1024x1024] [--seed] [--model]` → `<lib>/generated/<uuid>.png`
-  imported (format table) tagged `generated`. Tests: `reimagine-layer.test.ts` (`layer remove` restores), `generate.test.ts`,
+  imported through the content probe registry and tagged `generated`. Tests: `reimagine-layer.test.ts` (`layer remove` restores), `generate.test.ts`,
   `relight-template.test.ts`. Deps 12.
 - **13b** `develop <id> --auto-enhance`: `develop/stats.ts` on the 1024 sRGB preview (Rec.709 Y; p02/p50/p98/clipped/mean_sat/est_wb_k)
   → `StructuredModelAdapter` with the C4 schema → one `--set` batch, clamped; `develop_before_auto` stored for `--undo-auto`.
