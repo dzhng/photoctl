@@ -13,8 +13,12 @@ import {
   readLibraryDiagnostics,
 } from "@photoctl/library";
 import { cacheRootForLibrary } from "@photoctl/importer";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { resolve } from "node:path";
+import { parseArguments } from "./arguments.js";
+import { libraryPath, parseLockBudget } from "./context.js";
+import { exportCommand } from "./handlers/export.js";
+import { importCommand } from "./handlers/import.js";
+import { showCommand } from "./handlers/show.js";
 export interface DispatchContext {
   version: string;
 }
@@ -26,9 +30,21 @@ export async function dispatch(
     if (request.verb === "version") {
       return { schema: 1, ok: true, data: { version: context.version }, warnings: [] };
     }
+    if (request.verb === "import")
+      return await importCommand(request.args, request.env, request.cwd);
+    if (request.verb === "show") return await showCommand(request.args, request.env, request.cwd);
+    if (request.verb === "export")
+      return await exportCommand(request.args, request.env, request.cwd);
     if (request.verb === "init") {
-      const options = parseOptions(request.args, ["--path", "--cache-max"]);
-      const path = options.get("--path") ?? join(homedir(), "Pictures", "photoctl");
+      const parsed = parseArguments(request.args, { options: ["--path", "--cache-max"] });
+      if (parsed.positionals.length > 0) {
+        throw new PhotoctlError("usage", `Unexpected argument: ${parsed.positionals[0]}`);
+      }
+      const { options } = parsed;
+      const pathOption = options.get("--path");
+      const path = pathOption
+        ? resolve(request.cwd, pathOption)
+        : libraryPath(request.env, request.cwd);
       const cacheMax = options.get("--cache-max");
       const initialized = await initializeLibrary(
         path,
@@ -50,8 +66,11 @@ export async function dispatch(
       }
     }
     if (request.verb === "doctor") {
-      parseOptions(request.args, []);
-      const path = request.env.libraryPath ?? join(homedir(), "Pictures", "photoctl");
+      const parsed = parseArguments(request.args, {});
+      if (parsed.positionals.length > 0) {
+        throw new PhotoctlError("usage", `Unexpected argument: ${parsed.positionals[0]}`);
+      }
+      const path = libraryPath(request.env, request.cwd);
       const handle = await openLibrary(path, {
         noDaemon: request.env.noDaemon,
         lockBudgetMs: parseLockBudget(request.env.lockBudgetMs),
@@ -101,31 +120,4 @@ function parseByteSize(value: string): number {
     throw new PhotoctlError("usage", `Invalid byte size: ${value}`);
   }
   return bytes;
-}
-
-function parseLockBudget(value: string | undefined): number | undefined {
-  if (value === undefined) return undefined;
-  const milliseconds = Number(value);
-  if (!Number.isSafeInteger(milliseconds) || milliseconds < 0) {
-    throw new PhotoctlError("usage", "PHOTOCTL_LOCK_BUDGET_MS must be a non-negative integer");
-  }
-  return milliseconds;
-}
-
-function parseOptions(args: string[], names: string[]): Map<string, string> {
-  const allowed = new Set(names);
-  const options = new Map<string, string>();
-  for (let index = 0; index < args.length; index += 2) {
-    const name = args[index];
-    if (!name || !allowed.has(name)) {
-      throw new PhotoctlError("usage", `Unexpected argument: ${name ?? ""}`);
-    }
-    if (options.has(name)) throw new PhotoctlError("usage", `Duplicate option: ${name}`);
-    const value = args[index + 1];
-    if (!value || value.startsWith("--")) {
-      throw new PhotoctlError("usage", `${name} requires a value`);
-    }
-    options.set(name, value);
-  }
-  return options;
 }

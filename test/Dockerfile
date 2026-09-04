@@ -19,6 +19,7 @@ COPY packages/protocol/package.json packages/protocol/package.json
 COPY packages/commands/package.json packages/commands/package.json
 COPY packages/importer/package.json packages/importer/package.json
 COPY packages/library/package.json packages/library/package.json
+COPY packages/render/package.json packages/render/package.json
 COPY packages/test-harness/package.json packages/test-harness/package.json
 RUN bun install --frozen-lockfile
 COPY . .

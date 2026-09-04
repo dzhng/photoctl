@@ -13,6 +13,11 @@ export interface OrientationTransform {
   flop: boolean;
 }
 
+export function parseExifOrientation(value: number): ExifOrientation {
+  if (Number.isInteger(value) && value >= 1 && value <= 8) return value as ExifOrientation;
+  throw new Error(`Invalid EXIF orientation: ${value}`);
+}
+
 const inverseOrientations: Record<ExifOrientation, ExifOrientation> = {
   1: 1,
   2: 2,

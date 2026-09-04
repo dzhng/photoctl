@@ -17,6 +17,7 @@ const envelope = await dispatch(
       libraryPath: process.env.PHOTOCTL_LIBRARY,
       cacheRoot: process.env.PHOTOCTL_CACHE,
       lockBudgetMs: process.env.PHOTOCTL_LOCK_BUDGET_MS,
+      volumeMap: process.env.PHOTOCTL_VOLUME_MAP,
     },
   },
   { version },

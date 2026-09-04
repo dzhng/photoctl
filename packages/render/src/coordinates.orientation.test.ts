@@ -3,12 +3,19 @@ import {
   fromBase,
   fromBaseBbox,
   orientedDimensions,
+  parseExifOrientation,
   toBase,
   toBaseBbox,
   type Bbox,
   type ExifOrientation,
   type Point,
 } from "./index.js";
+
+test("validates orientation numbers at external boundaries", () => {
+  expect(parseExifOrientation(6)).toBe(6);
+  expect(() => parseExifOrientation(0)).toThrow("Invalid EXIF orientation: 0");
+  expect(() => parseExifOrientation(9)).toThrow("Invalid EXIF orientation: 9");
+});
 
 const source = { w: 3, h: 2 };
 

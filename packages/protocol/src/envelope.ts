@@ -35,11 +35,19 @@ export type Envelope<T = unknown> =
   | { schema: 1; ok: true; data: T; warnings: Warning[] }
   | {
       schema: 1;
+      ok: true;
+      summary: { ok: number; failed: number };
+      results: unknown[];
+      warnings: Warning[];
+    }
+  | {
+      schema: 1;
       ok: false;
       code: ErrorCode;
       data?: unknown;
       summary?: { ok: number; failed: number };
       results?: unknown[];
+      warnings?: Warning[];
     };
 const exitCodes: Record<ErrorCode, number> = {
   usage: 2,

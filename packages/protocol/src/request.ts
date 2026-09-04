@@ -7,5 +7,6 @@ export interface CommandRequest {
     libraryPath?: string;
     cacheRoot?: string;
     lockBudgetMs?: string;
+    volumeMap?: string;
   };
 }
