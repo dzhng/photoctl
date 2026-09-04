@@ -1,0 +1,30 @@
+{
+  "file": "a7c2.ARW",
+  "size": 73400320,
+  "sha256": "55de0ff9abbd11c2d166fdd8cfa99129ef8478f2895a65105253e6fcdfdba430",
+  "content_key": "ck_3dac5c943a33dcc4",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 44146,
+      "length": 8217
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 192674,
+      "length": 466017
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 659456,
+      "length": 6730200
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2023:10:02 18:18:37",
+    "OffsetTimeOriginal": "+02:00"
+  }
+}

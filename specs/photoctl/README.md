@@ -11,22 +11,22 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-03. Status: plan complete after two audits (refactor-clean, decision-budget);
-no code written. Repo scaffolded (skills, spec inputs, `fixtures/a7c2.ARW`, `.gitignore`, `AGENTS.md`).*
+*Last updated: 2026-09-04. Status: slice 00 implemented; the repository gate, stable command
+envelope, CLI entry point, functional-test seam, and independent fixture oracle are in place.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
 Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** `slices/00-repo-skeleton.md`.
+- **Pickup point:** `slices/01-first-jpeg.md`, pass 01a (library open and lifecycle commands).
 - **Blockers:** none for 00–08. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
   None blocks deterministic work — placeholders are named per slice.
 - **Before ending your pass:** update this section, tick the TODO, run the closeout gate named by the slice.
 
 ### Global TODO
-- [ ] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
+- [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
 - [ ] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
 - [ ] 01b import a7c2.ARW → show → export embedded JPEG — `slices/01-first-jpeg.md`
 - [ ] 02 daemon (runs `dispatch`), contention race, `tag` — `slices/02-daemon-and-contention.md`

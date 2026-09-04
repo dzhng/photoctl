@@ -30,6 +30,7 @@ crates/*/target
 helpers/*/.build
 *.node
 ts-traces
+*.tsbuildinfo
 
 # Local library / daemon / cache state produced by running photoctl
 .photoctl/

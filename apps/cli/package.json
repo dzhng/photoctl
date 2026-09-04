@@ -1,0 +1,1 @@
+{"name":"@photoctl/cli","version":"0.1.0","type":"module","bin":{"photoctl":"dist/bin.js"},"files":["dist"],"scripts":{"build":"tsc -p tsconfig.json"},"dependencies":{"@photoctl/commands":"workspace:*","@photoctl/protocol":"workspace:*"}}

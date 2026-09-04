@@ -1,0 +1,14 @@
+services:
+  functional:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile
+    environment:
+      PHOTOCTL_GATEWAY_URL: http://gateway-fixture:8787
+      PHOTOCTL_NO_DAEMON: "1"
+    depends_on: [gateway-fixture]
+  gateway-fixture:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile
+    command: ["node","packages/test-harness/dist/gateway-server.js"]
