@@ -10,7 +10,12 @@ not a skip). The root release version is the one owner for the CLI, package mani
 the version-sync test fails if any packaged surface drifts.
 
 ## Verification
-The gold exam (human accepts JPEGs as deliverable); `packed-install.test.ts` (macos): packed CLI runs the fixture gold exam; linkage audit.
+The gold exam (human accepts JPEGs as deliverable); `packed-install.test.ts` (macos): packed CLI runs the fixture gold exam; linkage
+audit. The full-feature run also executes the keyless fake-adapter reimagine and masked-density cases from 12/13, verifies full
+render/node/artifact hashes and paginated graph inspection from the packed CLI, and proves missing live upscaler credentials do not
+block release. A configured live adapter remains smoke evidence, never a release prerequisite.
 
-## Checkpoint (real input): three real JPEGs — professional "not broken"; `people` retune is data-only.
+## Checkpoint (real input): three real JPEGs — professional "not broken"; `people` retune is data-only. Use
+`compare-screenshots` against their accepted pre-generation render when applicable and run an unprimed `screenshot-critique` last;
+review is non-blocking per the root rule.
 ## Must stay green: everything. Deps: 08 (min), 13 (full). Firewall: taste edits touch preset/prompt data only.

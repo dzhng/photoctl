@@ -18,6 +18,11 @@ a committed journal can only finish rollback cleanup. Migration accepts only an 
 known forward migrations, verifies required constraints and indexes, and a persistent handle reports each startup
 upgrade once. Backup recency is encoded in its filename, so preserved copies cannot reorder retention.
 
+**Future artifact invariant (owned by 08a2):** this backup remains deliberately metadata-only. Before canonical DAG
+artifacts exist, 08a2 must narrow restore's directory swap so rebuilding PGlite preserves `artifacts/`, source-managed
+files, previews, and backups byte-for-byte. Restore may recreate graph metadata pointing at an already-missing artifact
+and report `artifact_available:false`; it never claims the SQL snapshot contains or can reproduce paid/generated pixels.
+
 ## Contract unlocked
 A broken, old, or PG-major-mismatched library is recovered by `restore`, never recreated silently (D36/D37); every later
 schema change has a proven upgrade path from a committed pgDump. Preview artifacts become safe to share and inspect before
@@ -40,6 +45,8 @@ later render graphs add more producers.
   `--no-daemon` never auto-snapshots. `photoctl restore [--from f]`: stops the daemon (or refuses `library_locked`), loads the
   snapshot into a fresh cluster under the current PG, swaps directories. `photoctl migrate`: forward-only schema migrations;
   `migrate_required` (PG major mismatch) is resolved by `restore`, which `migrate`'s message points to.
+  Slice 08a2 replaces the whole-library swap with a database-state swap before external canonical artifacts land; no compatibility
+  path or full-artifact backup mode is added.
 - **3b** `fixtures/libraries/schema-v1.pgsql` (a slice-01b library with the fixture). Every later schema slice adds `schema-vN.pgsql`
   and extends `migrate-upgrade.test.ts`.
 - `wb library`.

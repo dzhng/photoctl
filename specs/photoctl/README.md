@@ -1,7 +1,8 @@
 # photoctl v1 — build ladder
 
 CLI-first photo library + editor for Mac (portable core). TypeScript on Node 24, PGlite, a Rust
-napi addon, a Swift Core Image helper, Vercel AI Gateway. Audience: professional photographers
+napi addon, a Swift Core Image helper, Vercel AI Gateway plus explicitly configured image-processing
+adapters. Audience: professional photographers
 (shoot → cull → rate → deliver); agents drive it one-shot from a chat loop.
 
 This folder is the plan. `visualizations/map.html` is the decision ledger (D1–D40 + A′) this
@@ -15,18 +16,23 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
 the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
-`--human` renders the same envelopes without changing execution.*
+`--human` renders the same envelopes without changing execution. The pre-implementation DAG/upscaling
+unknowns walk is now incorporated into slices 08–13 and the choices ledger; no DAG/provider implementation
+has landed yet.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
 Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 04 (import/cull) and 08 (develop). Slice 04 inherits the
-  durable catalog and restore boundary; slice 08 inherits the completed decoder/color front.
+- **Pickup point:** dependency-ready slices 04 (import/cull) and 08a (immutable render-DAG foundation).
+  Slice 04 inherits the durable catalog and restore boundary; slice 08a inherits the completed decoder/color
+  front and must land before 08b+ develop nodes or later layer work.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
+  The first live upscaler/model and its balanced control values remain evidence-selected in 09b/13a; absent
+  credentials leave the adapter unconfigured and do not block the fake-adapter contracts.
   None blocks deterministic work — placeholders are named per slice.
 - **Before ending your pass:** update this section, tick the TODO, run the closeout gate named by the slice.
 
@@ -41,12 +47,12 @@ Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviatio
 - [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [ ] 08 develop: 8a dict · 8b1–3 color core · 8c1–4 local ops/NR/geometry/filters → **gold exam green** — `slices/08-develop.md`
-- [ ] 09 providers (9a), spikes (9b), embed worker + search (9c) — `slices/09-providers-embed-search.md`
-- [ ] 10 layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
+- [ ] 08 immutable render DAG: 8a graph/artifacts/revisions · 8b+ develop nodes/color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
+- [ ] 09 providers: gateway contracts + dedicated upscaler adapter (9a), non-blocking spikes (9b), embed worker + search (9c) — `slices/09-providers-embed-search.md`
+- [ ] 10 DAG-backed layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
-- [ ] 12 fill pipeline, strict composite, person-move flow — `slices/12-fill.md`
-- [ ] 13a reimagine/relight/generate · 13b auto_enhance · 13c markup · 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [ ] 12 fill DAG, optional density-matching upscale, strict composite, person-move flow — `slices/12-fill.md`
+- [ ] 13a reimagine/relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 
@@ -63,8 +69,9 @@ real drive in 14.
 ```
 00 ─ 01a ─ 01b ─ 02a ─ 03a ─ 03b ─ 04 ─ 05 ─ 06
                       ├─ 02b      │       └─ 09 (needs 02a, 04; parallel with 07/08)
-          └─ 07 (7a → 7b → 7c) ─ 08 ★gold
-                                  └─ 10 ─ 11 ─ 12 ─ 13a/b   (13c markup, 13d retouch need only 10)
+          └─ 07 (7a → 7b → 7c) ─ 08a DAG ─ 08b+ develop ★gold
+                                             ├─ 09 providers
+                                             └─ 10 ─ 11 ─ 12 ─ 13a/b   (13c markup, 13d retouch need only 10)
                                         14 ─ 15
 ```
 
@@ -102,10 +109,10 @@ photoctl/
   packages/
     protocol/         LEAF. Envelope, closed ErrorCode + WarningCode unions, exit mapping, stderr events, per-verb Zod shapes, CommandRequest.
     commands/         dispatcher + verb handlers + daemon client (socket path, ensureDaemon). Imports the domain packages.
-    library/          PGlite open/lock/session, migrations, backup (pgDump), identity, locators, settings, xmp, search fusion.
+    library/          PGlite open/lock/session, migrations, metadata-only backup (pgDump), identity, locators, settings, xmp, search fusion.
     importer/         scan, content-based image probe registry, EXIF (timezone owner), embedded-preview index, cache tiers/index/prune.
-    render/           decoder interface, render graph, coordinates, develop dict + operator/tier tables, layers, transforms, fill pipeline, markup, export planning.
-    providers/        gateway adapter, model adapters (image + structured), fixed model table, versioned prompts.
+    render/           typed immutable render DAG/evaluator, artifact publication, coordinates, develop dict + operator/tier tables, layers, transforms, fill pipeline, markup, export planning.
+    providers/        gateway adapter, image/structured adapters, dedicated UpscaleAdapter registry, fixed model table, versioned prompts.
     img/              napi loader for crates/photoctl-image; per-platform packages.
     mac-helper/       npm wrapper + darwin packages shipping the Swift helper binary.
     test-harness/     spawnPhotoctl (built JS only), withLibrary, fake gateway server, hold-lock helper, manifest reader.
@@ -142,9 +149,13 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
   per-item `results` (D6/D10). Single-target verbs (`segment fill retouch layer markup`) take one id.
 - **Warn, never refuse** on soft state — `warnings[]` with a `WarningCode`, exit 0 (D28).
 - **No runtime capability discovery** — model IDs are a fixed table; gateway `modalities` fields are never read (D25).
+  Upscaling uses a separate `UpscaleAdapter` registry: the release pins a generative default, a library may override it,
+  and `--upscale-model` wins per command. `generation.upscale` is `auto|off` (default `auto`), but `auto` runs only
+  after that adapter is explicitly configured; ambient credentials are not consent to send pixels to another vendor.
 - **Coordinates** are oriented, uncropped, top-left base pixels; `bbox = [x,y,w,h]`; crop/straighten apply
   last; adapters convert external frames once and never leak them (D13). `--norm` (0..1) accepted wherever coordinates are (from 10).
 - **Two buckets:** generation = SOTA general model + versioned prompt; restoration/geometry = specific local solution (D26).
+  Resolution matching of generated pixels is a generative processing node, not ordinary restoration or resampling.
 - **CoreML EP** is a constraint, not a plan item: no slice enables it in v1; if ever enabled it must be per
   model, static shapes, ≥2× measured, output-equivalent within tolerance; CPU is the reference (D40).
 - **Never write original image bytes, regardless of format; never write into source folders except
@@ -194,7 +205,26 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
   for which no registered preview producer can decode or extract a full-frame image return
   `unsupported_file`/`skipped_unsupported` and create no `photos` row.
 - **One resampler:** every pixel-space resample (layers, provider normalize, SAM letterbox) is
-  `photoctl-image::resample`; **sharp** does encode/ICC/XMP/EXIF + the final delivery downscale only.
+  `photoctl-image::resample`; **sharp** does encode/ICC/XMP/EXIF + the final delivery downscale only. An
+  `UpscaleAdapter` synthesizes pixels and therefore is not a second resampler; its result passes through the one
+  deterministic resampler at most once to reach exact base geometry.
+- **One immutable image DAG:** source, develop, generate, upscale, transform, mask, composite, crop, markup, and
+  output are typed nodes. User-visible layers are ordered roots into that graph, not containers for private replay
+  pipelines. Nodes and ordered edges are relational; typed parameters are canonical JSON. A mutation inserts nodes
+  and a document revision rather than editing a node in place.
+- **Identity and publication:** canonical recipe, execution, artifact, render, and view hashes retain the full
+  SHA-256 value; only `--human` abbreviates them. Deterministic nodes reuse by recipe and input-artifact hashes;
+  nondeterministic nodes also have an execution id and output-artifact hash. Canonical content-addressed artifacts
+  publish and fsync before the graph transaction redirects a root; a crash may leave an orphan, never an active
+  node with missing pixels.
+- **Graph retention:** active layer/output roots, bounded undo revisions, and explicitly pinned snapshots keep
+  nodes reachable. Reachability GC may collect canonical pixel artifacts after a grace period while retaining
+  lightweight provenance with `artifact_available:false`; cache pruning remains a separate lifecycle. The numeric
+  undo/age/storage limit stays OPEN until representative artifact sizes are measured, so no automatic canonical-
+  artifact deletion lands before that measurement.
+- **Backup scope:** automatic/manual `backup` remains a metadata-only PGlite recovery snapshot. Once canonical
+  artifacts exist, `restore` replaces database state while preserving `artifacts/`, originals, and cache directories;
+  it does not claim to recover artifact files already lost outside PGlite.
 - **Determinism:** no float atomics, fixed rayon chunking; the same dict + decoder → byte-identical 16-bit output.
 - **Migrations** are numbered at land time ("next number"); each schema slice adds `fixtures/libraries/schema-vN.pgsql`
   and extends `migrate-upgrade.test.ts`. Columns exist only when a verb writes them.
@@ -224,24 +254,26 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 | Content-based image probe registry; EXIF + timezone; embedded-preview index; cache tiers + index + prune | `packages/importer` | 01b/03 |
 | Generic `ImageSource`; decoder interface + `LinearImage{space}`; source/decoder selection | `packages/render/decoder` | 01b/07 |
 | Color core (levels→WB→matrix→ops→TRC), delta kernels, NR | `crates/photoctl-image::develop` | 07c/08/10 |
-| Render graph `renderPhoto() → Image16` (resolved image source day one; develop node 08; composite 10; draw 13c) | `packages/render/graph` | 01b |
+| Immutable image DAG types/evaluator, ordered edges, node recipes, document revisions, reachability, graph inspection | `packages/render/graph` | 08a |
+| Canonical artifact publication/index (paid state, never preview cache) | `packages/render/artifacts`; PGlite tables in `packages/library` migrations | 08a |
 | Canonical `render_hash` + `ViewSpec`; single-flight full-frame display master, cache leases, coordinate transforms, color, and versioned view paths | `packages/render/preview` | 01b/03/08/10/13 |
 | Coordinate space (`toBase/fromBase`, bbox, letterbox mapping) | `packages/render/coordinates` | 01b |
 | Develop dict, hash, presets (package data + `<lib>/presets/develop/`), **operator table**, **tier table** | `packages/render/develop` | 08 |
 | Export planning (template, collision, IPTC-as-XMP/EXIF, presets `<lib>/presets/export/`, history); sharp encode | `packages/render/export` | 01b/05 |
 | `scripts/gold-exam.sh` | scripts | 05 |
 | XMP read / explicit write (parse-merge) / sync / stale | `packages/library/xmp` | 04/06 |
-| Gateway adapter; `ImageModelAdapter` + `StructuredModelAdapter` (frame conversion, mask polarity); fixed model table; versioned prompts; cost table | `packages/providers` | 09a |
+| Gateway adapter; `ImageModelAdapter` + `StructuredModelAdapter`; external-boundary `UpscaleAdapter`; fixed model table; adapter registry; versioned prompts; cost table | `packages/providers` | 09a |
 | Embed worker; RRF search | `apps/daemon/src/workers/embed.ts`; `packages/library/search` | 09c |
-| Layer model (roles subject/vacancy/reimagine/retouch; `fill_params`), transforms (S→R→T matrix once) | `packages/render/{layers,transforms}` | 10 |
-| Fill pipeline (mask fit, crop policy, normalize, strict composite call) | `packages/render/fill` | 12 |
+| User-facing layer stack and output-node roots (roles subject/vacancy/reimagine/retouch), transforms (S→R→T matrix once) | `packages/render/{layers,transforms}` | 10 |
+| Fill DAG planning (mask fit, crop policy, generation, optional upscale/density plan, exact composite) | `packages/render/fill` | 12 |
 | Masks, resample, composite, lift, SAM, heal, draw | `crates/photoctl-image` | 10–13 |
 | Markup model + flatten | `packages/render/markup` | 13c |
 | Fixture manifest + generator | `fixtures/README.md`, `fixtures/a7c2.json`, `fixtures/tools/` | 00 |
 
-**Transitional seams (each named with its end):** (1) 01b's `renderPhoto` has one generic source node; 08 adds
-develop, 10 composite, 13c draw — source resolution and the pinned-preview fallback are permanent. (2) 05's gold-exam
-dry run omits `develop`; 08 adds it to the script — no stub verb exists. (3) 08a's `develop` result carries
+**Transitional seams (each named with its end):** (1) 01b's linear `renderPhoto` and 12-hex render/view hashes are
+unshipped scaffolding: 08a hard-cuts them to the immutable DAG evaluator and full SHA-256 protocol/path identities;
+there is no compatibility alias. Source resolution and the pinned-preview fallback remain permanent. (2) 05's gold-exam
+dry run omits `develop`; 08 adds it to the script — no stub verb exists. (3) 08's `develop` result carries
 empty `layers:{delta_applied:[],stale:[]}` until 10 fills it — shape fixed, no rewrite. Nothing else is
 temporary; the fake gateway, volume map and hold-lock helper are permanent test edges.
 
@@ -267,10 +299,14 @@ preview availability is an import invariant, not a best-effort cache hit.
 **Agent preview/export flow:** `show <id>` is the synchronization point for visual inspection: it must
 return only after `data.preview` names a readable absolute JPEG for the current `render_hash` and requested
 `ViewSpec`. Editing
-commands may return immediately after committing render state; the agent then calls `show`, views that
+commands may return immediately after committing a document revision and its active DAG roots; the agent then calls `show`, views that
 path, and decides whether to edit again or `export`. Export renders at the requested output tier from the
 same `render_hash` and includes it in the result, so preview and export cannot silently refer to different
 edit states. Preview pixels are review-sized, not the export source of truth.
+
+`layer list/show` remain the ordinary editing surface. `graph show <id> [--layer L] [--history] [--limit N]
+[--cursor C]` exposes a bounded page of reachable nodes and `graph node <id> <node>` returns one bounded
+provenance record. The daemon's 16 MiB frame ceiling never grows to accommodate unbounded history.
 
 The mandatory functional journey is: **make an overall edit → request and inspect the full-frame native
 preview → zoom into a native-resolution detail cropped from that cached master → make a local edit → inspect
@@ -286,13 +322,14 @@ contract rather than introduce a second rendering model.
 
 Sidecars only, explicit `xmp write` (D19) · drop `--json`, JSON default (D10) · OpenColorIO grading math
 instead of "port darktable/ART" · LibRaw is LGPL-2.1 OR CDDL-1.0, take CDDL · Vercel only for v1 behind a
-gateway adapter (D25) · `copy_edits_from` → `develop --copy-from` · `unblur` cut (D35); `relight` = prompt
+gateway adapter for its four OpenAI-compatible routes (D25), while purpose-built upscalers use an explicitly
+configured external `UpscaleAdapter` boundary · `copy_edits_from` → `develop --copy-from` · `unblur` cut (D35); `relight` = prompt
 template with `drift:"full-frame"`; `--strength` = feather (documented, not A1111 denoise). **Verbs added
 vs the input spec** (the inventory itself is `packages/protocol/src/verbs/`): `flag label next remove
-layer(list|show|transform|reorder|set|duplicate|remove|clear) xmp(write|sync) cache prune backup restore
-migrate daemon(start|stop|status) embed decode render presets(show) search`; `export --resize --template
+layer(list|show|transform|reorder|set|duplicate|remove|clear|refresh) xmp(write|sync) cache prune backup restore
+migrate daemon(start|stop|status) embed decode render presets(show) search graph(show|node)`; `export --resize --template
 --on-collision --iptc --preset`; `segment --text --dry-run`; `fill --move --to|--by`; `--relative`;
-`--no-daemon`; `--stream`; `doctor --fetch-models`.
+`--upscale|--no-upscale|--upscale-model`; `--no-daemon`; `--stream`; `doctor --fetch-models`.
 
 ## Known unknowns (OPEN on the map) and where they land
 
@@ -300,6 +337,9 @@ migrate daemon(start|stop|status) embed decode render presets(show) search`; `ex
 |---|---|---|
 | ARW drive path | 14 (04 uses it if present) | `fixtures:drive` + `fixtures:volume` |
 | Gateway key + per-verb model IDs | 09a (`doctor`, `settings`); 12 | fake gateway; `provider_unconfigured` |
+| First live upscaler adapter/model + balanced creativity/resemblance values | 09b/13a | deterministic fake adapter; `upscale_unconfigured`; live spike runs only when explicitly configured credentials exist |
+| Canonical provider/upscale artifact encoding | 08a/09b | lossless fake-adapter artifact; choose after PNG-vs-working-format size/round-trip measurement |
+| Undo artifact count/age/storage limit | 08a measurement, then 10 | roots/reachability land; automatic canonical-artifact GC remains off until measured |
 | Smoke 1 mask polarity | 12 pre-gate | adapters `maskPolarity:"unverified"` → live native-mask fill refused (`provider_unverified_mask` 69) |
 | Smoke 2 multimodal embedding shape | 09b | fake gateway vectors; real mode stays manual |
 | Lossless-L tag 6/7, M/S pseudo-RAW | 07b probe; 14 fixtures | uncompressed a7c2 only |
@@ -309,8 +349,10 @@ migrate daemon(start|stop|status) embed decode render presets(show) search`; `ex
 
 ## Human review checkpoints (non-blocking)
 
-Open evidence with `preview-shots`, name the ONE variable judged, wait ~5 min, decide on evidence if
-silent, record the call in the slice file, close windows. One variable per checkpoint; listed per slice.
+Open evidence with `preview-shots`, name the ONE variable judged, and use `compare-screenshots` whenever a
+prior/reference image exists. Every visual slice runs an unprimed `screenshot-critique` as its last acceptance
+check. Wait ~5 min, decide on evidence if silent, record the call in the slice file, close windows. One variable
+per checkpoint; listed per slice.
 
 ## Drafts and rulings (scrollback audit)
 

@@ -1,9 +1,12 @@
 # 13 — 13a reimagine/relight/generate · 13b auto_enhance · 13c markup · 13d retouch
 
-- **13a** `reimagine`/`relight` run the fill pipeline with `scope:"full-frame"`, land as a `role:"reimagine"` layer (never overwrite),
-  `drift:"full-frame"`; C3 template. `generate --prompt [--ref] [--size 1024x1024] [--seed] [--model]` → `<lib>/generated/<uuid>.png`
-  imported through the content probe registry and tagged `generated`. Tests: `reimagine-layer.test.ts` (`layer remove` restores), `generate.test.ts`,
-  `relight-template.test.ts`. Deps 12.
+- **13a** `reimagine`/`relight` run Slice 12's DAG planner with `scope:"full-frame"`: current source/develop → generation →
+  optional density-matching generative upscale → exact resample to oriented base dimensions → `role:"reimagine"` layer root
+  (never overwrite), `drift:"full-frame"`; C3 template. Removing the layer redirects the active revision to its prior root.
+  `generate --prompt [--ref] [--size 1024x1024] [--seed] [--model]` → canonical generated artifact → imported photo tagged
+  `generated`; it has no base-density target, so library `auto` does not invent one. Explicit `--upscale` uses the requested
+  `--size` only when the provider returned fewer pixels. Tests: `reimagine-layer.test.ts` (full target dimensions; remove restores),
+  `reimagine-upscale-fallback.test.ts` (generation survives upscaler failure), `generate.test.ts`, `relight-template.test.ts`. Deps 12.
 - **13b** `develop <id> --auto-enhance`: `develop/stats.ts` on the 1024 sRGB preview (Rec.709 Y; p02/p50/p98/clipped/mean_sat/est_wb_k)
   → `StructuredModelAdapter` with the C4 schema → one `--set` batch, clamped; `develop_before_auto` stored for `--undo-auto`.
   Test: fake output lands, clamped, `--undo-auto` restores. Deps 09a, 08.
@@ -14,8 +17,19 @@
 - **13d** `retouch <id> --at x,y [--radius]` (default 2 % long edge) → `photoctl-image::heal` (Telea) as a `role:"retouch"` layer with a
   circular mask; idempotency key `(at, radius)`. Test: outside bit-exact; inside differs; repeat → one layer. Deps 10.
 
-Every 13a/13c/13d pixel mutation contributes its provider output or local artifact content hash plus parameters to
-`renderStateHash`, returns the new hash without eager preview work, and extends `agent-preview-loop.test.ts` with at least one
-representative mutation. The next `show` remains the only required preview-materialization step.
+Every 13a/13c/13d pixel mutation creates typed nodes whose full input artifact hashes and parameters determine the active output
+root/render hash, returns a new document revision without eager preview work, and extends `agent-preview-loop.test.ts` with at
+least one representative mutation. The next `show` remains the only required preview-materialization step.
 
-## Checkpoints: one artifact per sub-slice, one variable each. Firewall: `unblur` cut; no local generative runners.
+## 13a upscaler quality spike (non-blocking)
+The fake adapter is the contract gate. When an upscaler is explicitly configured, `wb upscale-spike` uses identical inputs to make
+separate contact sheets for: (1) guarded inherited vs minimal prompt; (2) balanced control strength; then validation-only sheets for
+face/hair, fabric/foliage, repeating architecture, generated text/logo as an expected danger case, and a mask crossing detailed
+texture. Never mix prompt and strength judgments in one sheet. Each sheet records source/provider/target dimensions, resolved
+adapter/model/version and controls, latency/cost, prompts, mask, and crop. Run `compare-screenshots` for candidate-against-source
+telemetry and `screenshot-critique` last. Open with `preview-shots`; wait about five minutes, then choose from evidence and record the
+release default/control values if the user is silent. Missing credentials records `not_run:unconfigured` and does not block the slice.
+
+## Checkpoints: one artifact per sub-slice, one variable each; all inherit the root visual gates and non-blocking review rule.
+Firewall: `unblur` cut; no generic local generative runners. A future local UpscaleAdapter is allowed only as a separately configured
+external-boundary implementation; this slice does not add one.
