@@ -28,6 +28,7 @@ produced by a tool independent of the code under test.
   records the command. Tests read the manifest; they never call importer code to derive expectations.
 - Layout per README; `turbo.json` (`test` dependsOn `^build`); `bunfig.toml` (`linker = "hoisted"`); Cargo workspace with
   empty `crates/photoctl-image`; `.oxlintrc.json`/`.oxfmtrc.json` + `packages/typescript-config` copied from `~/dev/duet`.
+- `fixtures/*.ARW` are Git LFS objects (`.gitattributes` committed); the Dockerfile installs `git-lfs` and the compose mount carries the fetched files.
 - `test/Dockerfile` (node:24-bookworm, bun for install, rustup, clang), `test/compose.yaml` (`functional`, `gateway-fixture`).
 - **CI + tag releases, lifted from `~/dev/duet-agent/.github/workflows/`** (already committed at `.github/workflows/{ci,publish}.yml`):
   `ci.yml` runs install → build → lint → test on every push/PR; `publish.yml` runs the same gates on `v*` tags, creates a GitHub
