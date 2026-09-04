@@ -32,7 +32,7 @@ export async function tagCommand(
   if (Number(add !== undefined) + Number(remove !== undefined) !== 1) {
     throw new PhotoctlError("usage", "tag requires exactly one of --add or --remove");
   }
-  const tag = add ?? remove;
+  const tag = (add ?? remove)?.trim();
   if (!tag) throw new PhotoctlError("usage", "tag value must not be empty");
   const action = add === undefined ? "removed" : "added";
 
@@ -42,15 +42,20 @@ export async function tagCommand(
     const resolved = await resolveInputs(handle, parsed.positionals);
     await handle.query("BEGIN");
     try {
-      for (const item of resolved) {
-        if (!item.ok) continue;
+      const ids = resolved.filter((item) => item.ok).map((item) => item.id);
+      if (ids.length > 0) {
         if (action === "added") {
           await handle.query(
-            "INSERT INTO tags (photo_id, tag) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-            [item.id, tag],
+            `INSERT INTO tags (photo_id, tag)
+             SELECT photo_id, $2 FROM unnest($1::uuid[]) AS input(photo_id)
+             ON CONFLICT DO NOTHING`,
+            [ids, tag],
           );
         } else {
-          await handle.query("DELETE FROM tags WHERE photo_id = $1 AND tag = $2", [item.id, tag]);
+          await handle.query("DELETE FROM tags WHERE photo_id = ANY($1::uuid[]) AND tag = $2", [
+            ids,
+            tag,
+          ]);
         }
       }
       await handle.query("COMMIT");
@@ -88,19 +93,18 @@ async function resolveInputs(
   handle: LibraryHandle,
   inputs: string[],
 ): Promise<Array<{ id: string; ok: true } | TagFailure>> {
-  const resolved = [];
-  for (const input of inputs) {
-    try {
-      resolved.push({ id: await resolvePhotoId(handle, input), ok: true } as const);
-    } catch (error) {
-      if (!(error instanceof PhotoctlError)) throw error;
-      resolved.push({ id: input, ok: false, code: error.code, ...errorData(error.data) } as const);
-    }
-    // PGlite can resolve from its in-process store without returning to the I/O phase. Yield between
-    // batch items so the daemon can admit and cap peer requests while one large batch is resolving.
-    await new Promise<void>((resolveTurn) => setImmediate(resolveTurn));
-  }
-  return resolved;
+  // Let peer sockets reach the bounded daemon queue before this batch starts database work.
+  await new Promise<void>((resolveTurn) => setImmediate(resolveTurn));
+  return await Promise.all(
+    inputs.map(async (input) => {
+      try {
+        return { id: await resolvePhotoId(handle, input), ok: true } as const;
+      } catch (error) {
+        if (!(error instanceof PhotoctlError)) throw error;
+        return { id: input, ok: false, code: error.code, ...errorData(error.data) } as const;
+      }
+    }),
+  );
 }
 
 function commonFailureCode(failures: TagFailure[]): ErrorCode {

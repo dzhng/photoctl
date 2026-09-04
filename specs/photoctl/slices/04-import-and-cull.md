@@ -9,6 +9,12 @@ every id counted as imported or already present has a valid pinned offline previ
 - `packages/importer/src/{scan.ts,pipeline.ts}`: recursive candidate scan → content probe registry → identity → EXIF → preview
   producer → rows. Scanning must not discard a candidate solely because its extension is absent, unknown, or incorrect;
   progress events; `--copy` into `<lib>/originals/<date>/` (collision → `<stem>_<id8>`); result = session A2.
+- `packages/library/src/identity.ts` + migration (next number): the fast `content_key` remains
+  `size + hash(head 1 MiB + tail 1 MiB)`, but is no longer sufficient proof of equality when two candidates share it. On the
+  second candidate for a sampled key, compute and persist a full-file hash for both candidates before deciding duplicate versus
+  distinct photo; store it as nullable `photos.content_hash`, unique within the sampled key once promoted. If the existing
+  candidate has no online locator from which to compute that hash, fail safely without attaching the new locator to it. Later
+  matches reuse the persisted full hashes. This is the collision disambiguation required by D9, not a new always-full-hash path.
 - `packages/library/src/locators.ts`: relocation — a rescan that finds `content_key` at a new path adds a `files` row; the old row
   is removed when its volume is online and the path is gone, kept when the volume is offline. `online` refreshed on every open.
 - `packages/library/src/xmp/read.ts` (`fast-xml-parser`): `xmp:Rating`, `xmp:Label` (case-insensitive map of the five English
@@ -35,8 +41,9 @@ per id); `offline.test.ts`
 (`…:offline` → `online:false`, `rate` works, `show.preview` from cache for every imported format);
 `cull.test.ts` (partial → 65 with `results[2].code=="not_found"`; `remove` multi-id without `--yes` → 2); `next.test.ts`
 (order, cursor per filter, `--reset`); `xmp-read.test.ts` (rating/label/keywords land incl. hierarchical union; PGlite edit
-survives re-import; unknown label → warning); `migrate-upgrade` extended.
+survives re-import; unknown label → warning); `identity-collision.test.ts` builds two >2 MiB files with identical size/head/tail
+and different middles, proves stable distinct ids, then reimports both without duplication; `migrate-upgrade` extended.
 
-## Delegated: scan concurrency; `--human` widths.
+## Delegated: scan concurrency.
 ## Checkpoint: `wb sheet` — badge legibility only.
 ## Must stay green: 01–03. Deps: 03. Firewall: no XMP write; no develop; no `.lrcat` parsing.

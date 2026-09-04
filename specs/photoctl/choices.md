@@ -38,6 +38,60 @@
 - **Verdict:** **Sound.** The format is deterministic, dependency-free, and safely bounded.
 - **Confidence:** High.
 
+### Slice 02 integration — Initialization success survives an optional daemon-start failure
+
+- **When:** Slice 02 integration review.
+- **The choice:** `init` first creates and migrates the durable library, then attempts to start its convenience daemon. If that
+  second step fails, the command returns the successful initialization envelope with a `daemon_unavailable` warning. For
+  example, a broken packaged daemon no longer makes `init` exit 69 after the library already exists, which made the natural
+  retry fail with “library already exists.” The next ordinary command can retry daemon startup against the valid library.
+- **The gap:** The plan required initialization to leave a daemon running but did not define partial success after the durable
+  creation boundary had committed.
+- **The reach:** Initialization is safely retryable from an automation caller's perspective, and warnings distinguish a usable
+  catalog from its temporarily unavailable acceleration process.
+- **Verdict:** **Sound.** The response follows the irreversible state transition and exposes the recoverable secondary failure.
+- **Confidence:** High.
+
+### Slice 02 integration — Daemon control reports observed state and secures local IPC
+
+- **When:** Slice 02 integration review.
+- **The choice:** A connection first asks the daemon for live status instead of inventing zero uptime and queue values from a PID
+  file. `daemon stop` reports failure when a live holder does not answer or does not exit by the deadline, rather than claiming
+  success. Idle connected sockets do not consume request-queue capacity because only framed work is a request. The Unix socket
+  and current log are owner-only (`0600`), and each daemon start truncates the prior log instead of appending across restarts.
+- **The gap:** The daemon slice fixed the transport and queue ceiling but left probe truthfulness, idle-connection admission,
+  filesystem permissions, and failed-stop reporting implicit.
+- **The reach:** Status and lifecycle automation can trust successful control responses; another local account cannot send
+  commands through the socket; unused connections cannot manufacture overload; restart logs remain bounded by one daemon run.
+- **Verdict:** **Sound.** Each reported state now comes from the process that owns it, and local control surfaces use least
+  privilege without changing the protocol.
+- **Confidence:** High.
+
+### Spec maintenance — Preview cache safety lands before new render producers
+
+- **When:** Post-slices-02/07a wavefront audit.
+- **The choice:** Slice 03a now installs the one preview coordinator, validation-before-touch cache index, materialization leases,
+  and prune grace before Slice 08 adds developed render graphs. Without that move, Slice 03 was expected to protect in-flight
+  files using machinery the plan did not build until five slices later. Develop now plugs a new producer into the existing
+  lifecycle instead of creating a second cache owner.
+- **The gap:** A preview-contract amendment added concurrency guarantees after the original dependency graph was written.
+- **The reach:** Cache prune, ordinary preview, develop, and later layer previews inherit one writer and one lifetime model.
+- **Verdict:** **Sound.** The dependency order now builds the prerequisite before its first consumer and prevents parallel cache
+  implementations from drifting.
+- **Confidence:** High.
+
+### Spec maintenance — Sampled identity collisions promote only the colliding bucket
+
+- **When:** Post-slices-02/07a wavefront audit.
+- **The choice:** Ordinary imports keep the fast head-and-tail content key. When a second file shares that key, Slice 04 computes
+  full hashes for both files, stores those hashes on the colliding photos, and then decides duplicate versus distinct. If the
+  existing file is offline and has never been promoted, import refuses to attach the newcomer rather than guessing they are the
+  same. The rejected alternatives were hashing every file in full or silently merging different middles.
+- **The gap:** D9 required a full hash “on collision” but did not define persistence or the unavailable-existing-source case.
+- **The reach:** Large-drive import retains its sampled-hash speed while database identity stays collision-safe and repeatable.
+- **Verdict:** **Sound.** Work is paid only by the rare ambiguous bucket, and uncertainty cannot corrupt the locator graph.
+- **Confidence:** Medium.
+
 ### Rendered previews are lazy, versioned views of committed edit state
 
 - **When:** User-directed preview workflow amendment, 2026-09-04.
@@ -526,6 +580,19 @@
 - **Confidence:** Medium.
 
 ## Needs user
+
+### Slice 02 integration — CLI tags trim boundaries but preserve case and Unicode
+
+- **When:** Slice 02 integration review.
+- **The choice:** A command such as `tag <id> --add "  Ceremony  "` stores `Ceremony`: boundary whitespace is removed, a
+  whitespace-only tag is rejected, and case plus Unicode spelling remain exact. Repeating the padded or unpadded form is the
+  same idempotent request. The alternative would either preserve invisible accidental differences or impose case folding and
+  Unicode normalization before the product's search and XMP behavior is fully exercised.
+- **The gap:** The plan required exact idempotent tag values but did not define user-input normalization.
+- **The reach:** Slice 04's filters, XMP keyword union, search indexing, and human tables inherit tag identity semantics.
+- **Verdict:** **Needs-user.** The reversible provisional call trims only boundary whitespace and otherwise preserves what the
+  photographer typed. Before release, change the single command boundary if tags should be case-insensitive or Unicode-normalized.
+- **Confidence:** Low.
 
 ### Slice 01b — Rendered JPEG fallback uses quality 88
 

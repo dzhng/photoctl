@@ -6,7 +6,8 @@
 `otool -L` audit; `photoctl doctor` from the packed install must report `ciraw` and `libraw`. `scripts/gold-exam.sh
 /Volumes/<drive>/<folder>` → `assets/gold-exam/<date>/report.html` + sha256s. Real Classic sidecars → `fixtures/xmp/`; one frame
 per ARW compression mode → `fixtures/` with manifest rows; `decoder-libraw.test.ts` is parametrized over manifest rows (absence is
-not a skip).
+not a skip). The root release version is the one owner for the CLI, package manifests, and the Swift helper's `--version` output;
+the version-sync test fails if any packaged surface drifts.
 
 ## Verification
 The gold exam (human accepts JPEGs as deliverable); `packed-install.test.ts` (macos): packed CLI runs the fixture gold exam; linkage audit.

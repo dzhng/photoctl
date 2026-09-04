@@ -45,7 +45,7 @@ try {
     .flatMap((client) => client.writes)
     .filter(({ result }) => result.code === 0)
     .map(({ tag }) => tag)
-    .sort();
+    .toSorted();
   const failures = observed
     .flatMap((client) => client.writes)
     .filter(({ result }) => result.code !== 0);
@@ -97,16 +97,16 @@ try {
 }
 
 function parseArgs(args) {
-  let clients = 8;
-  let rows = 25;
+  let clientCount = 8;
+  let rowCount = 25;
   for (let index = 0; index < args.length; index += 2) {
     const name = args[index];
     const value = Number(args[index + 1]);
     if (!["--clients", "--rows"].includes(name) || !Number.isSafeInteger(value) || value <= 0) {
       throw new Error("usage: probe:race -- --clients N --rows N");
     }
-    if (name === "--clients") clients = value;
-    if (name === "--rows") rows = value;
+    if (name === "--clients") clientCount = value;
+    if (name === "--rows") rowCount = value;
   }
-  return { clients, rows };
+  return { clients: clientCount, rows: rowCount };
 }

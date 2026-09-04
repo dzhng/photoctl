@@ -39,18 +39,32 @@ export async function execute(
     if (request.verb === "init") {
       const envelope = await dispatch(request, context);
       if (!envelope.ok) return { envelope, events: [] };
-      const connection = await ensureDaemon(path, context.version, daemonOptions(request));
-      return { envelope, events: [daemonEvent(connection.action, connection.status)] };
+      try {
+        const connection = await ensureDaemon(path, context.version, daemonOptions(request));
+        return { envelope, events: [daemonEvent(connection.action, connection.status)] };
+      } catch (error) {
+        if (!(error instanceof PhotoctlError) || error.code !== "daemon_unavailable") throw error;
+        return {
+          envelope: {
+            ...envelope,
+            warnings: [
+              ...envelope.warnings,
+              {
+                code: "daemon_unavailable",
+                message: "The library was initialized, but its daemon could not be started",
+              },
+            ],
+          },
+          events: [],
+        };
+      }
     }
     let connection = await ensureDaemon(path, context.version, daemonOptions(request));
     let result;
     try {
       result = await requestDaemon(connection.status.socket, request);
     } catch {
-      const recovered = await ensureDaemon(path, context.version, {
-        ...daemonOptions(request),
-        probeExisting: true,
-      });
+      const recovered = await ensureDaemon(path, context.version, daemonOptions(request));
       connection = recovered;
       try {
         result = await requestDaemon(recovered.status.socket, request);
@@ -123,7 +137,6 @@ function commandLibraryPath(request: CommandRequest): string {
 function daemonOptions(request: CommandRequest): {
   lockBudgetMs?: number;
   pollCeilingMs?: number;
-  probeExisting?: boolean;
 } {
   return {
     lockBudgetMs: parseLockBudget(request.env.lockBudgetMs),

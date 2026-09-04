@@ -11,7 +11,7 @@ import {
 import { acquireLibraryLock, OPEN_LOCK_NAME, readLock, type LockPayload } from "@photoctl/library";
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
-import { closeSync, openSync } from "node:fs";
+import { closeSync, fchmodSync, openSync } from "node:fs";
 import { unlink } from "node:fs/promises";
 import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
@@ -47,7 +47,7 @@ export function daemonSocketPath(libraryPath: string, version: string): string {
 export async function ensureDaemon(
   libraryPath: string,
   version: string,
-  options: { lockBudgetMs?: number; pollCeilingMs?: number; probeExisting?: boolean } = {},
+  options: { lockBudgetMs?: number; pollCeilingMs?: number } = {},
 ): Promise<DaemonConnection> {
   const budgetMs = options.lockBudgetMs ?? 30_000;
   const pollCeilingMs = options.pollCeilingMs ?? 100;
@@ -58,21 +58,13 @@ export async function ensureDaemon(
     const payload = await readLock(join(libraryPath, OPEN_LOCK_NAME));
     if (payload) lastHolder = payload.pid;
     const expectedSocket = daemonSocketPath(libraryPath, version);
-    if (
-      !options.probeExisting &&
-      payload?.socket === expectedSocket &&
-      processState(payload.pid) !== "dead"
-    ) {
-      return {
-        action: "connected",
-        status: { pid: payload.pid, socket: payload.socket, uptime_s: 0, queue: 0, version },
-      };
-    }
     const existing = await statusFromPayload(payload);
     if (existing) {
       if (existing.version === version) return { status: existing, action: "connected" };
       await exchange(existing.socket, { type: "control", action: "stop" }, 5_000);
-      await waitForExit(existing.pid, deadline, pollCeilingMs);
+      if (!(await waitForExit(existing.pid, deadline, pollCeilingMs))) {
+        throw daemonUnavailable(libraryPath, new Error(`Process ${existing.pid} did not stop`));
+      }
       continue;
     }
 
@@ -92,7 +84,8 @@ export async function ensureDaemon(
         process.env.PHOTOCTL_DAEMON_ENTRY ??
         fileURLToPath(new URL("../../../apps/daemon/dist/bin.js", import.meta.url));
       const logPath = join(tmpdir(), `${socket.slice(socket.lastIndexOf("/") + 1, -5)}.log`);
-      const logFd = openSync(logPath, "a");
+      const logFd = openSync(logPath, "w", 0o600);
+      fchmodSync(logFd, 0o600);
       let child;
       let spawnError: unknown;
       try {
@@ -162,10 +155,28 @@ export async function inspectDaemon(libraryPath: string): Promise<DaemonStatus |
 }
 
 export async function stopDaemon(libraryPath: string): Promise<DaemonStatus | null> {
-  const status = await inspectDaemon(libraryPath);
-  if (!status) return null;
+  const path = resolve(libraryPath);
+  const payload = await readLock(join(path, OPEN_LOCK_NAME));
+  if (!payload || processState(payload.pid) === "dead") return null;
+  if (!payload.socket) {
+    throw new PhotoctlError("library_locked", `Library is locked by process ${payload.pid}`, {
+      holder_pid: payload.pid,
+    });
+  }
+  const status = await statusAt(payload.socket);
+  if (!status) {
+    throw new PhotoctlError("daemon_unavailable", "The photoctl daemon is not responding", {
+      pid: payload.pid,
+      socket: payload.socket,
+    });
+  }
   await exchange(status.socket, { type: "control", action: "stop" }, 5_000);
-  await waitForExit(status.pid, Date.now() + 5_000, 50);
+  if (!(await waitForExit(status.pid, Date.now() + 5_000, 50))) {
+    throw new PhotoctlError("daemon_unavailable", "The photoctl daemon did not stop", {
+      pid: status.pid,
+      socket: status.socket,
+    });
+  }
   return status;
 }
 
@@ -229,11 +240,12 @@ async function exchange(
   });
 }
 
-async function waitForExit(pid: number, deadline: number, pollCeilingMs: number): Promise<void> {
+async function waitForExit(pid: number, deadline: number, pollCeilingMs: number): Promise<boolean> {
   while (Date.now() < deadline) {
-    if (processState(pid) === "dead") return;
+    if (processState(pid) === "dead") return true;
     await delay(Math.min(pollCeilingMs, Math.max(1, deadline - Date.now())));
   }
+  return processState(pid) === "dead";
 }
 
 function processState(pid: number): "alive" | "dead" | "unknown" {

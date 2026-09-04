@@ -26,9 +26,9 @@ else {
 `,
   );
   await chmod(helper, 0o755);
+  const initialized = await initializeLibrary(libraryPath);
+  const daemonContext = { version: "test", library: initialized.handle };
   try {
-    const initialized = await initializeLibrary(libraryPath);
-    await initialized.handle.close();
     const imported = await dispatch(
       {
         verb: "import",
@@ -41,7 +41,7 @@ else {
           volumeMap: `${process.cwd()}=fixture-volume:online`,
         },
       },
-      { version: "test" },
+      daemonContext,
     );
     expect(imported).toMatchObject({ ok: true });
     const id = (imported as { data: { ids: string[] } }).data.ids[0];
@@ -59,7 +59,7 @@ else {
           macHelperPath: helper,
         },
       },
-      { version: "test" },
+      daemonContext,
     );
     expect(decoded).toMatchObject({
       schema: 1,
@@ -88,7 +88,7 @@ else {
           macHelperPath: join(directory, "missing-helper"),
         },
       },
-      { version: "test" },
+      daemonContext,
     );
     expect(fallback).toMatchObject({
       schema: 1,
@@ -115,7 +115,7 @@ else {
           macHelperPath: helper,
         },
       },
-      { version: "test" },
+      daemonContext,
     );
     expect(offline).toMatchObject({
       schema: 1,
@@ -137,7 +137,7 @@ else {
           macHelperPath: join(directory, "missing-helper"),
         },
       },
-      { version: "test" },
+      daemonContext,
     );
     expect(unavailable).toMatchObject({
       schema: 1,
@@ -146,6 +146,7 @@ else {
       data: { decoder: "ciraw" },
     });
   } finally {
+    await initialized.handle.close();
     await rm(directory, { recursive: true });
   }
 }, 30_000);

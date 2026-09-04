@@ -29,6 +29,10 @@ test("tag adds an exact value to every resolved photo", async () => {
     libraryDir: library,
     env,
   });
+  const repeated = await spawnPhotoctl(["tag", id, "--add", "  ceremony  "], {
+    libraryDir: library,
+    env,
+  });
   const shown = await spawnPhotoctl(["show", id], { libraryDir: library, env });
 
   expect(tagged.code).toBe(0);
@@ -39,6 +43,7 @@ test("tag adds an exact value to every resolved photo", async () => {
     results: [{ id, ok: true, tag: "ceremony", action: "added" }],
     warnings: [],
   });
+  expect(repeated.json).toMatchObject({ results: [{ id, ok: true, tag: "ceremony" }] });
   expect(shown.json).toMatchObject({ data: { tags: ["ceremony"] } });
 }, 30_000);
 

@@ -1,6 +1,7 @@
 import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createConnection, type Socket } from "node:net";
 import { afterEach, expect, test } from "vitest";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 import { daemonSocketPath, ensureDaemon } from "@photoctl/commands";
@@ -32,6 +33,24 @@ test("init leaves its new library served by the daemon", async () => {
       })
     ).code,
   ).toBe(0);
+}, 30_000);
+
+test("init remains successful when its optional daemon start fails", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-init-without-daemon-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+
+  const initialized = await spawnPhotoctl(["init", "--path", library], {
+    env: { PHOTOCTL_NO_DAEMON: "0", PHOTOCTL_DAEMON_ENTRY: join(parent, "missing-daemon.js") },
+  });
+
+  expect(initialized.code).toBe(0);
+  expect(initialized.json).toMatchObject({
+    schema: 1,
+    ok: true,
+    warnings: [{ code: "daemon_unavailable" }],
+  });
+  await expect(stat(join(library, "PG_VERSION"))).resolves.toBeDefined();
 }, 30_000);
 
 test("the first ordinary command starts one daemon and status reports it", async () => {
@@ -66,6 +85,29 @@ test("the first ordinary command starts one daemon and status reports it", async
     },
     warnings: [],
   });
+  const socketPath = (status.json as { data: { socket: string } }).data.socket;
+  expect((await stat(socketPath)).mode & 0o777).toBe(0o600);
+
+  const repeatedStart = await spawnPhotoctl(["daemon", "start"], {
+    libraryDir: library,
+    env: { PHOTOCTL_NO_DAEMON: "0" },
+  });
+  expect(repeatedStart.json).toMatchObject({
+    schema: 1,
+    ok: true,
+    data: { uptime_s: expect.any(Number) },
+  });
+  expect((repeatedStart.json as { data: { uptime_s: number } }).data.uptime_s).toBeGreaterThan(0);
+
+  const idleClients = await Promise.all(
+    Array.from({ length: 9 }, () => connectIdleClient(socketPath)),
+  );
+  const withIdleClients = await spawnPhotoctl(["doctor"], {
+    libraryDir: library,
+    env: { PHOTOCTL_NO_DAEMON: "0" },
+  });
+  idleClients.forEach((socket) => socket.destroy());
+  expect(withIdleClients.code).toBe(0);
 
   expect(
     (
@@ -76,6 +118,14 @@ test("the first ordinary command starts one daemon and status reports it", async
     ).code,
   ).toBe(0);
 }, 30_000);
+
+async function connectIdleClient(path: string): Promise<Socket> {
+  return await new Promise((resolveSocket, reject) => {
+    const socket = createConnection(path);
+    socket.once("connect", () => resolveSocket(socket));
+    socket.once("error", reject);
+  });
+}
 
 test("no-daemon stops a live daemon before opening the library in-process", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-no-daemon-"));
@@ -101,6 +151,26 @@ test("no-daemon stops a live daemon before opening the library in-process", asyn
   expect(diagnosed.events).toEqual([]);
   expect(status.code).toBe(69);
   expect(() => process.kill(pid, 0)).toThrow();
+}, 30_000);
+
+test("daemon stop does not report success while a live holder is unresponsive", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-unresponsive-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+  const env = { PHOTOCTL_NO_DAEMON: "0" };
+  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+  const started = await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env });
+  const pid = (started.json as { data: { pid: number } }).data.pid;
+
+  process.kill(pid, "SIGSTOP");
+  try {
+    const stopped = await spawnPhotoctl(["daemon", "stop"], { libraryDir: library, env });
+    expect(stopped.code).toBe(69);
+    expect(stopped.json).toMatchObject({ ok: false, code: "daemon_unavailable" });
+  } finally {
+    process.kill(pid, "SIGCONT");
+    await spawnPhotoctl(["daemon", "stop"], { libraryDir: library, env });
+  }
 }, 30_000);
 
 test("a command respawns the daemon after an unclean kill", async () => {

@@ -23,12 +23,11 @@ Sub-slices, one judged variable each: **8a** dict/presets/hash (no pixels) · **
   `render <id> --linear --to out.tif` probe. Geometry keys
   `crop:{x,y,w,h}`, `straighten_deg`, `rotate ∈ {0,90,180,270}` applied last; `show.crop` mirrors them. `auto_straighten`: Hough
   (portable, the only implementation in tests); `crop --auto` = straighten + minimal trim. NR only in Rust; CIRAW invoked with NR off.
-- `packages/render/src/preview.ts` gains `ensurePreview(photo,renderHash,viewSpec) → {path,preview_info}` and
-  `choosePreviewSource(photo,renderHash,viewSpec) → exact-view | sufficient-full-frame | render-master`. Slice 08 extends the
-  slice-01 hash input with decoder/version, develop dict, and geometry. The canonical native full-frame display master is
-  `view/<id>/<render_hash>/master.jpg`; other outputs are `view/<id>/<render_hash>/<view_hash>.jpg`. Generation uses temp-file +
-  fsync + atomic rename and upserts unpinned `cache_index` rows. Every cache hit validates readable JPEG bytes before reuse.
-  `show` calls `ensurePreview`; develop/crop mutations only commit state and return the new `render_hash`, without rendering pixels.
+- `packages/render/src/preview.ts` already exposes the slice-03 coordinated, indexed preview materializer. Slice 08 extends its
+  render-hash input with decoder/version, the develop dictionary, and geometry, and supplies the developed graph as the master
+  producer. The canonical native full-frame display master remains `view/<id>/<render_hash>/master.jpg`; other outputs remain
+  `view/<id>/<render_hash>/<view_hash>.jpg`. Develop/crop mutations only commit state and return the new `render_hash`, without
+  rendering pixels.
 - Source selection is deterministic. An exact view wins. Otherwise a cached full-frame view is sufficient only when, after mapping
   the requested base-image region into that view, both available crop dimensions are at least the requested output dimensions.
   Choose the smallest sufficient full-frame entry and crop/downsample it. If none is sufficient, render the current graph once as
@@ -36,12 +35,9 @@ Sub-slices, one judged variable each: **8a** dict/presets/hash (no pixels) · **
   returns `master.jpg` itself. Once a master exists, no region or smaller-view request for that `render_hash` may reevaluate the
   graph. The cheap default 1616 overview does not eagerly create a master. `preview_info.cache_source` is one of
   `exact_view | sufficient_full_frame | render_master`, and reports the selected source dimensions as well as output dimensions.
-- `PreviewCoordinator.materialize(key, work)` is the sole artifact writer. Requests for the same
-  `{photo_id,render_hash,master|view_hash}` are single-flight across callers sharing the cache: one request performs the graph
-  render or derivation while the others await and then validate the same path. No waiter observes a partial file; failure removes
-  the flight/claim and temporary bytes so retry is possible. This invariant covers different region requests converging on the
-  same missing master, not only byte-identical `ViewSpec`s. A successful exact hit or materialization updates
-  `cache_index.last_used` after JPEG validation and inherits slice 03's 30-minute prune grace.
+- Slice 03's `PreviewCoordinator`, artifact validation, cache-index touch, materialization lease, failure cleanup, and 30-minute
+  prune grace remain unchanged as develop adds new graph producers. Slice 08 must extend the existing path, not introduce a
+  second coordinator or cache lifecycle.
 - `show` adds `--preview-size <long-edge-px|native>`, `--region x,y,w,h`, and `--norm`. Region coordinates use the global oriented,
   uncropped base space. Default is full-frame/1616; region-without-size is native 1:1. The preview planner selects or materializes
   a sufficient full-frame source for the current graph, extracts the requested region, then downsizes only if requested. Numeric
@@ -72,9 +68,8 @@ when its mapped crop has enough real pixels, while an insufficient one promotes 
 and have different `view_hash`/paths; offline native detail truthfully reports its lower actual tier/scale and
 `preview_resolution_limited` instead of upscaling the overview. The cache-planner assertions use an instrumented graph invocation
 counter plus master path/hash/mtime checks, not timing;
-`preview-single-flight.test.ts` launches concurrent overview, native, and overlapping region requests at one render hash and proves
-one master graph evaluation, one valid artifact per key, identical paths for identical views, retry after injected failure, and no
-temporary-file residue; `preview-coordinate-contract.test.ts` round-trips base points through both transforms after orientation,
+slice 03's `preview-single-flight.test.ts` stays green while the producer runs the developed graph;
+`preview-coordinate-contract.test.ts` round-trips base points through both transforms after orientation,
 crop, rotate, and straighten, proves partial clipping is reported, and proves a fully outside region is a usage error;
 `preview-color.test.ts` reads every preview tier independently and proves the `sRGB2014` ICC is embedded and agrees with
 `preview_info`; slice 03's prune test holds an in-flight preview and touches a completed one while pruning to prove both survive;

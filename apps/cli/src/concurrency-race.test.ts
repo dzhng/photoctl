@@ -36,10 +36,10 @@ test("eight real clients append every requested tag without losing a row", async
   const clients = Array.from({ length: 8 }, (_, client) => runClient(client, id, library, env));
   const results = (await Promise.all(clients)).flat();
   const expected = Array.from({ length: 8 }, (_, client) =>
-    Array.from({ length: 25 }, (_, row) => `p${client}-${row}`),
+    Array.from({ length: 25 }, (_value, row) => `p${client}-${row}`),
   )
     .flat()
-    .sort();
+    .toSorted();
   const shown = await spawnPhotoctl(["show", id], { libraryDir: library, env });
   await spawnPhotoctl(["daemon", "stop"], { libraryDir: library, env });
 

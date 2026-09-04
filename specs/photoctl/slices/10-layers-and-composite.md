@@ -12,6 +12,10 @@
 - `crates/photoctl-image::{mask,composite,delta}`: dilate/erode/feather, `resample`, `overlay`, `lift`; **delta kernels** =
   inverse display transform → the 8b operator → display transform on pinned pixels. Render graph composite node. `develop` →
   `delta_applied` (Tier-1) / `stale` (Tier-2; `layers_stale` warning); export warns `vacancy_unfilled`.
+- `photoctl-image::resample` becomes the one owner of every non-delivery pixel resize. Preview source mapping and downsampling
+  migrate from Sharp to its bilinear preview mode; layer/composite rendering uses Lanczos3, while exact flips and quarter-turns
+  stay integer transforms. Sharp remains only the encoder/profile writer and the final delivery downscale named by the global
+  rule.
 - `renderStateHash` now includes ordered layer ids, pixel/mask content hashes, transforms, opacity, blend, role/state, and the
   base develop hash. Every layer mutation returns the new hash but leaves lazy preview generation to the next `show`.
 - `wb layers <id>`.
@@ -21,7 +25,8 @@
 (absolute idempotence; `flip h`×2 and `rotate 90`×4 identity; 2×3 fixture exact); `vacancy.test.ts`; `tier-delta.test.ts`
 (`exposure=0.5` → `delta_applied:[1,2]` and a pinned untouched layer equals the base re-render within ±1 LSB; `shadows=40` → stale;
 `temp_offset_k=200` Tier-1, `=400` Tier-2); `layer-preview-hash.test.ts` proves add/transform/opacity/reorder/remove each changes
-the hash and that `show.preview` reflects the ordered composite.
+the hash and that `show.preview` reflects the ordered composite; `preview-resampler.test.ts` proves preview pixels pass through
+the Rust bilinear kernel and that Sharp performs no intermediate resize.
 
 ## Delegated: nothing beyond blob compression.
 ## Checkpoint: `wb layers` — placeholder legibility only.

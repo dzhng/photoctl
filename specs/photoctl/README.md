@@ -11,9 +11,9 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-04. Status: slices 00–02 and decoder pass 07a are implemented. Commands share one
-persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces deterministic
-linear Rec.2020 pixels on macOS.*
+*Last updated: 2026-09-04. Status: slices 00–01, daemon pass 02a, and decoder pass 07a are implemented.
+Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
+deterministic linear Rec.2020 pixels on macOS.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
@@ -32,8 +32,9 @@ Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviatio
 - [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
 - [x] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
 - [x] 01b universal image source → show → offline preview → export (A7C II embedded-container proof) — `slices/01-first-jpeg.md`
-- [x] 02 daemon (runs `dispatch`), contention race, `tag` — `slices/02-daemon-and-contention.md`
-- [ ] 03 backup/restore/migrate/prune + schema fixture — `slices/03-library-lifecycle.md`
+- [x] 02a daemon (runs `dispatch`), contention race, `tag` — `slices/02-daemon-and-contention.md`
+- [ ] 02b global `--human` envelope renderer — `slices/02-daemon-and-contention.md`
+- [ ] 03a preview coordination/index/prune · 03b backup/restore/migrate + fixture — `slices/03-library-lifecycle.md`
 - [ ] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
 - [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
@@ -59,8 +60,8 @@ real drive in 14.
 ## Slice graph
 
 ```
-00 ─ 01a ─ 01b ─ 02 ─ 03 ─ 04 ─ 05 ─ 06
-          │                    └─ 09 (needs 02, 04; parallel with 07/08)
+00 ─ 01a ─ 01b ─ 02a ─ 03a ─ 03b ─ 04 ─ 05 ─ 06
+                      ├─ 02b      │       └─ 09 (needs 02a, 04; parallel with 07/08)
           └─ 07 (7a → 7b → 7c) ─ 08 ★gold
                                   └─ 10 ─ 11 ─ 12 ─ 13a/b   (13c markup, 13d retouch need only 10)
                                         14 ─ 15
@@ -331,6 +332,8 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   The map's ledger, OPEN list, sharp edges and landmine cards remain authoritative inputs.
 - `visualizations/session-sample.html` B3/B4 (export refusal, strict dims failure) → D27/D28 and the envelope section.
 - `assets/concurrency-spike/daemon.mjs` + `cli-socket.mjs` mechanism (PG-wire) → the daemon frame protocol in slice 02.
+- D35's reservation of `restore` for a future provider capability → top-level `photoctl restore` is catalog recovery in slice
+  03. V1 has no provider-restoration verb; any later provider operation must use a distinct name rather than overload it.
 
 ## Implementation notes
 
@@ -381,3 +384,13 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   creates a second-writer window. Call: inherit the locked descriptor as daemon fd 3, close only the parent's
   copy, and rewrite the payload through the inherited descriptor. Needs David: no; OS descriptor inheritance
   makes ownership continuous through startup and `kill -9` still releases it atomically.
+- **2026-09-04 — slice 02 integration review.** Plan said: mutations are retry-safe and daemon control reports
+  real state. Code revealed: a failed post-init spawn turned a committed library into an error, status invented zero values,
+  idle sockets consumed request capacity, and stop could report success for a live unresponsive holder. Call: initialization
+  returns success plus a daemon warning after its durable boundary; control probes the owner, verifies exit, counts only framed
+  work, and uses owner-only socket/log permissions. Needs David: no; the public result now follows durable state.
+- **2026-09-04 — slice 07a transitional output paths.** Plan said: Rust owns every non-delivery resample and decoder probes write
+  linear 16-bit TIFF. Code revealed: the Rust resampler and canonical linear Rec.2020 ICC do not exist yet, so 07a uses Sharp for
+  file-decoder scale and emits an untagged TIFF. Call: keep those limitations explicit, assign preview/file scaling migration to
+  slice 10 and TIFF profile tagging to 7c; slice 14 synchronizes the helper version with the root release version. Needs David:
+  no; these are named prerequisites, not accepted final-state exceptions.

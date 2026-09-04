@@ -6,7 +6,8 @@
   decoder boundary consumes its RGB-f32 wire format, `decode --with ciraw` writes linear 16-bit TIFF,
   and `doctor` exposes availability. The normal macOS host test is deterministic. G3 itself remains
   blocked because Remote Login is disabled; the evidence and rerunnable command live in
-  [`../assets/gates/G3-ciraw-headless.md`](../assets/gates/G3-ciraw-headless.md).
+  [`../assets/gates/G3-ciraw-headless.md`](../assets/gates/G3-ciraw-headless.md). File-decoder scaling still uses Sharp as a
+  transitional decode path; slice 10 must replace it with the one Rust resampler named by the global contract.
 - [ ] **7b LibRaw:** portable decoder, native package, compression probe, and G2.
 - [ ] **7c oracle:** shared camera front end/display transform and G4.
 
@@ -39,13 +40,15 @@ Every imported photo can enter the same develop/render graph. A whole-file decod
   `probe()` reports the TIFF compression tag (OPEN Lossless-L).
 - **7c** `photoctl-image::develop::front` = levels → WB → cam_xyz→Rec.2020 (runs only for `space:"camera"`); TRC + `sRGB2014.icc`
   at the display stage. `wb oracle <id>` (three-way embedded/CIRAW/LibRaw). G4 contract, set now: mean ΔE00 ≤ 2.0 and p95 ≤ 5.0
-  over a 64×64 patch grid, excluding patches where either decoder's Y > 0.9. David may edit at the checkpoint.
+  over a 64×64 patch grid, excluding patches where either decoder's Y > 0.9. The explicit linear-TIFF probe embeds the canonical
+  linear Rec.2020 ICC without transforming its already-linear samples. David may edit the tolerance at the checkpoint.
 
 ## Verification
 `test:macos`: `decoder-ciraw.test.ts`; `decoder-oracle.test.ts` (G4 as stated). `test:functional`:
 `decoder-format-matrix.test.ts` (representative whole-file formats plus unknown/wrong extension all produce oriented
 scene-linear Rec.2020 and the same result shape), `decoder-libraw.test.ts` (dims, matrix, compression tag, parametrized over
-manifest rows), `decoder-unavailable.test.ts` (explicit adapter request fails; automatic photo rendering falls back).
+manifest rows), `decoder-unavailable.test.ts` (explicit adapter request fails; automatic photo rendering falls back);
+`linear-tiff-profile.test.ts` proves external readers see the same linear Rec.2020 space reported by the envelope.
 `cargo test -p libraw-sys`.
 
 ## Delegated: f32 wire format Swift→TS; cmake vs `cc`.

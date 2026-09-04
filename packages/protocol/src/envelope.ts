@@ -17,6 +17,7 @@ export const errorCodes = [
 ] as const;
 export type ErrorCode = (typeof errorCodes)[number];
 export const warningCodes = [
+  "daemon_unavailable",
   "source_offline",
   "preview_resolution_limited",
   "layers_stale",

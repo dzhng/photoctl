@@ -14,7 +14,7 @@ import {
   type Envelope,
 } from "@photoctl/protocol";
 import { watch, type FSWatcher } from "node:fs";
-import { access, unlink } from "node:fs/promises";
+import { access, chmod, unlink } from "node:fs/promises";
 import { createServer, type Server, type Socket } from "node:net";
 import { basename, dirname, join, resolve } from "node:path";
 import { BackgroundRegistry } from "./workers/index.js";
@@ -40,7 +40,6 @@ export class DaemonServer {
   private readonly lockStartedAt: number;
   private readonly startedAt = Date.now();
   private readonly background = new BackgroundRegistry();
-  private readonly clients = new Set<Socket>();
   private readonly pending: QueuedRequest[] = [];
   private readonly lock;
   private server: Server | undefined;
@@ -88,6 +87,7 @@ export class DaemonServer {
       this.server?.once("error", reject);
       this.server?.listen(this.socketPath, resolveListen);
     });
+    await chmod(this.socketPath, 0o600);
     this.watchLibrary();
     this.armIdleTimer();
   }
@@ -106,8 +106,6 @@ export class DaemonServer {
   }
 
   private accept(socket: Socket): void {
-    this.clients.add(socket);
-    socket.once("close", () => this.clients.delete(socket));
     const decoder = new FrameDecoder();
     socket.on("data", (chunk) => {
       try {
@@ -124,11 +122,7 @@ export class DaemonServer {
       if (frame.action === "stop") setImmediate(() => void this.stop());
       return;
     }
-    if (
-      this.stopping ||
-      this.clients.size > this.queueMax ||
-      this.pending.length + Number(this.running) >= this.queueMax
-    ) {
+    if (this.stopping || this.pending.length + Number(this.running) >= this.queueMax) {
       this.respond(socket, lockedEnvelope(frame.request, 0));
       return;
     }
