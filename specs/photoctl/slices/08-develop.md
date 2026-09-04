@@ -1,7 +1,8 @@
 # 08 — immutable render DAG → develop → gold exam green
 
 Sub-slices, one seam or judged variable each: **8a1** immutable logical DAG/schema/revisions/full hashes · **8a2** canonical
-artifact publication, evaluator, graph inspection · **8b** develop dict/presets as a node (no pixels) · **8c1** global per-pixel ops ·
+artifact publication, evaluator, graph inspection · **8b** develop dict/presets as a node (no pixels) · **8c1a** exact
+scene-linear graph artifacts · **8c1b** global per-pixel ops ·
 **8c2** masked ops (highlights/shadows/vibrance; skin crop) · **8c3** curves/levels · **8d1** local contrast
 (brilliance/definition/sharpen) · **8d2** NR (texture crop) · **8d3** geometry (exact tests) · **8d4** filters + B&W (data).
 
@@ -28,6 +29,11 @@ artifact publication, evaluator, graph inspection · **8b** develop dict/presets
   evaluation; a failed publish cannot activate an execution. A crash before the DB commit leaves an unreferenced file for the orphan sweep.
   Provenance lives in PGlite, not a second canonical
   sidecar. Preview/cache artifacts remain disposable and use the existing coordinator/index lifecycle.
+- **8c1a artifact correction:** canonical graph artifacts are oriented scene-linear Rec.2020 RGB IEEE-f32 TIFFs. Their content
+  hash covers the exact unclamped samples consumed by the next node. The artifact owner converts to display-sRGB RGB16 only for
+  view/delivery readers; a provider may return display pixels and enter working linear once without settling the OPEN retention
+  encoding for its paid response. Legacy display-RGB canonical files fail linear validation, become unavailable during
+  reconciliation, and are lazily reevaluated from the normal source ladder.
 - **8a1 revisions / 8a2 inspection:** active output, retained undo revisions, and pinned snapshots are GC roots. Reachability and
   `artifact_available` land now, but automatic canonical-artifact deletion remains disabled until the OPEN retention measurement
   chooses count/age/storage limits. `graph show <id> [--layer L] [--history] [--limit N] [--cursor C]` returns bounded pages;
@@ -49,11 +55,12 @@ artifact publication, evaluator, graph inspection · **8b** develop dict/presets
   Develop state is the typed `develop` node's parameters, not duplicate `photos.develop` columns. The command inserts a replacement
   node/revision and returns `{develop_hash,render_hash,layers:{delta_applied:[],stale:[]}}`; an already-resolved no-op returns the
   active hashes without adding a duplicate revision.
-- **8c/8d** `crates/photoctl-image::develop` on f32 linear Rec.2020 (D22) → display 16-bit; deterministic node artifacts replace a
+- **8c/8d** `crates/photoctl-image::develop` on f32 linear Rec.2020 (D22); deterministic linear node artifacts replace a
   separate `dev/<id>/<hash>.<tier>.tif16` identity scheme;
   the graph evaluator; export uses the develop render for every source format. Full-resolution decoding is preferred;
   an embedded or pinned-preview fallback runs the same graph at its available dimensions and returns a source warning.
-  `render <id> --linear --to out.tif` probe. Geometry keys
+  display conversion/clamping occurs at view and delivery boundaries. `render <id> --linear --to out.tif` emits the actual linear
+  output artifact. Geometry keys
   `crop:{x,y,w,h}`, `straighten_deg`, `rotate ∈ {0,90,180,270}` applied last; `show.crop` mirrors them. `auto_straighten`: Hough
   (portable, the only implementation in tests); `crop --auto` = straighten + minimal trim. NR only in Rust; CIRAW invoked with NR off.
 - `packages/render/src/preview.ts` already exposes the slice-03 coordinated, indexed preview materializer. Slice 08 makes its
@@ -127,4 +134,20 @@ variable per later sub-slice as listed. Any shot runs `screenshot-critique` last
 target. Checkpoints are non-blocking per the root rule. The 8a2 graph report and 8b preset report were generated and structurally
 tested. Visual capture was unavailable on 2026-09-05: the in-app browser was disabled for subagent display and its hidden surface
 rejected local-file navigation; no indirect workaround was permitted, so no screenshot or visual-green claim was made.
+
 ## Must stay green: 01–07. Deps: 7b (functional), 7a (macos). Firewall: no layers, no providers, no learned NR, no CoreML, no VLM.
+
+## Implementation notes
+
+- **2026-09-05 — 8c1a canonical artifact correction.** Plan said: develop consumes and emits f32 scene-linear Rec.2020. Code
+  revealed: 8a2 canonicalized display-sRGB RGB16, irreversibly clipping native highlights before develop and forcing the linear
+  probe to approximate them by inversion. Call: the existing artifact owner now publishes exact IEEE-f32 linear Rec.2020 TIFFs;
+  DAG evaluation, identity, repair, restore, and availability all validate those bytes, while view/delivery alone convert to
+  display. Legacy display artifacts reconcile unavailable and lazily regenerate. Needs David: no; this corrects the working format
+  without adding a cache owner, and keeps provider-return retention encoding OPEN.
+
+- **2026-09-05 — 8c1a source review.** Plan said: every online original enters the existing decoder seam, while embedded and
+  pinned pixels are warned fallbacks. Code revealed: preview selection fed a RAW container's largest embedded JPEG directly to the
+  graph. Call: one command-layer owner resolves ordered native whole-file, embedded, and pinned linear producers plus exact
+  execution provenance for show and export; fallback reasons map centrally to `decoder_fallback` or `source_offline`. Needs David:
+  no; this restores the specified decoder contract before pixel operators land.

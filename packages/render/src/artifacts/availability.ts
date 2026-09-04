@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop -- Sweeps bound filesystem and catalog pressure by processing one artifact at a time. */
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { artifactPath, readArtifactImage } from "./publication.js";
+import { artifactPath, readArtifactLinear } from "./publication.js";
 
 interface ArtifactDatabase {
   query<Row>(sql: string, parameters?: unknown[]): Promise<{ rows: Row[] }>;
@@ -49,7 +49,7 @@ export async function reconcileArtifactAvailability(
     if (artifact.media_type === "image/tiff") {
       const path = artifactPath(libraryPath, artifact.artifact_hash, "tif");
       try {
-        await readArtifactImage(path, artifact.artifact_hash);
+        await readArtifactLinear(path, artifact.artifact_hash);
         present = true;
       } catch {
         present = false;

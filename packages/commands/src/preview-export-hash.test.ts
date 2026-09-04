@@ -7,6 +7,10 @@ import { initializeLibrary } from "@photoctl/library";
 import { commitRevision } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
 
+function imageMean(stats: Awaited<ReturnType<typeof sharp.prototype.stats>>): number {
+  return stats.channels.slice(0, 3).reduce((sum, channel) => sum + channel.mean, 0) / 3;
+}
+
 test("a preview and following export identify the same snapped render state", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-export-hash-"));
   const source = join(directory, "photo.jpg");
@@ -43,6 +47,13 @@ test("a preview and following export identify the same snapped render state", as
     expect((exported as { results: Array<{ render_hash: string }> }).results[0].render_hash).toBe(
       (shown as { data: { render_hash: string } }).data.render_hash,
     );
+    const preview = (shown as { data: { preview: string } }).data.preview;
+    const output = (exported as { results: Array<{ file: string }> }).results[0].file;
+    const [sourceMean, previewMean, outputMean] = await Promise.all(
+      [source, preview, output].map(async (path) => imageMean(await sharp(path).stats())),
+    );
+    expect(previewMean).toBeCloseTo(sourceMean, 0);
+    expect(outputMean).toBeCloseTo(sourceMean, 0);
   } finally {
     await initialized.handle.close();
     await rm(directory, { recursive: true });

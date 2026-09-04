@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- Source fallback order is semantic and bounds native decoder memory. */
 import {
   PhotoctlError,
   type Envelope,
@@ -26,15 +27,17 @@ import {
   type ExportCollisionPolicy,
   type ExportFormat,
   type ExportPreset,
-  type ImageSource,
-  type SourceExecutionProvenance,
 } from "@photoctl/render";
 import { mkdir, stat } from "node:fs/promises";
 import { basename, extname, join, resolve } from "node:path";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
 import { hasErrorCode } from "../errors.js";
 import { parseExportArguments, type ExportOverrides } from "../export-arguments.js";
-import { resolveOnlineImageSource, type SelectedSource } from "../image-source.js";
+import {
+  graphSourceWarning,
+  resolveGraphSources,
+  type GraphSourceCandidate,
+} from "../graph-source.js";
 import { loadPhoto, type StoredPhoto } from "../photo.js";
 import { runSerially } from "../serial.js";
 
@@ -108,6 +111,7 @@ export async function exportCommand(
             cacheRoot,
             options,
             sequence,
+            env,
           );
           warnings.push(...exported.warnings);
           results.push(exported.result);
@@ -181,14 +185,27 @@ async function exportOne(
   cacheRoot: string,
   options: EffectiveExportOptions,
   sequence: number,
+  env: RequestEnv,
 ): Promise<{ result: ExportResult; warnings: Warning[] }> {
   const fallbackFile = snapshot.photo.files[0];
   if (!fallbackFile)
     throw new PhotoctlError("file_offline", `Photo has no source: ${snapshot.id}`, {
       id: snapshot.id,
     });
-  const selected = await resolveOnlineImageSource(snapshot.photo, resolver);
-  const outputFile = selected?.file ?? fallbackFile;
+  const pinnedPath = join(cacheRoot, "emb", `${snapshot.id}.jpg`);
+  const candidates = await resolveGraphSources({
+    photo: snapshot.photo,
+    resolver,
+    pinned: {
+      kind: "pinned-preview",
+      path: pinnedPath,
+      mediaType: "image/jpeg",
+      orientation: 1,
+    },
+    pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${snapshot.id}.jpg` },
+    env,
+  });
+  const outputFile = candidates.find((candidate) => candidate.file)?.file ?? fallbackFile;
   const stem = basename(outputFile.relPath, extname(outputFile.relPath));
   let name: string;
   try {
@@ -245,7 +262,7 @@ async function exportOne(
   }
 
   try {
-    const evaluated = await evaluateExportImage(handle, snapshot, selected, cacheRoot);
+    const evaluated = await evaluateExportImage(handle, snapshot, candidates);
     const exported = await exportImage({
       id: snapshot.id,
       image: evaluated.image,
@@ -305,85 +322,40 @@ async function inspectExisting(path: string): Promise<{ w: number; h: number; by
 async function evaluateExportImage(
   handle: LibraryHandle,
   snapshot: ExportSnapshot,
-  selected: SelectedSource | undefined,
-  cacheRoot: string,
+  candidates: GraphSourceCandidate[],
 ): Promise<{
   image: Awaited<ReturnType<typeof readArtifactImage>>;
   warnings: Warning[];
 }> {
-  const evaluate = async (
-    imageSource: ImageSource,
-    locator: SourceExecutionProvenance["locator"],
-  ) => {
+  const evaluate = async (candidate: GraphSourceCandidate) => {
     const evaluated = await evaluateGraphNode({
       database: handle,
       libraryPath: handle.path,
       photoId: snapshot.id,
       nodeId: snapshot.outputNodeId,
-      source: { orientation: snapshot.photo.orientation, imageSource, locator },
+      source: candidate.produce,
     });
     return await readArtifactImage(evaluated.artifact.path, evaluated.artifact.artifactHash);
   };
 
-  if (selected) {
+  for (const candidate of candidates) {
     try {
-      return { image: await evaluate(selected.source, selectedLocator(selected)), warnings: [] };
+      const warning = graphSourceWarning(snapshot.id, candidate.fallback);
+      return {
+        image: await evaluate(candidate),
+        warnings: warning ? [warning] : [],
+      };
     } catch (error) {
       if (!(error instanceof SourceEvaluationError)) {
         throw new PhotoctlError("decoder_unavailable", errorMessage(error), { id: snapshot.id });
       }
     }
   }
-
-  const cachePath = join("emb", `${snapshot.id}.jpg`);
-  try {
-    return {
-      image: await evaluate(
-        {
-          kind: "pinned-preview",
-          path: join(cacheRoot, cachePath),
-          mediaType: "image/jpeg",
-          orientation: 1,
-        },
-        { kind: "pinned-preview", cache_path: cachePath },
-      ),
-      warnings: [
-        {
-          code: "source_offline",
-          id: snapshot.id,
-          message: "Exported from the pinned preview because the original is offline",
-        },
-      ],
-    };
-  } catch (error) {
-    if (error instanceof SourceEvaluationError) {
-      throw new PhotoctlError(
-        "file_offline",
-        `No usable image source is available for ${snapshot.id}`,
-        {
-          id: snapshot.id,
-        },
-      );
-    }
-    throw new PhotoctlError("decoder_unavailable", errorMessage(error), { id: snapshot.id });
-  }
-}
-
-function selectedLocator(selected: SelectedSource): SourceExecutionProvenance["locator"] {
-  const source = selected.source;
-  return source.kind === "online-file"
-    ? {
-        kind: "online-file",
-        volume_uuid: selected.file.volumeUuid,
-        rel_path: selected.file.relPath,
-      }
-    : {
-        kind: "online-jpeg-range",
-        volume_uuid: selected.file.volumeUuid,
-        rel_path: selected.file.relPath,
-        offset: source.offset,
-        length: source.length,
-      };
+  throw new PhotoctlError(
+    "file_offline",
+    `No usable image source is available for ${snapshot.id}`,
+    { id: snapshot.id },
+  );
 }
 
 function errorMessage(error: unknown): string {

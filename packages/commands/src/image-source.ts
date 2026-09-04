@@ -1,6 +1,6 @@
 import { probeImage, type EmbeddedJpeg, type ImageProbe } from "@photoctl/importer";
 import { fullFileHash, identifyFile, type VolumeResolver } from "@photoctl/library";
-import type { ImageSource } from "@photoctl/render";
+import type { ImageSource, SourceExecutionProvenance } from "@photoctl/render";
 import type { StoredPhoto } from "./photo.js";
 
 export type StoredFile = StoredPhoto["files"][number];
@@ -9,6 +9,24 @@ export interface SelectedSource {
   file: StoredFile;
   source: Exclude<ImageSource, { kind: "pinned-preview" }>;
   probe: ImageProbe;
+}
+
+export function selectedSourceLocator(
+  selected: SelectedSource,
+): SourceExecutionProvenance["locator"] {
+  return selected.source.kind === "online-jpeg-range"
+    ? {
+        kind: "online-jpeg-range",
+        volume_uuid: selected.file.volumeUuid,
+        rel_path: selected.file.relPath,
+        offset: selected.source.offset,
+        length: selected.source.length,
+      }
+    : {
+        kind: "online-file",
+        volume_uuid: selected.file.volumeUuid,
+        rel_path: selected.file.relPath,
+      };
 }
 
 export async function resolveOnlineImageSource(

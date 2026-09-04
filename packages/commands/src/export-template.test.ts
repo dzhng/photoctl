@@ -30,6 +30,17 @@ test("export applies a library preset, lets CLI options override it, resolves co
     if (!imported.ok || !("data" in imported)) throw new Error("fixture import failed");
     const id = (imported.data as { ids: string[] }).ids[0];
     await initialized.handle.query(
+      `INSERT INTO volumes (uuid, label, last_mount, last_seen)
+       VALUES ('offline-volume', 'missing card', $1, now())`,
+      [join(directory, "offline")],
+    );
+    await initialized.handle.query(
+      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+       VALUES ('00000000-0000-0000-0000-000000000001', $1, 'offline-volume',
+               'DCIM/offline-first.jpg', now())`,
+      [id],
+    );
+    await initialized.handle.query(
       "UPDATE photos SET shot_at = '2023-10-02T16:18:37Z', shot_offset_min = 120, rating = 5 WHERE id = $1",
       [id],
     );

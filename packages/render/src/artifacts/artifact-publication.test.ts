@@ -1,9 +1,13 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import sharp from "sharp";
 import { afterEach, expect, test } from "vitest";
-import { artifactPath, normalizeArtifact, publishArtifact } from "./publication.js";
+import {
+  artifactPath,
+  normalizeArtifact,
+  publishArtifact,
+  readArtifactLinear,
+} from "./publication.js";
 
 const directories: string[] = [];
 
@@ -11,16 +15,18 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
 });
 
-test("canonical pixels publish once at their full content address", async () => {
+test("canonical artifacts preserve exact scene-linear samples outside the display gamut", async () => {
   const library = await mkdtemp(join(tmpdir(), "photoctl-artifact-"));
   directories.push(library);
   const image = {
     w: 2,
     h: 1,
-    channels: 3 as const,
-    data: new Uint16Array([0, 16_384, 65_535, 4_096, 32_768, 49_152]),
-    space: "display-srgb" as const,
+    data: new Float32Array([-0.25, 0.5, 1.5, 0.125, 2, 4]),
+    space: "scene-linear-rec2020" as const,
     orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
   };
 
   const normalized = await normalizeArtifact(image);
@@ -34,13 +40,9 @@ test("canonical pixels publish once at their full content address", async () => 
     join("artifacts", "sha256", first.artifactHash.slice(2, 4), `${first.artifactHash}.tif`),
   );
   expect(await readFile(first.path)).toEqual(normalized.bytes);
-  expect(await sharp(normalized.bytes).metadata()).toMatchObject({
-    format: "tiff",
-    width: 2,
-    height: 1,
-    depth: "ushort",
-    bitsPerSample: 16,
-  });
+  const restored = await readArtifactLinear(first.path, first.artifactHash);
+  expect(restored).toMatchObject({ w: 2, h: 1, space: "scene-linear-rec2020" });
+  expect(restored.data).toEqual(image.data);
 });
 
 test("publication rejects bytes that do not match their claimed content address", async () => {
@@ -49,10 +51,12 @@ test("publication rejects bytes that do not match their claimed content address"
   const normalized = await normalizeArtifact({
     w: 1,
     h: 1,
-    channels: 3,
-    data: new Uint16Array([1, 2, 3]),
-    space: "display-srgb",
+    data: new Float32Array([1, 2, 3]),
+    space: "scene-linear-rec2020",
     orientationApplied: true,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
   });
   const path = artifactPath(library, normalized.artifactHash, normalized.extension);
   await mkdir(dirname(path), { recursive: true });

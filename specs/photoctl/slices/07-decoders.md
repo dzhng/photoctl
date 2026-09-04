@@ -22,7 +22,7 @@ Every imported photo can enter the same develop/render graph. A whole-file decod
 (LibRaw build), G3 (CIRAW headless), G4 (oracle tolerance) remain the RAW-adapter gates, not restrictions on library behavior.
 
 ## API seam
-- `packages/render/src/decoder.ts`: `Decoder{ id; probe(source:ImageSource)→{supported,compression?,notes[]};
+- `packages/render/src/decoder.ts`: `Decoder{ id; probe(source:ImageSource)→{supported,compression?,decoderVersion?,notes[]};
   decode(source,{scale:1|0.5|0.25}) → LinearImage }`; `LinearImage{ w,h, orientationApplied:true,
   space:"camera"|"scene-linear-rec2020", data:Float32Array, whiteLevel, blackLevel, camXyz?, asShotWb?, wbPreApplied }`.
   Selection is owned here and consumes slice 01's `ImageProbe`: `decoded-file` chooses `FileImageDecoder`; a camera container

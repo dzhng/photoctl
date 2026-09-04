@@ -39,7 +39,7 @@ test("show normalizes empty stored metadata to the public nullable shape", async
         camera: { make: null, model: null, lens: null },
         exposure: { shutter: null, f: null, iso: null, focal_mm: null, wb: null },
       },
-      warnings: [],
+      warnings: [{ code: "source_offline", id }],
     });
     const clipped = await dispatch(
       {

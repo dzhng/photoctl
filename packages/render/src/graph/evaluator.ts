@@ -3,7 +3,7 @@ import {
   artifactPath,
   normalizeArtifact,
   publishArtifact,
-  readArtifactImage,
+  readArtifactLinear,
   type PublishedArtifact,
 } from "../artifacts/publication.js";
 import {
@@ -16,10 +16,10 @@ import type { ImageNodeKind, JsonValue, SourceExecutionProvenance } from "./type
 import type { ExternalExecutionProvenance } from "./types.js";
 import { warningCodes, type ProviderEvent } from "@photoctl/protocol";
 import { z } from "zod";
-import type { Image16 } from "../source-render.js";
 import { renderSourceExecution } from "../source-render.js";
 import type { ExifOrientation } from "../coordinates.js";
-import type { ImageSource } from "../decoder.js";
+import type { ImageSource, LinearImage } from "../decoder.js";
+import type { Image16 } from "../source-render.js";
 import type { GraphDatabase, GraphTransaction } from "./store.js";
 
 export interface EvaluatedNode {
@@ -48,7 +48,7 @@ export interface EvaluateGraphNodeRequest {
   nodeId: string;
   executionId?: string;
   source?:
-    | (() => Promise<{ image: Image16; provenance: SourceExecutionProvenance }>)
+    | (() => Promise<{ image: LinearImage; provenance: SourceExecutionProvenance }>)
     | {
         orientation: ExifOrientation;
         imageSource: ImageSource;
@@ -61,7 +61,11 @@ export interface EvaluateGraphNodeRequest {
         nodeId: string;
         parameters: JsonValue;
         inputs: PixelOperationInput[];
-      }) => Promise<Image16 | { image: Image16; externalExecution: ExternalExecutionProvenance }>
+      }) => Promise<
+        | LinearImage
+        | Image16
+        | { image: LinearImage | Image16; externalExecution: ExternalExecutionProvenance }
+      >
     >
   >;
   hooks?: {
@@ -120,22 +124,22 @@ async function evaluateOne(
     }
   }
   const inputs = await Promise.all(node.inputNodeIds.map(evaluate));
-  let source: { image: Image16; provenance: SourceExecutionProvenance } | undefined;
+  let source: { image: LinearImage; provenance: SourceExecutionProvenance } | undefined;
   let normalizedSource: Awaited<ReturnType<typeof normalizeArtifact>> | undefined;
   if (node.kind === "source") {
     if (!request.source) throw new Error("Source graph evaluation requires a source producer");
-    if (typeof request.source === "function") {
-      source = await request.source();
-    } else {
-      try {
+    try {
+      if (typeof request.source === "function") {
+        source = await request.source();
+      } else {
         source = await renderSourceExecution(
           request.source.orientation,
           request.source.imageSource,
           request.source.locator,
         );
-      } catch (error) {
-        throw new SourceEvaluationError(error);
       }
+    } catch (error) {
+      throw new SourceEvaluationError(error);
     }
     normalizedSource = await normalizeArtifact(source.image);
   }
@@ -254,7 +258,7 @@ async function runOperation(
   nodeId: string,
   parameters: JsonValue,
   inputs: EvaluatedNode[],
-): Promise<{ image: Image16; externalExecution?: ExternalExecutionProvenance }> {
+): Promise<{ image: LinearImage | Image16; externalExecution?: ExternalExecutionProvenance }> {
   const operation = request.operations?.[kind];
   if (!operation) throw new Error(`No pixel evaluator is registered for ${kind}`);
   const result = await operation({ nodeId, parameters, inputs });
@@ -446,7 +450,7 @@ async function loadByExecutionId(
     throw new Error(`Unsupported artifact media type: ${row.media_type}`);
   const path = artifactPath(libraryPath, row.output_artifact_hash, "tif");
   try {
-    await readArtifactImage(path, row.output_artifact_hash);
+    await readArtifactLinear(path, row.output_artifact_hash);
   } catch {
     await database.query(
       "UPDATE image_artifacts SET artifact_available = false WHERE artifact_hash = $1",

@@ -270,7 +270,7 @@ test("changed source pixels at the same locator create a new source evaluation",
       source: async () => sourceEvaluation(),
     });
     const changed = sourceEvaluation();
-    changed.image.data = new Uint16Array([4, 5, 6]);
+    changed.image.data = new Float32Array([0.4, 0.5, 0.6]);
     const second = await evaluateGraphNode({
       database: db,
       libraryPath: library,
@@ -374,10 +374,12 @@ function sourceEvaluation() {
     image: {
       w: 1,
       h: 1,
-      channels: 3 as const,
-      data: new Uint16Array([1, 2, 3]),
-      space: "display-srgb" as const,
+      data: new Float32Array([0.1, 0.2, 0.3]),
+      space: "scene-linear-rec2020" as const,
       orientationApplied: true as const,
+      whiteLevel: 1,
+      blackLevel: 0,
+      wbPreApplied: true,
     },
     provenance: {
       locator: { kind: "pinned-preview" as const, cache_path: "emb/photo.jpg" },
@@ -392,7 +394,14 @@ function sourceEvaluation() {
 
 function providerResult() {
   return {
-    image: sourceEvaluation().image,
+    image: {
+      w: 1,
+      h: 1,
+      channels: 3 as const,
+      data: new Uint16Array([1, 2, 3]),
+      space: "display-srgb" as const,
+      orientationApplied: true as const,
+    },
     externalExecution: {
       adapter: "fake-gateway-v1",
       adapterVersion: "1",

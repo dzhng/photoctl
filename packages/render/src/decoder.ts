@@ -45,6 +45,7 @@ export type DecodeScale = 1 | 0.5 | 0.25;
 export interface DecoderProbe {
   supported: boolean;
   compression?: number;
+  decoderVersion?: string;
   notes: string[];
 }
 
@@ -76,6 +77,7 @@ export interface DecoderSelection {
   decoder: Decoder;
   source: ImageSource;
   fellBack: boolean;
+  probe?: DecoderProbe;
 }
 
 export class DecoderUnavailableError extends Error {}
@@ -88,11 +90,12 @@ export class FileImageDecoder implements Decoder {
       const bytes = await readImageSource(source);
       const image = sharp(bytes, { animated: true, failOn: "error" });
       const metadata = await image.metadata();
-      if ((metadata.pages ?? 1) !== 1) return { supported: false, notes: ["multi-frame"] };
+      if ((metadata.pages ?? 1) !== 1)
+        return { supported: false, decoderVersion: sharp.versions.sharp, notes: ["multi-frame"] };
       await sharp(bytes, { failOn: "error" }).stats();
-      return { supported: true, notes: [] };
+      return { supported: true, decoderVersion: sharp.versions.sharp, notes: [] };
     } catch {
-      return { supported: false, notes: ["undecodable"] };
+      return { supported: false, decoderVersion: sharp.versions.sharp, notes: ["undecodable"] };
     }
   }
 
@@ -192,6 +195,7 @@ export class CirawDecoder implements Decoder {
     return {
       supported: result.supported,
       compression: undefined,
+      decoderVersion: result.decoderVersion,
       notes: result.decoderVersion ? [`Core Image RAW decoder ${result.decoderVersion}`] : [],
     };
   }
@@ -256,7 +260,8 @@ export class LibrawDecoder implements Decoder {
       return { supported: false, notes: ["LibRaw requires an online whole-file source"] };
     }
     try {
-      return probeLibraw(source.path);
+      const result = probeLibraw(source.path);
+      return { ...result, decoderVersion: inspectLibraw().version ?? undefined };
     } catch (error) {
       if (error instanceof NativeImageUnavailableError) {
         return { supported: false, notes: [error.message] };
@@ -356,20 +361,21 @@ export async function selectDecoder(options: {
         `${options.requested} requires an online whole-file source`,
       );
     }
-    if (!(await decoder.probe(options.original)).supported) {
+    const probe = await decoder.probe(options.original);
+    if (!probe.supported) {
       throw new DecoderUnavailableError(`${options.requested} cannot decode this image`);
     }
-    return { decoder, source: options.original, fellBack: false };
+    return { decoder, source: options.original, fellBack: false, probe };
   }
   if (options.original && options.probe?.kind === "raw") {
-    const decoder = await firstSupportedDecoder(
+    const selected = await firstSupportedDecoder(
       [options.decoders.libraw, options.decoders.ciraw].filter(
         (candidate): candidate is Decoder => candidate !== undefined,
       ),
       options.original,
     );
-    if (decoder) {
-      return { decoder, source: options.original, fellBack: false };
+    if (selected) {
+      return { ...selected, source: options.original, fellBack: false };
     }
     return { decoder: file, source: options.fallback, fellBack: true };
   }
@@ -379,10 +385,11 @@ export async function selectDecoder(options: {
 async function firstSupportedDecoder(
   [decoder, ...remaining]: Decoder[],
   source: ImageSource,
-): Promise<Decoder | undefined> {
+): Promise<{ decoder: Decoder; probe: DecoderProbe } | undefined> {
   if (!decoder) return undefined;
   try {
-    if ((await decoder.probe(source)).supported) return decoder;
+    const probe = await decoder.probe(source);
+    if (probe.supported) return { decoder, probe };
   } catch (error) {
     if (!(error instanceof DecoderUnavailableError)) throw error;
   }

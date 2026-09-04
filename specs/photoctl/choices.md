@@ -1241,22 +1241,49 @@
 - **Verdict:** **Sound.** It preserves the direct parameter shape and makes uncertainty visible at the registry boundary.
 - **Confidence:** Medium; later slices still own the final fields and version transitions for their kinds.
 
-### Slice 08a2 implementation — Current display artifacts are canonical RGB16 TIFFs
+### Slice 08a2 implementation — Display RGB16 as the canonical graph artifact was unsound
 
 - **When:** Slice 08a2 artifact-publication implementation, 2026-09-05.
-- **The choice:** The artifact owner normalizes oriented display-sRGB RGB pixels to an uncompressed 16-bit TIFF carrying the
+- **The choice:** The artifact owner originally normalized oriented display-sRGB RGB pixels to an uncompressed 16-bit TIFF carrying the
   bundled `sRGB2014` profile, hashes those exact bytes, and stores them beneath a two-hex shard. Publication fsyncs the temporary
   file, installs it with an atomic no-replace link, verifies an already-present valid object byte-for-byte, atomically repairs a file
   whose bytes no longer match its content-addressed path, and fsyncs directory entries.
-  This decision covers the source/output display artifacts that exist now; it does not settle the OPEN provider/upscale encoding.
+  Slice 08c1a supersedes that representation because converting camera data to display RGB clamps highlights and out-of-gamut
+  colors before a later edit can use them. Existing display artifacts are treated as unavailable and lazily recomputed.
 - **The gap:** The plan required one normalized content-addressed representation and durable no-overwrite publication, but did not
   choose an encoding or shard width for the first executable graph.
-- **The reach:** Source evaluation, deterministic reuse, restore validation, orphan discovery, and downstream preview production
-  now agree on one byte identity. Future linear, mask, or provider artifact classes must add deliberate formats rather than silently
-  reinterpret this display-RGB contract.
-- **Verdict:** **Sound.** Lossless tagged TIFF makes the current pixels independently verifiable and keeps the unresolved provider
-  size/round-trip measurement open.
+- **The reach:** The durable publication and content-addressing mechanics remain sound, but display pixels are only a view/delivery
+  result. The provider-returned paid artifact encoding remains OPEN; converting that result once into working linear does not decide
+  whether or how its original bytes are retained.
+- **Verdict:** **Unsound.** A graph artifact must preserve the scene-linear values consumed by later pixel operators.
 - **Confidence:** Medium; storage cost is intentionally unoptimized until representative artifacts are measured.
+
+### Slice 08c1a — Canonical graph artifacts preserve exact scene-linear working pixels
+
+- **When:** Slice 08c1a artifact correction, 2026-09-05.
+- **The choice:** A source decode produces oriented scene-linear Rec.2020 RGB `f32` samples. The artifact owner writes those exact
+  samples to a deterministic uncompressed IEEE-f32 TIFF with the bundled linear Rec.2020 profile and hashes those bytes. Every DAG
+  node therefore reads the same unclamped values its parent published. Only a view or delivery request converts the working pixels
+  to display-sRGB RGB16 and clamps them. An external provider may still return display pixels; those convert once into the working
+  format, while retention of the provider's paid return remains deliberately OPEN.
+- **The gap:** The 08a2 implementation selected a display artifact before the first scene-linear operator existed, so the loss was
+  not observable then.
+- **The reach:** Develop, later masks/composites, deterministic identity, repair, restore, show, and export now share one true working
+  artifact. Negative, highlight-above-one, and out-of-gamut samples survive the DAG until the final display boundary.
+- **Verdict:** **Sound.** It restores the specified working color contract without adding a decoder replay or a second cache owner.
+- **Confidence:** High; exact sample, reuse, repair, reconciliation, source-only display, and native RAW tests cover the boundary.
+
+### Slice 08c1a — Graph consumers share one ordered source ladder
+
+- **When:** Slice 08c1a source integration, 2026-09-05.
+- **The choice:** Show and export ask one command-layer resolver for candidates. An online ordinary image enters the file decoder;
+  an online RAW enters the first supported full-resolution native decoder. Only decode failure advances to the best embedded JPEG,
+  then the pinned preview. The successful candidate carries its locator, dimensions, decoder identity/version, and fallback reason.
+- **The gap:** Preview selection preferred a RAW container's embedded JPEG and did not represent the production decode order.
+- **The reach:** Current display consumers and the later linear probe agree on source pixels and provenance. Fallback warnings say
+  whether native decoding failed or the original was offline.
+- **Verdict:** **Sound.** It composes the accepted decoder selection policy rather than duplicating it per command.
+- **Confidence:** High; show/export tests cover display delivery and 08c1b adds the real full-resolution RAW route gate.
 
 ### Slice 08a2 implementation — Existing photos acquire their initial graph on first graph-aware use
 

@@ -2,10 +2,10 @@
 import { createHash, randomUUID } from "node:crypto";
 import { link, mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { encodeDisplayTiff } from "../linear-tiff.js";
+import { displaySrgbToLinearRec2020, linearRec2020ToDisplaySrgb } from "../color.js";
+import type { LinearImage } from "../decoder.js";
+import { decodeLinearTiff, encodeLinearTiff } from "../linear-tiff.js";
 import type { Image16 } from "../source-render.js";
-import sharp from "sharp";
-import { srgb2014ProfilePath } from "../color.js";
 
 export interface NormalizedArtifact {
   artifactHash: `a_${string}`;
@@ -21,28 +21,44 @@ export interface PublishedArtifact extends Omit<NormalizedArtifact, "bytes"> {
   storageBytes: number;
 }
 
-/** Converts display pixels to the one canonical lossless representation owned by the artifact store. */
-export async function normalizeArtifact(image: Image16): Promise<NormalizedArtifact> {
-  if (
-    image.space !== "display-srgb" ||
-    image.channels !== 3 ||
-    image.orientationApplied !== true ||
-    !Number.isSafeInteger(image.w) ||
-    !Number.isSafeInteger(image.h) ||
-    image.w <= 0 ||
-    image.h <= 0 ||
-    image.data.length !== image.w * image.h * image.channels
-  ) {
-    throw new Error("Canonical artifacts require oriented display-sRGB RGB16 pixels");
+/** Converts an external display result once, then encodes the canonical scene-linear working artifact. */
+export async function normalizeArtifact(image: LinearImage | Image16): Promise<NormalizedArtifact> {
+  let linear: LinearImage;
+  if (image.space === "scene-linear-rec2020") {
+    linear = image;
+  } else if (image.space === "display-srgb") {
+    linear = {
+      w: image.w,
+      h: image.h,
+      orientationApplied: true,
+      space: "scene-linear-rec2020",
+      data: await displaySrgbToLinearRec2020(image.data),
+      whiteLevel: 1,
+      blackLevel: 0,
+      wbPreApplied: true,
+    };
+  } else {
+    throw new Error("Canonical artifacts require converted scene-linear pixels");
   }
-  const bytes = await encodeDisplayTiff(image);
+  if (
+    linear.orientationApplied !== true ||
+    !Number.isSafeInteger(linear.w) ||
+    !Number.isSafeInteger(linear.h) ||
+    linear.w <= 0 ||
+    linear.h <= 0 ||
+    linear.data.length !== linear.w * linear.h * 3 ||
+    !linear.data.every(Number.isFinite)
+  ) {
+    throw new Error("Canonical artifacts require oriented scene-linear Rec.2020 RGB f32 pixels");
+  }
+  const bytes = await encodeLinearTiff(linear);
   return {
     artifactHash: `a_${createHash("sha256").update(bytes).digest("hex")}`,
     bytes,
     extension: "tif",
     mediaType: "image/tiff",
-    w: image.w,
-    h: image.h,
+    w: linear.w,
+    h: linear.h,
   };
 }
 
@@ -129,35 +145,28 @@ async function ensureArtifactDirectory(libraryPath: string, artifactHash: string
   }
 }
 
-export async function readArtifactImage(path: string, expectedHash?: string): Promise<Image16> {
+export async function readArtifactLinear(
+  path: string,
+  expectedHash?: string,
+): Promise<LinearImage> {
   const bytes = await readFile(path);
   if (expectedHash && `a_${createHash("sha256").update(bytes).digest("hex")}` !== expectedHash) {
     throw new Error(`Canonical artifact content hash mismatch: ${path}`);
   }
-  const metadata = await sharp(bytes, { failOn: "error" }).metadata();
-  const expectedProfile = await readFile(srgb2014ProfilePath);
-  if (
-    metadata.format !== "tiff" ||
-    metadata.depth !== "ushort" ||
-    metadata.bitsPerSample !== 16 ||
-    !metadata.width ||
-    !metadata.height ||
-    !metadata.icc?.equals(expectedProfile)
-  ) {
-    throw new Error(`Canonical artifact failed validation: ${path}`);
-  }
-  const decoded = await sharp(bytes, { failOn: "error" })
-    .toColourspace("rgb16")
-    .removeAlpha()
-    .raw({ depth: "ushort" })
-    .toBuffer({ resolveWithObject: true });
-  const data = new Uint16Array(decoded.data.byteLength / Uint16Array.BYTES_PER_ELEMENT);
-  for (let index = 0; index < data.length; index += 1) {
-    data[index] = decoded.data.readUInt16LE(index * Uint16Array.BYTES_PER_ELEMENT);
+  return await decodeLinearTiff(bytes);
+}
+
+/** Converts a canonical linear artifact to clamped display pixels for view and delivery only. */
+export async function readArtifactImage(path: string, expectedHash?: string): Promise<Image16> {
+  const linear = await readArtifactLinear(path, expectedHash);
+  const encoded = await linearRec2020ToDisplaySrgb(linear.data);
+  const data = new Uint16Array(encoded.length);
+  for (let index = 0; index < encoded.length; index += 1) {
+    data[index] = Math.round(Math.max(0, Math.min(1, encoded[index])) * 65_535);
   }
   return {
-    w: decoded.info.width,
-    h: decoded.info.height,
+    w: linear.w,
+    h: linear.h,
     channels: 3,
     data,
     space: "display-srgb",

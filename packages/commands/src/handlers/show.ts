@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- Source fallback order is semantic and bounds native decoder memory. */
 import { cacheRootForLibrary, formatShotInstant, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import {
   CacheIndex,
@@ -15,13 +16,18 @@ import {
   PreviewCoordinator,
   readActiveDevelopState,
   readArtifactImage,
+  SourceEvaluationError,
   viewHash,
   type ImageSource,
   type ViewSpec,
 } from "@photoctl/render";
 import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
-import { resolveOnlineImageSource } from "../image-source.js";
+import {
+  graphSourceWarning,
+  resolveGraphSources,
+  type GraphSourceCandidate,
+} from "../graph-source.js";
 import { loadPhoto, type StoredPhoto } from "../photo.js";
 
 export async function showCommand(
@@ -64,13 +70,19 @@ export async function showCommand(
     });
     const renderHash = document.renderHash;
     const view = parseViewSpec(parsed.options, parsed.flags.has("--norm"), photo.w, photo.h);
-    const selected = await resolveOnlineImageSource(photo, resolver);
     const pinned: ImageSource = {
       kind: "pinned-preview",
       path: pinnedEmbeddedJpegPath(cacheRoot, id),
       mediaType: "image/jpeg",
       orientation: 1,
     };
+    const candidates = await resolveGraphSources({
+      photo,
+      resolver,
+      pinned,
+      pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${id}.jpg` },
+      env,
+    });
     const materialized = await materializeWithFallback(
       {
         id,
@@ -83,32 +95,7 @@ export async function showCommand(
         handle,
         outputNodeId: document.outputNodeId,
       },
-      selected
-        ? {
-            source: selected.source,
-            locator:
-              selected.source.kind === "online-jpeg-range"
-                ? {
-                    kind: "online-jpeg-range" as const,
-                    volume_uuid: selected.file.volumeUuid,
-                    rel_path: selected.file.relPath,
-                    offset: selected.source.offset,
-                    length: selected.source.length,
-                  }
-                : {
-                    kind: "online-file" as const,
-                    volume_uuid: selected.file.volumeUuid,
-                    rel_path: selected.file.relPath,
-                  },
-          }
-        : {
-            source: pinned,
-            locator: { kind: "pinned-preview" as const, cache_path: `emb/${id}.jpg` },
-          },
-      {
-        source: pinned,
-        locator: { kind: "pinned-preview" as const, cache_path: `emb/${id}.jpg` },
-      },
+      candidates,
     );
     const tags = await handle.query<{ tag: string }>(
       "SELECT tag FROM tags WHERE photo_id = $1 ORDER BY tag",
@@ -129,16 +116,9 @@ export async function showCommand(
       : false;
     if (xmpStale)
       warnings.push({ code: "xmp_stale", id, message: "The source XMP changed after it was read" });
-    if (
-      (materialized.usedFallback ||
-        (materialized.source.kind === "pinned-preview" && photo.files.length > 0)) &&
-      !warnings.some((warning) => warning.code === "source_offline")
-    ) {
-      warnings.push({
-        code: "source_offline",
-        id,
-        message: "Preview uses the pinned offline source",
-      });
+    const sourceWarning = graphSourceWarning(id, materialized.candidate.fallback);
+    if (sourceWarning && !warnings.some((warning) => warning.code === sourceWarning.code)) {
+      warnings.push(sourceWarning);
     }
     if (materialized.preview.resolutionLimited) {
       warnings.push({
@@ -298,39 +278,9 @@ async function materializeWithFallback(
     handle: LibraryHandle;
     outputNodeId: string;
   },
-  selected: {
-    source: ImageSource;
-    locator: import("@photoctl/render").SourceExecutionProvenance["locator"];
-  },
-  pinned: {
-    source: ImageSource;
-    locator: import("@photoctl/render").SourceExecutionProvenance["locator"];
-  },
+  candidates: GraphSourceCandidate[],
 ) {
-  try {
-    return {
-      preview: await materializePreview({
-        coordinator: context.coordinator,
-        index: context.index,
-        cacheRoot: context.cacheRoot,
-        photoId: context.id,
-        renderHash: context.renderHash,
-        photo: context.photo,
-        source: selected.source,
-        sourceTier: selected.source.kind,
-        render: async () => await evaluatePreviewGraph(context, selected.source, selected.locator),
-        view: context.view,
-      }),
-      source: selected.source,
-      usedFallback: false,
-    };
-  } catch (error) {
-    if (error instanceof PreviewDestinationError) {
-      throw new PhotoctlError("volume_readonly", error.message, { path: error.path });
-    }
-    if (selected.source.kind === "pinned-preview") {
-      throw new PhotoctlError("file_offline", "Pinned preview is unavailable", { id: context.id });
-    }
+  for (const candidate of candidates) {
     try {
       return {
         preview: await materializePreview({
@@ -340,23 +290,29 @@ async function materializeWithFallback(
           photoId: context.id,
           renderHash: context.renderHash,
           photo: context.photo,
-          source: pinned.source,
-          sourceTier: pinned.source.kind,
-          render: async () => await evaluatePreviewGraph(context, pinned.source, pinned.locator),
+          source: candidate.source,
+          sourceTier: candidate.source.kind,
+          render: async () => await evaluatePreviewGraph(context, candidate),
           view: context.view,
         }),
-        source: pinned.source,
-        usedFallback: true,
+        candidate,
       };
-    } catch (fallbackError) {
-      if (fallbackError instanceof PreviewDestinationError) {
-        throw new PhotoctlError("volume_readonly", fallbackError.message, {
-          path: fallbackError.path,
+    } catch (error) {
+      if (error instanceof PreviewDestinationError) {
+        throw new PhotoctlError("volume_readonly", error.message, {
+          path: error.path,
         });
       }
-      throw new PhotoctlError("file_offline", "No preview source is available", { id: context.id });
+      if (!(error instanceof SourceEvaluationError)) {
+        throw new PhotoctlError(
+          "decoder_unavailable",
+          error instanceof Error ? error.message : String(error),
+          { id: context.id },
+        );
+      }
     }
   }
+  throw new PhotoctlError("file_offline", "No preview source is available", { id: context.id });
 }
 
 async function evaluatePreviewGraph(
@@ -366,15 +322,14 @@ async function evaluatePreviewGraph(
     handle: LibraryHandle;
     outputNodeId: string;
   },
-  source: ImageSource,
-  locator: import("@photoctl/render").SourceExecutionProvenance["locator"],
+  candidate: GraphSourceCandidate,
 ) {
   const evaluated = await evaluateGraphNode({
     database: context.handle,
     libraryPath: context.handle.path,
     photoId: context.id,
     nodeId: context.outputNodeId,
-    source: { orientation: context.photo.orientation, imageSource: source, locator },
+    source: candidate.produce,
   });
   return await readArtifactImage(evaluated.artifact.path);
 }

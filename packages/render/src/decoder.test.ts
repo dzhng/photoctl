@@ -37,6 +37,7 @@ if (args[0] === "probe") {
   expect(await decoder.probe(source)).toEqual({
     supported: true,
     compression: undefined,
+    decoderVersion: "8",
     notes: ["Core Image RAW decoder 8"],
   });
   const image = await decoder.decode(source, { scale: 0.25 });
@@ -70,7 +71,11 @@ test("the file adapter decodes content with a wrong extension into linear Rec.20
   };
 
   const decoder = new FileImageDecoder();
-  expect(await decoder.probe(source)).toEqual({ supported: true, notes: [] });
+  expect(await decoder.probe(source)).toEqual({
+    supported: true,
+    decoderVersion: sharp.versions.sharp,
+    notes: [],
+  });
   const image = await decoder.decode(source, { scale: 1 });
   expect(image).toMatchObject({
     w: 2,
@@ -101,6 +106,7 @@ test("the LibRaw adapter reports compression and returns scaled camera-space pix
   expect(await decoder.probe(source)).toEqual({
     supported: true,
     compression: 1,
+    decoderVersion: "0.22.2-Release",
     notes: ["LibRaw 0.22.2-Release"],
   });
   const image = await decoder.decode(source, { scale: 0.25 });

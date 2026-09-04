@@ -50,7 +50,7 @@ test("restore marks a referenced canonical artifact unavailable when its file is
     { noDaemon: true },
     parent,
   );
-  expect(restored).toMatchObject({ ok: true, data: { schema_version: 5 } });
+  expect(restored).toMatchObject({ ok: true, data: { schema_version: 7 } });
   const verified = await openLibrary(library);
   try {
     const artifact = await verified.query<{ artifact_available: boolean }>(
