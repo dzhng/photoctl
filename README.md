@@ -1,18 +1,25 @@
 # photoctl
 
-CLI-first photo library and editor for Mac, with a portable core. Import RAW photos into a
-library, cull, rate, search, develop, retouch, and export — every verb usable from a shell or by
-an agent, with stable JSON output. A GUI, if one ever exists, is a client of the same verbs.
+A photo library and editor whose only interface is a CLI. Every verb — import, cull, rate,
+search, develop, retouch, export — prints stable JSON, so an agent can run the whole workflow
+without a screen. If a GUI ever exists it is a client of the same verbs, never a superset.
 
-**Status:** pre-alpha. The plan is written; the code is not. Start at
-[`specs/photoctl/README.md`](specs/photoctl/README.md) — its "Next Agent Prompt" says where to pick up.
+Principles that shape everything here:
 
-## Conventions
+- **The library is canonical.** PGlite holds the truth; XMP sidecars are written only on
+  request, and RAW bytes are never modified.
+- **Warn, never refuse.** Soft state (a stale layer, an unplugged drive) becomes a warning in
+  the output, not a failed command — the caller looked.
+- **Generation is a general model plus a prompt; restoration is a specific local solution.**
+  Pixels that must be invented go to a gateway; pixels that are determined by the input never do.
+- **Unmasked pixels are exact by construction.** Fidelity outside a mask comes from the
+  compositor, never from trusting a model.
 
-See [`AGENTS.md`](AGENTS.md). Tests are functional and run through the Docker seam; `fixtures/`
-holds committed known-good/known-bad assets (see `fixtures/README.md`).
+## Where things live
 
-## Running tests, linters, and the closeout gate
-
-Defined by slice 00 of the spec (`bun run verify`, `bun run test`, `scripts/gold-exam.sh`).
-This section is filled in when that slice lands.
+- [`specs/photoctl/`](specs/photoctl/README.md) — the plan and its decision ledger. Its "Next
+  Agent Prompt" is the current status and pickup point.
+- [`AGENTS.md`](AGENTS.md) — conventions for working in this repo.
+- [`fixtures/`](fixtures/README.md) — committed known-good and known-bad assets, each with the
+  fact it proves.
+- Root `package.json` scripts are the inventory of build, test, and release commands.
