@@ -978,6 +978,106 @@
   of reaching around it, and the chosen scale still gives every patch real spatial support.
 - **Confidence:** Medium.
 
+### Pre-slice 08 — One immutable image DAG replaces flat render state and private layer pipelines
+
+- **When:** DAG/upscaling unknowns walk, 2026-09-05.
+- **The choice:** Source, develop, generation, upscale, deterministic resample, transform, mask composite,
+  composite, crop, markup, and output are typed immutable nodes in one graph. User-visible layers remain an
+  ordered editing vocabulary, but each revision points a layer at one output node; a processing node never
+  masquerades as another painted layer. Graph topology uses normalized nodes and ordered edges, while each
+  node kind owns a validated canonical parameter schema. Changing parameters inserts a replacement node and
+  document revision rather than mutating history. The rejected alternatives were a visible layer for every
+  operation, per-layer private DAG fragments, and continuing the flat `fill_params` replay design.
+- **The gap:** The plan called a linear renderer a graph and assigned future layers enough fields to become a
+  second render-state owner. Adding upscaling there would compound the duplication.
+- **The reach:** Slice 08 establishes the graph before develop; Slice 10 makes layers roots into it; fill,
+  reimagine, retouch, markup, preview, export, undo, and future processing share the same evaluator and identity.
+- **Verdict:** **Sound.** The feature becomes a general processing architecture instead of an upscaler bolted
+  onto generated layers.
+- **Confidence:** High.
+
+### Pre-slice 08 — DAG identity separates recipes, executions, and artifact bytes
+
+- **When:** DAG/upscaling unknowns walk, 2026-09-05.
+- **The choice:** Canonical recipe, artifact, render, and view hashes retain all 256 SHA-256 bits; only human
+  presentation abbreviates them. Deterministic nodes reuse by canonical recipe plus input artifact hashes.
+  Nondeterministic generation/upscale nodes also record a distinct execution identity and actual output hash,
+  so rerunning identical parameters remains a new lineage. Canonical artifact bytes publish durably before the
+  graph/root transaction; the opposite order could expose active missing pixels. Active revisions, bounded undo,
+  and pinned snapshots are reachability roots. Numeric retention stays OPEN until artifact sizes are measured,
+  and automatic canonical-artifact collection remains off until then.
+- **The gap:** The implemented preview protocol truncates hashes to 48 bits and disposable preview publication
+  tolerates a temporarily incomplete image/sidecar pair. Neither contract is safe for canonical paid state.
+- **The reach:** Cache reuse, refresh, undo, graph pagination, artifact GC, preview paths, and export correlation
+  inherit collision-safe identities and crash-safe publication.
+- **Verdict:** **Sound.** It distinguishes “same request” from “same pixels” without making all nodes UUID-only.
+- **Confidence:** High.
+
+### Pre-slice 12 — Generated pixels optionally match destination density through a generative node
+
+- **When:** DAG/upscaling unknowns walk, 2026-09-05.
+- **The choice:** `generation.upscale=auto|off` defaults to `auto`; `--upscale`, `--no-upscale`, and
+  `--upscale-model` override it. Full-frame reimagine targets oriented base dimensions; masked generation targets
+  its base-space crop including padding. The planner chooses the smallest supported uniform generative scale
+  covering both axes, then uses the one deterministic resampler once for exact geometry. It reuses any cached
+  generative artifact with sufficient density; otherwise it reruns from the original generation artifact, never
+  recursively from a resized/composited result. Scaling a layer upward maintains density under `auto`. Generic
+  tiling and unexplained aspect stretching are forbidden; adapter-native tiling/reversible frame mappings are
+  allowed and recorded. If limits stop short, exact dimensions still land with `density_satisfied:false`.
+- **The gap:** The old fill normalization only matched provider response dimensions to the sent crop, not to
+  the base image's real pixel density, and a later layer scale could silently magnify that deficit.
+- **The reach:** Fill, reimagine, transform, refresh, preview, and export agree on what “full resolution” means.
+- **Verdict:** **Sound.** It makes generated detail honest at the destination without making rendering itself
+  nondeterministic.
+- **Confidence:** High.
+
+### Pre-slice 09 — Upscaling is an explicit external adapter with balanced guarded semantics
+
+- **When:** DAG/upscaling unknowns walk, 2026-09-05.
+- **The choice:** A dedicated `UpscaleAdapter` sits outside gateway transport and owns its display-sRGB color
+  conversion, supported scales/limits, optional native tiling, and reversible frame mapping. A release pins a
+  generative default; library then command overrides win. `auto` runs only after explicit adapter configuration,
+  never because ambient credentials exist. The default aesthetic is balanced creative: medium detail synthesis,
+  high resemblance, and a versioned guarded prompt that uses original intent as context while forbidding a repeat
+  of the replacement operation. Both original and derived prompts are provenance. A real-provider comparison
+  chooses adapter-specific controls when credentials exist; the fake-adapter contract and build never wait for it.
+- **The gap:** Vercel's four general routes cannot represent every purpose-built SOTA upscaler, while routing to
+  a second vendor silently would violate user intent and make model behavior unreproducible.
+- **The reach:** Provider selection, consent, doctor, settings, events, cost, prompts, and future hosted/local
+  implementations share one stable boundary.
+- **Verdict:** **Sound.** External differences stay at the external boundary without runtime capability guessing.
+- **Confidence:** Medium until the live model/control spike runs.
+
+### Pre-slice 12 — Partial generative success remains useful and refresh follows current lineage
+
+- **When:** DAG/upscaling unknowns walk, 2026-09-05.
+- **The choice:** If generation succeeds and upscaling fails, the generated branch becomes active with an
+  `upscale_failed`/configuration warning; no failed image node enters the graph. Retrying upscale reuses that exact
+  generation. Refreshing generation instead rebinds it to the current upstream develop node and reconstructs
+  descendants, so a brightness change followed by regenerate is visible to the provider. Compatible later develop
+  changes may add deterministic compensation to old generated branches; incompatible ones make the old lineage
+  explicitly stale. Mask exactness is proved at the mask-composite boundary against that node's base input, not
+  against a final output that may contain later global edits. Offline low-resolution context remains usable, but
+  source-context density and generated-output density are reported as separate facts.
+- **The gap:** A flat refresh record cannot express which expensive stage to rerun, and final-image equality would
+  misclassify legitimate downstream edits as mask leakage.
+- **The reach:** Failure recovery, cost, stale warnings, undo, strict compositing, and provenance become precise.
+- **Verdict:** **Sound.** The system retains paid successful work without claiming a failed enhancement happened.
+- **Confidence:** High.
+
+### Pre-slice 08 — PGlite backup remains metadata-only and restore preserves canonical artifacts
+
+- **When:** DAG/upscaling unknowns walk, 2026-09-05.
+- **The choice:** `backup` remains a small SQL recovery mechanism for PGlite corruption, not a full media backup.
+  Before canonical DAG artifacts land, restore is narrowed from replacing the entire library directory to replacing
+  database state while preserving artifacts, originals, previews, and backups. A restored node may honestly report
+  an already-missing artifact; SQL does not promise to recreate it.
+- **The gap:** Today's whole-directory restore is safe only because canonical external layer/generated artifacts do
+  not exist yet. Later it would delete the very files intentionally excluded from SQL.
+- **The reach:** Slice 08 artifact layout and restore tests must land together before generated paid state exists.
+- **Verdict:** **Sound.** It keeps the intentionally simple backup while preventing recovery from causing media loss.
+- **Confidence:** High.
+
 ## Needs user
 
 ### Slice 02 integration — CLI tags trim boundaries but preserve case and Unicode
