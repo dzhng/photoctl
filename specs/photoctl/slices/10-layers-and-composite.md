@@ -40,4 +40,4 @@ the Rust bilinear kernel and that Sharp performs no intermediate resize.
 ## Delegated: nothing beyond blob compression.
 ## Checkpoint: `wb layers` — layer/DAG relationship and placeholder legibility only. Run `screenshot-critique` last; no reference
 image means `compare-screenshots` is not required. Non-blocking per the root rule.
-## Must stay green: 01–09. Deps: 08. Firewall: no SAM; no gateway pixels; no `--refresh`.
+## Must stay green: 01–09. Deps: 08. Firewall: no SAM; no gateway pixels; provider-backed `layer refresh` lands in 12.

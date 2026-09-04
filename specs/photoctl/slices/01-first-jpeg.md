@@ -79,7 +79,7 @@ Every successfully imported decodable still image also becomes independently vie
   the same oriented display pipeline. `packages/render/src/export/run.ts` may copy bytes exactly only when the resolved online
   source is itself a full-frame, orientation-1 JPEG; every other format uses the same decode/render/encode path. If an online
   source cannot be read, it uses `pinned-preview` with a `source_offline` warning.
-- `packages/render/src/preview.ts` establishes `renderStateHash(photo) → "r_"+sha256(canonical pixel-affecting state).slice(0,12)`
+- `packages/render/src/preview.ts` initially establishes `renderStateHash(photo) → "r_"+sha256(canonical pixel-affecting state).slice(0,12)`
   and `ViewSpec{region:null|bbox,longEdge:number|"native"}`. `viewHash(ViewSpec)` canonicalizes base-pixel coordinates and output
   size separately from edit state, so changing zoom never changes `render_hash` and changing edits never reuses stale view pixels.
   It also reserves the full-frame native `ViewSpec` as the display master for a render state; later slices make region and smaller
@@ -87,6 +87,9 @@ Every successfully imported decodable still image also becomes independently vie
   In 01b the state is source `content_key` plus orientation; later slices extend the same canonical input with develop, geometry,
   layers, and markup. `show` returns this non-null `render_hash`; while state is visually identical to the pinned source preview,
   `data.preview` may point directly at that immutable file without creating a duplicate derived artifact.
+  **Superseded at the 08a boundary:** the 12-hex identity and flat pixel-affecting state are unshipped scaffolding;
+  Slice 08 hard-cuts canonical render/view identities to full SHA-256 and derives render identity from the immutable
+  DAG output root. No short-hash compatibility alias survives outside `--human` presentation.
 - Verbs: `import <file|folder> --link` (single file, non-recursive OK; result = A2 shape with `xmp_read` and `embeddings` zeroed),
   `show <id|prefix>` (A5 shape from day one: `preview` is a readable absolute JPEG path;
   `preview_info:{render_hash,view_hash,requested,actual,source_tier,source_dimensions,pixel_scale,resolution_limited,cache_source,

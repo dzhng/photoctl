@@ -1,35 +1,45 @@
 # 12 — fill DAG; optional generative density matching; strict composite; person-move flow
 
+Sub-slices: **12a** generation→mask-composite DAG with no upscaler · **12b** pure density planner and fake artifacts ·
+**12c** configured upscaler execution/policy/fallback · **12d** branch refresh, transform-driven density maintenance,
+and the agent preview journey. Each rung is useful and testable before the next external behavior lands.
+
 ## Pre-gate (with key, first): `smoke:mask-polarity` → each adapter's `maskPolarity` + a fake-gateway fixture. Until recorded,
 live native-mask fills refuse `provider_unverified_mask` 69; fake-gateway runs are unaffected.
 
 ## API seam
 `packages/render/src/fill/{pipeline.ts,fit.ts,crop.ts}` + `providers/prompts/{remove,outpaint}.ts` (C1/C2, versioned ids).
+Slice 12 extends protocol `WarningCode` with `upscale_unconfigured`, `upscale_failed`, `upscale_resolution_limited`, and
+`source_resolution_limited`; these are soft outcomes after usable generated pixels exist, so the command remains `ok:true`.
 Crop = mask bbox + `--pad N` (default 64, base px), rounded up to ×16; without `--full-res` the sent long edge is capped at 1536.
-`fit`: strict = hard; `expand=N` (default 24, base px); free = feather 24 px. The command plans and commits one branch:
+`fit`: strict = hard; `expand=N` (default 24, base px); free = feather 24 px. **12a** plans and commits one branch:
 current source/develop node → base-space crop + effective-mask nodes → `adapter.buildEdit`/gateway generation execution → normalized
 generated artifact node → optional `upscale` node → exact deterministic `resample` node → `mask_composite` → replacement layer/output
 root. Provider frame conversion remains inside its adapter. Same-ratio dimension mismatches resample; known letterbox/crop changes use
 the adapter's reversible frame mapping; an unexplained aspect change invalidates only that external result and never stretches pixels.
-- **Density plan:** full-frame target is the oriented base dimensions; a masked target is the base-space provider crop including pad.
+- **12b density plan:** full-frame target is the oriented base dimensions; a masked target is the base-space provider crop including pad.
   `required = max(target.w/generated.w,target.h/generated.h)`. If the generated/cached upscaled artifact already covers both axes,
   skip the paid call and deterministically resize once to exact target dimensions. Otherwise select the smallest supported uniform
   generative scale that covers both axes. Never generically tile; adapter-native tiling is allowed. If adapter limits stop short,
   use its largest valid output, resize exactly, set `density_satisfied:false`, and warn `upscale_resolution_limited`.
-- **Policy:** `generation.upscale=auto|off` defaults `auto`; `--upscale|--no-upscale` override and `--upscale-model ID` implies enabled.
+- **12c policy:** `generation.upscale=auto|off` defaults `auto`; `--upscale|--no-upscale` override and `--upscale-model ID` implies enabled.
   The resolved model follows release default → configured library override → command override. `auto` with no explicitly configured
   adapter preserves generation and warns `upscale_unconfigured`. The default technique is generative and its adapter-neutral
   personality is balanced creative (medium detail synthesis, high resemblance).
-- **Prompt:** the versioned guarded prompt preserves composition, silhouette, identity, pose, lighting, placement, and boundary
+- **12c prompt:** the versioned guarded prompt preserves composition, silhouette, identity, pose, lighting, placement, and boundary
   geometry while asking for plausible detail consistent with the original creative intent. Store both the original and exact derived
   prompt. The upscaler must not repeat the original replacement instruction.
-- **Failure:** generation is the successful commit boundary. Upscale transport failure, invalid aspect mapping, or bad output retains
+- **12c failure:** generation is the successful commit boundary. Upscale transport failure, invalid aspect mapping, or bad output retains
   the generated branch as active and returns `upscale_failed`; no failed image node enters the graph. Retrying from upscale reuses the
   exact generation artifact. Offline/pinned-preview context remains allowed: report `source_context.{tier,pixel_scale,
   resolution_limited}` separately from `upscale.density_satisfied`, which claims output sampling only.
-- **Refresh:** `layer refresh <id> <layer> [--from <node>]` defaults to the branch's generation node. Refreshing generation rebinds
+- **12d refresh:** `layer refresh <id> <layer> [--from <node>]` defaults to the branch's generation node. Refreshing generation rebinds
   it to the current upstream develop state and reconstructs descendants from their stored recipes; refreshing upscale reuses the
   existing generation. A new external execution gets a new execution/output identity. Deterministic descendants reuse by recipe.
+  Increasing a generated layer's scale under `auto` re-evaluates required density: reuse the cached pre-exact-resize generative
+  artifact when sufficient, otherwise execute a larger upscale from the original generation artifact. Never upscale the prior
+  exact-size/composited result. Move, flip, and rotate alone do not call the model. If rescale upscaling fails, the transform still
+  lands with the previous artifact plus `density_satisfied:false` and `upscale_failed`.
   `--strength f` remains `feather_px = round(f×64)` (documented: not denoise).
 Flags: `--remove|--prompt [--ref] [--fit] [--full-res] [--pad] [--strength] [--init original|fill|noise|empty] [--seed] [--model]
 | --move --to|--by | --outpaint [--aspect|--px] | --upscale|--no-upscale|--upscale-model`. Defaults: remove→strict,

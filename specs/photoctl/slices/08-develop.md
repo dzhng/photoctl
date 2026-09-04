@@ -17,6 +17,8 @@ revisions, evaluator, graph inspection · **8b** develop dict/presets as a node 
   Deterministic node identity derives from `{kind,recipe_version,canonical_parameters,input_artifact_hashes}`. External generative
   executions add a distinct `execution_id`, and their node/output identity includes the bytes actually returned. Slice 08 hard-cuts
   the existing 12-hex preview protocol and paths; no compatibility alias or dual hash survives.
+  A `source` evaluation also records the actual locator/tier, dimensions, and decoded artifact hash: an online full-resolution source
+  and its pinned-preview fallback can share photo identity but can never share an output artifact or descendant cache key.
 - **8a2 artifacts:** `packages/render/src/artifacts` is the sole canonical pixel-artifact owner under
   `<lib>/artifacts/sha256/<prefix>/<artifact_hash>.<ext>`. Normalize and hash bytes, publish/fsync without overwriting differing
   content, then commit node + edges + provenance + revision/root in one database transaction. A failed publish creates no node;
@@ -25,7 +27,8 @@ revisions, evaluator, graph inspection · **8b** develop dict/presets as a node 
 - **8a2 revisions/inspection:** active output, retained undo revisions, and pinned snapshots are GC roots. Reachability and
   `artifact_available` land now, but automatic canonical-artifact deletion remains disabled until the OPEN retention measurement
   chooses count/age/storage limits. `graph show <id> [--layer L] [--history] [--limit N] [--cursor C]` returns bounded pages;
-  `graph node <id> <node>` returns one bounded record. Default inspection walks only the active reachable graph, so the daemon's
+  its opaque cursor is bound to the inspected document revision so concurrent edits cannot mix pages. `graph node <id> <node>`
+  returns one bounded record. Default inspection walks only the active reachable graph, so the daemon's
   16 MiB frame cap is unchanged. `backup` stays SQL-only; restore replaces DB state while preserving `artifacts/`, source files,
   previews, and backups. Missing referenced files remain explicit `artifact_available:false` rather than being fabricated.
 - **8b** `packages/render/src/develop/{dict.ts,keys.ts,tiers.ts,hash.ts,presets.ts}`: one dict (D21); `--set` absolute merge,

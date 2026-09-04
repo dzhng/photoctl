@@ -5,8 +5,9 @@ napi addon, a Swift Core Image helper, Vercel AI Gateway plus explicitly configu
 adapters. Audience: professional photographers
 (shoot → cull → rate → deliver); agents drive it one-shot from a chat loop.
 
-This folder is the plan. `visualizations/map.html` is the decision ledger (D1–D40 + A′) this
-plan implements; `assets/spec-input.md` is David's original spec + delta. Where the map's kickoff
+This folder is the plan. `visualizations/map.html` holds the original decision ledger (D1–D40 + A′), and
+`choices.md` carries later implementation and architecture decisions this plan implements;
+`assets/spec-input.md` is David's original spec + delta. Where the map's kickoff
 prompt, open-questions list, or the session sample disagree with this README, **this README wins**
 (see "Supersedes").
 
@@ -21,8 +22,8 @@ unknowns walk is now incorporated into slices 08–13 and the choices ledger; no
 has landed yet.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
-point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
-Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
+point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
+Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
 - **Pickup point:** dependency-ready slices 04 (import/cull) and 08a (immutable render-DAG foundation).
@@ -68,11 +69,11 @@ real drive in 14.
 
 ```
 00 ─ 01a ─ 01b ─ 02a ─ 03a ─ 03b ─ 04 ─ 05 ─ 06
-                      ├─ 02b      │       └─ 09 (needs 02a, 04; parallel with 07/08)
-          └─ 07 (7a → 7b → 7c) ─ 08a DAG ─ 08b+ develop ★gold
-                                             ├─ 09 providers
-                                             └─ 10 ─ 11 ─ 12 ─ 13a/b   (13c markup, 13d retouch need only 10)
-                                        14 ─ 15
+                      └─ 02b
+          └─ 07 (7a → 7b → 7c) ─ 08a DAG ─ 08b+ develop ★gold ────────────── 14 ─ 15
+                                             ├─ 09 providers (also needs 04) ─┐
+                                             └─ 10 layers ─ 11 segment ──────┴─ 12 fill ─ 13a/b
+                                                          └──────────────────── 13c markup / 13d retouch
 ```
 
 ## Precedent repos — where to look before designing anything
@@ -372,8 +373,11 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
 ## Supersedes
 
 - `visualizations/map.html` "Implementation prompt" and "Tweakable build plan" → this README + `slices/`.
-  The map's ledger, OPEN list, sharp edges and landmine cards remain authoritative inputs.
-- `visualizations/session-sample.html` B3/B4 (export refusal, strict dims failure) → D27/D28 and the envelope section.
+  Its A′ flat pinned-layer representation, `fill --refresh`, 12-hex hash examples, and gateway-shaped provider
+  events are also superseded by `choices.md`'s 2026-09-05 DAG decisions and slices 08–13. Other ledger entries,
+  OPEN items, sharp edges and landmine cards remain authoritative inputs.
+- `visualizations/session-sample.html` B3/B4 (export refusal, strict dims failure, flat refresh hint, gateway-only
+  provider event) → D27/D28, the envelope section, and slices 09/12's DAG execution contracts.
 - `assets/concurrency-spike/daemon.mjs` + `cli-socket.mjs` mechanism (PG-wire) → the daemon frame protocol in slice 02.
 - D35's reservation of `restore` for a future provider capability → top-level `photoctl restore` is catalog recovery in slice
   03. V1 has no provider-restoration verb; any later provider operation must use a distinct name rather than overload it.
