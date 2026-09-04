@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
@@ -29,6 +29,18 @@ test("init creates a library with default settings", async () => {
     },
     warnings: [],
   });
+});
+
+test("init rejects unknown options without creating a library", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-init-args-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+
+  const initialized = await spawnPhotoctl(["init", "--path", library, "--cache-mxa", "1GiB"]);
+
+  expect(initialized.code).toBe(2);
+  expect(initialized.json).toMatchObject({ schema: 1, ok: false, code: "usage" });
+  await expect(stat(library)).rejects.toMatchObject({ code: "ENOENT" });
 });
 
 test("doctor reports persisted library settings", async () => {
@@ -68,6 +80,18 @@ test("doctor reports persisted library settings", async () => {
     },
     warnings: [],
   });
+});
+
+test("doctor rejects positional arguments", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-doctor-args-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+
+  const diagnosed = await spawnPhotoctl(["doctor", "nonsense"], { libraryDir: library });
+
+  expect(diagnosed.code).toBe(2);
+  expect(diagnosed.json).toMatchObject({ schema: 1, ok: false, code: "usage" });
 });
 
 test("init refuses to replace an existing library", async () => {

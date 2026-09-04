@@ -27,8 +27,9 @@ export async function dispatch(
       return { schema: 1, ok: true, data: { version: context.version }, warnings: [] };
     }
     if (request.verb === "init") {
-      const path = optionValue(request.args, "--path") ?? join(homedir(), "Pictures", "photoctl");
-      const cacheMax = optionValue(request.args, "--cache-max");
+      const options = parseOptions(request.args, ["--path", "--cache-max"]);
+      const path = options.get("--path") ?? join(homedir(), "Pictures", "photoctl");
+      const cacheMax = options.get("--cache-max");
       const initialized = await initializeLibrary(
         path,
         cacheMax ? parseByteSize(cacheMax) : DEFAULT_CACHE_MAX_BYTES,
@@ -49,6 +50,7 @@ export async function dispatch(
       }
     }
     if (request.verb === "doctor") {
+      parseOptions(request.args, []);
       const path = request.env.libraryPath ?? join(homedir(), "Pictures", "photoctl");
       const handle = await openLibrary(path, {
         noDaemon: request.env.noDaemon,
@@ -110,12 +112,20 @@ function parseLockBudget(value: string | undefined): number | undefined {
   return milliseconds;
 }
 
-function optionValue(args: string[], name: string): string | undefined {
-  const index = args.indexOf(name);
-  if (index < 0) return undefined;
-  const value = args[index + 1];
-  if (!value || value.startsWith("--")) {
-    throw new PhotoctlError("usage", `${name} requires a value`);
+function parseOptions(args: string[], names: string[]): Map<string, string> {
+  const allowed = new Set(names);
+  const options = new Map<string, string>();
+  for (let index = 0; index < args.length; index += 2) {
+    const name = args[index];
+    if (!name || !allowed.has(name)) {
+      throw new PhotoctlError("usage", `Unexpected argument: ${name ?? ""}`);
+    }
+    if (options.has(name)) throw new PhotoctlError("usage", `Duplicate option: ${name}`);
+    const value = args[index + 1];
+    if (!value || value.startsWith("--")) {
+      throw new PhotoctlError("usage", `${name} requires a value`);
+    }
+    options.set(name, value);
   }
-  return value;
+  return options;
 }

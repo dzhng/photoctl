@@ -4,6 +4,10 @@
 `photoctl init` creates a library; `doctor` reports it; opening is safe under one lock model; a broken or
 version-mismatched library is refused with a recovery command, never recreated.
 
+**Implemented:** commit `3c8909f`, with the atomic-lock review correction in the following maintenance
+checkpoint. The kernel lock supersedes the stale-PID unlink algorithm below; the JSON payload and
+timeout contract remain unchanged.
+
 ### Seam
 - `packages/library/src/open.ts`: `openLibrary(path,{noDaemon,lockBudgetMs=30000}) → LibraryHandle{query,close}`; direct PGlite
   under the lock (02 adds the daemon transport behind the same handle). `PGlite.create({dataDir, extensions:{vector}})`

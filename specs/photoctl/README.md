@@ -11,15 +11,15 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-04. Status: slice 00 implemented; the repository gate, stable command
-envelope, CLI entry point, functional-test seam, and independent fixture oracle are in place.*
+*Last updated: 2026-09-04. Status: slices 00 and 01a implemented; library creation, diagnostics,
+durable PGlite open, migrations, and single-writer locking are in place.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
 Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** `slices/01-first-jpeg.md`, pass 01a (library open and lifecycle commands).
+- **Pickup point:** `slices/01-first-jpeg.md`, pass 01b (import, show, and embedded-JPEG export).
 - **Blockers:** none for 00–08. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
   None blocks deterministic work — placeholders are named per slice.
@@ -27,7 +27,7 @@ Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviatio
 
 ### Global TODO
 - [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
-- [ ] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
+- [x] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
 - [ ] 01b import a7c2.ARW → show → export embedded JPEG — `slices/01-first-jpeg.md`
 - [ ] 02 daemon (runs `dispatch`), contention race, `tag` — `slices/02-daemon-and-contention.md`
 - [ ] 03 backup/restore/migrate/prune + schema fixture — `slices/03-library-lifecycle.md`
@@ -270,3 +270,15 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   in-progress work (protocol, commands, test-harness, fixtures/tools, Docker seam, `choices.md`) into that
   commit under the wrong message. Call: leave history as is (David's decision); slice-00 authorship is Codex's;
   agents in this repo `git add` only the paths they changed.
+- **2026-09-04 — slice 01a durability.** Plan said: turn `fsync` on after PGlite opens. Code revealed:
+  PGlite 0.5.8 starts Postgres with `-F` (fsync disabled), and Postgres rejects changing `fsync` in a
+  running session. Call: remove `-F` through PGlite's public `startParams`, set
+  `synchronous_commit=on`, and assert both live values on every open. Needs David: no; this is the
+  required durability invariant expressed at the only lifecycle where Postgres permits it.
+- **2026-09-04 — slice 01a lock reclamation.** Plan said: reclaim a dead PID's `wx` lockfile by
+  unlinking it. Code revealed: two contenders can both inspect the dead file, then one can unlink the
+  other's newly-created live lock; a real 20-process probe reproduced overlapping holders. Call: keep
+  the same external payload file, but hold a kernel advisory lock on its open descriptor for the whole
+  library session. A killed process releases the kernel lock atomically, so no stale unlink is needed;
+  `fs-ext` is a trusted native install dependency on the supported macOS/Linux targets. Needs David: no;
+  this replaces a racy mechanism with the single-writer invariant the decision requires.

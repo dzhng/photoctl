@@ -1,10 +1,10 @@
-import { unlinkSync } from "node:fs";
-import { open, readFile, stat, unlink } from "node:fs/promises";
+import { closeSync, fstatSync, statSync, unlinkSync } from "node:fs";
+import { open, readFile, stat, unlink, type FileHandle } from "node:fs/promises";
+import { flockSync } from "fs-ext";
 import { PhotoctlError } from "@photoctl/protocol";
 
 export const OPEN_LOCK_NAME = ".photoctl-open.lock";
 export const DEFAULT_LOCK_BUDGET_MS = 30_000;
-export const STALE_LOCK_MS = 10 * 60_000;
 const POLL_BACKOFF_MS = [10, 20, 40, 60, 80, 100] as const;
 
 export interface LockPayload {
@@ -19,21 +19,12 @@ export interface LibraryLock {
   release(): Promise<void>;
 }
 
-export type PidLiveness = "alive" | "dead" | "unknown";
-
-export function shouldReclaimLock(input: {
-  payload: LockPayload | null;
-  ageMs: number;
-  currentPid: number;
-  liveness: PidLiveness;
-}): boolean {
-  if (input.payload?.pid === input.currentPid) return true;
-  if (input.liveness === "dead") return true;
-  if (input.liveness === "alive") return false;
-  return input.ageMs > STALE_LOCK_MS;
+interface HeldLock {
+  file: FileHandle;
+  payload: LockPayload;
 }
 
-const heldLocks = new Map<string, LockPayload>();
+const heldLocks = new Map<string, HeldLock>();
 let cleanupInstalled = false;
 
 export async function acquireLibraryLock(
@@ -47,49 +38,53 @@ export async function acquireLibraryLock(
   async function acquireAttempt(): Promise<LibraryLock> {
     if (Date.now() - beganAt > budgetMs) throwLockTimeout(holderPid, budgetMs);
     const payload = { pid: process.pid, socket: null, startedAt: Date.now() } satisfies LockPayload;
-    let file;
+    let file: FileHandle;
     try {
-      file = await open(path, "wx");
+      file = await open(path, "wx+");
     } catch (error) {
       if (!hasCode(error, "EEXIST")) throw error;
-    }
-    if (file) {
       try {
-        await file.writeFile(JSON.stringify(payload));
-      } catch (error) {
-        try {
-          await unlink(path);
-        } catch {
-          // Preserve the write failure; a later open can age-reclaim an empty file.
-        }
-        throw error;
-      } finally {
-        await file.close();
+        file = await open(path, "r+");
+      } catch (openError) {
+        if (hasCode(openError, "ENOENT")) return acquireAttempt();
+        throw openError;
       }
-      heldLocks.set(path, payload);
-      return {
-        path,
-        payload,
-        release: async () => releaseLibraryLock(path, payload),
-      };
     }
-
-    const holder = await readLock(path);
-    holderPid = holder?.pid ?? 0;
-    if (await mayReclaim(path, holder)) {
-      try {
-        await unlink(path);
-      } catch (error) {
-        if (!hasCode(error, "ENOENT")) throw error;
-      }
+    try {
+      flockSync(file.fd, "exnb");
+    } catch (error) {
+      await file.close();
+      if (!hasCode(error, "EAGAIN") && !hasCode(error, "EWOULDBLOCK")) throw error;
+      const holder = await readLock(path);
+      holderPid = holder?.pid ?? 0;
+      return waitAndRetry();
+    }
+    if (!(await fileStillOwnsPath(file, path))) {
+      await file.close();
       return acquireAttempt();
     }
+    try {
+      await file.truncate(0);
+      await file.writeFile(JSON.stringify(payload));
+      await file.sync();
+    } catch (error) {
+      await file.close();
+      throw error;
+    }
+    heldLocks.set(path, { file, payload });
+    return {
+      path,
+      payload,
+      release: async () => releaseLibraryLock(path, payload, file),
+    };
 
-    const elapsed = Date.now() - beganAt;
-    if (elapsed >= budgetMs) throwLockTimeout(holderPid, budgetMs);
-    const delay = POLL_BACKOFF_MS[Math.min(attempt++, POLL_BACKOFF_MS.length - 1)];
-    await new Promise((resolve) => setTimeout(resolve, Math.min(delay, budgetMs - elapsed)));
-    return acquireAttempt();
+    async function waitAndRetry(): Promise<LibraryLock> {
+      const elapsed = Date.now() - beganAt;
+      if (elapsed >= budgetMs) throwLockTimeout(holderPid, budgetMs);
+      const delay = POLL_BACKOFF_MS[Math.min(attempt++, POLL_BACKOFF_MS.length - 1)];
+      await new Promise((resolve) => setTimeout(resolve, Math.min(delay, budgetMs - elapsed)));
+      return acquireAttempt();
+    }
   }
   return acquireAttempt();
 }
@@ -122,40 +117,35 @@ export async function readLock(path: string): Promise<LockPayload | null> {
   return null;
 }
 
-async function mayReclaim(path: string, payload: LockPayload | null): Promise<boolean> {
-  if (heldLocks.has(path)) return false;
-  const liveness = payload ? pidLiveness(payload.pid) : "unknown";
-  const ageMs = payload ? Date.now() - payload.startedAt : await fileAge(path);
-  return shouldReclaimLock({ payload, ageMs, currentPid: process.pid, liveness });
-}
-
-function pidLiveness(pid: number): PidLiveness {
+async function fileStillOwnsPath(file: FileHandle, path: string): Promise<boolean> {
   try {
-    process.kill(pid, 0);
-    return "alive";
-  } catch (error) {
-    if (hasCode(error, "ESRCH")) return "dead";
-    return "unknown";
-  }
-}
-
-async function fileAge(path: string): Promise<number> {
-  try {
-    return Date.now() - (await stat(path)).mtimeMs;
+    const [opened, current] = await Promise.all([file.stat(), stat(path)]);
+    return opened.dev === current.dev && opened.ino === current.ino;
   } catch {
-    return 0;
+    return false;
   }
 }
 
-async function releaseLibraryLock(path: string, payload: LockPayload): Promise<void> {
+async function releaseLibraryLock(
+  path: string,
+  payload: LockPayload,
+  file: FileHandle,
+): Promise<void> {
   const held = heldLocks.get(path);
-  if (held?.pid === payload.pid && held.startedAt === payload.startedAt) heldLocks.delete(path);
-  const current = await readLock(path);
-  if (current?.pid !== payload.pid || current.startedAt !== payload.startedAt) return;
+  if (held?.payload === payload) heldLocks.delete(path);
   try {
-    await unlink(path);
+    const current = await readLock(path);
+    if (
+      current?.pid === payload.pid &&
+      current.startedAt === payload.startedAt &&
+      (await fileStillOwnsPath(file, path))
+    ) {
+      await unlink(path);
+    }
   } catch (error) {
     if (!hasCode(error, "ENOENT")) throw error;
+  } finally {
+    await file.close();
   }
 }
 
@@ -163,13 +153,21 @@ function installCleanup(): void {
   if (cleanupInstalled) return;
   cleanupInstalled = true;
   const cleanup = () => {
-    for (const path of heldLocks.keys()) {
+    for (const [path, held] of heldLocks) {
       try {
-        unlinkSync(path);
+        const opened = fstatSync(held.file.fd);
+        const current = statSync(path);
+        if (opened.dev === current.dev && opened.ino === current.ino) unlinkSync(path);
       } catch {
         // Exit cleanup is best-effort; a missing lock is already released.
       }
+      try {
+        closeSync(held.file.fd);
+      } catch {
+        // The descriptor may already be closed after an interrupted operation.
+      }
     }
+    heldLocks.clear();
   };
   process.on("exit", cleanup);
   process.once("SIGINT", () => {

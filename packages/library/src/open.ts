@@ -60,7 +60,8 @@ export async function initializeLibrary(
     if (hasCode(error, "EEXIST")) {
       throw new PhotoctlError("usage", `Library already exists: ${libraryPath}`);
     }
-    throw error;
+    if (error instanceof PhotoctlError) throw error;
+    throw catalogUnreadable(libraryPath);
   }
 
   let handle: LibraryHandle | undefined;
@@ -75,7 +76,7 @@ export async function initializeLibrary(
         "cache_max_bytes",
         JSON.stringify(cacheMaxBytes),
         "daemon_idle_ms",
-        JSON.stringify(300_000),
+        JSON.stringify(900_000),
       ],
     );
     return { handle, libraryId, cacheMaxBytes };
@@ -107,11 +108,16 @@ export async function openLibrary(
   let db: PGlite | undefined;
   try {
     if (!options.initialize) await validatePGliteVersion(libraryPath);
-    db = await PGlite.create({
-      dataDir: libraryPath,
-      extensions: { vector },
-      startParams: PGlite.defaultStartParams.filter((argument) => argument !== "-F"),
-    });
+    try {
+      db = await PGlite.create({
+        dataDir: libraryPath,
+        extensions: { vector },
+        startParams: PGlite.defaultStartParams.filter((argument) => argument !== "-F"),
+      });
+    } catch (error) {
+      if (error instanceof PhotoctlError) throw error;
+      throw catalogUnreadable(libraryPath);
+    }
     await db.exec("CREATE EXTENSION IF NOT EXISTS vector");
     await db.exec("SET synchronous_commit = on");
     await assertDurability(db);
