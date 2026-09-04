@@ -1,0 +1,266 @@
+<title>photoctl Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{--bg:#F7F6F2;--fg:#1E2126;--muted:#6B6F75;--line:#DAD7CF;--panel:#FFFFFF;--code-bg:#0C0E11;--code-fg:#E6E3DA;--accent:#C8862A;--accent-ink:#1E2126;--ok:#3C8A5C;--err:#B8462F;--warn:#B07A1C;--magenta:#C22C8C;--chip:#EFECE4}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121417;--fg:#E8E6E0;--muted:#9A9EA5;--line:#2A2E34;--panel:#1A1D22;--code-bg:#0C0E11;--code-fg:#E6E3DA;--accent:#E0A458;--accent-ink:#121417;--ok:#5DB07E;--err:#E0664E;--warn:#D9A03A;--magenta:#E259B3;--chip:#22262C}}
+:root[data-theme="dark"]{--bg:#121417;--fg:#E8E6E0;--muted:#9A9EA5;--line:#2A2E34;--panel:#1A1D22;--code-bg:#0C0E11;--code-fg:#E6E3DA;--accent:#E0A458;--accent-ink:#121417;--ok:#5DB07E;--err:#E0664E;--warn:#D9A03A;--magenta:#E259B3;--chip:#22262C}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:"Source Sans 3",system-ui,sans-serif;font-size:16px;line-height:1.5;margin:0}
+main{max-width:1000px;margin:0 auto;padding:40px 24px 100px}
+h1,h2,h3,h4{font-family:"Bricolage Grotesque","Source Sans 3",sans-serif;text-wrap:balance;margin:0}
+h1{font-size:46px;line-height:1.05;font-weight:700;letter-spacing:-.01em}
+h2{font-size:28px;font-weight:700;margin-top:60px;padding-top:22px;border-top:2px solid var(--fg)}
+h2 .q{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:4px;font-family:"Source Sans 3",sans-serif}
+h3{font-size:19px;font-weight:700;margin-top:30px}
+h4{font-size:16px;font-weight:700}
+p{max-width:70ch}
+.lede{color:var(--muted);font-size:19px;margin-top:10px;max-width:70ch}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:22px}
+.stat{padding:14px 16px;border:1px solid var(--line);background:var(--panel)}
+.stat b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+table{border-collapse:collapse;width:100%;font-size:15px;margin-top:14px}
+.tw{overflow-x:auto}
+th{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--fg);font-weight:600}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.id{font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:600;color:var(--accent);white-space:nowrap}
+td.by{white-space:nowrap;font-size:13px;color:var(--muted)}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px}
+code{background:var(--chip);padding:1px 5px;border-radius:2px}
+pre{background:var(--code-bg);color:var(--code-fg);font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.55;padding:14px 16px;overflow-x:auto;margin:12px 0 0;white-space:pre}
+.tag{display:inline-block;font:600 11px/1 "Source Sans 3",sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:2px;color:#fff;white-space:nowrap}
+.t-dec{background:var(--ok)} .t-open{background:var(--err)} .t-edge{background:var(--warn)} .t-user{background:var(--accent);color:var(--accent-ink)} .t-terr{background:var(--muted)}
+.cards{display:grid;gap:14px;margin-top:16px}
+.card{border:1px solid var(--line);background:var(--panel);padding:14px 16px}
+.card h4{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.card .ev{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--muted);margin-top:6px;word-break:break-word}
+.card p{margin:8px 0 0;max-width:none;font-size:15px}
+ul{padding-left:20px;max-width:75ch} li{margin:4px 0}
+.open li{margin:8px 0}
+.open b{font-weight:600}
+.plan .card{border-left:3px solid var(--accent)}
+.plan .card.low{border-left-color:var(--line);opacity:.85}
+.prompt-box{margin-top:16px;border:1px solid var(--line);background:var(--panel);padding:14px 16px}
+.prompt-box textarea{width:100%;height:340px;font:12.5px/1.5 "JetBrains Mono",monospace;background:var(--bg);color:var(--fg);border:1px solid var(--line);padding:10px;resize:vertical}
+.bar{display:flex;align-items:center;gap:12px;margin-bottom:8px}.bar h3{flex:1;margin:0}
+.btn{font:600 13px "Source Sans 3",sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:9px 14px;background:var(--accent);color:var(--accent-ink);border:0;cursor:pointer;border-radius:2px}
+.btn:focus-visible{outline:2px solid var(--fg)}
+.note{font-size:14px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:760px){.two{grid-template-columns:1fr}}
+</style>
+<main>
+<div class="mono" style="color:var(--muted);font-size:12px;letter-spacing:.1em;text-transform:uppercase">The map is not the territory · walked 2026-09-03</div>
+<h1>photoctl Map</h1>
+<p class="lede">Four quadrants for a CLI-first photo library and editor: what was settled, what got decided, what you knew but hadn't said, and what the territory was hiding. Hand this to the implementer with the spec. Everything still open is on this page, not in scrollback.</p>
+<div class="stats">
+  <div class="stat"><b>40</b><span>decisions</span></div>
+  <div class="stat"><b>7</b><span>open, with unblocks</span></div>
+  <div class="stat"><b>14</b><span>sharp edges</span></div>
+  <div class="stat"><b>6</b><span>spec contradictions fixed</span></div>
+  <div class="stat"><b>3</b><span>measured spikes</span></div>
+</div>
+
+<h2><span class="q">Quadrant 1</span>Known knowns — the settled ground</h2>
+<div class="two">
+<div>
+<h3>This machine (the gold exam runs here)</h3>
+<ul>
+<li>Apple M5 Pro, arm64, 48 GB · <b>macOS 26.4.1</b>, SDK 26.4.1, Swift 6.3.1</li>
+<li>node v24.14.0 · npm 11.11.1 · rustc 1.94.1 · Homebrew 6.0.11</li>
+<li><b>Missing:</b> exiftool, cmake, pkg-config, libraw</li>
+<li>No Lightroom catalog, no XMP sidecars, no external drive mounted; originals live on a removable volume (D1)</li>
+<li><code>~/Pictures/Photos Library.photoslibrary</code> exists (not in scope)</li>
+</ul>
+<h3>Test fixture on disk</h3>
+<ul>
+<li><code>scratchpad/a7c2.ARW</code> — 70 MB, <code>ILCE-7CM2</code>, FE 24-70 F4, 1/100 f/7.1 ISO 100, 7008×4672, <b>uncompressed variant</b></li>
+<li>Embedded JPEGs at byte offsets: 160×120 (8 KB) · <b>1616×1080 (466 KB)</b> · <b>7008×4672 (6.7 MB)</b></li>
+<li><code>DateTimeOriginal 2023:10:02 18:18:37</code> + <code>OffsetTimeOriginal +02:00</code></li>
+</ul>
+</div>
+<div>
+<h3>Packages, verified</h3>
+<ul>
+<li><code>@electric-sql/pglite 0.5.8</code> = Postgres 18.3, wasm32, alpha badge · <code>pglite-pgvector 0.0.9</code> (pgvector 0.8.1, exact peer-pin on 0.5.8) · <code>pglite-socket 0.2.11</code></li>
+<li><code>sharp 0.35.4</code> (no ARW) · <code>exifr 7.1.3</code> · <code>napi-rs 0.3.10</code> · Rust <code>xmp_toolkit 1.12.1</code>, <code>rawler 0.8.0</code> (LGPL), <code>ort 2.0.0-rc.13</code></li>
+<li>LibRaw: <b>0.22.2</b> stable; A7C II support first in 0.22.0; dual <b>LGPL-2.1 OR CDDL-1.0</b>, no commercial option</li>
+<li>Vercel AI Gateway: 369 models; <code>openai/gpt-image-2</code>, <code>google/gemini-3.1-flash-image</code>, <code>google/gemini-3-pro-image</code>, <code>spacexai/grok-imagine-image-2.0</code>, <code>google/gemini-embedding-2</code>; <b>zero segmentation models</b></li>
+<li>OpenRouter: 425 models; zero segmentation; image API has no mask parameter</li>
+</ul>
+<h3>Code to lift — <code>~/dev/duet-agent</code> (Apache-2.0)</h3>
+<ul>
+<li><code>src/file-lock.ts</code>, <code>src/memory/pglite.ts</code>, <code>src/memory/session.ts</code>, <code>src/memory/embedding-worker.ts</code>, <code>src/memory/migrations.ts</code> (squash) · <code>storage.ts</code> is a template only</li>
+<li><b>Tests:</b> <code>test/memory-embedding-worker-lock-starvation.test.ts</code>, <code>test/memory-session-concurrent-fresh-open.test.ts</code>, <code>test/memory-pglite.test.ts</code>, <code>evals/memory-multi-cli-lock.eval.ts</code>, <code>memory-migrations/db/storage.test.ts</code></li>
+<li>Spike scripts: <code>scratchpad/spike/{lock,cli-lock,cli-socket,daemon,check}.mjs</code></li>
+</ul>
+</div>
+</div>
+
+<h2><span class="q">Quadrant 2</span>Known unknowns — the decision ledger</h2>
+<p class="note">Closed by <span class="tag t-user">you</span> or by <span class="tag t-terr">territory</span> (measured or read). Each line is phrased so the spec can carry it as a given.</p>
+<div class="tw"><table>
+<tr><th>#</th><th>Decision</th><th>Why</th><th>By</th></tr>
+<tr><td class="id">D1</td><td>Originals on a removable volume → locators are volume-UUID + mount-relative path; <b>offline</b> is a first-class state; develop works offline, fill/export don't</td><td>no ARWs on this Mac; bare paths break on remount</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D2</td><td>Classic catalog is on another machine; sidecars arrive with the drive; subscription end date bounds the founder checklist</td><td>your answer</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D3–5</td><td>Gateway inference only; provider interface shaped for a future photoctl.cloud; gen verbs → <code>provider_unconfigured</code> without keys; gold exam is keyless</td><td>your delta</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">A′</td><td><b>Render graph:</b> develop is the base; a layer pins 16-bit display pixels + mask + <code>develop_hash</code>. Tier-1 keys (exposure, brightness, contrast, saturation, vibrance, black_point, small WB) delta-apply to layers; Tier-2 (curves, levels, highlights, shadows, brilliance, definition, NR, selective_color, B&amp;W) mark layers stale; <code>fill --refresh</code> regenerates</td><td>your question upgraded option A; avoids paid regeneration on nudges</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D6</td><td><b>Daemon + lockfile, both, auto-start day one.</b> Lock lifted from duet-agent; socket in <code>$TMPDIR/photoctl-&lt;hash&gt;.sock</code> keyed by library path + version + schema; spawn guarded by the lock; stale socket → check pid, respawn once, else <code>daemon_unavailable</code>; idle-exit suppressed while embed queue non-empty; shutdown on volume unmount; <code>--no-daemon</code> on every command; <b>fsync on</b>; poll ceiling ~100 ms; every mutating verb takes <code>&lt;id...&gt;</code></td><td>spike: no-lock lost 150/201 rows with 6/8 processes reporting ok; daemon 111 ms vs 1756 ms wall at 8 clients; over-capacity refuses loudly</td><td class="by"><span class="tag t-user">you</span> <span class="tag t-terr">spike</span></td></tr>
+<tr><td class="id">D7</td><td><code>segment --at/--box/--brush</code> = <b>SAM 2.1 ONNX via <code>ort</code>, CPU EP</b> (Apache-2.0). Not SAM 3 (bespoke license, gated, 3.4 GB). Rule amended: no local <i>generative</i> weights; segmentation is geometry</td><td>no gateway serves segmentation; macOS 27's 1:1 API absent from your SDK</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D7b</td><td><code>segment --text</code> = Gemini (structured output, <code>box_2d[]</code>) → SAM box prompt. Returns all instances, one layer each; <code>--at</code> composes for disambiguation</td><td>Gemini's 6 px grid is fine as a prompt, useless as a mask</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D8</td><td>One noun: <b>layer</b> with state <code>selected → filled</code>; <code>segment --dry-run</code> creates nothing</td><td>avoids a second <code>mask</code> noun</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D9</td><td>Identity = <code>size + hash(head 1 MB + tail 1 MB)</code>; separate 1:N <code>files</code> locator table; full hash only on collision</td><td>2.4 s vs 51.8 s per 2000 files</td><td class="by"><span class="tag t-user">you</span> <span class="tag t-terr">measured</span></td></tr>
+<tr><td class="id">D10</td><td><b>JSON contract:</b> JSON default, <code>--human</code> opt-out, drop <code>--json</code>; envelope <code>{schema,ok,code,data}</code>; exit 0 / 2 usage / 65 data / <b>69 unavailable (don't retry) / 75 temp (retry)</b>; NDJSON progress + daemon events on stderr; multi-id = per-item results + <code>partial</code>; <code>--stream</code> NDJSON rows on <code>list</code>/<code>search</code></td><td>spec listed both <code>--json</code> and JSON-default</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D11</td><td><code>fill --move</code> is pure geometry (no gateway) and emits the vacancy as a new layer (<code>role: vacancy</code>)</td><td>the hole had no name</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D12</td><td>Layers carry a non-destructive <code>transform {dx,dy,scale,rotate,flip,anchor}</code>; one resample at render (Lanczos3; bilinear previews); flips and quarter-turns are exact</td><td>iterating placement must be free</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D13</td><td>Transforms are absolute by default, <code>--relative</code> to nudge; order scale→rotate→translate about anchor (default mask centroid); <b>layer coords live in the oriented, uncropped base</b>; crop + straighten apply last; blend modes need a declared space (→ D22)</td><td>retries must be idempotent</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D14</td><td><b>Both decoders behind one interface:</b> CIRAWFilter (Mac, headless verified) and LibRaw ≥ 0.22 vendored in own <code>-sys</code> crate under <b>CDDL</b>, <code>--disable-openmp</code>; they render differently by design and double as a correctness oracle</td><td>0.21.x silently returns the A7C mk1 matrix; CDDL is the only clean static-link path; forecloses GPL <i>code</i></td><td class="by"><span class="tag t-user">you</span> <span class="tag t-terr">verified</span></td></tr>
+<tr><td class="id">D15</td><td>Vacancy mask = full original silhouette, stored once at lift</td><td>a paid fill must survive later nudges</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D16</td><td>Unfilled vacancy renders as a magenta placeholder</td><td>legible as unfinished</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D17</td><td><b>Three cull axes:</b> stars 0–5, flag pick/reject/none, color label ×5 — all XMP round-trippable</td><td>audience is cull → deliver</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D18</td><td><b>v1 adds:</b> <code>flag</code>, <code>label</code>, range filters (<code>--rating ">=4"</code>), <code>next</code> cursor, <code>remove [--from-disk]</code>, export <code>--resize</code>, <code>--template</code>, <code>--on-collision skip|overwrite|rename</code>, IPTC, export presets</td><td>the spec had no culling and no deliverable export</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D19</td><td>XMP sidecars are written only by explicit <code>photoctl xmp write</code>; source folders are read-only by default; embedded XMP never (RAW bytes untouched)</td><td>"write on import" would touch 2000 files on the drive</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D20</td><td>PGlite wins on conflict; <code>xmp sync --read</code> pulls external edits; sidecar mtime stored at read and <code>doctor</code>/<code>list --xmp-stale</code> flag divergence</td><td>cheap to detect</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D21</td><td>One develop dict per photo; <code>--set</code> merges absolute values; <code>--unset</code>, <code>--reset</code>; presets are partial overlays applied before <code>--set</code>; <code>filter</code> is two keys; <code>copy_edits_from</code> → <code>develop --copy-from</code></td><td>one representation for XMP, presets, copy</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D22</td><td>Develop in 32-bit float linear Rec.2020 → display transform → <b>layers composite in display-referred 16-bit</b>; blend modes in that space (Photoshop default)</td><td>makes strict bit-exact for free</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D23</td><td>Eager embedded-JPEG extraction on import; lazy full renders; <code>init --cache-max</code> LRU; <code>cache prune</code></td><td>offline culling</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D24</td><td><code>auto_enhance</code> via VLM → develop keys; <code>auto_straighten</code> = horizon detection local; <code>crop --auto</code> = straighten + minimal trim</td><td></td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D25</td><td><b>Vercel AI Gateway only for v1</b>; compat layer so OpenRouter drops in later; <b>no runtime capability discovery</b> — hard-coded per-verb model table, config-overridable; <code>doctor</code> checks IDs resolve</td><td>catalog <code>modalities</code> field is wrong for both models that matter</td><td class="by"><span class="tag t-user">you</span> <span class="tag t-terr">verified</span></td></tr>
+<tr><td class="id">D26</td><td><b>Two-bucket rule:</b> generation = SOTA general model + prebuilt prompt (fill, outpaint, reimagine, generate, relight, auto_enhance, grounding); restoration/geometry = specific local solution (decode, develop, segment, NR, retouch, crop, transforms, export). <code>fill</code> default <code>gpt-image-2</code>; Nano Banana / Grok via <code>--model</code>. Two-level abstraction: gateway adapter × model adapter; strict composite lives above both</td><td>your philosophy</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D27</td><td>Adapters normalize: every model returns pixels at the sent crop dims (resample if needed, report <code>resampled</code>); strict never fails on geometry</td><td>strict guards unmasked pixels, which come from the composite</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D28</td><td><b>Commands warn on soft state, never refuse.</b> Export always writes; stale layers, unfilled vacancy, offline previews go in <code>warnings[]</code></td><td>the caller looked</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D29</td><td>Model answers read as data use AI SDK structured output (<code>generateObject</code> + Zod), never "return only JSON"</td><td></td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D30</td><td>Library and originals may share a folder or not; <b>preview cache location is independent of library location</b>, default <code>~/Library/Caches/photoctl/&lt;lib-id&gt;</code></td><td>a library on the drive would take its cache offline</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D31</td><td>Embeddings stored as <code>halfvec(3072)</code> with HNSW cosine</td><td>pgvector HNSW caps <code>vector</code> at 2000 dims — verified on 0.5.8</td><td class="by"><span class="tag t-user">you</span> <span class="tag t-terr">verified</span></td></tr>
+<tr><td class="id">D32</td><td>Pin the 1616×1080 embedded JPEG; record the full-size 7008×4672 as (offset, length) in the ARW, read on demand when online</td><td>0.9 GB vs 13 GB per 2000</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D33</td><td><code>init --embed auto|manual</code> (auto when a key exists); import result prints <code>embeddings.est_usd</code>; ~$0.90 per 2000 photos on gemini-embedding-2</td><td>never a surprise on the bill</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D34</td><td><code>remove --from-disk</code> requires <code>--yes</code>, refuses multi-id without it, moves to Trash on Mac</td><td>deletes from the source drive</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D35</td><td><code>unblur</code> is <b>cut</b>; <code>restore</code> reserved as a provider capability</td><td>no permissive model works on real shake; the field's own papers say so</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D36</td><td>Unreadable catalog: refuse to open, print path + restore command, exit 69; <code>PG_VERSION</code> mismatch → "run <code>photoctl migrate</code>", never quarantine</td><td>duet's auto-fresh reads as "library vanished"</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D37</td><td>Backups are <code>pgDump</code> SQL snapshots; no directory clones</td><td>version-proof, tiny</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D38</td><td><b>Tests follow <code>/write-tests</code>:</b> functional, through real <code>photoctl</code> processes against a real dataDir inside the Docker seam; CI runs with the gate ON; spawned workers target built JS; timing constants re-derived for Node</td><td>duet's gate is a seam, not a dependency</td><td class="by"><span class="tag t-user">you</span></td></tr>
+<tr><td class="id">D39</td><td><code>noise_reduction.{luminance,color}</code> is a cheap live key (CIRAWFilter raw-domain / NLM); <b>learned NR deferred</b> — NAFNet w64 measured 452 ms/512² tile on CoreML-GPU (85 s/24 MP), 986 ms CPU; w32 est. 25–30 s</td><td>every shipping product runs learned NR as a stage</td><td class="by"><span class="tag t-user">you</span> <span class="tag t-terr">measured</span></td></tr>
+<tr><td class="id">D40</td><td><b>CoreML EP rule:</b> default CPU; enable per model only with static shapes, ≥2× measured, output-equivalent within tolerance; record EP in cached-stage provenance; daemon owns the compiled-model cache</td><td>SAM 2 can't partition; tiny models get slower; ANE 5× slower for NAFNet</td><td class="by"><span class="tag t-terr">measured</span></td></tr>
+</table></div>
+
+<h3>OPEN — confirm before coding</h3>
+<ul class="open">
+<li><span class="tag t-open">open</span> <b>ARW drive path.</b> Unblock: plug in the drive, give the path. <code>a7c2.ARW</code> covers decode/import until then.</li>
+<li><span class="tag t-open">open</span> <b>Vercel AI Gateway key + per-verb default model IDs.</b> Defaults proposed: fill/outpaint/reimagine/generate → <code>openai/gpt-image-2</code>; grounding/auto_enhance → <code>google/gemini-3.1-flash</code>; embeddings → <code>google/gemini-embedding-2</code>.</li>
+<li><span class="tag t-open">open</span> <b>Smoke test 1 — mask polarity</b> through <code>POST /v1/images/edits</code> → gpt-image-2 (OpenAI: transparent = edit; BFL: white = edit). First thing to run with a key; getting it wrong inpaints the complement.</li>
+<li><span class="tag t-open">open</span> <b>Smoke test 2 — multimodal embedding request shape</b> for gemini-embedding-2 via the Gateway (page says images accepted; only text sample documented).</li>
+<li><span class="tag t-open">open</span> <b>Lossless-L compression tag (6 vs 7).</b> Unblock: shoot one frame per ARW mode. Decides whether rawler can read it; LibRaw handles both. M/S are YCbCr pseudo-RAW with WB pre-applied.</li>
+<li><span class="tag t-open">open</span> <b>PGlite TOAST bug</b> (<code>missing chunk number 0</code>) on wide vectors under heavy UPSERT — reproduce on 0.5.8 before the embed worker ships (duet <code>migrations.ts:356</code>).</li>
+<li><span class="tag t-open">open</span> <b>Founder checklist timing:</b> export Classic 4–5★ masters + write XMP on the other machine before the Adobe subscription ends.</li>
+</ul>
+
+<h2><span class="q">Quadrant 3</span>Unknown knowns — what you knew but hadn't said</h2>
+<div class="tw"><table>
+<tr><th>Extracted</th><th>What it reshaped</th></tr>
+<tr><td>Audience is <b>professional photographers: shoot → cull → rate → deliver</b>; not diffusion hobbyists</td><td>D17/D18 — culling and delivery verbs became the product; generative is the bonus</td></tr>
+<tr><td>No local generative inference; SOTA general models + prebuilt prompts, not feature-specific models</td><td>D25/D26 — dropped FLUX Fill; prompts (C1–C4 in the session sample) are the features</td></tr>
+<tr><td>"Don't use the capability field for anything"</td><td>D25 — hard-coded model table; caught the research trusting a wrong field</td></tr>
+<tr><td>Agents call it <b>one-shot from a chat loop, plus scripts</b></td><td>D6 auto-start; D10 <code>--stream</code>; MCP stays optional</td></tr>
+<tr><td>Library and originals: one folder or two, user's choice; this Mac + one drive</td><td>D30 — cache location decoupled from library</td></tr>
+<tr><td>"Done" = gold exam passes, daily use, OSS later</td><td>license cleanliness is a v2 gate; CDDL choice holds but isn't load-bearing yet</td></tr>
+<tr><td>"Export should always work — assume they looked"</td><td>D28 — warn, never refuse, across all verbs</td></tr>
+<tr><td>Layers need everything a real editor has: move, flip, rotate, reorder, opacity, blend</td><td>D12/D13 — full transform model, exact quarter-turns, S→R→T order</td></tr>
+<tr><td>Tests are functional through the Docker seam (<code>/write-tests</code>); "I don't want to solve the same problem twice"</td><td>D38; duet-agent + its tests cited as source of record</td></tr>
+<tr><td>Taste: <code>people</code> = soft contrast, held highlights, +150 K, vibrance over saturation, gentle NR, −definition; <code>high-contrast</code> = crushed blacks, +definition; <code>neutral</code> = identity</td><td>shipped presets (accepted as shown)</td></tr>
+<tr><td>Denoise: "find a specific solution" — then, on the numbers, defer it</td><td>D39</td></tr>
+</table></div>
+
+<h2><span class="q">Quadrant 4</span>Unknown unknowns — the landmines</h2>
+<div class="cards">
+<div class="card"><h4><span class="tag t-dec">decided</span> PGlite has no lock; concurrent processes silently lose committed writes</h4><div class="ev">measured: 8 procs × 25 rows → 51/201 rows survive, 6/8 report ok:true; pglite#324; no postmaster/flock in dist/</div><p>→ D6. Lock lifted from duet-agent; daemon for speed.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> <code>@electric-sql/pglite/vector</code> doesn't exist in 0.5.x; extension failure looks like corruption</h4><div class="ev">duet pglite.ts:2; 0.5.8 exports map; migrations run inside the quarantine probe (storage.ts:89)</div><p>Use <code>@electric-sql/pglite-pgvector</code> (exact peer-pin); assert <code>CREATE EXTENSION</code> outside the recovery try-block. → D36.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> LibRaw 0.21.x returns the A7C mk1 color matrix for the A7C II — no error</h4><div class="ev">cam_xyz 0.7374… (0.21.3) vs 0.7460… (0.22.2) on a7c2.ARW; prefix match on ILCE-7C; every Rust binding pins ≤0.21.3</div><p>→ D14: vendor ≥ 0.22 yourself.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> pgvector HNSW caps at 2000 dims; gemini-embedding-2 is 3072</h4><div class="ev">PGlite 0.5.8 / pgvector 0.8.1: vector(3072)+hnsw fails; halfvec(3072) OK; duet migrations.ts:319 hit the same cliff</div><p>→ D31.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> duet's quarantine = move library aside, start empty, exit 0</h4><div class="ev">pglite.ts:406–419; ~/.duet has 5 memory.db.corrupted-* dirs (1.2 GB)</div><p>→ D36 refuse-to-open. Also a PG major bump would trigger it for every user.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> duet's silent write-drop on lock timeout</h4><div class="ev">session.ts:191–195 swallows MemoryLockTimeoutError; storage.ts:198 "writes are silently dropped"</div><p><code>withDb</code> returns a discriminated result or throws; silent degrade is per-call opt-in. → D6.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> Backup pool: Node's cpSync doesn't clone; failed/empty snapshots poison the pool</h4><div class="ev">pglite.ts:626 comment assumes APFS clonefile (Bun); COPYFILE_FICLONE never passed; .failed- dirs still match the listing prefix; post-quarantine empty cluster gets snapshotted</div><p>→ D37 pgDump snapshots instead.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> Two lock implementations with opposite staleness rules; the pid-only one has no age fallback and treats EPERM as alive; no SIGINT/SIGTERM handler</h4><div class="ev">file-lock.ts:4,67–82 vs pglite.ts:766–773, 886–893, 226–234</div><p>Port <code>file-lock.ts</code>'s shape + pid liveness + bounded age + signal handlers; EPERM = unknown. Also fix the lock leak in <code>session.ts:203–213</code> (no try/catch around open).</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> Gateway inpaint output is always re-encoded (default JPEG) and dims aren't guaranteed; maskless models silently edit the whole frame with only a warning</h4><div class="ev">Vercel /v1/images/edits docs; BFL/OpenAI output_format defaults</div><p>Request <code>png</code>; adapter asserts/resamples dims (D27); provider layer reads <code>warnings[]</code> and treats "whole image" as a hard failure under strict.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> Learned denoise is 25–85 s/frame even on GPU; ANE is 5× slower for it</h4><div class="ev">NAFNet w64: 452 ms/tile CoreML-GPU, 2281 ms ANE, 986 ms CPU fp32, 1772 ms shipped int8; darktable-ai and Lightroom both run it as a stage</div><p>→ D39 defer; D40 EP rule.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> No gateway serves segmentation; the 1:1 Apple API is macOS 27 and absent from your SDK</h4><div class="ev">OpenRouter 425 / Vercel 369 model catalogs; grep of MacOSX.sdk Vision.framework: GenerateIterativeSegmentationRequest absent, VNGenerateForegroundInstanceMaskRequest present</div><p>→ D7 SAM 2.1 local; revisit Vision when macOS 27 ships.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> "Port/wrap darktable/ART" is a license violation; every pure-Rust RAW crate is LGPL</h4><div class="ev">darktable/RawTherapee/ART GPL-3.0-or-later; rawler/rawloader LGPL-2.1, imagepipe LGPL-3.0; Rust has no dynamic-link escape</div><p>OpenColorIO (BSD-3) has the grading operators; → D14 CDDL LibRaw.</p></div>
+<div class="card"><h4><span class="tag t-dec">decided</span> Test suite is env-gated; copied as-is, CI is green with zero assertions run</h4><div class="ev">test/helpers/docker-only.ts; all dataDir tests behind DUET_TEST_IN_DOCKER=1; workers Bun.spawn .ts importing ./pglite.js</div><p>→ D38: gate ON in CI, spawn built JS, re-derive Bun-derived timings (PEER_LOCK_BUDGET 4000 assumes ~1 s Bun spawn).</p></div>
+</div>
+
+<h3>Sharp edges — awareness, one right answer</h3>
+<ul>
+<li><span class="tag t-edge">edge</span> <b>Timezone:</b> parse <code>DateTimeOriginal</code> + <code>OffsetTimeOriginal</code>; store instant + offset; <code>{date}</code> uses the shot's local date; never the machine's zone. exifr shifted the sample 6 h.</li>
+<li><span class="tag t-edge">edge</span> <b>Gemini <code>box_2d</code> is <code>[ymin,xmin,ymax,xmax]</code> normalized 0–1000, origin top-left</b>; Apple Vision normalized coords are origin lower-left. Adapter converts; never leak.</li>
+<li><span class="tag t-edge">edge</span> <b>LibRaw <code>dcraw_process()</code> defaults:</b> 8-bit, BT.709 gamma labeled sRGB, auto-bright ON clipping 1 %, <code>use_camera_wb=0</code>. Use LibRaw for unpack + metadata + demosaic only; write the pipeline (black/white levels, WB, cam_xyz, tone, sRGB piecewise TRC with negative reflection, embed <code>sRGB2014.icc</code>).</li>
+<li><span class="tag t-edge">edge</span> <b>LibRaw and rawler disagree on white level</b> (16383 vs 15360) → highlight clipping differs; the two-decoder oracle must tolerate it.</li>
+<li><span class="tag t-edge">edge</span> <b>Build LibRaw <code>--disable-openmp</code></b> or the .node embeds an /opt/homebrew libomp path. Keep libc++ dynamic. Ship darwin-arm64 and darwin-x64 as separate napi packages.</li>
+<li><span class="tag t-edge">edge</span> <b>CIRAWFilter validity:</b> non-nil for junk; check <code>supportedDecoderVersions != ["None"]</code>; <code>identifierHint</code> required; software renderer is a no-op on Apple Silicon; SSH/no-window-server untested.</li>
+<li><span class="tag t-edge">edge</span> <b>Sony M/S lossless</b> is YCbCr pseudo-RAW with WB already applied (<code>as_shot_wb_applied</code>) — don't apply WB twice.</li>
+<li><span class="tag t-edge">edge</span> <b>Unix socket path ≤ 104 bytes on macOS</b> (131 chars → EINVAL). Socket in <code>$TMPDIR</code>, never in the library.</li>
+<li><span class="tag t-edge">edge</span> <b>Photos' "Vibrance" is not <code>CIVibrance</code></b> (it's <code>SmartColor.offsetContrast</code>); Brilliance = <code>SmartTone.offsetLocalLight</code> with a 31×31 lightMap — replicate the architecture, not the curve.</li>
+<li><span class="tag t-edge">edge</span> <b>AgX has no license file; ACES is a custom AMPAS license</b> despite GitHub's badge; Adobe .dcp files may not be bundled; RawTherapee's public-domain DCPs cover no Sony body.</li>
+<li><span class="tag t-edge">edge</span> <b>Free-tier embedding models may retain requests for training</b> — never for a private library.</li>
+<li><span class="tag t-edge">edge</span> <b>GPL-3 weights</b> (e.g. darktable's Bayer denoiser): don't bundle in a permissive distributable; fine for personal use; fine as opt-in download with license shown. The CDDL wall applies to linked code only.</li>
+<li><span class="tag t-edge">edge</span> <b>PGlite <code>fsync=off</code> by default</b>, parallelism hard-disabled, ~2.5× disk amplification, 4 GB wasm32 ceiling untested above 673 MB.</li>
+<li><span class="tag t-edge">edge</span> <b>Embedding worker + poll backoff pairing is admitted unsound</b> in duet (<code>embedding-worker.ts:52–58</code>); re-derive yield vs ceiling together.</li>
+</ul>
+
+<h3>Spec amendments the implementer must apply</h3>
+<ul>
+<li><b>Fix:</b> "Never overwrite RAW bytes" vs "Write XMP on import/save" → sidecars, explicit only (D19).</li>
+<li><b>Fix:</b> <code>--json</code> flags vs JSON-default → D10.</li>
+<li><b>Fix:</b> "port/wrap darktable/ART libraries" → OpenColorIO grading transforms.</li>
+<li><b>Fix:</b> "LibRaw license audit" → dual LGPL/CDDL, take CDDL; no commercial license exists.</li>
+<li><b>Fix:</b> "OpenRouter and/or Vercel AI Gateway" → Vercel only for v1, compat layer (D25).</li>
+<li><b>Fix:</b> <code>copy_edits_from</code> listed as a <code>--set</code> key → <code>develop --copy-from</code>.</li>
+<li><b>Add:</b> <code>flag</code>, <code>label</code>, <code>next</code>, <code>remove</code>, <code>layer transform|reorder|set|duplicate|remove|clear</code>, <code>xmp write|sync</code>, <code>cache prune</code>, <code>restore</code>, <code>migrate</code>, <code>daemon start|stop|status</code>, <code>embed</code>; export <code>--resize --template --on-collision --iptc --preset</code>; <code>segment --text --dry-run</code>; <code>fill --move --by</code>; <code>--relative</code>; <code>--no-daemon</code>; <code>--stream</code>.</li>
+<li><b>Remove:</b> <code>unblur</code>. <b>Reframe:</b> <code>relight</code> as a prompt template with documented drift; <code>--strength</code> = feather + guidance, documented as not-A1111-denoise.</li>
+<li><b>Add rules:</b> two-bucket rule; warn-never-refuse; batch-friendly verbs; coordinate space = oriented uncropped base; CoreML EP rule.</li>
+</ul>
+
+<h3>Integration test cases (functional, through the CLI)</h3>
+<ul>
+<li><b>Gold exam, keyless:</b> import <code>--link</code> → list → rate 10 → develop 3 <code>--preset people</code> → export JPEGs; no gateway key present; human accepts output.</li>
+<li><b>Person-move flow:</b> segment --text → --move --by → vacancy → fill --remove strict → fill --prompt expand=200 → Tier-1 nudge (layers follow) → Tier-2 change (stale) → export writes with warnings.</li>
+<li><b>Concurrency race:</b> N real processes × M inserts on one library → exactly N×M rows; over-capacity → loud <code>library_locked</code>/refusal, never silent loss (seed: <code>spike/</code>).</li>
+<li><b>Re-import idempotency:</b> import twice → <code>already_present</code> = all; move a file on the volume → same id, new locator.</li>
+<li><b>Offline drive:</b> unmount → <code>list</code> shows online:false, <code>develop</code> works, <code>export</code> exits 69, previews serve from cache.</li>
+<li><b>Timezone:</b> a7c2.ARW imports as 2023-10-02 local, +02:00; <code>{date}</code> renders 2023-10-02 regardless of machine zone.</li>
+<li><b>Strict composite:</b> for any model adapter, every pixel outside the mask equals the pre-fill render bit-for-bit.</li>
+<li><b>Decoder oracle:</b> CIRAWFilter vs LibRaw render of a7c2.ARW agree within a stated tolerance after both pipelines' WB and TRC.</li>
+</ul>
+
+<h2><span class="q">Rides along</span>Tweakable build plan</h2>
+<p class="note">Sorted by how likely you are to change your mind, not by execution order. Judgment calls first; mechanical work at the bottom.</p>
+<div class="cards plan">
+<div class="card"><h4>Provider adapters: gpt-image-2 native mask vs instruction+composite for Nano Banana / Grok</h4><p>Toggle: which models ship in the default table; whether <code>--model</code> is per-verb config or per-call only. Smoke tests 1–2 gate this.</p></div>
+<div class="card"><h4>Tier-1 / Tier-2 develop key classification</h4><p>Toggle: which keys delta-apply. The table above is the proposal; expect to move <code>white_balance</code> and <code>vibrance</code> after seeing real fills.</p></div>
+<div class="card"><h4>Daemon idle-exit and spawn policy</h4><p>Toggle: idle timeout (15 min proposed), whether <code>doctor</code> can restart it, version-key granularity.</p></div>
+<div class="card"><h4>Preset values and the four prompts</h4><p>Toggle freely; they're data. Start with what the session sample shows.</p></div>
+<div class="card"><h4>Export template grammar and IPTC field set</h4><p>Toggle: <code>{date}_{seq:03}_{stem}</code> proposed; <code>{seq}</code> scoped to the batch.</p></div>
+<div class="card low"><h4>Lock + session + recovery port from duet-agent</h4><p>Mechanical, with the 11 sweep cards as the checklist. Trust the port.</p></div>
+<div class="card low"><h4>PGlite schema v1 (squashed), halfvec(3072) HNSW, tsvector GIN, RRF search</h4><p>Mechanical. Retrieval shape from duet, no runtime dependency.</p></div>
+<div class="card low"><h4>Rust addon: LibRaw ≥ 0.22 vendored -sys crate; SAM 2.1 via ort; mask dilate/blur; Lanczos3 composite; encode + ICC</h4><p>Mechanical, with the OpenMP/libc++/deployment-target edges as the checklist.</p></div>
+<div class="card low"><h4>Swift helper for CIRAWFilter (headless) and horizon detection</h4><p>Mechanical; ~200 lines; validity check via supportedDecoderVersions.</p></div>
+</div>
+
+<h2><span class="q">Rides along</span>Implementation prompt</h2>
+<div class="prompt-box">
+<div class="bar"><h3>Paste to start the build</h3><button class="btn" id="copy" type="button">Copy</button></div>
+<textarea id="out" readonly>Build photoctl v1 from the spec plus the photoctl Map (this page). The Map's decision ledger D1–D40 and A′ are givens — do not re-decide them; if the code forces a deviation, log it (what the map said, what the code revealed, the conservative call) and continue.
+
+Stack: TypeScript on Node 24 (not Bun), @electric-sql/pglite 0.5.8 + @electric-sql/pglite-pgvector 0.0.9 (exact peer pin), Rust napi addon (LibRaw ≥ 0.22 vendored under CDDL, --disable-openmp; SAM 2.1 via ort on CPU EP), a headless Swift helper for CIRAWFilter, Vercel AI Gateway only behind a two-level provider abstraction (gateway adapter × model adapter).
+
+Lift, do not rewrite: ~/dev/duet-agent src/file-lock.ts, src/memory/pglite.ts, src/memory/session.ts, src/memory/embedding-worker.ts, and their tests (test/memory-embedding-worker-lock-starvation.test.ts, test/memory-session-concurrent-fresh-open.test.ts, test/memory-pglite.test.ts, evals/memory-multi-cli-lock.eval.ts). Apply the 11 port cards in Quadrant 4: pglite-pgvector import; assert CREATE EXTENSION outside the recovery path; withDb returns a discriminated result; refuse-to-open instead of quarantine; pgDump snapshots; one lock model (file-lock.ts shape + pid liveness + bounded age + SIGINT/SIGTERM; EPERM = unknown); fix the openWithPolling lock leak; drop Bun plumbing; squash migrations to v1; make timing constants injectable; keep clearStalePostmasterLock (0.5.8 writes postmaster.pid).
+
+Tests follow /write-tests: functional, through real photoctl processes against a real dataDir in the Docker seam, gate ON in CI, workers spawn built JS. Seed the concurrency test from scratchpad/spike/. The eight integration cases on the Map are the acceptance suite; the gold exam must pass with no gateway key.
+
+Implementation order: 1) init, schema v1, doctor, lockfile, daemon auto-start, JSON contract (D10). 2) import --link with locators + offline state, content key (D9), embedded-JPEG cache tiers (D32), XMP read, timezone rule; list/show/next/rate/flag/label/tag/remove. 3) export from the embedded full-size JPEG (identity path) with resize/template/collision/IPTC. 4) Decoders behind one interface: CIRAWFilter helper, then LibRaw addon; decoder-oracle test. 5) develop dict + presets + OpenColorIO tone math + cheap NR + XMP write/sync. 6) Embed worker (gemini-embedding-2, halfvec(3072), consent per D33) + hybrid search with RRF. 7) segment (SAM 2.1; --text via Gemini structured output) + layers with full transforms + fill (--fit, --full-res, --pad, --move/vacancy) + strict composite above the adapters. 8) reimagine, relight prompt, generate, auto_enhance, markup. 9) Optional MCP.
+
+Ask David only for: the ARW drive path, the Gateway key + per-verb model IDs, and to run smoke tests 1–2 (mask polarity; multimodal embedding shape) before step 7.</textarea>
+</div>
+
+<p class="note" style="margin-top:28px">After the walk: keep an implementation-notes log of every deviation; before shipping, package prototype + spec + notes into a buy-in doc; before merging a long diff, write the merge-readiness quiz.</p>
+</main>
+<script>
+document.getElementById('copy').addEventListener('click',function(){var t=document.getElementById('out');t.select();try{navigator.clipboard.writeText(t.value)}catch(e){document.execCommand('copy')}var b=this;b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1200)});
+</script>

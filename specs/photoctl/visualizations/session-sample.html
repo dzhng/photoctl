@@ -1,0 +1,389 @@
+<title>photoctl Session Sample</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#F7F6F2; --fg:#1E2126; --muted:#6B6F75; --line:#DAD7CF; --panel:#FFFFFF;
+  --code-bg:#0C0E11; --code-fg:#E6E3DA; --code-dim:#7C8189; --code-line:#1C2026;
+  --accent:#C8862A; --accent-ink:#1E2126; --ok:#3C8A5C; --err:#B8462F; --magenta:#C22C8C; --warn:#B07A1C;
+  --chip-bg:#EFECE4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121417; --fg:#E8E6E0; --muted:#9A9EA5; --line:#2A2E34; --panel:#1A1D22;
+    --code-bg:#0C0E11; --code-fg:#E6E3DA; --code-dim:#7C8189; --code-line:#1C2026;
+    --accent:#E0A458; --accent-ink:#121417; --ok:#5DB07E; --err:#E0664E; --magenta:#E259B3; --warn:#D9A03A;
+    --chip-bg:#22262C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121417; --fg:#E8E6E0; --muted:#9A9EA5; --line:#2A2E34; --panel:#1A1D22;
+  --code-bg:#0C0E11; --code-fg:#E6E3DA; --code-dim:#7C8189; --code-line:#1C2026;
+  --accent:#E0A458; --accent-ink:#121417; --ok:#5DB07E; --err:#E0664E; --magenta:#E259B3; --warn:#D9A03A;
+  --chip-bg:#22262C;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:"Source Sans 3",system-ui,-apple-system,Segoe UI,sans-serif;font-size:17px;line-height:1.5;margin:0}
+main{max-width:920px;margin:0 auto;padding:40px 24px 120px}
+h1,h2,h3{font-family:"Bricolage Grotesque","Source Sans 3",sans-serif;text-wrap:balance;margin:0}
+h1{font-size:44px;line-height:1.05;font-weight:700;letter-spacing:-.01em}
+h2{font-size:26px;font-weight:700;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+h3{font-size:17px;font-weight:700}
+p{max-width:66ch}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.lede{color:var(--muted);font-size:19px;margin-top:10px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 20px;margin-top:22px;padding:16px 18px;border:1px solid var(--line);background:var(--panel)}
+.facts div{font-size:14px;color:var(--muted)}
+.facts b{display:block;color:var(--fg);font-family:"JetBrains Mono",monospace;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.block{margin-top:26px;border:1px solid var(--line);background:var(--panel)}
+.block-head{display:flex;align-items:center;gap:14px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.block-head .id{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--accent);font-weight:600;min-width:34px}
+.block-head h3{flex:1 1 200px}
+.chips{display:flex;gap:6px}
+.chip{font:600 12px/1 "Source Sans 3",sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:7px 10px;border:1px solid var(--line);background:var(--chip-bg);color:var(--fg);cursor:pointer;border-radius:2px}
+.chip:hover{border-color:var(--accent)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.note{display:none;padding:8px 14px 12px;border-bottom:1px solid var(--line)}
+.note.show{display:block}
+.note input{width:100%;font:15px "Source Sans 3",sans-serif;padding:7px 9px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.why{padding:10px 14px 0;font-size:15px;color:var(--muted);max-width:none}
+.term{background:var(--code-bg);color:var(--code-fg);font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:13px;line-height:1.55;overflow-x:auto;margin:12px 14px 14px}
+.term pre{margin:0;padding:12px 14px;white-space:pre}
+.term .c{color:var(--code-dim)} .term .cmd{color:#FFFFFF;font-weight:600}
+.term .err{color:#8FA3B8;font-style:italic} .term .k{color:#E0A458} .term .s{color:#9BC98A} .term .n{color:#7FC8E8}
+.term .mg{color:#F06BC8;font-weight:600} .term .bad{color:#F08A75;font-weight:600} .term .good{color:#7FD39A}
+.lane{display:inline-block;width:5.2em;color:var(--code-dim);user-select:none}
+.prompt{padding:12px 14px 14px;font-size:15px;line-height:1.55}
+.prompt code{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--accent)}
+.prompt blockquote{margin:8px 0 0;padding:12px 14px;border-left:3px solid var(--accent);background:var(--bg);white-space:pre-wrap}
+.probe{display:flex;flex-direction:column;gap:8px;padding:12px 14px 16px}
+.probe .opts{display:flex;flex-wrap:wrap;gap:6px}
+.probe .opt{font:15px "Source Sans 3",sans-serif;padding:7px 11px;border:1px solid var(--line);background:var(--chip-bg);cursor:pointer;border-radius:2px}
+.probe .opt.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.probe .opt:focus-visible{outline:2px solid var(--accent)}
+.probe input{font:15px "Source Sans 3",sans-serif;padding:7px 9px;border:1px solid var(--line);background:var(--bg);color:var(--fg);width:100%}
+.reply{position:sticky;bottom:0;margin-top:56px;background:var(--panel);border:1px solid var(--line);border-bottom:0;padding:14px 16px 16px;box-shadow:0 -6px 24px rgba(0,0,0,.08)}
+.reply textarea{width:100%;height:150px;font:13px/1.5 "JetBrains Mono",monospace;background:var(--bg);color:var(--fg);border:1px solid var(--line);padding:10px;resize:vertical}
+.reply .bar{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.reply .bar h3{flex:1}
+.btn{font:600 13px "Source Sans 3",sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:9px 14px;background:var(--accent);color:var(--accent-ink);border:0;cursor:pointer;border-radius:2px}
+.btn:focus-visible{outline:2px solid var(--fg)}
+.count{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:18px;font-size:14px;color:var(--muted);margin-top:14px;flex-wrap:wrap}
+.legend span b{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.chip,.opt{transition:background .12s,border-color .12s}}
+</style>
+
+<main>
+  <div class="eyebrow">Stage 3 · a concrete sample to react to</div>
+  <h1>photoctl Session Sample</h1>
+  <p class="lede">Every command below is fabricated output against one real file. React block by block — steal it, skip it, or say what to change — and the reply assembles itself at the bottom.</p>
+
+  <div class="facts">
+    <div>File<b>a7c2.ARW · 70 MB</b></div>
+    <div>Body<b>SONY ILCE-7CM2</b></div>
+    <div>Lens<b>FE 24-70mm F4 ZA OSS</b></div>
+    <div>Exposure<b>1/100 · f/7.1 · ISO 100 · 24 mm</b></div>
+    <div>Frame<b>7008 × 4672 · WB Auto</b></div>
+    <div>Shot<b>2023-10-03 00:18:37</b></div>
+  </div>
+  <div class="legend">
+    <span><b>steal</b> — take it as shown</span>
+    <span><b>skip</b> — don't want this</span>
+    <span><b>edit</b> — right idea, wrong detail (say what)</span>
+  </div>
+
+  <h2>A · The gold exam, as an agent would see it</h2>
+  <p>JSON on stdout, progress on stderr, exit codes an agent can branch on. The daemon spawns silently on the first command.</p>
+
+  <div class="block" data-id="A1" data-name="init + first-run daemon spawn">
+    <div class="block-head"><span class="id">A1</span><h3>init, and the daemon's first spawn</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl init --path ~/Pictures/photoctl</span>
+<span class="lane">stderr</span><span class="err">{"event":"daemon","action":"spawned","pid":48112,"socket":"$TMPDIR/photoctl-9f3c1a7e.sock","version":"0.1.0","schema":1}</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{"library":"/Users/david/Pictures/photoctl","db":"pglite 0.5.8 / pg 18.3","cache_max_bytes":21474836480}}
+<span class="lane">exit</span><span class="good">0</span></pre></div>
+  </div>
+
+  <div class="block" data-id="A2" data-name="import --link with stderr progress">
+    <div class="block-head"><span class="id">A2</span><h3>import — progress on stderr, one result on stdout</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl import /Volumes/A7C2-2025/2025-08-30_wedding --link --recursive</span>
+<span class="lane">stderr</span><span class="err">{"event":"progress","phase":"scan","done":2140,"total":2140}</span>
+<span class="lane">stderr</span><span class="err">{"event":"progress","phase":"import","done":500,"total":2140,"per_sec":38.4,"eta_s":43}</span>
+<span class="lane">stderr</span><span class="err">{"event":"progress","phase":"import","done":2140,"total":2140,"per_sec":39.1}</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{
+  "imported":2131,"already_present":9,"skipped_unsupported":0,
+  "volume":{"uuid":"6A1F-0C3B","mount":"/Volumes/A7C2-2025","online":true},
+  "xmp_read":{"sidecars_found":2140,"ratings":1874,"keywords":2140,"labels":212},
+  "previews":{"embedded_extracted":2140,"bytes":17203200},
+  "embeddings":{"queued":2131,"note":"runs in daemon while online; search may lag"},
+  "elapsed_s":56.2}}
+<span class="lane">exit</span><span class="good">0</span></pre></div>
+    <p class="why">9 already present = D9 content key matched (a re-run is a no-op). Sidecars from Classic were read, not written. Embedding is queued, not blocking — and its cost is stated nowhere yet.</p>
+  </div>
+
+  <div class="block" data-id="A3" data-name="list --stream with range filters">
+    <div class="block-head"><span class="id">A3</span><h3>list — range filter, NDJSON rows</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl list --rating ">=4" --flag pick --folder 2025-08-30_wedding --stream</span>
+<span class="lane">stdout</span>{"id":"0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001","file":"DSC04417.ARW","rating":5,"flag":"pick","label":"green","shot":"2025-08-30T14:02:11-07:00","online":true}
+<span class="lane">stdout</span>{"id":"0199a7c2-3b1e-7c40-8f2a-1d0e5a91c0a9","file":"DSC04588.ARW","rating":4,"flag":"pick","label":null,"shot":"2025-08-30T15:47:03-07:00","online":true}
+<span class="lane">stdout</span><span class="c">… 61 more rows …</span>
+<span class="lane">exit</span><span class="good">0</span>
+
+<span class="cmd">$ photoctl list --rating ">=4" --flag pick --human</span>
+<span class="lane">stdout</span>  ID        FILE           ★  FLAG  LABEL  SHOT                 ONLINE
+<span class="lane">stdout</span>  0199a7c2… DSC04417.ARW   5  pick  green  2025-08-30 14:02:11  yes
+<span class="lane">stdout</span>  0199a7c2… DSC04588.ARW   4  pick  —      2025-08-30 15:47:03  yes</pre></div>
+    <p class="why">IDs are UUIDv7 (time-ordered, so they sort like a shoot). Any verb accepts an unambiguous prefix: <code>photoctl show 0199a7c2-3b1e</code>.</p>
+  </div>
+
+  <div class="block" data-id="A4" data-name="next cursor + batch rate/flag with per-item results">
+    <div class="block-head"><span class="id">A4</span><h3>cull loop — next, then a batch with one failure</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl next --unflagged</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{"id":"0199a7c2-…-c0b3","file":"DSC04591.ARW","preview":"/Users/david/Pictures/photoctl/cache/emb/0199a7c2-…-c0b3.jpg","remaining":1618}}
+
+<span class="cmd">$ photoctl rate 0199a7c2-…-c001 0199a7c2-…-c0a9 0199a7c2-…-ZZZZ --stars 5</span>
+<span class="lane">stdout</span>{"schema":1,"ok":false,"code":"partial","summary":{"ok":2,"failed":1},
+  "results":[{"id":"0199a7c2-…-c001","ok":true},{"id":"0199a7c2-…-c0a9","ok":true},
+             {"id":"0199a7c2-…-ZZZZ","ok":false,"code":"not_found"}]}
+<span class="lane">exit</span><span class="bad">65</span>   <span class="c">← data error: fix the input, don't retry</span>
+
+<span class="cmd">$ photoctl flag 0199a7c2-…-c0b3 --reject</span>
+<span class="lane">stdout</span>{"schema":1,"ok":false,"code":"library_locked","holder_pid":48990,"waited_ms":30000}
+<span class="lane">exit</span><span class="bad">75</span>   <span class="c">← temp fail: retry</span></pre></div>
+  </div>
+
+  <div class="block" data-id="A5" data-name="develop --preset people + show">
+    <div class="block-head"><span class="id">A5</span><h3>develop --preset people, then show</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl develop 0199a7c2-…-c001 0199a7c2-…-c0a9 --preset people --set exposure=0.3</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"summary":{"ok":2,"failed":0},"results":[{"id":"0199a7c2-…-c001","ok":true,"develop_hash":"h_4e21"},{"id":"0199a7c2-…-c0a9","ok":true,"develop_hash":"h_9b07"}]}
+
+<span class="cmd">$ photoctl show 0199a7c2-…-c001</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{
+  "id":"0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001",
+  "dims":{"w":7008,"h":4672,"orientation":1,"note":"oriented, uncropped — the coordinate space"},
+  "crop":null,
+  "camera":{"make":"SONY","model":"ILCE-7CM2","lens":"FE 24-70mm F4 ZA OSS"},
+  "exposure":{"shutter":"1/100","f":7.1,"iso":100,"focal_mm":24,"wb":"auto"},
+  "shot":"2023-10-03T00:18:37Z",
+  "rating":5,"flag":"pick","label":"green","tags":["wedding","ceremony"],
+  "locators":[{"volume":"6A1F-0C3B","path":"2025-08-30_wedding/DSC04417.ARW","online":true}],
+  "content_key":"ck_7f3a19e2c4b8d0a1",
+  "develop":{"preset":"people","exposure":0.3,"highlights":-20,"shadows":15,"contrast":-8,
+             "vibrance":10,"saturation":-5,"white_balance":{"temp_offset_k":150},
+             "noise_reduction":{"luminance":15,"color":25},"sharpen":20,"vignette":-8},
+  "develop_hash":"h_4e21",
+  "layers":{"count":0,"stale":0},
+  "xmp":{"sidecar":"DSC04417.xmp","read_at":"2025-09-03T19:41:00Z","stale":false}}}</pre></div>
+    <p class="why">Preset applied then <code>--set</code> overrides, in that order (D21). <code>show</code> reports the oriented, uncropped dims because that is the coordinate space every other verb uses (D13).</p>
+  </div>
+
+  <div class="block" data-id="A6" data-name="export with resize/template/collision + offline failure">
+    <div class="block-head"><span class="id">A6</span><h3>export — deliverable JPEGs, and the offline case</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl export 0199a7c2-…-c001 0199a7c2-…-c0a9 --to ~/Deliver/wedding \
+    --format jpeg --quality 88 --resize 2048 --template "{date}_{seq:03}_{stem}" --on-collision rename \
+    --iptc creator="David Z" copyright="© 2025 David Z"</span>
+<span class="lane">stderr</span><span class="err">{"event":"progress","phase":"render","done":2,"total":2}</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"summary":{"ok":2,"failed":0},"results":[
+  {"id":"0199a7c2-…-c001","ok":true,"file":"~/Deliver/wedding/2025-08-30_001_DSC04417.jpg","w":2048,"h":1365,"bytes":812044,"icc":"sRGB2014"},
+  {"id":"0199a7c2-…-c0a9","ok":true,"file":"~/Deliver/wedding/2025-08-30_002_DSC04588.jpg","w":2048,"h":1365,"bytes":790211,"icc":"sRGB2014"}]}
+
+<span class="c">— drive unplugged —</span>
+<span class="cmd">$ photoctl export 0199a7c2-…-c001 --to ~/Deliver/wedding</span>
+<span class="lane">stdout</span>{"schema":1,"ok":false,"code":"file_offline","summary":{"ok":0,"failed":1},"results":[{"id":"0199a7c2-…-c001","ok":false,"code":"file_offline","volume":"6A1F-0C3B","hint":"mount /Volumes/A7C2-2025"}]}
+<span class="lane">exit</span><span class="bad">69</span>   <span class="c">← unavailable: don't retry until the volume is back</span></pre></div>
+  </div>
+
+  <h2>B · The person-move flow</h2>
+  <p>The integration test you asked for. Local → gateway → local → gateway → local.</p>
+
+  <div class="block" data-id="B1" data-name="segment --text with --dry-run then commit">
+    <div class="block-head"><span class="id">B1</span><h3>segment --text — look first, then create layers</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl segment 0199a7c2-…-c001 --text "the person on the left" --dry-run</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{"instances":[{"i":0,"bbox":[2210,940,1380,3120],"conf":0.91,"source":"gemini-3.1-flash→sam2.1"}],"gateway_calls":1}}
+
+<span class="cmd">$ photoctl segment 0199a7c2-…-c001 --text "the person on the left"</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{"layers":[{"layer":1,"state":"selected","bbox":[2210,940,1380,3120],"mask_px":2891044,"name":"person on the left"}]}}
+<span class="lane">exit</span><span class="good">0</span></pre></div>
+    <p class="why">Gemini returns a coarse box; SAM 2.1 refines it locally to a pixel mask. <code>--at 2900,2500</code> would skip the gateway entirely.</p>
+  </div>
+
+  <div class="block" data-id="B2" data-name="fill --move emits the vacancy layer">
+    <div class="block-head"><span class="id">B2</span><h3>fill --move — pure geometry, emits the vacancy</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl fill 0199a7c2-…-c001 --layer 1 --move --by 1200,0</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{
+  "layers":[
+    {"layer":1,"state":"moved","transform":{"dx":1200,"dy":0,"scale":1,"rotate":0,"flip":null,"anchor":"centroid"},"pixels":"lifted","develop_hash":"h_4e21"},
+    {"layer":2,"state":"selected","role":"vacancy","of_layer":1,"mask_px":2891044,"render":"placeholder"}],
+  "gateway_calls":0}}
+
+<span class="cmd">$ photoctl layer list 0199a7c2-…-c001</span>
+<span class="lane">stdout</span>  L  STATE     ROLE     NAME                 TRANSFORM         STALE
+<span class="lane">stdout</span>  1  moved     subject  person on the left   dx=1200           no
+<span class="lane">stdout</span>  2  selected  <span class="mg">vacancy</span>  vacancy of L1        —                 <span class="mg">unfilled → export refuses</span></pre></div>
+  </div>
+
+  <div class="block" data-id="B3" data-name="fill --remove on the vacancy (strict) + provider details">
+    <div class="block-head"><span class="id">B3</span><h3>fill --remove — strict, with what the provider actually got</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl fill 0199a7c2-…-c001 --layer 2 --remove --fit strict --full-res --pad 192 --seed 7</span>
+<span class="lane">stderr</span><span class="err">{"event":"provider","gateway":"vercel","model":"openai/gpt-image-2","op":"edit","mask":"native","sent_px":"1764x3504","format":"png"}</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{
+  "layer":2,"state":"filled","fit":"strict",
+  "composite":{"unmasked_bit_exact":true,"returned_px":"1764x3504","resampled":false},
+  "provider":{"gateway":"vercel","model":"openai/gpt-image-2","seed":7,"warnings":[],"cost_usd":0.05,"ms":8420}}}
+
+<span class="c">— same call, model without native mask —</span>
+<span class="cmd">$ photoctl fill 0199a7c2-…-c001 --layer 2 --remove --fit strict --model google/gemini-3.1-flash-image</span>
+<span class="lane">stderr</span><span class="err">{"event":"provider","gateway":"vercel","model":"google/gemini-3.1-flash-image","op":"edit","mask":"instruction+composite","sent_px":"1764x3504"}</span>
+<span class="lane">stdout</span>{"schema":1,"ok":false,"code":"provider_dims_mismatch","returned_px":"1792x3584","sent_px":"1764x3504","hint":"strict forbids resampling; use --fit expand=24 or --fit free"}
+<span class="lane">exit</span><span class="bad">65</span>
+
+<span class="cmd">$ photoctl fill 0199a7c2-…-c001 --layer 2 --remove --fit expand=24 --model google/gemini-3.1-flash-image</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{"layer":2,"state":"filled","fit":"expand=24","composite":{"unmasked_bit_exact":true,"returned_px":"1792x3584","resampled":true,"resample":"lanczos3"},"provider":{"model":"google/gemini-3.1-flash-image","warnings":[],"cost_usd":0.04}}}</pre></div>
+    <p class="why">The provider event names the gateway, model, and how the mask was honored. <code>unmasked_bit_exact</code> is asserted by the composite, never by trusting the model.</p>
+  </div>
+
+  <div class="block" data-id="B4" data-name="fill --prompt hat with expand=200, then stale after develop">
+    <div class="block-head"><span class="id">B4</span><h3>add the hat, then nudge exposure — A′ in action</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre><span class="cmd">$ photoctl fill 0199a7c2-…-c001 --layer 1 --prompt "wearing a wide-brimmed straw hat" --fit expand=200</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{"layer":1,"state":"filled","fit":"expand=200","transform":{"dx":1200,"dy":0},"provider":{"model":"openai/gpt-image-2","cost_usd":0.05}}}
+
+<span class="cmd">$ photoctl develop 0199a7c2-…-c001 --set exposure=0.5</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{"develop_hash":"h_51c9","layers":{"delta_applied":[1,2],"stale":[]}}}   <span class="c">← Tier-1 key: layers follow</span>
+
+<span class="cmd">$ photoctl develop 0199a7c2-…-c001 --set shadows=40</span>
+<span class="lane">stdout</span>{"schema":1,"ok":true,"data":{"develop_hash":"h_a03e","layers":{"delta_applied":[],"stale":[1,2]},"hint":"photoctl fill --refresh --layer 1,2"}}   <span class="c">← Tier-2 key: layers stale</span>
+
+<span class="cmd">$ photoctl export 0199a7c2-…-c001 --to ./out --format jpeg</span>
+<span class="lane">stdout</span>{"schema":1,"ok":false,"code":"layers_stale","stale":[1,2],"hint":"--allow-stale to export anyway"}
+<span class="lane">exit</span><span class="bad">65</span></pre></div>
+  </div>
+
+  <h2>C · The prebuilt prompts</h2>
+  <p>Under the two-bucket rule these <em>are</em> the generative features. Placeholders in <code>{braces}</code>.</p>
+
+  <div class="block" data-id="C1" data-name="prompt: fill --remove">
+    <div class="block-head"><span class="id">C1</span><h3>fill --remove</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="prompt"><blockquote>Remove {subject_or_"the masked object"} from the masked region and reconstruct what would be behind it. Continue the surrounding background exactly: same perspective, light direction, color temperature, depth of field, and film grain. Add no new objects, people, or text. Change nothing outside the mask.</blockquote>
+    <p>Sent with: the crop + <code>--pad</code> ring, the mask (native or drawn as a hint), <code>seed</code>. Grain matching matters on ISO 3200 wedding frames.</p></div>
+  </div>
+
+  <div class="block" data-id="C2" data-name="prompt: fill --outpaint">
+    <div class="block-head"><span class="id">C2</span><h3>fill --outpaint</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="prompt"><blockquote>Extend this photograph beyond its current edges into the transparent border. Continue the scene as the same lens would have seen it: same horizon line, perspective, lighting, and grain. Keep every existing pixel unchanged. Do not introduce new subjects.</blockquote>
+    <p>photoctl pads the canvas locally to the target <code>--aspect</code> or <code>--px</code> and marks the pad as the mask; the model never chooses dimensions.</p></div>
+  </div>
+
+  <div class="block" data-id="C3" data-name="prompt: relight (documented drift)">
+    <div class="block-head"><span class="id">C3</span><h3>relight — a prompt template, drift documented</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="prompt"><blockquote>Relight this portrait as if a single soft studio key light were placed at {azimuth}° azimuth (0 = camera-right, 90 = directly above) and {elevation}° elevation with intensity {intensity} of 1. Keep the person's identity, expression, pose, clothing, and the background unchanged. Adjust only illumination, shadow direction, and specular highlights.</blockquote>
+    <p>Whole-frame regeneration through <code>reimagine</code>'s path. Output carries <code>"drift":"full-frame"</code> so agents don't mistake it for a local edit.</p></div>
+  </div>
+
+  <div class="block" data-id="C4" data-name="prompt: auto_enhance (VLM → develop JSON)">
+    <div class="block-head"><span class="id">C4</span><h3>auto_enhance — VLM proposes develop keys</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="prompt"><blockquote>You are a careful photo editor. Given this image (a 1024px preview) and its measured stats {p02, p50, p98, clipped_hi_pct, clipped_lo_pct, mean_sat, est_wb_k}, return only JSON with keys from: exposure [-2,2], highlights, shadows, contrast, black_point, vibrance, saturation [-100,100], white_balance.temp_offset_k [-1500,1500]. Be conservative. Protect skin tones. Never clip highlights that are currently held. Explain nothing.</blockquote>
+    <p>Result is written as ordinary develop keys — inspectable in <code>show</code>, undoable with <code>--reset</code>, never a black box.</p></div>
+  </div>
+
+  <h2>D · The three shipped presets</h2>
+  <p>Apple-scale keys, −100…100 unless noted. These are guesses at your taste — the point is to be corrected.</p>
+
+  <div class="block" data-id="D1" data-name="preset: neutral">
+    <div class="block-head"><span class="id">D1</span><h3>neutral</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre>{ }   <span class="c">// identity: as-shot WB, camera base curve, no NR, no sharpen.
+      // "What the sensor saw, rendered honestly." A baseline to diff against.</span></pre></div>
+  </div>
+
+  <div class="block" data-id="D2" data-name="preset: people">
+    <div class="block-head"><span class="id">D2</span><h3>people</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre>{ <span class="k">"highlights"</span>: <span class="n">-20</span>,  <span class="k">"shadows"</span>: <span class="n">15</span>,  <span class="k">"contrast"</span>: <span class="n">-8</span>,
+  <span class="k">"vibrance"</span>: <span class="n">10</span>,    <span class="k">"saturation"</span>: <span class="n">-5</span>,
+  <span class="k">"white_balance"</span>: { <span class="k">"temp_offset_k"</span>: <span class="n">150</span> },
+  <span class="k">"noise_reduction"</span>: { <span class="k">"luminance"</span>: <span class="n">15</span>, <span class="k">"color"</span>: <span class="n">25</span> },
+  <span class="k">"sharpen"</span>: <span class="n">20</span>,  <span class="k">"definition"</span>: <span class="n">-5</span>,  <span class="k">"vignette"</span>: <span class="n">-8</span> }
+<span class="c">// soft contrast, held highlights on skin, slight warmth, vibrance over saturation
+// so skin doesn't go orange, gentle NR, negative definition to flatter texture.</span></pre></div>
+  </div>
+
+  <div class="block" data-id="D3" data-name="preset: high-contrast">
+    <div class="block-head"><span class="id">D3</span><h3>high-contrast</h3><div class="chips"></div></div><div class="note"><input placeholder="what to change…"></div>
+    <div class="term"><pre>{ <span class="k">"contrast"</span>: <span class="n">30</span>,  <span class="k">"black_point"</span>: <span class="n">12</span>,  <span class="k">"highlights"</span>: <span class="n">-15</span>,  <span class="k">"shadows"</span>: <span class="n">-10</span>,
+  <span class="k">"definition"</span>: <span class="n">20</span>,  <span class="k">"saturation"</span>: <span class="n">8</span>,  <span class="k">"sharpen"</span>: <span class="n">35</span> }
+<span class="c">// crushed blacks, protected highlights, punchy local contrast. Not for skin.</span></pre></div>
+  </div>
+
+  <h2>E · Three things you'd never think to mention</h2>
+  <p>The decisive constraint usually arrives as a throwaway remark. Asking on purpose.</p>
+
+  <div class="block" data-id="E1" data-name="who consumes: agent invocation shape">
+    <div class="block-head"><span class="id">E1</span><h3>How do Grok Bot / Cursor actually invoke this?</h3></div>
+    <div class="probe" data-probe="E1">
+      <div class="opts"><span class="opt" tabindex="0">One-shot commands from a chat loop</span><span class="opt" tabindex="0">Long scripted sessions (hundreds of commands)</span><span class="opt" tabindex="0">Via MCP tools, not a shell</span><span class="opt" tabindex="0">Mostly me, agents occasionally</span></div>
+      <input placeholder="anything else about the caller…">
+    </div>
+  </div>
+
+  <div class="block" data-id="E2" data-name="where it runs: machines and drives">
+    <div class="block-head"><span class="id">E2</span><h3>Where does the library live, and on how many machines?</h3></div>
+    <div class="probe" data-probe="E2">
+      <div class="opts"><span class="opt" tabindex="0">This Mac only, originals on one external drive</span><span class="opt" tabindex="0">Laptop + desktop sharing the drive</span><span class="opt" tabindex="0">Library on the drive itself, so it travels</span><span class="opt" tabindex="0">Some originals on internal disk too</span></div>
+      <input placeholder="e.g. drive is exFAT, 4 TB, Thunderbolt…">
+    </div>
+  </div>
+
+  <div class="block" data-id="E3" data-name="what done looks like: OSS gate and who inherits">
+    <div class="block-head"><span class="id">E3</span><h3>What does "done" look like, and who inherits it?</h3></div>
+    <div class="probe" data-probe="E3">
+      <div class="opts"><span class="opt" tabindex="0">Gold exam passes; I use it daily; OSS later</span><span class="opt" tabindex="0">OSS publish is part of done</span><span class="opt" tabindex="0">Other photographers use it within months</span><span class="opt" tabindex="0">Coding agents maintain it, so tests are the spec</span></div>
+      <input placeholder="license preference, name, anything about the first outside user…">
+    </div>
+  </div>
+
+  <div class="reply" id="reply">
+    <div class="bar"><h3>Your reply, assembled</h3><span class="count" id="count">0 reactions</span><button class="btn" id="copy" type="button">Copy</button></div>
+    <textarea id="out" readonly placeholder="Click steal / skip / edit on any block, or pick a probe answer. This fills in."></textarea>
+  </div>
+</main>
+
+<script>
+(function(){
+  var state={}; var probes={};
+  var blocks=document.querySelectorAll('.block[data-id]');
+  blocks.forEach(function(b){
+    var id=b.dataset.id, name=b.dataset.name, chips=b.querySelector('.chips'), note=b.querySelector('.note');
+    if(!chips) return;
+    ['steal','skip','edit'].forEach(function(v){
+      var c=document.createElement('button'); c.type='button'; c.className='chip'; c.textContent=v; c.setAttribute('aria-pressed','false');
+      c.addEventListener('click',function(){
+        chips.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');x.setAttribute('aria-pressed','false');});
+        c.classList.add('on'); c.setAttribute('aria-pressed','true');
+        state[id]={v:v,name:name};
+        if(note){ note.classList.toggle('show', v==='edit'); if(v==='edit') note.querySelector('input').focus(); }
+        render();
+      });
+      chips.appendChild(c);
+    });
+    if(note){ note.querySelector('input').addEventListener('input',function(e){ if(state[id]) state[id].note=e.target.value; render(); }); }
+  });
+  document.querySelectorAll('.probe').forEach(function(p){
+    var id=p.dataset.probe, name=p.closest('.block').dataset.name;
+    p.querySelectorAll('.opt').forEach(function(o){
+      function pick(){ p.querySelectorAll('.opt').forEach(function(x){x.classList.remove('on')}); o.classList.add('on'); probes[id]=probes[id]||{name:name}; probes[id].v=o.textContent; render(); }
+      o.addEventListener('click',pick); o.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();} });
+    });
+    p.querySelector('input').addEventListener('input',function(e){ probes[id]=probes[id]||{name:name}; probes[id].note=e.target.value; render(); });
+  });
+  function render(){
+    var lines=[]; var n=0;
+    Object.keys(state).sort().forEach(function(id){ var s=state[id]; n++; lines.push(id+' '+s.name+': '+s.v+(s.note?' — '+s.note:'')); });
+    Object.keys(probes).sort().forEach(function(id){ var s=probes[id]; if(!s.v&&!s.note) return; n++; lines.push(id+' '+s.name+': '+(s.v||'')+(s.note?(s.v?' — ':'')+s.note:'')); });
+    document.getElementById('out').value=lines.join('\n');
+    document.getElementById('count').textContent=n+' reaction'+(n===1?'':'s');
+  }
+  document.getElementById('copy').addEventListener('click',function(){
+    var t=document.getElementById('out'); t.select();
+    try{ navigator.clipboard.writeText(t.value); }catch(e){ document.execCommand('copy'); }
+    var b=document.getElementById('copy'); b.textContent='Copied'; setTimeout(function(){b.textContent='Copy';},1200);
+  });
+})();
+</script>

@@ -1,0 +1,1 @@
+{"name":"photoctl-spike","private":true,"type":"module","dependencies":{"@electric-sql/pglite":"^0.5.8","@electric-sql/pglite-socket":"^0.2.11","exifr":"^7.1.3","pg":"^8.23.0"}}

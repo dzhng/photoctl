@@ -1,0 +1,68 @@
+# Lifted from ~/dev/duet, ~/dev/game, ~/dev/duet-agent — same lessons, photoctl-shaped.
+
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Local env files — commit ENCRYPTED dotenvx sources only; never keys, never *.local
+.env
+.env*.local
+.env.keys
+
+# Testing
+coverage
+**/playwright-report/
+**/test-results/
+# throwaway debug/probe tests (write-tests skill) — never commit
+crates/*/tests/dbg*.rs
+packages/*/test/dbg*.test.ts
+
+# Turbo
+.turbo
+
+# Build outputs
+build
+dist
+out/
+/target
+crates/*/target
+helpers/*/.build
+*.node
+ts-traces
+
+# Local library / daemon / cache state produced by running photoctl
+.photoctl/
+*.photoctl/
+**/photoctl-*.sock
+.ortcache/
+
+# Models and model caches (downloaded on demand, never committed)
+models/
+*.onnx
+*.onnx.data
+*.dtmodel
+*.mlpackage/
+
+# Debug
+npm-debug.log*
+*.log*
+
+# Misc
+.DS_Store
+*.pem
+tmp
+.worktrees/
+.claude/worktrees
+.claude/settings.local.json
+
+# throwaway scratch: one-off probes, dumps, plots, notes — never commit.
+# The folder is kept (its README); everything dropped in it is ignored.
+/throwaway/*
+!/throwaway/README.md
+
+# Local-only design notes / scratch
+.agents/notes/
+.wip/
+
+# NOTE: fixtures/ is committed on purpose — known-good/known-bad assets for tests.
