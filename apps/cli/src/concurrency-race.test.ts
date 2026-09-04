@@ -2,6 +2,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, expect, test } from "vitest";
+import { requestDaemon } from "@photoctl/commands";
+import type { CommandRequest } from "@photoctl/protocol";
 import { measureProcessTiming, seedPhotoRows, spawnPhotoctl } from "@photoctl/test-harness";
 
 const directories: string[] = [];
@@ -67,36 +69,43 @@ test("queue overflow fails loudly and commits every accepted batch in full", asy
   const ids = await seedPhotoRows(library, 25);
   const started = await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env });
   expect(started.code).toBe(0);
-  const daemonPid = (started.json as { data: { pid: number } }).data.pid;
+  const daemon = (started.json as { data: { pid: number; socket: string } }).data;
 
-  process.kill(daemonPid, "SIGSTOP");
-  let pending: ReturnType<typeof spawnPhotoctl>[] = [];
+  process.kill(daemon.pid, "SIGSTOP");
+  let pending: Array<ReturnType<typeof requestDaemon>> = [];
   let resumed = false;
   let contenders;
   try {
     pending = Array.from({ length: 24 }, (_, client) =>
-      spawnPhotoctl(["tag", ...ids, "--add", `client-${client}`], { libraryDir: library, env }),
+      requestDaemon(daemon.socket, {
+        verb: "tag",
+        args: [...ids, "--add", `client-${client}`],
+        cwd: library,
+        env: {
+          noDaemon: false,
+          libraryPath: library,
+          lockBudgetMs: env.PHOTOCTL_LOCK_BUDGET_MS,
+          pollCeilingMs: env.PHOTOCTL_POLL_CEILING_MS,
+        },
+      } satisfies CommandRequest),
     );
-    await new Promise((resolveDelay) => setTimeout(resolveDelay, 750));
-    process.kill(daemonPid, "SIGCONT");
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
+    process.kill(daemon.pid, "SIGCONT");
     resumed = true;
     contenders = await Promise.all(pending);
   } finally {
-    if (!resumed) process.kill(daemonPid, "SIGCONT");
+    if (!resumed) process.kill(daemon.pid, "SIGCONT");
   }
   await spawnPhotoctl(["daemon", "stop"], { libraryDir: library, env });
-  const successful = contenders.filter((result) => result.code === 0);
-  const failed = contenders.filter((result) => result.code !== 0);
+  const successful = contenders.filter((result) => result.envelope.ok);
+  const failed = contenders.filter((result) => !result.envelope.ok);
   const handle = await import("@photoctl/library").then(({ openLibrary }) => openLibrary(library));
   const rows = await handle.query<{ tag: string }>("SELECT tag FROM tags ORDER BY tag, photo_id");
   await handle.close();
 
   expect(successful.length).toBeGreaterThan(0);
   expect(failed.length).toBeGreaterThan(0);
-  expect(failed.map((result) => result.code)).toEqual(
-    Array.from({ length: failed.length }, () => 75),
-  );
-  expect(failed.map((result) => result.json)).toEqual(
+  expect(failed.map((result) => result.envelope)).toEqual(
     failed.map(() => expect.objectContaining({ ok: false, code: "library_locked" })),
   );
   expect(rows.rows).toHaveLength(25 * successful.length);
@@ -104,7 +113,7 @@ test("queue overflow fails loudly and commits every accepted batch in full", asy
     new Set(
       contenders
         .map((result, client) => ({ result, tag: `client-${client}` }))
-        .filter(({ result }) => result.code === 0)
+        .filter(({ result }) => result.envelope.ok)
         .map(({ tag }) => tag),
     ),
   );

@@ -55,16 +55,21 @@
 ### Slice 02 integration — Daemon control reports observed state and secures local IPC
 
 - **When:** Slice 02 integration review.
-- **The choice:** A connection first asks the daemon for live status instead of inventing zero uptime and queue values from a PID
-  file. `daemon stop` reports failure when a live holder does not answer or does not exit by the deadline, rather than claiming
-  success. Idle connected sockets do not consume request-queue capacity because only framed work is a request. The Unix socket
-  and current log are owner-only (`0600`), and each daemon start truncates the prior log instead of appending across restarts.
+- **The choice:** Public `daemon start|status` responses ask the daemon for live state instead of inventing uptime and queue values.
+  Ordinary commands take the cheaper endpoint route only when the live lock payload names the expected versioned Unix socket;
+  request failure triggers a probed recovery. `daemon stop` reports failure when a live holder does not answer or does not exit by
+  the deadline. Idle connected sockets do not consume request-queue capacity because only framed work is a request. When an idle
+  queue receives its first request, one 5 ms admission window coalesces simultaneous socket arrivals before serial execution; the
+  caller's lock-wait budget starts after that transport window. Recovery attempts the advisory lock before classifying a
+  live-looking PID/socket pair as an unresponsive owner, allowing stale artifacts with a reused PID to be replaced. The Unix
+  socket and current log are owner-only (`0600`), and each daemon start truncates the prior log instead of appending across restarts.
 - **The gap:** The daemon slice fixed the transport and queue ceiling but left probe truthfulness, idle-connection admission,
-  filesystem permissions, and failed-stop reporting implicit.
-- **The reach:** Status and lifecycle automation can trust successful control responses; another local account cannot send
-  commands through the socket; unused connections cannot manufacture overload; restart logs remain bounded by one daemon run.
-- **Verdict:** **Sound.** Each reported state now comes from the process that owns it, and local control surfaces use least
-  privilege without changing the protocol.
+  burst admission, filesystem permissions, and failed-stop reporting implicit.
+- **The reach:** Status and lifecycle automation can trust successful control responses; warm commands avoid an extra control
+  round-trip; another local account cannot send commands through the socket; unused connections cannot manufacture overload;
+  simultaneous work observes the configured queue ceiling; restart logs remain bounded by one daemon run.
+- **Verdict:** **Sound.** Observed status remains truthful while endpoint routing stays cheap, recovery remains explicit, and local
+  control surfaces use least privilege without changing the protocol.
 - **Confidence:** High.
 
 ### Spec maintenance — Preview cache safety lands before new render producers

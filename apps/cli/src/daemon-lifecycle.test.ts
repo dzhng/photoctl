@@ -1,7 +1,7 @@
 import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createConnection, type Socket } from "node:net";
+import { createConnection, createServer, type Socket } from "node:net";
 import { afterEach, expect, test } from "vitest";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 import { daemonSocketPath, ensureDaemon } from "@photoctl/commands";
@@ -117,6 +117,23 @@ test("the first ordinary command starts one daemon and status reports it", async
       })
     ).code,
   ).toBe(0);
+}, 30_000);
+
+test("an idle daemon accepts an uncontended request with a zero lock budget", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-zero-budget-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+  const env = { PHOTOCTL_NO_DAEMON: "0" };
+  expect((await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env })).code).toBe(0);
+
+  const diagnosed = await spawnPhotoctl(["doctor"], {
+    libraryDir: library,
+    env: { ...env, PHOTOCTL_LOCK_BUDGET_MS: "0" },
+  });
+
+  expect(diagnosed.code).toBe(0);
+  await spawnPhotoctl(["daemon", "stop"], { libraryDir: library, env });
 }, 30_000);
 
 async function connectIdleClient(path: string): Promise<Socket> {
@@ -248,6 +265,40 @@ test("a dead socket with a live-looking pid reports the replacement daemon", asy
   });
 }, 30_000);
 
+test("a live-looking impostor socket with a free lock is replaced", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-impostor-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+  const socket = daemonSocketPath(library, "0.1.0");
+  const impostor = createServer((client) => client.destroy());
+  await new Promise<void>((resolveListen, reject) => {
+    impostor.once("error", reject);
+    impostor.listen(socket, resolveListen);
+  });
+  await writeFile(
+    join(library, ".photoctl-open.lock"),
+    JSON.stringify({ pid: process.pid, socket, startedAt: Date.now() }),
+  );
+
+  try {
+    const diagnosed = await spawnPhotoctl(["doctor"], {
+      libraryDir: library,
+      env: { PHOTOCTL_NO_DAEMON: "0", PHOTOCTL_POLL_CEILING_MS: "10" },
+    });
+    const event = diagnosed.events.find((candidate) => candidate.event === "daemon");
+    expect(diagnosed.code).toBe(0);
+    expect(event).toEqual(expect.objectContaining({ action: "spawned", pid: expect.any(Number) }));
+    expect(event && "pid" in event ? event.pid : process.pid).not.toBe(process.pid);
+  } finally {
+    await new Promise<void>((resolveClose) => impostor.close(() => resolveClose()));
+    await spawnPhotoctl(["daemon", "stop"], {
+      libraryDir: library,
+      env: { PHOTOCTL_NO_DAEMON: "0" },
+    });
+  }
+}, 30_000);
+
 test("a live daemon from another photoctl version stops before replacement", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-version-"));
   directories.push(parent);
@@ -270,10 +321,10 @@ test("a live daemon from another photoctl version stops before replacement", asy
   expect(replacement).toEqual(
     expect.objectContaining({ version: "0.1.0", pid: expect.any(Number) }),
   );
-  expect(replacement && "pid" in replacement ? replacement.pid : foreign.status.pid).not.toBe(
-    foreign.status.pid,
+  expect(replacement && "pid" in replacement ? replacement.pid : foreign.endpoint.pid).not.toBe(
+    foreign.endpoint.pid,
   );
-  expect(() => process.kill(foreign.status.pid, 0)).toThrow();
+  expect(() => process.kill(foreign.endpoint.pid, 0)).toThrow();
   await spawnPhotoctl(["daemon", "stop"], {
     libraryDir: library,
     env: { PHOTOCTL_NO_DAEMON: "0" },

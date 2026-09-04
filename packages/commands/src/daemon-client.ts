@@ -12,22 +12,25 @@ import { acquireLibraryLock, OPEN_LOCK_NAME, readLock, type LockPayload } from "
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { closeSync, fchmodSync, openSync } from "node:fs";
-import { unlink } from "node:fs/promises";
+import { stat, unlink } from "node:fs/promises";
 import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export interface DaemonStatus {
+export interface DaemonEndpoint {
   pid: number;
   socket: string;
-  uptime_s: number;
-  queue: number;
   version: string;
 }
 
+export interface DaemonStatus extends DaemonEndpoint {
+  uptime_s: number;
+  queue: number;
+}
+
 export interface DaemonConnection {
-  status: DaemonStatus;
+  endpoint: DaemonEndpoint;
   action: "spawned" | "connected";
 }
 
@@ -47,7 +50,7 @@ export function daemonSocketPath(libraryPath: string, version: string): string {
 export async function ensureDaemon(
   libraryPath: string,
   version: string,
-  options: { lockBudgetMs?: number; pollCeilingMs?: number } = {},
+  options: { lockBudgetMs?: number; pollCeilingMs?: number; verifyExisting?: boolean } = {},
 ): Promise<DaemonConnection> {
   const budgetMs = options.lockBudgetMs ?? 30_000;
   const pollCeilingMs = options.pollCeilingMs ?? 100;
@@ -58,16 +61,26 @@ export async function ensureDaemon(
     const payload = await readLock(join(libraryPath, OPEN_LOCK_NAME));
     if (payload) lastHolder = payload.pid;
     const expectedSocket = daemonSocketPath(libraryPath, version);
+    const endpoint = options.verifyExisting
+      ? null
+      : await endpointFromPayload(payload, expectedSocket, version);
+    if (endpoint) {
+      return {
+        endpoint,
+        action: "connected",
+      };
+    }
     const existing = await statusFromPayload(payload);
     if (existing) {
-      if (existing.version === version) return { status: existing, action: "connected" };
+      if (existing.version === version) {
+        return { endpoint: daemonEndpoint(existing), action: "connected" };
+      }
       await exchange(existing.socket, { type: "control", action: "stop" }, 5_000);
       if (!(await waitForExit(existing.pid, deadline, pollCeilingMs))) {
         throw daemonUnavailable(libraryPath, new Error(`Process ${existing.pid} did not stop`));
       }
       continue;
     }
-
     try {
       const lock = await acquireLibraryLock(join(libraryPath, OPEN_LOCK_NAME), 0);
       const socket = expectedSocket;
@@ -122,7 +135,7 @@ export async function ensureDaemon(
       await lock.detach();
       while (Date.now() <= deadline) {
         const status = await statusAt(socket);
-        if (status) return { status, action: "spawned" };
+        if (status) return { endpoint: daemonEndpoint(status), action: "spawned" };
         if (spawnError) throw daemonUnavailable(libraryPath, spawnError);
         if (child.exitCode !== null) throw daemonUnavailable(libraryPath);
         await delay(Math.min(pollCeilingMs, Math.max(1, deadline - Date.now())));
@@ -130,6 +143,13 @@ export async function ensureDaemon(
       throw daemonUnavailable(libraryPath);
     } catch (error) {
       if (!(error instanceof PhotoctlError) || error.code !== "library_locked") throw error;
+      if (
+        options.verifyExisting &&
+        payload?.socket === expectedSocket &&
+        processState(payload.pid) !== "dead"
+      ) {
+        throw daemonUnavailable(libraryPath, new Error(`Process ${payload.pid} did not respond`));
+      }
     }
 
     if (Date.now() >= deadline) {
@@ -183,6 +203,29 @@ export async function stopDaemon(libraryPath: string): Promise<DaemonStatus | nu
 async function statusFromPayload(payload: LockPayload | null): Promise<DaemonStatus | null> {
   if (!payload?.socket || processState(payload.pid) === "dead") return null;
   return await statusAt(payload.socket);
+}
+
+async function endpointFromPayload(
+  payload: LockPayload | null,
+  expectedSocket: string,
+  version: string,
+): Promise<DaemonEndpoint | null> {
+  if (
+    payload?.socket !== expectedSocket ||
+    processState(payload.pid) === "dead" ||
+    !(await isSocket(expectedSocket))
+  ) {
+    return null;
+  }
+  return { pid: payload.pid, socket: expectedSocket, version };
+}
+
+async function isSocket(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isSocket();
+  } catch {
+    return false;
+  }
 }
 
 async function statusAt(socket: string): Promise<DaemonStatus | null> {
@@ -268,6 +311,10 @@ function daemonUnavailable(libraryPath: string, cause?: unknown): PhotoctlError 
     library: resolve(libraryPath),
     ...(cause instanceof Error ? { message: cause.message } : {}),
   });
+}
+
+function daemonEndpoint(status: DaemonStatus): DaemonEndpoint {
+  return { pid: status.pid, socket: status.socket, version: status.version };
 }
 
 function hasCode(error: unknown, code: string): boolean {

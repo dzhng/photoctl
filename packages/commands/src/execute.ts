@@ -12,6 +12,7 @@ import {
   inspectDaemon,
   requestDaemon,
   stopDaemon,
+  type DaemonEndpoint,
   type DaemonStatus,
 } from "./daemon-client.js";
 import { libraryPath, parseLockBudget } from "./context.js";
@@ -41,7 +42,7 @@ export async function execute(
       if (!envelope.ok) return { envelope, events: [] };
       try {
         const connection = await ensureDaemon(path, context.version, daemonOptions(request));
-        return { envelope, events: [daemonEvent(connection.action, connection.status)] };
+        return { envelope, events: [daemonEvent(connection.action, connection.endpoint)] };
       } catch (error) {
         if (!(error instanceof PhotoctlError) || error.code !== "daemon_unavailable") throw error;
         return {
@@ -62,12 +63,15 @@ export async function execute(
     let connection = await ensureDaemon(path, context.version, daemonOptions(request));
     let result;
     try {
-      result = await requestDaemon(connection.status.socket, request);
+      result = await requestDaemon(connection.endpoint.socket, request);
     } catch {
-      const recovered = await ensureDaemon(path, context.version, daemonOptions(request));
+      const recovered = await ensureDaemon(path, context.version, {
+        ...daemonOptions(request),
+        verifyExisting: true,
+      });
       connection = recovered;
       try {
-        result = await requestDaemon(recovered.status.socket, request);
+        result = await requestDaemon(recovered.endpoint.socket, request);
       } catch (error) {
         throw new PhotoctlError("daemon_unavailable", "The photoctl daemon did not respond", {
           library: path,
@@ -77,7 +81,7 @@ export async function execute(
     }
     return {
       envelope: result.envelope,
-      events: [daemonEvent(connection.action, connection.status), ...result.events],
+      events: [daemonEvent(connection.action, connection.endpoint), ...result.events],
     };
   } catch (error) {
     if (error instanceof PhotoctlError) {
@@ -106,9 +110,12 @@ async function executeDaemonControl(
   const action = request.args[0];
   if (action === "start") {
     const connection = await ensureDaemon(path, version, daemonOptions(request));
+    const status = await inspectDaemon(path);
+    if (!status)
+      throw new PhotoctlError("daemon_unavailable", "The photoctl daemon is not responding");
     return {
-      envelope: success(connection.status),
-      events: [daemonEvent(connection.action, connection.status)],
+      envelope: success(status),
+      events: [daemonEvent(connection.action, status)],
     };
   }
   if (action === "status") {
@@ -153,7 +160,7 @@ function parsePollCeiling(value: string | undefined): number | undefined {
   return milliseconds;
 }
 
-function daemonEvent(action: string, status: DaemonStatus): DaemonEvent {
+function daemonEvent(action: string, status: DaemonEndpoint): DaemonEvent {
   return {
     event: "daemon",
     action,

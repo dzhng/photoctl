@@ -31,8 +31,8 @@ The CLI can render the same typed envelopes for a person without changing their 
 `photoctl daemon status`; `bun run probe:race -- --clients 8 --rows 25` → 200/200; `wb race`.
 
 ## Verification
-`concurrency-race.test.ts`: 8×25 `tag --add p<i>-<j>` → exactly the 200 expected tag *values*; 24 clients with queue 8 → every
-failure is `library_locked` 75, rows == 25 × successes. `daemon-lifecycle.test.ts`: stale socket + dead pid → respawn once; live
+`concurrency-race.test.ts`: 8×25 real CLI `tag --add p<i>-<j>` calls → exactly the 200 expected tag *values*; 24 simultaneous
+framed clients with queue 8 → every failure is `library_locked` 75, rows == 25 × successes. `daemon-lifecycle.test.ts`: stale socket + dead pid → respawn once; live
 foreign version → stop + respawn; `--no-daemon` with a live daemon → daemon stops, command succeeds; `kill -9` mid-run → next
 command respawns; 200-char library path → socket ≤ 104 bytes. `fresh-open.test.ts` (8 `init`s on one path → migrations ran once,
 no lock left). Budgets via `PHOTOCTL_LOCK_BUDGET_MS`/`PHOTOCTL_POLL_CEILING_MS`, derived from measured spawn. Perf band (in
@@ -54,9 +54,13 @@ add/remove semantics. Version mismatch, dead/stale sockets, unclean daemon death
 execution, idle suppression hooks, and library removal all have real-process coverage.
 
 Integration review made the durable initialization result authoritative: a failed optional daemon start is a warning, so retry
-does not collide with an already-created library. Status comes from a live control response; stop refuses success until the owner
-exits; idle sockets do not consume framed-request capacity. The Unix socket and current-run log are owner-only, and daemon restarts
-truncate the prior log.
+does not collide with an already-created library. Public status comes from a live control response; ordinary commands route through
+the live lock holder's expected Unix-socket endpoint and probe on recovery rather than fabricating status fields. Stop refuses
+success until the owner exits; idle sockets do not consume framed-request capacity. An idle queue coalesces its first request for
+one 5 ms admission window so a simultaneous burst observes the configured ceiling before serial execution begins; that transport
+window does not consume the caller's lock-wait budget. Recovery takes the advisory lock before treating live-looking PID/socket
+metadata as authoritative, so stale artifacts with a reused PID remain replaceable. The Unix socket and current-run log are
+owner-only, and daemon restarts truncate the prior log.
 
 `bun run probe:race -- --clients 8 --rows 25` produced the committed G1 PASS verdict with 200 accepted
 and 200 persisted exact tag values. The 24-client overload test proves every refusal is

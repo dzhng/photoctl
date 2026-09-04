@@ -93,8 +93,6 @@ async function resolveInputs(
   handle: LibraryHandle,
   inputs: string[],
 ): Promise<Array<{ id: string; ok: true } | TagFailure>> {
-  // Let peer sockets reach the bounded daemon queue before this batch starts database work.
-  await new Promise<void>((resolveTurn) => setImmediate(resolveTurn));
   return await Promise.all(
     inputs.map(async (input) => {
       try {

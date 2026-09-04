@@ -22,7 +22,7 @@ import { BackgroundRegistry } from "./workers/index.js";
 interface QueuedRequest {
   request: CommandRequest;
   socket: Socket;
-  enqueuedAt: number;
+  enqueuedAt: number | null;
 }
 
 export interface DaemonServerOptions {
@@ -46,6 +46,7 @@ export class DaemonServer {
   private library: LibraryHandle | undefined;
   private watcher: FSWatcher | undefined;
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
+  private drainTimer: ReturnType<typeof setTimeout> | undefined;
   private idleMs = 900_000;
   private queueMax = 8;
   private running = false;
@@ -126,9 +127,23 @@ export class DaemonServer {
       this.respond(socket, lockedEnvelope(frame.request, 0));
       return;
     }
-    this.pending.push({ request: frame.request, socket, enqueuedAt: Date.now() });
+    this.pending.push({
+      request: frame.request,
+      socket,
+      enqueuedAt: this.running ? Date.now() : null,
+    });
     this.armIdleTimer();
-    void this.drain();
+    this.scheduleDrain();
+  }
+
+  private scheduleDrain(): void {
+    if (this.running || this.drainTimer) return;
+    this.drainTimer = setTimeout(() => {
+      this.drainTimer = undefined;
+      const admittedAt = Date.now();
+      for (const item of this.pending) item.enqueuedAt ??= admittedAt;
+      void this.drain();
+    }, 5);
   }
 
   private async drain(): Promise<void> {
@@ -141,7 +156,7 @@ export class DaemonServer {
     this.running = true;
     try {
       const budget = parseBudget(item.request.env.lockBudgetMs);
-      const waited = Date.now() - item.enqueuedAt;
+      const waited = item.enqueuedAt === null ? 0 : Date.now() - item.enqueuedAt;
       if (waited > budget) {
         this.respond(item.socket, lockedEnvelope(item.request, waited));
       } else {
