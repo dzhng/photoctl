@@ -2,16 +2,16 @@ import sharp from "sharp";
 import { expect, test } from "vitest";
 import { encodeLinearTiff } from "./linear-tiff.js";
 
-test("camera-space TIFFs map their measured black and white levels to the linear range", async () => {
+test("linear TIFFs preserve developed scene-linear sample values", async () => {
   const encoded = await encodeLinearTiff({
     w: 1,
     h: 1,
     orientationApplied: true,
-    space: "camera",
-    data: new Float32Array([0, 50, 100]),
-    whiteLevel: 100,
+    space: "scene-linear-rec2020",
+    data: new Float32Array([0, 0.5, 1]),
+    whiteLevel: 1,
     blackLevel: 0,
-    wbPreApplied: false,
+    wbPreApplied: true,
   });
   expect(await sharp(encoded).metadata()).toMatchObject({ bitsPerSample: 16, depth: "ushort" });
   const ifdOffset = encoded.readUInt32LE(4);

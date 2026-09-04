@@ -899,6 +899,70 @@
   while daemon shutdown remains responsible only for actual daemons.
 - **Confidence:** High.
 
+### Slice 07c — Full-frame color transforms run off the daemon event loop
+
+- **When:** Slice 07c shared color-front implementation.
+- **The choice:** When a decoder hands photoctl millions of RGB samples, the native call first snapshots
+  the mutable JavaScript typed array and sends the levels, white-balance, matrix, and transfer work to a
+  worker task. The daemon can continue accepting socket traffic while the pixels are processed. The
+  boundary copy is required because napi typed arrays remain writable by JavaScript; sharing one with a
+  worker would be an unsafe data race and make results depend on mutations after invocation. On the G4
+  host, snapshotting the 11.7 MiB quarter-scale display buffer took 2.4 ms and the 187.3 MiB full A7C II
+  display buffer took 22.3 ms; the much larger per-pixel transform remains off-thread.
+- **The gap:** The plan named Rust as the one color owner but did not specify how its napi boundary
+  should be scheduled inside the persistent daemon.
+- **The reach:** Every later develop operator inherits this execution model. CPU-heavy pixel work
+  belongs on native tasks, while the daemon thread remains an orchestration boundary.
+- **Verdict:** **Sound.** It preserves the single color owner without turning large RAW files into
+  command-admission stalls.
+- **Confidence:** High.
+
+### Slice 07c — A neutral CIRAW oracle zeros per-file presentation defaults
+
+- **When:** Slice 07c G4 diagnosis.
+- **The choice:** A Core Image RAW filter starts with some values chosen from each camera file, including
+  baseline exposure, shadow bias, local tone mapping, and highlight recovery. The oracle's first honest
+  run left those defaults active and failed at mean ΔE00 4.723. Photoctl now sets them to neutral just as
+  it already neutralized boost, noise reduction, sharpening, contrast, detail, lens correction, and
+  gamut mapping. The result is a scene-linear decode rather than Apple's suggested starting look.
+- **The gap:** The 07a property list omitted these newer or file-dependent CIRAW controls even though it
+  required a neutral render.
+- **The reach:** CIRAW remains a useful independent decoder oracle; otherwise later develop settings
+  would be measured on top of an invisible Apple exposure/tone adjustment.
+- **Verdict:** **Sound.** It enforces the stated neutral invariant and made G4 pass without moving its
+  tolerance.
+- **Confidence:** High.
+
+### Slice 07c — The embedded JPEG is visual context, not a neutral RAW measurement
+
+- **When:** Slice 07c workbench report.
+- **The choice:** `wb oracle` shows the full embedded JPEG, CIRAW, and LibRaw images at identical quarter
+  dimensions so framing and orientation are reviewable. Only CIRAW versus LibRaw contributes to ΔE00.
+  The embedded JPEG carries the camera maker's contrast, exposure, and color rendering, so including it
+  in the numeric neutral-decoder score would measure an intentional presentation difference as a bug.
+- **The gap:** The plan required a three-way workbench and a decoder tolerance but did not state whether
+  the already-rendered preview belongs in the numeric pair.
+- **The reach:** Future fixtures can use their camera previews to catch geometry errors without forcing
+  an independent RAW implementation to imitate proprietary picture styles.
+- **Verdict:** **Sound.** It keeps all three views useful while the threshold tests the two comparable
+  scene-linear decoders.
+- **Confidence:** Medium.
+
+### Slice 07c — The oracle measures the public linear-TIFF boundary
+
+- **When:** Slice 07c workbench report.
+- **The choice:** `wb oracle` decodes through the real CLI and measures the exported 16-bit linear
+  Rec.2020 TIFFs rather than importing a private in-memory decoder buffer. The quarter-scale request
+  keeps the three full frames practical while retaining more than one source pixel per 64×64 patch.
+- **The gap:** The plan fixed the patch grid and threshold but did not say whether the oracle should
+  compare private floating-point buffers or the artifacts users can actually request.
+- **The reach:** G4 covers command dispatch, decoder metadata, the shared camera front, TIFF
+  quantization, and framing as one public contract. Sub-16-bit numerical drift is deliberately outside
+  this integration gate and remains the color core's unit-test responsibility.
+- **Verdict:** **Sound.** A decoder oracle is more durable when it exercises the supported seam instead
+  of reaching around it, and the chosen scale still gives every patch real spatial support.
+- **Confidence:** Medium.
+
 ## Needs user
 
 ### Slice 02 integration — CLI tags trim boundaries but preserve case and Unicode

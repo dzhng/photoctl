@@ -7,6 +7,7 @@ import {
   NativeImageUnavailableError,
   decodeLibraw,
   inspectLibraw,
+  inspectNativeImageRuntime,
   probeLibraw,
 } from "@photoctl/img";
 import sharp, { type Sharp } from "sharp";
@@ -102,7 +103,7 @@ export class FileImageDecoder implements Decoder {
       h: display.h,
       orientationApplied: true,
       space: "scene-linear-rec2020",
-      data: displaySrgbToLinearRec2020(display.data),
+      data: await displaySrgbToLinearRec2020(display.data),
       whiteLevel: 1,
       blackLevel: 0,
       wbPreApplied: true,
@@ -403,6 +404,8 @@ export async function inspectCirawHelper(helperPath = "photoctl-mac"): Promise<{
 export function inspectLibrawDecoder(): { available: boolean; version: string | null } {
   return inspectLibraw();
 }
+
+export { inspectNativeImageRuntime };
 
 export async function readImageSource(source: ImageSource): Promise<Buffer> {
   if (source.kind !== "online-jpeg-range") return await readFile(source.path);

@@ -9,6 +9,7 @@ import {
   LibrawDecoder,
   selectDecoder,
   encodeLinearTiff,
+  toSceneLinearRec2020,
   type DecodeScale,
   type ImageSource,
 } from "@photoctl/render";
@@ -101,12 +102,18 @@ export async function decodeCommand(
       throw new PhotoctlError(code, "The selected image source could not be decoded", { id });
     }
     let encoded;
+    let developed;
     try {
-      encoded = await encodeLinearTiff(image);
+      developed = await toSceneLinearRec2020(image);
+      encoded = await encodeLinearTiff(developed);
     } catch {
-      throw new PhotoctlError("decoder_unavailable", "The decoded image could not be encoded", {
-        decoder: selected.decoder.id,
-      });
+      throw new PhotoctlError(
+        "decoder_unavailable",
+        "The decoded image could not be developed or encoded",
+        {
+          decoder: selected.decoder.id,
+        },
+      );
     }
     try {
       await writeFile(output, encoded);
@@ -124,7 +131,7 @@ export async function decodeCommand(
         file: output,
         w: image.w,
         h: image.h,
-        space: image.space,
+        space: developed.space,
       } satisfies DecodeData,
       warnings,
     };

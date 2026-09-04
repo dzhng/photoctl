@@ -11,18 +11,19 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–03 and decoder passes 07a–07b are implemented.
+*Last updated: 2026-09-05. Status: slices 00–03 and decoder slice 07 are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
-and `--human` renders the same envelopes without changing execution.*
+the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
+`--human` renders the same envelopes without changing execution.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the decision ledger (`visualizations/map.html`
 Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** dependency-ready slices 04 (import/cull) and 07c (decoder oracle).
-  Slice 04 inherits the durable catalog, migration fixture, and restore boundary from 03b.
+- **Pickup point:** dependency-ready slices 04 (import/cull) and 08 (develop). Slice 04 inherits the
+  durable catalog and restore boundary; slice 08 inherits the completed decoder/color front.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -39,8 +40,7 @@ Quadrant 2), in "Contracts", or in "Global rules"; if the code forces a deviatio
 - [ ] 04 import at scale, locators/offline, cull verbs, XMP read — `slices/04-import-and-cull.md`
 - [ ] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [ ] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
-- [x] 07a CIRAW helper + shared decoder seam — `slices/07-decoders.md`
-- [x] 07b LibRaw · [ ] 07c decoder oracle — `slices/07-decoders.md`
+- [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 develop: 8a dict · 8b1–3 color core · 8c1–4 local ops/NR/geometry/filters → **gold exam green** — `slices/08-develop.md`
 - [ ] 09 providers (9a), spikes (9b), embed worker + search (9c) — `slices/09-providers-embed-search.md`
 - [ ] 10 layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
@@ -395,3 +395,10 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   file-decoder scale and emits an untagged TIFF. Call: keep those limitations explicit, assign preview/file scaling migration to
   slice 10 and TIFF profile tagging to 7c; slice 14 synchronizes the helper version with the root release version. Needs David:
   no; these are named prerequisites, not accepted final-state exceptions.
+- **2026-09-05 — slice 07c CIRAW neutrality.** Plan said: zero the named Core Image enhancement
+  controls and compare the two RAW decoders within G4. Code revealed: CIRAW also carries per-file
+  baseline exposure, shadow bias, local tone mapping, and (on supported macOS versions) highlight
+  recovery defaults; leaving them active failed the unchanged G4 threshold at mean ΔE00 `4.723`.
+  Call: explicitly neutralize those presentation controls. The exact same oracle then passed at mean
+  `1.927`, p95 `2.791`. Needs David: no; this enforces the existing neutral-decode requirement rather
+  than changing its tolerance.

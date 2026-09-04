@@ -16,7 +16,11 @@ import {
 } from "@photoctl/library";
 import { cacheRootForLibrary } from "@photoctl/importer";
 import { resolveMacHelperPath } from "@photoctl/mac-helper";
-import { inspectCirawHelper, inspectLibrawDecoder } from "@photoctl/render";
+import {
+  inspectCirawHelper,
+  inspectLibrawDecoder,
+  inspectNativeImageRuntime,
+} from "@photoctl/render";
 import type { PreviewCoordinator } from "@photoctl/render";
 import { resolve } from "node:path";
 import { parseArguments } from "./arguments.js";
@@ -120,6 +124,7 @@ export async function dispatch(
         const diagnostics = await readLibraryDiagnostics(handle);
         const ciraw = await inspectCirawHelper(resolveMacHelperPath(request.env.macHelperPath));
         const libraw = inspectLibrawDecoder();
+        const nativeImage = inspectNativeImageRuntime();
         return {
           schema: 1,
           ok: true,
@@ -133,6 +138,7 @@ export async function dispatch(
               root: cacheRootForLibrary(diagnostics.libraryId, cacheBase(request.env, request.cwd)),
               max_bytes: diagnostics.cacheMaxBytes,
             },
+            native_image: { ...nativeImage, required: true },
             decoders: [
               {
                 id: "ciraw",

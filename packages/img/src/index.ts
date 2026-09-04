@@ -20,10 +20,28 @@ export interface NativeLinearImage {
   wbPreApplied: boolean;
 }
 
+export interface DevelopedImage {
+  data: Float32Array;
+  space: "scene-linear-rec2020";
+  whiteLevel: 1;
+  blackLevel: 0;
+  wbPreApplied: true;
+}
+
 interface NativeBinding {
   librawVersion(): string;
   probeLibraw(path: string): NativeProbe;
   decodeLibrawImage(path: string, scale: number): Promise<NativeLinearImage>;
+  developCameraFront(
+    data: Float32Array,
+    whiteLevel: number,
+    blackLevel: number,
+    camXyz: number[],
+    asShotWb: number[],
+    wbPreApplied: boolean,
+  ): Promise<DevelopedImage>;
+  convertDisplaySrgbToLinearRec2020(data: Uint16Array): Promise<Float32Array>;
+  convertLinearRec2020ToDisplaySrgb(data: Float32Array): Promise<Float32Array>;
 }
 
 export class NativeImageUnavailableError extends Error {}
@@ -33,6 +51,10 @@ export function inspectLibraw(): { available: boolean; version: string | null } 
   return binding
     ? { available: true, version: binding.librawVersion() }
     : { available: false, version: null };
+}
+
+export function inspectNativeImageRuntime(): { available: boolean; package: string } {
+  return { available: loadBinding() !== undefined, package: platformPackage() };
 }
 
 export function probeLibraw(path: string): NativeProbe {
@@ -50,6 +72,26 @@ export async function decodeLibraw(path: string, scale: number): Promise<NativeL
   };
 }
 
+export async function developCameraFront(image: NativeLinearImage): Promise<DevelopedImage> {
+  const result = await requiredBinding().developCameraFront(
+    image.data,
+    image.whiteLevel,
+    image.blackLevel,
+    image.camXyz,
+    image.asShotWb,
+    image.wbPreApplied,
+  );
+  return { ...result, data: asFloat32Array(result.data) };
+}
+
+export async function displaySrgbToLinearRec2020(data: Uint16Array): Promise<Float32Array> {
+  return asFloat32Array(await requiredBinding().convertDisplaySrgbToLinearRec2020(data));
+}
+
+export async function linearRec2020ToDisplaySrgb(data: Float32Array): Promise<Float32Array> {
+  return asFloat32Array(await requiredBinding().convertLinearRec2020ToDisplaySrgb(data));
+}
+
 let loaded: NativeBinding | null | undefined;
 
 function loadBinding(): NativeBinding | undefined {
@@ -64,8 +106,12 @@ function loadBinding(): NativeBinding | undefined {
 
 function requiredBinding(): NativeBinding {
   const binding = loadBinding();
-  if (!binding) throw new NativeImageUnavailableError("LibRaw native package is not installed");
+  if (!binding) throw new NativeImageUnavailableError("The native image package is not installed");
   return binding;
+}
+
+function asFloat32Array(data: Float32Array | ArrayLike<number>): Float32Array {
+  return data instanceof Float32Array ? data : new Float32Array(data);
 }
 
 function platformPackage(): string {

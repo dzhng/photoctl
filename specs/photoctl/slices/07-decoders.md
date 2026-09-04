@@ -12,7 +12,9 @@
   AHD into oriented, black-subtracted camera space on a native worker; probe exposes compression and
   the camera matrix. The fixture, CLI, macOS dependency, and Docker evidence live in
   [`../assets/gates/G2-libraw-build.md`](../assets/gates/G2-libraw-build.md).
-- [ ] **7c oracle:** shared camera front end/display transform and G4.
+- [x] **7c oracle:** the Rust color core owns camera levels/WB/matrix and display transfer in both
+  directions, linear TIFFs carry the deterministic Rec.2020 profile, and the exact three-way workbench
+  passes [`G4`](../assets/gates/G4-decoder-oracle.md).
 
 ## Contract unlocked
 Every imported photo can enter the same develop/render graph. A whole-file decoder handles every format admitted through
@@ -45,6 +47,17 @@ Every imported photo can enter the same develop/render graph. A whole-file decod
   at the display stage. `wb oracle <id>` (three-way embedded/CIRAW/LibRaw). G4 contract, set now: mean ΔE00 ≤ 2.0 and p95 ≤ 5.0
   over a 64×64 patch grid, excluding patches where either decoder's Y > 0.9. The explicit linear-TIFF probe embeds the canonical
   linear Rec.2020 ICC without transforming its already-linear samples. David may edit the tolerance at the checkpoint.
+
+`cam_xyz` is LibRaw's conventional XYZ-D65-to-camera matrix. The front end row-normalizes it against
+D65 before inversion; inverting the raw matrix is a different transform and is pinned by a numeric
+A7C II behavior test. Bulk transforms snapshot each mutable JavaScript typed array at the napi boundary,
+then run the expensive per-pixel math on a worker task. The snapshot prevents callers from racing the
+worker by mutating an input after invocation; it is the only synchronous part of the operation.
+The platform-specific native image package is therefore a required runtime component on every supported
+OS/CPU target; its npm dependency is marked optional only so incompatible target packages are skipped.
+Decoder fallback covers adapter/source capability, not a partially installed color runtime.
+`doctor` exposes that installation invariant as
+`native_image:{available,package,required:true}` before listing individual RAW adapters.
 
 ## Verification
 `test:macos`: `decoder-ciraw.test.ts`; `decoder-oracle.test.ts` (G4 as stated). `test:functional`:

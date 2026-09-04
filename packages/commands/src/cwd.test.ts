@@ -68,9 +68,15 @@ test("doctor resolves a relative cache root from the request working directory",
     const data = result.data as {
       library_id: string;
       cache: { root: string };
+      native_image: { available: boolean; package: string; required: boolean };
       decoders: unknown[];
     };
     expect(data.cache.root).toBe(join(directory, "relative-cache", data.library_id));
+    expect(data.native_image).toEqual({
+      available: true,
+      package: `@photoctl/img-${process.platform}-${process.arch}${process.platform === "linux" ? "-gnu" : ""}`,
+      required: true,
+    });
     expect(data.decoders).toContainEqual({
       id: "ciraw",
       available: true,

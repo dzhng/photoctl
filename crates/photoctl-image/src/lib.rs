@@ -1,12 +1,16 @@
 //! Native image operations for photoctl.
 
+mod develop;
+
 use std::path::Path;
 
 use napi::{
     Error, Status, Task,
-    bindgen_prelude::{AsyncTask, Float32Array},
+    bindgen_prelude::{AsyncTask, Float32Array, Uint16Array},
 };
 use napi_derive::napi;
+
+use develop::{camera_front, display_srgb_to_linear_rec2020, linear_rec2020_to_display_srgb};
 
 #[derive(Debug)]
 pub struct CameraImage {
@@ -78,6 +82,120 @@ pub struct LibrawImageResult {
     pub cam_xyz: Vec<f64>,
     pub as_shot_wb: Vec<f64>,
     pub wb_pre_applied: bool,
+}
+
+#[napi(object)]
+pub struct DevelopedImageResult {
+    pub data: Float32Array,
+    pub space: String,
+    pub white_level: f64,
+    pub black_level: f64,
+    pub wb_pre_applied: bool,
+}
+
+#[napi]
+pub fn develop_camera_front(
+    data: Float32Array,
+    white_level: f64,
+    black_level: f64,
+    cam_xyz: Vec<f64>,
+    as_shot_wb: Vec<f64>,
+    wb_pre_applied: bool,
+) -> AsyncTask<CameraFrontTask> {
+    AsyncTask::new(CameraFrontTask {
+        data: data.to_vec(),
+        white_level: white_level as f32,
+        black_level: black_level as f32,
+        cam_xyz,
+        as_shot_wb,
+        wb_pre_applied,
+    })
+}
+
+#[napi]
+pub fn convert_display_srgb_to_linear_rec2020(data: Uint16Array) -> AsyncTask<DisplayFrontTask> {
+    AsyncTask::new(DisplayFrontTask {
+        data: data.to_vec(),
+    })
+}
+
+#[napi]
+pub fn convert_linear_rec2020_to_display_srgb(data: Float32Array) -> AsyncTask<DisplayBackTask> {
+    AsyncTask::new(DisplayBackTask {
+        data: data.to_vec(),
+    })
+}
+
+pub struct CameraFrontTask {
+    data: Vec<f32>,
+    white_level: f32,
+    black_level: f32,
+    cam_xyz: Vec<f64>,
+    as_shot_wb: Vec<f64>,
+    wb_pre_applied: bool,
+}
+
+impl Task for CameraFrontTask {
+    type Output = Vec<f32>;
+    type JsValue = DevelopedImageResult;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        camera_front(
+            &self.data,
+            self.white_level,
+            self.black_level,
+            &self.cam_xyz,
+            &self.as_shot_wb,
+            self.wb_pre_applied,
+        )
+        .map_err(|message| Error::new(Status::InvalidArg, message))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(DevelopedImageResult {
+            data: data.into(),
+            space: "scene-linear-rec2020".to_owned(),
+            white_level: 1.0,
+            black_level: 0.0,
+            wb_pre_applied: true,
+        })
+    }
+}
+
+pub struct DisplayFrontTask {
+    data: Vec<u16>,
+}
+
+pub struct DisplayBackTask {
+    data: Vec<f32>,
+}
+
+impl Task for DisplayFrontTask {
+    type Output = Vec<f32>;
+    type JsValue = Float32Array;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        display_srgb_to_linear_rec2020(&self.data)
+            .map_err(|message| Error::new(Status::InvalidArg, message))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(data.into())
+    }
+}
+
+impl Task for DisplayBackTask {
+    type Output = Vec<f32>;
+    type JsValue = Float32Array;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        linear_rec2020_to_display_srgb(&self.data)
+            .map_err(|message| Error::new(Status::InvalidArg, message))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(data.into())
+    }
 }
 
 #[napi]

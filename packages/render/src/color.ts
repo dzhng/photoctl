@@ -1,23 +1,50 @@
 import { fileURLToPath } from "node:url";
+import {
+  developCameraFront,
+  displaySrgbToLinearRec2020 as convertDisplaySrgb,
+  linearRec2020ToDisplaySrgb as convertLinearRec2020,
+  type NativeLinearImage,
+} from "@photoctl/img";
+import type { LinearImage } from "./decoder.js";
 
 /** ICC's unmodified sRGB2014 profile bundled for deterministic preview tagging. */
 export const srgb2014ProfilePath = fileURLToPath(
   new URL("../assets/sRGB2014.icc", import.meta.url),
 );
 
-export function displaySrgbToLinearRec2020(samples: Uint16Array): Float32Array {
-  const output = new Float32Array(samples.length);
-  for (let index = 0; index < samples.length; index += 3) {
-    const red = inverseSrgb(samples[index] / 65_535);
-    const green = inverseSrgb(samples[index + 1] / 65_535);
-    const blue = inverseSrgb(samples[index + 2] / 65_535);
-    output[index] = 0.627404 * red + 0.329283 * green + 0.043313 * blue;
-    output[index + 1] = 0.069097 * red + 0.91954 * green + 0.011362 * blue;
-    output[index + 2] = 0.016391 * red + 0.088013 * green + 0.895595 * blue;
-  }
-  return output;
+/** ICC v4.4 matrix/TRC profile for already-linear Rec.2020 TIFF samples. */
+export const linearRec2020ProfilePath = fileURLToPath(
+  new URL("../assets/LinearRec2020-v4.icc", import.meta.url),
+);
+
+export async function displaySrgbToLinearRec2020(samples: Uint16Array): Promise<Float32Array> {
+  return await convertDisplaySrgb(samples);
 }
 
-function inverseSrgb(value: number): number {
-  return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+export async function linearRec2020ToDisplaySrgb(samples: Float32Array): Promise<Float32Array> {
+  return await convertLinearRec2020(samples);
+}
+
+export async function toSceneLinearRec2020(image: LinearImage): Promise<LinearImage> {
+  if (image.space === "scene-linear-rec2020") return image;
+  if (!image.camXyz || !image.asShotWb) {
+    throw new Error("Camera-space images require cam_xyz and as-shot WB metadata");
+  }
+  const developed = await developCameraFront({
+    width: image.w,
+    height: image.h,
+    space: "camera",
+    data: image.data,
+    whiteLevel: image.whiteLevel,
+    blackLevel: image.blackLevel,
+    camXyz: [...image.camXyz],
+    asShotWb: [...image.asShotWb],
+    wbPreApplied: image.wbPreApplied,
+  } satisfies NativeLinearImage);
+  return {
+    w: image.w,
+    h: image.h,
+    orientationApplied: true,
+    ...developed,
+  };
 }

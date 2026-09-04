@@ -98,7 +98,7 @@ else {
         file: librawOutput,
         w: 1752,
         h: 1168,
-        space: "camera",
+        space: "scene-linear-rec2020",
       },
       warnings: [],
     });
@@ -146,7 +146,7 @@ else {
     expect(fallback).toMatchObject({
       schema: 1,
       ok: true,
-      data: { id, decoder: "libraw", file: fallbackOutput, space: "camera" },
+      data: { id, decoder: "libraw", file: fallbackOutput, space: "scene-linear-rec2020" },
       warnings: [],
     });
     expect(await sharp(fallbackOutput).metadata()).toMatchObject({
@@ -202,4 +202,4 @@ else {
     await initialized.handle.close();
     await rm(directory, { recursive: true });
   }
-}, 30_000);
+}, 120_000);

@@ -97,6 +97,9 @@ private enum PhotoctlMac {
     guard !versions.isEmpty, versions != ["None"] else { throw HelperError.unsupported }
 
     filter.scaleFactor = scale
+    filter.exposure = 0
+    filter.baselineExposure = 0
+    filter.shadowBias = 0
     filter.boostAmount = 0
     filter.boostShadowAmount = 0
     filter.luminanceNoiseReductionAmount = 0
@@ -108,6 +111,10 @@ private enum PhotoctlMac {
     filter.isLensCorrectionEnabled = false
     filter.extendedDynamicRangeAmount = 0
     filter.isGamutMappingEnabled = false
+    filter.localToneMapAmount = 0
+    if #available(macOS 16.0, *) {
+      filter.isHighlightRecoveryEnabled = false
+    }
 
     guard let image = filter.outputImage else {
       throw HelperError.render("CIRAW produced no image")

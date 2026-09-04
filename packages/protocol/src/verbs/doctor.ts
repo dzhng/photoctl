@@ -7,6 +7,11 @@ export const doctorDataSchema = z.object({
   db: z.string(),
   vector: z.object({ installed: z.literal(true), version: z.string() }),
   cache: z.object({ root: z.string(), max_bytes: z.number().int().positive() }),
+  native_image: z.object({
+    available: z.boolean(),
+    package: z.string(),
+    required: z.literal(true),
+  }),
   decoders: z.array(
     z.object({
       id: z.enum(["ciraw", "libraw"]),

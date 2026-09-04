@@ -5,6 +5,7 @@ import { renderEnvelopeReport } from "./report.js";
 import { renderRaceReport, type RaceEvidence } from "./race.js";
 import { inspectLibrary, renderLibraryReport } from "./library.js";
 import { homedir } from "node:os";
+import { buildOracleReport } from "./oracle.js";
 
 export async function runWorkbench(
   args: string[],
@@ -12,8 +13,13 @@ export async function runWorkbench(
   env: { PHOTOCTL_LIBRARY?: string } = process.env,
 ): Promise<string> {
   const [command, ...rest] = args;
-  if (!command || rest.length > 0 || !["envelope", "race", "library"].includes(command))
-    throw new Error("usage: wb envelope|race|library");
+  if (!command || !["envelope", "race", "library", "oracle"].includes(command))
+    throw new Error("usage: wb envelope|race|library|oracle <photo-id>");
+  if (command === "oracle") {
+    if (rest.length !== 1) throw new Error("usage: wb oracle <photo-id>");
+    return await buildOracleReport(rest[0], cwd);
+  }
+  if (rest.length > 0) throw new Error("usage: wb envelope|race|library|oracle <photo-id>");
 
   const outputDirectory = join(cwd, "out", "wb");
   await mkdir(outputDirectory, { recursive: true });

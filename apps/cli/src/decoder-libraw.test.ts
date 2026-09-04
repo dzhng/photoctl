@@ -30,7 +30,14 @@ test("the built CLI probes and decodes the LibRaw fixture", async () => {
     expect(decoded.json).toMatchObject({
       schema: 1,
       ok: true,
-      data: { id, decoder: "libraw", file: output, w: 1752, h: 1168, space: "camera" },
+      data: {
+        id,
+        decoder: "libraw",
+        file: output,
+        w: 1752,
+        h: 1168,
+        space: "scene-linear-rec2020",
+      },
       warnings: [],
     });
     expect(await sharp(output).metadata()).toMatchObject({
@@ -50,4 +57,4 @@ test("the built CLI probes and decodes the LibRaw fixture", async () => {
   } finally {
     await rm(parent, { recursive: true });
   }
-}, 30_000);
+}, 120_000);
