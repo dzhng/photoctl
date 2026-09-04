@@ -882,6 +882,23 @@
 - **Verdict:** **Sound.** The exception is path-scoped to immutable third-party provenance.
 - **Confidence:** High.
 
+### Slice 03b integration — Direct commands defer non-daemon contention to the library lock
+
+- **When:** Slice 03b integration review.
+- **The choice:** A command running with `--no-daemon` stops a live photoctl daemon before opening the
+  library, but does not reject a socketless lock held by another direct process. It proceeds to the
+  ordinary library-open path, which waits for the configured lock budget and reports both the holder PID
+  and elapsed budget if contention persists. Explicit `daemon stop` and destructive restore keep their
+  strict behavior and reject a non-daemon holder immediately.
+- **The gap:** The daemon lifecycle specified how direct commands displace a daemon and how library-open
+  contention waits, but did not define which subsystem owns a socketless holder encountered while
+  preparing direct execution.
+- **The reach:** All direct-mode verbs now expose the same lock-wait contract as `openLibrary`; daemon
+  control and restore retain their stronger safety boundary.
+- **Verdict:** **Sound.** The library lock remains the sole owner of contention timing and error data,
+  while daemon shutdown remains responsible only for actual daemons.
+- **Confidence:** High.
+
 ## Needs user
 
 ### Slice 02 integration — CLI tags trim boundaries but preserve case and Unicode

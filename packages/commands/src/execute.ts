@@ -38,7 +38,7 @@ export async function execute(
       return { envelope: await dispatch(request, context), events: [] };
     }
     if (request.env.noDaemon) {
-      await stopDaemon(path);
+      await stopDaemon(path, { ignoreDirectHolder: true });
       return { envelope: await dispatch(request, context), events: [] };
     }
     if (request.verb === "init") {

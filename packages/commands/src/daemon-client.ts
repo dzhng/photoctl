@@ -174,11 +174,15 @@ export async function inspectDaemon(libraryPath: string): Promise<DaemonStatus |
   return await statusFromPayload(await readLock(join(resolve(libraryPath), OPEN_LOCK_NAME)));
 }
 
-export async function stopDaemon(libraryPath: string): Promise<DaemonStatus | null> {
+export async function stopDaemon(
+  libraryPath: string,
+  options: { ignoreDirectHolder?: boolean } = {},
+): Promise<DaemonStatus | null> {
   const path = resolve(libraryPath);
   const payload = await readLock(join(path, OPEN_LOCK_NAME));
   if (!payload || processState(payload.pid) === "dead") return null;
   if (!payload.socket) {
+    if (options.ignoreDirectHolder) return null;
     throw new PhotoctlError("library_locked", `Library is locked by process ${payload.pid}`, {
       holder_pid: payload.pid,
     });
