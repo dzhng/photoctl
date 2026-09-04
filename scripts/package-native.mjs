@@ -1,4 +1,5 @@
 import { copyFileSync, mkdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 
 const platform = `${process.platform}-${process.arch}`;
@@ -22,4 +23,7 @@ const [library, packageDirectory, addon] = target;
 const destination = join("packages", packageDirectory, addon);
 mkdirSync(join("packages", packageDirectory), { recursive: true });
 copyFileSync(join("target", "debug", library), destination);
+if (process.platform === "darwin") {
+  execFileSync("codesign", ["--force", "--sign", "-", destination], { stdio: "inherit" });
+}
 console.log(`Packaged ${destination}`);

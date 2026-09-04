@@ -899,6 +899,21 @@
   while daemon shutdown remains responsible only for actual daemons.
 - **Confidence:** High.
 
+### Slice 07c integration — macOS signs the packaged native addon after copying it
+
+- **When:** Slice 07c integration review.
+- **The choice:** The native packaging script ad-hoc signs the destination `.node` file on macOS after
+  copying Cargo's dylib into its platform package. Cargo's linker signature can verify after a filesystem
+  copy yet still be killed by the macOS loader; signing the artifact at its final path makes the package
+  boundary deterministic. Linux packaging performs no signing step.
+- **The gap:** The release layout required per-platform native packages but did not define how a copied
+  Apple Silicon dylib preserves a loader-acceptable code signature.
+- **The reach:** Source builds, tests, and packed macOS installs all load the exact addon artifact that
+  was signed at its shipped location instead of depending on copy semantics.
+- **Verdict:** **Sound.** This is the narrow platform-required finishing step at the package owner, and
+  it leaves native implementation and non-macOS builds unchanged.
+- **Confidence:** High.
+
 ### Slice 07c — Full-frame color transforms run off the daemon event loop
 
 - **When:** Slice 07c shared color-front implementation.
