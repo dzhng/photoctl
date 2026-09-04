@@ -35,6 +35,62 @@
 - **Verdict:** **Sound.** Pixel geometry is a functional requirement; camera annotations are not.
 - **Confidence:** Medium.
 
+### Slice 01b — Pixel orientation and coordinate orientation share one transform table
+
+- **When:** Slice 01b render-owned pass.
+- **The choice:** A photo can say “rotate right” or “mirror left-to-right” in its EXIF orientation
+  metadata. Photoctl turns that instruction into one small transform record containing a quarter-turn
+  rotation plus an optional vertical or horizontal reflection. Both the coordinate functions and the
+  Sharp pixel decoder consume that same record. Coordinates are measured along image edges: the
+  top-left is `[0,0]`, the bottom-right is `[width,height]`, and a bounding box transforms all four of
+  its edges before its new top-left and size are computed. The alternative was two separate tables—one
+  for points and another for pixels—which could eventually make a click land on a different subject
+  than the one shown on screen.
+- **The gap:** The plan fixed the eight EXIF orientations and the `[x,y,w,h]` box shape but did not
+  define edge-versus-pixel-centre coordinates or how pixel and geometry transforms would stay aligned.
+- **The reach:** Crop, segmentation boxes, masks, layer transforms, markup, and render orientation all
+  inherit one oriented, uncropped base coordinate space.
+- **Verdict:** **Sound.** One owner prevents an orientation fix in rendering from silently leaving
+  editing coordinates behind.
+- **Confidence:** High.
+
+### Slice 01b — `Image16` is full-range, display-referred sRGB in an interleaved typed array
+
+- **When:** Slice 01b render-owned pass.
+- **The choice:** Decoding an embedded JPEG produces three unsigned 16-bit channel values per pixel in
+  red-green-blue order, stored as a `Uint16Array`. “Full-range” means JPEG white becomes 65535, not 255
+  placed inside a larger integer type; `space:"display-srgb"` says the values are ready for display and
+  are not the scene-linear camera data introduced by later RAW decoders. Sharp's plain `ushort` cast
+  kept 8-bit values in the 0–255 range, so the graph deliberately converts through Sharp's `rgb16`
+  colourspace first. The alternative would look correct in TypeScript while giving later compositing
+  code only 1/257th of the expected numeric range.
+- **The gap:** The plan named `Image16` but did not specify its memory layout, numeric range, or explicit
+  colour-space tag.
+- **The reach:** The develop and composite graph stages can accept one stable pixel buffer without
+  guessing whether a value is linear light, display light, 8-bit, or 16-bit.
+- **Verdict:** **Sound.** The type and runtime values carry the information downstream pixel operations
+  need to remain deterministic.
+- **Confidence:** High.
+
+### Slice 01b — Export receives resolved sources and leaves destination planning to its caller
+
+- **When:** Slice 01b render-owned pass.
+- **The choice:** The render package receives a final output path, an optional online RAW-file range,
+  and an optional pinned JPEG path. It never opens the photo catalog or decides where a volume is
+  mounted. In plain control flow: `read online range → exact-copy when orientation is 1 → otherwise
+  render; if the online read fails → try pinned preview and warn; if neither can be read → file_offline`.
+  The command layer creates the output directory and owns collision naming before it calls this API;
+  destination write errors still propagate instead of being mislabeled as an offline source. The
+  alternative would make rendering depend on PGlite, cache policy, volume resolution, and filename
+  policy all at once.
+- **The gap:** The plan assigned source resolution to library/importer and export execution to render,
+  but did not define the data passed across that boundary or who creates the destination directory.
+- **The reach:** Slice 02 can change catalog transport and slice 05 can add templates and collision
+  policy without changing the pixel graph or adding a second source resolver.
+- **Verdict:** **Sound.** The API keeps catalog state, source-byte rendering, and destination planning
+  with their declared owners while preserving the stable offline outcome.
+- **Confidence:** High.
+
 ### Slice 01a — A successful `doctor` reports no foreign lock holder
 
 - **When:** Slice 01a.
