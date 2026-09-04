@@ -1,1 +1,1 @@
-{"files":[],"references":[{"path":"packages/protocol"},{"path":"packages/commands"},{"path":"packages/test-harness"},{"path":"apps/cli"}]}
+{"files":[],"references":[{"path":"packages/protocol"},{"path":"packages/library"},{"path":"packages/importer"},{"path":"packages/commands"},{"path":"packages/test-harness"},{"path":"apps/cli"}]}

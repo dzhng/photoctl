@@ -1,1 +1,1 @@
-{"name":"@photoctl/test-harness","version":"0.1.0","type":"module","exports":"./dist/index.js","scripts":{"build":"tsc -p tsconfig.json"},"dependencies":{"@photoctl/protocol":"workspace:*"}}
+{"name":"@photoctl/test-harness","version":"0.1.0","type":"module","exports":"./dist/index.js","scripts":{"build":"tsc -p tsconfig.json"},"dependencies":{"@photoctl/library":"workspace:*","@photoctl/protocol":"workspace:*"}}

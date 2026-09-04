@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "photoctl",
@@ -27,7 +28,23 @@
       "name": "@photoctl/commands",
       "version": "0.1.0",
       "dependencies": {
+        "@photoctl/importer": "workspace:*",
+        "@photoctl/library": "workspace:*",
         "@photoctl/protocol": "workspace:*",
+      },
+    },
+    "packages/importer": {
+      "name": "@photoctl/importer",
+      "version": "0.1.0",
+    },
+    "packages/library": {
+      "name": "@photoctl/library",
+      "version": "0.1.0",
+      "dependencies": {
+        "@electric-sql/pglite": "0.5.8",
+        "@electric-sql/pglite-pgvector": "0.0.9",
+        "@photoctl/protocol": "workspace:*",
+        "uuid": "14.0.2",
       },
     },
     "packages/protocol": {
@@ -41,11 +58,16 @@
       "name": "@photoctl/test-harness",
       "version": "0.1.0",
       "dependencies": {
+        "@photoctl/library": "workspace:*",
         "@photoctl/protocol": "workspace:*",
       },
     },
   },
   "packages": {
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.8", "", {}, "sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q=="],
+
+    "@electric-sql/pglite-pgvector": ["@electric-sql/pglite-pgvector@0.0.9", "", { "peerDependencies": { "@electric-sql/pglite": "0.5.8" } }, "sha512-ue4iBW651gDQwBwn97Ekv1lYGPvXa1ymHbRbTCSL0Ib286PRDD1VDOwzwEoekZuO/wctMbTzKzlwdgDwYrqZ8A=="],
+
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.28.2", "", { "os": "aix", "cpu": "ppc64" }, "sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ=="],
 
     "@esbuild/android-arm": ["@esbuild/android-arm@0.28.2", "", { "os": "android", "cpu": "arm" }, "sha512-kXXoiPVVGQcnIYGOeaovwOURpniDBpSq4A03qkQ+BMQqtGG6HYap3xne9C1O1yo4TR3qxlCX5IqqmX6fFo2Lqg=="],
@@ -159,6 +181,10 @@
     "@photoctl/cli": ["@photoctl/cli@workspace:apps/cli"],
 
     "@photoctl/commands": ["@photoctl/commands@workspace:packages/commands"],
+
+    "@photoctl/importer": ["@photoctl/importer@workspace:packages/importer"],
+
+    "@photoctl/library": ["@photoctl/library@workspace:packages/library"],
 
     "@photoctl/protocol": ["@photoctl/protocol@workspace:packages/protocol"],
 
@@ -325,6 +351,8 @@
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
+
+    "uuid": ["uuid@14.0.2", "", { "bin": { "uuid": "dist-node/bin/uuid" } }, "sha512-xZe/16rV4aa+HGSOCiY2YeLT1OybRLrrkL/Rqaq7p7GMVXjFh+6wN4oMYgjFmnSnhY8t6Xpdl2l9qmnHYuMHwQ=="],
 
     "vite": ["vite@7.3.6", "", { "dependencies": { "esbuild": "^0.27.0 || ^0.28.0", "fdir": "^6.5.0", "picomatch": "^4.0.3", "postcss": "^8.5.6", "rollup": "^4.43.0", "tinyglobby": "^0.2.15" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "jiti": ">=1.21.0", "less": "^4.0.0", "lightningcss": "^1.21.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "jiti", "less", "lightningcss", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-4XP60spRGjSZFf1qYH+dJIkK2znL3zQfl9KkOV9MkkRR/3Dls0dxaBsQPTloEc5BLXWPL9vsOxopxyKoMmDueg=="],
 

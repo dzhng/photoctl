@@ -8,7 +8,17 @@ const { version } = JSON.parse(
 ) as { version: string };
 const verb = args[0] === "--version" || args[0] === "-V" ? "version" : (args.shift() ?? "");
 const envelope = await dispatch(
-  { verb, args, cwd: process.cwd(), env: { noDaemon: process.env.PHOTOCTL_NO_DAEMON === "1" } },
+  {
+    verb,
+    args,
+    cwd: process.cwd(),
+    env: {
+      noDaemon: process.env.PHOTOCTL_NO_DAEMON === "1",
+      libraryPath: process.env.PHOTOCTL_LIBRARY,
+      cacheRoot: process.env.PHOTOCTL_CACHE,
+      lockBudgetMs: process.env.PHOTOCTL_LOCK_BUDGET_MS,
+    },
+  },
   { version },
 );
 process.stdout.write(`${JSON.stringify(envelope)}\n`);

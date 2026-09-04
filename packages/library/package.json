@@ -1,0 +1,13 @@
+{
+  "name": "@photoctl/library",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": "./dist/index.js",
+  "scripts": { "build": "tsc -p tsconfig.json" },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-pgvector": "0.0.9",
+    "@photoctl/protocol": "workspace:*",
+    "uuid": "14.0.2"
+  }
+}
