@@ -5,6 +5,7 @@
   "references": [
     { "path": "../../packages/protocol" },
     { "path": "../../packages/library" },
-    { "path": "../../packages/commands" }
+    { "path": "../../packages/commands" },
+    { "path": "../../packages/render" }
   ]
 }

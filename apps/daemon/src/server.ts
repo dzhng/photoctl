@@ -144,7 +144,7 @@ export class DaemonServer {
     this.drainTimer = setTimeout(() => {
       this.drainTimer = undefined;
       const admittedAt = Date.now();
-      for (const item of this.pending) item.enqueuedAt ??= admittedAt;
+      for (const item of this.pending.slice(1)) item.enqueuedAt ??= admittedAt;
       void this.drain();
     }, 5);
   }
