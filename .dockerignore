@@ -1,0 +1,9 @@
+.git
+.agents
+.claude
+.turbo
+node_modules
+target
+**/dist
+**/*.tsbuildinfo
+throwaway

@@ -22,9 +22,9 @@ produced by a tool independent of the code under test.
 - `packages/commands/src/dispatch.ts`: `dispatch(req, ctx) → Promise<Envelope>` — the ONE command API. `apps/cli`
   serializes it; `apps/daemon` (02) runs it; `--no-daemon` calls it in-process. Library helpers throw `PhotoctlError{code}`;
   dispatch maps once.
-- `packages/test-harness/src/{spawn.ts,library.ts,gateway-fixture.ts,manifest.ts,hold-lock.ts}`: `spawnPhotoctl(args,{libraryDir,env})
+- `packages/test-harness/src/{spawn.ts,library.ts,gateway-fixture.ts,manifest.ts}`: `spawnPhotoctl(args,{libraryDir,env})
   → {code,json,events}` (always `node apps/cli/dist/bin.js`; honours `PHOTOCTL_NO_DAEMON`); `withLibrary()`; fake gateway
-  `http.createServer` on `PHOTOCTL_GATEWAY_URL`; `readManifest()`; `hold-lock.js <lib> <ms>` (opens the library and sleeps).
+  `http.createServer` on `PHOTOCTL_GATEWAY_URL`; `readManifest()`. The lock-holding process lands with the real library lock in 01a.
 - `fixtures/tools/manifest.py` (stdlib only): TIFF IFD walk for embedded JPEG `{w,h,offset,length}`, `size`, `sha256` content key
   per the 01b formula, `DateTimeOriginal`/`OffsetTimeOriginal` raw strings → writes `fixtures/a7c2.json`; `fixtures/README.md`
   records the command. Tests read the manifest; they never call importer code to derive expectations.
