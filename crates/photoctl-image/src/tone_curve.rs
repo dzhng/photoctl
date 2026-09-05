@@ -52,9 +52,9 @@ pub(crate) fn prepare(points: Vec<Vec<f32>>) -> Result<Option<ToneCurve>, String
     }
 
     let mut slopes = estimate_slopes(&controls);
-    let (mut knots, mut segments) = fit(&controls, &slopes);
+    let (mut knots, mut segments) = fit(&controls, &slopes)?;
     if adjust_slopes(&controls, &mut slopes, &knots) {
-        (knots, segments) = fit(&controls, &slopes);
+        (knots, segments) = fit(&controls, &slopes)?;
     }
     Ok(Some(ToneCurve { knots, segments }))
 }
@@ -100,7 +100,7 @@ fn estimate_slopes(points: &[[f32; 2]]) -> Vec<f32> {
     slopes
 }
 
-fn fit(points: &[[f32; 2]], slopes: &[f32]) -> (Vec<f32>, Vec<Segment>) {
+fn fit(points: &[[f32; 2]], slopes: &[f32]) -> Result<(Vec<f32>, Vec<Segment>), String> {
     let mut knots = vec![points[0][0]];
     let mut segments = Vec::with_capacity(points.len() * 2 - 2);
     for index in 0..points.len() - 1 {
@@ -124,6 +124,12 @@ fn fit(points: &[[f32; 2]], slopes: &[f32]) -> (Vec<f32>, Vec<Segment>) {
             } else {
                 x0 + right * dx / (slopes[index + 1] - slopes[index])
             };
+            // Extreme adjacent slopes can round the analytic split onto an endpoint in f32.
+            // Keep both quadratic spans representable rather than emitting infinite coefficients.
+            let middle = middle.clamp(x0 + dx * 1e-5, x1 - dx * 1e-5);
+            if !(x0 < middle && middle < x1) {
+                return Err("develop curve controls are too close to fit safely".to_owned());
+            }
             let middle_slope = (2.0 * secant - slopes[index + 1])
                 + (slopes[index + 1] - slopes[index]) * (middle - x0) / dx;
             let acceleration = (middle_slope - slopes[index]) / (middle - x0);
@@ -142,7 +148,7 @@ fn fit(points: &[[f32; 2]], slopes: &[f32]) -> (Vec<f32>, Vec<Segment>) {
         }
         knots.push(x1);
     }
-    (knots, segments)
+    Ok((knots, segments))
 }
 
 fn adjust_slopes(points: &[[f32; 2]], slopes: &mut [f32], knots: &[f32]) -> bool {
@@ -209,5 +215,31 @@ pub(crate) fn from_log(value: f32) -> f32 {
         (value - LOG_OFFSET) / LOG_GAIN
     } else {
         value.exp2().mul_add(0.18 + LOG_SHIFT, -LOG_SHIFT)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::prepare;
+
+    #[test]
+    fn steep_adjacent_controls_keep_every_spline_segment_finite() {
+        let curve = prepare(vec![
+            vec![0.22, 0.17],
+            vec![0.66, 0.28],
+            vec![0.68, 0.51],
+            vec![0.70, 0.74],
+        ])
+        .unwrap()
+        .unwrap();
+
+        let mut previous = f32::NEG_INFINITY;
+        for index in 0..=1_000 {
+            let value = -7.0 + index as f32 * 0.014;
+            let evaluated = curve.evaluate(value);
+            assert!(evaluated.is_finite(), "non-finite curve value at {value}");
+            assert!(evaluated >= previous, "curve decreased at {value}");
+            previous = evaluated;
+        }
     }
 }
