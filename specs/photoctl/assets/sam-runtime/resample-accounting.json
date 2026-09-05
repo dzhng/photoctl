@@ -13,5 +13,5 @@
   },
   "ownership": "Input Vec remains charged through separate output registration, then is freed before guard discharge. Main-thread task destruction also covers error exits that skip finally. No new scheduler, output estimate, or JS API.",
   "reproduction": "cargo build -p photoctl-image -j1; node scripts/package-native.mjs; node node_modules/vitest/vitest.mjs run packages/img/src/task-memory.test.ts packages/render/src/color.test.ts packages/img/src/sam2.test.ts packages/render/src/mask-kernels.test.ts",
-  "resource_verdict": "Not an RSS measurement. Full-resolution repeated-cache gate remains red pending a separate no-forced-GC rerun."
+  "resource_verdict": "Counter tests are not RSS measurements. The separate no-forced-GC full-resolution runtime cache pass is recorded in fullres-cache-resample-accounting.json; public persistent-daemon resource behavior is not established by either witness."
 }

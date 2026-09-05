@@ -100,7 +100,7 @@ Resampling and affine transformation borrow their task-owned inputs to produce s
 charge therefore survives output registration until task destruction frees the input; it is not transferred to the output.
 Only allocated input capacity is reported, not predicted worker buffers. [Resampler accounting evidence](resample-accounting.json)
 pins queued capacity, settled output-only accounting, rejection cleanup, and exact caller-snapshot pixels. Full-resolution
-RSS must be measured separately without forced GC; counter correctness does not close the repeated-cache red witness below.
+RSS must be measured separately without forced GC; counter correctness alone cannot close a resource witness.
 
 [Accounting evidence](task-accounting.json) separates two V8 metrics: Node 24's public `external` memory statistic reads
 backing-store bytes, while `--trace-gc-verbose` prints the manual external-memory counter separately. The consumer regression
@@ -114,8 +114,16 @@ different metric and ranges from 3.00 to 3.32 GB. This passes the recorded RSS w
 photographic-quality gate or every platform. The historical prepared-input runs are not an interleaved A/B experiment;
 allocator residency and memory compression can influence causal comparisons. Other native snapshots remain unaccounted.
 
-[Repeated full-resolution cache recheck](fullres-cache-accounting.json) remains **red** for the color-only accounting checkpoint: the unchanged
+[Repeated full-resolution cache recheck](fullres-cache-accounting.json) is the historical **red** on color-only accounting: the unchanged
 7008×4672 distinct-buffer probe stopped after two of sixteen requested images at 3.161 GB peak RSS. Both masks retain the
 historical exact hash. Its display-RGB input bypasses pointwise color conversion; the full-frame resampler snapshot was
-unaccounted in that run. A rerun with resampler accounting is pending. End-of-request RSS below the limit does not erase the measured peak. This fails before cache eviction is
+unaccounted in that run. End-of-request RSS below the limit does not erase the measured peak. This failed before cache eviction was
 exercised and is not superseded by the six passing independent CLI runs.
+
+[Full-resolution resampler-accounting recheck](fullres-cache-resample-accounting.json) passes all sixteen distinct-buffer
+requests through the existing cache at 2.842 GB peak RSS, with unchanged model and mask hashes. No forced GC was used. The
+competing ORT build container was fully paused; roughly 1 GiB idle VM memory remained resident on the 48 GiB host. This is a
+measured runtime-cache pass, not an interleaved pristine-host A/B comparison. It supersedes the preceding resource result
+for this runtime witness, while preserving the historical failure. The public persistent-daemon path still needs its own
+bounded resource witness: source/develop preparation, command dispatch and library commit are absent from this probe, and
+the passing independent CLI runs started fresh processes. Photographic edge quality remains separate.

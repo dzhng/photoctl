@@ -1,0 +1,135 @@
+{
+  "date": "2026-09-06",
+  "implementationCommit": "2e28559",
+  "command": "node scripts/probe-sam2.mjs --models <frozen-model-directory> --width 7008 --height 4672 --runs 16 --stop-on-memory-limit",
+  "requestedRuns": 16,
+  "terminalExitCode": 0,
+  "forcedGc": false,
+  "environment": {
+    "physicalMemoryBytes": 51539607552,
+    "beforeRunMemoryPressureFreePercent": 56,
+    "concurrentHeavyWork": false,
+    "pausedContainer": "Entire ORT proof container paused before probe start and resumed only after terminal exit. Approximately 1 GiB idle VM memory remained resident.",
+    "caveat": "Not a pristine-host or interleaved A/B comparison; allocator residency and OS memory compression can influence RSS."
+  },
+  "observation": {
+    "cpu": "Apple M5 Pro",
+    "platform": "darwin",
+    "arch": "arm64",
+    "modelHashes": {
+      "encoder": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+      "decoder": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d"
+    },
+    "dimensions": {
+      "w": 7008,
+      "h": 4672
+    },
+    "qualityVerified": false,
+    "samples": [
+      {
+        "run": 0,
+        "encodeMs": 1171.9821250000005,
+        "decodeMs": 36.023041000000376,
+        "rssBytes": 2837954560
+      },
+      {
+        "run": 1,
+        "encodeMs": 1272.3495839999996,
+        "decodeMs": 80.54249999999956,
+        "rssBytes": 1968635904
+      },
+      {
+        "run": 2,
+        "encodeMs": 1613.7525830000013,
+        "decodeMs": 55.47591600000305,
+        "rssBytes": 2322153472
+      },
+      {
+        "run": 3,
+        "encodeMs": 1133.1412920000002,
+        "decodeMs": 38.00904199999786,
+        "rssBytes": 2311421952
+      },
+      {
+        "run": 4,
+        "encodeMs": 1909.026833,
+        "decodeMs": 82.15108300000065,
+        "rssBytes": 661258240
+      },
+      {
+        "run": 5,
+        "encodeMs": 1994.032333999996,
+        "decodeMs": 94.07916699999623,
+        "rssBytes": 715882496
+      },
+      {
+        "run": 6,
+        "encodeMs": 1617.4672499999942,
+        "decodeMs": 45.6572079999969,
+        "rssBytes": 1961426944
+      },
+      {
+        "run": 7,
+        "encodeMs": 1053.1635840000017,
+        "decodeMs": 38.459374999998545,
+        "rssBytes": 1975713792
+      },
+      {
+        "run": 8,
+        "encodeMs": 1835.2107499999984,
+        "decodeMs": 53.73870899999747,
+        "rssBytes": 727465984
+      },
+      {
+        "run": 9,
+        "encodeMs": 1300.6041660000046,
+        "decodeMs": 56.73391700000502,
+        "rssBytes": 2046705664
+      },
+      {
+        "run": 10,
+        "encodeMs": 1495.344624999998,
+        "decodeMs": 57.41387499999837,
+        "rssBytes": 2065907712
+      },
+      {
+        "run": 11,
+        "encodeMs": 1417.9107499999955,
+        "decodeMs": 42.43550000000687,
+        "rssBytes": 1976418304
+      },
+      {
+        "run": 12,
+        "encodeMs": 1082.4728749999922,
+        "decodeMs": 37.07958299999882,
+        "rssBytes": 2188787712
+      },
+      {
+        "run": 13,
+        "encodeMs": 1450.4680829999998,
+        "decodeMs": 57.647291999994195,
+        "rssBytes": 1418821632
+      },
+      {
+        "run": 14,
+        "encodeMs": 1458.8147499999905,
+        "decodeMs": 66.83304199999839,
+        "rssBytes": 1710342144
+      },
+      {
+        "run": 15,
+        "encodeMs": 1211.453582999995,
+        "decodeMs": 45.56691599999613,
+        "rssBytes": 2365456384
+      }
+    ],
+    "maxRssBytes": 2841640960,
+    "maskHash": "845a76e4da660f99cc7620c038f4729800654c15c68b5c6de12a75be396b6b2b",
+    "limits": {
+      "encodeMs": 4000,
+      "maxRssBytes": 3000000000
+    },
+    "passed": true
+  },
+  "interpretation": "All sixteen distinct full-resolution display-RGB buffers pass the unchanged peak-RSS and encode-time limits through the existing eight-entry encoder cache, preserving exact historical masks and frozen model hashes. This supersedes the color-only repeated-cache red result for this runtime witness, not the historical observation. It bypasses public CLI/daemon dispatch, source/develop rendering, library commits, and external grounding. It does not prove photographic quality, other-platform performance, or end-to-end repeated daemon resource behavior."
+}
