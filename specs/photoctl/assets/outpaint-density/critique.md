@@ -35,3 +35,7 @@ Disposition: accept the depicted sampling and placement mechanics. Border and sm
 are byte-identical between sets. The absent unmarked control limits this visual comparison; public
 tests independently pin the shrunken-border native dimensions and mapping. This report does not
 claim photographic quality, recovered original detail, or full canvas lifecycle acceptance.
+
+The integrated old/new odd crop, corrected quarter-turn and native-border zooms were opened for a
+non-blocking review window. With no contrary response after five minutes, the evidence-based
+sampling/placement verdict above stands provisionally; the opened Preview window was closed.
