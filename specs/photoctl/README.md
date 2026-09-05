@@ -66,6 +66,7 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | Native diagnostics | 21 TypeScript + 5 Rust checks, native/TS build/typecheck; override model gate below |
 | Public undo | 46 merged CLI/command/revision/markup/canvas/develop checks, TS build/typecheck |
 | Canvas sampling / reconnect | 71 merged canvas/preview/export/undo/evaluator/SAM and built-journey checks, TS build/typecheck; independent review |
+| Historical schema fixtures | 31 merged migration checks, including version-authored v10–v12 preservation; no production schema change |
 | [Untouched overview](assets/gates/show-overview/evidence.json) | 37 preview/daemon/develop cases across integration and focused correction; fresh visual review |
 | Paid retention / atomic removal / upscale-develop consumers | 85 / 18 / 21 checks and typecheck; no extra provider work for exposure replacement |
 
@@ -128,7 +129,7 @@ Update this handoff after each pass and continue to the next unfinished requirem
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
 - [ ] 13a [x] initial reimagine/relight/generate · [ ] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
-- [ ] Fixture completeness: [ ] historical schema-v10/v11/v12 preservation witnesses · [x] structured truncated-RAW rejection — `fixtures/README.md`
+- [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 

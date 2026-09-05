@@ -4734,4 +4734,39 @@
 - **The reach:** This guards malformed container handling without adding an extension-based refusal
   or declaring every partially damaged RAW unsupported. No production, schema or dependency changes.
 - **Verdict:** **Sound.** Exercise a real structural failure without contradicting preview-based admission.
+### Historical schema fixtures — Recreate old writer state, not a current database with an old label
+
+- **When:** Schema-v10–v12 fixture completion, 2026-09-06.
+- **The choice:** When checking whether an old edited library survives an upgrade, start a fresh
+  database with the migration runner from that schema's original commit. Use that commit's graph
+  writer—the code that stores immutable edit recipes and their connections—to author a moved
+  subject, affine image sampling, or local retouch before dumping the database. Keep the resulting
+  SQL unchanged as the test input. An alternative would be to insert old-looking rows into today's
+  schema and change its version label; that would never exercise the real old constraints or writers.
+- **The gap:** The plan requires a dump for every schema but does not specify how to recover the
+  omitted historical fixtures after later schema versions have already landed.
+- **The reach:** These are historical application schemas running on the available PGlite/PostgreSQL
+  engine, not a cross-PostgreSQL-version certification. The affine fixture uses the historical graph
+  commit and layer-projection owners directly; it does not claim to recreate a provider request.
+- **Verdict:** **Sound.** Historical code establishes the authoring contract without changing live
+  libraries, adding migrations, or teaching production a second compatibility path.
+- **Confidence:** High.
+
+### Historical schema fixtures — Prove metadata preservation without claiming pixel recovery
+
+- **When:** Schema-v10–v12 fixture completion, 2026-09-06.
+- **The choice:** A restored SQL backup must retain an edit's exact recipe, ordered inputs, saved
+  revision, layer identity and artifact record even when the actual image file is absent. The tests
+  compare those records before and after the real migration, then check what the edit means: the
+  vacancy belongs to the moved subject, the affine node keeps its matrix, and the retouch reads the
+  previous image plus its selection in the correct order. Mask files are generated while authoring
+  the fixture but are not packaged into the SQL dump; a passing check is not evidence that lost
+  image bytes can be recovered or that a retouched photograph looks good.
+- **The gap:** The missing-fixture requirement does not set the boundary between metadata upgrade
+  coverage and pixel rendering/recovery evidence.
+- **The reach:** This extends the existing migration suite while retaining all prior fixtures.
+  Pixel execution and photographic quality remain responsibilities of the renderer and its gates;
+  no new artifact format, runtime dependency or release command is introduced.
+- **Verdict:** **Sound.** It proves the metadata-only backup contract without inventing a broader
+  recovery guarantee from a database-only test.
 - **Confidence:** High.

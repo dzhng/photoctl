@@ -79,6 +79,17 @@ known settings. `wb library` was captured from a real schema-v3 library at 1440�
 explicit library ID/path labels, one-line identity, Table/Rows headings, and no clipping or alignment defects.
 Fresh critique retained only non-blocking density and wide-column polish notes.
 
+Historical v10–v12 coverage restores real dumps authored by the corresponding migration and graph
+writers, rather than inserting the new node kinds only after upgrade. The tests preserve exact
+recipes, ordered edges, artifact records, revision ancestry, active roots and layer snapshots; they
+also assert the moved-subject/vacancy pairing, affine input, and heal selection/prior-image order.
+[`fixtures/README.md`](../../../fixtures/README.md) records provenance and the metadata-only boundary.
+Each missing-fixture tracer was red before its dump existed. Temporarily corrupting solid/resample/heal
+parameters in migration 13 made all three upgrade tests red on the changed records; restoring the
+migration earned green without changing the assertions. No production schema change is part of this pass.
+The complete migration/upgrade selection passes 31 checks with typecheck, formatting and lint;
+independent diff review found no issues. These focused results are not the whole-spec release gate.
+
 ## Delegated: pgDump compression.
 ## Must stay green: 01–02. Deps: 3a ← 02; 3b ← 3a.
 ## Firewall: no directory clones; no auto-quarantine; no down migrations; no develop state.

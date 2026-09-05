@@ -355,6 +355,148 @@ test("the v9 layer fixture gains the explicit deterministic solid RGB node kind"
   }
 });
 
+test("the v10 fixture preserves a moved subject and its original-position vacancy", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v10.pgsql"));
+    // Match restore's session reset after pgDump clears the search path.
+    await db.exec('SET search_path TO "$user", public');
+    const before = await historicalGraph(db);
+    expect(await migrate(db)).toMatchObject({ fromVersion: 10, toVersion: LATEST_SCHEMA_VERSION });
+    expect(await historicalGraph(db)).toEqual(before);
+    expect(
+      (
+        await db.query(`
+      SELECT identity.role, content.kind, content.parameters,
+        mask.kind AS mask_kind, (identity.of_layer = subject.id) AS paired
+      FROM photo_documents document
+      JOIN document_revision_layers snapshot ON snapshot.revision_id = document.active_revision_id
+      JOIN layers identity ON identity.id = snapshot.layer_id
+      JOIN image_nodes content ON content.id = snapshot.content_node_id
+      JOIN image_nodes mask ON mask.id = snapshot.mask_node_id
+      LEFT JOIN layers subject ON subject.role = 'subject'
+      ORDER BY snapshot.z
+    `)
+      ).rows,
+    ).toEqual([
+      {
+        role: "vacancy",
+        kind: "solid",
+        parameters: { w: 16, h: 12, space: "scene-linear-rec2020", rgb: [1, 0, 1] },
+        mask_kind: "mask",
+        paired: true,
+      },
+      {
+        role: "subject",
+        kind: "transform",
+        parameters: { matrix: [1, 0, 0, 1, 3, -2] },
+        mask_kind: "transform",
+        paired: null,
+      },
+    ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the v11 fixture preserves an affine resample recipe and its ordered input", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v11.pgsql"));
+    await db.exec('SET search_path TO "$user", public');
+    const before = await historicalGraph(db);
+    expect(await migrate(db)).toMatchObject({ fromVersion: 11, toVersion: LATEST_SCHEMA_VERSION });
+    expect(await historicalGraph(db)).toEqual(before);
+    expect(
+      (
+        await db.query(`
+      SELECT node.recipe_version, node.parameters, edge.input_index, input.kind AS input_kind
+      FROM photo_documents document
+      JOIN document_revision_layers snapshot ON snapshot.revision_id = document.active_revision_id
+      JOIN layers identity ON identity.id = snapshot.layer_id AND identity.role = 'subject'
+      JOIN image_nodes node ON node.id = snapshot.content_node_id
+      JOIN image_node_inputs edge ON edge.node_id = node.id
+      JOIN image_nodes input ON input.id = edge.input_node_id
+      WHERE node.kind = 'resample'
+    `)
+      ).rows,
+    ).toEqual([
+      {
+        recipe_version: 2,
+        parameters: { w: 16, h: 12, kernel: "lanczos3", matrix: [1.25, 0, 0, 1.25, 0.5, -0.25] },
+        input_index: 0,
+        input_kind: "transform",
+      },
+    ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the v12 fixture preserves a retouch recipe, its selection and prior-image input", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v12.pgsql"));
+    await db.exec('SET search_path TO "$user", public');
+    const before = await historicalGraph(db);
+    expect(await migrate(db)).toMatchObject({ fromVersion: 12, toVersion: LATEST_SCHEMA_VERSION });
+    expect(await historicalGraph(db)).toEqual(before);
+    expect(
+      (
+        await db.query(`
+      SELECT node.recipe_version, node.parameters, edge.input_index, input.kind AS input_kind,
+        (input.id = snapshot.mask_node_id) AS selection_input,
+        (input.id = prior.node_id) AS prior_image_input
+      FROM photo_documents document
+      JOIN document_revisions revision ON revision.id = document.active_revision_id
+      JOIN document_revision_roots prior ON prior.revision_id = revision.parent_revision_id AND prior.root_name = 'output'
+      JOIN document_revision_layers snapshot ON snapshot.revision_id = document.active_revision_id
+      JOIN layers identity ON identity.id = snapshot.layer_id AND identity.role = 'retouch'
+      JOIN image_nodes node ON node.id = snapshot.content_node_id AND node.kind = 'heal'
+      JOIN image_node_inputs edge ON edge.node_id = node.id
+      JOIN image_nodes input ON input.id = edge.input_node_id
+      ORDER BY edge.input_index
+    `)
+      ).rows,
+    ).toEqual(
+      ["composite", "mask"].map((input_kind, input_index) => ({
+        recipe_version: 1,
+        parameters: {
+          method: "fast-marching-harmonic",
+          at: [8, 6],
+          radius: 2,
+          neighborhood_radius: 3,
+          refinement_iterations: 512,
+          refinement_pixel_budget: 8_000_000,
+        },
+        input_index,
+        input_kind,
+        selection_input: input_index === 1,
+        prior_image_input: input_index === 0,
+      })),
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+async function historicalGraph(db: Awaited<ReturnType<typeof testDatabase>>) {
+  // Select the historical contract explicitly: later migrations may add columns,
+  // but must not rewrite existing recipes, ordered edges, snapshots or roots.
+  return await Promise.all(
+    [
+      "SELECT photo_id, id, kind, recipe_version, parameters, recipe_hash, created_at FROM image_nodes ORDER BY photo_id, id",
+      "SELECT artifact_hash, media_type, bytes, w, h, artifact_available, created_at FROM image_artifacts ORDER BY artifact_hash",
+      "SELECT photo_id, node_id, input_index, input_node_id FROM image_node_inputs ORDER BY photo_id, node_id, input_index",
+      "SELECT photo_id, id, parent_revision_id, pinned, created_at FROM document_revisions ORDER BY photo_id, id",
+      "SELECT photo_id, active_revision_id FROM photo_documents ORDER BY photo_id",
+      "SELECT photo_id, revision_id, root_name, node_id FROM document_revision_roots ORDER BY photo_id, revision_id, root_name",
+      "SELECT photo_id, id, role, of_layer, created_at FROM layers ORDER BY photo_id, id",
+      "SELECT photo_id, revision_id, layer_id, name, z, content_node_id, mask_node_id, opacity, blend, enabled FROM document_revision_layers ORDER BY photo_id, revision_id, z",
+    ].map(async (sql) => (await db.query(sql)).rows),
+  );
+}
+
 test("the v13 revision-metadata fixture preserves its auto-enhance undo contract", async () => {
   const db = await testDatabase();
   try {
