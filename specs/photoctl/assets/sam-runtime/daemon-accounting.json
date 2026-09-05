@@ -1,0 +1,122 @@
+{
+  "date": "2026-09-06",
+  "codeCommit": "f4fe6ef",
+  "runtime": "Node 24.14.0, macOS arm64, Apple M5 Pro",
+  "scope": "Six alternating point-segmentation requests on one unchanged 7008x4672 photographic source through one persistent daemon",
+  "source": "fixtures/a7c2.ARW",
+  "models": {
+    "encoder": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+    "decoder": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d"
+  },
+  "forcedGc": false,
+  "terminalExitCode": 0,
+  "daemonPid": 6896,
+  "daemonStopped": true,
+  "peakRssBytes": 2220621824,
+  "rssLimitBytes": 3000000000,
+  "encodeLimitMs": 4000,
+  "encoderRuns": [
+    {
+      "event": "runEncoder:done",
+      "pid": 6896,
+      "ms": 22336.924792,
+      "rss": 2023211008,
+      "maxRss": 2023260160,
+      "durationMs": 1297.1239170000008
+    }
+  ],
+  "decoderRuns": [
+    {
+      "event": "runDecoder:done",
+      "pid": 6896,
+      "ms": 22414.609792,
+      "rss": 2049703936,
+      "maxRss": 2073051136,
+      "durationMs": 54.13454100000308
+    },
+    {
+      "event": "runDecoder:done",
+      "pid": 6896,
+      "ms": 44263.308417,
+      "rss": 609894400,
+      "maxRss": 2220621824,
+      "durationMs": 77.17583400000149
+    },
+    {
+      "event": "runDecoder:done",
+      "pid": 6896,
+      "ms": 66401.328208,
+      "rss": 609124352,
+      "maxRss": 2220621824,
+      "durationMs": 136.09545799999614
+    },
+    {
+      "event": "runDecoder:done",
+      "pid": 6896,
+      "ms": 88875.803917,
+      "rss": 607813632,
+      "maxRss": 2220621824,
+      "durationMs": 120.21708399998897
+    },
+    {
+      "event": "runDecoder:done",
+      "pid": 6896,
+      "ms": 110957.525292,
+      "rss": 609943552,
+      "maxRss": 2220621824,
+      "durationMs": 76.42254099999263
+    },
+    {
+      "event": "runDecoder:done",
+      "pid": 6896,
+      "ms": 132588.708042,
+      "rss": 611401728,
+      "maxRss": 2220621824,
+      "durationMs": 104.38741600001231
+    }
+  ],
+  "requests": [
+    {
+      "point": "4000,600",
+      "mask": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "ok": true
+    },
+    {
+      "point": "4400,3500",
+      "mask": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162",
+      "ok": true
+    },
+    {
+      "point": "4000,600",
+      "mask": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "ok": true
+    },
+    {
+      "point": "4400,3500",
+      "mask": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162",
+      "ok": true
+    },
+    {
+      "point": "4000,600",
+      "mask": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "ok": true
+    },
+    {
+      "point": "4400,3500",
+      "mask": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162",
+      "ok": true
+    }
+  ],
+  "controls": [
+    "Fresh isolated library/cache, linked original, hash-verified copies of frozen model pair; no gateway calls.",
+    "Public built CLI init/import/status/segment/stop. PHOTOCTL_NO_DAEMON=0 for the measured commands; every status retained the same PID.",
+    "Read-only native-boundary preload records process.resourceUsage().maxRSS and model durations in the daemon, not clients; 100ms samples plus operation completion and exit records. No pixel changes, forced GC, thread or allocator tuning.",
+    "Competing ORT container was idle with no compiler or inference, but its VM remained resident; not a pristine-host or interleaved A/B comparison."
+  ],
+  "reproduction": "Initialize a fresh no-daemon library; provision frozen models; enable daemon dispatch, import the linked fixture, alternate sky 4000,600 and road 4400,3500 three times, checking same daemon PID and exact mask artifacts after each request. Observe cumulative maxRSS inside daemon, then stop it and retain exit counter.",
+  "limits": [
+    "One source identity exercises persistent command/source-preparation overhead and cache reuse, not multi-photo eviction.",
+    "The separate sixteen-input runtime-cache witness omits public command overhead; neither witness alone proves their combined worst case.",
+    "This is recorded host/fixture resource evidence, not photographic edge acceptance or other-platform acceptance."
+  ]
+}

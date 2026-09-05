@@ -26,7 +26,7 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   choose density from actual available sources, not tier labels. Equal pixel bytes do not imply equal
   coordinates, and old ancestry recovery never guesses the latest execution. See [12f1](slices/12-outpaint.md).
   Photographic mutations now share one output planner. Deterministic canvas composition and reversible
-  border removal are integrated; restriction activation and remaining consumers are next in
+  border removal and independent restriction activation are integrated; remaining consumers are next in
   [12f2](slices/12-outpaint.md#geometry-intent-and-ordinary-layer-operations).
 - Fit/strength, capped/full-res inputs, and reference/init controls are integrated. Migration 18
   retains exact reference PNG plus working TIFF through one artifact owner; supported references
@@ -34,8 +34,9 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   reference field is removed. Follow [12f2](slices/12-outpaint.md) for immutable geometry intent,
   inherited crop exclusions, and removable extent, then wire generation in 12f3. Canvas owns the
   integrated migration 19 for immutable geometry/layer-authoring metadata; paid retention is integrated as 20.
-  Migration 21 carries authored canvas composition. Independent crop/aspect activation, undo,
-  source-only SAM geometry, and offline/purchased-density consumers remain in progress.
+  Migration 21 carries authored canvas composition. Crop/aspect, copy/reset/presets and graph undo
+  are verified; captured stages after border transforms, source-only SAM geometry, and
+  offline/purchased-density consumers remain in progress. General CLI undo remains unimplemented.
   Keep live quality separate from deterministic evidence.
 - Slice 11 runtime, real parity-verified weights, and `wb masks` are integrated. Real-photo
   coarse subject tests pass; foliage/wire edges remain red. Full-command RSS passes the six-run
@@ -64,6 +65,7 @@ allocation and storage checkpoints, not canvas completion or a passing whole-com
 Convex support passed 78 merged geometry/pixel tests and typecheck; its canvas consumers remain in progress.
 Canvas core passed 156 merged consumer tests and typecheck. Native color/resampler accounting
 passed its merged build, typecheck, and 26 accounting/color/SAM-session/mask tests.
+Restriction activation passed 72 merged consumer tests, TypeScript build and typecheck.
 Retention passed 85 merged tests, atomic removal 18, and upscale/develop consumers 21, each with
 typecheck. The latter verifies exposure replacement without additional provider work.
 Earlier integrations passed focused tests, Rust tests, builds, typecheck,
@@ -78,8 +80,9 @@ pixel-free cached dimensions and prepared inference handles are integrated (19 m
 typecheck). Native color snapshots now report their actual capacity to Node; six no-forced-GC CLI
 runs preserve exact masks at 2.04–2.27 GB RSS on the fixture host. After resampler accounting, the
 unchanged full-resolution multi-photo cache probe passes all sixteen inputs at 2.842 GB peak RSS.
-The remaining resource witness is repeated public commands through one persistent daemon,
-including source/develop preparation and library commits. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
+Six same-photo public commands through one persistent daemon also pass at 2.221 GB peak RSS.
+The remaining resource witness combines public source/develop preparation and library commits with
+multi-photo cache eviction. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
 single/multi-mask references all fail detailed edges. Any extra refinement is a separate decision.
 [Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
 Docker's functional gate now consumes hash-verified models and runs the shared real-model test;

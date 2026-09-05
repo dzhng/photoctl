@@ -124,6 +124,15 @@ exercised and is not superseded by the six passing independent CLI runs.
 requests through the existing cache at 2.842 GB peak RSS, with unchanged model and mask hashes. No forced GC was used. The
 competing ORT build container was fully paused; roughly 1 GiB idle VM memory remained resident on the 48 GiB host. This is a
 measured runtime-cache pass, not an interleaved pristine-host A/B comparison. It supersedes the preceding resource result
-for this runtime witness, while preserving the historical failure. The public persistent-daemon path still needs its own
-bounded resource witness: source/develop preparation, command dispatch and library commit are absent from this probe, and
-the passing independent CLI runs started fresh processes. Photographic edge quality remains separate.
+for this runtime witness, while preserving the historical failure. Source/develop preparation, command dispatch and library
+commit are absent from this probe, and the passing independent CLI runs started fresh processes.
+
+[Persistent-daemon measurements](daemon-accounting.json) cover six public sky/road requests on the same full-resolution
+photograph through one daemon. All preserve exact masks; cumulative daemon peak RSS is 2.221 GB, including cold preparation,
+with one 1.297-second encoder execution reused across six decoder calls. The observer records the daemon's native-boundary
+timings and cumulative OS high-water counter, not client-process RSS. No forced GC or allocator tuning is used; the daemon
+stops cleanly afterward. An idle ORT build VM remained resident, so this is not a pristine-host causal comparison.
+
+That same-photo public witness and the sixteen-photo runtime-cache witness cover different costs. Their combined public
+multi-photo/eviction path still needs measurement; neither passing result proves that combined peak. Photographic edge
+quality and other-platform resources remain separate.
