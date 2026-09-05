@@ -19,6 +19,7 @@ export interface ActiveDevelopState {
   photoId: string;
   revisionId: string;
   outputNodeId: string;
+  baseNodeId: string;
   sourceNodeId: string;
   outputParameters: JsonValue;
   develop: DevelopDict;
@@ -26,6 +27,26 @@ export interface ActiveDevelopState {
   layers: RevisionLayer[];
   layerDevelop: Record<string, DevelopDict>;
   renderHash: `r_${string}`;
+}
+
+export function activeLayerStatus(state: ActiveDevelopState): {
+  count: number;
+  staleIds: string[];
+  unfilledVacancyIds: string[];
+} {
+  return {
+    count: state.layers.length,
+    staleIds: state.layers
+      .filter(
+        (layer) =>
+          layer.role !== "vacancy" &&
+          planDevelopChange(state.layerDevelop[layer.id] ?? {}, state.develop)?.tier === 2,
+      )
+      .map(({ id }) => id),
+    unfilledVacancyIds: state.layers
+      .filter((layer) => layer.role === "vacancy" && layer.enabled)
+      .map(({ id }) => id),
+  };
 }
 
 export async function readActiveDevelopState(
@@ -53,6 +74,7 @@ export async function readActiveDevelopState(
       photoId: request.photoId,
       revisionId: document.revisionId,
       outputNodeId: document.roots.output,
+      baseNodeId: document.roots.base,
       sourceNodeId: input.id,
       outputParameters: output.parameters,
       develop: {},
@@ -74,6 +96,7 @@ export async function readActiveDevelopState(
     photoId: request.photoId,
     revisionId: document.revisionId,
     outputNodeId: document.roots.output,
+    baseNodeId: document.roots.base,
     sourceNodeId: source.id,
     outputParameters: output.parameters,
     develop: developDictSchema.parse(input.parameters),
@@ -94,7 +117,9 @@ export async function commitDevelopState(
   layers: { deltaApplied: string[]; stale: string[] };
 }> {
   const layerChanges = current.layers.map((layer) =>
-    planDevelopChange(current.layerDevelop[layer.id] ?? {}, develop),
+    layer.role === "vacancy"
+      ? null
+      : planDevelopChange(current.layerDevelop[layer.id] ?? {}, develop),
   );
   const nodes: NodeDraft[] = [
     {

@@ -2396,7 +2396,64 @@
   for actual coordinates.
 - **Confidence:** Medium.
 
+### Slice 10c2 — Vacancy pixels have their own deterministic RGB recipe
+
+- **When:** Slice 10c2 vacancy integration, 2026-09-05.
+- **The choice:** A vacancy's magenta content is a zero-input `solid` recipe at version 1. Its parameters carry oriented width,
+  height, the scene-linear Rec.2020 space, and one RGB triplet; evaluation allocates the pixels asynchronously in the native image
+  owner. It is not disguised as provider output, a mask artifact, markup, or a special composite role.
+- **The gap:** The plan required deterministic RGB vacancy content, but the graph had no honest artifact pin or constant-image node.
+- **The reach:** Solid images now have a canonical hashable graph identity and remain lazy until show or export. Future constant
+  backgrounds can reuse this vocabulary without teaching composite what a vacancy means.
+- **Verdict:** **Sound.** One explicit versioned node keeps pixel generation, graph identity, and layer semantics in their existing
+  owners.
+- **Confidence:** High.
+
+### Slice 10c2 — Repeated moves preserve one original vacancy identity
+
+- **When:** Slice 10c2 move integration, 2026-09-05.
+- **The choice:** The first move creates one vacancy identity for the subject; later moves reuse it even if a prior revision removed
+  it. A partial unique database index enforces that invariant. Each active revision places the vacancy immediately behind its
+  subject and renumbers the whole stack contiguously. `--to` translates the current visible mask centroid while preserving existing
+  scale and rotation; `--by` adds a vector in oriented base-image coordinates. Because a second vacancy identity would violate this
+  contract, `layer duplicate` rejects vacancy layers as a usage error.
+- **The gap:** The plan required a stable original vacancy and repeat moves, but did not define reactivation after removal, exact
+  stack placement, or whether `--to` discarded existing linear transforms.
+- **The reach:** History always refers to the same logical hole, scripts do not accumulate vacancy identities, and repeated moves
+  keep the subject's current shape while relocating it.
+- **Verdict:** **Sound.** The database enforces the identity rule, while direct adjacency makes subject/vacancy order predictable
+  without adding a group abstraction.
+- **Confidence:** Medium; the identity and coordinate rules are strong, while a future UI may want vacancy grouping rather than
+  adjacency as presentation policy.
+
+### Slice 10c2 — Vacancy content never receives develop compensation or stale state
+
+- **When:** Slice 10c2 develop-lineage integration, 2026-09-05.
+- **The choice:** Develop changes plan deltas and staleness only for photographic layers. A vacancy retains its exact solid content
+  chain, never appears in `delta_applied` or `stale`, and is reported separately as `vacancy_unfilled` only while enabled in the
+  active revision. Show and export derive both warnings from the same active document snapshot.
+- **The gap:** The plan required real stale IDs and a vacancy warning, but did not say whether the deliberately synthetic placeholder
+  should inherit ordinary photographic develop policy.
+- **The reach:** Editing exposure cannot tint the warning placeholder or make one vacancy count as two problems. Historical and
+  disabled vacancy rows remain retained without warning current commands.
+- **Verdict:** **Sound.** Vacancy state is workflow state, not photographic compatibility, so its warning and develop behavior stay
+  separate.
+- **Confidence:** High.
+
 ## Needs user
+
+### Slice 10c2 — The provisional vacancy color is full scene-linear Rec.2020 magenta
+
+- **When:** Slice 10c2 vacancy rendering, 2026-09-05.
+- **The choice:** The `solid` v1 vacancy recipe stores exactly `rgb:[1,0,1]` in scene-linear Rec.2020 with white level 1. It renders
+  as a deliberately unmistakable saturated magenta and is replaced later by provider-backed fill content. Alternatives include a
+  display-referred sRGB magenta converted into the working space or a less saturated checker pattern.
+- **The gap:** The plan named “magenta” but did not define exact samples, working-space interpretation, or visual intensity.
+- **The reach:** Recipe hashes, exported warning images, screenshots, and any future color-picker representation inherit these exact
+  values until the single solid-node parameter changes in a replacement revision.
+- **Verdict:** **Needs-user.** The value is deterministic and conspicuous, but its visual character is a product choice that the
+  blocked workbench screenshot gate could not validate in this environment.
+- **Confidence:** Low until the workbench and real photographic composites are reviewed visually.
 
 ### Slice 10b2 — Morphology uses a square footprint and feather uses three bounded box passes
 

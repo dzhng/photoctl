@@ -699,6 +699,7 @@ async function nodePixelKind(
   const row = node.rows[0];
   if (!row) throw new Error(`Graph input does not exist for photo: ${nodeId}`);
   if (row.kind === "source") return "rgb";
+  if (row.kind === "solid") return "rgb";
   if (row.kind === "mask") return "mask";
   const inputIds = await loadPixelInputs(transaction, photoId, nodeId, row.kind);
   const inputKinds = await mapInOrder(inputIds, async (input) => {

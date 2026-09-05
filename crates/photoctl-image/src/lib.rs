@@ -177,6 +177,57 @@ pub fn atomic_rename_no_replace(source: String, destination: String) -> napi::Re
 }
 
 #[napi]
+pub fn solid_rgb_pixels(
+    width: u32,
+    height: u32,
+    red: f64,
+    green: f64,
+    blue: f64,
+) -> napi::Result<AsyncTask<SolidRgbTask>> {
+    if width == 0 || height == 0 || ![red, green, blue].into_iter().all(f64::is_finite) {
+        return Err(Error::new(
+            Status::InvalidArg,
+            "solid RGB dimensions must be positive and samples must be finite".to_owned(),
+        ));
+    }
+    let samples = usize::try_from(width)
+        .ok()
+        .and_then(|value| value.checked_mul(height as usize))
+        .and_then(|value| value.checked_mul(3))
+        .ok_or_else(|| Error::new(Status::InvalidArg, "solid RGB dimensions are too large"))?;
+    Ok(AsyncTask::new(SolidRgbTask {
+        samples,
+        rgb: [red as f32, green as f32, blue as f32],
+    }))
+}
+
+pub struct SolidRgbTask {
+    samples: usize,
+    rgb: [f32; 3],
+}
+
+impl Task for SolidRgbTask {
+    type Output = Vec<f32>;
+    type JsValue = Float32Array;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        Ok(solid_rgb(self.samples, self.rgb))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(data.into())
+    }
+}
+
+fn solid_rgb(samples: usize, rgb: [f32; 3]) -> Vec<f32> {
+    let mut output = vec![0.0; samples];
+    for pixel in output.chunks_exact_mut(3) {
+        pixel.copy_from_slice(&rgb);
+    }
+    output
+}
+
+#[napi]
 pub fn develop_camera_front(
     data: Float32Array,
     white_level: f64,
@@ -678,6 +729,14 @@ impl From<CameraImage> for LibrawImageResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn solid_rgb_repeats_the_exact_asymmetric_triplet() {
+        assert_eq!(
+            solid_rgb(6, [1.0, 0.25, -0.5]),
+            [1.0, 0.25, -0.5, 1.0, 0.25, -0.5]
+        );
+    }
 
     #[test]
     fn decodes_the_libraw_fixture_at_the_requested_scale() {

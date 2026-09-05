@@ -10,6 +10,7 @@ import {
 import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@photoctl/protocol";
 import {
   developHash,
+  activeLayerStatus,
   developBaseRegion,
   developGeometryMatrix,
   developPreviewProjection,
@@ -73,6 +74,21 @@ export async function showCommand(
       photoId: id,
       orientation: photo.orientation,
     });
+    const layerStatus = activeLayerStatus(document);
+    if (layerStatus.staleIds.length > 0) {
+      warnings.push({
+        code: "layers_stale",
+        id,
+        message: `${layerStatus.staleIds.length} ${layerStatus.staleIds.length === 1 ? "layer is" : "layers are"} stale`,
+      });
+    }
+    if (layerStatus.unfilledVacancyIds.length > 0) {
+      warnings.push({
+        code: "vacancy_unfilled",
+        id,
+        message: `${layerStatus.unfilledVacancyIds.length} ${layerStatus.unfilledVacancyIds.length === 1 ? "vacancy is" : "vacancies are"} unfilled`,
+      });
+    }
     const renderHash = document.renderHash;
     const view = parseViewSpec(parsed.options, parsed.flags.has("--norm"), photo.w, photo.h);
     const geometry = developGeometryMatrix(photo.w, photo.h, document.develop);
@@ -193,7 +209,7 @@ export async function showCommand(
       develop: document.develop,
       develop_hash: document.hasDevelopNode ? developHash(document.develop) : null,
       render_hash: renderHash,
-      layers: { count: document.layers.length, stale: 0 },
+      layers: { count: layerStatus.count, stale: layerStatus.staleIds.length },
       xmp: xmpRow
         ? {
             sidecar_path: xmpRow.sidecar_path,

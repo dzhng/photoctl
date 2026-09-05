@@ -35,6 +35,7 @@ import { developDictSchema } from "../develop/dict.js";
 import {
   compositeMaskedPixels,
   featherMask,
+  solidRgbPixels,
   transformMaskPixels,
   transformPixels,
 } from "@photoctl/img";
@@ -340,6 +341,9 @@ async function runOperation(
     if (kind === "mask_composite") {
       return { image: await evaluateMaskComposite(parameters, inputs) };
     }
+    if (kind === "solid") {
+      return { image: await evaluateSolid(parameters) };
+    }
     if (kind === "composite" && recipeVersion === 2) {
       return { image: await evaluateCompositeV2(parameters, inputs) };
     }
@@ -371,6 +375,29 @@ async function runOperation(
     );
   }
   return { image: result };
+}
+
+async function evaluateSolid(parameters: JsonValue): Promise<LinearImage> {
+  const parsed = z
+    .object({
+      w: z.number().int().positive(),
+      h: z.number().int().positive(),
+      space: z.literal("scene-linear-rec2020"),
+      rgb: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]),
+    })
+    .strict()
+    .parse(parameters);
+  const data = await solidRgbPixels(parsed.w, parsed.h, parsed.rgb);
+  return {
+    w: parsed.w,
+    h: parsed.h,
+    orientationApplied: true,
+    space: parsed.space,
+    data,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
 }
 
 async function evaluateMaskComposite(

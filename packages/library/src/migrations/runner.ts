@@ -8,6 +8,7 @@ import { migration0006 } from "./0006-export-history.js";
 import { migration0007 } from "./0007-provider-execution.js";
 import { migration0008 } from "./0008-search.js";
 import { migration0009 } from "./0009-layers.js";
+import { migration0010 } from "./0010-solid-image-nodes.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -25,6 +26,7 @@ const migrations = [
   { version: 7, sql: migration0007 },
   { version: 8, sql: migration0008 },
   { version: 9, sql: migration0009 },
+  { version: 10, sql: migration0010 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
@@ -198,6 +200,7 @@ export async function verifyLatestSchema(db: PGlite): Promise<void> {
         "image_node_inputs_input_idx",
         "image_nodes_id_idx",
         "layers_id_idx",
+        "layers_one_vacancy_per_subject_idx",
         "node_executions_deterministic_eval_idx",
         "node_executions_node_id_idx",
         "exports_photo_at_idx",

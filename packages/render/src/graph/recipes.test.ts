@@ -54,7 +54,25 @@ test("logical recipes canonicalize parameters but preserve ordered node inputs",
       inputNodeIds: [inputs[0]],
     }),
   ).toThrow();
-  expect(Object.keys(imageNodeRegistry)).toHaveLength(13);
+  expect(Object.keys(imageNodeRegistry)).toHaveLength(14);
+});
+
+test("solid RGB is an explicit deterministic zero-input recipe", () => {
+  expect(
+    canonicalNodeRecipe({
+      kind: "solid",
+      recipeVersion: 1,
+      parameters: {
+        w: 40,
+        h: 30,
+        space: "scene-linear-rec2020",
+        rgb: [1, 0, 1],
+      },
+      inputNodeIds: [],
+    }),
+  ).toBe(
+    '{"input_node_ids":[],"kind":"solid","parameters":{"h":30,"rgb":[1,0,1],"space":"scene-linear-rec2020","w":40},"recipe_version":1}',
+  );
 });
 
 test("composite v2 binds ordered content-mask pairs to aligned pixel parameters", () => {

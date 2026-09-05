@@ -14,12 +14,15 @@ import {
   type VolumeResolver,
 } from "@photoctl/library";
 import {
+  activeLayerStatus,
   ensurePhotoDocument,
   evaluateGraphNode,
   exportImage,
   ExportPresetError,
   loadExportPreset,
+  loadActiveDocument,
   readArtifactImage,
+  readActiveDevelopState,
   renderExportTemplate,
   resolveExportCollision,
   SourceEvaluationError,
@@ -57,6 +60,7 @@ interface ExportSnapshot {
   photo: StoredPhoto;
   outputNodeId: `node_${string}`;
   renderHash: `r_${string}`;
+  warnings: Warning[];
 }
 
 interface ExportFailure {
@@ -102,6 +106,7 @@ export async function exportCommand(
           results.push(snapshot.failure);
           return;
         }
+        warnings.push(...snapshot.warnings);
         try {
           const exported = await exportOne(
             handle,
@@ -156,16 +161,47 @@ async function snapshotBatch(
       try {
         const id = await resolvePhotoId(database, input);
         const photo = await loadPhoto(database, id);
-        const renderState = await ensurePhotoDocument(database, {
+        await ensurePhotoDocument(database, {
           photoId: id,
           orientation: photo.orientation,
         });
+        const document = await loadActiveDocument(database, id);
+        if (!document) throw new Error("The active photo document is missing");
+        const layerStatus =
+          document.layers.length > 0
+            ? activeLayerStatus(
+                await readActiveDevelopState(database, {
+                  photoId: id,
+                  orientation: photo.orientation,
+                }),
+              )
+            : { staleIds: [], unfilledVacancyIds: [] };
         return {
           input,
           id,
           photo,
-          outputNodeId: renderState.outputNodeId,
-          renderHash: renderState.renderHash,
+          outputNodeId: document.roots.output as `node_${string}`,
+          renderHash: document.renderHash,
+          warnings: [
+            ...(layerStatus.staleIds.length > 0
+              ? [
+                  {
+                    code: "layers_stale" as const,
+                    id,
+                    message: `${layerStatus.staleIds.length} ${layerStatus.staleIds.length === 1 ? "layer is" : "layers are"} stale`,
+                  },
+                ]
+              : []),
+            ...(layerStatus.unfilledVacancyIds.length > 0
+              ? [
+                  {
+                    code: "vacancy_unfilled" as const,
+                    id,
+                    message: `${layerStatus.unfilledVacancyIds.length} ${layerStatus.unfilledVacancyIds.length === 1 ? "vacancy is" : "vacancies are"} unfilled`,
+                  },
+                ]
+              : []),
+          ],
         };
       } catch (error) {
         if (error instanceof PhotoctlError) {

@@ -176,7 +176,7 @@ test("the current graph fixture preserves its active lazy source revision", asyn
     expect(result).toEqual({
       fromVersion: 5,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [6, 7, 8, 9],
+      applied: [6, 7, 8, 9, 10],
     });
     expect(document.rows).toEqual([
       {
@@ -213,7 +213,7 @@ test("the current delivery fixture preserves export history", async () => {
     expect(result).toEqual({
       fromVersion: 6,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [7, 8, 9],
+      applied: [7, 8, 9, 10],
     });
     expect(history.rows).toEqual([
       {
@@ -239,7 +239,11 @@ test("the current provider fixture has the bounded external-execution seam", asy
          AND column_name = 'provider_execution'`,
     );
 
-    expect(result).toEqual({ fromVersion: 7, toVersion: LATEST_SCHEMA_VERSION, applied: [8, 9] });
+    expect(result).toEqual({
+      fromVersion: 7,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [8, 9, 10],
+    });
     expect(column.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
     const search = await db.query<{ vector_type: string; searchable: string }>(
       `SELECT pg_typeof(e.vec)::text AS vector_type,
@@ -279,11 +283,59 @@ test("the v8 search fixture gains typed base and output roots without changing i
        ORDER BY root.root_name`,
     );
 
-    expect(result).toEqual({ fromVersion: 8, toVersion: LATEST_SCHEMA_VERSION, applied: [9] });
+    expect(result).toEqual({ fromVersion: 8, toVersion: LATEST_SCHEMA_VERSION, applied: [9, 10] });
     expect(document.rows).toEqual([
       { root_name: "base", node_id: `node_${"1".repeat(64)}`, matched: true },
       { root_name: "output", node_id: `node_${"1".repeat(64)}`, matched: true },
     ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the v9 layer fixture gains the explicit deterministic solid RGB node kind", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v9.pgsql"));
+
+    const result = await migrate(db);
+    await db.query(
+      `INSERT INTO image_nodes
+         (photo_id, id, kind, recipe_version, parameters, recipe_hash)
+       VALUES (
+         '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', $1, 'solid', 1,
+         '{"w":1,"h":1,"space":"scene-linear-rec2020","rgb":[1,0,1]}'::jsonb, $2
+       )`,
+      [`node_${"4".repeat(64)}`, `recipe_${"5".repeat(64)}`],
+    );
+    const kinds = await db.query<{ kind: string }>(
+      "SELECT kind FROM image_nodes WHERE kind = 'solid'",
+    );
+    await db.exec(`
+      INSERT INTO layers (photo_id, id, role)
+      VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c010', 'subject');
+      INSERT INTO layers (photo_id, id, role, of_layer)
+      VALUES (
+        '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001',
+        '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c011',
+        'vacancy',
+        '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c010'
+      );
+    `);
+    await expect(
+      db.exec(`
+        INSERT INTO layers (photo_id, id, role, of_layer)
+        VALUES (
+          '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001',
+          '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c012',
+          'vacancy',
+          '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c010'
+        )
+      `),
+    ).rejects.toThrow();
+
+    expect(result).toEqual({ fromVersion: 9, toVersion: LATEST_SCHEMA_VERSION, applied: [10] });
+    expect(kinds.rows).toEqual([{ kind: "solid" }]);
   } finally {
     await db.close();
   }

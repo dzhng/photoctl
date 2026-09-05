@@ -48,6 +48,7 @@ const graphNodeSummarySchema = z.object({
     "upscale",
     "resample",
     "transform",
+    "solid",
     "mask",
     "delta",
     "mask_composite",

@@ -203,6 +203,7 @@ export async function layerCommand(
         message.startsWith("Layer position") ||
         message.startsWith("Layer name") ||
         message.startsWith("Layer opacity") ||
+        message.startsWith("A vacancy layer") ||
         message.startsWith("Transform scale") ||
         message.startsWith("Transform values")
       ) {

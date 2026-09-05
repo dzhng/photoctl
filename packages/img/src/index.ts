@@ -33,6 +33,13 @@ interface NativeBinding {
   librawVersion(): string;
   probeLibraw(path: string): NativeProbe;
   decodeLibrawImage(path: string, scale: number): Promise<NativeLinearImage>;
+  solidRgbPixels(
+    width: number,
+    height: number,
+    red: number,
+    green: number,
+    blue: number,
+  ): Promise<Float32Array>;
   developCameraFront(
     data: Float32Array,
     whiteLevel: number,
@@ -445,6 +452,16 @@ export async function compositeMaskedPixels(
 ): Promise<Float32Array> {
   return asFloat32Array(
     await requiredBinding().compositeMaskedPixels(base, content, mask, width, height, opacity),
+  );
+}
+
+export async function solidRgbPixels(
+  width: number,
+  height: number,
+  rgb: readonly [number, number, number],
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().solidRgbPixels(width, height, rgb[0], rgb[1], rgb[2]),
   );
 }
 

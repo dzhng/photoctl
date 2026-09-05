@@ -95,6 +95,19 @@ export const imageNodeRegistry = {
     1,
     true,
   ),
+  solid: definition(
+    z
+      .object({
+        w: z.number().int().positive(),
+        h: z.number().int().positive(),
+        space: z.literal("scene-linear-rec2020"),
+        rgb: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]),
+      })
+      .strict(),
+    0,
+    0,
+    true,
+  ),
   mask: definition(
     z.object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) }).strict(),
     0,

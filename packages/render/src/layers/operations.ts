@@ -157,29 +157,119 @@ export async function transformLayer(
     request.relative,
     anchor,
   );
-  const nodes: NodeDraft[] = [
-    transformDraft("layer-content-transform", content.baseNodeId, matrix),
-    transformDraft("layer-mask-transform", mask.baseNodeId, matrix),
-  ];
-  let contentNode: { localKey: string } = { localKey: "layer-content-transform" };
-  for (const [index, node] of content.prefix.toReversed().entries()) {
-    const localKey = `layer-content-prefix-${index}`;
-    nodes.push({
-      localKey,
-      kind: node.kind,
-      recipeVersion: node.recipeVersion,
-      parameters: node.parameters,
-      inputs: [contentNode],
-    });
-    contentNode = { localKey };
-  }
+  const transformed = transformBranches("layer", content, mask, matrix);
   const layers = document.layers.map((layer) =>
     layer.id === layerId
-      ? layerDraft(layer, layer.z, contentNode, { localKey: "layer-mask-transform" })
+      ? layerDraft(layer, layer.z, transformed.contentNode, transformed.maskNode)
       : layerDraft(layer, layer.z),
   );
-  const committed = await commitLayerSnapshot(database, document, layers, { nodes });
+  const committed = await commitLayerSnapshot(database, document, layers, {
+    nodes: transformed.nodes,
+  });
   return { ...committed, layer: committed.layers.find(({ id }) => id === layerId)!, matrix };
+}
+
+export async function moveLayer(
+  database: GraphDatabase,
+  libraryPath: string,
+  request: {
+    photoId: string;
+    orientation: number;
+    dimensions: { w: number; h: number };
+    layer: string;
+    destination: { mode: "to" | "by"; x: number; y: number };
+  },
+) {
+  await ensurePhotoDocument(database, request);
+  const document = await activeDocument(database, request.photoId);
+  const layerId = await resolveLayerId(database, request.photoId, request.layer);
+  const selected = requiredLayer(document.layers, layerId);
+  if (selected.role !== "subject") throw new Error("fill --move requires a subject layer");
+  const content = await splitTransformLineage(database, request.photoId, selected.contentNodeId);
+  const mask = await splitTransformLineage(database, request.photoId, selected.maskNodeId);
+  if (JSON.stringify(content.matrix) !== JSON.stringify(mask.matrix)) {
+    throw new Error("Layer content and mask transforms disagree");
+  }
+  const centroid = await maskCentroid(database, libraryPath, request.photoId, mask.baseNodeId);
+  const currentCentroid = transformPoint(content.matrix, centroid);
+  const dx =
+    request.destination.mode === "to"
+      ? request.destination.x - currentCentroid.x
+      : request.destination.x;
+  const dy =
+    request.destination.mode === "to"
+      ? request.destination.y - currentCentroid.y
+      : request.destination.y;
+  const matrix: TransformMatrix = [
+    content.matrix[0],
+    content.matrix[1],
+    content.matrix[2],
+    content.matrix[3],
+    content.matrix[4] + dx,
+    content.matrix[5] + dy,
+  ];
+  const vacancyIdentities = await database.query<{ id: string }>(
+    "SELECT id::text FROM layers WHERE photo_id = $1 AND role = 'vacancy' AND of_layer = $2",
+    [request.photoId, layerId],
+  );
+  const vacancyId = vacancyIdentities.rows[0]?.id;
+  const transformed = transformBranches("move", content, mask, matrix);
+  const nodes: NodeDraft[] = [
+    ...transformed.nodes,
+    {
+      localKey: "vacancy-solid",
+      kind: "solid",
+      recipeVersion: 1,
+      parameters: {
+        w: request.dimensions.w,
+        h: request.dimensions.h,
+        space: "scene-linear-rec2020",
+        rgb: [1, 0, 1],
+      },
+      inputs: [],
+    },
+  ];
+  const vacancyReference = vacancyId
+    ? ({ layerId: vacancyId } as const)
+    : ({ localKey: "vacancy-layer" } as const);
+  const layers: RevisionLayerDraft[] = [];
+  for (const layer of document.layers.filter(({ id }) => id !== vacancyId)) {
+    if (layer.id === selected.id) {
+      layers.push({
+        layer: vacancyReference,
+        name: `${selected.name.slice(0, 248)} vacancy`,
+        z: layers.length,
+        contentNode: { localKey: "vacancy-solid" },
+        maskNode: { nodeId: mask.baseNodeId },
+        opacity: 1,
+        blend: "normal",
+        enabled: true,
+      });
+      layers.push(
+        layerDraft(selected, layers.length, transformed.contentNode, transformed.maskNode),
+      );
+    } else {
+      layers.push(layerDraft(layer, layers.length));
+    }
+  }
+  const committed = await commitLayerSnapshot(database, document, layers, {
+    nodes,
+    newLayers: vacancyId
+      ? undefined
+      : [
+          {
+            localKey: "vacancy-layer",
+            role: "vacancy",
+            ofLayer: { layerId },
+          },
+        ],
+  });
+  return {
+    ...committed,
+    layerId,
+    vacancyLayerId: vacancyId ?? committed.newLayers["vacancy-layer"],
+    matrix,
+  };
 }
 
 export async function reorderLayer(
@@ -265,6 +355,7 @@ export async function duplicateLayer(
   const document = await activeDocument(database, request.photoId);
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const source = requiredLayer(document.layers, layerId);
+  if (source.role === "vacancy") throw new Error("A vacancy layer cannot be duplicated");
   const name = `${source.name.slice(0, 251)} copy`;
   const drafts: RevisionLayerDraft[] = [];
   for (const layer of document.layers) {
@@ -385,6 +476,12 @@ interface ChainNode {
   inputNodeIds: string[];
 }
 
+interface TransformLineage {
+  baseNodeId: string;
+  matrix: TransformMatrix;
+  prefix: ChainNode[];
+}
+
 async function firstInputChain(database: GraphDatabase, photoId: string, root: string) {
   const chain: ChainNode[] = [];
   let nodeId: string | undefined = root;
@@ -426,7 +523,11 @@ async function loadChainNode(
   };
 }
 
-async function splitTransformLineage(database: GraphDatabase, photoId: string, root: string) {
+async function splitTransformLineage(
+  database: GraphDatabase,
+  photoId: string,
+  root: string,
+): Promise<TransformLineage> {
   const prefix: ChainNode[] = [];
   let nodeId = root;
   while (true) {
@@ -444,6 +545,37 @@ async function splitTransformLineage(database: GraphDatabase, photoId: string, r
     prefix.push(node);
     nodeId = node.inputNodeIds[0];
   }
+}
+
+function transformBranches(
+  key: string,
+  content: TransformLineage,
+  mask: TransformLineage,
+  matrix: TransformMatrix,
+) {
+  const contentTransform = `${key}-content-transform`;
+  const maskTransform = `${key}-mask-transform`;
+  const nodes: NodeDraft[] = [
+    transformDraft(contentTransform, content.baseNodeId, matrix),
+    transformDraft(maskTransform, mask.baseNodeId, matrix),
+  ];
+  let contentNode: { localKey: string } = { localKey: contentTransform };
+  for (const [index, node] of content.prefix.toReversed().entries()) {
+    const localKey = `${key}-content-prefix-${index}`;
+    nodes.push({
+      localKey,
+      kind: node.kind,
+      recipeVersion: node.recipeVersion,
+      parameters: node.parameters,
+      inputs: [contentNode],
+    });
+    contentNode = { localKey };
+  }
+  return {
+    nodes,
+    contentNode,
+    maskNode: { localKey: maskTransform } as const,
+  };
 }
 
 function transformDraft(localKey: string, inputNodeId: string, matrix: TransformMatrix): NodeDraft {

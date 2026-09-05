@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08d4, provider slices 09a–09c, and layer slices 10a–10c1 are
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08d4, provider slices 09a–09c, and layer slices 10a–10c2 are
 implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -31,7 +31,8 @@ silently losing an observed edit. Develop dictionaries and package/library prese
 hashes. Exact scene-linear Rec.2020 f32 artifacts now remain canonical through the DAG, and the first deterministic pixel pass
 applies global exposure, brightness, contrast, black point, saturation, masked highlights/shadows, skin-protected vibrance,
 white balance, cast, levels, OpenColorIO-style scene-linear curves, and deterministic local contrast in the native Rust owner.
-Schema v9 stores stable layer identities and complete immutable revision snapshots; typed base/output roots and composite-v2
+Schema v9 stores stable layer identities and complete immutable revision snapshots; schema v10 adds a deterministic solid-RGB
+recipe and enforces one vacancy identity per subject. Typed base/output roots and composite-v2
 projection keep layer metadata, graph reachability, and pixel recipe identity in one atomic document contract. The native image owner
 provides bilinear preview resampling plus Lanczos3 float resample/transform, retaining exact integer flips and quarter-turns.
 Develop now applies scene-linear delta nodes to compatible layer branches, derives stale state from immutable lineage, and returns
@@ -41,6 +42,8 @@ mask kernels and the relational composite-v2 fold preserve every fully unmasked 
 Manual geometry now creates permanent layer masks in the oriented base coordinate space. Layer commands replace immutable
 revision snapshots, preserve compatible develop compensation while transforming, and expose both concise layer summaries and
 revision-bound paginated graph inspection. Pixel evaluation remains lazy until a rendering command consumes the active composite.
+Moving a subject applies one matrix to its RGB and active mask, reuses one vacancy with the original silhouette, and reports active
+unfilled vacancies through both show and export without treating vacancy content as stale develop lineage.
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
@@ -48,7 +51,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
 - **Active wave:** slice 08's keyless fixture gold exam is green; its declared selective-color
-  operator remains open while 10c2 implements stale-state, vacancy, and move integration.
+  operator remains open while the next provider-backed segmentation and fill work is prepared.
   Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
   its live multimodal request remains provisional until the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
@@ -72,7 +75,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 geometry · [x] 8d4 filters/B&W · [x] keyless fixture gold exam · selective color remains open — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
-- [ ] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
+- [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG, optional density-matching upscale, strict composite, person-move flow — `slices/12-fill.md`
 - [ ] 13a reimagine/relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · 13d retouch — `slices/13-generative-extras-and-markup.md`

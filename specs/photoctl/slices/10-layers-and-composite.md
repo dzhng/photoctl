@@ -2,7 +2,8 @@
 
 Sub-slices, one ownership seam at a time: **10a ✓** layer identity + immutable revision model · **10b1 ✓** generic Rust
 resample/transform · **10b2 ✓** mask artifacts + mask/lift/composite · **10b3 ✓** develop compensation/delta · **10c1 ✓** manual
-mask and layer command integration · **10c2** stale/delta, vacancy, move, and warnings. Slice 10's migration is schema v9 and
+mask and layer command integration · **10c2 ✓** stale/delta, vacancy, move, and warnings. Slice 10's layer migration is schema v9;
+10c2 adds schema v10 for the solid-RGB recipe and one-vacancy-per-subject invariant. Schema v9
 must land after 09c owns v8. 10a may run beside 08c2/08c3 only while it stays out of Rust, the evaluator, preview, command
 dispatch, and protocol exports. No 10b pass may overlap 08c2/08c3 in those shared owners.
 
@@ -61,7 +62,10 @@ dispatch, and protocol exports. No 10b pass may overlap 08c2/08c3 in those share
 - **10c2 vacancy/move:** `fill --move --to x,y|--by dx,dy` deliberately owns only the non-generative early move mode before Slice
   12's provider-backed `fill`; it creates a transformed subject branch plus a vacancy layer containing the full silhouette at lift
   and a magenta placeholder. Every enabled active vacancy emits `vacancy_unfilled`; disabled and historical vacancies do not.
-  Export preserves the warning. `develop` wires 10b3's actual layer-id `delta_applied`/`stale` results into the new revision.
+  Export preserves the warning, including a collision skip that performs no evaluation. The placeholder is an explicit,
+  deterministic, zero-input `solid` v1 RGB node rather than a provider, mask, or composite-role overload. Repeated moves retain one
+  stable vacancy identity and original silhouette. `develop` wires 10b3's actual layer-id `delta_applied`/`stale` results into the
+  new revision while excluding vacancy content from compensation and stale accounting.
 - **Identity:** `render_hash` is the full recipe hash of the active output/composite root. Ordered enabled content and mask hashes,
   opacity/blend, transforms, and the base branch are inputs to that root; disabled roots affect retention but not pixels.
   No parallel hand-built render-state hash exists. `wb layers <id>` shows the immutable stack beside those DAG roots.
@@ -106,6 +110,9 @@ dispatch, and protocol exports. No 10b pass may overlap 08c2/08c3 in those share
 ## Delegated: nothing beyond blob compression.
 ## Checkpoint: `wb layers` — layer/DAG relationship and placeholder legibility only. Run `compare-screenshots` on the generated
 frame and `screenshot-critique` last. Non-blocking per the root rule.
+## Implementation note: the 10c2 workbench HTML and structural assertions were generated successfully, but this environment's
+browser security policy rejected the local `file:` checkpoint URL. No screenshot comparison or critique is claimed for this pass;
+repeat the visual gate when the checkpoint can be opened by an allowed browser surface.
 ## Must stay green: 01–09. Deps: 08c and 09c as graphed above. Firewall: no SAM inference; no gateway pixels; only manual
 segmentation and non-generative move land here; provider-backed refresh/fill lands in 12. No blend mode beyond `normal` until its
 math and a concrete caller are specified.

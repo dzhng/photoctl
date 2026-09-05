@@ -4,7 +4,13 @@ import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { runWorkbench } from "./run.js";
 import { createBackup, initializeLibrary, LATEST_SCHEMA_VERSION } from "@photoctl/library";
-import { commitRevision, type NodeDraft } from "@photoctl/render";
+import {
+  commitRevision,
+  compositeV2Projection,
+  ensurePhotoDocument,
+  MASK_ARTIFACT_MEDIA_TYPE,
+  type NodeDraft,
+} from "@photoctl/render";
 import sharp from "sharp";
 import { FakeUpscaleAdapter, UpscaleRegistry } from "@photoctl/providers";
 
@@ -195,6 +201,92 @@ test("graph follows bounded inspection pages through the active output lineage",
   expect(html.match(/<article class="node /gu)).toHaveLength(103);
   expect(html).toContain('class="node source"');
   expect(html).toContain('class="node output"');
+});
+
+test("layers renders the immutable stack beside its DAG roots with a legible vacancy", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-workbench-layers-"));
+  temporaryDirectories.push(cwd);
+  const library = join(cwd, "library");
+  const initialized = await initializeLibrary(library);
+  const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c053";
+  await initialized.handle.query(
+    `INSERT INTO photos (id, content_key, size, w, h, orientation)
+     VALUES ($1, 'ck_7890abcdef123456', 1, 40, 30, 1)`,
+    [photoId],
+  );
+  const initial = await ensurePhotoDocument(initialized.handle, { photoId, orientation: 1 });
+  const maskHash = `a_${"6".repeat(64)}`;
+  await initialized.handle.query(
+    `INSERT INTO image_artifacts
+       (artifact_hash, media_type, bytes, w, h, artifact_available)
+     VALUES ($1, $2, 4, 40, 30, true)`,
+    [maskHash, MASK_ARTIFACT_MEDIA_TYPE],
+  );
+  const layers = [
+    {
+      layer: { localKey: "vacancy" },
+      name: "Portrait vacancy",
+      z: 0,
+      contentNode: { localKey: "solid" },
+      maskNode: { localKey: "mask" },
+      opacity: 1,
+      blend: "normal" as const,
+      enabled: true,
+    },
+    {
+      layer: { localKey: "subject" },
+      name: "Portrait subject",
+      z: 1,
+      contentNode: { nodeId: initial.outputNodeId },
+      maskNode: { localKey: "mask" },
+      opacity: 1,
+      blend: "normal" as const,
+      enabled: true,
+    },
+  ];
+  const projection = compositeV2Projection({ nodeId: initial.outputNodeId }, layers);
+  const revision = await commitRevision(initialized.handle, {
+    photoId,
+    expectedRevisionId: initial.revisionId,
+    nodes: [
+      {
+        localKey: "solid",
+        kind: "solid",
+        recipeVersion: 1,
+        parameters: { w: 40, h: 30, space: "scene-linear-rec2020", rgb: [1, 0, 1] },
+        inputs: [],
+      },
+      {
+        localKey: "mask",
+        kind: "mask",
+        recipeVersion: 1,
+        parameters: { artifact_hash: maskHash },
+        inputs: [],
+      },
+      { localKey: "composite", kind: "composite", recipeVersion: 2, ...projection },
+    ],
+    rootUpdates: [{ root: "output", node: { localKey: "composite" } }],
+    newLayers: [
+      { localKey: "subject", role: "subject" },
+      { localKey: "vacancy", role: "vacancy", ofLayer: { localKey: "subject" } },
+    ],
+    layers,
+  });
+  await initialized.handle.close();
+
+  const output = await runWorkbench(["layers", photoId], cwd, { PHOTOCTL_LIBRARY: library });
+  const html = await readFile(output, "utf8");
+
+  expect(output).toBe(join(cwd, "out", "wb", "layers.html"));
+  expect(html).toContain("Layers beside their DAG roots");
+  expect(html).toContain("Portrait subject");
+  expect(html).toContain("Portrait vacancy");
+  expect(html).toContain('aria-label="Magenta vacancy placeholder"');
+  expect(html).toContain("background: #ff00ff");
+  expect(html).toContain(revision.revisionId);
+  expect(html).toContain(revision.renderHash!);
+  expect(html).toContain("2 active layers · 0 stale · 1 unfilled vacancy");
+  expect(html).not.toMatch(/<(?:script|link|img)[^>]+(?:src|href)=/u);
 });
 
 test("presets renders the shipped dictionaries and their full develop identities", async () => {

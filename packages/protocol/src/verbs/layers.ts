@@ -45,6 +45,7 @@ const chainNodeSchema = z.object({
     "upscale",
     "resample",
     "transform",
+    "solid",
     "mask",
     "delta",
     "mask_composite",
@@ -98,7 +99,15 @@ export const layerClearDataSchema = z.object({
   removed: z.number().int().nonnegative(),
 });
 
+export const fillMoveDataSchema = z.object({
+  ...revisionFields,
+  layer_id: z.uuid(),
+  vacancy_layer_id: z.uuid(),
+  matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
+});
+
 export type SegmentData = z.infer<typeof segmentDataSchema>;
 export type LayerListData = z.infer<typeof layerListDataSchema>;
 export type LayerShowData = z.infer<typeof layerShowDataSchema>;
 export type LayerTransformData = z.infer<typeof layerTransformDataSchema>;
+export type FillMoveData = z.infer<typeof fillMoveDataSchema>;
