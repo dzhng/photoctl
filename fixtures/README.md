@@ -21,7 +21,7 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `libraries/schema-v16.pgsql` | known-good | Derived mask fit parameters retain their original selection ancestry across schema upgrades. |
 | `libraries/schema-v17.pgsql` | known-good | A realized execution frame keeps its source-tier coordinates even when its pixel artifact is unavailable. |
 | `libraries/schema-v18.pgsql` | known-good | A pinned reference retains working RGB and encoded PNG artifacts before any source execution exists. |
-| `models.json` | release contract | Pins the SAM 2.1 source revision and exported ONNX opsets. Null hashes and `awaiting_export` deliberately make fetch/build fail until the real export is published. |
+| `models.json` | release contract | Pins the SAM 2.1 source revision, real CPU-parity-verified ONNX hashes, and opsets. Distribution location is configured separately; hashes do not assert model quality or runtime performance. |
 | `xmp/classic.xmp` | known-good | A Classic-style sidecar exercises rating, label, flat and hierarchical keywords, and photoctl's namespaced flag. |
 | `tools/drive.mjs` | generator | `fixtures:drive -- --count N --out DIR` creates deterministic tail-distinct ARW copies and matching Classic-style sidecars. |
 | `tools/volume.mjs` | host generator | `fixtures:volume -- --path FILE --mount DIR` creates and attaches a macOS APFS disk image for real offline-volume checks. |
@@ -29,4 +29,4 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 Wanted (see [the photoctl spec](../specs/photoctl/README.md#known-unknowns-open-on-the-map-and-where-they-land)): one A7C II frame per compression mode (Lossless L / M / S, lossy), a portrait-orientation frame, and a truncated ARW (known-bad: import must report `unsupported`, never crash).
 
 Generate the independent machine-readable facts with `python3 fixtures/tools/manifest.py`.
-Generate the pinned segmentation artifacts with `scripts/export-sam2.py`; it writes real hashes only after both ONNX files have been exported and inspected.
+Generate the pinned segmentation artifacts with `scripts/export-sam2.py`; it writes real hashes only after both ONNX files pass CPU parity and opset checks. [Reproduction and evidence](../specs/photoctl/assets/sam-export/README.md) document the isolated export environment.

@@ -187,7 +187,7 @@ test("default command adapter segments pinned develop pixels and dry-run leaves 
   }
 });
 
-test("production SAM reports the incomplete release before touching the document", async () => {
+test("production SAM reports missing model files before touching the document", async () => {
   const fixture = await fixtureLibrary("release");
   try {
     const response = await dispatch(
@@ -202,7 +202,7 @@ test("production SAM reports the incomplete release before touching the document
     expect(response).toMatchObject({
       ok: false,
       code: "provider_unconfigured",
-      data: { reason: "model_manifest_incomplete" },
+      data: { reason: "model_missing" },
     });
     expect((await fixture.handle.query("SELECT id FROM document_revisions")).rows).toEqual([]);
   } finally {

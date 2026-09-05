@@ -37,6 +37,22 @@ def digest(path):
     return value.hexdigest()
 
 
+def prepare_source_tree(source, destination, checkpoint, config):
+    shutil.copytree(source, destination, symlinks=True)
+    (destination / "checkpoints").mkdir(exist_ok=True)
+    (destination / "sam2_configs").mkdir(exist_ok=True)
+    shutil.copy2(checkpoint, destination / "checkpoints/sam2_hiera_small.pt")
+    # The exporter uses a SAM 2.0 short name; Hydra resolves it inside the SAM package.
+    config_alias = destination / "sam2/sam2_hiera_s.yaml"
+    config_alias.unlink()
+    shutil.copy2(config, config_alias)
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = os.pathsep.join(
+        [str(destination.resolve()), environment.get("PYTHONPATH", "")]
+    )
+    return environment
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--print-contract", action="store_true")
@@ -51,6 +67,8 @@ def main():
         return
     if not args.sam2_dir or not args.onnxruntime_dir or not args.output_dir:
         raise SystemExit("--sam2-dir, --onnxruntime-dir, and --output-dir are required")
+    if args.output_dir.exists() and any(args.output_dir.iterdir()):
+        raise SystemExit("--output-dir must be new or empty; model candidates are immutable")
     checkout(args.sam2_dir, SAM2_REVISION, "SAM 2")
     checkout(args.onnxruntime_dir, ONNXRUNTIME_REVISION, "ONNX Runtime")
     try:
@@ -66,26 +84,27 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="photoctl-sam2-") as temporary:
         shadow, raw = Path(temporary) / "sam2", Path(temporary) / "onnx"
-        shutil.copytree(args.sam2_dir, shadow, symlinks=True)
-        (shadow / "checkpoints").mkdir(exist_ok=True)
-        (shadow / "sam2_configs").mkdir(exist_ok=True)
-        shutil.copy2(checkpoint, shadow / "checkpoints/sam2_hiera_small.pt")
-        shutil.copy2(config, shadow / "sam2_configs/sam2_hiera_s.yaml")
-        subprocess.run([sys.executable, str(converter), "--model_type", MODEL_TYPE,
-                        "--components", "image_encoder", "image_decoder", "--output_dir", str(raw),
-                        "--sam2_dir", str(shadow), "--overwrite"], cwd=converter.parent, check=True)
+        environment = prepare_source_tree(args.sam2_dir, shadow, checkpoint, config)
+        subprocess.run([sys.executable, str(Path(__file__).with_name("sam2-export-runtime.py").resolve()),
+                        "--exporter-dir", str(converter.parent.resolve()), "--output-dir", str(raw),
+                        "--sam2-dir", str(shadow)], cwd=converter.parent, env=environment, check=True)
         inputs = {"encoder.onnx": raw / f"{MODEL_TYPE}_image_encoder.onnx",
                   "decoder.onnx": raw / f"{MODEL_TYPE}_image_decoder.onnx"}
         expected = {item["file"]: item["opset"] for item in contract()["artifacts"]}
         artifacts = []
-        for name, source in inputs.items():
-            model = onnx.load(source, load_external_data=False)
-            opset = max(item.version for item in model.opset_import if item.domain in ("", "ai.onnx"))
-            if opset != expected[name]:
-                raise SystemExit(f"unexpected {name} opset {opset}; expected {expected[name]}")
-            destination = args.output_dir / name
-            os.replace(source, destination)
-            artifacts.append({"file": name, "sha256": digest(destination), "opset": opset})
+        with tempfile.TemporaryDirectory(prefix=".sam-candidate-", dir=args.output_dir.parent) as pending:
+            staged = Path(pending) / "candidate"
+            staged.mkdir()
+            for name, source in inputs.items():
+                model = onnx.load(source, load_external_data=False)
+                opset = max(item.version for item in model.opset_import if item.domain in ("", "ai.onnx"))
+                if opset != expected[name]:
+                    raise SystemExit(f"unexpected {name} opset {opset}; expected {expected[name]}")
+                destination = staged / name
+                shutil.copy2(source, destination)
+                artifacts.append({"file": name, "sha256": digest(destination), "opset": opset})
+            shutil.copy2(raw / "verification.json", staged / "verification.json")
+            os.replace(staged, args.output_dir)
     release = {"schema": 1, "status": "ready",
                "source": {"repository": MODEL_REPOSITORY, "revision": MODEL_REVISION},
                "artifacts": artifacts}

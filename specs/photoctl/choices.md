@@ -4029,3 +4029,23 @@
 - **Verdict:** **Sound.** One assembly owner removes divergent mutation paths while retaining the existing
   atomic publication boundary and its rejection of invalid graph requests.
 - **Confidence:** High.
+
+### SAM export — Rank logits, preserve reported probabilities, and separate export acceptance
+
+- **When:** Real CPU export prerequisite, 2026-09-06.
+- **The choice:** The pinned ONNX decoder ranks pre-sigmoid IoU logits while leaving its probability outputs and first-index
+  equal-score rule unchanged. The exporter recognizes only the pinned graph topology and fails on any other shape. It checks
+  actual upstream parity results before publishing model files or manifests; the upstream converter's zero exit status alone
+  is insufficient. Python dependencies and source revisions are pinned in an isolated CPU export environment.
+  Candidate output must be new or empty; a complete staged pair plus report is published by directory rename. Metadata
+  files remain individually atomic, not a cross-directory transaction; retry uses another fresh candidate.
+- **The gap:** Real seed-zero inputs exposed numerical sigmoid saturation that selected a different mask, despite the
+  mathematically identical ordering. The installed Hydra package also resolved the exporter's short name to the wrong model
+  config. Neither defect was visible to the prior contract-only tests.
+- **The reach:** The release hashes identify normalized real graphs. A private pinned source copy binds the correct config
+  without changing installed dependencies or upstream checkouts. Local HTTP distribution permits native evidence without
+  credentials; public hosting is still a separate decision. Export parity does not accept inference RSS or mask quality.
+- **Verdict:** **Sound.** Monotonic ordering is preserved without relaxing tolerances or changing probability reporting;
+  installed-package, real-model, ONNX tie, and failed-publication regressions ground the decision.
+- **Confidence:** High for ordering and fail-closed publication; medium for parity coverage beyond the bounded prompt probes.
+  Cross-platform export reproducibility and photographic quality are not established by this one-host CPU run.

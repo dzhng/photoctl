@@ -1,12 +1,20 @@
 {
   "schema": 1,
-  "status": "awaiting_export",
+  "status": "ready",
   "source": {
     "repository": "facebook/sam2.1-hiera-small",
     "revision": "ee5bba1d82bb8749febdf90f45e84b687142ba03"
   },
   "artifacts": [
-    { "file": "encoder.onnx", "sha256": null, "opset": 17 },
-    { "file": "decoder.onnx", "sha256": null, "opset": 16 }
+    {
+      "file": "encoder.onnx",
+      "sha256": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+      "opset": 17
+    },
+    {
+      "file": "decoder.onnx",
+      "sha256": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d",
+      "opset": 16
+    }
   ]
 }

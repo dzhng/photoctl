@@ -1,4 +1,4 @@
-import { initializeLibrary } from "@photoctl/library";
+import { initializeLibrary, PINNED_MODEL_RELEASE } from "@photoctl/library";
 import { doctorDataSchema } from "@photoctl/protocol";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { expect, test } from "vitest";
 import { dispatch } from "./dispatch.js";
 
-test("doctor reports the explicitly incomplete SAM export and fetch refuses without a base URL", async () => {
+test("doctor reports the ready SAM manifest and fetch refuses without a base URL", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-model-doctor-"));
   const libraryPath = join(parent, "library");
   const initialized = await initializeLibrary(libraryPath);
@@ -23,12 +23,14 @@ test("doctor reports the explicitly incomplete SAM export and fetch refuses with
       data: {
         models: {
           base_url: null,
-          manifest_ready: false,
+          manifest_ready: true,
           directory: join(libraryPath, "models"),
-          artifacts: [
-            { file: "encoder.onnx", sha256: null, opset: 17, cached: false },
-            { file: "decoder.onnx", sha256: null, opset: 16, cached: false },
-          ],
+          artifacts: PINNED_MODEL_RELEASE.artifacts.map(({ file, sha256, opset }) => ({
+            file,
+            sha256,
+            opset,
+            cached: false,
+          })),
         },
       },
     });

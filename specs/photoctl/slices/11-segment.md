@@ -2,7 +2,7 @@
 
 ## API seam
 - **11a** `scripts/export-sam2.py` (pinned `facebook/sam2.1-hiera-small` commit) → `encoder.onnx`, `decoder.onnx`; sha256 + opset in
-  `fixtures/models.json`; download base `settings.models_base_url` (OPEN: David-hosted release) with hash verification; cache
+  `fixtures/models.json`; download base `settings.models_base_url` (public distribution OPEN; local HTTP supported) with hash verification; cache
   `models/` pinned. `photoctl-image::sam2` via `ort` CPU EP (D40); encoder once per `(id, tier)` cached in the daemon; decoder per
   prompt. Input = develop render (offline: 1616 tier) letterboxed to 1024 (mapping in `coordinates.ts`); 256² logits → bilinear
   upsample → threshold 0 → base-res mask. Docker: weights fetched in the Dockerfile with hash check (missing → loud failure).
@@ -21,7 +21,7 @@
 ## Must stay green: 01–10. Deps: 09a, 10. Firewall: no SAM 3; no macOS 27 API; CPU EP only.
 
 ## 11a keyless checkpoint (2026-09-05)
-The pinned export, manifest, hash-fetch/cache, CPU ONNX session, 1024 letterbox, base-mask logit, and daemon encoder-cache contracts are implemented without inventing release bytes. The checked-in manifest remains `awaiting_export`, so `doctor --fetch-models` and the Docker `models` target fail loudly until David supplies the hosted base URL and a real export populates both hashes. G6 and the `wb masks` visual checkpoint remain open for that release-weight run; 11b verbs are not part of this checkpoint.
+The pinned export, manifest, hash-fetch/cache, CPU ONNX session, 1024 letterbox, base-mask logit, and daemon encoder-cache contracts are implemented. The real CPU export now supplies both hashes; a configured local HTTP base can supply those files without credentials or public hosting. Public release distribution remains unconfigured. G6 and the `wb masks` visual checkpoint are separate from export parity and remain open here.
 
 ## 11b keyless command checkpoint (2026-09-05)
 
@@ -51,8 +51,10 @@ one encoder execution returns all feature levels, the decoder's own prompt encod
 mask path consumes floating-point low-resolution logits rather than the exporter's thresholded output.
 
 Production construction, point/text routing, geometry, cache reuse/eviction/retry, and dry-run behavior have deterministic
-tests. These are wiring evidence, not model-quality evidence. The checked-in release remains `awaiting_export`;
-real `segment-at` probes, `a7c2` thresholds, `wb masks` visual acceptance, and G6 remain open with real release weights.
+tests. These are wiring evidence, not model-quality evidence. The checked-in release now pins a real export;
+real `segment-at` probes, `a7c2` thresholds, `wb masks` visual acceptance, and G6 remain open independently.
+[Export evidence](../assets/sam-export/README.md) records the real Hydra resolution regression, raw-logit ranking normalization,
+unchanged parity tolerances, and fail-closed publication boundary. Export-process RSS is not inference-process RSS.
 
 ## Mask inspection contract
 
