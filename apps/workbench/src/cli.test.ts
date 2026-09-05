@@ -3,11 +3,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { runWorkbench } from "./run.js";
-import { createBackup, initializeLibrary, LATEST_SCHEMA_VERSION } from "@photoctl/library";
+import {
+  createBackup,
+  initializeLibrary,
+  LATEST_SCHEMA_VERSION,
+  openLibrary,
+} from "@photoctl/library";
 import {
   commitRevision,
   compositeV2Projection,
   ensurePhotoDocument,
+  loadActiveDocument,
   MASK_ARTIFACT_MEDIA_TYPE,
   type NodeDraft,
 } from "@photoctl/render";
@@ -286,6 +292,40 @@ test("layers renders the immutable stack beside its DAG roots with a legible vac
   expect(html).toContain(revision.renderHash!);
   expect(html).toContain("2 active layers · 0 stale · 1 unfilled vacancy");
   expect(html).not.toMatch(/<(?:script|link|img)[^>]+(?:src|href)=/u);
+
+  const reopened = await openLibrary(library);
+  const active = await loadActiveDocument(reopened, photoId);
+  if (!active) throw new Error("Expected active document");
+  const filledLayers = active.layers.map((layer) => ({
+    layer: { layerId: layer.id },
+    name: layer.name,
+    z: layer.z,
+    contentNode: {
+      nodeId: layer.role === "vacancy" ? active.roots.base : layer.contentNodeId,
+    },
+    maskNode: { nodeId: layer.maskNodeId },
+    opacity: layer.opacity,
+    blend: layer.blend,
+    enabled: layer.enabled,
+  }));
+  const filledProjection = compositeV2Projection({ nodeId: active.roots.base }, filledLayers);
+  await commitRevision(reopened, {
+    photoId,
+    expectedRevisionId: active.revisionId,
+    nodes: [
+      { localKey: "filled-composite", kind: "composite", recipeVersion: 2, ...filledProjection },
+    ],
+    rootUpdates: [{ root: "output", node: { localKey: "filled-composite" } }],
+    layers: filledLayers,
+  });
+  await reopened.close();
+
+  const filledOutput = await runWorkbench(["layers", photoId], cwd, {
+    PHOTOCTL_LIBRARY: library,
+  });
+  const filledHtml = await readFile(filledOutput, "utf8");
+  expect(filledHtml).not.toContain('aria-label="Magenta vacancy placeholder"');
+  expect(filledHtml).toContain("2 active layers · 0 stale · 0 unfilled vacancies");
 });
 
 test("presets renders the shipped dictionaries and their full develop identities", async () => {

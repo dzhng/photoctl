@@ -13,15 +13,16 @@ export async function buildLayersReport(libraryPath: string, photo: string): Pro
       photoId,
       orientation: orientation.rows[0]!.orientation,
     });
-    const status = activeLayerStatus(document);
+    const status = await activeLayerStatus(library, document);
     const cards = document.layers
       .toReversed()
-      .map(
-        (layer) => `<article class="layer ${layer.role}">
+      .map((layer) => {
+        const unfilledVacancy = status.unfilledVacancyIds.includes(layer.id);
+        return `<article class="layer ${unfilledVacancy ? "vacancy" : layer.role === "vacancy" ? "filled-vacancy" : layer.role}">
           <div class="layer-head">
             <span class="order">${layer.z + 1}</span>
             <div><strong>${escapeHtml(layer.name)}</strong><span>${escapeHtml(layer.role)}</span></div>
-            ${layer.role === "vacancy" ? '<i class="vacancy-swatch" aria-label="Magenta vacancy placeholder"></i>' : ""}
+            ${unfilledVacancy ? '<i class="vacancy-swatch" aria-label="Magenta vacancy placeholder"></i>' : ""}
           </div>
           <dl>
             <div><dt>Layer</dt><dd>${escapeHtml(layer.id)}</dd></div>
@@ -30,8 +31,8 @@ export async function buildLayersReport(libraryPath: string, photo: string): Pro
             <div><dt>State</dt><dd>${layer.enabled ? "enabled" : "disabled"}${status.staleIds.includes(layer.id) ? " · stale" : ""}</dd></div>
             ${layer.ofLayer ? `<div><dt>Vacancy for</dt><dd>${escapeHtml(layer.ofLayer)}</dd></div>` : ""}
           </dl>
-        </article>`,
-      )
+        </article>`;
+      })
       .join('<div class="stack-arrow" aria-hidden="true">↑</div>');
     return `<!doctype html>
 <html lang="en">

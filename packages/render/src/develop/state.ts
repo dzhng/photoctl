@@ -12,6 +12,7 @@ import {
   type RevisionLayer,
   type RevisionLayerDraft,
 } from "../layers/model.js";
+import { unfilledVacancyLayerIds } from "../layers/status.js";
 import { developDictSchema, type DevelopDict } from "./dict.js";
 import { applyDevelopCompensation, planDevelopChange } from "./tiers.js";
 
@@ -29,22 +30,26 @@ export interface ActiveDevelopState {
   renderHash: `r_${string}`;
 }
 
-export function activeLayerStatus(state: ActiveDevelopState): {
+export async function activeLayerStatus(
+  database: GraphDatabase,
+  state: ActiveDevelopState,
+): Promise<{
   count: number;
   staleIds: string[];
   unfilledVacancyIds: string[];
-} {
+}> {
+  const unfilledVacancies = await unfilledVacancyLayerIds(database, state.photoId, state.layers);
   return {
     count: state.layers.length,
     staleIds: state.layers
       .filter(
         (layer) =>
-          layer.role !== "vacancy" &&
+          !unfilledVacancies.has(layer.id) &&
           planDevelopChange(state.layerDevelop[layer.id] ?? {}, state.develop)?.tier === 2,
       )
       .map(({ id }) => id),
     unfilledVacancyIds: state.layers
-      .filter((layer) => layer.role === "vacancy" && layer.enabled)
+      .filter((layer) => layer.enabled && unfilledVacancies.has(layer.id))
       .map(({ id }) => id),
   };
 }
@@ -116,8 +121,13 @@ export async function commitDevelopState(
   renderHash: `r_${string}`;
   layers: { deltaApplied: string[]; stale: string[] };
 }> {
+  const unfilledVacancies = await unfilledVacancyLayerIds(
+    database,
+    current.photoId,
+    current.layers,
+  );
   const layerChanges = current.layers.map((layer) =>
-    layer.role === "vacancy"
+    unfilledVacancies.has(layer.id)
       ? null
       : planDevelopChange(current.layerDevelop[layer.id] ?? {}, develop),
   );

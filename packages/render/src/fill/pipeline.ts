@@ -22,6 +22,7 @@ import {
 } from "../graph/store.js";
 import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
 import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { unfilledVacancyLayerIds } from "../layers/status.js";
 import type { Image16 } from "../source-render.js";
 import { planFillCrop } from "./crop.js";
 import { planOutputDensity, type SourceContextDensity } from "./density.js";
@@ -144,13 +145,18 @@ export async function fillLayerStrict(
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  if (selected.role === "vacancy") throw new Error("A vacancy layer cannot be filled directly");
+  const unfilledVacancies = await unfilledVacancyLayerIds(database, request.photoId, [selected]);
+  const fillingVacancy = unfilledVacancies.has(selected.id);
+  if (selected.role === "vacancy" && (!selected.enabled || !fillingVacancy)) {
+    throw new Error("Only an enabled unfilled vacancy layer can be filled directly");
+  }
+  const fillBaseNodeId = fillingVacancy ? document.roots.base : selected.contentNodeId;
 
   const baseEvaluation = await evaluateGraphNode({
     database,
     libraryPath,
     photoId: request.photoId,
-    nodeId: selected.contentNodeId,
+    nodeId: fillBaseNodeId,
     source: request.source,
   });
   const maskEvaluation = await evaluateGraphNode({
@@ -169,11 +175,13 @@ export async function fillLayerStrict(
   );
   if (base.w !== mask.w || base.h !== mask.h) throw new Error("Fill content and mask disagree");
   const crop = planFillCrop(mask, request.pad);
-  const reusable = await findReusableFillLineage(database, libraryPath, request, selected, crop, {
-    w: base.w,
-    h: base.h,
-  });
-  const strictBaseNodeId = reusable?.baseNodeId ?? selected.contentNodeId;
+  const reusable = fillingVacancy
+    ? undefined
+    : await findReusableFillLineage(database, libraryPath, request, selected, crop, {
+        w: base.w,
+        h: base.h,
+      });
+  const strictBaseNodeId = reusable?.baseNodeId ?? fillBaseNodeId;
   const sourceContext = reusable?.sourceContext ?? request.sourceContext;
   let generationNodeId: `node_${string}`;
   let provider: ExternalExecutionProvenance;
@@ -309,7 +317,7 @@ export async function fillLayerStrict(
         kind: "generate",
         recipeVersion: 1,
         parameters: generationParameters,
-        inputNodeIds: [selected.contentNodeId],
+        inputNodeIds: [fillBaseNodeId],
       }),
     );
     generationNodeId = logicalNodeId(generationRecipe) as `node_${string}`;
@@ -334,7 +342,7 @@ export async function fillLayerStrict(
       kind: "generate",
       recipeVersion: 1,
       parameters: generationParameters,
-      inputs: [{ nodeId: selected.contentNodeId }],
+      inputs: [{ nodeId: fillBaseNodeId }],
     };
     generationExecution = {
       node: { localKey: "generation" },

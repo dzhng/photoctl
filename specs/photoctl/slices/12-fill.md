@@ -237,3 +237,16 @@ If a larger upscale fails, the transform still commits with the best prior valid
 `density_satisfied:false` and `upscale_failed`; no failed node or execution enters the graph. The layer-transform response exposes the
 shared upscale record for generated layers and `null` for other layers. Vacancy/person movement, the agent-preview visual journey,
 workbench fill, and live adapters remain outside this checkpoint.
+
+## 12d3 person-move checkpoint — 2026-09-05
+
+A vacancy retains its original UUID, subject relationship, stack position, and permanent mask across fill and later moves. Its
+unfilled state is derived from whether active content still descends through the placeholder solid; role alone does not imply that
+state. Show and export therefore warn only for enabled placeholder vacancies, while a successfully filled vacancy participates in
+ordinary Tier-1 develop compensation and Tier-2 staleness.
+
+Strict vacancy fill uses the active document base for both the provider input and the protected-pixel composite, never the magenta
+sentinel. Only the vacancy content root changes to the canonical fill branch. Generated subjects continue to move through the shared
+affine branch descriptor and rebuilder with no provider call, and another move restores the same vacancy identity to its original
+solid/mask warning state. The public dispatch journey pins provider counts, base and mask ownership, exact unmasked pixels, develop
+layer IDs, current export hash, and repeated-move reset. Photographic/live provider quality remains a separate evidence gate.

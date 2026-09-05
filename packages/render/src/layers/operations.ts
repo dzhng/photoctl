@@ -23,6 +23,8 @@ import {
   type RevisionLayerDraft,
 } from "./model.js";
 import type { ImageNodeKind, JsonValue } from "../graph/types.js";
+import { describeFillBranch } from "../fill/branch.js";
+import { rebuildFillBranch } from "../fill/rebuild.js";
 
 export type ManualMaskShape =
   | { kind: "box"; bbox: [number, number, number, number] }
@@ -227,13 +229,20 @@ export async function moveLayer(
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const selected = requiredLayer(document.layers, layerId);
   if (selected.role !== "subject") throw new Error("fill --move requires a subject layer");
-  const content = await splitTransformLineage(database, request.photoId, selected.contentNodeId);
-  const mask = await splitTransformLineage(database, request.photoId, selected.maskNodeId);
-  if (JSON.stringify(content.matrix) !== JSON.stringify(mask.matrix)) {
+  const fillBranch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  const content = fillBranch
+    ? undefined
+    : await splitTransformLineage(database, request.photoId, selected.contentNodeId);
+  const mask = fillBranch
+    ? undefined
+    : await splitTransformLineage(database, request.photoId, selected.maskNodeId);
+  if (content && mask && JSON.stringify(content.matrix) !== JSON.stringify(mask.matrix)) {
     throw new Error("Layer content and mask transforms disagree");
   }
-  const centroid = await maskCentroid(database, libraryPath, request.photoId, mask.baseNodeId);
-  const currentCentroid = transformPoint(content.matrix, centroid);
+  const currentMatrix = fillBranch ? fillBranch.currentMatrix : content!.matrix;
+  const permanentMaskNodeId = fillBranch ? fillBranch.permanentMaskNodeId : mask!.baseNodeId;
+  const centroid = await maskCentroid(database, libraryPath, request.photoId, permanentMaskNodeId);
+  const currentCentroid = transformPoint(currentMatrix, centroid);
   const dx =
     request.destination.mode === "to"
       ? request.destination.x - currentCentroid.x
@@ -243,19 +252,34 @@ export async function moveLayer(
       ? request.destination.y - currentCentroid.y
       : request.destination.y;
   const matrix: TransformMatrix = [
-    content.matrix[0],
-    content.matrix[1],
-    content.matrix[2],
-    content.matrix[3],
-    content.matrix[4] + dx,
-    content.matrix[5] + dy,
+    currentMatrix[0],
+    currentMatrix[1],
+    currentMatrix[2],
+    currentMatrix[3],
+    currentMatrix[4] + dx,
+    currentMatrix[5] + dy,
   ];
   const vacancyIdentities = await database.query<{ id: string }>(
     "SELECT id::text FROM layers WHERE photo_id = $1 AND role = 'vacancy' AND of_layer = $2",
     [request.photoId, layerId],
   );
   const vacancyId = vacancyIdentities.rows[0]?.id;
-  const transformed = transformBranches("move", content, mask, matrix);
+  const rebuilt = fillBranch
+    ? rebuildFillBranch({
+        branch: fillBranch,
+        key: "move-fill",
+        frame: request.dimensions,
+        baseNodeId: document.roots.base,
+        placement: { nodeId: fillBranch.densityInput.id },
+        placementDimensions: fillBranch.densityInputDimensions,
+        generationDimensions: fillBranch.generationDimensions,
+        matrix,
+        preserveCompensations: true,
+      })
+    : undefined;
+  const transformed = rebuilt
+    ? { nodes: rebuilt.nodes, contentNode: rebuilt.content, maskNode: rebuilt.mask }
+    : transformBranches("move", content!, mask!, matrix);
   const nodes: NodeDraft[] = [
     ...transformed.nodes,
     {
@@ -282,7 +306,7 @@ export async function moveLayer(
         name: `${selected.name.slice(0, 248)} vacancy`,
         z: layers.length,
         contentNode: { localKey: "vacancy-solid" },
-        maskNode: { nodeId: mask.baseNodeId },
+        maskNode: { nodeId: permanentMaskNodeId },
         opacity: 1,
         blend: "normal",
         enabled: true,

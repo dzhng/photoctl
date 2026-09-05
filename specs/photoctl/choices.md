@@ -2,6 +2,21 @@
 
 ## Sound
 
+### Slice 12d3 — Vacancy workflow state comes from content lineage, not role
+
+- **When:** Slice 12d3 person-move integration, 2026-09-05.
+- **The choice:** A stable `vacancy` identity describes its relationship to a subject; it does not permanently mean “magenta and
+  unfinished.” The active vacancy is unfilled exactly while its content first-input lineage reaches the sentinel `solid`. Only that
+  placeholder state is excluded from develop compensation and staleness. Once filled, the same identity is photographic content and
+  follows the ordinary develop tiers; moving its subject again resets the content to the solid without allocating another vacancy.
+- **The gap:** Slice 10c2 could equate role with placeholder state because vacancy fill did not yet exist. Keeping that shortcut would
+  leave a filled hole warning forever and silently exempt generated pixels from later develop changes.
+- **The reach:** Show, export, develop commits, and strict fill share one derived state. The database relationship remains stable while
+  undoable content revisions move cleanly between pending and filled workflow states.
+- **Verdict:** **Sound.** Immutable lineage already records the state transition, so no mutable status column or parallel flag can
+  drift from the active graph.
+- **Confidence:** High; one public journey observes warning, fill, both develop tiers, export, and reset through command dispatch.
+
 ### Slice 12d2 — The keyless agent journey separates state continuity from model aesthetics
 
 - **When:** Slice 12d2 agent-preview integration, 2026-09-05.

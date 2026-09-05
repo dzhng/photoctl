@@ -38,6 +38,7 @@ export interface FillBranchDescriptor {
   generationExecution: GraphNodeRecord["executions"][number];
   generationProvider: ExternalExecutionProvenance;
   densityInput: GraphNodeRecord;
+  densityInputDimensions: { w: number; h: number };
   baseNodeId: string;
   /** Leading transform/compensation nodes already present when fill ran. */
   baseAncestry: GraphNodeRecord[];
@@ -130,6 +131,11 @@ export async function describeFillBranch(
   const generationExecution = pinnedExecution(placement);
   const upscaleExecution = upscale ? pinnedExecution(upscale) : undefined;
   if (!generationExecution || (upscale && !upscaleExecution)) return undefined;
+  const densityInputDimensions = await executionArtifactDimensions(
+    database,
+    upscaleExecution ?? generationExecution,
+  );
+  if (!densityInputDimensions) return undefined;
   const generationProvider = providerFromExecution(generationExecution);
   const upscaleProvider = upscaleExecution ? providerFromExecution(upscaleExecution) : undefined;
   const sourceContext = asSourceContext(generationRequest?.source_context);
@@ -175,6 +181,7 @@ export async function describeFillBranch(
     generationExecution,
     generationProvider,
     densityInput: upscale ?? placement,
+    densityInputDimensions,
     baseNodeId,
     baseAncestry: base.nodes,
     maskNodeId: composite.inputNodeIds[2]!,
@@ -190,6 +197,18 @@ export async function describeFillBranch(
     ...(upscaleExecution ? { upscaleExecution } : {}),
     ...(upscaleProvider ? { upscaleProvider } : {}),
   };
+}
+
+async function executionArtifactDimensions(
+  database: GraphDatabase,
+  execution: GraphNodeRecord["executions"][number],
+): Promise<{ w: number; h: number } | undefined> {
+  const result = await database.query<{ w: number; h: number }>(
+    `SELECT w, h FROM image_artifacts
+     WHERE artifact_hash = $1 AND artifact_available = true`,
+    [execution.outputArtifactHash],
+  );
+  return result.rows[0];
 }
 
 function resampleFrame(resample: GraphNodeRecord): { w: number; h: number } | undefined {

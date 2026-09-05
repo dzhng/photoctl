@@ -169,7 +169,8 @@ async function snapshotBatch(
         if (!document) throw new Error("The active photo document is missing");
         const layerStatus =
           document.layers.length > 0
-            ? activeLayerStatus(
+            ? await activeLayerStatus(
+                database,
                 await readActiveDevelopState(database, {
                   photoId: id,
                   orientation: photo.orientation,

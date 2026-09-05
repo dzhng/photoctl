@@ -74,7 +74,7 @@ export async function showCommand(
       photoId: id,
       orientation: photo.orientation,
     });
-    const layerStatus = activeLayerStatus(document);
+    const layerStatus = await activeLayerStatus(handle, document);
     if (layerStatus.staleIds.length > 0) {
       warnings.push({
         code: "layers_stale",

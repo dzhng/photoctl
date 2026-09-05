@@ -36,7 +36,11 @@ export async function buildFillReport(
     if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
     const branch = await describeFillBranch(library, photoId, selected.contentNodeId);
     if (!branch) throw new Error("Layer does not contain a refreshable fill branch");
-    if (selected.maskNodeId !== branch.maskNodeId) {
+    if (
+      branch.currentMatrix.some(
+        (value, index) => Math.abs(value - [1, 0, 0, 1, 0, 0][index]!) > 1e-9,
+      )
+    ) {
       throw new Error("Fill report does not yet support transformed fill layers");
     }
     const source = await cachedSourceProducer(
