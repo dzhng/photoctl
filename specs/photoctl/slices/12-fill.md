@@ -4,6 +4,28 @@ Sub-slices: **12a** generation→mask-composite DAG with no upscaler · **12b** 
 **12c** configured upscaler execution/policy/fallback · **12d** branch refresh, transform-driven density maintenance,
 and the agent preview journey. Each rung is useful and testable before the next external behavior lands.
 
+## Remaining implementation after 12d
+
+The public parser still accepts only layer remove/prompt, pad, seed, model, upscale controls, and move.
+The completed strict-fill checkpoints do not implement the full flag contract below. These are build
+requirements, independent of missing live credentials:
+
+- **12e1 effective masks:** implement `--fit strict|expand=N|free` and `--strength` using the existing
+  native mask owner; remove defaults to strict, prompt to expand=24. Persist the effective mask and
+  its recipe so refresh, transform, and exact exterior protection agree. Verify defaults, feather
+  coverage, expanded support, and unchanged pixels outside effective coverage through public commands.
+- **12e2 provider inputs:** implement `--ref`, `--init`, and `--full-res`; preserve the default sent
+  long-edge cap and map reduced provider inputs to exact base coordinates through the existing frame
+  owner. Unsupported adapter capabilities produce the specified warnings. Verify actual HTTP bodies,
+  dimensions, immutable provenance, and refresh reuse with the fake gateway.
+- **12f outpaint:** implement `--outpaint --aspect|--px` through an explicit canvas/coordinate contract
+  that retains original pixels, places invented exterior pixels, and keeps later layer, preview,
+  export, and undo operations coherent. Settle this geometry in a reviewable plan before coding;
+  a larger returned provider image alone is not an outpaint implementation.
+
+Each pass follows red/green public behavior tests and the existing visual gates. Live polarity and
+photographic quality remain distinct evidence requirements after these controls work deterministically.
+
 ## Pre-gate (with key, first): `smoke:mask-polarity` → each adapter's `maskPolarity` + a fake-gateway fixture. Until recorded,
 live native-mask fills refuse `provider_unverified_mask` 69; fake-gateway runs are unaffected.
 

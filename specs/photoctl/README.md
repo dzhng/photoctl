@@ -13,71 +13,51 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–10, the keyless Slice 11 command seam, the bounded
-Slice 12a strict-fill, 12b density-planning, the bounded 12c upscale checkpoints, and the Slice 12 fill workbench report are implemented.
-Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
-deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
-the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
-recursive import commits through a bounded deterministic pipeline, collision buckets promote to full hashes,
-and culling/list/next/remove remain usable from pinned previews while source volumes are offline. Immutable photo-scoped logical
-nodes, atomic document revisions, full hash identities, canonical artifact publication, graph evaluation/inspection, and
-restore-time artifact reconciliation are now in place. Gateway and independent upscaler contracts now resolve fixed models,
-require explicit provider consent, and attach bounded external-execution provenance to the existing DAG execution record. The
-reserved keyless image-fixture profile uses instruction plus strict composite instead of claiming a native-mask polarity;
-the live default remains fail-closed until its polarity smoke is accepted. Delivery
-exports snapshot that immutable identity, encode the canonical evaluated artifact without unasked clobbering, and record successful
-writes in schema v6. Explicit XMP writes now merge catalog cull metadata into sidecars without touching originals or foreign
-metadata; pull sync and mtime divergence reporting share that owner. Opened-file snapshots and a strong pre-publication identity
-check followed by atomic displacement and no-clobber installation keep external editors from pairing old XML with new metadata or
-silently losing an observed edit. Develop dictionaries and package/library presets now live in typed immutable nodes with full
-hashes. Exact scene-linear Rec.2020 f32 artifacts now remain canonical through the DAG, and the first deterministic pixel pass
-applies global exposure, brightness, contrast, black point, saturation, masked highlights/shadows, skin-protected vibrance,
-white balance, cast, levels, OpenColorIO-style scene-linear curves, deterministic local contrast, noise reduction, selective
-color, vignette, B&W, and named filters in the native Rust owner. Public auto-enhance now measures
-the current 1024-pixel sRGB preview, applies one schema-constrained and clamped C4 develop batch,
-and stores its undo snapshot plus structured-provider provenance on the resulting atomic revision.
-Schema v9 stores stable layer identities and complete immutable revision snapshots; schema v10 adds a deterministic solid-RGB
-recipe and enforces one vacancy identity per subject. Typed base/output roots and composite-v2
-projection keep layer metadata, graph reachability, and pixel recipe identity in one atomic document contract. The native image owner
-provides bilinear preview resampling plus Lanczos3 float resample/transform, retaining exact integer flips and quarter-turns.
-Develop now applies scene-linear delta nodes to compatible layer branches, derives stale state from immutable lineage, and returns
-the stable layer identities affected by either outcome.
-Typed single-channel mask artifacts now publish, validate, repair, and transform independently of RGB artifacts; native bounded
-mask kernels and the relational composite-v2 fold preserve every fully unmasked base sample bit-for-bit.*
-Manual geometry now creates permanent layer masks in the oriented base coordinate space. Layer commands replace immutable
-revision snapshots, preserve compatible develop compensation while transforming, and expose both concise layer summaries and
-revision-bound paginated graph inspection. Pixel evaluation remains lazy until a rendering command consumes the active composite.
-Moving a subject applies one matrix to its RGB and active mask, reuses one vacancy with the original silhouette, and reports active
-unfilled vacancies through both show and export. Filling that stable vacancy replaces only its content, after which it participates
-in develop compensation and staleness like other photographic layers; a later move resets it to the original placeholder.
-Keyless `reimagine` and the versioned C3 `relight` specialization now project the shared fill generation-and-density planner over an
-uncropped, unrotated current source/develop root at oriented base dimensions, then add their exact-base-size results as removable
-full-frame layers without eager preview work. Reimagine strength and relight intensity are explicit whole-frame blends as well as
-versioned provider guidance. Crop/rotate develop geometry is refused before provider work until layer composition has a durable
-current-frame geometry contract. A smaller pinned fallback is likewise not a composable full-frame base under the current exact
-composite-v2 invariant.
+*Last reconciled: 2026-09-05, after `9a61492`. The last pass integrated and pushed relight,
+standalone generation, and vector markup. The spec remains in implementation.*
 
-You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
-point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
-Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
-"Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
+Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
+below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-- **Active wave:** Slice 13b auto-enhance is complete through the fake structured-provider path; Slice 13a and 13c remain independent
-  pickup points. Slice 12a owns keyless remove/prompt generation through the fake gateway, immutable provider execution,
-  intrinsic provider dimensions, and strict base-pixel composite; 12b owns the pure density plan; 12c owns policy, the guarded prompt,
-  configured execution, and generation-preserving failure/retry; 12d1 owns explicit branch refresh; and 12d2 owns transform-driven
-  density maintenance, the fill workbench, and the keyless agent-preview journey; 12d3 completes deterministic person-move and
-  vacancy-fill integration. Slice 13a now includes the public keyless `reimagine`, `relight`, and standalone `generate` checkpoints; live
-  upscaler quality evidence, and the remaining fill photographic/live evidence are still open. Slice 11 still needs the hosted SAM weights, real point probes, G6,
-  and `wb masks`; fake masks are not evidence for those gates. Slice 09c's live multimodal request also remains provisional until
-  the purpose-key smoke produces an accepted fixture.
-- **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
-  does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
-  the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
-  The first live upscaler/model and its balanced control values remain evidence-selected in 09b/13a; absent
-  credentials leave the adapter unconfigured and do not block the fake-adapter contracts.
-  None blocks deterministic work — placeholders are named per slice.
-- **Before ending your pass:** update this section, tick the TODO, run the closeout gate named by the slice.
+**Current pickup: finish production segmentation and the independently installable release.**
+
+- Slice 11: connect the model loader, native inference, prompt mapping, and mask conversion to the
+  public command and daemon. The existing injectable command tests do not prove production wiring.
+  One encoder invocation must retain every decoder-required tensor; the daemon cache must be bounded
+  and distinguish changed render inputs. Then run real-weight probes, G6, and `wb masks` when verified
+  export artifacts are available. See [Slice 11](slices/11-segment.md).
+- In parallel, Slice 14: package the CLI, daemon, native addon, helper, and runtime dependency closure;
+  synchronize release versions; install into a clean prefix outside the checkout and run its exam.
+  A source-tree CLI test does not establish that the shipped package works.
+  See [Slice 14](slices/14-gold-exam-and-release.md).
+- Complete the still-unimplemented fill controls and outpaint canvas in [Slice 12](slices/12-fill.md),
+  then reconcile its photographic/live evidence and the separate
+  prompt/control quality comparisons in [Slice 13](slices/13-generative-extras-and-markup.md).
+  Keep actual missing prerequisites distinct from implementation still possible without them.
+- Before release, run the full integrated closeout gate once, audit the full requirements and choices
+  ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
+  optional and unspecified, rather than an implied requirement to invent an MCP product.
+
+**Current evidence:** slices 00–10 and the deterministic Slice 12 editing contracts are committed.
+Slice 13's reimagine, relight, generate, auto-enhance, markup, and retouch checkpoints are committed.
+The last integration passed focused migration/graph/command tests, Rust tests, builds, typecheck,
+formatting, and lint. It did not run the root full-suite release gate. Its preview-loop tolerance
+change still needs an evidence-based oracle review; a passing rerun alone does not justify widening it.
+Slice files and their assets hold the detailed acceptance evidence.
+
+**External evidence still outstanding:** the SAM manifest remains `awaiting_export`, with no verified
+weights in the inspected local caches; real SAM quality/G6 cannot be inferred from fake tensors.
+G3 still requires an SSH-capable Mac session. The real-drive path, additional ARW compression fixtures,
+and actual Classic sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
+require their explicitly configured credentials and consent; an ambient key is not acceptance evidence.
+
+**Carry-forward invariants:** one daemon library handle; one atomic document/revision owner; exact
+scene-linear canonical artifacts; lazy preview materialization from immutable graph roots.
+Generation owns migration 14 and markup migration 15. Full-frame reimagine/relight currently require
+an uncropped, unrotated exact-size base; see Slice 13 for that accepted limitation. Markup stays a final,
+removable presentation node, with editable vectors and the revision updated in the same transaction.
+
+Update this handoff after each pass and continue to the next unfinished requirement.
 
 ### Global TODO
 - [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
@@ -94,7 +74,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
-- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [ ] photographic/live evidence — `slices/12-fill.md`
+- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [ ] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
 - [ ] 13a [x] reimagine/relight/generate · [ ] upscaler quality spike · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
