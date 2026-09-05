@@ -1,4 +1,6 @@
 import { openLibrary } from "@photoctl/library";
+import { graphNodeDataSchema, graphShowDataSchema } from "@photoctl/protocol";
+import { artifactPath, readArtifactLinear } from "@photoctl/render";
 import { FAKE_IMAGE_EDIT_MODEL } from "@photoctl/providers";
 import {
   AGENT_PREVIEW_FACTS,
@@ -42,6 +44,7 @@ test("the built CLI keeps agent previews current through fill, opacity, retouch,
   });
   expect(h1Native.preview.startsWith("/")).toBe(true);
   const h1MasterPixels = await rawImage(h1Native.preview);
+  const h1Linear = await currentLinearArtifact(fixture, h1);
   expect({ w: h1MasterPixels.width, h: h1MasterPixels.height }).toEqual({ w: 1_920, h: 1_280 });
   expect(meanRgb((await sharp(h1Native.preview).stats()).channels)).toBeGreaterThan(
     meanRgb(neutralStats.channels) * 1.15,
@@ -138,6 +141,7 @@ test("the built CLI keeps agent previews current through fill, opacity, retouch,
   expect(fixture.gatewayRequests()).toBe(1);
   expect(await providerExecutionCount(fixture.library)).toBe(2);
   const h2Pixels = await rawImage(h2Detail.preview);
+  const h2Linear = await currentLinearArtifact(fixture, h2);
   expect({ w: h2Pixels.width, h: h2Pixels.height }).toEqual({ w: 320, h: 384 });
   expect(
     pixelDistance(
@@ -166,15 +170,27 @@ test("the built CLI keeps agent previews current through fill, opacity, retouch,
     preview_info: { cache_source: "render_master", pixel_scale: 1 },
   });
   const h3Pixels = await rawImage(h3Detail.preview);
+  const h3Linear = await currentLinearArtifact(fixture, h3);
   expect({ w: h3Pixels.width, h: h3Pixels.height }).toEqual({ w: 320, h: 384 });
   expect(fixture.gatewayRequests()).toBe(1);
-  const person = AGENT_PREVIEW_FACTS.person.anchor;
-  expect(
-    pixelDistance(
-      sampleBase(h3Pixels, person),
-      linearLightMidpoint(sampleBase(h1DetailPixels, person), sampleBase(h2Pixels, person)),
-    ),
-  ).toBeLessThan(8);
+  // JPEG chroma subsampling changes edge colors; blend arithmetic belongs to lossless artifacts.
+  expect([h2Linear.w, h2Linear.h, h3Linear.w, h3Linear.h]).toEqual([
+    h1Linear.w,
+    h1Linear.h,
+    h1Linear.w,
+    h1Linear.h,
+  ]);
+  let maximumBlendError = 0;
+  for (let index = 0; index < h3Linear.data.length; index += 1) {
+    const expected = (h1Linear.data[index]! + h2Linear.data[index]!) / 2;
+    maximumBlendError = Math.max(
+      maximumBlendError,
+      Math.abs(h3Linear.data[index]! - expected) / Math.max(1, Math.abs(expected)),
+    );
+  }
+  expect(maximumBlendError).toBeLessThanOrEqual(2 ** -23);
+  expect(meanAbsoluteDifference(h3Pixels, h1DetailPixels)).toBeGreaterThan(0);
+  expect(meanAbsoluteDifference(h3Pixels, h2Pixels)).toBeGreaterThan(0);
   expect(await fileIdentity(h1Detail.preview)).toEqual(h1DetailBefore);
   expect(await fileIdentity(h2Detail.preview)).toEqual(h2DetailBefore);
 
@@ -445,6 +461,24 @@ async function artifactCount(library: string): Promise<number> {
   }
 }
 
+async function currentLinearArtifact(fixture: Fixture, renderHash: string) {
+  const shown = await run(fixture, ["graph", "show", fixture.id]);
+  expect(shown.code, JSON.stringify(shown.json)).toBe(0);
+  const graph = graphShowDataSchema.parse(shown.json.data);
+  expect(graph.render_hash).toBe(renderHash);
+  if (!("output" in graph.roots)) throw new Error("Expected the document output root");
+  const inspected = await run(fixture, ["graph", "node", fixture.id, graph.roots.output]);
+  expect(inspected.code, JSON.stringify(inspected.json)).toBe(0);
+  const node = graphNodeDataSchema.parse(inspected.json.data);
+  expect(node.executions).toHaveLength(1);
+  const execution = node.executions[0]!;
+  expect(execution.artifact_available).toBe(true);
+  return await readArtifactLinear(
+    artifactPath(fixture.library, execution.output_artifact_hash, "tif"),
+    execution.output_artifact_hash,
+  );
+}
+
 async function providerExecutionCount(library: string): Promise<number> {
   const handle = await openLibrary(library, { noDaemon: true });
   try {
@@ -527,20 +561,6 @@ function detailContrast(image: RawImage): number {
 
 function pixelDistance(left: number[], right: number[]): number {
   return left.reduce((sum, value, index) => sum + Math.abs(value - right[index]!), 0) / 3;
-}
-
-function linearLightMidpoint(left: number[], right: number[]): number[] {
-  return left.map((value, index) => {
-    const midpoint = (srgbToLinear(value) + srgbToLinear(right[index]!)) / 2;
-    const encoded =
-      midpoint <= 0.0031308 ? midpoint * 12.92 : 1.055 * midpoint ** (1 / 2.4) - 0.055;
-    return encoded * 255;
-  });
-}
-
-function srgbToLinear(value: number): number {
-  const encoded = value / 255;
-  return encoded <= 0.04045 ? encoded / 12.92 : ((encoded + 0.055) / 1.055) ** 2.4;
 }
 
 function meanAbsoluteDifference(left: RawImage, right: RawImage): number {

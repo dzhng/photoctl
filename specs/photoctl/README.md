@@ -41,8 +41,8 @@ below; record evidence-driven deviations in the owning slice and audit new decis
 **Current evidence:** slices 00–10 and the deterministic Slice 12 editing contracts are committed.
 Slice 13's reimagine, relight, generate, auto-enhance, markup, and retouch checkpoints are committed.
 The last integration passed focused migration/graph/command tests, Rust tests, builds, typecheck,
-formatting, and lint. It did not run the root full-suite release gate. Its preview-loop tolerance
-change still needs an evidence-based oracle review; a passing rerun alone does not justify widening it.
+formatting, and lint. It did not run the root full-suite release gate. The preview-loop blend oracle
+now compares lossless graph outputs at Float32 precision; JPEG views independently prove freshness.
 Slice files and their assets hold the detailed acceptance evidence.
 
 **External evidence still outstanding:** the SAM manifest remains `awaiting_export`, with no verified

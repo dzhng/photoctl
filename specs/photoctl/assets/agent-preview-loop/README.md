@@ -4,6 +4,12 @@ This keyless capture follows one 1920×1280 document through global exposure (H1
 
 The measurements in `metrics.json` support the mechanical verdict: the fill is concentrated in the selected rectangle and preserves an independently chosen protected pixel, H3 follows the expected linear-light blend, and the export represents H3. The exaggerated difference image also reveals the faint codec halo expected from a lossy JPEG review view; canonical unmasked bit-exactness is owned by the compositor test, not this visual oracle. The fake provider intentionally returns a flat synthetic fill. These captures therefore establish preview freshness, cache reuse, placement, and export continuity—not live-model texture or photographic quality.
 
+The executable journey checks half-strength opacity on every sample of the lossless graph outputs,
+allowing only Float32 rounding. Arithmetic on JPEG endpoint colors is not a blend oracle: chroma
+subsampling and ringing at the fixture's checkerboard corners alter those colors before comparison.
+JPEG views separately establish freshness and cache/export continuity. The archived captures document
+their capture-time rendering; they do not replace the current executable checks.
+
 Regenerate the source, masters, crops, overview, and export while running the public-CLI journey (the montage, difference image, and metrics are review artifacts derived from that capture):
 
 ```bash
