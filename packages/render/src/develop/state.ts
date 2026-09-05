@@ -7,11 +7,8 @@ import {
   type NodeReference,
 } from "../graph/store.js";
 import type { ImageNodeKind, JsonValue } from "../graph/types.js";
-import {
-  compositeV2Projection,
-  type RevisionLayer,
-  type RevisionLayerDraft,
-} from "../layers/model.js";
+import type { RevisionLayer, RevisionLayerDraft } from "../layers/model.js";
+import { planPhotographicOutput } from "../graph/output.js";
 import { unfilledVacancyLayerIds } from "../layers/status.js";
 import { developDictSchema, type DevelopDict } from "./dict.js";
 import { applyDevelopCompensation, planDevelopChange } from "./tiers.js";
@@ -192,27 +189,12 @@ export async function commitDevelopState(
       enabled: layer.enabled,
     };
   });
-  const rootUpdates: Array<{
-    root: "base" | "output";
-    node: { localKey: string };
-  }> = [{ root: "base", node: { localKey: "base-output" } }];
-  if (layers.length === 0) {
-    rootUpdates.push({ root: "output", node: { localKey: "base-output" } });
-  } else {
-    const projection = compositeV2Projection({ localKey: "base-output" }, layers);
-    nodes.push({
-      localKey: "composite",
-      kind: "composite",
-      recipeVersion: 2,
-      ...projection,
-    });
-    rootUpdates.push({ root: "output", node: { localKey: "composite" } });
-  }
+  const output = planPhotographicOutput({ localKey: "base-output" }, layers);
   const committed = await commitRevision(database, {
     photoId: current.photoId,
     expectedRevisionId: current.revisionId,
-    nodes,
-    rootUpdates,
+    nodes: [...nodes, ...output.nodes],
+    rootUpdates: [{ root: "base", node: { localKey: "base-output" } }, ...output.rootUpdates],
     layers,
     ...(metadata === undefined ? {} : { metadata }),
   });

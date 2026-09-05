@@ -11,7 +11,7 @@ import {
   publishArtifact,
   readArtifactLinear,
 } from "../artifacts/publication.js";
-import { compositeV2Projection } from "../layers/model.js";
+import { compositeV2Projection } from "./output.js";
 import { evaluateGraphNode } from "./evaluator.js";
 import { commitRevision } from "./store.js";
 

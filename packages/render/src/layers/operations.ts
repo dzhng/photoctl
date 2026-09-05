@@ -1,5 +1,6 @@
 import { artifactPath, normalizeMaskArtifact, publishArtifact } from "../artifacts/publication.js";
 import { evaluateGraphNode } from "../graph/evaluator.js";
+import { planPhotographicOutput } from "../graph/output.js";
 import type { MaskImage } from "../mask-tiff.js";
 /* eslint-disable no-await-in-loop -- Graph chains are inherently ordered database walks. */
 import {
@@ -18,7 +19,6 @@ import {
   type TransformMatrix,
 } from "../transforms.js";
 import {
-  compositeV2Projection,
   resolveLayerId,
   type NewLayerIdentity,
   type RevisionLayer,
@@ -136,7 +136,7 @@ export async function commitPreparedMaskLayers(
       enabled: true,
     })),
   ];
-  const projection = compositeV2Projection({ nodeId: current.roots.base }, layers);
+  const output = planPhotographicOutput({ nodeId: current.roots.base }, layers);
   const committed = await commitRevision(database, {
     photoId: request.photoId,
     expectedRevisionId: current.revisionId,
@@ -152,9 +152,9 @@ export async function commitPreparedMaskLayers(
             inputs: [],
           }) satisfies NodeDraft,
       ),
-      { localKey: "composite", kind: "composite", recipeVersion: 2, ...projection },
+      ...output.nodes,
     ],
-    rootUpdates: [{ root: "output", node: { localKey: "composite" } }],
+    rootUpdates: output.rootUpdates,
     newLayers: prepared.map(({ layerKey }) => ({ localKey: layerKey, role: "subject" })),
     layers,
   });
@@ -514,21 +514,12 @@ async function commitLayerSnapshot(
   layers: RevisionLayerDraft[],
   additions: { nodes?: NodeDraft[]; newLayers?: NewLayerIdentity[] } = {},
 ) {
-  const nodes = [...(additions.nodes ?? [])];
-  const rootUpdates: Array<{ root: "output"; node: { nodeId: string } | { localKey: string } }> =
-    [];
-  if (layers.length === 0) {
-    rootUpdates.push({ root: "output", node: { nodeId: document.roots.base } });
-  } else {
-    const projection = compositeV2Projection({ nodeId: document.roots.base }, layers);
-    nodes.push({ localKey: "composite", kind: "composite", recipeVersion: 2, ...projection });
-    rootUpdates.push({ root: "output", node: { localKey: "composite" } });
-  }
+  const output = planPhotographicOutput({ nodeId: document.roots.base }, layers);
   const committed = await commitRevision(database, {
     photoId: document.photoId,
     expectedRevisionId: document.revisionId,
-    nodes,
-    rootUpdates,
+    nodes: [...(additions.nodes ?? []), ...output.nodes],
+    rootUpdates: output.rootUpdates,
     newLayers: additions.newLayers,
     layers,
   });

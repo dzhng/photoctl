@@ -11,7 +11,8 @@ import { executeFreshGeneration, executeGenerationDensity } from "./fill/generat
 import { image16Png } from "./fill/external-pixels.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./fill/pipeline.js";
 import type { SourceContextDensity } from "./fill/density.js";
-import { compositeV2Projection, type RevisionLayerDraft } from "./layers/model.js";
+import type { RevisionLayerDraft } from "./layers/model.js";
+import { planPhotographicOutput } from "./graph/output.js";
 
 export type ReimagineDependencies = FillGenerationDependencies;
 
@@ -152,21 +153,16 @@ export async function createReimagineLayer(
       enabled: true,
     },
   ];
-  nodes.push({
-    localKey: "document-composite",
-    kind: "composite",
-    recipeVersion: 2,
-    ...compositeV2Projection({ nodeId: state.baseNodeId }, layers),
-  });
+  const output = planPhotographicOutput({ nodeId: state.baseNodeId }, layers);
   const committed = await commitRevision(database, {
     photoId: request.photoId,
     expectedRevisionId: state.revisionId,
     artifacts: [...density.artifacts, mask],
     executions: density.executions,
-    nodes,
+    nodes: [...nodes, ...output.nodes],
     newLayers: [{ localKey: "reimagine-layer", role: "reimagine" }],
     layers,
-    rootUpdates: [{ root: "output", node: { localKey: "document-composite" } }],
+    rootUpdates: output.rootUpdates,
   });
   if (!committed.renderHash) throw new Error("A reimagine revision must have a render hash");
   return {

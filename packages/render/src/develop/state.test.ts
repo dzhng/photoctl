@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "vitest";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { testDatabase } from "../../../library/src/migrations/test-database.js";
-import { compositeV2Projection } from "../layers/model.js";
+import { compositeV2Projection } from "../graph/output.js";
 import { MASK_ARTIFACT_MEDIA_TYPE } from "../artifacts/publication.js";
 import { commitRevision, ensurePhotoDocument, loadActiveDocument } from "../graph/store.js";
 import { commitDevelopState, readActiveDevelopState } from "./state.js";

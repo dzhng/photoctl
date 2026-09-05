@@ -3948,3 +3948,20 @@
   can be treated as a provider contract. The restriction is localized and reversible without changing stored library data.
 - **Verdict:** **Sound.** A bounded experiment input remains explicit without presenting an unverified range as provider behavior.
 - **Confidence:** Medium; the eventual shared control contract may require revisiting this runner restriction.
+
+### Photographic output — Planning stays separate from atomic publication
+
+- **When:** Output-owner prerequisite for outpaint, 2026-09-06.
+- **The choice:** When a user changes layer opacity or develops the base, the editing operation gives its
+  intended base and complete layer snapshot to one pure planner. The planner returns the photographic
+  graph nodes and output-root update; the existing revision transaction still validates the snapshot,
+  applies final vector markup, and publishes the revision together. Planning does not read the catalog,
+  write state, or silently rewrite an arbitrary low-level graph commit.
+- **The gap:** The plan required one output owner without choosing between explicit planning by editing
+  operations and implicit graph reconstruction inside every revision commit.
+- **The reach:** Future canvas geometry can be planned at the same editing boundary without adding a
+  second transaction owner. Low-level graph commits remain explicit and validated; the shared composite
+  projection lives with the planner and also supplies the commit validator's expected layer projection.
+- **Verdict:** **Sound.** One assembly owner removes divergent mutation paths while retaining the existing
+  atomic publication boundary and its rejection of invalid graph requests.
+- **Confidence:** High.

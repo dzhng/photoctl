@@ -17,7 +17,8 @@ import {
   type PreparedNodeExecution,
 } from "../graph/store.js";
 import type { ExternalExecutionProvenance } from "../graph/types.js";
-import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { planPhotographicOutput } from "../graph/output.js";
 import { maskCentroid } from "../layers/operations.js";
 import {
   resolveTransformMatrix,
@@ -336,20 +337,14 @@ export async function transformFillLayer(
     blend: layer.blend,
     enabled: layer.enabled,
   }));
-  const output = compositeV2Projection({ nodeId: document.roots.base }, layers);
-  nodes.push({
-    localKey: "density-document-composite",
-    kind: "composite",
-    recipeVersion: 2,
-    ...output,
-  });
+  const output = planPhotographicOutput({ nodeId: document.roots.base }, layers);
   const committed = await commitRevision(database, {
     photoId: request.photoId,
     expectedRevisionId: document.revisionId,
-    nodes,
+    nodes: [...nodes, ...output.nodes],
     artifacts,
     executions,
-    rootUpdates: [{ root: "output", node: { localKey: "density-document-composite" } }],
+    rootUpdates: output.rootUpdates,
     layers,
   });
   if (!committed.renderHash) throw new Error("A layer transform must commit a render hash");

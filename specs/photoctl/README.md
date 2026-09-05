@@ -25,6 +25,8 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   Migration 17 retains coordinates per execution; cached masters/views retain their own frame and
   choose density from actual available sources, not tier labels. Equal pixel bytes do not imply equal
   coordinates, and old ancestry recovery never guesses the latest execution. See [12f1](slices/12-outpaint.md).
+  Photographic mutations now share one output planner; the canvas and geometry-intent state remain
+  the next implementation work in [12f2](slices/12-outpaint.md#geometry-intent-and-ordinary-layer-operations).
 - Finish reference/init controls and the outpaint canvas. Outpaint's independent drafts agree
   that graph-derived frame ownership must replace per-consumer size reconstruction; follow the
   [outpaint checkpoints](slices/12-outpaint.md), settling crop and removable-extent semantics before

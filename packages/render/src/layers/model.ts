@@ -58,22 +58,3 @@ export async function resolveLayerId(
   }
   return id;
 }
-
-export function compositeV2Projection<Reference = NodeReference>(
-  base: Reference,
-  layers: readonly {
-    contentNode: Reference;
-    maskNode: Reference;
-    opacity: number;
-    blend: "normal";
-    enabled: boolean;
-  }[],
-): { parameters: { layers: Array<{ opacity: number; blend: "normal" }> }; inputs: Reference[] } {
-  const enabled = layers.filter((layer) => layer.enabled);
-  return {
-    parameters: {
-      layers: enabled.map(({ opacity, blend }) => ({ opacity, blend })),
-    },
-    inputs: [base, ...enabled.flatMap(({ contentNode, maskNode }) => [contentNode, maskNode])],
-  };
-}

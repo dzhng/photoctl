@@ -164,6 +164,13 @@ no contrary answer; keep this planner choice reversible before any canvas is aut
 
 ### Geometry intent and ordinary layer operations
 
+The [photographic output planner](../../../packages/render/src/graph/output.ts) owns final layer
+projection for every photographic mutation. It returns graph drafts and the output root for the
+existing revision transaction; final vector markup remains that transaction's presentation step.
+An empty layer stack points directly at the base, while a nonempty disabled stack retains its
+composite identity. This prerequisite preserves current behavior; geometry intent and canvas
+authoring below remain unimplemented.
+
 The same absolute control value can mean a new restriction after a border consumed it. For example,
 crop C → border A → explicit `develop --set crop=C` must restrict A's expanded picture; only the next
 identical set is a no-op. The current handler compares just the final develop dictionary and would

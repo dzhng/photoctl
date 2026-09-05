@@ -1,6 +1,7 @@
 import { normalizeMaskArtifact, publishArtifact } from "./artifacts/publication.js";
 import { commitRevision, type GraphDatabase, type NodeDraft } from "./graph/store.js";
-import { compositeV2Projection, type RevisionLayerDraft } from "./layers/model.js";
+import type { RevisionLayerDraft } from "./layers/model.js";
+import { planPhotographicOutput } from "./graph/output.js";
 import type { JsonValue } from "./graph/types.js";
 import { loadLogicalFrame } from "./graph/projection.js";
 import { readActiveDevelopState } from "./develop/state.js";
@@ -127,20 +128,15 @@ export async function createRetouchLayer(
       enabled: true,
     },
   ];
-  nodes.push({
-    localKey: "composite",
-    kind: "composite",
-    recipeVersion: 2,
-    ...compositeV2Projection({ nodeId: document.roots.base }, layers),
-  });
+  const output = planPhotographicOutput({ nodeId: document.roots.base }, layers);
   const committed = await commitRevision(database, {
     photoId: request.photoId,
     expectedRevisionId: document.revisionId,
     artifacts: [published],
-    nodes,
+    nodes: [...nodes, ...output.nodes],
     newLayers: [{ localKey: "retouch-layer", role: "retouch" }],
     layers,
-    rootUpdates: [{ root: "output", node: { localKey: "composite" } }],
+    rootUpdates: output.rootUpdates,
   });
   if (!committed.renderHash) throw new Error("A retouch revision must have a render hash");
   return {

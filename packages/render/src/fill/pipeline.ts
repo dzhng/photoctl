@@ -17,7 +17,8 @@ import {
   type NodeReference,
 } from "../graph/store.js";
 import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
-import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { planPhotographicOutput } from "../graph/output.js";
 import { unfilledVacancyLayerIds } from "../layers/status.js";
 import type { Image16 } from "../source-render.js";
 import { planFillCrop } from "./crop.js";
@@ -417,15 +418,14 @@ export async function fillLayer(
     blend: layer.blend,
     enabled: layer.enabled,
   }));
-  const output = compositeV2Projection({ nodeId: document.roots.base }, layers);
-  nodes.push({ localKey: "document-composite", kind: "composite", recipeVersion: 2, ...output });
+  const output = planPhotographicOutput({ nodeId: document.roots.base }, layers);
   const committed = await commitRevision(database, {
     photoId: request.photoId,
     expectedRevisionId: document.revisionId,
     artifacts,
     executions,
-    nodes,
-    rootUpdates: [{ root: "output", node: { localKey: "document-composite" } }],
+    nodes: [...nodes, ...output.nodes],
+    rootUpdates: output.rootUpdates,
     layers,
   });
   if (!committed.renderHash) throw new Error("A fill revision must have a render hash");

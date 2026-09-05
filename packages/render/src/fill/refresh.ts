@@ -28,7 +28,8 @@ import {
   type PreparedNodeExecution,
 } from "../graph/store.js";
 import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
-import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { planPhotographicOutput } from "../graph/output.js";
 import { describeFillBranch, type FillBranchDescriptor } from "./branch.js";
 import {
   fillProviderInputs,
@@ -210,18 +211,12 @@ export async function refreshFillLayer(
     blend: layer.blend,
     enabled: layer.enabled,
   }));
-  const output = compositeV2Projection({ nodeId: document.roots.base }, layers);
-  nodes.push({
-    localKey: "refresh-document-composite",
-    kind: "composite",
-    recipeVersion: 2,
-    ...output,
-  });
+  const output = planPhotographicOutput({ nodeId: document.roots.base }, layers);
   const committed = await commitRevision(database, {
     photoId: request.photoId,
     expectedRevisionId: document.revisionId,
-    nodes,
-    rootUpdates: [{ root: "output", node: { localKey: "refresh-document-composite" } }],
+    nodes: [...nodes, ...output.nodes],
+    rootUpdates: output.rootUpdates,
     layers,
     artifacts,
     executions,

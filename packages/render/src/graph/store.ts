@@ -22,7 +22,6 @@ import {
   type PublishedArtifact,
 } from "../artifacts/publication.js";
 import {
-  compositeV2Projection,
   layerRoles,
   type LayerReference,
   type LayerRole,
@@ -30,6 +29,7 @@ import {
   type RevisionLayer,
   type RevisionLayerDraft,
 } from "../layers/model.js";
+import { compositeV2Projection } from "./output.js";
 import type { MarkupDocument } from "@photoctl/protocol";
 import {
   projectMarkupRequest,

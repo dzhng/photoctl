@@ -10,7 +10,8 @@ import {
   setRevisionPinned,
   undoRevision,
 } from "./store.js";
-import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { compositeV2Projection } from "./output.js";
 import { MASK_ARTIFACT_MEDIA_TYPE } from "../artifacts/publication.js";
 import { canonicalNodeRecipe, evaluationHash, logicalNodeId, recipeHash } from "./recipes.js";
 
