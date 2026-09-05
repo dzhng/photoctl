@@ -413,17 +413,23 @@ fn direct_patch_distance(
 fn component_distance(source: [f32; 3], candidate: [f32; 3], component: Component) -> f64 {
     let squared_difference = |index: usize| {
         let difference = source[index] - candidate[index];
-        let squared = difference * difference;
-        if squared.is_finite() {
-            f64::from(squared)
-        } else {
-            let difference = f64::from(source[index]) - f64::from(candidate[index]);
-            difference * difference
-        }
+        difference * difference
     };
-    match component {
+    let distance = match component {
         Component::Luminance => squared_difference(0),
         Component::Color => squared_difference(1) + squared_difference(2),
+    };
+    if distance.is_finite() {
+        f64::from(distance)
+    } else {
+        let squared_difference = |index: usize| {
+            let difference = f64::from(source[index]) - f64::from(candidate[index]);
+            difference * difference
+        };
+        match component {
+            Component::Luminance => squared_difference(0),
+            Component::Color => squared_difference(1) + squared_difference(2),
+        }
     }
 }
 
@@ -486,6 +492,11 @@ mod tests {
                 Component::Color,
             )
             .is_finite()
+        );
+        let source = [0.0, 0.000_233_932_29, 0.000_238_024_75];
+        assert_eq!(
+            component_distance(source, [0.0; 3], Component::Color),
+            f64::from(source[1].powi(2) + source[2].powi(2)),
         );
     }
 }
