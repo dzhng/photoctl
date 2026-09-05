@@ -44,6 +44,7 @@ test("canvas composites cannot be interpreted as fixed-base layer composites", (
   const canvas = {
     frame: savedRenderFrame(developFrame({ w: 16, h: 12 }, { w: 16, h: 12 })),
     uncovered: false,
+    viewport_stages: [],
     base_stages: [],
     layers: [],
   };

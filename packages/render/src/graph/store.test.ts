@@ -92,6 +92,7 @@ test("geometry intent is an immutable inherited revision root, restored by undo 
             aspect_activation: 0,
             geometry: {},
             input_frame: savedRenderFrame(developFrame({ w: 8, h: 6 }, { w: 8, h: 6 })),
+            input_stages: [savedRenderFrame(developFrame({ w: 8, h: 6 }, { w: 8, h: 6 }))],
             outer_frame: savedRenderFrame(developFrame({ w: 8, h: 6 }, { w: 8, h: 6 })),
           },
           inputs: [],

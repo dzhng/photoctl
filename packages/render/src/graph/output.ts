@@ -28,6 +28,7 @@ export const canvasCompositeSchema = z
   .object({
     frame: savedFrameSchema,
     uncovered: z.boolean(),
+    viewport_stages: z.array(savedFrameSchema),
     base_stages: z.array(savedFrameSchema),
     layers: z.array(
       z
@@ -43,11 +44,7 @@ export const canvasCompositeSchema = z
   .strict();
 
 /** Read the snapped photographic plan before preview/export caches can bypass evaluation. */
-export async function readCanvasStatus(
-  database: GraphTransaction,
-  photoId: string,
-  outputNodeId: string,
-) {
+async function readCanvasPlan(database: GraphTransaction, photoId: string, outputNodeId: string) {
   const photographic = await markupFreeOutputNode(database, photoId, outputNodeId);
   const node = (
     await database.query<{ kind: string; recipe_version: number; parameters: unknown }>(
@@ -56,12 +53,30 @@ export async function readCanvasStatus(
     )
   ).rows[0];
   if (!node) throw new Error("Canvas status requires the snapped output node");
-  return {
-    uncovered:
-      node.kind === "composite" && node.recipe_version === 3
-        ? canvasCompositeSchema.parse(node.parameters).uncovered
-        : false,
-  };
+  return node.kind === "composite" && node.recipe_version === 3
+    ? canvasCompositeSchema.parse(node.parameters)
+    : undefined;
+}
+
+export async function readCanvasStatus(
+  database: GraphTransaction,
+  photoId: string,
+  outputNodeId: string,
+) {
+  return { uncovered: (await readCanvasPlan(database, photoId, outputNodeId))?.uncovered ?? false };
+}
+
+/** Capture the exact replaceable viewport consumed by the next expansion, without pixel history. */
+export async function readCanvasInputStages(
+  database: GraphTransaction,
+  photoId: string,
+  roots: { output: string; base: string },
+) {
+  const plan = await readCanvasPlan(database, photoId, roots.output);
+  if (plan) return plan.viewport_stages;
+  const input = await loadLogicalFrame(database, photoId, roots.output);
+  const { develop } = await readBaseDevelopInput(database, photoId, roots.base);
+  return developFrames(input.catalog, input.catalog, develop).map(savedRenderFrame);
 }
 
 export async function planDevelopIntent(
@@ -172,19 +187,7 @@ export async function planPhotographicOutput(
     const stagesAfter = (sequence: number) =>
       ordered
         .filter(([, checkpoint]) => checkpoint.sequence > sequence)
-        .flatMap(([id, checkpoint]) => {
-          const input = parseRenderFrame(checkpoint.input_frame);
-          const parent = ancestry.nodes
-            .get(id)!
-            .inputs.slice(0, checkpoint.support_input_count)
-            .map((nodeId) => checkpoints.get(nodeId)!)
-            .sort((a, b) => a.sequence - b.sequence)
-            .at(-1);
-          const stages = parent
-            ? canvasViewportStages(parseRenderFrame(parent.outer_frame), parent, checkpoint)
-            : developFrames(input.catalog, input.catalog, checkpoint.geometry);
-          return [...stages.map(savedRenderFrame), checkpoint.input_frame];
-        });
+        .flatMap(([, checkpoint]) => [...checkpoint.input_stages, checkpoint.input_frame]);
     const borderFrames = new Map(
       await Promise.all(
         borders.map(async (layer) => {
@@ -220,7 +223,8 @@ export async function planPhotographicOutput(
         [developFrame(outer.catalog, outer.catalog), ...stagesAfter(0).map(parseRenderFrame)],
         [...borderFrames.values()],
       ),
-      base_stages: [...stagesAfter(0), ...tail],
+      viewport_stages: tail,
+      base_stages: stagesAfter(0),
       layers: enabled.map((layer) => {
         const checkpoint = layer.authoredCheckpointNodeId
           ? ancestry.nodes.get(layer.authoredCheckpointNodeId)?.parameters
@@ -230,7 +234,7 @@ export async function planPhotographicOutput(
           blend: layer.blend,
           frame:
             layer.role === "border" ? savedRenderFrame(borderFrames.get(layer.id)!.outer) : null,
-          stages: [...stagesAfter(checkpoint?.sequence ?? 0), ...tail],
+          stages: stagesAfter(checkpoint?.sequence ?? 0),
         };
       }),
     };
@@ -242,12 +246,13 @@ export async function planPhotographicOutput(
       canvas = {
         frame: savedRenderFrame(outer),
         uncovered: true,
-        base_stages: stages.map(savedRenderFrame),
+        viewport_stages: stages.map(savedRenderFrame),
+        base_stages: [],
         layers: enabled.map((layer) => ({
           opacity: layer.opacity,
           blend: layer.blend,
           frame: null,
-          stages: stages.map(savedRenderFrame),
+          stages: [],
         })),
       };
     }

@@ -83,6 +83,30 @@
   alternately grow width and height; exact-ratio integer dimensions make the second request a no-op.
 - **Confidence:** Medium.
 
+### Canvas ancestry — Capture the ordered input projection when a border is authored
+
+- **When:** 12f2 moved-border input preservation pass, 2026-09-06.
+- **The choice:** Expand a cropped photograph with border A, move A to the right, then add border B
+  around the resulting view. B records the exact ordered projection stages that made its input
+  visible. A stage is a frame and coordinate mapping used by one existing pixel sampler. Later
+  renders replay those immutable stages against live pixels; they do not reconstruct B's input from
+  A's original, unmoved rectangle. That reconstruction erased four already-visible red columns in
+  the public regression. Capturing RGB instead would freeze later photographic edits, so only the
+  projection is retained.
+- **The gap:** Earlier checkpoints kept input/output frames and absolute controls, but those cannot
+  recover the intermediate canvas after an older border has moved. The general requirement is the
+  actual authored projection, not an inferred projection from a prior border's original bounds.
+- **The reach:** Geometry checkpoints require `input_stages`. The canvas recipe stores its shared
+  `viewport_stages` once; each RGB and coverage input still applies that tail before compositing,
+  after its own earlier restrictions. Moving the sampler after compositing would change boundary
+  pixels and is not this factoring. No historical RGB dependency, mutable table, or extra identity
+  resample is introduced. The unshipped scaffold shapes are tightened in place; real schema 19/21
+  fixtures are regenerated through their writers without changing historical SQL migrations.
+- **Verdict:** **Sound.** Captured projection preserves the complete visible input while keeping
+  authored exclusions fixed and later pixels editable. Density realization remains a separate
+  outstanding consumer contract, not permission to force every source to the authoring raster.
+- **Confidence:** High.
+
 ### Canvas restrictions — Aspect edits start from the stable authored canvas
 
 - **When:** 12f2 restriction-activation pass, 2026-09-06.

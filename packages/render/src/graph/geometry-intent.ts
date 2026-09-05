@@ -25,6 +25,7 @@ export const geometryNodeParametersSchema = z
           straighten_deg: true,
         }),
         input_frame: savedFrameSchema,
+        input_stages: z.array(savedFrameSchema),
         outer_frame: savedFrameSchema,
       })
       .strict(),

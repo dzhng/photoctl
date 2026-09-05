@@ -20,6 +20,7 @@ import { loadLogicalFrame } from "./projection.js";
 import { loadGeometryAncestry } from "./geometry-intent.js";
 import { normalizeMaskArtifact, publishArtifact } from "../artifacts/publication.js";
 import { readBaseDevelopInput } from "./base-input.js";
+import { readCanvasInputStages } from "./output.js";
 
 export type CanvasExpansion = { padding: number } | { aspect: readonly [number, number] };
 export interface CanvasLimits {
@@ -49,6 +50,9 @@ export async function prepareCanvasExpansion(
     expectedRevisionId: document?.revisionId ?? null,
     document,
     inputFrame,
+    inputStages: document
+      ? await readCanvasInputStages(database, request.photoId, document.roots)
+      : [savedRenderFrame(inputFrame)],
     ...expandCanvasFrame(inputFrame, request, request.limits),
   };
 }
@@ -132,6 +136,7 @@ export async function commitCanvasExpansion(
           support_input_count: support.length,
           geometry,
           input_frame: savedRenderFrame(prepared.inputFrame),
+          input_stages: prepared.inputStages,
           outer_frame: savedRenderFrame(prepared.frame),
         },
         inputs: [...support, ...(head ? [head] : [])].map((nodeId) => ({ nodeId })),

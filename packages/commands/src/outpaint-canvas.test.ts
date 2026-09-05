@@ -169,6 +169,30 @@ test("a border transform moves its full intrinsic pixels and extent without movi
   }
 });
 
+test("a later expansion preserves the complete visible input after an earlier border moves", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, author, currentPixels } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    const a = await author(2, "red");
+    await command("layer", ["transform", id, a.layerId, "--dx", "4", "--anchor", "0,0"]);
+    await command("show", [id, "--preview-size", "native"]);
+    const input = await currentPixels();
+    expect({ w: input.w, h: input.h }).toEqual({ w: 12, h: 8 });
+    await author(1, "blue");
+    const shown = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(shown.preview_info.actual).toMatchObject({ w: 14, h: 10 });
+    const expanded = await currentPixels();
+    for (let y = 0; y < input.h; y++) {
+      expect(expanded.data.slice(((y + 1) * 14 + 1) * 3, ((y + 1) * 14 + 13) * 3)).toEqual(
+        input.data.slice(y * 12 * 3, (y + 1) * 12 * 3),
+      );
+    }
+  } finally {
+    await fixture.close();
+  }
+});
+
 test("uncovered canvas status survives cached show and skipped export and ignores intentional border opacity", async () => {
   const fixture = await createCanvasFixture();
   const { id, command, response, author } = fixture;

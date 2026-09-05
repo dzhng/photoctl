@@ -680,8 +680,9 @@ async function evaluateCanvasComposite(
   const output = parseRenderFrame(plan.frame);
   let base = await readRgbInput(inputs[0]!);
   let baseFrame = await loadBaseProjection(request.database, request.photoId, inputs[0]!);
-  const baseSupportFrames = [baseFrame, ...plan.base_stages.map(parseRenderFrame)];
-  for (const saved of [...plan.base_stages, plan.frame]) {
+  const baseStages = [...plan.base_stages, ...plan.viewport_stages];
+  const baseSupportFrames = [baseFrame, ...baseStages.map(parseRenderFrame)];
+  for (const saved of [...baseStages, plan.frame]) {
     const frame = parseRenderFrame(saved);
     base = await projectRgbToRender(base, baseFrame, frame, frame.raster);
     baseFrame = frame;
@@ -706,7 +707,8 @@ async function evaluateCanvasComposite(
     let frame: RenderFrame = layer.frame
       ? parseRenderFrame(layer.frame)
       : await loadBaseProjection(request.database, request.photoId, contentInput);
-    const supportFrames = [frame, ...layer.stages.map(parseRenderFrame)];
+    const stages = [...layer.stages, ...plan.viewport_stages];
+    const supportFrames = [frame, ...stages.map(parseRenderFrame)];
     const coverage = await supportCoverage(request, maskInput);
     let mask = layer.frame
       ? await readMaskInput(maskInput, content)
@@ -715,7 +717,7 @@ async function evaluateCanvasComposite(
           frame,
           content,
         );
-    for (const saved of [...layer.stages, plan.frame]) {
+    for (const saved of [...stages, plan.frame]) {
       const target = parseRenderFrame(saved);
       content = await projectRgbToRender(content, frame, target, target.raster);
       mask = await projectCoverageBetweenFrames(mask, frame, target, target.raster);

@@ -39,16 +39,16 @@ COMMENT ON EXTENSION vector IS 'vector data type and ivfflat and hnsw access met
 CREATE FUNCTION public.refresh_file_search_text() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
-  BEGIN
-    IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
-      PERFORM refresh_photo_search_text(OLD.photo_id);
-    END IF;
-    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-      PERFORM refresh_photo_search_text(NEW.photo_id);
-    END IF;
-    RETURN NULL;
-  END
-  $$;
+BEGIN
+  IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
+    PERFORM refresh_photo_search_text(OLD.photo_id);
+  END IF;
+  IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+    PERFORM refresh_photo_search_text(NEW.photo_id);
+  END IF;
+  RETURN NULL;
+END
+$$;
 
 
 ALTER FUNCTION public.refresh_file_search_text() OWNER TO postgres;
@@ -60,22 +60,16 @@ ALTER FUNCTION public.refresh_file_search_text() OWNER TO postgres;
 CREATE FUNCTION public.refresh_photo_search_text(target_photo_id uuid) RETURNS void
     LANGUAGE sql
     AS $$
-    UPDATE photos
-    SET search_text = concat_ws(
-      ' ',
-      COALESCE((
-        SELECT string_agg(regexp_replace(rel_path, '[^[:alnum:]]+', ' ', 'g'), ' ' ORDER BY rel_path)
-        FROM files
-        WHERE photo_id = target_photo_id
-      ), ''),
-      COALESCE((
-        SELECT string_agg(regexp_replace(tag, '[^[:alnum:]]+', ' ', 'g'), ' ' ORDER BY tag)
-        FROM tags
-        WHERE photo_id = target_photo_id
-      ), '')
-    )
-    WHERE id = target_photo_id
-  $$;
+  UPDATE photos
+  SET search_text = concat_ws(
+    ' ',
+    COALESCE((SELECT string_agg(regexp_replace(rel_path, '[^[:alnum:]]+', ' ', 'g'), ' ' ORDER BY rel_path)
+              FROM files WHERE photo_id = target_photo_id), ''),
+    COALESCE((SELECT string_agg(regexp_replace(tag, '[^[:alnum:]]+', ' ', 'g'), ' ' ORDER BY tag)
+              FROM tags WHERE photo_id = target_photo_id), '')
+  )
+  WHERE id = target_photo_id
+$$;
 
 
 ALTER FUNCTION public.refresh_photo_search_text(target_photo_id uuid) OWNER TO postgres;
@@ -87,16 +81,16 @@ ALTER FUNCTION public.refresh_photo_search_text(target_photo_id uuid) OWNER TO p
 CREATE FUNCTION public.refresh_tag_search_text() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
-  BEGIN
-    IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
-      PERFORM refresh_photo_search_text(OLD.photo_id);
-    END IF;
-    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-      PERFORM refresh_photo_search_text(NEW.photo_id);
-    END IF;
-    RETURN NULL;
-  END
-  $$;
+BEGIN
+  IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
+    PERFORM refresh_photo_search_text(OLD.photo_id);
+  END IF;
+  IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+    PERFORM refresh_photo_search_text(NEW.photo_id);
+  END IF;
+  RETURN NULL;
+END
+$$;
 
 
 ALTER FUNCTION public.refresh_tag_search_text() OWNER TO postgres;
@@ -390,6 +384,7 @@ ALTER TABLE public.photo_documents OWNER TO postgres;
 CREATE TABLE public.photos (
     id uuid NOT NULL,
     content_key text NOT NULL,
+    content_hash text,
     size bigint NOT NULL,
     w integer NOT NULL,
     h integer NOT NULL,
@@ -399,7 +394,6 @@ CREATE TABLE public.photos (
     shot_at timestamp with time zone,
     shot_offset_min integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    content_hash text,
     rating integer DEFAULT 0 NOT NULL,
     flag text DEFAULT 'none'::text NOT NULL,
     label text,
@@ -487,49 +481,50 @@ ALTER TABLE public.xmp_state OWNER TO postgres;
 -- Data for Name: cache_index; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
+INSERT INTO public.cache_index VALUES ('emb/0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001.jpg', 466017, '2023-10-02 23:18:37+07', true);
 
 
 --
 -- Data for Name: document_revision_layers; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.document_revision_layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'd76423c7-43d1-48f4-bad1-255ada660fe5', '546df901-9075-4bcb-a9d1-f9a89e5b354c', 'Before', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
-INSERT INTO public.document_revision_layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', '90702979-03c1-4968-942b-3e06b5048d4f', '546df901-9075-4bcb-a9d1-f9a89e5b354c', 'Before', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
-INSERT INTO public.document_revision_layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', '37b86fbd-51f7-4a4a-b654-6fcc2b4dcc41', '546df901-9075-4bcb-a9d1-f9a89e5b354c', 'Before', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
-INSERT INTO public.document_revision_layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', '37b86fbd-51f7-4a4a-b654-6fcc2b4dcc41', '84599113-8ad6-4ffb-9e75-e5cb1381b8e5', 'After', 1, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
-INSERT INTO public.document_revision_layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'c0ab2c4f-ed38-4ded-95bf-a7d1778ec960', '546df901-9075-4bcb-a9d1-f9a89e5b354c', 'Before', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
-INSERT INTO public.document_revision_layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'c0ab2c4f-ed38-4ded-95bf-a7d1778ec960', '355a2081-a33d-4f5b-993c-dfff6cc7785f', 'Before copy', 1, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
-INSERT INTO public.document_revision_layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'c0ab2c4f-ed38-4ded-95bf-a7d1778ec960', '84599113-8ad6-4ffb-9e75-e5cb1381b8e5', 'After', 2, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
+INSERT INTO public.document_revision_layers VALUES ('0199a7c2-0000-7000-8000-000000000019', '58516335-e311-4ae7-a335-cfcffe696c50', 'c78e9d2f-e66a-4c9f-b6f1-b0fca9c11db1', 'Before', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
+INSERT INTO public.document_revision_layers VALUES ('0199a7c2-0000-7000-8000-000000000019', 'feab7e50-bc7c-4578-9f57-66d88a39ca55', 'c78e9d2f-e66a-4c9f-b6f1-b0fca9c11db1', 'Before', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
+INSERT INTO public.document_revision_layers VALUES ('0199a7c2-0000-7000-8000-000000000019', 'eb158b95-c517-4a7f-a237-5fc4b20432c6', 'c78e9d2f-e66a-4c9f-b6f1-b0fca9c11db1', 'Before', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
+INSERT INTO public.document_revision_layers VALUES ('0199a7c2-0000-7000-8000-000000000019', 'eb158b95-c517-4a7f-a237-5fc4b20432c6', 'd4de8c5a-511f-443e-8b2c-5095c7f895f9', 'After', 1, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
+INSERT INTO public.document_revision_layers VALUES ('0199a7c2-0000-7000-8000-000000000019', '638d3ef0-a23e-4951-ae20-7905a6a422fc', 'c78e9d2f-e66a-4c9f-b6f1-b0fca9c11db1', 'Before', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
+INSERT INTO public.document_revision_layers VALUES ('0199a7c2-0000-7000-8000-000000000019', '638d3ef0-a23e-4951-ae20-7905a6a422fc', 'd82a92df-337d-4be9-8a19-3bceea6181e2', 'Before copy', 1, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
+INSERT INTO public.document_revision_layers VALUES ('0199a7c2-0000-7000-8000-000000000019', '638d3ef0-a23e-4951-ae20-7905a6a422fc', 'd4de8c5a-511f-443e-8b2c-5095c7f895f9', 'After', 2, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 1, 'normal', false);
 
 
 --
 -- Data for Name: document_revision_roots; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.document_revision_roots VALUES ('bcfff910-f570-4965-9baa-22016dcac8a8', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
-INSERT INTO public.document_revision_roots VALUES ('bcfff910-f570-4965-9baa-22016dcac8a8', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'output', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
-INSERT INTO public.document_revision_roots VALUES ('d76423c7-43d1-48f4-bad1-255ada660fe5', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'output', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0');
-INSERT INTO public.document_revision_roots VALUES ('d76423c7-43d1-48f4-bad1-255ada660fe5', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
-INSERT INTO public.document_revision_roots VALUES ('90702979-03c1-4968-942b-3e06b5048d4f', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'output', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0');
-INSERT INTO public.document_revision_roots VALUES ('90702979-03c1-4968-942b-3e06b5048d4f', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'geometry', 'node_848e04925ac95dc0975af1a92b4f783541c810cff16246242369c0342871dcca');
-INSERT INTO public.document_revision_roots VALUES ('90702979-03c1-4968-942b-3e06b5048d4f', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
-INSERT INTO public.document_revision_roots VALUES ('37b86fbd-51f7-4a4a-b654-6fcc2b4dcc41', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'geometry', 'node_848e04925ac95dc0975af1a92b4f783541c810cff16246242369c0342871dcca');
-INSERT INTO public.document_revision_roots VALUES ('37b86fbd-51f7-4a4a-b654-6fcc2b4dcc41', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'output', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0');
-INSERT INTO public.document_revision_roots VALUES ('37b86fbd-51f7-4a4a-b654-6fcc2b4dcc41', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
-INSERT INTO public.document_revision_roots VALUES ('c0ab2c4f-ed38-4ded-95bf-a7d1778ec960', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'geometry', 'node_848e04925ac95dc0975af1a92b4f783541c810cff16246242369c0342871dcca');
-INSERT INTO public.document_revision_roots VALUES ('c0ab2c4f-ed38-4ded-95bf-a7d1778ec960', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'output', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0');
-INSERT INTO public.document_revision_roots VALUES ('c0ab2c4f-ed38-4ded-95bf-a7d1778ec960', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
+INSERT INTO public.document_revision_roots VALUES ('8b117fcb-73ef-425c-8d98-9fe14ca92497', '0199a7c2-0000-7000-8000-000000000019', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
+INSERT INTO public.document_revision_roots VALUES ('8b117fcb-73ef-425c-8d98-9fe14ca92497', '0199a7c2-0000-7000-8000-000000000019', 'output', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
+INSERT INTO public.document_revision_roots VALUES ('58516335-e311-4ae7-a335-cfcffe696c50', '0199a7c2-0000-7000-8000-000000000019', 'output', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0');
+INSERT INTO public.document_revision_roots VALUES ('58516335-e311-4ae7-a335-cfcffe696c50', '0199a7c2-0000-7000-8000-000000000019', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
+INSERT INTO public.document_revision_roots VALUES ('feab7e50-bc7c-4578-9f57-66d88a39ca55', '0199a7c2-0000-7000-8000-000000000019', 'geometry', 'node_a56453de67d10af4ad7b92f50cc51bec9ebea8abc9ab73bdfa3e9cd3552c246d');
+INSERT INTO public.document_revision_roots VALUES ('feab7e50-bc7c-4578-9f57-66d88a39ca55', '0199a7c2-0000-7000-8000-000000000019', 'output', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0');
+INSERT INTO public.document_revision_roots VALUES ('feab7e50-bc7c-4578-9f57-66d88a39ca55', '0199a7c2-0000-7000-8000-000000000019', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
+INSERT INTO public.document_revision_roots VALUES ('eb158b95-c517-4a7f-a237-5fc4b20432c6', '0199a7c2-0000-7000-8000-000000000019', 'geometry', 'node_a56453de67d10af4ad7b92f50cc51bec9ebea8abc9ab73bdfa3e9cd3552c246d');
+INSERT INTO public.document_revision_roots VALUES ('eb158b95-c517-4a7f-a237-5fc4b20432c6', '0199a7c2-0000-7000-8000-000000000019', 'output', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0');
+INSERT INTO public.document_revision_roots VALUES ('eb158b95-c517-4a7f-a237-5fc4b20432c6', '0199a7c2-0000-7000-8000-000000000019', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
+INSERT INTO public.document_revision_roots VALUES ('638d3ef0-a23e-4951-ae20-7905a6a422fc', '0199a7c2-0000-7000-8000-000000000019', 'geometry', 'node_a56453de67d10af4ad7b92f50cc51bec9ebea8abc9ab73bdfa3e9cd3552c246d');
+INSERT INTO public.document_revision_roots VALUES ('638d3ef0-a23e-4951-ae20-7905a6a422fc', '0199a7c2-0000-7000-8000-000000000019', 'output', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0');
+INSERT INTO public.document_revision_roots VALUES ('638d3ef0-a23e-4951-ae20-7905a6a422fc', '0199a7c2-0000-7000-8000-000000000019', 'base', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
 
 
 --
 -- Data for Name: document_revisions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.document_revisions VALUES ('bcfff910-f570-4965-9baa-22016dcac8a8', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', NULL, false, '2026-09-06 04:19:59.209+07', NULL);
-INSERT INTO public.document_revisions VALUES ('d76423c7-43d1-48f4-bad1-255ada660fe5', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'bcfff910-f570-4965-9baa-22016dcac8a8', false, '2026-09-06 04:19:59.246+07', NULL);
-INSERT INTO public.document_revisions VALUES ('90702979-03c1-4968-942b-3e06b5048d4f', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'd76423c7-43d1-48f4-bad1-255ada660fe5', false, '2026-09-06 04:19:59.258+07', NULL);
-INSERT INTO public.document_revisions VALUES ('37b86fbd-51f7-4a4a-b654-6fcc2b4dcc41', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', '90702979-03c1-4968-942b-3e06b5048d4f', false, '2026-09-06 04:19:59.269+07', NULL);
-INSERT INTO public.document_revisions VALUES ('c0ab2c4f-ed38-4ded-95bf-a7d1778ec960', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', '37b86fbd-51f7-4a4a-b654-6fcc2b4dcc41', false, '2026-09-06 04:19:59.281+07', NULL);
+INSERT INTO public.document_revisions VALUES ('8b117fcb-73ef-425c-8d98-9fe14ca92497', '0199a7c2-0000-7000-8000-000000000019', NULL, false, '2026-09-06 05:19:31.925+07', NULL);
+INSERT INTO public.document_revisions VALUES ('58516335-e311-4ae7-a335-cfcffe696c50', '0199a7c2-0000-7000-8000-000000000019', '8b117fcb-73ef-425c-8d98-9fe14ca92497', false, '2026-09-06 05:19:31.97+07', NULL);
+INSERT INTO public.document_revisions VALUES ('feab7e50-bc7c-4578-9f57-66d88a39ca55', '0199a7c2-0000-7000-8000-000000000019', '58516335-e311-4ae7-a335-cfcffe696c50', false, '2026-09-06 05:19:31.983+07', NULL);
+INSERT INTO public.document_revisions VALUES ('eb158b95-c517-4a7f-a237-5fc4b20432c6', '0199a7c2-0000-7000-8000-000000000019', 'feab7e50-bc7c-4578-9f57-66d88a39ca55', false, '2026-09-06 05:19:31.995+07', NULL);
+INSERT INTO public.document_revisions VALUES ('638d3ef0-a23e-4951-ae20-7905a6a422fc', '0199a7c2-0000-7000-8000-000000000019', 'eb158b95-c517-4a7f-a237-5fc4b20432c6', false, '2026-09-06 05:19:32.006+07', NULL);
 
 
 --
@@ -554,37 +549,41 @@ INSERT INTO public.document_revisions VALUES ('c0ab2c4f-ed38-4ded-95bf-a7d1778ec
 -- Data for Name: image_artifacts; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.image_artifacts VALUES ('a_afa9233e6c9c1ce5bd08c7bdc489314c89e92cd33a43e5ad3ab84cf05391a0a7', 'image/vnd.photoctl.mask+tiff', 914, 16, 12, true, '2026-09-06 04:19:59.245+07');
+INSERT INTO public.image_artifacts VALUES ('a_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'image/vnd.photoctl.mask+tiff', 0, 100, 100, true, '2026-09-05 23:09:01.405+07');
+INSERT INTO public.image_artifacts VALUES ('a_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'image/tiff', 0, 1616, 1080, false, '2026-09-06 01:10:26.546+07');
+INSERT INTO public.image_artifacts VALUES ('a_cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', 'image/tiff', 100, 16, 12, true, '2026-09-06 01:47:05.682+07');
+INSERT INTO public.image_artifacts VALUES ('a_dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', 'image/png', 80, 16, 12, true, '2026-09-06 01:47:05.682+07');
+INSERT INTO public.image_artifacts VALUES ('a_afa9233e6c9c1ce5bd08c7bdc489314c89e92cd33a43e5ad3ab84cf05391a0a7', 'image/vnd.photoctl.mask+tiff', 914, 16, 12, true, '2026-09-06 05:19:31.97+07');
 
 
 --
 -- Data for Name: image_node_inputs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.image_node_inputs VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 0, 'node_400fef71431222c339bae4d13ab4b6813963a3ac1dd3a7b379dec6a2355ecd2f');
-INSERT INTO public.image_node_inputs VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
-INSERT INTO public.image_node_inputs VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'node_848e04925ac95dc0975af1a92b4f783541c810cff16246242369c0342871dcca', 0, 'node_c679c7a082f68ee8d23994cb620e9879ee1d503ea5662a014e11a197deb54460');
+INSERT INTO public.image_node_inputs VALUES ('0199a7c2-0000-7000-8000-000000000019', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 0, 'node_400fef71431222c339bae4d13ab4b6813963a3ac1dd3a7b379dec6a2355ecd2f');
+INSERT INTO public.image_node_inputs VALUES ('0199a7c2-0000-7000-8000-000000000019', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0', 0, 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594');
+INSERT INTO public.image_node_inputs VALUES ('0199a7c2-0000-7000-8000-000000000019', 'node_a56453de67d10af4ad7b92f50cc51bec9ebea8abc9ab73bdfa3e9cd3552c246d', 0, 'node_ea99e734ab8c1aee40e49e9f6978f676896f50664233235990291ef0fb4b0d43');
 
 
 --
 -- Data for Name: image_nodes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.image_nodes VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'node_400fef71431222c339bae4d13ab4b6813963a3ac1dd3a7b379dec6a2355ecd2f', 'source', 1, '{"orientation": 1}', 'recipe_81842893f26267bbf6b06dc5ccc91b5e0c70739909524d22edc862cc7591b644', '2026-09-06 04:19:59.209+07');
-INSERT INTO public.image_nodes VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'output', 1, '{"format": "display-rgb", "color_space": "srgb"}', 'recipe_a3ca36e9bdf42a8191e77503162a5eaa23ba420a7df542cc099602057078a71a', '2026-09-06 04:19:59.209+07');
-INSERT INTO public.image_nodes VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 'mask', 1, '{"artifact_hash": "a_afa9233e6c9c1ce5bd08c7bdc489314c89e92cd33a43e5ad3ab84cf05391a0a7"}', 'recipe_fe8b9005b9840863c1837cf7c0a9e1e9ba115b6d55fc13bc9aec251f0f196e5a', '2026-09-06 04:19:59.246+07');
-INSERT INTO public.image_nodes VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0', 'composite', 2, '{"layers": []}', 'recipe_13c2667593822777b571b6b41eeb35b8a8605cc3d92f1687da24a446439e1010', '2026-09-06 04:19:59.246+07');
-INSERT INTO public.image_nodes VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'node_c679c7a082f68ee8d23994cb620e9879ee1d503ea5662a014e11a197deb54460', 'geometry', 1, '{"type": "checkpoint", "geometry": {}, "sequence": 1, "input_frame": {"raster": {"h": 12, "w": 16}, "source": {"h": 12, "w": 16}, "catalog": {"h": 12, "w": 16}, "sourceToRaster": [1, 0, 0, 1, 0, 0]}, "outer_frame": {"raster": {"h": 12, "w": 16}, "source": {"h": 12, "w": 16}, "catalog": {"h": 12, "w": 16}, "sourceToRaster": [1, 0, 0, 1, 0, 0]}, "crop_activation": 0, "aspect_activation": 0, "support_input_count": 0}', 'recipe_e55561f497c8fd1bbce6c7e7b827ae2e4bf6dd08ef913eb8bb0a65f5f1670530', '2026-09-06 04:19:59.258+07');
-INSERT INTO public.image_nodes VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'node_848e04925ac95dc0975af1a92b4f783541c810cff16246242369c0342871dcca', 'geometry', 1, '{"type": "intent", "sequence": 1, "crop_activation": 0, "aspect_activation": 0}', 'recipe_963b65c5d83bfd78e9933dc1c6293d5f6915003943775cb0309d203a47fda8d8', '2026-09-06 04:19:59.258+07');
+INSERT INTO public.image_nodes VALUES ('0199a7c2-0000-7000-8000-000000000019', 'node_400fef71431222c339bae4d13ab4b6813963a3ac1dd3a7b379dec6a2355ecd2f', 'source', 1, '{"orientation": 1}', 'recipe_81842893f26267bbf6b06dc5ccc91b5e0c70739909524d22edc862cc7591b644', '2026-09-06 05:19:31.925+07');
+INSERT INTO public.image_nodes VALUES ('0199a7c2-0000-7000-8000-000000000019', 'node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594', 'output', 1, '{"format": "display-rgb", "color_space": "srgb"}', 'recipe_a3ca36e9bdf42a8191e77503162a5eaa23ba420a7df542cc099602057078a71a', '2026-09-06 05:19:31.925+07');
+INSERT INTO public.image_nodes VALUES ('0199a7c2-0000-7000-8000-000000000019', 'node_fa458204f262aabea97b8ec6be0054b7bede1bf86af193b1f2d0b3aa5cedd5cb', 'mask', 1, '{"artifact_hash": "a_afa9233e6c9c1ce5bd08c7bdc489314c89e92cd33a43e5ad3ab84cf05391a0a7"}', 'recipe_fe8b9005b9840863c1837cf7c0a9e1e9ba115b6d55fc13bc9aec251f0f196e5a', '2026-09-06 05:19:31.97+07');
+INSERT INTO public.image_nodes VALUES ('0199a7c2-0000-7000-8000-000000000019', 'node_201c5a5d7c81cdcb3dcfb15601904190485d6a659c51b02461b0d19a2fc671c0', 'composite', 2, '{"layers": []}', 'recipe_13c2667593822777b571b6b41eeb35b8a8605cc3d92f1687da24a446439e1010', '2026-09-06 05:19:31.97+07');
+INSERT INTO public.image_nodes VALUES ('0199a7c2-0000-7000-8000-000000000019', 'node_ea99e734ab8c1aee40e49e9f6978f676896f50664233235990291ef0fb4b0d43', 'geometry', 1, '{"type": "checkpoint", "geometry": {}, "sequence": 1, "input_frame": {"raster": {"h": 12, "w": 16}, "source": {"h": 12, "w": 16}, "catalog": {"h": 12, "w": 16}, "sourceToRaster": [1, 0, 0, 1, 0, 0]}, "outer_frame": {"raster": {"h": 12, "w": 16}, "source": {"h": 12, "w": 16}, "catalog": {"h": 12, "w": 16}, "sourceToRaster": [1, 0, 0, 1, 0, 0]}, "input_stages": [{"raster": {"h": 12, "w": 16}, "source": {"h": 12, "w": 16}, "catalog": {"h": 12, "w": 16}, "sourceToRaster": [1, 0, 0, 1, 0, 0]}], "crop_activation": 0, "aspect_activation": 0, "support_input_count": 0}', 'recipe_c1d2f3c2675f551e79577225a6028c8e02460424d8823b7f001ec3fbfd8b7545', '2026-09-06 05:19:31.983+07');
+INSERT INTO public.image_nodes VALUES ('0199a7c2-0000-7000-8000-000000000019', 'node_a56453de67d10af4ad7b92f50cc51bec9ebea8abc9ab73bdfa3e9cd3552c246d', 'geometry', 1, '{"type": "intent", "sequence": 1, "crop_activation": 0, "aspect_activation": 0}', 'recipe_5b4bc1a6cbe85813866a235f43d9876eddf0807a63118d5d7a55e75e13563135', '2026-09-06 05:19:31.983+07');
 
 
 --
 -- Data for Name: layers; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', '546df901-9075-4bcb-a9d1-f9a89e5b354c', 'subject', NULL, '2026-09-06 04:19:59.246+07', NULL);
-INSERT INTO public.layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', '84599113-8ad6-4ffb-9e75-e5cb1381b8e5', 'subject', NULL, '2026-09-06 04:19:59.269+07', 'node_c679c7a082f68ee8d23994cb620e9879ee1d503ea5662a014e11a197deb54460');
-INSERT INTO public.layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', '355a2081-a33d-4f5b-993c-dfff6cc7785f', 'subject', NULL, '2026-09-06 04:19:59.281+07', NULL);
+INSERT INTO public.layers VALUES ('0199a7c2-0000-7000-8000-000000000019', 'c78e9d2f-e66a-4c9f-b6f1-b0fca9c11db1', 'subject', NULL, '2026-09-06 05:19:31.97+07', NULL);
+INSERT INTO public.layers VALUES ('0199a7c2-0000-7000-8000-000000000019', 'd4de8c5a-511f-443e-8b2c-5095c7f895f9', 'subject', NULL, '2026-09-06 05:19:31.995+07', 'node_ea99e734ab8c1aee40e49e9f6978f676896f50664233235990291ef0fb4b0d43');
+INSERT INTO public.layers VALUES ('0199a7c2-0000-7000-8000-000000000019', 'd82a92df-337d-4be9-8a19-3bceea6181e2', 'subject', NULL, '2026-09-06 05:19:32.006+07', NULL);
 
 
 --
@@ -609,48 +608,50 @@ INSERT INTO public.layers VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', '355a2
 -- Data for Name: photo_documents; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.photo_documents VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'c0ab2c4f-ed38-4ded-95bf-a7d1778ec960');
+INSERT INTO public.photo_documents VALUES ('0199a7c2-0000-7000-8000-000000000019', '638d3ef0-a23e-4951-ae20-7905a6a422fc');
 
 
 --
 -- Data for Name: photos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.photos VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c191', 'ck_canvas_fixture_19', 1, 16, 12, 1, '{}', '{}', NULL, NULL, '2026-09-06 04:19:59.207+07', NULL, 0, 'none', NULL, '', DEFAULT);
+INSERT INTO public.photos VALUES ('0199a7c2-0000-7000-8000-000000000019', 'ck_3dac5c943a33dcc4', NULL, 1, 16, 12, 1, '{}', '{}', NULL, NULL, '2026-09-06 05:19:31.923+07', 0, 'none', NULL, '', DEFAULT);
 
 
 --
 -- Data for Name: schema_version; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.schema_version VALUES (1, '2026-09-06 04:19:59.167+07');
-INSERT INTO public.schema_version VALUES (2, '2026-09-06 04:19:59.171+07');
-INSERT INTO public.schema_version VALUES (3, '2026-09-06 04:19:59.173+07');
-INSERT INTO public.schema_version VALUES (4, '2026-09-06 04:19:59.177+07');
-INSERT INTO public.schema_version VALUES (5, '2026-09-06 04:19:59.185+07');
-INSERT INTO public.schema_version VALUES (6, '2026-09-06 04:19:59.187+07');
-INSERT INTO public.schema_version VALUES (7, '2026-09-06 04:19:59.188+07');
-INSERT INTO public.schema_version VALUES (8, '2026-09-06 04:19:59.194+07');
-INSERT INTO public.schema_version VALUES (9, '2026-09-06 04:19:59.198+07');
-INSERT INTO public.schema_version VALUES (10, '2026-09-06 04:19:59.199+07');
-INSERT INTO public.schema_version VALUES (11, '2026-09-06 04:19:59.2+07');
-INSERT INTO public.schema_version VALUES (12, '2026-09-06 04:19:59.201+07');
-INSERT INTO public.schema_version VALUES (13, '2026-09-06 04:19:59.201+07');
-INSERT INTO public.schema_version VALUES (14, '2026-09-06 04:19:59.202+07');
-INSERT INTO public.schema_version VALUES (15, '2026-09-06 04:19:59.203+07');
-INSERT INTO public.schema_version VALUES (16, '2026-09-06 04:19:59.204+07');
-INSERT INTO public.schema_version VALUES (17, '2026-09-06 04:19:59.204+07');
-INSERT INTO public.schema_version VALUES (18, '2026-09-06 04:19:59.205+07');
-INSERT INTO public.schema_version VALUES (19, '2026-09-06 04:19:59.207+07');
+INSERT INTO public.schema_version VALUES (1, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (2, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (3, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (4, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (5, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (6, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (7, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (8, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (9, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (10, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (11, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (12, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (13, '2026-09-05 21:22:49.735+07');
+INSERT INTO public.schema_version VALUES (14, '2026-09-05 21:22:49.77+07');
+INSERT INTO public.schema_version VALUES (15, '2026-09-05 21:22:49.771+07');
+INSERT INTO public.schema_version VALUES (16, '2026-09-05 23:09:01.403+07');
+INSERT INTO public.schema_version VALUES (17, '2026-09-06 01:10:26.546+07');
+INSERT INTO public.schema_version VALUES (18, '2026-09-06 01:47:05.681+07');
+INSERT INTO public.schema_version VALUES (19, '2026-09-06 05:19:31.913+07');
 
 
 --
 -- Data for Name: settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
+INSERT INTO public.settings VALUES ('library_id', '"0199a7c2-0000-7000-8000-000000000001"');
+INSERT INTO public.settings VALUES ('cache_max_bytes', '21474836480');
+INSERT INTO public.settings VALUES ('daemon_idle_ms', '900000');
 INSERT INTO public.settings VALUES ('daemon_queue_max', '8');
 INSERT INTO public.settings VALUES ('embed_mode', '"manual"');
-INSERT INTO public.settings VALUES ('library_id', '"0199a7c2-0000-7000-8000-000000000019"');
 
 
 --
@@ -663,6 +664,7 @@ INSERT INTO public.settings VALUES ('library_id', '"0199a7c2-0000-7000-8000-0000
 -- Data for Name: volumes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
+INSERT INTO public.volumes VALUES ('6A1F-0C3B', 'A7C2', '/Volumes/A7C2', '2023-10-02 23:18:37+07');
 
 
 --
@@ -675,7 +677,7 @@ INSERT INTO public.settings VALUES ('library_id', '"0199a7c2-0000-7000-8000-0000
 -- Name: exports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.exports_id_seq', 1, false);
+SELECT pg_catalog.setval('public.exports_id_seq', 1, true);
 
 
 --

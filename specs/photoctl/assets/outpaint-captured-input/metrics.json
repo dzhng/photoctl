@@ -1,0 +1,37 @@
+[
+  {
+    "name": "01-input",
+    "w": 12,
+    "h": 8,
+    "sha256": "58752d8c904258ce02642007cc95d457c08c6989dcd2901fa9efa13eecc7b940",
+    "frame": {
+      "a": 1,
+      "b": 0,
+      "c": 0,
+      "d": 1,
+      "e": -4,
+      "f": -1
+    }
+  },
+  {
+    "name": "02-expanded",
+    "w": 14,
+    "h": 10,
+    "sha256": "8361e10020a530ceee0b9a21413334730d36daebaac0ffe5213bdab2239df4fd",
+    "frame": {
+      "a": 1,
+      "b": 0,
+      "c": 0,
+      "d": 1,
+      "e": -3,
+      "f": 0
+    }
+  },
+  {
+    "name": "03-retained-interior",
+    "w": 12,
+    "h": 8,
+    "sha256": "58752d8c904258ce02642007cc95d457c08c6989dcd2901fa9efa13eecc7b940",
+    "matchesInput": true
+  }
+]
