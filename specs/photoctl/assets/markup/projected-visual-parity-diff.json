@@ -1,0 +1,74 @@
+{
+  "kind": "screenshot-parity-diff",
+  "generatedAt": "2026-09-05T14:42:01.208Z",
+  "note": "Lower parityDistance means the candidate is closer to the reference for this fixed pair. This is a distance metric, not an acceptance gate.",
+  "pairCount": 1,
+  "worstPair": "frame",
+  "results": [
+    {
+      "id": "frame",
+      "current": "../../../../tmp/photoctl-markup-capture.FxVo8Y/projected-reference/frame.png",
+      "candidate": "../../../../tmp/photoctl-markup-capture.FxVo8Y/projected-candidate/frame.png",
+      "dimensions": {
+        "width": 30,
+        "height": 40
+      },
+      "parityDistance": 0.46529,
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 3,
+          "colorEntropyBits": 0.45318,
+          "edgeDensity": 0,
+          "dominantColorShare": 0.91583,
+          "transparentShare": 0,
+          "luminanceMean": 10.40545,
+          "luminanceP5": 6.9988,
+          "luminanceP95": 14.3582,
+          "luminanceContrast": 7.3594
+        },
+        "candidate": {
+          "colorBuckets": 3,
+          "colorEntropyBits": 1.03476,
+          "edgeDensity": 0.04332,
+          "dominantColorShare": 0.5,
+          "transparentShare": 0,
+          "luminanceMean": 28.03469,
+          "luminanceP5": 6.9988,
+          "luminanceP95": 47.1784,
+          "luminanceContrast": 40.1796
+        }
+      },
+      "grayscale": {
+        "mae": 17.62924,
+        "rmse": 24.96206,
+        "diffRatio16": 0.5,
+        "diffRatio32": 0.48417,
+        "diffRatio64": 0,
+        "pixelmatchRatio": 0.5
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 1,
+        "blackRatioCandidate": 0.5,
+        "terrainLikeRatioCurrent": 0,
+        "terrainLikeRatioCandidate": 0,
+        "avgLuminanceCurrent": 10.40545,
+        "avgLuminanceCandidate": 28.03469,
+        "avgLuminanceDelta": 17.62924,
+        "edgeEnergyCurrent": 0.00866,
+        "edgeEnergyCandidate": 0.05191,
+        "edgeEnergyRatio": 5.99338,
+        "edgeDiffRatio32": 0.08333
+      },
+      "artifacts": {
+        "sideBySide": "projected-compare/frame-side-by-side.png",
+        "currentGray": "projected-compare/frame-current-gray.png",
+        "candidateGray": "projected-compare/frame-candidate-gray.png",
+        "absDiff": "projected-compare/frame-absdiff.png",
+        "pixelmatch": "projected-compare/frame-pixelmatch.png",
+        "currentEdges": "projected-compare/frame-current-edges.png",
+        "candidateEdges": "projected-compare/frame-candidate-edges.png",
+        "edgeDiff": "projected-compare/frame-edge-diff.png"
+      }
+    }
+  ]
+}

@@ -15,11 +15,14 @@ import {
 import { unfilledVacancyLayerIds } from "../layers/status.js";
 import { developDictSchema, type DevelopDict } from "./dict.js";
 import { applyDevelopCompensation, planDevelopChange } from "./tiers.js";
+import { markupFreeOutputNode } from "../markup/graph.js";
 
 export interface ActiveDevelopState {
   photoId: string;
   revisionId: string;
   outputNodeId: string;
+  /** Current RGB output without the final editable markup presentation node. */
+  pixelOutputNodeId: string;
   baseNodeId: string;
   sourceNodeId: string;
   outputParameters: JsonValue;
@@ -63,6 +66,11 @@ export async function readActiveDevelopState(
   const document = await loadActiveDocument(database, request.photoId);
   if (!document) throw new Error("The active photo document is missing");
   const output = await loadNode(database, request.photoId, document.roots.base);
+  const pixelOutputNodeId = await markupFreeOutputNode(
+    database,
+    request.photoId,
+    document.roots.output,
+  );
   if (output.kind !== "output") throw new Error("The active base root is not an output node");
   const outputInputs = await loadInputs(database, request.photoId, output.id);
   if (outputInputs.length !== 1) throw new Error("The active output node must have one input");
@@ -80,6 +88,7 @@ export async function readActiveDevelopState(
       photoId: request.photoId,
       revisionId: document.revisionId,
       outputNodeId: document.roots.output,
+      pixelOutputNodeId,
       baseNodeId: document.roots.base,
       sourceNodeId: input.id,
       outputParameters: output.parameters,
@@ -103,6 +112,7 @@ export async function readActiveDevelopState(
     photoId: request.photoId,
     revisionId: document.revisionId,
     outputNodeId: document.roots.output,
+    pixelOutputNodeId,
     baseNodeId: document.roots.base,
     sourceNodeId: source.id,
     outputParameters: output.parameters,

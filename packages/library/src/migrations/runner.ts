@@ -13,6 +13,7 @@ import { migration0011 } from "./0011-affine-resample.js";
 import { migration0012 } from "./0012-heal-nodes.js";
 import { migration0013 } from "./0013-revision-metadata.js";
 import { migration0014 } from "./0014-standalone-generation.js";
+import { migration0015 } from "./0015-markup.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -35,6 +36,7 @@ const migrations = [
   { version: 12, sql: migration0012 },
   { version: 13, sql: migration0013 },
   { version: 14, sql: migration0014 },
+  { version: 15, sql: migration0015 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
@@ -51,6 +53,7 @@ const latestTables = [
   "image_node_inputs",
   "image_nodes",
   "layers",
+  "markup",
   "node_executions",
   "photo_documents",
   "photos",
@@ -109,6 +112,9 @@ const latestConstraints = [
   "layers_photo_id_fkey",
   "layers_photo_id_of_layer_fkey",
   "layers_role_check",
+  "markup_pkey",
+  "markup_photo_id_fkey",
+  "markup_items_array_check",
   "node_execution_inputs_index_check",
   "node_execution_inputs_input_artifact_hash_fkey",
   "node_execution_inputs_photo_id_execution_id_fkey",

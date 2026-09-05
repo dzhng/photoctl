@@ -99,7 +99,7 @@ export async function createRetouchLayer(
         refinement_iterations: REFINEMENT_ITERATIONS,
         refinement_pixel_budget: REFINEMENT_PIXEL_BUDGET,
       },
-      inputs: [{ nodeId: document.roots.output }, { localKey: "mask" }],
+      inputs: [{ nodeId: state.pixelOutputNodeId }, { localKey: "mask" }],
     },
   ];
   const layers: RevisionLayerDraft[] = [

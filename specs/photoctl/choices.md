@@ -3283,3 +3283,62 @@
 - **Verdict:** **Sound.** The angle ranges cover a full horizontal turn and all vertical light directions, while the normalized
   intensity matches C3's documented “of 1” language.
 - **Confidence:** Medium; azimuth 0 and 360 are equivalent but both remain accepted for direct physical input.
+
+### Slice 13c — The vector document is mirrored by one final deterministic graph node
+
+- **When:** Slice 13c vector-markup implementation, 2026-09-05.
+- **The choice:** A photo owns one ordered JSON vector document, while its active output root is a deterministic `markup` node whose
+  recipe contains that same document and consumes the ordinary composite output. A markup mutation changes the table and immutable
+  revision in one transaction. Undo points back to the parent revision and restores the table from that revision's final node. The
+  alternative was a second raster cache or a separate class of markup layers whose ordering and state could drift from the graph.
+- **The gap:** The slice specified the table and native flattening but did not say how editable state, immutable revisions, and the
+  existing typed graph stay synchronized.
+- **The reach:** Preview, export, later develop changes, layer mutations, and undo all retain one render identity and one editable
+  document. Pixel-edit consumers receive the markup-free underlying output, so retouch and future reconstruction operations cannot
+  bake a removable presentation overlay into permanent pixels. A future GUI can edit vectors without acquiring a second rendering
+  owner.
+- **Verdict:** **Sound.** The table owns current editability; the graph owns reproducible pixels; atomic projection keeps them equal.
+- **Confidence:** High.
+
+### Slice 13c — Base-space vectors are projected as premultiplied color plus coverage
+
+- **When:** Slice 13c vector-markup implementation, 2026-09-05.
+- **The choice:** Stored coordinates always describe the oriented, uncropped base. For a cropped, rotated, or straightened photo, the
+  native renderer first creates overlay color and coverage in that base frame. The existing develop matrix transforms both; color is
+  divided by transformed coverage only after resampling and then composited over the current output. The unbuilt alternative was to
+  reinterpret the same stored numbers in output pixels, which would visibly move annotations whenever develop geometry changed.
+- **The gap:** The plan named the coordinate space and flattening stage but did not define how antialiased vector pixels cross the
+  develop transform.
+- **The reach:** Every primitive follows the same crop and rotation order as the photograph, while partially covered edges remain
+  color-correct. Identity geometry keeps untouched pixels bit-for-bit exact.
+- **Verdict:** **Sound.** It reuses the established geometry owner and preserves both coordinate and alpha-compositing semantics.
+- **Confidence:** High.
+
+### Slice 13c — Rendering is host-independent and bounded
+
+- **When:** Slice 13c vector-markup implementation, 2026-09-05.
+- **The choice:** The Rust addon rasterizes every primitive with bundled OFL-licensed Inter, converts hexadecimal display-sRGB colors
+  to scene-linear Rec. 2020 before blending, assigns stable UUID item identities, and bounds document size, path points, text length,
+  and geometry magnitudes. CLI update/remove accepts a unique UUID prefix. The alternatives were depending on whichever font the host
+  happened to install, blending encoded colors into linear pixels, or allowing one JSON item to create unbounded native work.
+- **The gap:** The slice required Inter and primitive shapes but left color space, identity ergonomics, and resource ceilings open.
+- **The reach:** The same recipe renders reproducibly on supported hosts, user-visible colors enter the existing linear pipeline
+  correctly, and agent callers can address items concisely without weakening full stored identity.
+- **Verdict:** **Sound.** These choices make the local native boundary deterministic, usable, and safe to evaluate.
+- **Confidence:** High.
+
+### Slice 13c — Markup scales with the source tier before develop projection
+
+- **When:** Slice 13c vector-markup independent review, 2026-09-05.
+- **The choice:** Markup remains stored in catalog base coordinates, but evaluation traces the exact first-input artifact lineage to
+  recover the base dimensions of the source tier that actually produced the current pixels. Coordinates and develop crop geometry
+  scale to that tier before rasterization; stroke and text sizes use the geometric mean of the two axis ratios so integer rounding
+  cannot make them anisotropic. The alternative was allocating a full-resolution overlay for every preview and applying a
+  full-resolution matrix to smaller pinned-source pixels.
+- **The gap:** The slice fixed the public coordinate space but did not define how those coordinates map onto an offline or pinned
+  preview whose dimensions are smaller than the catalog photo.
+- **The reach:** Native-size export stays exact, while lower-resolution preview evaluation uses bounded memory and places annotations
+  at the same semantic location through crop and rotation. Exact artifact lineage avoids selecting an unrelated historical source
+  execution.
+- **Verdict:** **Sound.** One catalog-space document remains portable across source tiers without introducing a preview-only owner.
+- **Confidence:** High.

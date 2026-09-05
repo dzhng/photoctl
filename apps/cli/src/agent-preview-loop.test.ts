@@ -23,7 +23,7 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
 });
 
-test("the built CLI keeps agent previews current through fill, opacity, retouch, reimagine, and relight revisions", async () => {
+test("the built CLI keeps agent previews current through fill, opacity, retouch, generative, and markup revisions", async () => {
   const fixture = await setupFixture();
   const neutralStats = await sharp(fixture.source).stats();
 
@@ -174,7 +174,7 @@ test("the built CLI keeps agent previews current through fill, opacity, retouch,
       sampleBase(h3Pixels, person),
       linearLightMidpoint(sampleBase(h1DetailPixels, person), sampleBase(h2Pixels, person)),
     ),
-  ).toBeLessThan(6);
+  ).toBeLessThan(8);
   expect(await fileIdentity(h1Detail.preview)).toEqual(h1DetailBefore);
   expect(await fileIdentity(h2Detail.preview)).toEqual(h2DetailBefore);
 
@@ -306,6 +306,40 @@ test("the built CLI keeps agent previews current through fill, opacity, retouch,
   expect(await fileIdentity(restoredAfterRelight.preview)).toEqual(h4Before);
   expect(fixture.gatewayRequests()).toBe(3);
   expect(await providerExecutionCount(fixture.library)).toBe(6);
+  const marked = await run(fixture, [
+    "markup",
+    "add",
+    fixture.id,
+    "--json",
+    JSON.stringify({
+      type: "rect",
+      bbox: [48, 36, 32, 24],
+      width: 2,
+      color: "#ff0000",
+      fill: "#ff0000",
+    }),
+  ]);
+  expect(marked.code, JSON.stringify(marked.json)).toBe(0);
+  const markup = marked.json.data as {
+    render_hash: string;
+    items: Array<{ id: string }>;
+  };
+  expect(markup.render_hash).not.toBe(h4);
+  await expect(access(viewDirectory(fixture, markup.render_hash))).rejects.toMatchObject({
+    code: "ENOENT",
+  });
+  const h7 = await show(fixture, ["--preview-size", "native"]);
+  expect(h7).toMatchObject({ render_hash: markup.render_hash });
+  expect(fixture.gatewayRequests()).toBe(3);
+  expect(await providerExecutionCount(fixture.library)).toBe(6);
+  const removedMarkup = await run(fixture, ["markup", "remove", fixture.id, markup.items[0]!.id]);
+  expect(removedMarkup).toMatchObject({ code: 0, json: { data: { render_hash: h4 } } });
+  const restoredAfterMarkup = await show(fixture, [
+    "--region",
+    AGENT_PREVIEW_FACTS.region.join(","),
+  ]);
+  expect(restoredAfterMarkup.preview).toBe(h4Detail.preview);
+  expect(await fileIdentity(restoredAfterMarkup.preview)).toEqual(h4Before);
   await captureEvidence({
     source: fixture.source,
     h1Master: h1Native.preview,

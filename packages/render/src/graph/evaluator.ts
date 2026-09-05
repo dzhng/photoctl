@@ -44,6 +44,9 @@ import {
   transformPixels,
 } from "@photoctl/img";
 import type { MaskImage } from "../mask-tiff.js";
+import { drawMarkup, scaleMarkupDocument } from "../markup/flatten.js";
+import { markupDocumentSchema } from "@photoctl/protocol";
+import { developGeometryMatrix, scaleDevelopGeometry } from "../develop/geometry.js";
 
 export interface EvaluatedNode {
   artifact: PublishedArtifact;
@@ -388,6 +391,27 @@ async function runOperation(
         ),
       };
     }
+    if (kind === "markup") {
+      if (inputs.length !== 1) throw new Error("Markup evaluation requires one RGB input");
+      const image = await readRgbInput(inputs[0]!);
+      const parsed = imageNodeRegistry.markup.parameters.parse(parameters);
+      const projection = await loadMarkupProjection(
+        request.database,
+        request.photoId,
+        nodeId,
+        inputs[0]!,
+      );
+      return {
+        image: await drawMarkup(
+          image,
+          scaleMarkupDocument(markupDocumentSchema.parse(parsed.document), projection.catalogBase, {
+            w: projection.baseW,
+            h: projection.baseH,
+          }),
+          projection,
+        ),
+      };
+    }
     if (kind === "solid") {
       return { image: await evaluateSolid(parameters) };
     }
@@ -425,6 +449,78 @@ async function runOperation(
     );
   }
   return { image: result };
+}
+
+async function loadMarkupProjection(
+  database: GraphTransaction,
+  photoId: string,
+  markupNodeId: string,
+  input: EvaluatedNode,
+) {
+  const result = await database.query<{
+    depth: number;
+    kind: string;
+    parameters: JsonValue;
+    w: number;
+    h: number;
+    catalog_w: number;
+    catalog_h: number;
+  }>(
+    `WITH RECURSIVE lineage(node_id, artifact_hash, depth) AS (
+       SELECT edge.input_node_id, $3::text, 0
+       FROM image_node_inputs AS edge
+       WHERE edge.photo_id = $1 AND edge.node_id = $2 AND edge.input_index = 0
+       UNION ALL
+       SELECT edge.input_node_id, execution_input.input_artifact_hash, lineage.depth + 1
+       FROM lineage
+       JOIN image_node_inputs AS edge
+         ON edge.photo_id = $1 AND edge.node_id = lineage.node_id AND edge.input_index = 0
+       JOIN LATERAL (
+         SELECT execution_input.input_artifact_hash
+         FROM node_executions AS execution
+         JOIN node_execution_inputs AS execution_input
+           ON execution_input.photo_id = execution.photo_id
+          AND execution_input.execution_id = execution.execution_id
+          AND execution_input.input_index = 0
+         WHERE execution.photo_id = $1
+           AND execution.node_id = lineage.node_id
+           AND execution.output_artifact_hash = lineage.artifact_hash
+         ORDER BY execution.created_at DESC, execution.execution_id
+         LIMIT 1
+       ) AS execution_input ON true
+     )
+     SELECT lineage.depth, node.kind, node.parameters, artifact.w, artifact.h,
+            photo.w AS catalog_w, photo.h AS catalog_h
+     FROM lineage
+     JOIN image_nodes AS node ON node.photo_id = $1 AND node.id = lineage.node_id
+     JOIN image_artifacts AS artifact ON artifact.artifact_hash = lineage.artifact_hash
+     JOIN photos AS photo ON photo.id = $1
+     ORDER BY lineage.depth`,
+    [photoId, markupNodeId, input.artifact.artifactHash],
+  );
+  const rows = result.rows;
+  const first = rows[0];
+  if (!first) throw new Error(`Markup input execution is unavailable: ${input.executionId}`);
+  const developIndex = rows.findIndex(({ kind }) => kind === "develop");
+  const sourceBase = developIndex >= 0 ? rows[developIndex + 1] : rows.at(-1);
+  if (!sourceBase) throw new Error("Markup develop input execution is unavailable");
+  const catalogBase = { w: first.catalog_w, h: first.catalog_h };
+  const actualBase = { w: sourceBase.w, h: sourceBase.h };
+  const develop = developIndex >= 0 ? rows[developIndex]!.parameters : {};
+  const geometry = developGeometryMatrix(
+    actualBase.w,
+    actualBase.h,
+    scaleDevelopGeometry(developDictSchema.parse(develop), catalogBase, actualBase),
+  );
+  if (geometry.w !== input.artifact.w || geometry.h !== input.artifact.h) {
+    throw new Error("Markup geometry does not match its evaluated RGB input");
+  }
+  return {
+    baseW: actualBase.w,
+    baseH: actualBase.h,
+    matrix: geometry.matrix,
+    catalogBase,
+  };
 }
 
 async function evaluateResample(

@@ -62,6 +62,17 @@ interface NativeBinding {
     refinementIterations: number,
     refinementPixelBudget: number,
   ): Promise<Float32Array>;
+  drawMarkupPixels(
+    data: Float32Array,
+    width: number,
+    height: number,
+    documentJson: string,
+  ): Promise<Float32Array>;
+  drawMarkupOverlay(
+    width: number,
+    height: number,
+    documentJson: string,
+  ): Promise<{ color: Float32Array; mask: Float32Array }>;
   developCameraFront(
     data: Float32Array,
     whiteLevel: number,
@@ -564,6 +575,26 @@ export async function healPixels(
       refinementPixelBudget,
     ),
   );
+}
+
+export async function drawMarkupPixels(
+  data: Float32Array,
+  width: number,
+  height: number,
+  documentJson: string,
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().drawMarkupPixels(data, width, height, documentJson),
+  );
+}
+
+export async function drawMarkupOverlay(
+  width: number,
+  height: number,
+  documentJson: string,
+): Promise<{ color: Float32Array; mask: Float32Array }> {
+  const overlay = await requiredBinding().drawMarkupOverlay(width, height, documentJson);
+  return { color: asFloat32Array(overlay.color), mask: asFloat32Array(overlay.mask) };
 }
 
 export async function transformArtifactPixels(

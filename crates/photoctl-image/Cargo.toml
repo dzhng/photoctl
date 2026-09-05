@@ -8,11 +8,14 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+fontdue = "0.9"
 libc = "0.2"
 libraw-sys = { path = "../libraw-sys" }
 napi = { version = "3.3", default-features = false, features = ["napi8"] }
 napi-derive = "3.2"
 ort = "=2.0.0-rc.13"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [build-dependencies]
 napi-build = "2.4"

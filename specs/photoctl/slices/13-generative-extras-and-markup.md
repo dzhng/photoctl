@@ -27,7 +27,7 @@
 - **13b** `develop <id> --auto-enhance`: `develop/stats.ts` on the 1024 sRGB preview (Rec.709 Y; p02/p50/p98/clipped/mean_sat/est_wb_k)
   → `StructuredModelAdapter` with the C4 schema → one `--set` batch, clamped; `develop_before_auto` stored for `--undo-auto`.
   Test: fake output lands, clamped, `--undo-auto` restores. Deps 09a, 08.
-- **13c** Migration (next number) `markup(photo_id, items jsonb)`; `markup add <id> --json '{type,…}'` with per-primitive shapes:
+- **13c** ✓ Migration (next number) `markup(photo_id, items jsonb)`; `markup add <id> --json '{type,…}'` with per-primitive shapes:
   `text{at,text,size_px,color}`, `arrow|line{from,to,width,color}`, `rect|ellipse{bbox,width,color,fill?}`, `path{points,width,color}`,
   `highlight{bbox,color,opacity}`; bundled OFL font Inter; `photoctl-image::draw` into the composite node; `markup list|update|remove|clear`.
   Test: opaque red rect → red pixels there, nothing else changed. Deps 10.
@@ -72,3 +72,18 @@ failure leaves the active revision unchanged. Preview materialization remains cu
 are its required model input, while the newly committed develop result is not rendered until the next consuming command.
 
 The deterministic visual checkpoint and its no-op/geometry telemetry live in [`../assets/auto-enhance/`](../assets/auto-enhance/).
+
+## 13c vector-markup checkpoint — 2026-09-05
+
+Markup is one ordered vector document owned by the photo. Its strict public item schemas are the durable editing contract; the
+active render graph carries the same document in a deterministic final `markup` node so previews and exports share one flattening
+path. Adding, updating, removing, clearing, and revision undo keep the table, active revision, and render identity atomic.
+
+Coordinates remain in oriented, uncropped base space. The renderer rasterizes there, then projects premultiplied color and coverage
+through the active develop geometry before compositing over the final RGB result. That preserves crop, quarter-turn, and straighten
+semantics without rewriting stored vectors. Display-sRGB style colors are converted to scene-linear Rec. 2020 before blending, and
+the bundled Inter font makes text deterministic without a host-font dependency.
+
+The deterministic checkpoint in [`../assets/markup/`](../assets/markup/) shows the exact unchanged base, the flattened red rectangle,
+and the same base-space rectangle after crop plus rotation. The CLI journey also proves lazy materialization, exact restoration after
+removal, and bit-exact pixels outside the primitive for the identity-geometry case.

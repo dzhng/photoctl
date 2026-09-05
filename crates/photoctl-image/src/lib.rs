@@ -1,6 +1,7 @@
 //! Native image operations for photoctl.
 
 mod develop;
+mod draw;
 mod heal;
 mod mask;
 mod publication;
@@ -31,6 +32,91 @@ pub use resample::{
     resample_display_srgb, resample_display_srgb_region, resample_display_srgb8, resample_pixels,
     transform_pixels,
 };
+
+#[napi]
+pub fn draw_markup_pixels(
+    data: Float32Array,
+    width: u32,
+    height: u32,
+    document_json: String,
+) -> napi::Result<AsyncTask<DrawMarkupTask>> {
+    draw::validate_markup_request(&data, width, height, &document_json)
+        .map_err(|message| Error::new(Status::InvalidArg, message))?;
+    Ok(AsyncTask::new(DrawMarkupTask {
+        data: data.to_vec(),
+        width,
+        height,
+        document_json,
+    }))
+}
+
+pub struct DrawMarkupTask {
+    data: Vec<f32>,
+    width: u32,
+    height: u32,
+    document_json: String,
+}
+
+#[napi(object)]
+pub struct MarkupOverlay {
+    pub color: Float32Array,
+    pub mask: Float32Array,
+}
+
+#[napi]
+pub fn draw_markup_overlay(
+    width: u32,
+    height: u32,
+    document_json: String,
+) -> AsyncTask<DrawMarkupOverlayTask> {
+    AsyncTask::new(DrawMarkupOverlayTask {
+        width,
+        height,
+        document_json,
+    })
+}
+
+pub struct DrawMarkupOverlayTask {
+    width: u32,
+    height: u32,
+    document_json: String,
+}
+
+impl Task for DrawMarkupOverlayTask {
+    type Output = (Vec<f32>, Vec<f32>);
+    type JsValue = MarkupOverlay;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        draw::draw_markup_overlay(self.width, self.height, &self.document_json)
+            .map_err(|message| Error::new(Status::GenericFailure, message))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(MarkupOverlay {
+            color: data.0.into(),
+            mask: data.1.into(),
+        })
+    }
+}
+
+impl Task for DrawMarkupTask {
+    type Output = Vec<f32>;
+    type JsValue = Float32Array;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        draw::draw_markup(
+            std::mem::take(&mut self.data),
+            self.width,
+            self.height,
+            &self.document_json,
+        )
+        .map_err(|message| Error::new(Status::GenericFailure, message))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(data.into())
+    }
+}
 
 #[derive(Debug)]
 pub struct CameraImage {

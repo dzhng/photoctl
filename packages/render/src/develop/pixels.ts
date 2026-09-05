@@ -12,6 +12,7 @@ import {
   applyDevelopArtifactGeometry,
   applyDevelopGeometry,
   hasDevelopGeometry,
+  scaleDevelopGeometry,
 } from "./geometry.js";
 
 const IMPLEMENTED_KEYS = new Set([
@@ -140,27 +141,6 @@ function hasPixelDevelop(parameters: DevelopDict): boolean {
   return Object.keys(parameters).some(
     (key) => !["preset", "crop", "rotate", "straighten_deg", "aspect_ratio"].includes(key),
   );
-}
-
-function scaleDevelopGeometry(
-  parameters: DevelopDict,
-  base: { w: number; h: number },
-  source: { w: number; h: number },
-): DevelopDict {
-  if (!parameters.crop || (base.w === source.w && base.h === source.h)) return parameters;
-  const scaleX = source.w / base.w;
-  const scaleY = source.h / base.h;
-  const x = parameters.crop.x * scaleX;
-  const y = parameters.crop.y * scaleY;
-  return {
-    ...parameters,
-    crop: {
-      x,
-      y,
-      w: Math.min(source.w, (parameters.crop.x + parameters.crop.w) * scaleX) - x,
-      h: Math.min(source.h, (parameters.crop.y + parameters.crop.h) * scaleY) - y,
-    },
-  };
 }
 
 function nativeParameters(parameters: DevelopDict): NativeDevelopParameters {

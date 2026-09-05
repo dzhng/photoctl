@@ -34,6 +34,8 @@ export * from "./layers/operations.js";
 export * from "./layers/status.js";
 export * from "./transforms.js";
 export * from "./retouch.js";
+export * from "./markup/flatten.js";
+export * from "./markup/state.js";
 export * from "./reimagine.js";
 export * from "./generate.js";
 export * from "./fill/crop.js";

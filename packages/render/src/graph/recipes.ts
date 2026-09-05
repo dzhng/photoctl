@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
+import { markupDocumentSchema } from "@photoctl/protocol";
 import type {
   ImageNodeKind,
   JsonValue,
@@ -230,7 +231,7 @@ export const imageNodeRegistry = {
     1,
     true,
   ),
-  markup: definition(z.object({ document: z.record(z.string(), jsonSchema) }).strict(), 1, 1, true),
+  markup: definition(z.object({ document: markupDocumentSchema }).strict(), 1, 1, true),
   output: definition(
     z
       .object({

@@ -29,6 +29,12 @@ import {
   type RevisionLayer,
   type RevisionLayerDraft,
 } from "../layers/model.js";
+import type { MarkupDocument } from "@photoctl/protocol";
+import {
+  projectMarkupRequest,
+  restoreMarkupForRevision,
+  unwrapMarkupProjection,
+} from "../markup/graph.js";
 
 interface QueryResult<Row> {
   rows: Row[];
@@ -60,6 +66,8 @@ export interface CommitRevisionRequest {
   artifacts?: PublishedArtifact[];
   executions?: PreparedNodeExecution[];
   metadata?: Record<string, JsonValue>;
+  /** Replaces the photo's vector overlay in the same transaction as this revision. */
+  markupDocument?: MarkupDocument;
 }
 export interface PreparedNodeExecution {
   node: NodeReference;
@@ -218,11 +226,12 @@ export async function commitRevisionInTransaction(
   if (activeRevisionId !== request.expectedRevisionId) {
     throw new RevisionConflictError();
   }
+  const markupProjection = await projectMarkupRequest(transaction, request, activeRevisionId);
   await mapInOrder(request.artifacts ?? [], async (artifact) => {
     await registerPublishedArtifact(transaction, artifact);
   });
 
-  const drafts = new Map(request.nodes.map((node) => [node.localKey, node]));
+  const drafts = new Map(markupProjection.nodes.map((node) => [node.localKey, node]));
   const resolved = new Map<string, StoredImageNode>();
   const resolving = new Set<string>();
   const resolveReference = async (reference: NodeReference): Promise<StoredImageNode> => {
@@ -260,7 +269,7 @@ export async function commitRevisionInTransaction(
   };
 
   const rootUpdates = new Map<"base" | "output", string>(
-    await mapInOrder(request.rootUpdates, async (update) => {
+    await mapInOrder(markupProjection.rootUpdates, async (update) => {
       const node = await resolveReference(update.node);
       return [update.root, node.id];
     }),
@@ -301,11 +310,15 @@ export async function commitRevisionInTransaction(
         preparedNodeIds,
       )
     : await loadRevisionLayers(transaction, request.photoId, activeRevisionId!);
+  const updatedOutputIsMarkup = rootUpdates.has("output")
+    ? (await loadNode(transaction, request.photoId, resultingRoots.output)).kind === "markup"
+    : false;
   if (
     request.layers === undefined &&
     layers.length === 0 &&
     rootUpdates.has("output") &&
-    !rootUpdates.has("base")
+    !rootUpdates.has("base") &&
+    !updatedOutputIsMarkup
   ) {
     resultingRoots.base = resultingRoots.output;
     rootUpdates.set("base", resultingRoots.base);
@@ -349,6 +362,7 @@ export async function commitRevisionInTransaction(
     resultingRoots.base,
     resultingRoots.output,
     layers,
+    markupProjection.document,
   );
   if (resolved.size !== drafts.size) {
     throw new Error(
@@ -393,6 +407,13 @@ export async function commitRevisionInTransaction(
     );
   }
   await storeRevisionLayers(transaction, request.photoId, revisionId, layers);
+  if (request.markupDocument !== undefined) {
+    await transaction.query(
+      `INSERT INTO markup (photo_id, items) VALUES ($1, $2::jsonb)
+       ON CONFLICT (photo_id) DO UPDATE SET items = EXCLUDED.items`,
+      [request.photoId, canonicalJson(markupProjection.document)],
+    );
+  }
   await transaction.query(
     "UPDATE photo_documents SET active_revision_id = $1 WHERE photo_id = $2",
     [revisionId, request.photoId],
@@ -514,6 +535,7 @@ export async function undoRevision(
       [activeRevisionId, request.photoId],
     );
     const parentRevisionId = revision.rows[0]?.parent_revision_id ?? null;
+    await restoreMarkupForRevision(transaction, request.photoId, parentRevisionId);
     await transaction.query(
       "UPDATE photo_documents SET active_revision_id = $1 WHERE photo_id = $2",
       [parentRevisionId, request.photoId],
@@ -940,6 +962,7 @@ async function assertCompositeProjection(
   baseNodeId: string,
   outputNodeId: string,
   layers: RevisionLayer[],
+  markupDocument: MarkupDocument,
 ): Promise<void> {
   if ((await nodePixelKind(transaction, photoId, baseNodeId)) !== "rgb") {
     throw new Error("A document base root must produce RGB pixels");
@@ -947,13 +970,19 @@ async function assertCompositeProjection(
   if ((await nodePixelKind(transaction, photoId, outputNodeId)) !== "rgb") {
     throw new Error("A document output root must produce RGB pixels");
   }
+  const projectedOutputNodeId = await unwrapMarkupProjection(
+    transaction,
+    photoId,
+    outputNodeId,
+    markupDocument,
+  );
   if (layers.length === 0) {
-    if (baseNodeId !== outputNodeId) {
+    if (baseNodeId !== projectedOutputNodeId) {
       throw new Error("A revision without layers must project its base directly to output");
     }
     return;
   }
-  const output = await loadNode(transaction, photoId, outputNodeId);
+  const output = await loadNode(transaction, photoId, projectedOutputNodeId);
   if (output.kind !== "composite" || output.recipeVersion !== 2) {
     throw new Error("A layered revision output must be a composite recipe version 2");
   }
@@ -970,7 +999,7 @@ async function assertCompositeProjection(
   const inputs = await transaction.query<{ input_node_id: string }>(
     `SELECT input_node_id FROM image_node_inputs
      WHERE photo_id = $1 AND node_id = $2 ORDER BY input_index`,
-    [photoId, outputNodeId],
+    [photoId, projectedOutputNodeId],
   );
   if (
     inputs.rows.length !== expected.inputs.length ||
@@ -1057,7 +1086,11 @@ function assertRequestShape(request: CommitRevisionRequest): void {
   }
   const roots = request.rootUpdates.map((update) => update.root);
   if (new Set(roots).size !== roots.length) throw new Error("A revision may update each root once");
-  if (request.rootUpdates.length === 0 && request.layers === undefined) {
+  if (
+    request.rootUpdates.length === 0 &&
+    request.layers === undefined &&
+    request.markupDocument === undefined
+  ) {
     throw new Error("A revision must redirect a document root or replace the layer snapshot");
   }
 }

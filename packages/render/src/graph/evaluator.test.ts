@@ -384,6 +384,81 @@ test("source fallback keeps render state stable while recording a distinct sourc
   }
 });
 
+test("markup and develop geometry scale from catalog space to a smaller evaluated source", async () => {
+  const db = await testDatabase();
+  await migrate(db);
+  const library = await mkdtemp(join(tmpdir(), "photoctl-markup-source-scale-"));
+  directories.push(library);
+  await db.query(
+    `INSERT INTO photos (id, content_key, size, w, h, orientation)
+     VALUES ($1, 'ck_markup_source_scale', 1, 8, 8, 1)`,
+    [photoId],
+  );
+  const initial = await commitRevision(db, {
+    photoId,
+    expectedRevisionId: null,
+    nodes: [
+      {
+        localKey: "source",
+        kind: "source",
+        recipeVersion: 1,
+        parameters: { orientation: 1 },
+        inputs: [],
+      },
+      {
+        localKey: "develop",
+        kind: "develop",
+        recipeVersion: 1,
+        parameters: { crop: { x: 2, y: 2, w: 4, h: 4 } },
+        inputs: [{ localKey: "source" }],
+      },
+    ],
+    rootUpdates: [{ root: "output", node: { localKey: "develop" } }],
+  });
+  const marked = await commitRevision(db, {
+    photoId,
+    expectedRevisionId: initial.revisionId,
+    nodes: [],
+    rootUpdates: [],
+    markupDocument: [
+      {
+        id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c173",
+        type: "rect",
+        bbox: [4, 4, 2, 2],
+        width: 1,
+        color: "#ffffff",
+        fill: "#ffffff",
+      },
+    ],
+  });
+
+  try {
+    const source = linearFixture(
+      4,
+      4,
+      Array.from({ length: 16 }, () => 0),
+    );
+    const evaluated = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId: marked.roots.output!,
+      developBaseDimensions: { w: 8, h: 8 },
+      source: async () => sourceEvaluationFor(source),
+    });
+    const output = await readArtifactLinear(
+      evaluated.artifact.path,
+      evaluated.artifact.artifactHash,
+    );
+
+    expect([output.w, output.h]).toEqual([2, 2]);
+    expect(output.data[(1 * output.w + 1) * 3]).toBeGreaterThan(0.5);
+    expect(output.data[0]).toBe(0);
+  } finally {
+    await db.close();
+  }
+});
+
 test("changed source pixels at the same locator create a new source evaluation", async () => {
   const { db, library, nodeId } = await sourceGraph();
   try {
