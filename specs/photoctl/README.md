@@ -73,7 +73,9 @@ Slice files and their assets hold the detailed acceptance evidence.
 failed detailed edges and historical full-command memory breaches. Pointwise buffer reuse and
 pixel-free cached dimensions and prepared inference handles are integrated (19 merged tests and
 typecheck). Native color snapshots now report their actual capacity to Node; six no-forced-GC CLI
-runs preserve exact masks at 2.04–2.27 GB RSS on the fixture host. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
+runs preserve exact masks at 2.04–2.27 GB RSS on the fixture host. The separate full-resolution
+multi-photo cache probe remains red at 3.161 GB, stopping after two inputs; resampler snapshot
+accounting is the next bounded memory pass. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
 single/multi-mask references all fail detailed edges. Any extra refinement is a separate decision.
 [Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
 Docker's functional gate now consumes hash-verified models and runs the shared real-model test;

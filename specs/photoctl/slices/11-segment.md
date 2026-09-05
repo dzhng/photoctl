@@ -85,7 +85,10 @@ The default scan-order workbench crop is not sufficient to reveal these defects;
 crops remain necessary. Exact pointwise buffer reuse and pixel-free cached dimensions are integrated,
 and prepared handles release full-frame captures before inference. Native color snapshots now
 report their capacity to Node; six no-forced-GC CLI runs preserve exact masks and pass the unchanged
-3 GB RSS band on the fixture host. Other platforms and photographic edge quality are not implied.
+3 GB RSS band on the fixture host. Repeated full-resolution multi-photo use remains red at
+3.161 GB after two inputs; that display-RGB path bypasses the color guard. Resampler snapshot
+accounting is the next bounded candidate, not a proven resource fix. Other platforms and
+photographic edge quality are not implied.
 The actual photographic tensor now agrees with pinned PyTorch at the unchanged tolerance, including
 all but two full-resolution mask pixels. Controlled square geometry improves wires/path but worsens
 foliage; both fail the target. The full upstream predictor also fails with single-mask and automatic
