@@ -176,7 +176,7 @@ test("the current graph fixture preserves its active lazy source revision", asyn
     expect(result).toEqual({
       fromVersion: 5,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 5 }, (_, index) => index + 6),
     });
     expect(document.rows).toEqual([
       {
@@ -213,7 +213,7 @@ test("the current delivery fixture preserves export history", async () => {
     expect(result).toEqual({
       fromVersion: 6,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 6 }, (_, index) => index + 7),
     });
     expect(history.rows).toEqual([
       {
@@ -242,7 +242,7 @@ test("the current provider fixture has the bounded external-execution seam", asy
     expect(result).toEqual({
       fromVersion: 7,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 7 }, (_, index) => index + 8),
     });
     expect(column.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
     const revisionMetadata = await db.query<{ is_nullable: string; data_type: string }>(
@@ -292,7 +292,7 @@ test("the v8 search fixture gains typed base and output roots without changing i
     expect(result).toEqual({
       fromVersion: 8,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 8 }, (_, index) => index + 9),
     });
     expect(document.rows).toEqual([
       { root_name: "base", node_id: `node_${"1".repeat(64)}`, matched: true },
@@ -347,7 +347,7 @@ test("the v9 layer fixture gains the explicit deterministic solid RGB node kind"
     expect(result).toEqual({
       fromVersion: 9,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [10, 11, 12, 13, 14, 15, 16, 17, 18],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 9 }, (_, index) => index + 10),
     });
     expect(kinds.rows).toEqual([{ kind: "solid" }]);
   } finally {
@@ -370,7 +370,7 @@ test("the v13 revision-metadata fixture preserves its auto-enhance undo contract
     expect(result).toEqual({
       fromVersion: 13,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [14, 15, 16, 17, 18],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 13 }, (_, index) => index + 14),
     });
     expect(revision.rows).toEqual([
       {
@@ -418,7 +418,7 @@ test("the v14 fixture preserves a source-less generated photo and its provider p
     expect(result).toEqual({
       fromVersion: 14,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [15, 16, 17, 18],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 14 }, (_, index) => index + 15),
     });
     expect(generated.rows).toEqual([
       { tag: "generated", recipe_version: 2, inputs: "0", output_kind: "output", seed: 7 },
@@ -439,7 +439,7 @@ test("the v15 markup fixture preserves its stable vector document", async () => 
     expect(result).toEqual({
       fromVersion: 15,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [16, 17, 18],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 15 }, (_, index) => index + 16),
     });
     expect(markup.rows).toEqual([
       {
@@ -466,7 +466,7 @@ test("the v16 fixture preserves derived effective-mask intent and its original s
     expect(await migrate(db)).toEqual({
       fromVersion: 16,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [17, 18],
+      applied: Array.from({ length: LATEST_SCHEMA_VERSION - 16 }, (_, index) => index + 17),
     });
     const masks = await db.query<{ parameters: unknown; source_parameters: unknown }>(
       `SELECT node.parameters, source.parameters AS source_parameters
@@ -488,6 +488,40 @@ test("the v16 fixture preserves derived effective-mask intent and its original s
 async function fixture(name: string): Promise<string> {
   return await readFile(new URL(`../../../../fixtures/libraries/${name}`, import.meta.url), "utf8");
 }
+
+test("the v19 fixture retains immutable geometry intent and layer authoring relations", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v19.pgsql"));
+    await migrate(db);
+    const layers = await db.query<{ name: string; sequence: number | null }>(
+      `SELECT snapshot.name, (checkpoint.parameters->>'sequence')::int AS sequence
+       FROM photo_documents document
+       JOIN document_revision_layers snapshot ON snapshot.photo_id = document.photo_id AND snapshot.revision_id = document.active_revision_id
+       JOIN layers identity ON identity.photo_id = snapshot.photo_id AND identity.id = snapshot.layer_id
+       LEFT JOIN image_nodes checkpoint ON checkpoint.photo_id = identity.photo_id AND checkpoint.id = identity.authored_checkpoint_node_id
+       ORDER BY snapshot.name`,
+    );
+    expect(layers.rows).toEqual([
+      { name: "After", sequence: 1 },
+      { name: "Before", sequence: null },
+      { name: "Before copy", sequence: null },
+    ]);
+    const root = await db.query<{ type: string; sequence: number; head_matches: boolean }>(
+      `SELECT intent.parameters->>'type' AS type, (intent.parameters->>'sequence')::int AS sequence,
+         EXISTS(SELECT 1 FROM layers identity WHERE identity.photo_id = root.photo_id AND identity.authored_checkpoint_node_id = edge.input_node_id) AS head_matches
+       FROM photo_documents document JOIN document_revision_roots root ON root.photo_id = document.photo_id AND root.revision_id = document.active_revision_id
+       JOIN image_nodes intent ON intent.photo_id = root.photo_id AND intent.id = root.node_id
+       JOIN image_node_inputs edge ON edge.photo_id = intent.photo_id AND edge.node_id = intent.id
+       WHERE root.root_name = 'geometry'`,
+    );
+    expect(root.rows).toEqual([{ type: "intent", sequence: 1, head_matches: true }]);
+    expect((await db.query("SELECT w, h FROM photos")).rows).toEqual([{ w: 16, h: 12 }]);
+    expect((await db.query("SELECT 1 FROM node_executions")).rows).toHaveLength(0);
+  } finally {
+    await db.close();
+  }
+});
 
 test("the v18 fixture retains both reference encodings without a source execution", async () => {
   const db = await testDatabase();

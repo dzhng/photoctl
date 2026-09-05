@@ -3,7 +3,6 @@ import {
   canonicalNodeRecipe,
   deterministicExecutionId,
   evaluationHash,
-  imageNodeRegistry,
   logicalNodeId,
   newExecutionId,
   recipeHash,
@@ -54,7 +53,30 @@ test("logical recipes canonicalize parameters but preserve ordered node inputs",
       inputNodeIds: [inputs[0]],
     }),
   ).toThrow();
-  expect(Object.keys(imageNodeRegistry)).toHaveLength(15);
+});
+
+test("geometry intent participates in render identity without changing legacy identities", () => {
+  const output = `node_${"1".repeat(64)}`;
+  const intent = logicalNodeId(
+    recipeHash(
+      canonicalNodeRecipe({
+        kind: "geometry",
+        recipeVersion: 1,
+        parameters: { type: "intent", sequence: 0, crop_activation: 0, aspect_activation: 0 },
+        inputNodeIds: [],
+      }),
+    ),
+  );
+  expect(renderHashForNode(output, intent)).not.toBe(renderHashForNode(output));
+  expect(renderHashForNode(output, undefined)).toBe(renderHashForNode(output));
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "geometry",
+      recipeVersion: 1,
+      parameters: { type: "intent", sequence: 0, crop_activation: 1, aspect_activation: 0 },
+      inputNodeIds: [],
+    }),
+  ).toThrow();
 });
 
 test("solid RGB is an explicit deterministic zero-input recipe", () => {

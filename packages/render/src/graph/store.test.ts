@@ -14,9 +14,145 @@ import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { compositeV2Projection } from "./output.js";
 import { MASK_ARTIFACT_MEDIA_TYPE } from "../artifacts/publication.js";
 import { canonicalNodeRecipe, evaluationHash, logicalNodeId, recipeHash } from "./recipes.js";
+import { developFrame, savedRenderFrame } from "./frame.js";
+import { duplicateLayer } from "../layers/operations.js";
+import { inspectGraph } from "./inspection.js";
 
 const firstPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
 const secondPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
+
+test("geometry intent is an immutable inherited revision root, restored by undo without pixel executions", async () => {
+  const db = await graphDatabase();
+  try {
+    const original = await ensurePhotoDocument(db, { photoId: firstPhoto, orientation: 1 });
+    const authored = await commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: original.revisionId,
+      nodes: [
+        {
+          localKey: "checkpoint",
+          kind: "geometry",
+          recipeVersion: 1,
+          parameters: {
+            type: "checkpoint",
+            sequence: 1,
+            crop_activation: 0,
+            aspect_activation: 0,
+            geometry: {},
+            input_frame: savedRenderFrame(developFrame({ w: 8, h: 6 }, { w: 8, h: 6 })),
+            outer_frame: savedRenderFrame(developFrame({ w: 8, h: 6 }, { w: 8, h: 6 })),
+          },
+          inputs: [],
+        },
+        {
+          localKey: "intent",
+          kind: "geometry",
+          recipeVersion: 1,
+          parameters: { type: "intent", sequence: 1, crop_activation: 0, aspect_activation: 0 },
+          inputs: [{ localKey: "checkpoint" }],
+        },
+      ],
+      rootUpdates: [{ root: "geometry", node: { localKey: "intent" } }],
+    });
+    expect((await loadActiveDocument(db, firstPhoto))?.roots.geometry).toBe(
+      authored.nodes.intent.id,
+    );
+    const layers: RevisionLayerDraft[] = [
+      {
+        layer: { localKey: "later-layer" },
+        name: "Later layer",
+        z: 0,
+        contentNode: { nodeId: original.outputNodeId },
+        maskNode: { localKey: "later-mask" },
+        opacity: 1,
+        blend: "normal",
+        enabled: false,
+      },
+      {
+        layer: { localKey: "earlier-layer" },
+        name: "Earlier layer",
+        z: 1,
+        contentNode: { nodeId: original.outputNodeId },
+        maskNode: { localKey: "later-mask" },
+        opacity: 1,
+        blend: "normal",
+        enabled: false,
+      },
+    ];
+    const inherited = await commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: authored.revisionId,
+      nodes: [
+        mask("later-mask", "1"),
+        {
+          localKey: "later-output",
+          kind: "composite",
+          recipeVersion: 2,
+          ...compositeV2Projection({ nodeId: original.outputNodeId }, layers),
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "later-output" } }],
+      newLayers: [
+        { localKey: "later-layer", role: "subject" },
+        { localKey: "earlier-layer", role: "subject", authoredCheckpointNode: null },
+      ],
+      layers,
+      metadata: { unrelated: true },
+    });
+    expect(inherited.roots.geometry).toBe(authored.nodes.intent.id);
+    expect(inherited.layers[0].authoredCheckpointNodeId).toBe(authored.nodes.checkpoint.id);
+    expect((await loadActiveDocument(db, firstPhoto))?.layers[0].authoredCheckpointNodeId).toBe(
+      authored.nodes.checkpoint.id,
+    );
+    expect(authored.renderHash).not.toBe(original.renderHash);
+    const inspected = await inspectGraph(db, { photoId: firstPhoto });
+    expect(inspected.roots.geometry).toBe(authored.nodes.intent.id);
+    expect(inspected.renderHash).toBe(inherited.renderHash);
+    const layerGraph = await inspectGraph(db, {
+      photoId: firstPhoto,
+      layerId: inherited.newLayers["later-layer"],
+    });
+    expect(layerGraph.roots.authored_checkpoint).toBe(authored.nodes.checkpoint.id);
+    expect(layerGraph.nodes.some(({ id }) => id === authored.nodes.checkpoint.id)).toBe(true);
+    const duplicate = await duplicateLayer(db, {
+      photoId: firstPhoto,
+      orientation: 1,
+      layer: inherited.newLayers["earlier-layer"],
+    });
+    expect(duplicate.layer.authoredCheckpointNodeId).toBeNull();
+    await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: duplicate.revisionId });
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: inherited.revisionId,
+        nodes: [
+          {
+            localKey: "invalid-checkpoint",
+            kind: "geometry",
+            recipeVersion: 1,
+            parameters: authored.nodes.checkpoint.parameters,
+            inputs: [{ nodeId: original.outputNodeId }],
+          },
+          {
+            localKey: "invalid-intent",
+            kind: "geometry",
+            recipeVersion: 1,
+            parameters: authored.nodes.intent.parameters,
+            inputs: [{ localKey: "invalid-checkpoint" }],
+          },
+        ],
+        rootUpdates: [{ root: "geometry", node: { localKey: "invalid-intent" } }],
+      }),
+    ).rejects.toThrow("Geometry ancestry cannot depend on pixel nodes");
+    expect((await loadActiveDocument(db, firstPhoto))?.revisionId).toBe(inherited.revisionId);
+    await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: inherited.revisionId });
+    await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: authored.revisionId });
+    expect((await loadActiveDocument(db, firstPhoto))?.roots.geometry).toBeUndefined();
+    expect((await db.query("SELECT 1 FROM node_executions")).rows).toHaveLength(0);
+  } finally {
+    await db.close();
+  }
+});
 
 test("one revision atomically stores a chain with ordered shared inputs and redirects output", async () => {
   const db = await graphDatabase();

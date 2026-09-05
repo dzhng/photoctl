@@ -17,6 +17,7 @@ import { migration0015 } from "./0015-markup.js";
 import { migration0016 } from "./0016-effective-masks.js";
 import { migration0017 } from "./0017-execution-frames.js";
 import { migration0018 } from "./0018-reference-images.js";
+import { migration0019 } from "./0019-canvas-intent.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -43,6 +44,7 @@ const migrations = [
   { version: 16, sql: migration0016 },
   { version: 17, sql: migration0017 },
   { version: 18, sql: migration0018 },
+  { version: 19, sql: migration0019 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
@@ -70,6 +72,7 @@ const latestTables = [
   "xmp_state",
 ] as const;
 const latestConstraints = [
+  "layers_photo_id_authored_checkpoint_node_id_fkey",
   "cache_index_bytes_check",
   "cache_index_pkey",
   "document_revision_roots_pkey",

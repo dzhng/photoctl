@@ -4066,3 +4066,40 @@
 - **Verdict:** **Sound.** Exact byte identity is a conservative preservation boundary and keeps wrong-scene
   expectations from surviving fixture replacement. Separate coarse and visual verdicts preserve both gates.
 - **Confidence:** High.
+
+### Geometry authoring — New identities capture the checkpoint unless the caller preserves an older one
+
+- **When:** 12f2 metadata prerequisite, 2026-09-06.
+- **The choice:** Suppose a subject layer exists before a canvas checkpoint, and a second subject is
+  created afterward. The revision writer attaches the second layer to the current immutable
+  checkpoint automatically. If the earlier subject is duplicated afterward, duplication explicitly
+  preserves its original reference, including a null reference meaning it predates any checkpoint.
+  Omitting the optional authoring reference means “created now”; supplying null means “preserve the
+  pre-checkpoint origin.” Both are stored on the stable layer identity, not on its changing position
+  in the paint stack.
+- **The gap:** The lifecycle plan required creation and duplication to have different authoring
+  semantics without choosing whether every editing handler or the existing revision writer owns
+  the default. The writer already creates stable layer identities atomically.
+- **The reach:** New layer-producing operations inherit the correct default without each re-reading
+  geometry history. Operations that copy an identity must preserve its reference explicitly. A
+  photo-scoped database foreign key prevents referring to another photo's checkpoint.
+- **Verdict:** **Sound.** One atomic identity owner supplies the default while preserving the distinct
+  meaning of duplication; no timestamps or mutable parallel history table are needed.
+- **Confidence:** High.
+
+### Geometry metadata — Existing revisions adopt the extra root only when it is authored
+
+- **When:** 12f2 metadata prerequisite, 2026-09-06.
+- **The choice:** Upgrading an existing library adds storage support but does not rewrite every old
+  revision with an empty geometry record. An old photograph keeps its existing render identity;
+  its earlier layers have a null authoring reference. Once an operation explicitly authors geometry
+  metadata, that immutable root becomes part of the document identity and subsequent revisions
+  inherit it. Undo returns to the exact earlier root, including its absence.
+- **The gap:** The plan required durable activation provenance without choosing eager migration of
+  historical revisions versus lazy adoption through the existing graph writer.
+- **The reach:** Unrelated upgrades do not invalidate all existing previews. Consumers must treat an
+  absent geometry root as an ordinary pre-canvas document, not as lost data. Future canvas writers
+  are responsible for the first real activation/checkpoint record.
+- **Verdict:** **Sound.** Optional metadata preserves historical identities and avoids manufacturing
+  authoring history during schema migration.
+- **Confidence:** High.

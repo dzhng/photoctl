@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
 import { graphShowDataSchema, graphNodeDataSchema } from "@photoctl/protocol";
+import { commitRevision, ensurePhotoDocument } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
 
 const directories: string[] = [];
@@ -54,6 +55,38 @@ test("graph show and node expose bounded full-identity records", async () => {
     const node = graphNodeDataSchema.parse(inspected.data);
     expect(node.id).toBe(page.roots.output);
     expect(node.recipe_hash).toMatch(/^recipe_[0-9a-f]{64}$/);
+    const authored = await commitRevision(initialized.handle, {
+      photoId,
+      expectedRevisionId: page.revision_id,
+      nodes: [
+        {
+          localKey: "intent",
+          kind: "geometry",
+          recipeVersion: 1,
+          parameters: { type: "intent", sequence: 0, crop_activation: 0, aspect_activation: 0 },
+          inputs: [],
+        },
+      ],
+      rootUpdates: [{ root: "geometry", node: { localKey: "intent" } }],
+    });
+    const withGeometry = await dispatch(
+      {
+        verb: "graph",
+        args: ["show", photoId],
+        cwd: parent,
+        env: { noDaemon: true },
+      },
+      { version: "test", library: initialized.handle },
+    );
+    expect(withGeometry.ok).toBe(true);
+    if (!withGeometry.ok) return;
+    const geometryPage = graphShowDataSchema.parse(withGeometry.data);
+    expect(geometryPage.roots.geometry).toBe(authored.nodes.intent.id);
+    expect(geometryPage.render_hash).toBe(authored.renderHash);
+    expect(geometryPage.nodes.find(({ id }) => id === authored.nodes.intent.id)).toMatchObject({
+      kind: "geometry",
+      execution_count: 0,
+    });
   } finally {
     await initialized.handle.close();
   }
@@ -70,6 +103,42 @@ test("graph show pages a layer content and mask graph with a revision-and-layer-
        VALUES ($1, 'ck_4567890abcdef124', 1, 3, 2, 1)`,
       [photoId],
     );
+    const original = await ensurePhotoDocument(initialized.handle, { photoId, orientation: 1 });
+    const frame = {
+      catalog: { w: 3, h: 2 },
+      source: { w: 3, h: 2 },
+      raster: { w: 3, h: 2 },
+      sourceToRaster: [1, 0, 0, 1, 0, 0],
+    };
+    const authored = await commitRevision(initialized.handle, {
+      photoId,
+      expectedRevisionId: original.revisionId,
+      nodes: [
+        {
+          localKey: "checkpoint",
+          kind: "geometry",
+          recipeVersion: 1,
+          parameters: {
+            type: "checkpoint",
+            sequence: 1,
+            crop_activation: 0,
+            aspect_activation: 0,
+            geometry: {},
+            input_frame: frame,
+            outer_frame: frame,
+          },
+          inputs: [],
+        },
+        {
+          localKey: "intent",
+          kind: "geometry",
+          recipeVersion: 1,
+          parameters: { type: "intent", sequence: 1, crop_activation: 0, aspect_activation: 0 },
+          inputs: [{ localKey: "checkpoint" }],
+        },
+      ],
+      rootUpdates: [{ root: "geometry", node: { localKey: "intent" } }],
+    });
     const segmented = await dispatch(
       {
         verb: "segment",
@@ -97,6 +166,7 @@ test("graph show pages a layer content and mask graph with a revision-and-layer-
     expect(firstPage.roots).toEqual({
       content: expect.stringMatching(/^node_[0-9a-f]{64}$/),
       mask: expect.stringMatching(/^node_[0-9a-f]{64}$/),
+      authored_checkpoint: authored.nodes.checkpoint.id,
     });
     expect(firstPage.nodes).toHaveLength(1);
     expect(firstPage.next_cursor).toBeTypeOf("string");

@@ -21,6 +21,7 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `libraries/schema-v16.pgsql` | known-good | Derived mask fit parameters retain their original selection ancestry across schema upgrades. |
 | `libraries/schema-v17.pgsql` | known-good | A realized execution frame keeps its source-tier coordinates even when its pixel artifact is unavailable. |
 | `libraries/schema-v18.pgsql` | known-good | A pinned reference retains working RGB and encoded PNG artifacts before any source execution exists. |
+| `libraries/schema-v19.pgsql` | known-good | Immutable geometry intent and per-layer authoring checkpoints survive a dump/restore; duplicating an earlier layer does not make it newly authored. |
 | `models.json` | release contract | Pins the SAM 2.1 source revision, real CPU-parity-verified ONNX hashes, and opsets. Distribution location is configured separately; hashes do not assert model quality or runtime performance. |
 | `xmp/classic.xmp` | known-good | A Classic-style sidecar exercises rating, label, flat and hierarchical keywords, and photoctl's namespaced flag. |
 | `tools/drive.mjs` | generator | `fixtures:drive -- --count N --out DIR` creates deterministic tail-distinct ARW copies and matching Classic-style sidecars. |

@@ -279,10 +279,30 @@ test("manual layer commands create immutable revisions and retain stable identit
           "0.4",
           "--blend",
           "normal",
+          "--enabled",
+          "false",
         ]),
       ),
     );
-    expect(set.layer).toMatchObject({ name: "Lead subject", opacity: 0.4, blend: "normal" });
+    expect(set.layer).toMatchObject({
+      name: "Lead subject",
+      opacity: 0.4,
+      blend: "normal",
+      enabled: false,
+    });
+    const invalidEnabled = await command(initialized.handle, parent, "layer", [
+      "set",
+      photoId,
+      first.layer_id,
+      "--enabled",
+      "yes",
+    ]);
+    expect(invalidEnabled.ok).toBe(false);
+    expect(
+      layerListDataSchema.parse(
+        success(await command(initialized.handle, parent, "layer", ["list", photoId])),
+      ).revision_id,
+    ).toBe(set.revision_id);
 
     const duplicated = layerDuplicateDataSchema.parse(
       success(
@@ -290,7 +310,23 @@ test("manual layer commands create immutable revisions and retain stable identit
       ),
     );
     expect(duplicated.layer_id).not.toBe(first.layer_id);
-    expect(duplicated.layer).toMatchObject({ name: "Lead subject copy", opacity: 0.4 });
+    expect(duplicated.layer).toMatchObject({
+      name: "Lead subject copy",
+      opacity: 0.4,
+      enabled: false,
+    });
+    const reenabled = layerSetDataSchema.parse(
+      success(
+        await command(initialized.handle, parent, "layer", [
+          "set",
+          photoId,
+          first.layer_id,
+          "--enabled",
+          "true",
+        ]),
+      ),
+    );
+    expect(reenabled.layer).toMatchObject({ enabled: true, opacity: 0.4 });
     layerMutationDataSchema.parse(
       success(
         await command(initialized.handle, parent, "layer", [

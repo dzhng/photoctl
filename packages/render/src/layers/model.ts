@@ -9,6 +9,8 @@ export interface NewLayerIdentity {
   localKey: string;
   role: LayerRole;
   ofLayer?: LayerReference | null;
+  /** Omission captures the current checkpoint; duplication explicitly preserves the original. */
+  authoredCheckpointNode?: NodeReference | null;
 }
 
 export interface RevisionLayerDraft {
@@ -26,6 +28,7 @@ export interface RevisionLayer {
   id: string;
   role: LayerRole;
   ofLayer: string | null;
+  authoredCheckpointNodeId: string | null;
   name: string;
   z: number;
   contentNodeId: string;

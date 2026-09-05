@@ -30,6 +30,7 @@ import {
   type RevisionLayerDraft,
 } from "../layers/model.js";
 import { compositeV2Projection } from "./output.js";
+import { loadGeometryAncestry } from "./geometry-intent.js";
 import type { MarkupDocument } from "@photoctl/protocol";
 import {
   projectMarkupRequest,
@@ -61,7 +62,7 @@ export interface CommitRevisionRequest {
   photoId: string;
   expectedRevisionId: string | null;
   nodes: NodeDraft[];
-  rootUpdates: Array<{ root: "base" | "output"; node: NodeReference }>;
+  rootUpdates: Array<{ root: "base" | "output" | "geometry"; node: NodeReference }>;
   newLayers?: NewLayerIdentity[];
   layers?: RevisionLayerDraft[];
   artifacts?: PublishedArtifact[];
@@ -81,14 +82,14 @@ export interface PreparedNodeExecution {
 export interface CommitRevisionResult {
   revisionId: string;
   nodes: Record<string, StoredImageNode>;
-  roots: { base?: string; output?: string };
+  roots: { base?: string; output?: string; geometry?: string };
   newLayers: Record<string, string>;
   layers: RevisionLayer[];
   renderHash: string | null;
 }
 export interface ActiveDocument {
   revisionId: string;
-  roots: { base: string; output: string };
+  roots: { base: string; output: string; geometry?: string };
   layers: RevisionLayer[];
   renderHash: `r_${string}`;
   metadata: Record<string, JsonValue> | null;
@@ -161,13 +162,18 @@ async function loadActiveOutput(
   const existing = await database.query<{
     active_revision_id: string | null;
     node_id: string | null;
+    geometry_node_id: string | null;
   }>(
-    `SELECT document.active_revision_id, root.node_id
+    `SELECT document.active_revision_id, root.node_id, geometry.node_id AS geometry_node_id
      FROM photo_documents AS document
      LEFT JOIN document_revision_roots AS root
        ON root.photo_id = document.photo_id
       AND root.revision_id = document.active_revision_id
       AND root.root_name = 'output'
+     LEFT JOIN document_revision_roots AS geometry
+       ON geometry.photo_id = document.photo_id
+      AND geometry.revision_id = document.active_revision_id
+      AND geometry.root_name = 'geometry'
      WHERE document.photo_id = $1`,
     [photoId],
   );
@@ -176,7 +182,7 @@ async function loadActiveOutput(
   return {
     revisionId: row.active_revision_id,
     outputNodeId: row.node_id as `node_${string}`,
-    renderHash: renderHashForNode(row.node_id),
+    renderHash: renderHashForNode(row.node_id, row.geometry_node_id ?? undefined),
   };
 }
 
@@ -201,9 +207,13 @@ export async function loadActiveDocument(
   if (!roots.base || !roots.output) throw new Error("The active document is missing a typed root");
   return {
     revisionId,
-    roots: { base: roots.base, output: roots.output },
+    roots: {
+      base: roots.base,
+      output: roots.output,
+      ...(roots.geometry ? { geometry: roots.geometry } : {}),
+    },
     layers: await loadRevisionLayers(database, photoId, revisionId),
-    renderHash: renderHashForNode(roots.output),
+    renderHash: renderHashForNode(roots.output, roots.geometry),
     metadata: document.rows[0]?.metadata ?? null,
   };
 }
@@ -269,7 +279,7 @@ export async function commitRevisionInTransaction(
     return node;
   };
 
-  const rootUpdates = new Map<"base" | "output", string>(
+  const rootUpdates = new Map<CommitRevisionRequest["rootUpdates"][number]["root"], string>(
     await mapInOrder(markupProjection.rootUpdates, async (update) => {
       const node = await resolveReference(update.node);
       return [update.root, node.id];
@@ -279,6 +289,25 @@ export async function commitRevisionInTransaction(
     ? await loadRevisionRoots(transaction, request.photoId, activeRevisionId)
     : {};
   const resultingRoots = { ...inheritedRoots, ...Object.fromEntries(rootUpdates) };
+  let currentCheckpoint: string | null = null;
+  if (resultingRoots.geometry && rootUpdates.has("geometry")) {
+    const geometry = await loadGeometryAncestry(
+      transaction,
+      request.photoId,
+      resultingRoots.geometry,
+    );
+    if (geometry.parameters.type !== "intent")
+      throw new Error("The geometry root must contain immutable geometry intent");
+    currentCheckpoint = geometry.inputs[0] ?? null;
+  } else if (resultingRoots.geometry && request.newLayers?.length) {
+    currentCheckpoint =
+      (
+        await transaction.query<{ input_node_id: string }>(
+          "SELECT input_node_id FROM image_node_inputs WHERE photo_id = $1 AND node_id = $2 AND input_index = 0",
+          [request.photoId, resultingRoots.geometry],
+        )
+      ).rows[0]?.input_node_id ?? null;
+  }
   if (!resultingRoots.output) throw new Error("A revision requires an output root");
   if (!resultingRoots.base) resultingRoots.base = resultingRoots.output;
 
@@ -299,6 +328,8 @@ export async function commitRevisionInTransaction(
     transaction,
     request.photoId,
     request.newLayers ?? [],
+    resolveReference,
+    currentCheckpoint,
   );
   const layerDrafts = request.layers ?? (activeRevisionId ? undefined : []);
   const layers = layerDrafts
@@ -426,7 +457,7 @@ export async function commitRevisionInTransaction(
     roots,
     newLayers: newLayerIds,
     layers,
-    renderHash: roots.output ? renderHashForNode(roots.output) : null,
+    renderHash: roots.output ? renderHashForNode(roots.output, roots.geometry) : null,
   };
 }
 
@@ -560,10 +591,10 @@ export async function undoRevision(
     );
     const roots = parentRevisionId
       ? await loadRevisionRoots(transaction, request.photoId, parentRevisionId)
-      : ({} as { base?: string; output?: string });
+      : ({} as CommitRevisionResult["roots"]);
     return {
       revisionId: parentRevisionId,
-      renderHash: roots.output ? renderHashForNode(roots.output) : null,
+      renderHash: roots.output ? renderHashForNode(roots.output, roots.geometry) : null,
     };
   });
 }
@@ -724,8 +755,11 @@ async function loadRevisionRoots(
   transaction: GraphTransaction,
   photoId: string,
   revisionId: string,
-): Promise<{ base?: string; output?: string }> {
-  const result = await transaction.query<{ root_name: "base" | "output"; node_id: string }>(
+): Promise<CommitRevisionResult["roots"]> {
+  const result = await transaction.query<{
+    root_name: CommitRevisionRequest["rootUpdates"][number]["root"];
+    node_id: string;
+  }>(
     `SELECT root_name, node_id FROM document_revision_roots
      WHERE photo_id = $1 AND revision_id = $2`,
     [photoId, revisionId],
@@ -737,17 +771,33 @@ async function storeLayerIdentities(
   transaction: GraphTransaction,
   photoId: string,
   drafts: NewLayerIdentity[],
+  resolveNode: (reference: NodeReference) => Promise<StoredImageNode>,
+  currentCheckpoint: string | null,
 ): Promise<Record<string, string>> {
   const keys = drafts.map(({ localKey }) => localKey);
   if (keys.some((key) => key.length === 0) || new Set(keys).size !== keys.length) {
     throw new Error("Local layer keys must be non-empty and unique");
   }
   const ids = Object.fromEntries(keys.map((key) => [key, randomUUID()]));
+  const validatedCheckpoints = new Set(currentCheckpoint ? [currentCheckpoint] : []);
   await mapInOrder(drafts, async (draft) => {
     if (!layerRoles.includes(draft.role)) throw new Error(`Unknown layer role: ${draft.role}`);
+    const checkpoint =
+      draft.authoredCheckpointNode === undefined
+        ? currentCheckpoint
+        : draft.authoredCheckpointNode === null
+          ? null
+          : (await resolveNode(draft.authoredCheckpointNode)).id;
+    if (checkpoint && !validatedCheckpoints.has(checkpoint)) {
+      const node = await loadGeometryAncestry(transaction, photoId, checkpoint);
+      if (node.parameters.type !== "checkpoint") {
+        throw new Error("Layer authoring must refer to an immutable geometry checkpoint");
+      }
+      validatedCheckpoints.add(checkpoint);
+    }
     await transaction.query(
-      `INSERT INTO layers (photo_id, id, role, of_layer) VALUES ($1, $2, $3, NULL)`,
-      [photoId, ids[draft.localKey], draft.role],
+      `INSERT INTO layers (photo_id, id, role, of_layer, authored_checkpoint_node_id) VALUES ($1, $2, $3, NULL, $4)`,
+      [photoId, ids[draft.localKey], draft.role, checkpoint],
     );
   });
   await mapInOrder(drafts, async (draft) => {
@@ -800,6 +850,7 @@ async function resolveLayerSnapshot(
       id,
       role: identity.role,
       ofLayer: identity.of_layer,
+      authoredCheckpointNodeId: identity.authored_checkpoint_node_id,
       name: draft.name,
       z: draft.z,
       contentNodeId: content.id,
@@ -860,13 +911,13 @@ async function resolveLayerReference(
   return id;
 }
 
-async function loadLayerIdentity(
-  transaction: GraphTransaction,
-  photoId: string,
-  layerId: string,
-): Promise<{ role: LayerRole; of_layer: string | null }> {
-  const result = await transaction.query<{ role: LayerRole; of_layer: string | null }>(
-    "SELECT role, of_layer::text FROM layers WHERE photo_id = $1 AND id = $2",
+async function loadLayerIdentity(transaction: GraphTransaction, photoId: string, layerId: string) {
+  const result = await transaction.query<{
+    role: LayerRole;
+    of_layer: string | null;
+    authored_checkpoint_node_id: string | null;
+  }>(
+    "SELECT role, of_layer::text, authored_checkpoint_node_id FROM layers WHERE photo_id = $1 AND id = $2",
     [photoId, layerId],
   );
   if (!result.rows[0]) throw new Error(`Layer does not exist for photo: ${layerId}`);
@@ -1054,6 +1105,7 @@ async function loadRevisionLayers(
     id: string;
     role: LayerRole;
     of_layer: string | null;
+    authored_checkpoint_node_id: string | null;
     name: string;
     z: number;
     content_node_id: string;
@@ -1062,7 +1114,7 @@ async function loadRevisionLayers(
     blend: "normal";
     enabled: boolean;
   }>(
-    `SELECT identity.id::text, identity.role, identity.of_layer::text, snapshot.name, snapshot.z,
+    `SELECT identity.id::text, identity.role, identity.of_layer::text, identity.authored_checkpoint_node_id, snapshot.name, snapshot.z,
             snapshot.content_node_id, snapshot.mask_node_id, snapshot.opacity,
             snapshot.blend, snapshot.enabled
      FROM document_revision_layers AS snapshot
@@ -1076,6 +1128,7 @@ async function loadRevisionLayers(
     id: row.id,
     role: row.role,
     ofLayer: row.of_layer,
+    authoredCheckpointNodeId: row.authored_checkpoint_node_id,
     name: row.name,
     z: row.z,
     contentNodeId: row.content_node_id,

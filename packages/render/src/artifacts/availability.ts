@@ -108,6 +108,9 @@ export async function retainedArtifacts(
        SELECT layer.photo_id, layer.mask_node_id
        FROM document_revision_layers AS layer
        UNION
+       SELECT photo_id, authored_checkpoint_node_id FROM layers
+       WHERE authored_checkpoint_node_id IS NOT NULL
+       UNION
        SELECT edge.photo_id, edge.input_node_id
        FROM image_node_inputs AS edge
        JOIN retained_nodes AS retained

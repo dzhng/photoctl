@@ -56,6 +56,7 @@ const graphNodeSummarySchema = z.object({
     "crop",
     "markup",
     "output",
+    "geometry",
   ]),
   recipe_version: z.number().int().positive(),
   recipe_hash: recipeHash,
@@ -79,12 +80,12 @@ export const graphShowDataSchema = z.union([
   z.object({
     ...graphShowFields,
     scope: z.object({ root: z.literal("output"), history: z.boolean() }),
-    roots: z.object({ output: nodeId }),
+    roots: z.object({ output: nodeId, geometry: nodeId.optional() }),
   }),
   z.object({
     ...graphShowFields,
     scope: z.object({ root: z.literal("layer"), layer_id: z.uuid(), history: z.boolean() }),
-    roots: z.object({ content: nodeId, mask: nodeId }),
+    roots: z.object({ content: nodeId, mask: nodeId, authored_checkpoint: nodeId.optional() }),
   }),
 ]);
 

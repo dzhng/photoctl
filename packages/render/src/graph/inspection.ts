@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { renderHashForNode } from "./recipes.js";
 import type { ImageNodeKind } from "./types.js";
-import type { GraphTransaction } from "./store.js";
+import type { CommitRevisionResult, GraphTransaction } from "./store.js";
 
 const MAX_PAGE = 100;
 const MAX_SUMMARY_INPUTS = 32;
@@ -36,7 +36,11 @@ export interface GraphPage {
   revisionId: string;
   parentRevisionId: string | null;
   pinned: boolean;
-  roots: { output?: string; content?: string; mask?: string };
+  roots: CommitRevisionResult["roots"] & {
+    content?: string;
+    mask?: string;
+    authored_checkpoint?: string;
+  };
   layerId: string | null;
   renderHash: string | null;
   nodes: GraphNodeSummary[];
@@ -122,6 +126,12 @@ export async function inspectGraph(
        FROM document_revision_layers AS snapshot
        JOIN revisions ON revisions.id = snapshot.revision_id
        WHERE snapshot.photo_id = $1 AND snapshot.layer_id = $6::uuid
+     ), authored_roots(id) AS (
+       SELECT identity.authored_checkpoint_node_id FROM layers identity
+       JOIN document_revision_layers snapshot ON snapshot.photo_id = identity.photo_id AND snapshot.layer_id = identity.id
+       JOIN revisions ON revisions.id = snapshot.revision_id
+       WHERE identity.photo_id = $1 AND identity.authored_checkpoint_node_id IS NOT NULL
+         AND ($6::uuid IS NULL OR identity.id = $6::uuid)
      ), reachable(id) AS (
        SELECT root.node_id
        FROM document_revision_roots AS root
@@ -129,6 +139,8 @@ export async function inspectGraph(
        WHERE root.photo_id = $1 AND $6::uuid IS NULL
        UNION
        SELECT id FROM layer_roots WHERE $6::uuid IS NOT NULL
+       UNION
+       SELECT id FROM authored_roots
        UNION
        SELECT edge.input_node_id
        FROM image_node_inputs AS edge
@@ -171,14 +183,26 @@ export async function inspectGraph(
   }
   let rootMap: GraphPage["roots"];
   if (layerId) {
-    const roots = await database.query<{ content_node_id: string; mask_node_id: string }>(
-      `SELECT content_node_id, mask_node_id FROM document_revision_layers
-       WHERE photo_id = $1 AND revision_id = $2 AND layer_id = $3`,
+    const roots = await database.query<{
+      content_node_id: string;
+      mask_node_id: string;
+      authored_checkpoint_node_id: string | null;
+    }>(
+      `SELECT snapshot.content_node_id, snapshot.mask_node_id, identity.authored_checkpoint_node_id
+       FROM document_revision_layers snapshot JOIN layers identity
+         ON identity.photo_id = snapshot.photo_id AND identity.id = snapshot.layer_id
+       WHERE snapshot.photo_id = $1 AND snapshot.revision_id = $2 AND snapshot.layer_id = $3`,
       [request.photoId, revisionId, layerId],
     );
     const layer = roots.rows[0];
     if (!layer) throw new Error(`Layer is not present in graph revision: ${layerId}`);
-    rootMap = { content: layer.content_node_id, mask: layer.mask_node_id };
+    rootMap = {
+      content: layer.content_node_id,
+      mask: layer.mask_node_id,
+      ...(layer.authored_checkpoint_node_id
+        ? { authored_checkpoint: layer.authored_checkpoint_node_id }
+        : {}),
+    };
   } else {
     const roots = await database.query<{ root_name: "output"; node_id: string }>(
       `SELECT root_name, node_id FROM document_revision_roots
@@ -187,11 +211,13 @@ export async function inspectGraph(
     );
     rootMap = Object.fromEntries(roots.rows.map((root) => [root.root_name, root.node_id]));
   }
-  const outputRoot = await database.query<{ node_id: string }>(
-    `SELECT node_id FROM document_revision_roots
-     WHERE photo_id = $1 AND revision_id = $2 AND root_name = 'output'`,
+  const outputRoot = await database.query<{ root_name: string; node_id: string }>(
+    `SELECT root_name, node_id FROM document_revision_roots
+     WHERE photo_id = $1 AND revision_id = $2 AND root_name IN ('output', 'geometry')`,
     [request.photoId, revisionId],
   );
+  const outputNodeId = outputRoot.rows.find(({ root_name }) => root_name === "output")?.node_id;
+  const geometryNodeId = outputRoot.rows.find(({ root_name }) => root_name === "geometry")?.node_id;
   return {
     photoId: request.photoId,
     revisionId,
@@ -199,7 +225,7 @@ export async function inspectGraph(
     pinned: revision.rows[0].pinned,
     roots: rootMap,
     layerId,
-    renderHash: outputRoot.rows[0]?.node_id ? renderHashForNode(outputRoot.rows[0].node_id) : null,
+    renderHash: outputNodeId ? renderHashForNode(outputNodeId, geometryNodeId) : null,
     nodes,
     nextCursor:
       hasNext && nodes.length > 0

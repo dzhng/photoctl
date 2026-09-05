@@ -413,6 +413,7 @@ export async function setLayer(
     name?: string;
     opacity?: number;
     blend?: "normal";
+    enabled?: boolean;
   },
 ) {
   await ensurePhotoDocument(database, request);
@@ -435,6 +436,7 @@ export async function setLayer(
             name: request.name ?? layer.name,
             opacity: request.opacity ?? layer.opacity,
             blend: request.blend ?? layer.blend,
+            enabled: request.enabled ?? layer.enabled,
           }
         : layer,
       layer.z,
@@ -472,7 +474,15 @@ export async function duplicateLayer(
     }
   }
   const committed = await commitLayerSnapshot(database, document, drafts, {
-    newLayers: [{ localKey: "duplicate-layer", role: source.role }],
+    newLayers: [
+      {
+        localKey: "duplicate-layer",
+        role: source.role,
+        authoredCheckpointNode: source.authoredCheckpointNodeId
+          ? { nodeId: source.authoredCheckpointNodeId }
+          : null,
+      },
+    ],
   });
   const duplicateId = committed.newLayers["duplicate-layer"];
   return {

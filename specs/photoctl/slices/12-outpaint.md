@@ -116,6 +116,17 @@ execution metadata column. This is checkpoint evidence, not the full release gat
 
 ## 12f2 — Canvas authoring and reversible extent
 
+The metadata prerequisite is implemented separately from canvas pixels. The graph revision writer
+accepts an immutable `geometry` root: current activation records refer to authored checkpoints,
+whose ancestry contains only geometry metadata, never historical generated RGB. Current absolute
+develop values remain in the base graph. New layer identities capture the current checkpoint in the
+same revision transaction; duplicates retain their original authoring relation. Geometry intent is
+included in document render identity and follows ordinary revision inheritance and undo. The
+`layer set --enabled true|false` boundary controls the existing enabled snapshot field explicitly.
+Migration 19 and its real dump fixture cover this storage contract. They do **not** implement canvas
+composition, crop consumption, extent, uncovered warnings, SAM geometry, or pixel lifecycle acceptance;
+those remain 12f2 work. Subsequent canvas pixel kinds require their own migration, not edits to 19.
+
 **Decision checkpoint before coding:** use an asymmetric cropped, quarter-rotated, straightened
 example to settle the viewport policy. Merely retaining the prior final crop hides the extension;
 clearing it reveals previously excluded content. An authored extent after straightening is an affine

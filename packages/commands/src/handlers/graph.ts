@@ -85,8 +85,17 @@ export async function graphCommand(
             ? { root: "layer", layer_id: page.layerId, history: parsed.flags.has("--history") }
             : { root: "output", history: parsed.flags.has("--history") },
           roots: page.layerId
-            ? { content: page.roots.content, mask: page.roots.mask }
-            : { output: page.roots.output },
+            ? {
+                content: page.roots.content,
+                mask: page.roots.mask,
+                ...(page.roots.authored_checkpoint
+                  ? { authored_checkpoint: page.roots.authored_checkpoint }
+                  : {}),
+              }
+            : {
+                output: page.roots.output,
+                ...(page.roots.geometry ? { geometry: page.roots.geometry } : {}),
+              },
           render_hash: page.renderHash,
           nodes: page.nodes.map((node) => ({
             id: node.id,

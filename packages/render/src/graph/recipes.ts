@@ -9,6 +9,7 @@ import type {
 } from "./types.js";
 import { developDictSchema } from "../develop/dict.js";
 import { effectiveMaskParametersSchema } from "../mask-operations.js";
+import { geometryNodeParametersSchema } from "./geometry-intent.js";
 
 const pinnedArtifactParametersSchema = z
   .object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) })
@@ -122,6 +123,7 @@ export const resampleParametersSchema = z
   });
 
 export const imageNodeRegistry = {
+  geometry: definition(geometryNodeParametersSchema, 0, Number.MAX_SAFE_INTEGER, true),
   source: definition(
     z.union([decodedSourceParametersSchema, pinnedReferenceParametersSchema]),
     0,
@@ -308,11 +310,16 @@ export function logicalNodeId(recipe: string): `node_${string}` {
   return hashIdentity("node", recipe);
 }
 
-export function renderHashForNode(nodeId: string): `r_${string}` {
+export function renderHashForNode(nodeId: string, geometryNodeId?: string): `r_${string}` {
   assertHash(nodeId, "node");
+  if (geometryNodeId) assertHash(geometryNodeId, "node");
   return hashIdentity(
     "r",
-    canonicalJson({ node_id: nodeId, renderer_semantic_revision: rendererSemanticRevision }),
+    canonicalJson({
+      node_id: nodeId,
+      renderer_semantic_revision: rendererSemanticRevision,
+      ...(geometryNodeId ? { geometry_node_id: geometryNodeId } : {}),
+    }),
   );
 }
 

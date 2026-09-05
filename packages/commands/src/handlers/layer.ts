@@ -230,7 +230,7 @@ export async function layerCommand(
       }
       if (action === "set") {
         const parsed = parseArguments(target.rest, {
-          options: ["--name", "--opacity", "--blend"],
+          options: ["--name", "--opacity", "--blend", "--enabled"],
         });
         if (parsed.positionals.length > 0) unexpected(parsed.positionals[0]);
         if (parsed.options.size === 0)
@@ -238,6 +238,10 @@ export async function layerCommand(
         const blend = parsed.options.get("--blend");
         if (blend !== undefined && blend !== "normal") {
           throw new PhotoctlError("usage", "--blend currently supports only normal");
+        }
+        const enabled = parsed.options.get("--enabled");
+        if (enabled !== undefined && enabled !== "true" && enabled !== "false") {
+          throw new PhotoctlError("usage", "--enabled requires true or false");
         }
         const updated = await setLayer(lease.handle, {
           photoId,
@@ -248,6 +252,7 @@ export async function layerCommand(
             ? parseNumber(parsed.options.get("--opacity")!, "--opacity")
             : undefined,
           blend,
+          enabled: enabled === undefined ? undefined : enabled === "true",
         });
         return ok({
           id: photoId,

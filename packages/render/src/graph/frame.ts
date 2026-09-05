@@ -15,7 +15,7 @@ import {
 
 type Dimensions = { w: number; h: number };
 const dimensions = z.object({ w: z.number().int().positive(), h: z.number().int().positive() });
-const savedFrameSchema = z.object({
+export const savedFrameSchema = z.object({
   catalog: dimensions,
   source: dimensions,
   raster: dimensions,

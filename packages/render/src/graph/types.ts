@@ -14,6 +14,7 @@ export const imageNodeKinds = [
   "crop",
   "markup",
   "output",
+  "geometry",
 ] as const;
 
 export type ImageNodeKind = (typeof imageNodeKinds)[number];
