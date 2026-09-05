@@ -71,6 +71,7 @@ const chainNodeSchema = z.object({
     "solid",
     "mask",
     "delta",
+    "heal",
     "mask_composite",
     "composite",
     "crop",

@@ -861,9 +861,10 @@ async function nodePixelKind(
     row.kind === "generate" ||
     row.kind === "upscale" ||
     row.kind === "delta" ||
+    row.kind === "heal" ||
     row.kind === "markup"
   ) {
-    assertPixelInputKinds(row.kind, inputKinds, ["rgb"]);
+    assertPixelInputKinds(row.kind, inputKinds, row.kind === "heal" ? ["rgb", "mask"] : ["rgb"]);
     return "rgb";
   }
   if (row.kind === "mask_composite") {

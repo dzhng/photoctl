@@ -187,6 +187,21 @@ export const imageNodeRegistry = {
     true,
   ),
   delta: definition(developDictSchema, 1, 1, true),
+  heal: definition(
+    z
+      .object({
+        method: z.literal("fast-marching-harmonic"),
+        at: z.tuple([z.number().finite(), z.number().finite()]),
+        radius: z.number().positive(),
+        neighborhood_radius: z.number().int().min(1).max(16),
+        refinement_iterations: z.number().int().min(1).max(4096),
+        refinement_pixel_budget: z.number().int().min(1).max(100_000_000),
+      })
+      .strict(),
+    2,
+    2,
+    true,
+  ),
   mask_composite: definition(z.object({ feather: z.number().nonnegative() }).strict(), 3, 3, true),
   composite: definition(
     z.union([

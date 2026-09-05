@@ -50,6 +50,7 @@ import { searchCommand } from "./handlers/search.js";
 import { segmentCommand, type SegmentationDependencies } from "./handlers/segment.js";
 import { layerCommand } from "./handlers/layer.js";
 import { fillCommand, type FillDependencies } from "./handlers/fill.js";
+import { retouchCommand } from "./handlers/retouch.js";
 import {
   flagCommand,
   labelCommand,
@@ -154,6 +155,8 @@ export async function dispatch(
         context.library,
         context.fill,
       );
+    if (request.verb === "retouch")
+      return await retouchCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "list")

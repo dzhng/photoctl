@@ -3056,3 +3056,20 @@
   paid result, and remain usable offline when provider consent or availability disappears.
 - **Verdict:** **Sound.** The rule maximizes usable density while preserving lineage and atomic graph truth.
 - **Confidence:** High.
+
+### Slice 13d — Public repair extent and native reconstruction neighborhood remain separate
+
+- **When:** Slice 13d keyless retouch implementation, 2026-09-05.
+- **The choice:** `radius` always describes the permanent circular repair mask. With `--norm`, an explicit radius is a fraction of
+  the oriented long edge, just like the default two-percent extent. Resolved pixel geometry is canonicalized to nine decimal places
+  so an equivalent normalized and absolute retry has one identity. The versioned heal recipe separately records a fixed three-pixel
+  neighborhood, 512-iteration ceiling, and eight-million masked-pixel update budget for the project-owned deterministic
+  fast-marching fill with harmonic refinement. The recipe names that method directly rather than
+  claiming canonical Telea behavior.
+- **The gap:** The plan named Telea and a public target radius but did not define whether the same number controlled the inpaint
+  sampler, nor how normalized radius should scale. Coupling the values would make a larger selected defect silently change the
+  algorithm instead of only changing its extent.
+- **The reach:** Retouch identity, exact retry reuse, and mask composition remain stable if a later recipe version replaces or tunes
+  the native reconstruction algorithm. Normalized retouch geometry also stays independent of portrait/landscape orientation.
+- **Verdict:** **Sound.** One value belongs to the user-visible edit; the other belongs to a reproducible pixel recipe.
+- **Confidence:** High.

@@ -23,7 +23,7 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
 });
 
-test("the built CLI keeps agent previews current through a fill and opacity revision", async () => {
+test("the built CLI keeps agent previews current through fill, opacity, and retouch revisions", async () => {
   const fixture = await setupFixture();
   const neutralStats = await sharp(fixture.source).stats();
 
@@ -222,6 +222,26 @@ test("the built CLI keeps agent previews current through a fill and opacity revi
   expect(await fileIdentity(h1Native.preview)).toEqual(h1MasterBefore);
   expect(await fileIdentity(h2Master)).toEqual(h2MasterBefore);
   expect(await fileIdentity(h3Master)).toEqual(h3MasterBefore);
+  expect(fixture.gatewayRequests()).toBe(1);
+  expect(await providerExecutionCount(fixture.library)).toBe(2);
+
+  const retouched = await run(fixture, [
+    "retouch",
+    fixture.id,
+    "--at",
+    protectedPoint.join(","),
+    "--radius",
+    "8",
+  ]);
+  expect(retouched.code, JSON.stringify(retouched.json)).toBe(0);
+  const h4 = (retouched.json.data as { render_hash: string }).render_hash;
+  expect(h4).not.toBe(h3);
+  await expect(access(viewDirectory(fixture, h4))).rejects.toMatchObject({ code: "ENOENT" });
+  const h4Detail = await show(fixture, ["--region", AGENT_PREVIEW_FACTS.region.join(",")]);
+  expect(h4Detail).toMatchObject({
+    render_hash: h4,
+    preview_info: { cache_source: "render_master", pixel_scale: 1 },
+  });
   expect(fixture.gatewayRequests()).toBe(1);
   expect(await providerExecutionCount(fixture.library)).toBe(2);
   await captureEvidence({

@@ -1,6 +1,7 @@
 //! Native image operations for photoctl.
 
 mod develop;
+mod heal;
 mod mask;
 mod publication;
 mod resample;
@@ -534,6 +535,59 @@ pub struct TransformArtifactTask {
     output_height: u32,
     matrix: [f64; 6],
     filter: ResampleFilter,
+}
+
+pub struct HealTask {
+    data: Vec<f32>,
+    mask: Vec<f32>,
+    width: usize,
+    height: usize,
+    neighborhood_radius: usize,
+    refinement_iterations: usize,
+    refinement_pixel_budget: usize,
+}
+
+impl Task for HealTask {
+    type Output = Vec<f32>;
+    type JsValue = Float32Array;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        heal::heal_pixels(
+            std::mem::take(&mut self.data),
+            &self.mask,
+            self.width,
+            self.height,
+            self.neighborhood_radius,
+            self.refinement_iterations,
+            self.refinement_pixel_budget,
+        )
+        .map_err(|message| Error::new(Status::InvalidArg, message))
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(data.into())
+    }
+}
+
+#[napi]
+pub fn heal_pixels(
+    data: Float32Array,
+    mask: Float32Array,
+    width: u32,
+    height: u32,
+    neighborhood_radius: u32,
+    refinement_iterations: u32,
+    refinement_pixel_budget: u32,
+) -> AsyncTask<HealTask> {
+    AsyncTask::new(HealTask {
+        data: data.to_vec(),
+        mask: mask.to_vec(),
+        width: width as usize,
+        height: height as usize,
+        neighborhood_radius: neighborhood_radius as usize,
+        refinement_iterations: refinement_iterations as usize,
+        refinement_pixel_budget: refinement_pixel_budget as usize,
+    })
 }
 
 pub struct ValidateLinearArtifactTask {

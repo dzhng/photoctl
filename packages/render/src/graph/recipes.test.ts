@@ -54,7 +54,7 @@ test("logical recipes canonicalize parameters but preserve ordered node inputs",
       inputNodeIds: [inputs[0]],
     }),
   ).toThrow();
-  expect(Object.keys(imageNodeRegistry)).toHaveLength(14);
+  expect(Object.keys(imageNodeRegistry)).toHaveLength(15);
 });
 
 test("solid RGB is an explicit deterministic zero-input recipe", () => {
@@ -73,6 +73,40 @@ test("solid RGB is an explicit deterministic zero-input recipe", () => {
   ).toBe(
     '{"input_node_ids":[],"kind":"solid","parameters":{"h":30,"rgb":[1,0,1],"space":"scene-linear-rec2020","w":40},"recipe_version":1}',
   );
+});
+
+test("heal is a deterministic RGB plus mask recipe with separate reconstruction controls", () => {
+  const recipe = canonicalNodeRecipe({
+    kind: "heal",
+    recipeVersion: 1,
+    parameters: {
+      method: "fast-marching-harmonic",
+      at: [10, 12],
+      radius: 5,
+      neighborhood_radius: 3,
+      refinement_iterations: 512,
+      refinement_pixel_budget: 8_000_000,
+    },
+    inputNodeIds: [`node_${"1".repeat(64)}`, `node_${"2".repeat(64)}`],
+  });
+
+  expect(recipe).toContain('"kind":"heal"');
+  expect(recipe).toContain('"neighborhood_radius":3');
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "heal",
+      recipeVersion: 1,
+      parameters: {
+        method: "fast-marching-harmonic",
+        at: [10, 12],
+        radius: 5,
+        neighborhood_radius: 0,
+        refinement_iterations: 512,
+        refinement_pixel_budget: 8_000_000,
+      },
+      inputNodeIds: [`node_${"1".repeat(64)}`, `node_${"2".repeat(64)}`],
+    }),
+  ).toThrow();
 });
 
 test("resample v2 binds one affine placement into an oriented output canvas", () => {

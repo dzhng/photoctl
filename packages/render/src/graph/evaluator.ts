@@ -37,6 +37,7 @@ import { developDictSchema } from "../develop/dict.js";
 import {
   compositeMaskedPixels,
   featherMask,
+  healPixels,
   resamplePixels,
   solidRgbPixels,
   transformMaskPixels,
@@ -366,6 +367,26 @@ async function runOperation(
     }
     if (kind === "mask_composite") {
       return { image: await evaluateMaskComposite(parameters, inputs) };
+    }
+    if (kind === "heal") {
+      if (inputs.length !== 2) throw new Error("Heal evaluation requires RGB and mask inputs");
+      const image = await readRgbInput(inputs[0]!);
+      const mask = await readMaskInput(inputs[1]!, image);
+      const parsed = imageNodeRegistry.heal.parameters.parse(parameters);
+      return {
+        image: linearImage(
+          image,
+          await healPixels(
+            image.data,
+            mask.data,
+            image.w,
+            image.h,
+            parsed.neighborhood_radius as number,
+            parsed.refinement_iterations as number,
+            parsed.refinement_pixel_budget as number,
+          ),
+        ),
+      };
     }
     if (kind === "solid") {
       return { image: await evaluateSolid(parameters) };

@@ -53,6 +53,15 @@ interface NativeBinding {
     green: number,
     blue: number,
   ): Promise<Float32Array>;
+  healPixels(
+    data: Float32Array,
+    mask: Float32Array,
+    width: number,
+    height: number,
+    neighborhoodRadius: number,
+    refinementIterations: number,
+    refinementPixelBudget: number,
+  ): Promise<Float32Array>;
   developCameraFront(
     data: Float32Array,
     whiteLevel: number,
@@ -532,6 +541,28 @@ export async function solidRgbPixels(
 ): Promise<Float32Array> {
   return asFloat32Array(
     await requiredBinding().solidRgbPixels(width, height, rgb[0], rgb[1], rgb[2]),
+  );
+}
+
+export async function healPixels(
+  data: Float32Array,
+  mask: Float32Array,
+  width: number,
+  height: number,
+  neighborhoodRadius: number,
+  refinementIterations: number,
+  refinementPixelBudget: number,
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().healPixels(
+      data,
+      mask,
+      width,
+      height,
+      neighborhoodRadius,
+      refinementIterations,
+      refinementPixelBudget,
+    ),
   );
 }
 

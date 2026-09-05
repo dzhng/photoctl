@@ -8,6 +8,7 @@ export const imageNodeKinds = [
   "solid",
   "mask",
   "delta",
+  "heal",
   "mask_composite",
   "composite",
   "crop",
