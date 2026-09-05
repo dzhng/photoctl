@@ -122,8 +122,18 @@ export async function readActiveDevelopState(
   };
 }
 
-function isDevelopSource(node: { kind: ImageNodeKind; recipeVersion: number }): boolean {
-  return node.kind === "source" || (node.kind === "generate" && node.recipeVersion === 2);
+function isDevelopSource(node: {
+  kind: ImageNodeKind;
+  recipeVersion: number;
+  parameters: JsonValue;
+}): boolean {
+  return (
+    node.kind === "source" ||
+    (node.kind === "generate" &&
+      (node.recipeVersion === 2 ||
+        (node.recipeVersion === 3 &&
+          (node.parameters as { request: { scope?: string } }).request.scope === "standalone")))
+  );
 }
 
 export async function commitDevelopState(

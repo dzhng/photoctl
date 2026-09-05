@@ -23,7 +23,9 @@ import {
   removePrompt,
   readProviderSettings,
   resolveModel,
+  type ImageInit,
 } from "@photoctl/providers";
+import { readImageReference } from "./image-reference.js";
 import {
   generationSourceTierSchema,
   PhotoctlError,
@@ -53,6 +55,8 @@ export async function fillCommand(
       "--pad",
       "--fit",
       "--strength",
+      "--ref",
+      "--init",
       "--seed",
       "--model",
       "--upscale-model",
@@ -80,6 +84,8 @@ export async function fillCommand(
     parsed.options.has("--pad") ||
     parsed.options.has("--fit") ||
     parsed.options.has("--strength") ||
+    parsed.options.has("--ref") ||
+    parsed.options.has("--init") ||
     parsed.options.has("--seed") ||
     parsed.options.has("--model") ||
     parsed.options.has("--upscale-model") ||
@@ -310,6 +316,10 @@ async function fillGenerationCommand(
     throw new PhotoctlError("usage", "fill accepts only one of --upscale or --no-upscale");
   }
   const pad = parseOptionalInteger(parsed.options.get("--pad"), "--pad", 0);
+  const init = parsed.options.get("--init") ?? "original";
+  if (!["original", "fill", "noise", "empty"].includes(init))
+    throw new PhotoctlError("usage", "--init must be original, fill, noise, or empty");
+  const reference = await readImageReference(parsed.options.get("--ref"), cwd);
   const fit = resolveFillFit(
     remove ? "remove" : "prompt",
     parsed.options.get("--fit"),
@@ -366,6 +376,8 @@ async function fillGenerationCommand(
           prompt: remove ? removePrompt() : custom!,
           promptVersion: remove ? REMOVE_PROMPT_VERSION : 1,
           fit,
+          init: init as ImageInit,
+          ...(reference ? { referenceImage: reference } : {}),
           ...(pad === undefined ? {} : { pad }),
           fullResolution: parsed.flags.has("--full-res"),
           ...(seed === undefined ? {} : { seed }),

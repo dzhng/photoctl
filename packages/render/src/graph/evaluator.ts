@@ -185,7 +185,7 @@ async function evaluateOne(
   const inputs = await Promise.all(node.inputNodeIds.map(evaluate));
   let source: { image: LinearImage; provenance: SourceExecutionProvenance } | undefined;
   let normalizedSource: Awaited<ReturnType<typeof normalizeArtifact>> | undefined;
-  if (node.kind === "source") {
+  if (node.kind === "source" && node.recipeVersion === 1) {
     if (!request.source) throw new Error("Source graph evaluation requires a source producer");
     try {
       if (typeof request.source === "function") {
@@ -235,8 +235,16 @@ async function evaluateOne(
   if (node.kind === "output") {
     if (inputs.length !== 1) throw new Error("Output evaluation requires one input artifact");
     artifact = inputs[0].artifact;
-  } else if (node.kind === "mask" && node.recipeVersion === 1) {
-    artifact = await loadPinnedMaskArtifact(request.database, request.libraryPath, node.parameters);
+  } else if (
+    (node.kind === "mask" && node.recipeVersion === 1) ||
+    (node.kind === "source" && node.recipeVersion === 2)
+  ) {
+    artifact = await loadPinnedArtifact(
+      request.database,
+      request.libraryPath,
+      node.parameters,
+      node.kind === "mask" ? MASK_ARTIFACT_MEDIA_TYPE : "image/tiff",
+    );
   } else {
     const operation =
       node.kind === "source"
@@ -720,14 +728,14 @@ function linearImage(base: LinearImage, data: Float32Array): LinearImage {
   return { ...base, data };
 }
 
-async function loadPinnedMaskArtifact(
+async function loadPinnedArtifact(
   database: GraphTransaction,
   libraryPath: string,
   parameters: JsonValue,
+  mediaType: PublishedArtifact["mediaType"],
 ): Promise<PublishedArtifact> {
   const artifactHash = z
     .object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) })
-    .strict()
     .parse(parameters).artifact_hash;
   const result = await database.query<{
     media_type: string;
@@ -741,12 +749,14 @@ async function loadPinnedMaskArtifact(
     [artifactHash],
   );
   const row = result.rows[0];
-  if (!row?.artifact_available || row.media_type !== MASK_ARTIFACT_MEDIA_TYPE) {
-    throw new Error(`Mask artifact is unavailable: ${artifactHash}`);
+  if (!row?.artifact_available || row.media_type !== mediaType) {
+    throw new Error(`Pinned artifact is unavailable: ${artifactHash}`);
   }
   const path = artifactPath(libraryPath, artifactHash, "tif");
   try {
-    await readMaskArtifactBytes(path, artifactHash, row);
+    if (mediaType === MASK_ARTIFACT_MEDIA_TYPE)
+      await readMaskArtifactBytes(path, artifactHash, row);
+    else await readArtifactBytes(path, artifactHash, row);
   } catch (error) {
     await database.query(
       "UPDATE image_artifacts SET artifact_available = false WHERE artifact_hash = $1",
@@ -757,7 +767,7 @@ async function loadPinnedMaskArtifact(
   return {
     artifactHash: artifactHash as `a_${string}`,
     extension: "tif",
-    mediaType: MASK_ARTIFACT_MEDIA_TYPE,
+    mediaType,
     path,
     storageBytes: Number(row.bytes),
     w: row.w,

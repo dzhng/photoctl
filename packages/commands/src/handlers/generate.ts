@@ -16,9 +16,7 @@ import {
   type UpscaleRegistry,
 } from "@photoctl/providers";
 import { PhotoctlError, type Envelope, type GenerateData } from "@photoctl/protocol";
-import { access, readFile } from "node:fs/promises";
-import { resolve } from "node:path";
-import sharp from "sharp";
+import { readImageReference } from "./image-reference.js";
 import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
 import { createProgressHeartbeat } from "../progress.js";
@@ -26,13 +24,7 @@ import { importGeneratedArtifact } from "./import.js";
 
 export interface GenerateDependencies {
   adapter: ImageModelAdapter;
-  gateway: {
-    imageGenerations(body: Record<string, unknown>): Promise<{
-      data: unknown;
-      requestId: string | null;
-      attempts: number;
-    }>;
-  };
+  gateway: Pick<GatewayClient, "imageGenerations" | "imageEdits">;
   model: string;
   upscaleRegistry?: UpscaleRegistry;
   upscaleSettings?: import("@photoctl/render").UpscalePolicySettings;
@@ -56,7 +48,7 @@ export async function generateCommand(
   if (!prompt) throw new PhotoctlError("usage", "generate requires --prompt");
   const dimensions = parseSize(parsed.options.get("--size") ?? "1024x1024");
   const seed = parseSeed(parsed.options.get("--seed"));
-  const reference = await readReference(parsed.options.get("--ref"), cwd);
+  const reference = await readImageReference(parsed.options.get("--ref"), cwd);
   const lease = await openRequestLibrary(env, cwd, provided);
   const progress = createProgressHeartbeat({
     emit:
@@ -112,15 +104,15 @@ export async function generateCommand(
           : {}),
       };
     }
+    const preparedRequest = adapter.buildGeneration(prompt, dimensions, seed, reference);
     const prepared = await prepareStandaloneGeneratedPhoto(lease.handle.path, {
       dimensions,
       prompt,
       promptVersion: 1,
       ...(seed === undefined ? {} : { seed }),
-      referencePixels: reference?.pixels ?? 0,
-      referenceUsed: reference !== undefined,
+      ...(reference ? { referenceImage: reference } : {}),
       dependencies: { adapter, gateway, model },
-      body: adapter.buildGeneration(prompt, dimensions, seed, reference),
+      preparedRequest,
       ...(upscale ? { upscale } : {}),
     });
     const cacheRoot = cacheRootForLibrary(await readLibraryId(lease.handle), cacheBase(env, cwd));
@@ -158,7 +150,7 @@ export async function generateCommand(
         output_node: outputNode,
         tag: "generated",
         requested: dimensions,
-        reference: { used: reference !== undefined },
+        reference: { used: preparedRequest.appliedControls.reference },
         artifact: {
           hash: prepared.finalArtifact.artifactHash,
           media_type: "image/tiff",
@@ -248,20 +240,4 @@ function parseSeed(value: string | undefined): number | undefined {
   if (!Number.isSafeInteger(seed) || seed < 0)
     throw new PhotoctlError("usage", "--seed must be a non-negative integer");
   return seed;
-}
-
-async function readReference(value: string | undefined, cwd: string) {
-  if (value === undefined) return undefined;
-  const path = resolve(cwd, value);
-  try {
-    await access(path);
-    const image = sharp(await readFile(path), { failOn: "error" }).rotate();
-    const metadata = await image.metadata();
-    if (!metadata.width || !metadata.height) throw new Error("dimensions are missing");
-    return { png: await image.png().toBuffer(), pixels: metadata.width * metadata.height };
-  } catch (error) {
-    throw new PhotoctlError("usage", `Could not read --ref image: ${path}`, {
-      reason: error instanceof Error ? error.message : String(error),
-    });
-  }
 }

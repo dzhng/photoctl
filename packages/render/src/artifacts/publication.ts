@@ -2,6 +2,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { link, mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
+import sharp from "sharp";
 import { displaySrgbToLinearRec2020, linearRec2020ToDisplaySrgb } from "../color.js";
 import type { LinearImage } from "../decoder.js";
 import {
@@ -24,10 +25,41 @@ export const MASK_ARTIFACT_MEDIA_TYPE = "image/vnd.photoctl.mask+tiff" as const;
 export interface NormalizedArtifact {
   artifactHash: `a_${string}`;
   bytes: Buffer;
-  extension: "tif";
-  mediaType: "image/tiff" | typeof MASK_ARTIFACT_MEDIA_TYPE;
+  extension: "tif" | "png";
+  mediaType: "image/tiff" | "image/png" | typeof MASK_ARTIFACT_MEDIA_TYPE;
   w: number;
   h: number;
+}
+
+/** Encoded reference intent retains alpha; the RGB working artifact is a separate projection. */
+export async function normalizeEncodedPngArtifact(bytes: Buffer): Promise<NormalizedArtifact> {
+  const dimensions = await validateEncodedPng(bytes);
+  return {
+    artifactHash: `a_${createHash("sha256").update(bytes).digest("hex")}`,
+    bytes,
+    extension: "png",
+    mediaType: "image/png",
+    ...dimensions,
+  };
+}
+
+export async function readEncodedPngArtifactBytes(
+  path: string,
+  expectedHash: string,
+  expectedDimensions: { w: number; h: number },
+): Promise<Buffer> {
+  const bytes = await readVerifiedArtifactBytes(path, expectedHash);
+  assertDimensions(path, await validateEncodedPng(bytes), expectedDimensions);
+  return bytes;
+}
+
+async function validateEncodedPng(bytes: Buffer): Promise<{ w: number; h: number }> {
+  const image = sharp(bytes, { failOn: "error" });
+  const metadata = await image.metadata();
+  if (metadata.format !== "png" || !metadata.width || !metadata.height)
+    throw new Error("Encoded reference artifacts require PNG pixels");
+  await image.stats(); // Decode the complete image without allocating a JavaScript raster.
+  return { w: metadata.width, h: metadata.height };
 }
 
 export async function normalizeMaskArtifact(mask: MaskImage): Promise<NormalizedArtifact> {

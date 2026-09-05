@@ -19,7 +19,7 @@ export interface ReusableFillLineage extends ReusableExternalNode {
   generationRecipe: {
     recipeVersion: number;
     parameters: Record<string, unknown>;
-    inputNodeId: string;
+    inputNodeIds: string[];
     inputArtifactHashes: string[];
     intentMatches: boolean;
   };
@@ -39,6 +39,8 @@ export async function findReusableFillLineage(
     seed?: number;
     fullResolution?: boolean;
     pad?: number;
+    init?: import("@photoctl/providers").ImageInit;
+    referenceEncodedArtifactHash?: string;
     source: EvaluateGraphNodeRequest["source"];
     dependencies: FillGenerationDependencies;
     upscale: FillUpscaleDependencies;
@@ -125,6 +127,8 @@ export async function findReusableFillLineage(
       pad?: unknown;
       source_context?: unknown;
       upscale?: unknown;
+      reference_encoded_artifact_hash?: string;
+      controls?: { requested_init?: string };
     };
   };
   const storedUpscale = generationParameters.request
@@ -150,6 +154,10 @@ export async function findReusableFillLineage(
     generationParameters.request.seed !== request.seed ||
     (generationParameters.request.full_res ?? true) !== (request.fullResolution ?? false) ||
     (generationParameters.request.pad ?? 64) !== (request.pad ?? 64) ||
+    (generationParameters.request.controls?.requested_init ?? "original") !==
+      (request.init ?? "original") ||
+    generationParameters.request.reference_encoded_artifact_hash !==
+      request.referenceEncodedArtifactHash ||
     typeof generationParameters.request.execution_id !== "string"
   )
     return undefined;
@@ -178,7 +186,7 @@ export async function findReusableFillLineage(
     generationRecipe: {
       recipeVersion: generation.recipeVersion,
       parameters: generationParameters,
-      inputNodeId: generation.inputNodeIds[0]!,
+      inputNodeIds: generation.inputNodeIds,
       inputArtifactHashes: inputs.rows.map(({ input_artifact_hash }) => input_artifact_hash),
       intentMatches:
         storedUpscale !== undefined &&

@@ -1,0 +1,115 @@
+{
+  "compositeBackground": "white for transparent pixels",
+  "sceneMetrics": [
+    {
+      "file": "empty.png",
+      "width": 32,
+      "height": 32,
+      "transparentShare": 0,
+      "colorEntropyBits": 0,
+      "dominantColorShare": 1,
+      "luminanceContrast": 0,
+      "avgLuminance": 0
+    },
+    {
+      "file": "fill.png",
+      "width": 32,
+      "height": 32,
+      "transparentShare": 0,
+      "colorEntropyBits": 0,
+      "dominantColorShare": 1,
+      "luminanceContrast": 0,
+      "avgLuminance": 109.1603999999976
+    },
+    {
+      "file": "noise.png",
+      "width": 32,
+      "height": 32,
+      "transparentShare": 0,
+      "colorEntropyBits": 0,
+      "dominantColorShare": 1,
+      "luminanceContrast": 0,
+      "avgLuminance": 134.7930000000023
+    },
+    {
+      "file": "original.png",
+      "width": 32,
+      "height": 32,
+      "transparentShare": 0,
+      "colorEntropyBits": 0,
+      "dominantColorShare": 1,
+      "luminanceContrast": 0,
+      "avgLuminance": 94.83960000000177
+    },
+    {
+      "file": "reference-4x.png",
+      "width": 128,
+      "height": 128,
+      "transparentShare": 1,
+      "colorEntropyBits": 1,
+      "dominantColorShare": 0.5,
+      "luminanceContrast": 50.39359999999999,
+      "avgLuminance": 179.40959999997654
+    },
+    {
+      "file": "reference-checker-4x.png",
+      "width": 128,
+      "height": 128,
+      "transparentShare": 0,
+      "colorEntropyBits": 2,
+      "dominantColorShare": 0.25,
+      "luminanceContrast": 98.39359999999998,
+      "avgLuminance": 149.21274999999565
+    },
+    {
+      "file": "reference-empty-sent.png",
+      "width": 32,
+      "height": 32,
+      "transparentShare": 1,
+      "colorEntropyBits": 1,
+      "dominantColorShare": 0.5,
+      "luminanceContrast": 50.39359999999999,
+      "avgLuminance": 179.40959999999933
+    },
+    {
+      "file": "reference-fill-sent.png",
+      "width": 32,
+      "height": 32,
+      "transparentShare": 1,
+      "colorEntropyBits": 1,
+      "dominantColorShare": 0.5,
+      "luminanceContrast": 50.39359999999999,
+      "avgLuminance": 179.40959999999933
+    },
+    {
+      "file": "reference-noise-sent.png",
+      "width": 32,
+      "height": 32,
+      "transparentShare": 1,
+      "colorEntropyBits": 1,
+      "dominantColorShare": 0.5,
+      "luminanceContrast": 50.39359999999999,
+      "avgLuminance": 179.40959999999933
+    },
+    {
+      "file": "reference-original-sent.png",
+      "width": 32,
+      "height": 32,
+      "transparentShare": 1,
+      "colorEntropyBits": 1,
+      "dominantColorShare": 0.5,
+      "luminanceContrast": 50.39359999999999,
+      "avgLuminance": 179.40959999999933
+    },
+    {
+      "file": "reference.png",
+      "width": 32,
+      "height": 32,
+      "transparentShare": 1,
+      "colorEntropyBits": 1,
+      "dominantColorShare": 0.5,
+      "luminanceContrast": 50.39359999999999,
+      "avgLuminance": 179.40959999999933
+    }
+  ]
+}

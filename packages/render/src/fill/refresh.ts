@@ -11,6 +11,7 @@ import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evalu
 import { loadBaseProjection } from "../graph/projection.js";
 import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
 import { prepareFillMask } from "./mask.js";
+import { readReferenceArtifact } from "./reference.js";
 import { planRefreshedFillCrop } from "./crop.js";
 import {
   canonicalNodeRecipe,
@@ -324,6 +325,17 @@ async function executeGenerationRefresh(
   }
   const prompt = stringValue(parameters.prompt, "generate prompt");
   const seed = numberOrUndefined(storedRequest.seed, "generate seed");
+  const storedControls =
+    storedRequest.controls === undefined
+      ? {}
+      : objectParameters(storedRequest.controls, "generate controls");
+  const init = storedControls.requested_init ?? "original";
+  if (init !== "original" && init !== "fill" && init !== "noise" && init !== "empty")
+    throw new Error("Generate recipe has an invalid initialization");
+  const referenceNodeId = generation.recipeVersion === 3 ? generation.inputNodeIds[1] : undefined;
+  const reference = referenceNodeId
+    ? await readReferenceArtifact(database, libraryPath, request.photoId, referenceNodeId)
+    : undefined;
   assertGenerationAdapter(parameters, request.dependencies);
   const [baseEvaluation, maskEvaluation] = await Promise.all([
     evaluateGraphNode({
@@ -393,16 +405,18 @@ async function executeGenerationRefresh(
     storedRequest.full_res !== false,
     baseToInput,
   );
-  const form = await request.dependencies.adapter.buildEdit(
+  const prepared = await request.dependencies.adapter.buildEdit(
     operation,
     sent.image,
     sent.mask,
     prompt,
     seed,
+    { init, ...(reference ? { reference } : {}) },
   );
   const started = (request.dependencies.now ?? Date.now)();
-  const response = await request.dependencies.gateway.imageEdits(form);
+  const response = await request.dependencies.gateway.imageEdits(prepared.body);
   const normalized = await request.dependencies.adapter.normalize(response.data, sent.image);
+  normalized.warnings.unshift(...prepared.warnings);
   if (effectiveMask && effectiveMask.clippedPixels > 0)
     normalized.warnings.push({
       code: "mask_clipped",
@@ -426,6 +440,11 @@ async function executeGenerationRefresh(
     adapter_version: request.dependencies.adapter.version,
     request: {
       ...storedRequest,
+      controls: {
+        requested_init: init,
+        applied_init: prepared.appliedControls.init,
+        reference_used: prepared.appliedControls.reference,
+      },
       execution_id: executionId,
       returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
       sent: [sent.image.w, sent.image.h],
@@ -451,14 +470,14 @@ async function executeGenerationRefresh(
     kind: "generate",
     recipeVersion: generation.recipeVersion,
     parameters: nextParameters,
-    inputs: [{ nodeId: baseNodeId }],
+    inputs: [{ nodeId: baseNodeId }, ...(referenceNodeId ? [{ nodeId: referenceNodeId }] : [])],
   };
   const recipe = recipeHash(
     canonicalNodeRecipe({
       kind: node.kind,
       recipeVersion: node.recipeVersion,
       parameters: node.parameters,
-      inputNodeIds: [baseNodeId],
+      inputNodeIds: [baseNodeId, ...(referenceNodeId ? [referenceNodeId] : [])],
     }),
   );
   const provider: ExternalExecutionProvenance = {
@@ -471,7 +490,9 @@ async function executeGenerationRefresh(
     seed: seed ?? null,
     durationMs: Math.max(0, (request.dependencies.now ?? Date.now)() - started),
     costUsd: 0,
-    inputPx: sent.image.w * sent.image.h,
+    inputPx:
+      sent.image.w * sent.image.h +
+      (reference && prepared.appliedControls.reference ? reference.w * reference.h : 0),
     targetPx: cropRect.w * cropRect.h,
     attempt: response.attempts,
     densityVerdict: "not-applicable",
@@ -484,10 +505,16 @@ async function executeGenerationRefresh(
       nodeRecipeHash: recipe,
       kind: node.kind,
       recipeVersion: node.recipeVersion,
-      inputArtifactHashes: [baseEvaluation.artifact.artifactHash],
+      inputArtifactHashes: [
+        baseEvaluation.artifact.artifactHash,
+        ...(reference ? [reference.workingArtifactHash] : []),
+      ],
     }),
     outputArtifactHash: artifact.artifactHash,
-    inputArtifactHashes: [baseEvaluation.artifact.artifactHash],
+    inputArtifactHashes: [
+      baseEvaluation.artifact.artifactHash,
+      ...(reference ? [reference.workingArtifactHash] : []),
+    ],
     provider,
   };
   return {

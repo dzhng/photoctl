@@ -720,7 +720,7 @@ test("an unpublished permanent mask pin cannot enter an active snapshot", async 
         newLayers: [{ localKey: "subject", role: "subject" }],
         layers,
       }),
-    ).rejects.toThrow("Mask artifact is unavailable");
+    ).rejects.toThrow("Pinned artifact is unavailable");
     expect((await db.query("SELECT 1 FROM document_revisions")).rows).toEqual([]);
     expect((await db.query("SELECT 1 FROM image_nodes")).rows).toEqual([]);
     expect((await db.query("SELECT 1 FROM layers")).rows).toEqual([]);
@@ -817,7 +817,7 @@ test("an activated RGB branch cannot hide an unpublished permanent mask pin", as
         ],
         rootUpdates: [{ root: "output", node: { localKey: "masked" } }],
       }),
-    ).rejects.toThrow("Mask artifact is unavailable");
+    ).rejects.toThrow("Pinned artifact is unavailable");
     expect((await db.query("SELECT 1 FROM document_revisions")).rows).toEqual([]);
   } finally {
     await db.close();

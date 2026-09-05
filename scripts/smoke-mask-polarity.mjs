@@ -58,7 +58,7 @@ try {
       .png()
       .toBuffer();
     const prompt = "Repaint every colored rectangle bright green. Keep the gray background gray.";
-    const form = await adapter.buildEdit(
+    const { body: form } = await adapter.buildEdit(
       "replace",
       { png: input, w: 1024, h: 1024 },
       mask,

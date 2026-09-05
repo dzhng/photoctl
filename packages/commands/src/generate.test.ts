@@ -1,7 +1,13 @@
 import { initializeLibrary } from "@photoctl/library";
 import { generateDataSchema } from "@photoctl/protocol";
+import {
+  artifactPath,
+  inspectGraphNode,
+  retainedArtifacts,
+  reconcileArtifactAvailability,
+} from "@photoctl/render";
 import { startGatewayFixture } from "@photoctl/test-harness/gateway-fixture";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
@@ -11,6 +17,102 @@ import sharp from "sharp";
 const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => {
   await Promise.all(cleanups.splice(0).map(async (cleanup) => await cleanup()));
+});
+
+test("reference-guided generation retains an immutable reachable image without importing another photo", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-reference-"));
+  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  const paths: string[] = [];
+  const gateway = await startGatewayFixture(0, { onImageRequest: ({ path }) => paths.push(path) });
+  cleanups.push(
+    async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
+    async () => await handle.close(),
+    async () => await rm(parent, { recursive: true }),
+  );
+  const reference = join(parent, "reference.png");
+  await writeFile(
+    reference,
+    await sharp({ create: { width: 3, height: 2, channels: 3, background: "#ff0000" } })
+      .png()
+      .toBuffer(),
+  );
+  const address = gateway.address();
+  if (!address || typeof address === "string") throw new Error("Fixture unavailable");
+  const envelope = await dispatch(
+    {
+      verb: "generate",
+      args: ["--prompt", "a red vase", "--ref", reference, "--size", "4x4"],
+      cwd: parent,
+      env: {
+        noDaemon: true,
+        cacheRoot: join(parent, "cache"),
+        gatewayApiKey: "fixture",
+        gatewayUrl: `http://127.0.0.1:${address.port}`,
+      },
+    },
+    { version: "test", library: handle },
+  );
+  expect(envelope).toMatchObject({ ok: true });
+  if (!envelope.ok || !("data" in envelope)) throw new Error("Expected generation");
+  const result = generateDataSchema.parse(envelope.data);
+  expect(result.reference.used).toBe(true);
+  expect(paths).toEqual(["/v1/images/edits"]);
+  await rm(reference);
+  const pinned = await handle.query<{ w: number; h: number; available: boolean }>(
+    `
+    SELECT artifact.w, artifact.h, artifact.artifact_available AS available
+    FROM image_nodes AS generation
+    JOIN image_node_inputs AS edge ON edge.photo_id = generation.photo_id AND edge.node_id = generation.id
+    JOIN image_nodes AS reference ON reference.photo_id = edge.photo_id AND reference.id = edge.input_node_id
+    JOIN image_artifacts AS artifact ON artifact.artifact_hash = reference.parameters->>'artifact_hash'
+    WHERE generation.photo_id = $1 AND generation.kind = 'generate' AND reference.kind = 'source'
+  `,
+    [result.id],
+  );
+  expect(pinned.rows).toEqual([{ w: 3, h: 2, available: true }]);
+  const generation = await inspectGraphNode(handle, {
+    photoId: result.id,
+    nodeId: result.generation.node,
+  });
+  const leaf = await inspectGraphNode(handle, {
+    photoId: result.id,
+    nodeId: generation.inputNodeIds[0]!,
+  });
+  const pins = leaf.parameters as { artifact_hash: string; encoded_artifact_hash: string };
+  expect(leaf.executions).toEqual([]);
+  expect(await retainedArtifacts(handle)).toEqual(
+    expect.arrayContaining([
+      { artifactHash: pins.artifact_hash, available: true },
+      { artifactHash: pins.encoded_artifact_hash, available: true },
+    ]),
+  );
+  expect(leaf.artifactAvailable).toBe(true);
+  const encodedPath = artifactPath(handle.path, pins.encoded_artifact_hash, "png");
+  const encoded = await readFile(encodedPath);
+  await writeFile(encodedPath, "corrupt reference");
+  expect(await reconcileArtifactAvailability(handle, handle.path)).toMatchObject({
+    unavailable: 1,
+  });
+  expect(await retainedArtifacts(handle)).toEqual(
+    expect.arrayContaining([{ artifactHash: pins.encoded_artifact_hash, available: false }]),
+  );
+  await writeFile(encodedPath, encoded);
+  expect(await reconcileArtifactAvailability(handle, handle.path)).toMatchObject({
+    unavailable: 0,
+  });
+  expect((await handle.query<{ id: string }>("SELECT id FROM photos")).rows).toEqual([
+    { id: result.id },
+  ]);
+  const developed = await dispatch(
+    {
+      verb: "develop",
+      args: [result.id, "--set", "exposure=1"],
+      cwd: parent,
+      env: { noDaemon: true, cacheRoot: join(parent, "cache") },
+    },
+    { version: "test", library: handle },
+  );
+  expect(developed).toMatchObject({ ok: true });
 });
 
 test("generate imports the canonical provider artifact with durable provenance and no automatic upscale", async () => {
@@ -131,9 +233,15 @@ test("explicit generate upscale reaches the requested size and sends a normalize
     .jpeg()
     .toFile(referencePath);
   const requests: Array<{ path: string; body?: Record<string, unknown> }> = [];
+  const uploads: Array<{
+    path: string;
+    fields: Readonly<Record<string, unknown>>;
+    files: ReadonlySet<string>;
+  }> = [];
   const gateway = await startGatewayFixture(0, {
     imageMode: "smallerdims",
     onRequest: (request) => requests.push(request),
+    onImageRequest: (request) => uploads.push(request),
   });
   cleanups.push(
     async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
@@ -188,9 +296,10 @@ test("explicit generate upscale reaches the requested size and sends a normalize
     executions: [{ kind: "generate" }, { kind: "upscale" }],
   });
   expect(requests[0]).toMatchObject({
-    path: "/v1/images/generations",
-    body: { size: "40x30", reference_image: expect.stringMatching(/^data:image\/png;base64,/) },
+    path: "/v1/images/edits",
   });
+  expect(uploads[0]).toMatchObject({ fields: { size: "40x30" } });
+  expect(uploads[0]!.files).toEqual(new Set(["image[]"]));
 });
 
 test("generate provider geometry failure leaves no catalog or graph state", async () => {

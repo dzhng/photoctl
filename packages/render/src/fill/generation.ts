@@ -1,4 +1,12 @@
 import type { Warning } from "@photoctl/protocol";
+import type {
+  GatewayClient,
+  ImageModelAdapter,
+  PreparedImageEdit,
+  PreparedImageGeneration,
+  SentImage,
+} from "@photoctl/providers";
+import { prepareReferenceArtifact } from "./reference.js";
 import { normalizeArtifact, publishArtifact } from "../artifacts/publication.js";
 import {
   canonicalNodeRecipe,
@@ -28,32 +36,14 @@ export interface PreparedGeneration {
 }
 
 export interface StandaloneGenerationDependencies {
-  adapter: {
-    readonly id: string;
-    readonly version: string | null;
-    normalize(
-      response: unknown,
-      sentDimensions: { w: number; h: number },
-    ): Promise<{
-      png: Buffer;
-      returnedDimensions: { w: number; h: number };
-      wholeFrame: boolean;
-      warnings: Warning[];
-    }>;
-  };
-  gateway: {
-    imageGenerations(body: Record<string, unknown>): Promise<{
-      data: unknown;
-      requestId: string | null;
-      attempts: number;
-    }>;
-  };
+  adapter: Pick<ImageModelAdapter, "id" | "version" | "normalize">;
+  gateway: Pick<GatewayClient, "imageGenerations" | "imageEdits">;
   model: string;
   service?: string;
   now?: () => number;
 }
 
-/** Executes a source-less generation and prepares its immutable v2 graph root. */
+/** Standalone generation owns a new canvas; any input is reference intent, not an editable base. */
 export async function executeStandaloneGeneration(
   libraryPath: string,
   input: {
@@ -61,16 +51,26 @@ export async function executeStandaloneGeneration(
     prompt: string;
     promptVersion: number;
     seed?: number;
-    referencePixels: number;
-    referenceUsed: boolean;
+    referenceImage?: SentImage;
     dependencies: StandaloneGenerationDependencies;
-    body: Record<string, unknown>;
+    preparedRequest: PreparedImageGeneration;
   },
 ): Promise<PreparedGeneration> {
   const executionId = newExecutionId();
   const started = (input.dependencies.now ?? Date.now)();
-  const response = await input.dependencies.gateway.imageGenerations(input.body);
+  const prepared = input.preparedRequest;
+  const reference = input.referenceImage
+    ? await prepareReferenceArtifact(libraryPath, input.referenceImage)
+    : undefined;
+  const recipeVersion = reference ? 3 : 2;
+  const inputNodeIds = reference ? [reference.nodeId] : [];
+  const inputArtifactHashes = reference ? [reference.artifact.artifactHash] : [];
+  const response =
+    prepared.route === "edits"
+      ? await input.dependencies.gateway.imageEdits(prepared.body)
+      : await input.dependencies.gateway.imageGenerations(prepared.body);
   const normalized = await input.dependencies.adapter.normalize(response.data, input.dimensions);
+  normalized.warnings.unshift(...prepared.warnings);
   const image = await decodeExternalImage(normalized.png, normalized.returnedDimensions);
   const artifact = await publishArtifact(libraryPath, await normalizeArtifact(image));
   const parameters: JsonValue = {
@@ -85,12 +85,12 @@ export async function executeStandaloneGeneration(
       scope: "standalone",
       requested: [input.dimensions.w, input.dimensions.h],
       returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
-      reference_used: input.referenceUsed,
+      reference_used: prepared.appliedControls.reference,
       ...(input.seed === undefined ? {} : { seed: input.seed }),
     },
   };
   const recipe = recipeHash(
-    canonicalNodeRecipe({ kind: "generate", recipeVersion: 2, parameters, inputNodeIds: [] }),
+    canonicalNodeRecipe({ kind: "generate", recipeVersion, parameters, inputNodeIds }),
   );
   const nodeId = logicalNodeId(recipe) as `node_${string}`;
   const provider: ExternalExecutionProvenance = {
@@ -103,7 +103,10 @@ export async function executeStandaloneGeneration(
     seed: input.seed ?? null,
     durationMs: Math.max(0, (input.dependencies.now ?? Date.now)() - started),
     costUsd: 0,
-    inputPx: input.referencePixels,
+    inputPx:
+      reference && prepared.appliedControls.reference
+        ? reference.artifact.w * reference.artifact.h
+        : 0,
     targetPx: input.dimensions.w * input.dimensions.h,
     attempt: response.attempts,
     densityVerdict: "not-applicable",
@@ -121,12 +124,13 @@ export async function executeStandaloneGeneration(
       {
         localKey: "generation",
         kind: "generate",
-        recipeVersion: 2,
+        recipeVersion,
         parameters,
-        inputs: [],
+        inputs: reference ? [{ localKey: reference.node.localKey }] : [],
       },
+      ...(reference ? [reference.node] : []),
     ],
-    artifacts: [artifact],
+    artifacts: [artifact, ...(reference ? [reference.artifact, reference.encodedArtifact] : [])],
     executions: [
       {
         node: { localKey: "generation" },
@@ -134,11 +138,11 @@ export async function executeStandaloneGeneration(
         evaluationHash: evaluationHash({
           nodeRecipeHash: recipe,
           kind: "generate",
-          recipeVersion: 2,
-          inputArtifactHashes: [],
+          recipeVersion,
+          inputArtifactHashes,
         }),
         outputArtifactHash: artifact.artifactHash,
-        inputArtifactHashes: [],
+        inputArtifactHashes,
         provider,
       },
     ],
@@ -150,13 +154,15 @@ export async function executeFreshGeneration(
   input: {
     inputNodeId: string;
     inputArtifactHash: `a_${string}`;
+    reference?: Awaited<ReturnType<typeof prepareReferenceArtifact>>;
+    requestedInit?: import("@photoctl/providers").ImageInit;
     sentDimensions: { w: number; h: number };
     prompt: string;
     promptVersion: number;
     seed?: number;
     dependencies: FillGenerationDependencies;
     request: (executionId: `exec_${string}`, returned: { w: number; h: number }) => JsonValue;
-    buildRequest: () => FormData | Promise<FormData>;
+    buildRequest: () => PreparedImageEdit | Promise<PreparedImageEdit>;
     validate?: (response: {
       wholeFrame: boolean;
       returnedDimensions: { w: number; h: number };
@@ -166,12 +172,21 @@ export async function executeFreshGeneration(
 ): Promise<PreparedGeneration> {
   const executionId = newExecutionId();
   const started = (input.dependencies.now ?? Date.now)();
-  const response = await input.dependencies.gateway.imageEdits(await input.buildRequest());
+  const prepared = await input.buildRequest();
+  const reference = input.reference;
+  const recipeVersion = reference ? 3 : 1;
+  const inputNodeIds = [input.inputNodeId, ...(reference ? [reference.nodeId] : [])];
+  const inputArtifactHashes = [
+    input.inputArtifactHash,
+    ...(reference ? [reference.artifact.artifactHash] : []),
+  ];
+  const response = await input.dependencies.gateway.imageEdits(prepared.body);
   const normalized = await input.dependencies.adapter.normalize(
     response.data,
     input.sentDimensions,
   );
   input.validate?.(normalized);
+  normalized.warnings.unshift(...prepared.warnings);
   const image = await decodeExternalImage(normalized.png, normalized.returnedDimensions);
   const artifact = await publishArtifact(libraryPath, await normalizeArtifact(image));
   const parameters = {
@@ -181,14 +196,27 @@ export async function executeFreshGeneration(
     model_version: null,
     prompt: input.prompt,
     prompt_version: input.promptVersion,
-    request: input.request(executionId, normalized.returnedDimensions),
+    request: {
+      ...(input.request(executionId, normalized.returnedDimensions) as Record<string, JsonValue>),
+      ...(reference
+        ? {
+            scope: "masked",
+            reference_encoded_artifact_hash: reference.encodedArtifact.artifactHash,
+          }
+        : {}),
+      controls: {
+        requested_init: input.requestedInit ?? "original",
+        applied_init: prepared.appliedControls.init,
+        reference_used: prepared.appliedControls.reference,
+      },
+    },
   } as const;
   const recipe = recipeHash(
     canonicalNodeRecipe({
       kind: "generate",
-      recipeVersion: 1,
+      recipeVersion,
       parameters,
-      inputNodeIds: [input.inputNodeId],
+      inputNodeIds,
     }),
   );
   const nodeId = logicalNodeId(recipe) as `node_${string}`;
@@ -202,7 +230,11 @@ export async function executeFreshGeneration(
     seed: input.seed ?? null,
     durationMs: Math.max(0, (input.dependencies.now ?? Date.now)() - started),
     costUsd: 0,
-    inputPx: input.sentDimensions.w * input.sentDimensions.h,
+    inputPx:
+      input.sentDimensions.w * input.sentDimensions.h +
+      (reference && prepared.appliedControls.reference
+        ? reference.artifact.w * reference.artifact.h
+        : 0),
     targetPx: input.targetPixels,
     attempt: response.attempts,
     densityVerdict: "not-applicable",
@@ -220,12 +252,16 @@ export async function executeFreshGeneration(
       {
         localKey: "generation",
         kind: "generate",
-        recipeVersion: 1,
+        recipeVersion,
         parameters,
-        inputs: [{ nodeId: input.inputNodeId }],
+        inputs: [
+          { nodeId: input.inputNodeId },
+          ...(reference ? [{ localKey: reference.node.localKey }] : []),
+        ],
       },
+      ...(reference ? [reference.node] : []),
     ],
-    artifacts: [artifact],
+    artifacts: [artifact, ...(reference ? [reference.artifact, reference.encodedArtifact] : [])],
     executions: [
       {
         node: { localKey: "generation" },
@@ -233,11 +269,11 @@ export async function executeFreshGeneration(
         evaluationHash: evaluationHash({
           nodeRecipeHash: recipe,
           kind: "generate",
-          recipeVersion: 1,
-          inputArtifactHashes: [input.inputArtifactHash],
+          recipeVersion,
+          inputArtifactHashes,
         }),
         outputArtifactHash: artifact.artifactHash,
-        inputArtifactHashes: [input.inputArtifactHash],
+        inputArtifactHashes,
         provider,
       },
     ],

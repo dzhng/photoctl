@@ -13,6 +13,22 @@ export interface SentImage {
   h: number;
 }
 
+export type ImageInit = "original" | "fill" | "noise" | "empty";
+
+export interface ImageEditControls {
+  reference?: { png: Buffer };
+  init?: ImageInit;
+}
+
+export interface PreparedImageEdit {
+  body: FormData;
+  warnings: Warning[];
+  appliedControls: { reference: boolean; init: ImageInit };
+}
+
+export type PreparedImageGeneration = Omit<PreparedImageEdit, "body"> &
+  ({ route: "generations"; body: Record<string, unknown> } | { route: "edits"; body: FormData });
+
 export interface NormalizedImageResponse {
   png: Buffer;
   returnedDimensions: { w: number; h: number };
@@ -31,14 +47,15 @@ export interface ImageModelAdapter {
     mask: Buffer,
     prompt: string,
     seed?: number,
-  ): Promise<FormData>;
-  buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): FormData;
+    controls?: ImageEditControls,
+  ): Promise<PreparedImageEdit>;
+  buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): PreparedImageEdit;
   buildGeneration(
     prompt: string,
     dimensions: { w: number; h: number },
     seed?: number,
     reference?: { png: Buffer },
-  ): Record<string, unknown>;
+  ): PreparedImageGeneration;
   normalize(
     response: unknown,
     sentDimensions: { w: number; h: number },
@@ -67,7 +84,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
   constructor(options: GatewayImageModelAdapterOptions) {
     this.id =
       options.mask === "native" ? "gateway-image-v1" : "gateway-image-instruction-composite-v1";
-    this.version = options.mask === "native" ? "2" : "1";
+    this.version = options.mask === "native" ? "3" : "2";
     this.model = options.model;
     this.mask = options.mask;
     this.maskPolarity = options.maskPolarity;
@@ -88,7 +105,8 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     mask: Buffer,
     prompt: string,
     seed?: number,
-  ): Promise<FormData> {
+    controls: ImageEditControls = {},
+  ): Promise<PreparedImageEdit> {
     if (this.mask === "native" && this.maskPolarity === "unverified") {
       throw new PhotoctlError(
         "provider_unverified_mask",
@@ -96,8 +114,13 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
       );
     }
     const form = new FormData();
+    const { reference, warnings, appliedControls } = this.prepareControls(controls);
     form.set("model", this.model);
-    form.set("image", pngBlob(crop.png), "crop.png");
+    if (reference) {
+      // The image-edit API applies the mask to the first image in this ordered array.
+      form.append("image[]", pngBlob(crop.png), "crop.png");
+      form.append("image[]", pngBlob(reference.png), "reference.png");
+    } else form.set("image", pngBlob(crop.png), "crop.png");
     if (this.mask === "native") {
       let wireMask = mask;
       if (this.maskPolarity === "transparent-edits") {
@@ -128,10 +151,11 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     form.set("size", `${crop.w}x${crop.h}`);
     form.set("output_format", "png");
     if (seed !== undefined) form.set("seed", String(seed));
-    return form;
+    if (this.model === FAKE_IMAGE_EDIT_MODEL) form.set("init", appliedControls.init);
+    return { body: form, warnings, appliedControls };
   }
 
-  buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): FormData {
+  buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): PreparedImageEdit {
     const form = new FormData();
     form.set("model", this.model);
     form.set("image", pngBlob(crop.png), "image.png");
@@ -142,7 +166,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     form.set("size", `${crop.w}x${crop.h}`);
     form.set("output_format", "png");
     if (seed !== undefined) form.set("seed", String(seed));
-    return form;
+    return { body: form, warnings: [], appliedControls: { reference: false, init: "original" } };
   }
 
   buildGeneration(
@@ -150,16 +174,49 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     dimensions: { w: number; h: number },
     seed?: number,
     reference?: { png: Buffer },
-  ): Record<string, unknown> {
-    return {
+  ): PreparedImageGeneration {
+    const prepared = this.prepareControls(reference ? { reference } : {});
+    const fields = {
       model: this.model,
       prompt,
       size: `${dimensions.w}x${dimensions.h}`,
       output_format: "png",
       ...(seed === undefined ? {} : { seed }),
-      ...(reference
-        ? { reference_image: `data:image/png;base64,${reference.png.toString("base64")}` }
-        : {}),
+    };
+    const metadata = { warnings: prepared.warnings, appliedControls: prepared.appliedControls };
+    if (!prepared.reference) return { route: "generations", body: fields, ...metadata };
+    const form = new FormData();
+    for (const [key, value] of Object.entries(fields)) form.set(key, String(value));
+    if (this.mask === "instruction+composite")
+      form.set("prompt", buildInstructionCompositePrompt("generate", prompt));
+    form.append("image[]", pngBlob(prepared.reference.png), "reference.png");
+    return { route: "edits", body: form, ...metadata };
+  }
+
+  private prepareControls(controls: ImageEditControls) {
+    const warnings: Warning[] = [];
+    const fixture = this.model === FAKE_IMAGE_EDIT_MODEL;
+    const reference =
+      controls.reference && (this.model === "openai/gpt-image-2" || fixture)
+        ? controls.reference
+        : undefined;
+    if (controls.reference && !reference)
+      warnings.push({
+        code: "provider_warning",
+        message: `Reference images are unsupported by ${this.model}; the reference was not sent`,
+      });
+    if (!fixture && controls.init && controls.init !== "original")
+      warnings.push({
+        code: "provider_warning",
+        message: `Initialization ${controls.init} is unsupported by ${this.model}; original initialization was used`,
+      });
+    return {
+      reference,
+      warnings,
+      appliedControls: {
+        reference: reference !== undefined,
+        init: fixture ? (controls.init ?? "original") : ("original" as ImageInit),
+      },
     };
   }
 

@@ -6,6 +6,7 @@ import {
   MASK_ARTIFACT_MEDIA_TYPE,
   readArtifactLinear,
   readMaskArtifactBytes,
+  readEncodedPngArtifactBytes,
 } from "./publication.js";
 
 interface ArtifactDatabase {
@@ -33,7 +34,7 @@ export async function findOrphanArtifacts(
   for (const prefix of prefixes.toSorted()) {
     if (!/^[0-9a-f]{2}$/.test(prefix)) continue;
     for (const name of (await readdir(join(root, prefix))).toSorted()) {
-      const match = /^(a_[0-9a-f]{64})\.tif$/.exec(name);
+      const match = /^(a_[0-9a-f]{64})\.(?:tif|png)$/.exec(name);
       if (match && !known.has(match[1])) paths.push(join(root, prefix, name));
     }
   }
@@ -62,6 +63,17 @@ export async function reconcileArtifactAvailability(
         } else {
           await readArtifactLinear(path, artifact.artifact_hash);
         }
+        present = true;
+      } catch {
+        present = false;
+      }
+    } else if (artifact.media_type === "image/png") {
+      try {
+        await readEncodedPngArtifactBytes(
+          artifactPath(libraryPath, artifact.artifact_hash, "png"),
+          artifact.artifact_hash,
+          artifact,
+        );
         present = true;
       } catch {
         present = false;
@@ -110,7 +122,14 @@ export async function retainedArtifacts(
        FROM retained_nodes AS retained
        JOIN image_nodes AS node
          ON (node.photo_id, node.id) = (retained.photo_id, retained.node_id)
-       WHERE node.kind = 'mask' AND node.recipe_version = 1
+       WHERE (node.kind = 'mask' AND node.recipe_version = 1)
+         OR (node.kind = 'source' AND node.recipe_version = 2)
+       UNION
+       SELECT node.parameters->>'encoded_artifact_hash'
+       FROM retained_nodes AS retained
+       JOIN image_nodes AS node
+         ON (node.photo_id, node.id) = (retained.photo_id, retained.node_id)
+       WHERE node.kind = 'source' AND node.recipe_version = 2
      )
      SELECT DISTINCT artifact.artifact_hash, artifact.artifact_available
      FROM retained_artifacts AS retained

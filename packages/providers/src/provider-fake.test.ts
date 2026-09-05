@@ -27,7 +27,12 @@ test("transparent edit masks preserve fractional coverage as inverse alpha", asy
   })
     .png()
     .toBuffer();
-  const form = await adapter.buildEdit("replace", { png: mask, w: 3, h: 1 }, mask, "replace");
+  const { body: form } = await adapter.buildEdit(
+    "replace",
+    { png: mask, w: 3, h: 1 },
+    mask,
+    "replace",
+  );
   const wire = Buffer.from(await (form.get("mask") as File).arrayBuffer());
   const { data, info } = await sharp(wire).raw().toBuffer({ resolveWithObject: true });
   expect(info.channels).toBe(4);
@@ -52,7 +57,7 @@ test("the image adapter preserves the provider's intrinsic same-ratio raster", a
   })
     .png()
     .toBuffer();
-  const form = await adapter.buildEdit(
+  const { body: form } = await adapter.buildEdit(
     "replace",
     { png: input, w: 20, h: 12 },
     input,
@@ -108,7 +113,7 @@ test("whole-frame fake responses surface the adapter warning", async () => {
   })
     .png()
     .toBuffer();
-  const form = await adapter.buildEdit(
+  const { body: form } = await adapter.buildEdit(
     "replace",
     { png: input, w: 10, h: 8 },
     input,
@@ -158,7 +163,7 @@ test("an unverified native mask is refused before pixels leave the process", asy
 
 test("the reserved image fixture uses a distinct instruction-composite adapter profile", async () => {
   const adapter = createGatewayImageModelAdapter({ model: FAKE_IMAGE_EDIT_MODEL });
-  const form = await adapter.buildEdit(
+  const { body: form } = await adapter.buildEdit(
     "remove",
     { png: Buffer.from("crop"), w: 10, h: 8 },
     Buffer.from("mask"),
@@ -167,7 +172,7 @@ test("the reserved image fixture uses a distinct instruction-composite adapter p
 
   expect(adapter).toMatchObject({
     id: "gateway-image-instruction-composite-v1",
-    version: "1",
+    version: "2",
     mask: "instruction+composite",
     maskPolarity: "unverified",
   });
@@ -185,7 +190,10 @@ test("full-frame reimagine sends source pixels without inventing a native mask",
     .png()
     .toBuffer();
 
-  const form = adapter.buildFullFrameEdit({ png: input, w: 10, h: 8 }, "painted twilight");
+  const { body: form } = adapter.buildFullFrameEdit(
+    { png: input, w: 10, h: 8 },
+    "painted twilight",
+  );
 
   expect(form.has("image")).toBe(true);
   expect(form.has("mask")).toBe(false);
@@ -203,7 +211,7 @@ test("the fake gateway rejects a native mask for its reserved instruction-compos
   })
     .png()
     .toBuffer();
-  const form = await new GatewayImageModelAdapter({
+  const { body: form } = await new GatewayImageModelAdapter({
     model: FAKE_IMAGE_EDIT_MODEL,
     mask: "native",
     maskPolarity: "transparent-edits",

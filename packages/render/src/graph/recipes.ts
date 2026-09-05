@@ -10,9 +10,15 @@ import type {
 import { developDictSchema } from "../develop/dict.js";
 import { effectiveMaskParametersSchema } from "../mask-operations.js";
 
-const pinnedMaskParametersSchema = z
+const pinnedArtifactParametersSchema = z
   .object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) })
   .strict();
+const decodedSourceParametersSchema = z
+  .object({ orientation: z.number().int().min(1).max(8) })
+  .strict();
+const pinnedReferenceParametersSchema = pinnedArtifactParametersSchema.extend({
+  encoded_artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/),
+});
 
 // Pixel-kernel semantics select derived artifacts/views, never paid execution identities.
 const rendererSemanticRevision = 4;
@@ -117,14 +123,11 @@ export const resampleParametersSchema = z
 
 export const imageNodeRegistry = {
   source: definition(
-    z
-      .object({
-        orientation: z.number().int().min(1).max(8),
-      })
-      .strict(),
+    z.union([decodedSourceParametersSchema, pinnedReferenceParametersSchema]),
     0,
     0,
     true,
+    [1, 2],
   ),
   develop: definition(developDictSchema, 1, 1, true),
   generate: definition(
@@ -140,9 +143,9 @@ export const imageNodeRegistry = {
       })
       .strict(),
     0,
-    1,
+    2,
     false,
-    [1, 2],
+    [1, 2, 3],
   ),
   upscale: definition(
     z
@@ -191,7 +194,7 @@ export const imageNodeRegistry = {
     true,
   ),
   mask: definition(
-    z.union([pinnedMaskParametersSchema, effectiveMaskParametersSchema]),
+    z.union([pinnedArtifactParametersSchema, effectiveMaskParametersSchema]),
     0,
     1,
     true,
@@ -270,6 +273,15 @@ export function canonicalNodeRecipe(input: LogicalNodeRecipeInput): string {
 }
 
 function assertVersionedRecipeShape(input: LogicalNodeRecipeInput): void {
+  if (input.kind === "generate" && input.recipeVersion === 3) {
+    const parameters = input.parameters as Record<string, JsonValue>;
+    const request = parameters.request as Record<string, JsonValue>;
+    const expected = request?.scope === "standalone" ? 1 : request?.scope === "masked" ? 2 : 0;
+    if (!expected || input.inputNodeIds.length !== expected)
+      throw new Error(
+        "Referenced generation requires a scoped reference input after any editable base",
+      );
+  }
   if (input.kind !== "composite") return;
   const parameters = input.parameters as Record<string, JsonValue>;
   if (input.recipeVersion === 1) {
@@ -314,10 +326,10 @@ export function evaluationHash(input: {
 }): `eval_${string}` {
   assertHash(input.nodeRecipeHash, "recipe");
   assertRecipeVersion(input.kind, input.recipeVersion);
-  if (input.kind === "source" && !input.source) {
+  if (input.kind === "source" && input.recipeVersion === 1 && !input.source) {
     throw new Error("Source evaluation requires source provenance");
   }
-  if (input.kind !== "source" && input.source) {
+  if ((input.kind !== "source" || input.recipeVersion !== 1) && input.source) {
     throw new Error("Source provenance is only valid for source evaluation");
   }
   assertInputCount(
@@ -361,15 +373,19 @@ export function canonicalParameters(
 ): JsonValue {
   assertRecipeVersion(kind, recipeVersion);
   const schema =
-    kind === "mask"
+    kind === "source"
       ? recipeVersion === 1
-        ? pinnedMaskParametersSchema
-        : effectiveMaskParametersSchema
-      : kind === "resample"
+        ? decodedSourceParametersSchema
+        : pinnedReferenceParametersSchema
+      : kind === "mask"
         ? recipeVersion === 1
-          ? resampleV1ParametersSchema
-          : resampleParametersSchema
-        : imageNodeRegistry[kind].parameters;
+          ? pinnedArtifactParametersSchema
+          : effectiveMaskParametersSchema
+        : kind === "resample"
+          ? recipeVersion === 1
+            ? resampleV1ParametersSchema
+            : resampleParametersSchema
+          : imageNodeRegistry[kind].parameters;
   return sortJson(schema.parse(value) as JsonValue);
 }
 
@@ -455,6 +471,8 @@ function assertVersionedInputCount(kind: ImageNodeKind, version: number, count: 
     if (version === 2 && count !== 0) {
       throw new Error("generate recipe version 2 requires no inputs");
     }
+    if (version === 3 && count !== 1 && count !== 2)
+      throw new Error("Referenced generation requires one or two inputs");
     return;
   }
   if (kind !== "composite") return;

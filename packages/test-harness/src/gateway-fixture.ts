@@ -129,7 +129,15 @@ async function handleRequest(
     mode === "checkerboard"
       ? await checkerboard(output)
       : await sharp({
-          create: { width: output.w, height: output.h, channels: 4, background: "#336699ff" },
+          create: {
+            width: output.w,
+            height: output.h,
+            channels: 4,
+            background:
+              fields.model === "photoctl/fake-image-edit-v1"
+                ? fixtureInitColor(fields.init)
+                : "#336699ff",
+          },
         })
           .png()
           .toBuffer();
@@ -138,6 +146,22 @@ async function handleRequest(
     data: [{ b64_json: png.toString("base64") }],
     photoctl_fixture: { wholeframe: mode === "wholeframe" },
   });
+}
+
+function fixtureInitColor(init: unknown): string {
+  switch (init) {
+    case undefined:
+    case "original":
+      return "#336699ff";
+    case "fill":
+      return "#996633ff";
+    case "noise":
+      return "#669933ff";
+    case "empty":
+      return "#000000ff";
+    default:
+      throw new Error("Unknown fixture image initialization");
+  }
 }
 
 async function checkerboard(dimensions: { w: number; h: number }): Promise<Buffer> {

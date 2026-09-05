@@ -2,7 +2,7 @@
 
 ## Unsound
 
-### Slice 13a generate — Replace the speculative reference transport
+### Slice 13a generate — Speculative reference transport superseded
 
 - **When:** Slice 13a standalone generation, 2026-09-05; evidence correction, 2026-09-06.
 - **The choice:** `generate --ref photo.jpg` rotates and normalizes the reference to PNG, then places one data URL in a
@@ -15,12 +15,15 @@
   live acceptance evidence.
 - **The reach:** A live gateway can reject only reference-bearing calls while text-only generation remains valid. The uncertainty is
   isolated to `ImageModelAdapter.buildGeneration`; catalog, graph, import, and result schemas do not depend on the field name.
-- **Verdict:** **Unsound.** A fake that accepts an invented field cannot establish the live reference
+- **Verdict:** **Unsound, corrected.** A fake that accepts an invented field cannot establish the live reference
   contract. [Current Vercel documentation](https://vercel.com/docs/ai-gateway/modalities/image-generation/openai#editing-images)
   supplies a supported alternative: reference images on `/images/edits`, with `images[].image_url`
-  documented for JSON requests. Replace the speculative generation field through the shared adapter
-  input boundary and retain pinned reference pixels for reproducible refresh. The correction is pending;
-  live photographic acceptance remains a separate check, not a reason to retain the invented field.
+  documented for JSON requests. The shared adapter now uses the
+  [documented OpenAI multipart edit contract](https://developers.openai.com/api/docs/guides/image-generation):
+  repeated `image[]`, with the editable base first when masked. Standalone references also route to
+  edits; the speculative generation field is removed. Dual immutable reference pins preserve exact
+  oriented PNG bytes including alpha and a separate working RGB projection for reproducible refresh.
+  Live photographic acceptance remains separate and unrun.
 - **Confidence:** High in the corrected transport decision; live execution has not been measured.
 
 ## Needs-user
@@ -155,6 +158,28 @@
 - **Verdict:** **Sound.** Content-addressed identity must depend on bytes, not the caller's purpose;
   strict working validation must remain intact when additional encoded formats are retained.
 - **Confidence:** High; implementation and format-by-format tests remain required.
+
+### Slice 12e2 — Reference intent has one adapter and artifact owner
+
+- **When:** Reference/init production integration, 2026-09-06.
+- **The choice:** Providers owns prepared binary request types, capability decisions, warnings and applied
+  controls. Render imports those types only. Supported references use image edits; unsupported requested
+  controls are retained as immutable intent but warned and not sent. Non-original live initialization is
+  unsupported until evidenced; the fake adapter consumes each mode through distinct fixture signatures.
+- **The contract:** Migration 18 admits `source@2` with required working TIFF and encoded PNG hashes,
+  plus scoped `generate@3` reference ancestry. Both pins use existing publication, availability and
+  reachability even before a source execution. Alpha-only changes change request identity; repeat reuses
+  exact intent and warnings; refresh reads encoded bytes after the original path disappears.
+- **The cost:** Working reference normalization remains full-size, allocating display-16 and float RGB
+  buffers proportional to reference pixels and retaining a full-size TIFF in addition to PNG. No silent
+  flattening or reduced tier was invented. Future bounded projection needs an explicit density/role
+  contract; exact encoded reference intent must remain unchanged.
+- **Verdict:** **Sound for the scoped transport/provenance contract.** Public HTTP tests cover reference,
+  initialization, unsupported warnings, repeat, alpha-only change, deleted-file refresh, corruption and
+  restoration. [Capture evidence](assets/reference-controls/README.md) is limited to alpha and fixture
+  distinctions; agent-limit fallback review is recorded, not presented as fresh-agent or live acceptance.
+- **Confidence:** High in tested transport and immutable intent; medium in the full-size working
+  reference cost, which is explicit and not optimized. No claim about live latent or photographic quality.
 
 ### Slice 12f plan — Track whether a crop is active, not only its numeric value
 

@@ -204,11 +204,11 @@ test("logical recipes reject a version their node kind does not support", () => 
   expect(() =>
     canonicalNodeRecipe({
       kind: "source",
-      recipeVersion: 2,
+      recipeVersion: 3,
       parameters: { orientation: 1 },
       inputNodeIds: [],
     }),
-  ).toThrow("source does not support recipe version 2");
+  ).toThrow("source does not support recipe version 3");
 });
 
 test("evaluation identity binds actual artifacts while deterministic execution is reusable", () => {

@@ -108,7 +108,7 @@ test("the latest schema supports promoted sampled-key collisions and cull state"
   }
 });
 
-test("the latest schema permits affine resample recipes without widening other node versions", async () => {
+test("the latest schema permits affine resample recipes while rejecting unknown source versions", async () => {
   const db = await testDatabase();
   try {
     await migrate(db);
@@ -128,7 +128,7 @@ test("the latest schema permits affine resample recipes without widening other n
       db.query(
         `INSERT INTO image_nodes
            (photo_id, id, kind, recipe_version, parameters, recipe_hash)
-         VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', $1, 'source', 2, '{}', $2)`,
+         VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', $1, 'source', 3, '{}', $2)`,
         [`node_${"3".repeat(64)}`, `recipe_${"4".repeat(64)}`],
       ),
     ).rejects.toThrow();
@@ -208,7 +208,7 @@ test("the graph schema separates logical nodes from reusable and attempted execu
       db.query(
         `INSERT INTO image_nodes
            (photo_id, id, kind, recipe_version, parameters, recipe_hash)
-         VALUES ($1, $2, 'source', 2, '{}', $3)`,
+         VALUES ($1, $2, 'source', 3, '{}', $3)`,
         [photoId, `node_${"f".repeat(64)}`, `recipe_${"f".repeat(64)}`],
       ),
     ).rejects.toThrow();
@@ -326,7 +326,7 @@ test("the layer schema keeps identities, snapshots, graph roots, and photos in o
     await expect(
       db.query(
         `INSERT INTO image_nodes (photo_id, id, kind, recipe_version, parameters, recipe_hash)
-         VALUES ($1, $2, 'source', 2, '{}', $3)`,
+         VALUES ($1, $2, 'source', 3, '{}', $3)`,
         [first, `node_${"7".repeat(64)}`, `recipe_${"7".repeat(64)}`],
       ),
     ).rejects.toThrow();

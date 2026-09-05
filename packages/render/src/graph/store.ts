@@ -348,7 +348,7 @@ export async function commitRevisionInTransaction(
     preparedNodeIds,
   );
   await mapInOrder([...retainedRoots], async (nodeId) => {
-    await assertMaskArtifactsAvailable(transaction, request.photoId, nodeId);
+    await assertPinnedArtifactsAvailable(transaction, request.photoId, nodeId);
   });
   await mapInOrder([...rootUpdates.values()], async (nodeId) => {
     await assertRootActivationAllowed(
@@ -811,7 +811,7 @@ async function resolveLayerSnapshot(
   });
 }
 
-async function assertMaskArtifactsAvailable(
+async function assertPinnedArtifactsAvailable(
   transaction: GraphTransaction,
   photoId: string,
   nodeId: string,
@@ -825,19 +825,24 @@ async function assertMaskArtifactsAvailable(
        JOIN ancestors ON ancestors.node_id = edge.node_id
        WHERE edge.photo_id = $1
      )
-     SELECT node.parameters->>'artifact_hash' AS artifact_hash
+     SELECT pin.artifact_hash
      FROM ancestors
      JOIN image_nodes AS node ON node.photo_id = $1 AND node.id = ancestors.node_id
-     LEFT JOIN image_artifacts AS artifact
-       ON artifact.artifact_hash = node.parameters->>'artifact_hash'
-     WHERE node.kind = 'mask' AND node.recipe_version = 1
-       AND (COALESCE(artifact.artifact_available, false) = false OR artifact.media_type <> $3)
+     CROSS JOIN LATERAL (VALUES
+       (node.parameters->>'artifact_hash', CASE WHEN node.kind = 'mask' THEN $3 ELSE 'image/tiff' END),
+       (CASE WHEN node.kind = 'source' THEN node.parameters->>'encoded_artifact_hash' END, 'image/png')
+     ) AS pin(artifact_hash, media_type)
+     LEFT JOIN image_artifacts AS artifact ON artifact.artifact_hash = pin.artifact_hash
+     WHERE ((node.kind = 'mask' AND node.recipe_version = 1)
+       OR (node.kind = 'source' AND node.recipe_version = 2))
+       AND pin.artifact_hash IS NOT NULL
+       AND (COALESCE(artifact.artifact_available, false) = false OR artifact.media_type <> pin.media_type)
      LIMIT 1`,
     [photoId, nodeId, MASK_ARTIFACT_MEDIA_TYPE],
   );
   if (unavailable.rows.length > 0) {
     throw new Error(
-      `Mask artifact is unavailable or has the wrong media type: ${unavailable.rows[0].artifact_hash}`,
+      `Pinned artifact is unavailable or has the wrong media type: ${unavailable.rows[0].artifact_hash}`,
     );
   }
 }
@@ -932,7 +937,15 @@ async function nodePixelKind(
     row.kind === "heal" ||
     row.kind === "markup"
   ) {
-    assertPixelInputKinds(row.kind, inputKinds, row.kind === "heal" ? ["rgb", "mask"] : ["rgb"]);
+    assertPixelInputKinds(
+      row.kind,
+      inputKinds,
+      row.kind === "heal"
+        ? ["rgb", "mask"]
+        : row.kind === "generate"
+          ? inputKinds.map(() => "rgb")
+          : ["rgb"],
+    );
     return "rgb";
   }
   if (row.kind === "mask_composite") {

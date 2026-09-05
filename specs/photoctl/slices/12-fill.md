@@ -6,12 +6,8 @@ and the agent preview journey. Each rung is useful and testable before the next 
 
 ## Remaining implementation after 12d
 
-The public parser accepts layer remove/prompt, fit/strength, pad, seed, model, upscale controls, and move.
 The following remaining requirements are independent of missing live credentials:
 
-- **12e2 provider inputs:** input-size capping and `--full-res` are implemented; `--ref` and `--init`
-  remain. Unsupported adapter capabilities produce the specified warnings. Verify actual HTTP bodies,
-  immutable reference provenance, and refresh reuse with the fake gateway.
 - **12f outpaint:** implement `--outpaint --aspect|--px` through an explicit canvas/coordinate contract
   that retains original pixels, places invented exterior pixels, and keeps later layer, preview,
   export, and undo operations coherent. Settle this geometry in a reviewable plan before coding;
@@ -35,21 +31,37 @@ The public-command regression in `fill-input-size.test.ts` inspects the actual u
 both modes, and checks canonical output dimensions and protected samples. This is deterministic
 geometry/provenance evidence, not a live-provider or photographic quality verdict.
 
-### Reference-input implementation boundary
+### Reference and initialization intent
 
-Pin the normalized reference as a reachable immutable RGB graph input, not just a hash inside
-request JSON. Refresh must use those pinned pixels even after the caller's reference path changes
-or disappears. A new reference or initialization request cannot reuse generation made for different
-inputs. Decoder-backed source leaves and pinned-reference leaves have distinct recipes; do not import
-a reference as an extra library photo or create a second artifact-retention owner.
+The [image adapter](../../../packages/providers/src/adapters/image.ts) owns the wire request,
+unsupported-control warnings, and applied controls. Render consumes its types without importing a
+provider client. Reference-guided generation uses image edits, not a generations-only field; masked
+edits send the editable image first because the provider applies the mask to the first image.
+This follows the [documented OpenAI image-edit contract](https://developers.openai.com/api/docs/guides/image-generation)
+and [gateway image-edit support](https://vercel.com/docs/ai-gateway/modalities/image-generation/openai).
+Documentation establishes the wire shape, not live mask polarity or visual quality.
 
-[Vercel's image-editing contract](https://vercel.com/docs/ai-gateway/modalities/image-generation/openai#editing-images)
-documents multiple source images on `/images/edits`, including a JSON `images[].image_url` form for
-URLs or inline data. Use a documented fixed adapter profile; the earlier standalone-generation
-`reference_image` field is not established by that contract. Reference-bearing standalone generation
-must share the supported edit-input boundary rather than retain that speculative field. Keep actual
-multipart spelling grounded in the SDK transport when using uploads. Unsupported controls still warn;
-documentation does not replace live polarity or photographic acceptance evidence.
+Requested references are dual artifact pins in the paid graph, not filesystem paths and not extra
+photos. The exact oriented PNG preserves alpha and is sent unchanged on refresh; its working RGB
+TIFF is a separate render projection. Both use the existing content-addressed publication,
+availability, and retention owner, even if the RGB leaf has never been evaluated. Alpha-only changes
+therefore change reference intent. A reference remains reachable even when an adapter cannot use it: refresh retains
+the same immutable intent and repeats the warning, while applied-control provenance and charged
+input pixels distinguish what was actually sent. Changing reference pixels or initialization creates
+a different fill intent; exact repeats reuse the paid result and its warnings. Standalone generation
+still owns a new canvas even when a reference is an input.
+
+Migration 18 admits the pinned `source@2` leaf and reference-bearing `generate@3` recipe; it does
+not rewrite paid history. The working reference projection currently retains full reference dimensions,
+so its RGB normalization has memory and storage cost proportional to reference pixels. The exact PNG
+is not flattened or silently downsampled to hide that cost.
+
+Initialization is delegated, never confused with local feathering or denoise. Unsupported modes keep
+original initialization with a warning; the default is silent. The fake gateway consumes each mode
+with a distinct deterministic signature so public command tests can verify dispatch and refresh.
+These signatures are harness evidence, not an implementation of any live model's latent initialization.
+The [capture record](../assets/reference-controls/README.md) includes exact sent references, all four
+fixture signatures, alpha-aware telemetry, and the explicitly limited adversarial review verdict.
 
 ## 12e1 effective-mask ownership
 

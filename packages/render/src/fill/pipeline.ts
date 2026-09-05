@@ -1,5 +1,7 @@
 import { PhotoctlError, type Warning } from "@photoctl/protocol";
-import { publishArtifact, readArtifactImage } from "../artifacts/publication.js";
+import type { ImageInit, ImageModelAdapter, SentImage } from "@photoctl/providers";
+import { prepareReferenceArtifact } from "./reference.js";
+import { readArtifactImage } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
 import { loadBaseProjection } from "../graph/projection.js";
 import {
@@ -14,13 +16,11 @@ import {
   loadActiveDocument,
   type GraphDatabase,
   type NodeDraft,
-  type NodeReference,
 } from "../graph/store.js";
-import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
+import type { JsonValue } from "../graph/types.js";
 import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { planPhotographicOutput } from "../graph/output.js";
 import { unfilledVacancyLayerIds } from "../layers/status.js";
-import type { Image16 } from "../source-render.js";
 import { planFillCrop } from "./crop.js";
 import type { SourceContextDensity } from "./density.js";
 import { resolveFillFit } from "./fit.js";
@@ -28,7 +28,7 @@ import type { FillFit } from "../mask-operations.js";
 import { prepareFillMask } from "./mask.js";
 import { findReusableFillLineage } from "./reuse.js";
 import type { ResolvedUpscalePolicy } from "./upscale-policy.js";
-import { fillProviderInputs, image16Png } from "./external-pixels.js";
+import { fillProviderInputs } from "./external-pixels.js";
 import {
   executeFreshGeneration,
   executeGenerationDensity,
@@ -36,31 +36,10 @@ import {
 } from "./generation.js";
 
 export interface FillGenerationDependencies {
-  adapter: {
-    readonly id: string;
-    readonly version: string | null;
-    buildEdit(
-      operation: string,
-      crop: { png: Buffer; w: number; h: number },
-      mask: Buffer,
-      prompt: string,
-      seed?: number,
-    ): Promise<FormData>;
-    buildFullFrameEdit(
-      crop: { png: Buffer; w: number; h: number },
-      prompt: string,
-      seed?: number,
-    ): FormData;
-    normalize(
-      response: unknown,
-      sentDimensions: { w: number; h: number },
-    ): Promise<{
-      png: Buffer;
-      returnedDimensions: { w: number; h: number };
-      wholeFrame: boolean;
-      warnings: Array<{ code: import("@photoctl/protocol").WarningCode; message: string }>;
-    }>;
-  };
+  adapter: Pick<
+    ImageModelAdapter,
+    "id" | "version" | "buildEdit" | "buildFullFrameEdit" | "normalize"
+  >;
   gateway: {
     imageEdits(body: FormData): Promise<{
       data: unknown;
@@ -138,6 +117,8 @@ export async function fillLayer(
     fit?: FillFit;
     pad?: number;
     fullResolution?: boolean;
+    init?: ImageInit;
+    referenceImage?: SentImage;
     seed?: number;
     source: EvaluateGraphNodeRequest["source"];
     dependencies: FillGenerationDependencies;
@@ -180,12 +161,19 @@ export async function fillLayer(
   if (!mask.data.some((value) => value > 0))
     throw new PhotoctlError("usage", "The effective selection is not visible in the current frame");
   const crop = planFillCrop(mask, request.pad);
+  const reference = request.referenceImage
+    ? await prepareReferenceArtifact(libraryPath, request.referenceImage)
+    : undefined;
   const reusable = fillingVacancy
     ? undefined
     : await findReusableFillLineage(
         database,
         libraryPath,
-        { ...request, effectiveMaskNodeId: effective.effectiveNodeId },
+        {
+          ...request,
+          effectiveMaskNodeId: effective.effectiveNodeId,
+          referenceEncodedArtifactHash: reference?.encodedArtifact.artifactHash,
+        },
         selected,
         crop,
         {
@@ -195,26 +183,19 @@ export async function fillLayer(
       );
   const strictBaseNodeId = reusable?.baseNodeId ?? fillBaseNodeId;
   const sourceContext = reusable?.sourceContext ?? request.sourceContext;
-  let generationNodeId: `node_${string}`;
-  let provider: ExternalExecutionProvenance;
-  let normalized: {
-    png: Buffer;
-    returnedDimensions: { w: number; h: number };
-    warnings: Warning[];
-  };
-  let generated: Image16;
-  let generatedPublished: Awaited<ReturnType<typeof publishArtifact>>;
-  let generationDraft: NodeDraft | undefined;
-  let generationExecution: import("../graph/store.js").PreparedNodeExecution | undefined;
+  let generation: PreparedGeneration;
   if (reusable) {
-    generationNodeId = reusable.nodeId;
-    provider = reusable.provider;
-    generated = reusable.image;
-    generatedPublished = reusable.artifact;
-    normalized = {
-      png: await image16Png(generated),
-      returnedDimensions: { w: generated.w, h: generated.h },
-      warnings: [],
+    generation = {
+      nodeId: reusable.nodeId,
+      reference: { nodeId: reusable.nodeId },
+      provider: reusable.provider,
+      image: reusable.image,
+      artifact: reusable.artifact,
+      returnedDimensions: { w: reusable.image.w, h: reusable.image.h },
+      warnings: [...reusable.provider.warnings],
+      nodes: [],
+      artifacts: [],
+      executions: [],
     };
     if (!reusable.generationRecipe.intentMatches) {
       const executionId = newExecutionId();
@@ -237,41 +218,48 @@ export async function fillLayer(
           },
         },
       } as JsonValue;
-      generationDraft = {
+      const generationDraft: NodeDraft = {
         localKey: "generation",
         kind: "generate",
         recipeVersion: reusable.generationRecipe.recipeVersion,
         parameters,
-        inputs: [{ nodeId: reusable.generationRecipe.inputNodeId }],
+        inputs: reusable.generationRecipe.inputNodeIds.map((nodeId) => ({ nodeId })),
       };
       const recipe = recipeHash(
         canonicalNodeRecipe({
           kind: "generate",
           recipeVersion: generationDraft.recipeVersion,
           parameters,
-          inputNodeIds: [reusable.generationRecipe.inputNodeId],
+          inputNodeIds: reusable.generationRecipe.inputNodeIds,
         }),
       );
-      generationNodeId = logicalNodeId(recipe) as `node_${string}`;
-      generationExecution = {
-        node: { localKey: "generation" },
-        executionId,
-        evaluationHash: evaluationHash({
-          nodeRecipeHash: recipe,
-          kind: "generate",
-          recipeVersion: generationDraft.recipeVersion,
+      generation.nodeId = logicalNodeId(recipe) as `node_${string}`;
+      generation.reference = { localKey: "generation" };
+      generation.nodes = [generationDraft];
+      generation.artifacts = [reusable.artifact];
+      generation.executions = [
+        {
+          node: { localKey: "generation" },
+          executionId,
+          evaluationHash: evaluationHash({
+            nodeRecipeHash: recipe,
+            kind: "generate",
+            recipeVersion: generationDraft.recipeVersion,
+            inputArtifactHashes: reusable.generationRecipe.inputArtifactHashes,
+          }),
+          outputArtifactHash: reusable.artifact.artifactHash,
           inputArtifactHashes: reusable.generationRecipe.inputArtifactHashes,
-        }),
-        outputArtifactHash: reusable.artifact.artifactHash,
-        inputArtifactHashes: reusable.generationRecipe.inputArtifactHashes,
-        provider,
-      };
+          provider: reusable.provider,
+        },
+      ];
     }
   } else {
     const sent = await fillProviderInputs(base, mask, crop, request.fullResolution, baseToInput);
-    const prepared = await executeFreshGeneration(libraryPath, {
+    generation = await executeFreshGeneration(libraryPath, {
       inputNodeId: fillBaseNodeId,
       inputArtifactHash: baseEvaluation.artifact.artifactHash,
+      ...(reference ? { reference } : {}),
+      requestedInit: request.init,
       sentDimensions: sent.image,
       prompt: request.prompt,
       promptVersion: request.promptVersion,
@@ -284,6 +272,10 @@ export async function fillLayer(
           sent.mask,
           request.prompt,
           request.seed,
+          {
+            init: request.init,
+            ...(request.referenceImage ? { reference: request.referenceImage } : {}),
+          },
         ),
       validate: ({ wholeFrame }) => {
         if (wholeFrame && fit.mode === "strict")
@@ -326,35 +318,11 @@ export async function fillLayer(
       }),
       targetPixels: crop.w * crop.h,
     });
-    generationNodeId = prepared.nodeId;
-    provider = prepared.provider;
-    generated = prepared.image;
-    generatedPublished = prepared.artifact;
-    normalized = {
-      png: await image16Png(prepared.image),
-      returnedDimensions: prepared.returnedDimensions,
-      warnings: prepared.warnings,
-    };
-    generationDraft = prepared.nodes[0];
-    generationExecution = prepared.executions[0];
   }
-  const generationReference: NodeReference = generationDraft
-    ? { localKey: "generation" }
-    : { nodeId: generationNodeId };
+  const { nodeId: generationNodeId, provider } = generation;
   const cachedUpscale = reusable?.cachedUpscale;
   const density = await executeGenerationDensity(libraryPath, {
-    generation: {
-      nodeId: generationNodeId,
-      reference: generationReference,
-      provider,
-      image: generated,
-      artifact: generatedPublished,
-      returnedDimensions: normalized.returnedDimensions,
-      warnings: normalized.warnings,
-      nodes: generationDraft ? [generationDraft] : [],
-      artifacts: generationDraft ? [generatedPublished] : [],
-      executions: generationExecution ? [generationExecution] : [],
-    } satisfies PreparedGeneration,
+    generation,
     target: {
       kind: "base_space_provider_crop",
       dimensionsIncludingPad: { w: crop.w, h: crop.h },
@@ -436,7 +404,7 @@ export async function fillLayer(
     renderHash: committed.renderHash as `r_${string}`,
     generationNodeId: generationNodeId as `node_${string}`,
     compositeNodeId: committed.nodes["strict-composite"]!.id as `node_${string}`,
-    returnedDimensions: normalized.returnedDimensions,
+    returnedDimensions: generation.returnedDimensions,
     sourceContext,
     upscale: {
       enabled: density.upscale.enabled,

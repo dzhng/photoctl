@@ -8,6 +8,18 @@ const MAX_PAGE = 100;
 const MAX_SUMMARY_INPUTS = 32;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
+// Reference leaves are ready without evaluating their working RGB projection.
+const nodeArtifactAvailabilitySql = `CASE WHEN node.kind = 'source' AND node.recipe_version = 2 THEN
+  EXISTS (SELECT 1 FROM image_artifacts AS working
+    JOIN image_artifacts AS encoded ON encoded.artifact_hash = node.parameters->>'encoded_artifact_hash'
+    WHERE working.artifact_hash = node.parameters->>'artifact_hash'
+      AND working.media_type = 'image/tiff' AND encoded.media_type = 'image/png'
+      AND working.artifact_available AND encoded.artifact_available)
+  ELSE EXISTS (SELECT 1 FROM node_executions AS execution
+    JOIN image_artifacts AS artifact ON artifact.artifact_hash = execution.output_artifact_hash
+    WHERE execution.photo_id = node.photo_id AND execution.node_id = node.id
+      AND artifact.artifact_available) END`;
+
 export interface GraphNodeSummary {
   id: string;
   kind: ImageNodeKind;
@@ -128,13 +140,7 @@ export async function inspectGraph(
         WHERE input.photo_id = node.photo_id AND input.node_id = node.id) AS input_count,
        (SELECT count(*)::text FROM node_executions AS execution
         WHERE execution.photo_id = node.photo_id AND execution.node_id = node.id) AS execution_count,
-       EXISTS (
-         SELECT 1 FROM node_executions AS execution
-         JOIN image_artifacts AS artifact
-           ON artifact.artifact_hash = execution.output_artifact_hash
-         WHERE execution.photo_id = node.photo_id AND execution.node_id = node.id
-           AND artifact.artifact_available = true
-       ) AS artifact_available
+       ${nodeArtifactAvailabilitySql} AS artifact_available
      FROM reachable
      JOIN image_nodes AS node ON node.photo_id = $1 AND node.id = reachable.id
      WHERE node.id > $4
@@ -230,13 +236,7 @@ export async function inspectGraphNode(
         WHERE consumer.photo_id = node.photo_id AND consumer.input_node_id = node.id) AS consumer_count,
        (SELECT count(*)::text FROM node_executions AS execution
         WHERE execution.photo_id = node.photo_id AND execution.node_id = node.id) AS execution_count,
-       EXISTS (
-         SELECT 1 FROM node_executions AS execution
-         JOIN image_artifacts AS artifact
-           ON artifact.artifact_hash = execution.output_artifact_hash
-         WHERE execution.photo_id = node.photo_id AND execution.node_id = node.id
-           AND artifact.artifact_available = true
-       ) AS artifact_available
+       ${nodeArtifactAvailabilitySql} AS artifact_available
      FROM image_nodes AS node WHERE node.photo_id = $1 AND node.id = $2`,
     [request.photoId, request.nodeId],
   );

@@ -6,11 +6,18 @@ import { afterEach, expect, test } from "vitest";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { encodeDisplayTiff } from "../linear-tiff.js";
-import { reconcileArtifactAvailability, retainedArtifacts } from "./availability.js";
+import {
+  reconcileArtifactAvailability,
+  retainedArtifacts,
+  findOrphanArtifacts,
+} from "./availability.js";
+import sharp from "sharp";
 import {
   artifactPath,
   MASK_ARTIFACT_MEDIA_TYPE,
   normalizeMaskArtifact,
+  normalizeEncodedPngArtifact,
+  registerPublishedArtifact,
   publishArtifact,
 } from "./publication.js";
 
@@ -18,6 +25,30 @@ const directories: string[] = [];
 
 afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
+});
+
+test("encoded PNG publication shares orphan discovery and registration", async () => {
+  const library = await mkdtemp(join(tmpdir(), "photoctl-encoded-orphan-"));
+  directories.push(library);
+  const database = await testDatabase();
+  await migrate(database);
+  try {
+    const png = await sharp({
+      create: { width: 2, height: 1, channels: 4, background: "#ff000080" },
+    })
+      .png()
+      .toBuffer();
+    const artifact = await publishArtifact(library, await normalizeEncodedPngArtifact(png));
+    expect(await findOrphanArtifacts(database, library)).toEqual([artifact.path]);
+    await registerPublishedArtifact(database, artifact);
+    expect(await findOrphanArtifacts(database, library)).toEqual([]);
+    expect(await reconcileArtifactAvailability(database, library)).toEqual({
+      available: 1,
+      unavailable: 0,
+    });
+  } finally {
+    await database.close();
+  }
 });
 
 test("reconciliation invalidates legacy display artifacts", async () => {

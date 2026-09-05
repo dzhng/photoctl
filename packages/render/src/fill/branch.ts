@@ -119,8 +119,8 @@ export async function describeFillBranch(
   }
   if (
     placement.kind !== "generate" ||
-    placement.recipeVersion !== 1 ||
-    placement.inputNodeIds.length !== 1 ||
+    (placement.recipeVersion !== 1 && placement.recipeVersion !== 3) ||
+    placement.inputNodeIds.length !== (placement.recipeVersion === 3 ? 2 : 1) ||
     !validPaidNode(placement, "generate")
   )
     return undefined;
