@@ -130,7 +130,43 @@ ceiling was rejected because an identical request can grow repeatedly (10×7 →
 The exact-ratio contract above gives 12×8 once and then a no-op. The non-blocking question received
 no contrary answer; keep this planner choice reversible before any canvas is authored.
 
-After those decisions are materialized, implement the immutable canvas/extent recipe and the
+### Geometry intent and ordinary layer operations
+
+The same absolute control value can mean a new restriction after a border consumed it. For example,
+crop C → border A → explicit `develop --set crop=C` must restrict A's expanded picture; only the next
+identical set is a no-op. The current handler compares just the final develop dictionary and would
+incorrectly discard the first set. Move semantic no-op detection into the graph-owned output planner.
+
+Keep current absolute geometry values together with the activation provenance of crop/aspect
+restrictions in immutable graph intent. Each border captures an authoring checkpoint. A single global
+"geometry changed" counter is insufficient: changing exposure, rotate, or straighten cannot reactivate
+a consumed crop. Preserve the explicit fields touched by the command through this boundary:
+
+- `--set` and `--unset` touch the named fields; presets touch only keys their overlay supplies.
+- `--copy-from` replaces the full develop dictionary and explicitly sets/clears its geometry restrictions.
+- `--reset` clears all current restrictions, including their fallback intent after borders are removed.
+- Auto-enhance touches only fields it actually proposes; undo restores its prior intent rather than
+  activating unrelated historical geometry. Revision undo restores the complete recorded graph state.
+
+Intent changes can warrant a revision even when current pixels happen to match: clearing a consumed
+crop changes what will be visible after border removal. Do not hide this state solely in optional
+revision metadata that unrelated layer writers omit. One canonical output planner must serve develop,
+manual mask/layer creation, and every layer mutation; changing only `commitLayerSnapshot` is insufficient.
+
+Reordering changes paint order, not authoring chronology. Duplicating copies an authored checkpoint and
+extent; it is not another expansion and does not consume the current geometry again. Removing one of
+two coincident copies keeps the remaining copy's conditional boundary active. Provisionally, an explicit
+layer transform moves that border's generated pixels, mask, and extent contribution together, while its
+authored input exclusion remains fixed in original coordinates. It does not rotate or move the whole
+document, reveal excluded source pixels, or move later borders. Vacated areas follow the uncovered-canvas
+policy above.
+
+**Remaining decision gate:** specify an exterior crop whose supporting borders are later all removed.
+Removal must not silently reset the current crop or fail just because source-bounds validation used to
+assume no exterior canvas. Settle clipped-source versus retained unsupported viewport behavior before
+implementation, and verify nonzero straighten using exact frame composition, not angle subtraction.
+
+After that final viewport decision is materialized, implement the immutable canvas/extent recipe and the
 canonical layer/output builder together. Current enabled layer state derives the extent; do not add
 a mutable canvas table. New constrained node kinds or roles use the next numbered migration with its
 schema fixture and upgrade test. All output-building paths must retain the same extent contract.

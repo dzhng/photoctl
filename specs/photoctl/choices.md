@@ -99,7 +99,38 @@
 - **Confidence:** Medium; the tradeoff spends additional disk space, and representative library-history
   measurements are still required before any automatic deletion policy.
 
+### Slice 12f plan — Transform the border, not the whole photograph
+
+- **When:** Outpaint lifecycle recon, 2026-09-06; not implemented yet.
+- **The choice:** Moving an outpaint layer moves its generated pixels, edit mask, and extent together.
+  The source area excluded when that border was authored stays excluded while its boundary is active.
+  Other borders retain their own authored positions. Reordering changes paint order only; duplication
+  creates another copy at the same footprint, not another canvas expansion.
+- **The gap:** Ordinary layer operations were required but their effect on authored canvas extent was unspecified.
+- **The reach:** Border transforms are local paint edits, unlike develop rotation of the whole picture.
+  Resulting holes use the declared background/warning policy rather than triggering generation.
+- **Verdict:** **Needs-user.** Provisionally preserve the existing meaning of layer transforms as local
+  operations. A whole-canvas transform would be a separate product operation, not an implicit side effect.
+  This choice is reversible in the planner before implementation.
+- **Confidence:** Medium.
+
 ## Sound
+
+### Slice 12f plan — Track whether a crop is active, not only its numeric value
+
+- **When:** Outpaint geometry-intent recon, 2026-09-06; not implemented yet.
+- **The choice:** Crop to rectangle C, expand with border A, then explicitly set crop C again. That
+  command must crop the expanded picture even though the absolute crop value equals the old value.
+  Repeating the set afterward is a no-op. A graph-owned geometry-intent record therefore preserves
+  which restrictions were explicitly activated after each border's authoring checkpoint. Exposure
+  or rotation changes do not reactivate a consumed crop.
+- **The gap:** Equal develop dictionaries previously implied equal intent because there was no canvas authoring boundary.
+- **The reach:** The canonical output planner must own semantic no-op detection across develop and
+  layer writers. Reset/copy/preset operations retain explicit field-touch semantics; optional revision
+  metadata alone cannot own state that ordinary layer mutations would drop.
+- **Verdict:** **Sound.** It distinguishes an actual user action from an incidental unchanged value,
+  without a second mutable geometry table or permanently destructive crop.
+- **Confidence:** High for the required distinction; exact node representation remains to be implemented.
 
 ### Upscaler reports — Unequal rasters have no direct pixel-drift measurement
 
