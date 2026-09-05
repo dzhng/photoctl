@@ -54,7 +54,37 @@ test("logical recipes canonicalize parameters but preserve ordered node inputs",
       inputNodeIds: [inputs[0]],
     }),
   ).toThrow();
-  expect(Object.keys(imageNodeRegistry)).toHaveLength(11);
+  expect(Object.keys(imageNodeRegistry)).toHaveLength(13);
+});
+
+test("composite v2 binds ordered content-mask pairs to aligned pixel parameters", () => {
+  const base = `node_${"1".repeat(64)}`;
+  const content = `node_${"2".repeat(64)}`;
+  const mask = `node_${"3".repeat(64)}`;
+  const recipe = canonicalNodeRecipe({
+    kind: "composite",
+    recipeVersion: 2,
+    parameters: { layers: [{ opacity: 0.5, blend: "normal" }] },
+    inputNodeIds: [base, content, mask],
+  });
+
+  expect(recipe).toContain('"recipe_version":2');
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "composite",
+      recipeVersion: 2,
+      parameters: { layers: [{ opacity: 0.5, blend: "normal" }] },
+      inputNodeIds: [base, mask, content, mask, content],
+    }),
+  ).toThrow("one content/mask pair per layer");
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "composite",
+      recipeVersion: 1,
+      parameters: { opacity: 1, blend: "normal" },
+      inputNodeIds: [base],
+    }),
+  ).toThrow("at least two inputs");
 });
 
 test("logical recipes reject a version their node kind does not support", () => {

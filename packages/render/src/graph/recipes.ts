@@ -95,14 +95,31 @@ export const imageNodeRegistry = {
     1,
     true,
   ),
+  mask: definition(
+    z.object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) }).strict(),
+    0,
+    0,
+    true,
+  ),
+  delta: definition(developDictSchema, 1, 1, true),
   mask_composite: definition(z.object({ feather: z.number().nonnegative() }).strict(), 3, 3, true),
   composite: definition(
-    z
-      .object({ opacity: z.number().min(0).max(1), blend: z.enum(["normal"]).default("normal") })
-      .strict(),
-    2,
+    z.union([
+      z
+        .object({ opacity: z.number().min(0).max(1), blend: z.enum(["normal"]).default("normal") })
+        .strict(),
+      z
+        .object({
+          layers: z.array(
+            z.object({ opacity: z.number().min(0).max(1), blend: z.enum(["normal"]) }).strict(),
+          ),
+        })
+        .strict(),
+    ]),
+    1,
     Number.MAX_SAFE_INTEGER,
     true,
+    [1, 2],
   ),
   crop: definition(
     z
@@ -130,6 +147,8 @@ export function canonicalNodeRecipe(input: LogicalNodeRecipeInput): string {
   const nodeDefinition = imageNodeRegistry[input.kind];
   assertRecipeVersion(input.kind, input.recipeVersion);
   assertInputCount(input.kind, nodeDefinition.inputs, input.inputNodeIds.length);
+  assertVersionedInputCount(input.kind, input.recipeVersion, input.inputNodeIds.length);
+  assertVersionedRecipeShape(input);
   for (const id of input.inputNodeIds) assertHash(id, "node");
   return canonicalJson({
     input_node_ids: input.inputNodeIds,
@@ -137,6 +156,24 @@ export function canonicalNodeRecipe(input: LogicalNodeRecipeInput): string {
     parameters: canonicalParameters(input.kind, input.parameters),
     recipe_version: input.recipeVersion,
   });
+}
+
+function assertVersionedRecipeShape(input: LogicalNodeRecipeInput): void {
+  if (input.kind !== "composite") return;
+  const parameters = input.parameters as Record<string, JsonValue>;
+  if (input.recipeVersion === 1) {
+    if (!("opacity" in parameters)) {
+      throw new Error("composite recipe version 1 requires opacity and blend parameters");
+    }
+  }
+  if (input.recipeVersion === 2) {
+    const layers = parameters.layers;
+    if (!Array.isArray(layers) || input.inputNodeIds.length !== 1 + layers.length * 2) {
+      throw new Error(
+        "composite recipe version 2 requires one base and one content/mask pair per layer",
+      );
+    }
+  }
 }
 
 export function recipeHash(canonical: string): `recipe_${string}` {
@@ -173,6 +210,7 @@ export function evaluationHash(input: {
     imageNodeRegistry[input.kind].inputs,
     input.inputArtifactHashes.length,
   );
+  assertVersionedInputCount(input.kind, input.recipeVersion, input.inputArtifactHashes.length);
   for (const hash of input.inputArtifactHashes) assertHash(hash, "a");
   return hashIdentity(
     "eval",
@@ -269,6 +307,16 @@ function assertInputCount(
   const expected =
     arity.minimum === arity.maximum ? String(arity.minimum) : `at least ${arity.minimum}`;
   throw new Error(`${kind} expects ${expected} inputs; received ${count}`);
+}
+
+function assertVersionedInputCount(kind: ImageNodeKind, version: number, count: number): void {
+  if (kind !== "composite") return;
+  if (version === 1 && count < 2) {
+    throw new Error("composite recipe version 1 requires at least two inputs");
+  }
+  if (version === 2 && count % 2 !== 1) {
+    throw new Error("composite recipe version 2 requires one base and content/mask input pairs");
+  }
 }
 
 function definition(

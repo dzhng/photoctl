@@ -5,10 +5,12 @@ import { expect, test } from "vitest";
 import {
   commitRevision,
   ensurePhotoDocument,
+  loadActiveDocument,
   RevisionConflictError,
   setRevisionPinned,
   undoRevision,
 } from "./store.js";
+import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 
 const firstPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
 const secondPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
@@ -44,7 +46,10 @@ test("one revision atomically stores a chain with ordered shared inputs and redi
       { input_index: 1, input_node_id: committed.nodes.bright.id },
       { input_index: 2, input_node_id: committed.nodes.dark.id },
     ]);
-    expect(committed.roots).toEqual({ output: committed.nodes.composite.id });
+    expect(committed.roots).toEqual({
+      base: committed.nodes.composite.id,
+      output: committed.nodes.composite.id,
+    });
     expect(committed.renderHash).toMatch(/^r_[0-9a-f]{64}$/);
   } finally {
     await db.close();
@@ -215,7 +220,10 @@ test("revision inheritance stays in its photo when revision UUIDs repeat", async
       rootUpdates: [{ root: "output", node: { localKey: "edit" } }],
     });
 
-    expect(edited.roots).toEqual({ output: edited.nodes.edit.id });
+    expect(edited.roots).toEqual({
+      base: edited.nodes.edit.id,
+      output: edited.nodes.edit.id,
+    });
   } finally {
     await db.close();
   }
@@ -280,7 +288,7 @@ test("unreachable drafts and node-only revisions are refused without debris", as
         nodes: [source("source")],
         rootUpdates: [],
       }),
-    ).rejects.toThrow("redirect at least one");
+    ).rejects.toThrow("redirect a document root or replace the layer snapshot");
     expect((await db.query("SELECT 1 FROM image_nodes")).rows).toEqual([]);
     expect((await db.query("SELECT 1 FROM document_revisions")).rows).toEqual([]);
   } finally {
@@ -313,6 +321,442 @@ test("a revision may redirect its root to an existing node without adding nodes"
   }
 });
 
+test("a layer-free base update advances the identical output projection", async () => {
+  const db = await graphDatabase();
+  try {
+    const initial = await commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: null,
+      nodes: [source("source")],
+      rootUpdates: [{ root: "output", node: { localKey: "source" } }],
+    });
+    const updated = await commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: initial.revisionId,
+      nodes: [develop("base-edit", { nodeId: initial.roots.base! }, 0.5)],
+      rootUpdates: [{ root: "base", node: { localKey: "base-edit" } }],
+    });
+
+    expect(updated.roots).toEqual({
+      base: updated.nodes["base-edit"].id,
+      output: updated.nodes["base-edit"].id,
+    });
+  } finally {
+    await db.close();
+  }
+});
+
+test("layer mutations create immutable complete snapshots and exact composite-v2 projections", async () => {
+  const db = await graphDatabase();
+  try {
+    const preciseOpacity = 0.123456789;
+    const projection = compositeV2Projection({ localKey: "base" }, [
+      layerDraft("left", "left-content", "left-mask", 0),
+      { ...layerDraft("right", "right-content", "right-mask", 1), opacity: preciseOpacity },
+    ]);
+    const initial = await commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: null,
+      nodes: [
+        source("base"),
+        develop("left-content", { localKey: "base" }, 0.5),
+        mask("left-mask", "1"),
+        develop("right-content", { localKey: "base" }, -0.5),
+        mask("right-mask", "2"),
+        {
+          localKey: "composite",
+          kind: "composite",
+          recipeVersion: 2,
+          ...projection,
+        },
+      ],
+      rootUpdates: [
+        { root: "base", node: { localKey: "base" } },
+        { root: "output", node: { localKey: "composite" } },
+      ],
+      newLayers: [
+        { localKey: "left", role: "subject" },
+        { localKey: "right", role: "subject" },
+      ],
+      layers: [
+        layerDraft("left", "left-content", "left-mask", 0),
+        { ...layerDraft("right", "right-content", "right-mask", 1), opacity: preciseOpacity },
+      ],
+    });
+
+    const reorderedLayers: RevisionLayerDraft[] = [
+      existingLayer(initial.newLayers.right, initial.layers[1], 0),
+      existingLayer(initial.newLayers.left, initial.layers[0], 1),
+    ];
+    const reordered = await layerMutation(db, initial, reorderedLayers);
+    const disabledLayers: RevisionLayerDraft[] = reordered.layers.map((layer) => {
+      const draft = existingLayer(layer.id, layer, layer.z);
+      draft.enabled = layer.id !== initial.newLayers.left;
+      return draft;
+    });
+    const disabled = await layerMutation(db, reordered, disabledLayers);
+    const reloaded = await loadActiveDocument(db, firstPhoto);
+    expect(reloaded).not.toBeNull();
+    const renamed = await commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: disabled.revisionId,
+      nodes: [],
+      rootUpdates: [],
+      layers: reloaded!.layers.map((layer) => {
+        const draft = existingLayer(layer.id, layer, layer.z);
+        draft.name = layer.id === initial.newLayers.right ? "renamed" : layer.name;
+        return draft;
+      }),
+    });
+    expect(renamed.renderHash).toBe(disabled.renderHash);
+    const opacity = await layerMutation(
+      db,
+      renamed,
+      renamed.layers.map((layer) => {
+        const draft = existingLayer(layer.id, layer, layer.z);
+        draft.opacity = layer.id === initial.newLayers.right ? 0.25 : layer.opacity;
+        return draft;
+      }),
+    );
+
+    const snapshots = await db.query<{
+      revision_id: string;
+      layer_id: string;
+      name: string;
+      z: number;
+      opacity: number;
+      enabled: boolean;
+    }>(
+      `SELECT revision_id::text, layer_id::text, name, z, opacity, enabled
+       FROM document_revision_layers WHERE photo_id = $1
+       ORDER BY revision_id, z`,
+      [firstPhoto],
+    );
+    expect(snapshots.rows.filter(({ revision_id }) => revision_id === initial.revisionId)).toEqual([
+      {
+        revision_id: initial.revisionId,
+        layer_id: initial.newLayers.left,
+        name: "left",
+        z: 0,
+        opacity: 1,
+        enabled: true,
+      },
+      {
+        revision_id: initial.revisionId,
+        layer_id: initial.newLayers.right,
+        name: "right",
+        z: 1,
+        opacity: preciseOpacity,
+        enabled: true,
+      },
+    ]);
+    expect(
+      opacity.layers.map(({ id, name, z, opacity: value, enabled }) => ({
+        id,
+        name,
+        z,
+        opacity: value,
+        enabled,
+      })),
+    ).toEqual([
+      { id: initial.newLayers.right, name: "renamed", z: 0, opacity: 0.25, enabled: true },
+      { id: initial.newLayers.left, name: "left", z: 1, opacity: 1, enabled: false },
+    ]);
+    expect(
+      (
+        await db.query<{ active_revision_id: string }>(
+          "SELECT active_revision_id::text FROM photo_documents WHERE photo_id = $1",
+          [firstPhoto],
+        )
+      ).rows,
+    ).toEqual([{ active_revision_id: opacity.revisionId }]);
+    expect(await loadActiveDocument(db, firstPhoto)).toEqual({
+      revisionId: opacity.revisionId,
+      roots: { base: initial.roots.base, output: opacity.roots.output },
+      layers: opacity.layers,
+      renderHash: opacity.renderHash,
+    });
+    expect(
+      (
+        await db.query<{ count: string }>(
+          "SELECT count(*)::text AS count FROM document_revisions WHERE photo_id = $1",
+          [firstPhoto],
+        )
+      ).rows,
+    ).toEqual([{ count: "5" }]);
+    expect(
+      (
+        await db.query<{ count: string }>(
+          "SELECT count(*)::text AS count FROM image_nodes WHERE photo_id = $1 AND kind <> 'composite'",
+          [firstPhoto],
+        )
+      ).rows,
+    ).toEqual([{ count: "5" }]);
+
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: initial.revisionId,
+        nodes: [mask("orphan-mask", "3")],
+        rootUpdates: [{ root: "output", node: { nodeId: opacity.roots.output! } }],
+        newLayers: [{ localKey: "orphan", role: "subject" }],
+        layers: opacity.layers.map((layer) => existingLayer(layer.id, layer, layer.z)),
+      }),
+    ).rejects.toThrow(RevisionConflictError);
+    expect(
+      (
+        await db.query<{ count: string }>(
+          "SELECT count(*)::text AS count FROM layers WHERE photo_id = $1",
+          [firstPhoto],
+        )
+      ).rows,
+    ).toEqual([{ count: "2" }]);
+
+    const cleared = await commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: opacity.revisionId,
+      nodes: [],
+      rootUpdates: [{ root: "output", node: { nodeId: opacity.roots.base! } }],
+      layers: [],
+    });
+    expect(cleared.layers).toEqual([]);
+    expect(cleared.roots.output).toBe(cleared.roots.base);
+    expect(
+      (await db.query("SELECT 1 FROM layers WHERE photo_id = $1", [firstPhoto])).rows,
+    ).toHaveLength(2);
+    expect(
+      (
+        await db.query<{ count: string }>(
+          "SELECT count(*)::text AS count FROM document_revision_layers WHERE photo_id = $1 AND revision_id = $2",
+          [firstPhoto, cleared.revisionId],
+        )
+      ).rows,
+    ).toEqual([{ count: "0" }]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("invalid layer relationships and composite projections roll back every new identity and node", async () => {
+  const db = await graphDatabase();
+  try {
+    const request = {
+      photoId: firstPhoto,
+      expectedRevisionId: null,
+      nodes: [source("base"), develop("content", { localKey: "base" }, 0.5), mask("mask", "1")],
+      rootUpdates: [{ root: "output" as const, node: { localKey: "content" } }],
+    };
+    await expect(
+      commitRevision(db, {
+        ...request,
+        newLayers: [{ localKey: "vacancy", role: "vacancy" }],
+        layers: [layerDraft("vacancy", "content", "mask", 0)],
+      }),
+    ).rejects.toThrow("vacancy layer must refer");
+    await expect(
+      commitRevision(db, {
+        ...request,
+        newLayers: [{ localKey: "subject", role: "subject" }],
+        layers: [
+          {
+            ...layerDraft("subject", "content", "mask", 1),
+            z: 1,
+          },
+        ],
+      }),
+    ).rejects.toThrow("contiguous");
+    await expect(
+      commitRevision(db, {
+        ...request,
+        newLayers: [{ localKey: "subject", role: "subject" }],
+        layers: [layerDraft("subject", "content", "mask", 0)],
+      }),
+    ).rejects.toThrow("composite recipe version 2");
+    await expect(
+      commitRevision(db, {
+        ...request,
+        newLayers: [{ localKey: "subject", role: "subject" }],
+        layers: [
+          {
+            ...layerDraft("subject", "content", "mask", 0),
+            contentNode: { localKey: "mask" },
+          },
+        ],
+      }),
+    ).rejects.toThrow("content root must produce RGB");
+    expect((await db.query("SELECT 1 FROM layers")).rows).toEqual([]);
+    expect((await db.query("SELECT 1 FROM image_nodes")).rows).toEqual([]);
+    expect((await db.query("SELECT 1 FROM document_revisions")).rows).toEqual([]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("an unpublished permanent mask pin cannot enter an active snapshot", async () => {
+  const db = await graphDatabase();
+  try {
+    const layers = [layerDraft("subject", "content", "missing-mask", 0)];
+    const projection = compositeV2Projection({ localKey: "base" }, layers);
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: null,
+        nodes: [
+          source("base"),
+          develop("content", { localKey: "base" }, 0.5),
+          mask("missing-mask", "9"),
+          { localKey: "composite", kind: "composite", recipeVersion: 2, ...projection },
+        ],
+        rootUpdates: [
+          { root: "base", node: { localKey: "base" } },
+          { root: "output", node: { localKey: "composite" } },
+        ],
+        newLayers: [{ localKey: "subject", role: "subject" }],
+        layers,
+      }),
+    ).rejects.toThrow("Mask artifact is unavailable");
+    expect((await db.query("SELECT 1 FROM document_revisions")).rows).toEqual([]);
+    expect((await db.query("SELECT 1 FROM image_nodes")).rows).toEqual([]);
+    expect((await db.query("SELECT 1 FROM layers")).rows).toEqual([]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("an output wrapper cannot relabel RGB pixels as a mask", async () => {
+  const db = await graphDatabase();
+  try {
+    const layers = [layerDraft("subject", "base", "fake-mask", 0)];
+    const projection = compositeV2Projection({ localKey: "base" }, layers);
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: null,
+        nodes: [
+          source("base"),
+          {
+            localKey: "fake-mask",
+            kind: "output",
+            recipeVersion: 1,
+            parameters: { format: "mask", color_space: "coverage" },
+            inputs: [{ localKey: "base" }],
+          },
+          { localKey: "composite", kind: "composite", recipeVersion: 2, ...projection },
+        ],
+        rootUpdates: [
+          { root: "base", node: { localKey: "base" } },
+          { root: "output", node: { localKey: "composite" } },
+        ],
+        newLayers: [{ localKey: "subject", role: "subject" }],
+        layers,
+      }),
+    ).rejects.toThrow("Output pixel format disagrees with its input");
+  } finally {
+    await db.close();
+  }
+});
+
+test("an RGB-only operation cannot relabel a mask branch as layer content", async () => {
+  const db = await graphDatabase();
+  try {
+    const layers = [layerDraft("subject", "fake-content", "layer-mask", 0)];
+    const projection = compositeV2Projection({ localKey: "base" }, layers);
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: null,
+        nodes: [
+          source("base"),
+          mask("content-mask", "1"),
+          {
+            localKey: "fake-content",
+            kind: "delta",
+            recipeVersion: 1,
+            parameters: { exposure: 0.5 },
+            inputs: [{ localKey: "content-mask" }],
+          },
+          mask("layer-mask", "2"),
+          { localKey: "composite", kind: "composite", recipeVersion: 2, ...projection },
+        ],
+        rootUpdates: [
+          { root: "base", node: { localKey: "base" } },
+          { root: "output", node: { localKey: "composite" } },
+        ],
+        newLayers: [{ localKey: "subject", role: "subject" }],
+        layers,
+      }),
+    ).rejects.toThrow("delta input 0 must produce RGB pixels");
+  } finally {
+    await db.close();
+  }
+});
+
+test("an activated RGB branch cannot hide an unpublished permanent mask pin", async () => {
+  const db = await graphDatabase();
+  try {
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: null,
+        nodes: [
+          source("base"),
+          mask("missing-mask", "9"),
+          {
+            localKey: "masked",
+            kind: "mask_composite",
+            recipeVersion: 1,
+            parameters: { feather: 0 },
+            inputs: [{ localKey: "base" }, { localKey: "base" }, { localKey: "missing-mask" }],
+          },
+        ],
+        rootUpdates: [{ root: "output", node: { localKey: "masked" } }],
+      }),
+    ).rejects.toThrow("Mask artifact is unavailable");
+    expect((await db.query("SELECT 1 FROM document_revisions")).rows).toEqual([]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("a permanent mask cannot become the document's RGB base and output", async () => {
+  const db = await graphDatabase();
+  try {
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: null,
+        nodes: [mask("mask", "1")],
+        rootUpdates: [{ root: "output", node: { localKey: "mask" } }],
+      }),
+    ).rejects.toThrow("A document base root must produce RGB pixels");
+  } finally {
+    await db.close();
+  }
+});
+
+test("layer identity lookup accepts only a full id or an unambiguous photo-scoped prefix", async () => {
+  const db = await graphDatabase();
+  try {
+    const ids = ["0199a7c2-3b1e-7c40-8f2a-1d0e5a91c011", "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c012"];
+    await db.query(
+      `INSERT INTO layers (photo_id, id, role)
+       VALUES ($1, $2, 'subject'), ($1, $3, 'subject'), ($4, $2, 'subject')`,
+      [firstPhoto, ids[0], ids[1], secondPhoto],
+    );
+
+    await expect(resolveLayerId(db, firstPhoto, `${ids[0].slice(0, -1)}1`)).resolves.toBe(ids[0]);
+    await expect(resolveLayerId(db, firstPhoto, ids[0].slice(0, -1))).rejects.toMatchObject({
+      code: "not_found",
+      data: { id: ids[0].slice(0, -1), reason: "ambiguous" },
+    });
+    await expect(resolveLayerId(db, firstPhoto, "not-a-layer")).rejects.toMatchObject({
+      code: "usage",
+    });
+  } finally {
+    await db.close();
+  }
+});
+
 function source(localKey: string) {
   return {
     localKey,
@@ -337,6 +781,80 @@ function develop(
   };
 }
 
+function mask(localKey: string, digit: string) {
+  return {
+    localKey,
+    kind: "mask" as const,
+    recipeVersion: 1,
+    parameters: { artifact_hash: `a_${digit.repeat(64)}` },
+    inputs: [],
+  };
+}
+
+function layerDraft(
+  localKey: string,
+  contentKey: string,
+  maskKey: string,
+  z: number,
+): RevisionLayerDraft {
+  return {
+    layer: { localKey },
+    name: localKey,
+    z,
+    contentNode: { localKey: contentKey },
+    maskNode: { localKey: maskKey },
+    opacity: 1,
+    blend: "normal",
+    enabled: true,
+  };
+}
+
+function existingLayer(
+  id: string,
+  layer: {
+    name: string;
+    contentNodeId: string;
+    maskNodeId: string;
+    opacity: number;
+    blend: "normal";
+    enabled: boolean;
+  },
+  z: number,
+): RevisionLayerDraft {
+  return {
+    layer: { layerId: id },
+    name: layer.name,
+    z,
+    contentNode: { nodeId: layer.contentNodeId },
+    maskNode: { nodeId: layer.maskNodeId },
+    opacity: layer.opacity,
+    blend: layer.blend,
+    enabled: layer.enabled,
+  };
+}
+
+async function layerMutation(
+  db: PGlite,
+  current: Awaited<ReturnType<typeof commitRevision>>,
+  layers: RevisionLayerDraft[],
+) {
+  const projection = compositeV2Projection({ nodeId: current.roots.base! }, layers);
+  return await commitRevision(db, {
+    photoId: firstPhoto,
+    expectedRevisionId: current.revisionId,
+    nodes: [
+      {
+        localKey: "composite",
+        kind: "composite",
+        recipeVersion: 2,
+        ...projection,
+      },
+    ],
+    rootUpdates: [{ root: "output", node: { localKey: "composite" } }],
+    layers,
+  });
+}
+
 async function graphDatabase(): Promise<PGlite> {
   const db = await testDatabase();
   await migrate(db);
@@ -345,6 +863,14 @@ async function graphDatabase(): Promise<PGlite> {
      VALUES ($1, 'ck_3dac5c943a33dcc4', 1, 1, 1, 1),
             ($2, 'ck_aaaaaaaaaaaaaaaa', 1, 1, 1, 1)`,
     [firstPhoto, secondPhoto],
+  );
+  await db.query(
+    `INSERT INTO image_artifacts
+       (artifact_hash, media_type, bytes, w, h, artifact_available)
+     VALUES ($1, 'application/x-photoctl-mask-test', 1, 1, 1, true),
+            ($2, 'application/x-photoctl-mask-test', 1, 1, 1, true),
+            ($3, 'application/x-photoctl-mask-test', 1, 1, 1, true)`,
+    ["1", "2", "3"].map((digit) => `a_${digit.repeat(64)}`),
   );
   return db;
 }

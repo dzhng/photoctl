@@ -78,17 +78,32 @@ export async function retainedArtifacts(
        JOIN document_revisions AS revision
          ON (revision.photo_id, revision.id) = (root.photo_id, root.revision_id)
        UNION
+       SELECT layer.photo_id, layer.content_node_id
+       FROM document_revision_layers AS layer
+       UNION
+       SELECT layer.photo_id, layer.mask_node_id
+       FROM document_revision_layers AS layer
+       UNION
        SELECT edge.photo_id, edge.input_node_id
        FROM image_node_inputs AS edge
        JOIN retained_nodes AS retained
          ON (retained.photo_id, retained.node_id) = (edge.photo_id, edge.node_id)
+     ), retained_artifacts(artifact_hash) AS (
+       SELECT execution.output_artifact_hash
+       FROM retained_nodes AS retained
+       JOIN node_executions AS execution
+         ON (execution.photo_id, execution.node_id) = (retained.photo_id, retained.node_id)
+       UNION
+       SELECT node.parameters->>'artifact_hash'
+       FROM retained_nodes AS retained
+       JOIN image_nodes AS node
+         ON (node.photo_id, node.id) = (retained.photo_id, retained.node_id)
+       WHERE node.kind = 'mask'
      )
      SELECT DISTINCT artifact.artifact_hash, artifact.artifact_available
-     FROM retained_nodes AS retained
-     JOIN node_executions AS execution
-       ON (execution.photo_id, execution.node_id) = (retained.photo_id, retained.node_id)
+     FROM retained_artifacts AS retained
      JOIN image_artifacts AS artifact
-       ON artifact.artifact_hash = execution.output_artifact_hash
+       ON artifact.artifact_hash = retained.artifact_hash
      ORDER BY artifact.artifact_hash`,
   );
   return result.rows.map((row) => ({

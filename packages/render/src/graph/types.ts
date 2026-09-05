@@ -5,6 +5,8 @@ export const imageNodeKinds = [
   "upscale",
   "resample",
   "transform",
+  "mask",
+  "delta",
   "mask_composite",
   "composite",
   "crop",

@@ -245,3 +245,149 @@ test("the graph schema separates logical nodes from reusable and attempted execu
     await db.close();
   }
 });
+
+test("the layer schema keeps identities, snapshots, graph roots, and photos in one ownership boundary", async () => {
+  const db = await testDatabase();
+  const first = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
+  const second = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
+  const revision = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c010";
+  const subject = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c011";
+  const vacancy = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c012";
+  const content = `node_${"1".repeat(64)}`;
+  const mask = `node_${"2".repeat(64)}`;
+  const foreignContent = `node_${"8".repeat(64)}`;
+  const foreignMask = `node_${"9".repeat(64)}`;
+  const foreignLayer = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c015";
+  try {
+    await migrate(db);
+    await db.query(
+      `INSERT INTO photos (id, content_key, size, w, h, orientation)
+       VALUES ($1, 'ck_layer_first', 1, 1, 1, 1), ($2, 'ck_layer_second', 1, 1, 1, 1)`,
+      [first, second],
+    );
+    await db.query(
+      `INSERT INTO image_nodes (photo_id, id, kind, recipe_version, parameters, recipe_hash)
+       VALUES ($1, $3, 'source', 1, '{"orientation":1}', $5),
+              ($1, $4, 'mask', 1, $7, $6),
+              ($2, $3, 'source', 1, '{"orientation":1}', $5),
+              ($2, $4, 'mask', 1, $7, $6),
+              ($2, $8, 'source', 1, '{"orientation":1}', $9),
+              ($2, $10, 'mask', 1, $7, $11)`,
+      [
+        first,
+        second,
+        content,
+        mask,
+        `recipe_${"3".repeat(64)}`,
+        `recipe_${"4".repeat(64)}`,
+        JSON.stringify({ artifact_hash: `a_${"5".repeat(64)}` }),
+        foreignContent,
+        `recipe_${"8".repeat(64)}`,
+        foreignMask,
+        `recipe_${"9".repeat(64)}`,
+      ],
+    );
+    await expect(
+      db.query(
+        `INSERT INTO image_nodes (photo_id, id, kind, recipe_version, parameters, recipe_hash)
+         VALUES ($1, $2, 'composite', 2, '{"layers":[]}', $3)`,
+        [first, `node_${"6".repeat(64)}`, `recipe_${"6".repeat(64)}`],
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      db.query(
+        `INSERT INTO image_nodes (photo_id, id, kind, recipe_version, parameters, recipe_hash)
+         VALUES ($1, $2, 'source', 2, '{}', $3)`,
+        [first, `node_${"7".repeat(64)}`, `recipe_${"7".repeat(64)}`],
+      ),
+    ).rejects.toThrow();
+    await db.query("INSERT INTO document_revisions (photo_id, id) VALUES ($1, $2)", [
+      first,
+      revision,
+    ]);
+    await db.query("INSERT INTO layers (photo_id, id, role) VALUES ($1, $2, 'subject')", [
+      first,
+      subject,
+    ]);
+    await db.query(
+      "INSERT INTO layers (photo_id, id, role, of_layer) VALUES ($1, $2, 'vacancy', $3)",
+      [first, vacancy, subject],
+    );
+    await db.query("INSERT INTO layers (photo_id, id, role) VALUES ($1, $2, 'subject')", [
+      second,
+      foreignLayer,
+    ]);
+    await db.query(
+      `INSERT INTO document_revision_layers
+         (photo_id, revision_id, layer_id, name, z, content_node_id, mask_node_id,
+          opacity, blend, enabled)
+       VALUES ($1, $2, $3, 'subject', 0, $4, $5, 1, 'normal', true)`,
+      [first, revision, subject, content, mask],
+    );
+
+    await expect(
+      db.query("INSERT INTO layers (photo_id, id, role) VALUES ($1, $2, 'unknown')", [
+        first,
+        "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c013",
+      ]),
+    ).rejects.toThrow();
+    await expect(
+      db.query("INSERT INTO layers (photo_id, id, role) VALUES ($1, $2, 'subject')", [
+        "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c099",
+        "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c016",
+      ]),
+    ).rejects.toThrow();
+    await expect(
+      db.query("INSERT INTO layers (photo_id, id, role, of_layer) VALUES ($1, $2, 'vacancy', $3)", [
+        second,
+        "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c014",
+        subject,
+      ]),
+    ).rejects.toThrow();
+
+    const invalidSnapshot = (overrides: string) =>
+      db.query(
+        `INSERT INTO document_revision_layers
+           (photo_id, revision_id, layer_id, name, z, content_node_id, mask_node_id,
+            opacity, blend, enabled)
+         VALUES ${overrides}`,
+        [
+          first,
+          second,
+          revision,
+          vacancy,
+          content,
+          mask,
+          foreignLayer,
+          foreignContent,
+          foreignMask,
+        ],
+      );
+    await expect(
+      invalidSnapshot("($1, $3, $4, 'bad-z', -1, $5, $6, 1, 'normal', true)"),
+    ).rejects.toThrow();
+    await expect(
+      invalidSnapshot("($1, $3, $4, 'bad-opacity', 1, $5, $6, 1.1, 'normal', true)"),
+    ).rejects.toThrow();
+    await expect(
+      invalidSnapshot("($1, $3, $4, 'bad-blend', 1, $5, $6, 1, 'multiply', true)"),
+    ).rejects.toThrow();
+    await expect(
+      invalidSnapshot("($1, $3, $4, 'duplicate-z', 0, $5, $6, 1, 'normal', true)"),
+    ).rejects.toThrow();
+    await expect(
+      invalidSnapshot("($2, $3, $7, 'foreign-revision', 0, $8, $9, 1, 'normal', true)"),
+    ).rejects.toThrow();
+    await expect(
+      invalidSnapshot("($1, $3, $7, 'foreign-layer', 1, $5, $6, 1, 'normal', true)"),
+    ).rejects.toThrow();
+    await expect(
+      invalidSnapshot("($1, $3, $4, 'foreign-content', 1, $8, $6, 1, 'normal', true)"),
+    ).rejects.toThrow();
+    await expect(
+      invalidSnapshot("($1, $3, $4, 'foreign-mask', 1, $5, $9, 1, 'normal', true)"),
+    ).rejects.toThrow();
+  } finally {
+    await db.close();
+  }
+});

@@ -169,15 +169,22 @@ test("the current graph fixture preserves its active lazy source revision", asyn
        JOIN document_revision_roots AS root
          ON (root.photo_id, root.revision_id) = (r.photo_id, r.id)
        JOIN image_nodes AS node
-         ON (node.photo_id, node.id) = (root.photo_id, root.node_id)`,
+         ON (node.photo_id, node.id) = (root.photo_id, root.node_id)
+       ORDER BY root.root_name`,
     );
 
     expect(result).toEqual({
       fromVersion: 5,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [6, 7, 8],
+      applied: [6, 7, 8, 9],
     });
     expect(document.rows).toEqual([
+      {
+        active_revision_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003",
+        pinned: true,
+        root_name: "base",
+        kind: "source",
+      },
       {
         active_revision_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003",
         pinned: true,
@@ -203,7 +210,11 @@ test("the current delivery fixture preserves export history", async () => {
       bytes: string;
     }>("SELECT path, render_hash, bytes::text FROM exports");
 
-    expect(result).toEqual({ fromVersion: 6, toVersion: LATEST_SCHEMA_VERSION, applied: [7, 8] });
+    expect(result).toEqual({
+      fromVersion: 6,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [7, 8, 9],
+    });
     expect(history.rows).toEqual([
       {
         path: "/delivery/a7c2.jpg",
@@ -228,7 +239,7 @@ test("the current provider fixture has the bounded external-execution seam", asy
          AND column_name = 'provider_execution'`,
     );
 
-    expect(result).toEqual({ fromVersion: 7, toVersion: LATEST_SCHEMA_VERSION, applied: [8] });
+    expect(result).toEqual({ fromVersion: 7, toVersion: LATEST_SCHEMA_VERSION, applied: [8, 9] });
     expect(column.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
     const search = await db.query<{ vector_type: string; searchable: string }>(
       `SELECT pg_typeof(e.vec)::text AS vector_type,
@@ -252,19 +263,27 @@ test("the current provider fixture has the bounded external-execution seam", asy
   }
 });
 
-test("the current search fixture is already v8 and retains generated search text", async () => {
+test("the v8 search fixture gains typed base and output roots without changing its active pixels", async () => {
   const db = await testDatabase();
   try {
     await db.exec(await fixture("schema-v8.pgsql"));
 
     const result = await migrate(db);
-    const searchable = await db.query<{ matched: boolean }>(
-      `SELECT searchable @@ websearch_to_tsquery('english', 'ceremony') AS matched
-       FROM photos`,
+    const document = await db.query<{ root_name: string; node_id: string; matched: boolean }>(
+      `SELECT root.root_name, root.node_id,
+              photo.searchable @@ websearch_to_tsquery('english', 'ceremony') AS matched
+       FROM photo_documents AS document
+       JOIN document_revision_roots AS root
+         ON (root.photo_id, root.revision_id) = (document.photo_id, document.active_revision_id)
+       JOIN photos AS photo ON photo.id = document.photo_id
+       ORDER BY root.root_name`,
     );
 
-    expect(result).toEqual({ fromVersion: 8, toVersion: 8, applied: [] });
-    expect(searchable.rows).toEqual([{ matched: true }]);
+    expect(result).toEqual({ fromVersion: 8, toVersion: LATEST_SCHEMA_VERSION, applied: [9] });
+    expect(document.rows).toEqual([
+      { root_name: "base", node_id: `node_${"1".repeat(64)}`, matched: true },
+      { root_name: "output", node_id: `node_${"1".repeat(64)}`, matched: true },
+    ]);
   } finally {
     await db.close();
   }

@@ -1995,6 +1995,103 @@
 - **Verdict:** **Sound.** This is the smallest portable interpretation of hue protection and leaves semantic masking to later owners.
 - **Confidence:** Medium; equal-saturation tests pin behavior, while visual portrait acceptance remains open for lack of a fixture.
 
+### Slice 10a — Graph-only revisions inherit the complete layer snapshot
+
+- **When:** Slice 10a immutable document writer, 2026-09-05.
+- **The choice:** A caller that changes only the graph may omit `layers`; the writer then copies every row from the active
+  revision into the new immutable snapshot. Passing `layers:[]` is different and explicitly clears the active stack. For example,
+  a metadata-independent base edit cannot accidentally make two subject layers disappear merely because that caller predates the
+  layer commands, while `layer clear` can still say exactly what it means. When the inherited stack is empty, changing either
+  `base` or `output` advances both typed roots; once layers exist, the explicit composite projection keeps them distinct. The alternative
+  required every graph caller to read and echo the stack even when it was not changing it, creating many places that could silently
+  drop a row.
+- **The gap:** The plan requires complete snapshots but did not define whether unchanged callers must resubmit them.
+- **The reach:** Every future graph mutation inherits layers safely by default; commands that reorder, rename, disable, remove, or
+  clear layers must submit the complete replacement snapshot so the transaction can validate its exact composite projection.
+- **Verdict:** **Sound.** Inheritance preserves immutable state while an explicit empty list keeps clear/removal unambiguous.
+- **Confidence:** High.
+
+### Slice 10a — Vacancy is the only role that may point at another layer
+
+- **When:** Slice 10a layer identity validation, 2026-09-05.
+- **The choice:** A vacancy is the hole left by moving a subject, so it must store `of_layer` pointing to a `subject` identity in
+  the same photo. Subject, reimagine, and retouch identities must leave `of_layer` empty. Thus a future fill can follow a vacancy
+  back to the subject whose original silhouette it preserves, while ordinary layers do not acquire vague parent relationships.
+  The alternative allowed arbitrary layer-to-layer links that no current command could explain or render.
+- **The gap:** The schema named `of_layer` and required legal role pairings but did not enumerate the pairing table.
+- **The reach:** Move/fill owns one precise relationship; adding another relationship later requires deliberately widening this
+  validation rather than teaching every reader to interpret an unconstrained graph.
+- **Verdict:** **Sound.** It constrains persistence to the only relationship in the current product contract.
+- **Confidence:** Medium because a later retouch workflow may justify a separately named relationship.
+
+### Slice 10a — Permanent masks are zero-input artifact pins
+
+- **When:** Slice 10a graph branch vocabulary, 2026-09-05.
+- **The choice:** A permanent manual or SAM selection is represented by a deterministic `mask` node whose parameter is the full
+  canonical mask-artifact hash and which has no graph input. In plain terms, the node says “this exact saved coverage image,” not
+  “run segmentation again.” Transform and resample nodes may then derive new mask branches from that immutable pin. The alternative
+  stored brush prompts or model inputs and made evaluation regenerate a selection that was already accepted and saved.
+- **The gap:** The plan named a typed deterministic mask node but not its recipe parameters or arity.
+- **The reach:** Slice 10b2 must make the typed mask artifact reader/evaluator honor this pin; later segment commands publish the
+  artifact before committing the node. Retention reads the pinned hash directly from the mask recipe, because a permanent pin does
+  not need a `node_executions` row merely to stay live. The revision writer refuses a snapshot if any permanent mask pin in its mask
+  branch is not published and available. Mask identity remains stable across rename, reorder, and content refresh.
+- **Verdict:** **Sound.** It makes the accepted mask bytes, rather than a replayable procedure, the permanent editing fact.
+- **Confidence:** Medium until 10b2 wires the evaluator and typed media contract.
+
+### Slice 10a — UUID layer identities are allocated only inside the revision transaction
+
+- **When:** Slice 10a document writer, 2026-09-05.
+- **The choice:** New layers receive UUIDs after the expected active revision has been locked and checked, inside the same database
+  transaction that stores graph nodes, the complete stack, and the new active revision. A stale caller therefore leaves no visible
+  identity behind; a successful retry receives the identity from the successful revision. The alternative allocated and inserted
+  identities before compare-and-swap, leaving unattached rows when two agents edited the same photo concurrently.
+- **The gap:** The plan required stable full IDs and atomic failure but did not choose their format or allocation point.
+- **The reach:** Prefix lookup follows the same 36-character UUID vocabulary as photos, while names remain freely revisioned
+  presentation. Future commands must reference the writer-returned identity rather than manufacture a name-derived ID.
+- **Verdict:** **Sound.** It reuses the catalog identity convention and makes the transaction boundary enforce the no-orphan rule.
+- **Confidence:** High.
+
+### Slice 10a — Delta recipes reuse the develop dictionary over one RGB input
+
+- **When:** Slice 10a graph branch vocabulary, 2026-09-05.
+- **The choice:** A deterministic `delta` node consumes one RGB node and stores the same sparse, validated operator dictionary used
+  by develop nodes. For example, exposure compensation can be `{exposure:0.5}` without inventing a second spelling or range; the
+  node means “apply this compensation to these already-generated pixels.” The alternative introduced a parallel adjustment schema
+  that would have to remain synchronized with Slice 08's operator owner.
+- **The gap:** The plan named the delta node and its purpose but left its exact recipe shape and arity to implementation.
+- **The reach:** Slice 10b3 can derive compatible compensation from the one develop-operator table and persist it without a schema
+  translation. If compensation later needs provenance beyond operator values, that belongs in a separate field rather than a
+  duplicate operator vocabulary.
+- **Verdict:** **Sound.** One input and the existing validated dictionary are the narrowest shape the described operation needs.
+- **Confidence:** Medium until 10b3 exercises every Tier-1 operator.
+
+### Slice 10a — Relative transforms pre-multiply the current base-space matrix
+
+- **When:** Slice 10a pure transform contract, 2026-09-05.
+- **The choice:** An absolute request compiles directly to one scale-then-rotate-then-translate matrix about its resolved anchor and
+  replaces the prior matrix. A relative request compiles the same way and pre-multiplies the stored matrix: `next = nudge × current`.
+  Applying the result to a point is therefore the same as applying the old edit first and the new base-space nudge second. The
+  alternative post-multiplied the nudge, making translation rotate or scale in the layer's already-transformed local axes.
+- **The gap:** The plan fixed absolute versus relative behavior and S→R→T order but did not state which coordinate frame relative
+  composition uses or name the combined horizontal-and-vertical flip value.
+- **The reach:** Layer commands can retry absolute placement idempotently and use relative movement in the oriented base coordinate
+  system. The pure owner also snaps quarter-turn sine/cosine values so exact geometry does not inherit floating-point near-zero.
+- **Verdict:** **Sound.** Base-space nudges match the global coordinate contract and the documented command meaning.
+- **Confidence:** Medium; 10c1's real command ergonomics will confirm the relative-frame choice.
+
+### Slice 10a — Opacity snapshots preserve recipe-number precision
+
+- **When:** Slice 10a immutable layer persistence review, 2026-09-05.
+- **The choice:** PostgreSQL stores opacity as double precision, matching JavaScript and JSON recipe numbers. A value such as
+  `0.123456789` therefore survives a snapshot reload exactly enough for a rename-only revision to prove that the unchanged
+  composite-v2 recipe still projects the layer rows. The alternative `real` column rounded to float32 on write while the recipe
+  retained the original number, giving one immutable edit two identities depending on whether it had crossed the database seam.
+- **The gap:** The plan constrained opacity to `[0,1]` but did not choose a database precision or a separate canonical quantization.
+- **The reach:** Snapshot reloads, recipe equality, render hashes, and future opacity commands use one numeric representation.
+- **Verdict:** **Sound.** Persistence must not silently change an identity-bearing recipe parameter.
+- **Confidence:** High.
+
 ## Needs user
 
 ### Slice 09a — The fake upscaler is the provisional release default

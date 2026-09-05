@@ -7,6 +7,7 @@ import { migration0005 } from "./0005-image-graph.js";
 import { migration0006 } from "./0006-export-history.js";
 import { migration0007 } from "./0007-provider-execution.js";
 import { migration0008 } from "./0008-search.js";
+import { migration0009 } from "./0009-layers.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -23,12 +24,14 @@ const migrations = [
   { version: 6, sql: migration0006 },
   { version: 7, sql: migration0007 },
   { version: 8, sql: migration0008 },
+  { version: 9, sql: migration0009 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
 const latestTables = [
   "cache_index",
   "document_revision_roots",
+  "document_revision_layers",
   "document_revisions",
   "exports",
   "embeddings",
@@ -37,6 +40,7 @@ const latestTables = [
   "node_execution_inputs",
   "image_node_inputs",
   "image_nodes",
+  "layers",
   "node_executions",
   "photo_documents",
   "photos",
@@ -53,6 +57,15 @@ const latestConstraints = [
   "document_revision_roots_photo_id_revision_id_fkey",
   "document_revision_roots_photo_id_node_id_fkey",
   "document_revision_roots_name_check",
+  "document_revision_layers_pkey",
+  "document_revision_layers_photo_id_revision_id_fkey",
+  "document_revision_layers_photo_id_layer_id_fkey",
+  "document_revision_layers_photo_id_content_node_id_fkey",
+  "document_revision_layers_photo_id_mask_node_id_fkey",
+  "document_revision_layers_photo_id_revision_id_z_key",
+  "document_revision_layers_z_check",
+  "document_revision_layers_opacity_check",
+  "document_revision_layers_blend_check",
   "document_revisions_photo_id_parent_revision_id_fkey",
   "document_revisions_photo_id_fkey",
   "document_revisions_pkey",
@@ -81,6 +94,10 @@ const latestConstraints = [
   "image_nodes_photo_id_recipe_hash_key",
   "image_nodes_recipe_hash_check",
   "image_nodes_recipe_version_check",
+  "layers_pkey",
+  "layers_photo_id_fkey",
+  "layers_photo_id_of_layer_fkey",
+  "layers_role_check",
   "node_execution_inputs_index_check",
   "node_execution_inputs_input_artifact_hash_fkey",
   "node_execution_inputs_photo_id_execution_id_fkey",
@@ -180,6 +197,7 @@ export async function verifyLatestSchema(db: PGlite): Promise<void> {
         "files_photo_id_idx",
         "image_node_inputs_input_idx",
         "image_nodes_id_idx",
+        "layers_id_idx",
         "node_executions_deterministic_eval_idx",
         "node_executions_node_id_idx",
         "exports_photo_at_idx",
