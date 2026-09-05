@@ -36,7 +36,7 @@ test("model fetch publishes only hash-verified bytes and reuses a verified cache
 
   const first = await fetchPinnedModels({
     manifest,
-    baseUrl: "https://models.example.test/photoctl/v1/",
+    baseUrl: "https://models.example.test/photoctl/v1",
     directory: root,
     fetch: fetchModel,
   });

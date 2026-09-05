@@ -22,6 +22,11 @@ def checkout(path, revision, label):
     actual = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
     if actual != revision:
         raise SystemExit(f"{label} checkout must be {revision}; received {actual}")
+    dirty = subprocess.check_output(
+        ["git", "-C", str(path), "status", "--porcelain", "--untracked-files=all"], text=True
+    ).strip()
+    if dirty:
+        raise SystemExit(f"{label} checkout must be clean")
 
 
 def digest(path):

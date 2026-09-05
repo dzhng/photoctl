@@ -1,6 +1,8 @@
 import type { Dimensions, Point } from "./coordinates.js";
 
 const SAM2_INPUT_SIZE = 1024;
+const SAM2_CHANNEL_MEAN = [0.485, 0.456, 0.406] as const;
+const SAM2_CHANNEL_STD = [0.229, 0.224, 0.225] as const;
 
 export interface Sam2Letterbox {
   source: Dimensions;
@@ -30,14 +32,16 @@ export function sam2Letterbox(source: Dimensions): Sam2Letterbox {
     x: Math.floor((SAM2_INPUT_SIZE - resized.w) / 2),
     y: Math.floor((SAM2_INPUT_SIZE - resized.h) / 2),
   };
+  const scaleX = resized.w / source.w;
+  const scaleY = resized.h / source.h;
   return {
     source: { ...source },
     model: { w: SAM2_INPUT_SIZE, h: SAM2_INPUT_SIZE },
     resized,
     scale,
     offset,
-    toModel: ([x, y]) => [x * scale + offset.x, y * scale + offset.y],
-    toBase: ([x, y]) => [(x - offset.x) / scale, (y - offset.y) / scale],
+    toModel: ([x, y]) => [x * scaleX + offset.x, y * scaleY + offset.y],
+    toBase: ([x, y]) => [(x - offset.x) / scaleX, (y - offset.y) / scaleY],
   };
 }
 
@@ -69,11 +73,18 @@ export async function prepareSam2EncoderInput(
     mapping.resized.h,
     "bilinear",
   );
-  const output = new Float32Array(SAM2_INPUT_SIZE * SAM2_INPUT_SIZE * 3);
+  const channelSize = SAM2_INPUT_SIZE * SAM2_INPUT_SIZE;
+  const output = new Float32Array(channelSize * 3);
   for (let y = 0; y < mapping.resized.h; y += 1) {
-    const sourceOffset = y * mapping.resized.w * 3;
-    const outputOffset = ((y + mapping.offset.y) * SAM2_INPUT_SIZE + mapping.offset.x) * 3;
-    output.set(resized.subarray(sourceOffset, sourceOffset + mapping.resized.w * 3), outputOffset);
+    for (let x = 0; x < mapping.resized.w; x += 1) {
+      const sourceOffset = (y * mapping.resized.w + x) * 3;
+      const outputOffset = (y + mapping.offset.y) * SAM2_INPUT_SIZE + x + mapping.offset.x;
+      for (let channel = 0; channel < 3; channel += 1) {
+        output[channel * channelSize + outputOffset] =
+          (resized[sourceOffset + channel]! - SAM2_CHANNEL_MEAN[channel]!) /
+          SAM2_CHANNEL_STD[channel]!;
+      }
+    }
   }
   return { data: output, mapping };
 }

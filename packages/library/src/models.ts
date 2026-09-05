@@ -32,6 +32,7 @@ export async function fetchPinnedModels(options: {
   if (baseUrl.protocol !== "https:" && baseUrl.protocol !== "http:") {
     throw new Error("Model base URL must use HTTP or HTTPS");
   }
+  if (!baseUrl.pathname.endsWith("/")) baseUrl.pathname += "/";
   await mkdir(options.directory, { recursive: true });
   const request = options.fetch ?? fetch;
   return await Promise.all(

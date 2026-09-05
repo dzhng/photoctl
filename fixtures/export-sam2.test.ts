@@ -1,4 +1,7 @@
 import { execFileSync } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, test } from "vitest";
 import { PINNED_MODEL_RELEASE } from "@photoctl/library";
 import release from "./models.json";
@@ -25,4 +28,26 @@ test("SAM exporter exposes immutable source and ONNX contracts without weights",
       { file: "decoder.onnx", opset: 16 },
     ],
   });
+});
+
+test("SAM exporter refuses a dirty source checkout", async () => {
+  const checkout = await mkdtemp(join(tmpdir(), "photoctl-sam-export-checkout-"));
+  try {
+    execFileSync("git", ["init", "--quiet", checkout]);
+    await writeFile(join(checkout, "source.py"), "pinned\n");
+    execFileSync("git", ["-C", checkout, "add", "source.py"]);
+    execFileSync("git", ["-C", checkout, "-c", "user.name=test", "-c", "user.email=test@example.com", "commit", "--quiet", "-m", "pinned"]);
+    const revision = execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    await writeFile(join(checkout, "source.py"), "modified\n");
+    const probe = [
+      "import importlib.util, pathlib, sys",
+      "spec=importlib.util.spec_from_file_location('export_sam2', 'scripts/export-sam2.py')",
+      "module=importlib.util.module_from_spec(spec)",
+      "spec.loader.exec_module(module)",
+      "module.checkout(pathlib.Path(sys.argv[1]), sys.argv[2], 'test source')",
+    ].join(";");
+    expect(() => execFileSync("python3", ["-c", probe, checkout, revision])).toThrow();
+  } finally {
+    await rm(checkout, { recursive: true });
+  }
 });
