@@ -19,17 +19,15 @@ oracle, and export heartbeats are pushed. The spec remains in implementation.*
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: finish production segmentation and the independently installable release.**
+**Current pickup: finish fill controls and the remaining workbench/release journeys.**
 
-- Slice 11: connect the model loader, native inference, prompt mapping, and mask conversion to the
-  public command and daemon. The existing injectable command tests do not prove production wiring.
-  One encoder invocation must retain every decoder-required tensor; the daemon cache must be bounded
-  and distinguish changed render inputs. Then run real-weight probes, G6, and `wb masks` when verified
-  export artifacts are available. See [Slice 11](slices/11-segment.md).
-- In parallel, Slice 14: package the CLI, daemon, native addon, helper, and runtime dependency closure;
-  synchronize release versions; install into a clean prefix outside the checkout and run its exam.
-  A source-tree CLI test does not establish that the shipped package works.
-  See [Slice 14](slices/14-gold-exam-and-release.md).
+- Slice 11 production runtime is integrated: verified lazy model loading, multi-output native inference,
+  bounded pixel-keyed encoder caching, base-coordinate prompts/masks, and crop/offline render projection.
+  Finish the `wb masks` current-context report and run real-weight probes/G6 when verified export artifacts
+  are available. A keyless runtime test does not prove model quality. See [Slice 11](slices/11-segment.md).
+- Slice 14 standalone packaging is integrated. Its optimized, clean-prefix install passed the ten-ARW
+  fixture gold exam. Finish the full-feature fake-generation packed journey and report artifacts, then
+  real-drive acceptance. A fixture exam does not prove an unseen drive. See [Slice 14](slices/14-gold-exam-and-release.md).
 - Complete the still-unimplemented fill controls and outpaint canvas in [Slice 12](slices/12-fill.md),
   with input-size capping/`--full-res` implemented and reference/init controls still pending,
   then reconcile its photographic/live evidence and the separate

@@ -22,6 +22,67 @@
 
 ## Sound
 
+### Slice 14 — One CLI tarball contains the private runtime modules
+
+- **When:** Standalone packaging integration, 2026-09-05.
+- **The choice:** Installing the CLI also installs its private command, render, provider, and daemon
+  modules inside that tarball. Their ordinary third-party dependencies are declared once on the CLI;
+  platform-specific native binaries remain optional packages. A JavaScript bundler or separately
+  published domain packages would create additional release boundaries without helping CLI users.
+- **The gap:** The plan named CLI and platform tarballs but left internal workspace modules unshipped.
+  npm treats dependencies of bundled modules as bundled too, so leaving external dependency declarations
+  on the embedded manifests would misstate what the archive contains.
+- **The reach:** Module-relative assets and package boundaries survive installation. The CLI explicitly
+  owns the daemon dependency; the launcher resolves its package entry rather than a checkout-relative path.
+- **Verdict:** **Sound.** The installed runtime has one public JavaScript release boundary and the same
+  module/data ownership as development, without a commands-to-daemon dependency cycle.
+- **Confidence:** Medium; the clean-prefix exam proves the current closure, and future external
+  dependency conflicts are rejected by the packer rather than silently resolved.
+
+### Slice 14 — Shipping uses optimized binaries and one version owner
+
+- **When:** Standalone packaging integration, 2026-09-05.
+- **The choice:** Ordinary development builds stay debuggable; packaging compiles optimized Rust and
+  Swift binaries. The root version generates the Swift release value and synchronizes platform pins.
+  Packing normally targets the host; the release job combines separately built platform artifacts.
+  Publishing selects only the expected current-version tarballs, not every file left in an output folder.
+- **The gap:** The previous build scripts did not distinguish shipped performance from development
+  performance, and the helper's literal version could diverge from the CLI.
+- **The reach:** Local and CI releases follow the same version/profile rule. The Darwin linkage check
+  accepts system dependencies only; a binary's own LC_ID_DYLIB identity is not a dependency. PGlite
+  diagnostics read the installed package's version, not a dependency declaration stripped during packing.
+- **Verdict:** **Sound.** These are release properties, owned by build/package code rather than runtime
+  fallbacks or changes to image algorithms.
+- **Confidence:** High; the installed CLI/helper version and actual RAW processing are exercised together.
+
+### Slice 11 — Cropped prompts keep their meaning rather than moving to a visible edge
+
+- **When:** Production segmentation integration, 2026-09-05.
+- **The choice:** A base-coordinate point outside the current develop crop returns a usage error;
+  clipping it would select a different object. A base-space box transformed by rotation becomes the
+  enclosing axis-aligned box because SAM's box input cannot express an angled rectangle. Text-grounded
+  boxes already belong to the rendered frame and are passed in that frame directly.
+- **The gap:** The global coordinate contract does not specify how an invisible point or an angled
+  rectangle maps into a model's point/axis-aligned-box prompt vocabulary.
+- **The reach:** CLI coordinates remain stable across crop/rotation; point refusal is explicit, and
+  the conservative box can include more background than the original angled selection.
+- **Verdict:** **Sound.** It avoids silently moving point intent and avoids repeated box conversions.
+- **Confidence:** Medium; enclosing boxes are a model-interface limitation, and real mask quality
+  for rotated selections remains part of the photographic probe gate.
+
+### Slice 11 — Encoder reuse follows pixels, not metadata revisions
+
+- **When:** Production segmentation integration, 2026-09-05.
+- **The choice:** Within a photo/tier cache entry, the encoder input's dimensions and pixel hash decide
+  reuse. Rating a photo does not encode again; changing its develop pixels or switching source quality
+  does. Lazy session loads are coalesced, and failed loads/encodes are removed so a repaired model can retry.
+- **The gap:** The plan required encoder reuse per photo/tier but that pair alone cannot distinguish
+  changed develop inputs. A revision-only key would also discard features after unrelated metadata work.
+- **The reach:** The daemon owns the bounded cache and sessions; individual commands share the same
+  freshness policy. Model-file verification remains local, and downloads stay explicit through doctor.
+- **Verdict:** **Sound.** Actual input identity determines reuse, while eviction bounds retained memory.
+- **Confidence:** High; tests change pixels independently of metadata and prove retry after failure.
+
 ### Slice 12e2 — Provider sampling is separate from the final fill crop
 
 - **When:** Fill input-size pass, 2026-09-05.
