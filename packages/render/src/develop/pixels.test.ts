@@ -10,6 +10,12 @@ function chroma(values: Float32Array, offset: number): number {
   );
 }
 
+function rec2020Luminance(values: Float32Array, offset: number): number {
+  return (
+    0.2627002 * values[offset]! + 0.6779981 * values[offset + 1]! + 0.0593017 * values[offset + 2]!
+  );
+}
+
 test("develop applies exposure directly to scene-linear Rec.2020 pixels", async () => {
   const source = {
     w: 2,
@@ -614,6 +620,173 @@ test("filters and B&W cross the canonical seam before geometry", async () => {
   expect({ w: combined.w, h: combined.h }).toEqual({ w: 2, h: 3 });
   expect(combined.data).toEqual(sequential.data);
   expect(decoded.data).toEqual(combined.data);
+});
+
+test("selective color targets named hue bands and leaves neutral pixels unchanged", async () => {
+  const source = {
+    w: 3,
+    h: 1,
+    data: new Float32Array([0.8, 0.2, 0.2, 0.2, 0.8, 0.8, 0.4, 0.4, 0.4]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const desaturated = await applyDevelop(source, {
+    selective_color: { red: { saturation: -100 } },
+  });
+  const rotated = await applyDevelop(source, { selective_color: { red: { hue: 100 } } });
+  const lifted = await applyDevelop(source, {
+    selective_color: { red: { luminance: 100 } },
+  });
+
+  expect(chroma(desaturated.data, 0)).toBeCloseTo(0, 6);
+  expect(rec2020Luminance(desaturated.data, 0)).toBeCloseTo(rec2020Luminance(source.data, 0), 6);
+  expect(Array.from(desaturated.data.subarray(3))).toEqual(Array.from(source.data.subarray(3)));
+  expect(rotated.data[1]).toBeGreaterThan(source.data[1]!);
+  expect(rec2020Luminance(rotated.data, 0)).toBeCloseTo(rec2020Luminance(source.data, 0), 6);
+  expect(rec2020Luminance(lifted.data, 0)).toBeGreaterThan(rec2020Luminance(source.data, 0));
+});
+
+test("selective color keeps dark saturated colors inside the scene-linear gamut", async () => {
+  const source = {
+    w: 1,
+    h: 1,
+    data: new Float32Array([0.01, 0.1, 0.01]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, {
+    selective_color: { green: { hue: 20, saturation: 25 } },
+  });
+
+  expect(Math.min(...developed.data)).toBeGreaterThanOrEqual(0);
+  expect(chroma(developed.data, 0)).toBeGreaterThanOrEqual(chroma(source.data, 0));
+  expect(rec2020Luminance(developed.data, 0)).toBeCloseTo(rec2020Luminance(source.data, 0), 6);
+});
+
+test("selective luminance is a proportional scene-linear gain", async () => {
+  const source = {
+    w: 1,
+    h: 1,
+    data: new Float32Array([1, 0, 0]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const darkened = await applyDevelop(source, {
+    selective_color: { red: { luminance: -100 } },
+  });
+  const lightened = await applyDevelop(source, {
+    selective_color: { red: { luminance: 100 } },
+  });
+
+  expect(darkened.data).toEqual(new Float32Array([0.5, 0, 0]));
+  expect(lightened.data).toEqual(new Float32Array([2, 0, 0]));
+});
+
+test.each([
+  ["red", [0.8, 0.2, 0.2]],
+  ["orange", [0.8, 0.5, 0.2]],
+  ["yellow", [0.8, 0.8, 0.2]],
+  ["green", [0.2, 0.8, 0.2]],
+  ["cyan", [0.2, 0.8, 0.8]],
+  ["blue", [0.2, 0.2, 0.8]],
+  ["magenta", [0.8, 0.2, 0.8]],
+] as const)("selective color maps the %s band to its named hue", async (band, pixel) => {
+  const source = {
+    w: 1,
+    h: 1,
+    data: new Float32Array(pixel),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, {
+    selective_color: { [band]: { saturation: 50 } },
+  });
+
+  expect(chroma(developed.data, 0)).toBeGreaterThan(chroma(source.data, 0));
+  expect(rec2020Luminance(developed.data, 0)).toBeCloseTo(rec2020Luminance(source.data, 0), 6);
+});
+
+test("selective color is deterministic across canonical pixels and precedes finishing and geometry", async () => {
+  const source = {
+    w: 3,
+    h: 2,
+    data: new Float32Array([
+      0.8, 0.2, 0.2, 0.8, 0.5, 0.2, 0.8, 0.8, 0.2, 0.2, 0.8, 0.2, 0.2, 0.8, 0.8, 0.2, 0.2, 0.8,
+    ]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const selective = {
+    red: { hue: 35, saturation: 20, luminance: -10 },
+    green: { hue: -20, saturation: 15 },
+    blue: { luminance: 12 },
+  };
+  const pixelParameters = {
+    selective_color: selective,
+    vignette: -15,
+    filter: { name: "vivid_warm" as const, strength: 0.25 },
+  };
+  const memory = await applyDevelop(source, pixelParameters);
+  const repeated = await applyDevelop(source, pixelParameters);
+  const artifact = await applyDevelopArtifact(
+    await encodeArtifactLinearTiff(source),
+    { w: source.w, h: source.h },
+    pixelParameters,
+  );
+  const decoded = await decodeArtifactLinearTiff(artifact.bytes);
+  const combined = await applyDevelop(source, { ...pixelParameters, rotate: 90 });
+  const selectiveOnly = await applyDevelop(source, { selective_color: selective });
+  const ordered = await applyDevelop(selectiveOnly, {
+    vignette: -15,
+    filter: { name: "vivid_warm", strength: 0.25 },
+    rotate: 90,
+  });
+
+  expect(memory.data).toEqual(repeated.data);
+  expect(decoded.data).toEqual(memory.data);
+  expect(combined.data).toEqual(ordered.data);
+});
+
+test("zero selective-color controls are an exact canonical no-op", async () => {
+  const source = {
+    w: 2,
+    h: 1,
+    data: new Float32Array([-0.1, 0.2, 1.4, 0.8, 0.4, 0.2]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const input = await encodeArtifactLinearTiff(source);
+  const output = await applyDevelopArtifact(
+    input,
+    { w: source.w, h: source.h },
+    {
+      selective_color: { blue: { hue: 0, saturation: 0, luminance: 0 } },
+    },
+  );
+
+  expect(output.bytes).toEqual(input);
 });
 
 test("vignette applies a deterministic radial scene-linear gain before geometry", async () => {

@@ -7,7 +7,9 @@ const SHARPEN_GAIN_AT_FULL_SCALE: f32 = 0.5;
 mod finishing;
 mod noise_reduction;
 
-pub(crate) use finishing::{BlackAndWhiteParameters, FilterParameters};
+pub(crate) use finishing::{
+    BlackAndWhiteParameters, FilterParameters, SelectiveColorAdjustment, SelectiveColorParameters,
+};
 
 use crate::tone_curve::{ToneCurve, from_log, prepare as prepare_tone_curve, to_log};
 use std::collections::VecDeque;
@@ -70,6 +72,7 @@ pub(crate) struct Develop {
     pub sharpen: f32,
     pub noise_reduction_luminance: f32,
     pub noise_reduction_color: f32,
+    pub selective_color: Option<SelectiveColorParameters>,
     pub vignette: f32,
     pub black_and_white: Option<BlackAndWhiteParameters>,
     pub filter: Option<FilterParameters>,
@@ -126,6 +129,7 @@ pub(crate) fn apply_develop_artifact_in_place(
     let black_and_white = parameters.black_and_white;
     let filter = parameters.filter.clone();
     let vignette = parameters.vignette;
+    let selective_color = parameters.selective_color;
     apply_global_artifact_in_place(data, pixel_offset, pixel_bytes, width, height, parameters)?;
     if !local.is_identity() {
         apply_local_bytes_in_place(&mut data[pixel_offset..], width, height, local)?;
@@ -134,6 +138,7 @@ pub(crate) fn apply_develop_artifact_in_place(
         &mut data[pixel_offset..],
         width,
         height,
+        selective_color,
         vignette,
         black_and_white,
         filter,
@@ -204,9 +209,18 @@ pub(crate) fn apply_develop_in_place(
     let black_and_white = parameters.black_and_white;
     let filter = parameters.filter.clone();
     let vignette = parameters.vignette;
+    let selective_color = parameters.selective_color;
     apply_global_in_place(data, parameters)?;
     apply_local_in_place(data, width, height, local)?;
-    finishing::apply_in_place(data, width, height, vignette, black_and_white, filter)
+    finishing::apply_in_place(
+        data,
+        width,
+        height,
+        selective_color,
+        vignette,
+        black_and_white,
+        filter,
+    )
 }
 
 #[derive(Clone, Copy)]

@@ -204,6 +204,12 @@ export interface NativeDevelopParameters {
   sharpen?: number;
   noiseReductionLuminance?: number;
   noiseReductionColor?: number;
+  selectiveColor?: Partial<
+    Record<
+      "red" | "orange" | "yellow" | "green" | "cyan" | "blue" | "magenta",
+      { hue?: number; saturation?: number; luminance?: number }
+    >
+  >;
   bwIntensity?: number;
   bwNeutrals?: number;
   bwTone?: number;

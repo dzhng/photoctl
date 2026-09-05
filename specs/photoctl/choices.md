@@ -2613,3 +2613,27 @@
 - **Verdict:** **Needs-user.** Keep the reversible labels because they are readable and require no new persistence. If the product
   wants localized or unique defaults, change the single naming policy before UI clients treat these strings as durable copy.
 - **Confidence:** Low; this is product language rather than a technical invariant.
+
+### Slice 08 — Selective color interpolates named bands in working-space hue
+
+- **When:** Slice 08 selective-color closeout, 2026-09-05.
+- **The choice:** The seven schema names are centers on the scene-linear Rec.2020 RGB hue wheel, with red wrapping at zero and
+  smooth interpolation between neighboring centers. Achromatic pixels have no hue and remain unchanged. The alternative was a
+  hard nearest-band selection or a second perceptual-color conversion outside the existing native owner.
+- **The gap:** The schema fixes the band names and bounded controls, but not their hue coordinate or boundary behavior.
+- **The reach:** Every selective-color recipe inherits continuous band transitions and working-space hue semantics.
+- **Verdict:** **Sound.** It is deterministic, portable, continuous at every band boundary, and adds no render seam.
+- **Confidence:** Medium; future reference-image evidence could justify a perceptual hue coordinate behind the same schema.
+
+### Slice 08 — Selective color stays in the finishing sequence before vignette
+
+- **When:** Slice 08 selective-color closeout, 2026-09-05.
+- **The choice:** Selective color follows global and local corrections, then precedes vignette, B&W, named filters, and geometry.
+  Its out-of-gamut target blends toward the original color at the same luminance rather than clipping channels or discarding
+  chroma. The alternative was to append it after filters or introduce a separate gamut/resample stage.
+- **The gap:** The plan requires one fixed native operator order and geometry last, but does not place selective color among the
+  already implemented finishing operators or define safe working-gamut behavior.
+- **The reach:** Mixed develop recipes, canonical hashes, layer stale-state behavior, and exported pixels inherit this ordering
+  and gamut policy.
+- **Verdict:** **Sound.** The choice retains the existing owner, exact luminance invariant, and continuous photographic output.
+- **Confidence:** Medium; the first production probe exposed and corrected the naive clipping/desaturation alternatives.

@@ -7,7 +7,7 @@ import { expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
 import { dispatch } from "./dispatch.js";
 
-test("global develop renders whole-file, embedded-container, and extensionless inputs", async () => {
+test("develop renders whole-file, embedded-container, and extensionless inputs", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-develop-formats-"));
   try {
     const whole = join(directory, "whole.png");
@@ -44,7 +44,17 @@ test("global develop renders whole-file, embedded-container, and extensionless i
         if (!imported.ok || !("data" in imported)) throw new Error(`${entry.name} import failed`);
         const id = (imported.data as { ids: string[] }).ids[0];
         const developed = await dispatch(
-          { verb: "develop", args: [id, "--set", "exposure=0.5"], cwd: directory, env },
+          {
+            verb: "develop",
+            args: [
+              id,
+              "--set",
+              "exposure=0.5",
+              'selective_color={"blue":{"hue":15,"saturation":10,"luminance":-5}}',
+            ],
+            cwd: directory,
+            env,
+          },
           { version: "test", library: initialized.handle },
         );
         const rendered = await dispatch(
@@ -84,4 +94,4 @@ test("global develop renders whole-file, embedded-container, and extensionless i
   } finally {
     await rm(directory, { recursive: true });
   }
-}, 60_000);
+}, 90_000);

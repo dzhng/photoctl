@@ -139,6 +139,7 @@ pub struct DevelopParameters {
     pub sharpen: Option<f64>,
     pub noise_reduction_luminance: Option<f64>,
     pub noise_reduction_color: Option<f64>,
+    pub selective_color: Option<DevelopSelectiveColorParameters>,
     pub bw_enabled: Option<bool>,
     pub bw_intensity: Option<f64>,
     pub bw_neutrals: Option<f64>,
@@ -162,6 +163,24 @@ pub struct DevelopLevelsParameters {
     pub black: f64,
     pub midpoint: f64,
     pub white: f64,
+}
+
+#[napi(object)]
+pub struct DevelopSelectiveColorParameters {
+    pub red: Option<DevelopSelectiveColorAdjustment>,
+    pub orange: Option<DevelopSelectiveColorAdjustment>,
+    pub yellow: Option<DevelopSelectiveColorAdjustment>,
+    pub green: Option<DevelopSelectiveColorAdjustment>,
+    pub cyan: Option<DevelopSelectiveColorAdjustment>,
+    pub blue: Option<DevelopSelectiveColorAdjustment>,
+    pub magenta: Option<DevelopSelectiveColorAdjustment>,
+}
+
+#[napi(object)]
+pub struct DevelopSelectiveColorAdjustment {
+    pub hue: Option<f64>,
+    pub saturation: Option<f64>,
+    pub luminance: Option<f64>,
 }
 
 #[napi]
@@ -381,6 +400,17 @@ fn develop_parameters(parameters: DevelopParameters) -> Develop {
         sharpen: parameters.sharpen.unwrap_or_default() as f32,
         noise_reduction_luminance: parameters.noise_reduction_luminance.unwrap_or_default() as f32,
         noise_reduction_color: parameters.noise_reduction_color.unwrap_or_default() as f32,
+        selective_color: parameters.selective_color.map(|selective| {
+            develop::SelectiveColorParameters {
+                red: selective_adjustment(selective.red),
+                orange: selective_adjustment(selective.orange),
+                yellow: selective_adjustment(selective.yellow),
+                green: selective_adjustment(selective.green),
+                cyan: selective_adjustment(selective.cyan),
+                blue: selective_adjustment(selective.blue),
+                magenta: selective_adjustment(selective.magenta),
+            }
+        }),
         vignette: parameters.vignette.unwrap_or_default() as f32,
         black_and_white: parameters.bw_enabled.unwrap_or_default().then_some(
             develop::BlackAndWhiteParameters {
@@ -396,6 +426,19 @@ fn develop_parameters(parameters: DevelopParameters) -> Develop {
                 name,
                 strength: parameters.filter_strength.unwrap_or_default() as f32,
             }),
+    }
+}
+
+fn selective_adjustment(
+    adjustment: Option<DevelopSelectiveColorAdjustment>,
+) -> develop::SelectiveColorAdjustment {
+    let Some(adjustment) = adjustment else {
+        return develop::SelectiveColorAdjustment::default();
+    };
+    develop::SelectiveColorAdjustment {
+        hue: adjustment.hue.unwrap_or_default() as f32,
+        saturation: adjustment.saturation.unwrap_or_default() as f32,
+        luminance: adjustment.luminance.unwrap_or_default() as f32,
     }
 }
 

@@ -14,6 +14,24 @@ pub(crate) struct FilterParameters {
     pub strength: f32,
 }
 
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct SelectiveColorAdjustment {
+    pub hue: f32,
+    pub saturation: f32,
+    pub luminance: f32,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct SelectiveColorParameters {
+    pub red: SelectiveColorAdjustment,
+    pub orange: SelectiveColorAdjustment,
+    pub yellow: SelectiveColorAdjustment,
+    pub green: SelectiveColorAdjustment,
+    pub cyan: SelectiveColorAdjustment,
+    pub blue: SelectiveColorAdjustment,
+    pub magenta: SelectiveColorAdjustment,
+}
+
 #[derive(Clone, Copy)]
 struct FilterRecipe {
     exposure_stops: f32,
@@ -27,14 +45,27 @@ pub(super) fn apply_bytes(
     data: &mut [u8],
     width: usize,
     height: usize,
+    selective_color: Option<SelectiveColorParameters>,
     vignette: f32,
     black_and_white: Option<BlackAndWhiteParameters>,
     filter: Option<FilterParameters>,
 ) -> Result<(), String> {
-    if vignette == 0.0 && black_and_white.is_none() && filter.is_none() {
+    if selective_color.is_none_or(SelectiveColorParameters::is_identity)
+        && vignette == 0.0
+        && black_and_white.is_none()
+        && filter.is_none()
+    {
         return Ok(());
     }
-    apply(data, width, height, vignette, black_and_white, filter)?;
+    apply(
+        data,
+        width,
+        height,
+        selective_color,
+        vignette,
+        black_and_white,
+        filter,
+    )?;
     if data
         .chunks_exact(4)
         .any(|sample| !f32::from_le_bytes(sample.try_into().unwrap()).is_finite())
@@ -48,14 +79,27 @@ pub(super) fn apply_in_place(
     data: &mut [f32],
     width: usize,
     height: usize,
+    selective_color: Option<SelectiveColorParameters>,
     vignette: f32,
     black_and_white: Option<BlackAndWhiteParameters>,
     filter: Option<FilterParameters>,
 ) -> Result<(), String> {
-    if vignette == 0.0 && black_and_white.is_none() && filter.is_none() {
+    if selective_color.is_none_or(SelectiveColorParameters::is_identity)
+        && vignette == 0.0
+        && black_and_white.is_none()
+        && filter.is_none()
+    {
         return Ok(());
     }
-    apply(data, width, height, vignette, black_and_white, filter)?;
+    apply(
+        data,
+        width,
+        height,
+        selective_color,
+        vignette,
+        black_and_white,
+        filter,
+    )?;
     if data.iter().any(|sample| !sample.is_finite()) {
         return Err("finishing develop produced a non-finite sample".to_owned());
     }
@@ -66,6 +110,7 @@ fn apply<S: SampleStorage + ?Sized>(
     data: &mut S,
     width: usize,
     height: usize,
+    selective_color: Option<SelectiveColorParameters>,
     vignette: f32,
     black_and_white: Option<BlackAndWhiteParameters>,
     filter: Option<FilterParameters>,
@@ -84,6 +129,9 @@ fn apply<S: SampleStorage + ?Sized>(
             data.read_sample(index * 3 + 1),
             data.read_sample(index * 3 + 2),
         ];
+        if let Some(parameters) = selective_color {
+            pixel = apply_selective_color(pixel, parameters);
+        }
         if vignette != 0.0 {
             let gain = vignette_gain(index % width, index / width, width, height, vignette);
             pixel = pixel.map(|sample| sample * gain);
@@ -104,6 +152,105 @@ fn apply<S: SampleStorage + ?Sized>(
         }
     }
     Ok(())
+}
+
+impl SelectiveColorParameters {
+    fn is_identity(self) -> bool {
+        self.adjustments().into_iter().all(|adjustment| {
+            adjustment.hue == 0.0 && adjustment.saturation == 0.0 && adjustment.luminance == 0.0
+        })
+    }
+
+    fn adjustments(self) -> [SelectiveColorAdjustment; 7] {
+        [
+            self.red,
+            self.orange,
+            self.yellow,
+            self.green,
+            self.cyan,
+            self.blue,
+            self.magenta,
+        ]
+    }
+}
+
+fn apply_selective_color(pixel: [f32; 3], parameters: SelectiveColorParameters) -> [f32; 3] {
+    let Some((hue, chroma)) = rgb_hue(pixel) else {
+        return pixel;
+    };
+    let adjustment = interpolate_adjustment(hue, parameters);
+    if adjustment.hue == 0.0 && adjustment.saturation == 0.0 && adjustment.luminance == 0.0 {
+        return pixel;
+    }
+    let hue = (hue + adjustment.hue * 0.3).rem_euclid(360.0);
+    let luminance_gain = (adjustment.luminance / 100.0).exp2();
+    let requested_chroma =
+        (chroma * (1.0 + adjustment.saturation / 100.0) * luminance_gain).max(0.0);
+    let target_luminance = rec2020_luminance(pixel) * luminance_gain;
+    let colored = hue_chroma(hue, requested_chroma);
+    let colored_offset = target_luminance - rec2020_luminance(colored);
+    let desired = colored.map(|sample| sample + colored_offset);
+    let in_gamut_anchor = pixel.map(|sample| sample * luminance_gain);
+    let blend = desired
+        .into_iter()
+        .zip(in_gamut_anchor)
+        .filter(|(sample, anchor)| *sample < 0.0 && *anchor > *sample)
+        .map(|(sample, anchor)| anchor / (anchor - sample))
+        .fold(1.0_f32, f32::min);
+    std::array::from_fn(|channel| {
+        in_gamut_anchor[channel] + blend * (desired[channel] - in_gamut_anchor[channel])
+    })
+}
+
+fn interpolate_adjustment(
+    hue: f32,
+    parameters: SelectiveColorParameters,
+) -> SelectiveColorAdjustment {
+    const CENTERS: [f32; 8] = [0.0, 30.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0];
+    let adjustments = parameters.adjustments();
+    for segment in 0..CENTERS.len() - 1 {
+        if hue <= CENTERS[segment + 1] {
+            let left = adjustments[segment % adjustments.len()];
+            let right = adjustments[(segment + 1) % adjustments.len()];
+            let amount = smoothstep(CENTERS[segment], CENTERS[segment + 1], hue);
+            return SelectiveColorAdjustment {
+                hue: left.hue + amount * (right.hue - left.hue),
+                saturation: left.saturation + amount * (right.saturation - left.saturation),
+                luminance: left.luminance + amount * (right.luminance - left.luminance),
+            };
+        }
+    }
+    parameters.red
+}
+
+fn rgb_hue(pixel: [f32; 3]) -> Option<(f32, f32)> {
+    let maximum = pixel.into_iter().fold(f32::NEG_INFINITY, f32::max);
+    let minimum = pixel.into_iter().fold(f32::INFINITY, f32::min);
+    let chroma = maximum - minimum;
+    if chroma <= 1e-6 {
+        return None;
+    }
+    let sector = if maximum == pixel[0] {
+        (pixel[1] - pixel[2]) / chroma
+    } else if maximum == pixel[1] {
+        (pixel[2] - pixel[0]) / chroma + 2.0
+    } else {
+        (pixel[0] - pixel[1]) / chroma + 4.0
+    };
+    Some(((sector * 60.0).rem_euclid(360.0), chroma))
+}
+
+fn hue_chroma(hue: f32, chroma: f32) -> [f32; 3] {
+    let sector = hue / 60.0;
+    let secondary = chroma * (1.0 - (sector.rem_euclid(2.0) - 1.0).abs());
+    match sector.floor() as usize % 6 {
+        0 => [chroma, secondary, 0.0],
+        1 => [secondary, chroma, 0.0],
+        2 => [0.0, chroma, secondary],
+        3 => [0.0, secondary, chroma],
+        4 => [secondary, 0.0, chroma],
+        _ => [chroma, 0.0, secondary],
+    }
 }
 
 fn vignette_gain(x: usize, y: usize, width: usize, height: usize, amount: f32) -> f32 {

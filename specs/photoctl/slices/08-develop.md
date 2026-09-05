@@ -275,6 +275,17 @@ artifact dimensions; command tests pin base/view round trips and honest partial/
   first three imports with the shipped people preset before exporting all ten, and verifies those
   three highlight p98 values fall below their neutral sources. The production A7C II comparison is
   recorded in the [vignette closeout checkpoint](../assets/gates/G10-vignette-gold.md). Needs David:
-  no; the radial falloff and full-scale gain are delegated operator constants. This bounded
-  correction does not implement the separately declared `selective_color` operator, so Slice 08
-  remains open even though its keyless fixture gold exam is green.
+  no; the radial falloff and full-scale gain are delegated operator constants.
+
+- **2026-09-05 — Slice 08 selective-color closeout.** The last schema-declared develop key now runs
+  in the existing native finishing owner. Seven named hue bands carry independent hue, saturation,
+  and luminance controls; neighboring bands meet through smooth interpolation in scene-linear
+  Rec.2020 hue space. Hue and chroma edits preserve Rec.2020 luminance, while the explicit luminance
+  control applies a proportional scene-linear gain. Requested colors that leave the nonnegative
+  working gamut blend back toward the original color at the same luminance, avoiding hard clipping
+  or false-neutral shadow patches. Selective color runs after the established local operators and
+  before vignette, B&W, filters, and geometry, using the same in-memory/canonical seam. The production
+  A7C II comparison and the rejected first probe that drove the gamut correction are recorded in the
+  [selective-color checkpoint](../assets/gates/G10-selective-color.md). The keyless people-preset gold
+  exam remains green, so every declared develop key is implemented and Slice 08 is closed. Needs
+  David: no; control scaling remains reversible delegated operator data.
