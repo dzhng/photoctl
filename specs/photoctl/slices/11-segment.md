@@ -77,6 +77,9 @@ tests verify pixel alignment and identity only; the real-weight hair/foliage che
 [Real-photo evidence](../assets/sam-photographic/README.md) records passing coarse subject probes,
 failed foliage/wire and distant-path edges, and a full-command RSS breach before inference.
 The default scan-order workbench crop is not sufficient to reveal these defects; targeted detail
-crops remain necessary. Next: exact color-buffer ownership reduction and an actual photographic
-reference-model comparison. Neither passing area bands nor synthetic export parity closes the
-edge-quality checkpoint.
+crops remain necessary. Exact pointwise buffer reuse and pixel-free cached dimensions are integrated,
+but whole-command RSS remains red; the next memory pass removes full-frame captures across inference.
+The actual photographic tensor now agrees with pinned PyTorch at the unchanged tolerance, including
+all but two full-resolution mask pixels. Next quality question: compare the specified letterbox with
+upstream square resizing under controlled inputs. Neither numerical parity nor coarse area bands
+closes the edge-quality checkpoint.

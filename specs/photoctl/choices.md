@@ -105,7 +105,7 @@
 
 ### Paid image responses — Retain original encoded bytes beside working pixels
 
-- **When:** Bounded format measurement, 2026-09-06; retention implementation remains pending.
+- **When:** Bounded format measurement, 2026-09-06; implemented by the paid-response journal.
 - **The choice:** After a paid generation returns a PNG, keep those exact bytes as well as the
   scene-linear float TIFF consumed by the editing graph. On the 1024×684 photographic proxy,
   retaining the original adds 1,304,370 bytes beside an 8,405,802-byte working artifact. Its RGB8
@@ -119,7 +119,8 @@
 - **Verdict:** **Needs-user.** Provisionally preserve original bytes unchanged because they represent
   purchased, non-reproducible output. The bounded measurement supports the format distinction, not a
   universal compression ratio or storage budget. A different retention preference can change policy
-  before implementation; canonical graph pixels remain exact regardless.
+  for future responses; canonical graph pixels remain exact regardless. Existing originals are not
+  deleted by changing that preference.
 - **Confidence:** Medium; the tradeoff spends additional disk space, and representative library-history
   measurements are still required before any automatic deletion policy.
 
@@ -176,9 +177,26 @@
   the targeted check supplies stronger evidence when needed.
 - **Confidence:** Medium; an eventual bulk verification command would need its own bounded-work contract.
 
+### Editable develop input — Preserve the whole purchased RGB branch
+
+- **When:** Standalone upscale consumer correction, 2026-09-06.
+- **The choice:** Generate a picture, pay to enlarge it, then lower exposure. The editable develop
+  node (the graph step holding current adjustment controls) consumes the entire enlarged result,
+  including any final exact-size resample. Replacing exposure replaces those controls without
+  tracing back past purchased processing or stacking a second exposure adjustment. The unbuilt
+  alternative treats only a source or generation leaf as editable input, refusing normal preview
+  of an upscaled picture or discarding its paid pixels when editing.
+- **The gap:** The early develop reader assumed source leaves; the general immutable RGB contract
+  did not specify the reader shared by develop and canvas planning.
+- **The reach:** One graph reader unwraps only the direct editable develop node beneath the base
+  output. Canvas planning shares that interpretation. No schema, provider invocation, or pixel-stage
+  ordering changes; graph publication remains responsible for valid RGB inputs.
+- **Verdict:** **Sound.** Adjustments apply to the actual immutable base, not an older ancestor.
+- **Confidence:** High.
+
 ### Paid response retention — Record attempts before deciding whether their images can be used
 
-- **When:** Retention producer audit, 2026-09-06; implementation remains pending.
+- **When:** Retention producer audit, 2026-09-06; implemented in migration 20 and producer capture.
 - **The choice:** A paid image arrives with the wrong aspect ratio. Preserve it through the ordinary
   artifact store, then record the rejection on a library-owned attempt. A successful render execution
   links that same attempt when its revision commits. Standalone generation can therefore retain a
@@ -193,11 +211,11 @@
   inspection and attempt IDs in diagnostics make rejected paid work discoverable.
 - **Verdict:** **Sound.** Capture must precede acceptance policy to preserve purchased output. The
   journal shares the existing artifact lifecycle and avoids a success-only transitional schema.
-- **Confidence:** High in ownership; failure and crash boundaries still require implementation tests.
+- **Confidence:** High in ownership; interrupted attempts remain incomplete rather than authorizing replay.
 
 ### Paid response artifacts — Classify bytes independently of how an execution uses them
 
-- **When:** Original-response retention recon, 2026-09-06; implementation remains pending.
+- **When:** Original-response retention recon, 2026-09-06; implemented by artifact validation profiles.
 - **The choice:** A provider can return a TIFF that is already identical to the strict working TIFF
   used by the graph. Keep one file and artifact row, with original-response and working links pointing to it. A
   different, ordinary display TIFF is preserved as encoded image data but cannot be read as working
@@ -212,7 +230,7 @@
   silently narrowed to PNG merely to simplify storage.
 - **Verdict:** **Sound.** Content-addressed identity must depend on bytes, not the caller's purpose;
   strict working validation must remain intact when additional encoded formats are retained.
-- **Confidence:** High; implementation and format-by-format tests remain required.
+- **Confidence:** High; encoded originals and strict working pixels retain separate read requirements.
 
 ### Slice 12e2 — Reference intent has one adapter and artifact owner
 
@@ -2156,7 +2174,7 @@
   samples to a deterministic uncompressed IEEE-f32 TIFF with the bundled linear Rec.2020 profile and hashes those bytes. Every DAG
   node therefore reads the same unclamped values its parent published. Only a view or delivery request converts the working pixels
   to display-sRGB RGB16 and clamps them. An external provider may still return display pixels; those convert once into the working
-  format, while retention of the provider's paid return remains deliberately OPEN.
+  format, while the paid-response journal separately retains the original encoded return.
 - **The gap:** The 08a2 implementation selected a display artifact before the first scene-linear operator existed, so the loss was
   not observable then.
 - **The reach:** Develop, later masks/composites, deterministic identity, repair, restore, show, and export now share one true working

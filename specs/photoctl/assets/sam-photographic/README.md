@@ -56,10 +56,22 @@ recommendation was not adopted. The model-directory prerequisite is documented i
 clean-checkout provisioning/public hosting and Docker model-stage integration remain release work.
 The existing Docker functional stage does not yet consume its separate model-fetch stage.
 
-Next quality investigation must compare the actual photographic tensor and prompt through the
-pinned reference model and production runtime before attributing these defects to the model or
-changing preprocessing. Export parity on synthetic tensors does not settle that question.
-Do not weaken the edge target or claim the coarse test proves it.
+## Photographic reference parity
+
+`photo-reference.json` compares the actual normalized photographic tensor and mapped positive
+prompts through the pinned PyTorch CPU encoder/decoder and production ONNX runtime. Replaying
+the captured production inputs reproduces both published masks exactly. With the unchanged
+export tolerance (0.005 absolute plus 0.0001 relative), neither photographic probe has a logit
+mismatch; maximum absolute errors are below 0.000106. Projecting PyTorch logits through the
+production full-resolution mapping differs at only two sky pixels and zero road pixels out of
+32,741,376. The ready model identities and source are the ones recorded below; the JSON pins
+the actual input tensor hash. Scratch tensors are not release artifacts.
+
+This rules out substantial ONNX numerical drift for these inputs, not inappropriate input
+preprocessing or insufficient model quality. The pinned upstream SAM2 transforms resize directly
+to a square, whereas this spec prescribes centered letterboxing. Next: a controlled photographic
+comparison of those coordinate/preprocessing contracts before changing the explicit letterbox
+decision. Do not weaken the edge target or claim the coarse test proves it.
 
 ## Identity and resource boundaries
 

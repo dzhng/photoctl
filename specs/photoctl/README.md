@@ -19,7 +19,7 @@ the last pushed export-heartbeat checkpoint.*
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: implement reversible outpaint canvas and paid-image attempt retention in parallel.**
+**Current pickup: implement reversible outpaint canvas and close SAM memory/edge failures in parallel.**
 
 - Initial cropped-frame fill, refresh, and preview/detail planning now share exact realized frames.
   Migration 17 retains coordinates per execution; cached masters/views retain their own frame and
@@ -32,8 +32,8 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   use documented image edits and unsupported controls warn explicitly. The speculative standalone
   reference field is removed. Follow [12f2](slices/12-outpaint.md) for immutable geometry intent,
   inherited crop exclusions, and removable extent, then wire generation in 12f3. Canvas owns the
-  integrated migration 19 for immutable geometry/layer-authoring metadata; paid retention follows with 20.
-  Canvas pixel lifecycle remains unbuilt and will use a later migration if required. Keep live quality
+  integrated migration 19 for immutable geometry/layer-authoring metadata; paid retention is integrated as 20.
+  Canvas pixel lifecycle remains in progress on its own worktree. Keep live quality
   separate from deterministic evidence.
 - Slice 11 runtime, real parity-verified weights, and `wb masks` are integrated. Real-photo
   coarse subject tests pass; foliage/wire edges and full-command G6 remain red. The report selects
@@ -44,11 +44,11 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   identical requests across inspection cases. Conduct the photographic
   comparisons in [Slice 13](slices/13-generative-extras-and-markup.md) when explicitly configured.
   Missing live prerequisites do not block deterministic work.
-- Implement [paid-image attempt retention](slices/13-generative-extras-and-markup.md#paid-response-retention--remaining-artifact-contract)
-  through the existing artifact owner, capturing valid images before acceptance checks. An execution
-  links the attempt; rejected paid images remain discoverable without a dummy photo or node.
-  [Bounded format evidence](assets/artifact-storage/) exists; retention and representative undo-history
-  storage policy remain unfinished.
+- [Paid-image attempt retention](slices/13-generative-extras-and-markup.md#paid-response-retention--shared-artifact-and-attempt-ownership)
+  captures originals before acceptance checks through the existing artifact owner. Attempts remain
+  inspectable after rejection or photo removal. The base develop reader preserves purchased upscale
+  and exact resample branches through later edits and delivery. Representative undo-history storage
+  policy remains unfinished; automatic canonical-artifact deletion stays disabled.
 - Before release, run the full integrated closeout gate once, audit the full requirements and choices
   ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
   optional and unspecified, rather than an implied requirement to invent an MCP product.
@@ -58,6 +58,8 @@ Slice 13's reimagine, relight, generate, auto-enhance, markup, and retouch check
 The geometry prerequisite passed 77 merged migration/graph/command tests and typecheck; the exact
 pointwise color-buffer reuse passed its merged native build and focused color/SAM tests. These are
 allocation and storage checkpoints, not canvas completion or a passing whole-command resource gate.
+Retention passed 85 merged tests, atomic removal 18, and upscale/develop consumers 21, each with
+typecheck. The latter verifies exposure replacement without additional provider work.
 Earlier integrations passed focused tests, Rust tests, builds, typecheck,
 formatting, and lint. It did not run the root full-suite release gate. The preview-loop blend oracle
 now compares lossless graph outputs at Float32 precision; JPEG views independently prove freshness.
@@ -65,9 +67,10 @@ Slice files and their assets hold the detailed acceptance evidence.
 
 **SAM pickup:** the release manifest now pins real export hashes with composed CPU parity checks.
 [Photographic evidence](assets/sam-photographic/) distinguishes passing coarse subject checks from
-failed detailed edges and a reproduced full-command memory breach. Reduce the measured pointwise
-color-conversion allocations without changing pixels, then compare real photographic inputs through
-the reference model before changing segmentation. [Native resource evidence](assets/sam-runtime/)
+failed detailed edges and a reproduced full-command memory breach. Pointwise buffer reuse and
+pixel-free cached dimensions are integrated; full-frame closure lifetime is the next memory pass.
+Actual photographic ONNX/PyTorch parity passes, so compare letterbox versus upstream square
+preprocessing before changing segmentation. [Native resource evidence](assets/sam-runtime/)
 covers inference alone; public model hosting and wiring Docker's model-fetch stage into the
 functional gate remain unfinished. The host model test fails visibly without its documented weights.
 
@@ -105,7 +108,7 @@ Update this handoff after each pass and continue to the next unfinished requirem
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
-- [ ] 13a [x] reimagine/relight/generate · [ ] upscaler quality spike · [ ] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [ ] 13a [x] reimagine/relight/generate · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 

@@ -1,0 +1,29 @@
+{
+  "inputSha256": "f0f8b08932197834a11c330c5768cd69bbcd0a18b4b31731474ece34ff70e018",
+  "sky": {
+    "points": [
+      584.4749145507812,
+      257.71405029296875
+    ],
+    "differentPublishedMaskPixels": 0,
+    "max_abs_error": 0.00007534027099609375,
+    "mismatch_percentage": 0,
+    "same_logit_sign_percentage": 100,
+    "parity_passed": true,
+    "torchProjectedDifferentPixels": 2,
+    "projectedPixels": 32741376
+  },
+  "road": {
+    "points": [
+      642.92236328125,
+      681.6652221679688
+    ],
+    "differentPublishedMaskPixels": 0,
+    "max_abs_error": 0.00010585784912109375,
+    "mismatch_percentage": 0,
+    "same_logit_sign_percentage": 100,
+    "parity_passed": true,
+    "torchProjectedDifferentPixels": 0,
+    "projectedPixels": 32741376
+  }
+}
