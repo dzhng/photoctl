@@ -34,3 +34,4 @@ export * from "./transforms.js";
 export * from "./fill/crop.js";
 export * from "./fill/fit.js";
 export * from "./fill/pipeline.js";
+export * from "./fill/density.js";

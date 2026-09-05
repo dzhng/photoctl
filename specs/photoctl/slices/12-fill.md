@@ -107,6 +107,15 @@ an injected source plus the real adapter against the HTTP fake; they cover exact
 normalization, whole-frame/aspect rejection without a revision, versioned prompt storage, and continued `fill --move` behavior.
 
 This checkpoint does not claim live provider polarity, outpaint canvas behavior, `--ref`, alternate fit/init/full-resolution modes,
-or visual continuity. Slice 12b still owns density planning; 12c owns configured upscaler selection, warnings, and partial-failure
+or visual continuity. Slice 12c owns configured upscaler selection, warnings, and partial-failure
 semantics; 12d owns refresh, transform-driven density reuse, and the person-move/agent-preview journey. Their live, visual, and
 performance gates remain open.
+
+## 12b density-planning checkpoint — 2026-09-05
+
+`planOutputDensity` now owns the pure choice between a sufficient generation artifact, a sufficient lineage-bound cached upscale,
+or the smallest supported uniform upscale that fits within adapter limits. Its executable plan always ends with exactly one
+deterministic resize to the oriented full-frame or padded base-space crop target. If no allowed scale reaches both target axes, the
+largest valid output is retained, `density_satisfied` is false, and `upscale_resolution_limited` is returned; no generic tiling is
+introduced. Source-context resolution remains a separate record and cannot make an undersampled output claim sufficient density.
+Slice 12c still owns settings/flag/model precedence, configured adapter execution, guarded prompts, and partial-failure retention.
