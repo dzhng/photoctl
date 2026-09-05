@@ -1,12 +1,79 @@
-import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createConnection, createServer, type Socket } from "node:net";
 import { afterEach, expect, test } from "vitest";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 import { daemonSocketPath, ensureDaemon } from "@photoctl/commands";
+import { acquireLibraryLock, OPEN_LOCK_NAME } from "@photoctl/library";
+import { encodeFrame, FrameDecoder, type DaemonClientFrame } from "@photoctl/protocol";
 
 const directories: string[] = [];
+
+test("a lost response does not replay a committed command", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-lost-response-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+  const socket = daemonSocketPath(library, "0.1.0");
+  const committed = join(parent, "committed.json");
+  await writeFile(committed, "[]");
+  const lock = await acquireLibraryLock(join(library, OPEN_LOCK_NAME));
+  await lock.rewrite({ pid: process.pid, socket, startedAt: Date.now() });
+  const server = createServer((client) => {
+    const decoder = new FrameDecoder();
+    client.on("data", (chunk) => {
+      void (async () => {
+        for (const value of decoder.push(chunk)) {
+          const frame = value as DaemonClientFrame;
+          if (frame.type === "request") {
+            const commands = JSON.parse(await readFile(committed, "utf8")) as string[];
+            commands.push(frame.request.verb);
+            await writeFile(committed, JSON.stringify(commands));
+            if (commands.length === 1) {
+              client.end();
+              continue;
+            }
+          }
+          client.end(
+            encodeFrame({
+              type: "response",
+              envelope: {
+                schema: 1,
+                ok: true,
+                warnings: [],
+                data: {
+                  pid: process.pid,
+                  socket,
+                  version: "0.1.0",
+                  uptime_s: 1,
+                  queue: 0,
+                },
+              },
+            }),
+          );
+        }
+      })().catch((error) => client.destroy(error));
+    });
+    client.on("error", () => {});
+  });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(socket, resolve);
+    });
+    const result = await spawnPhotoctl(["layer", "duplicate", "photo", "layer"], {
+      libraryDir: library,
+      env: { PHOTOCTL_NO_DAEMON: "0" },
+    });
+    expect(JSON.parse(await readFile(committed, "utf8"))).toEqual(["layer"]);
+    expect(result.code).toBe(69);
+    expect(result.json).toMatchObject({ ok: false, code: "daemon_unavailable" });
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await lock.release();
+  }
+}, 30_000);
 
 afterEach(async () => {
   await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true })));
@@ -265,7 +332,7 @@ test("a dead socket with a live-looking pid reports the replacement daemon", asy
   });
 }, 30_000);
 
-test("a live-looking impostor socket with a free lock is replaced", async () => {
+test("an accepting impostor reports an unknown outcome before explicit recovery", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-impostor-"));
   directories.push(parent);
   const library = join(parent, "library");
@@ -286,10 +353,27 @@ test("a live-looking impostor socket with a free lock is replaced", async () => 
       libraryDir: library,
       env: { PHOTOCTL_NO_DAEMON: "0", PHOTOCTL_POLL_CEILING_MS: "10" },
     });
-    const event = diagnosed.events.find((candidate) => candidate.event === "daemon");
-    expect(diagnosed.code).toBe(0);
-    expect(event).toEqual(expect.objectContaining({ action: "spawned", pid: expect.any(Number) }));
-    expect(event && "pid" in event ? event.pid : process.pid).not.toBe(process.pid);
+    expect(diagnosed.code).toBe(69);
+    expect(diagnosed.json).toMatchObject({
+      ok: false,
+      code: "daemon_unavailable",
+      data: { message: "Command outcome is unknown. Inspect library state before retrying." },
+    });
+    const recovered = await spawnPhotoctl(["daemon", "start"], {
+      libraryDir: library,
+      env: { PHOTOCTL_NO_DAEMON: "0" },
+    });
+    expect(recovered.code).toBe(0);
+    expect(recovered.events).toContainEqual(expect.objectContaining({ action: "spawned" }));
+    expect((recovered.json as { data: { pid: number } }).data.pid).not.toBe(process.pid);
+    expect(
+      (
+        await spawnPhotoctl(["doctor"], {
+          libraryDir: library,
+          env: { PHOTOCTL_NO_DAEMON: "0" },
+        })
+      ).code,
+    ).toBe(0);
   } finally {
     await new Promise<void>((resolveClose) => impostor.close(() => resolveClose()));
     await spawnPhotoctl(["daemon", "stop"], {
@@ -386,7 +470,8 @@ test("the imported-image journey runs through one persistent daemon handle", asy
   ).results.find((result) => result.ok)?.file;
   expect(file).toBeDefined();
   await expect(stat(file ?? "")).resolves.toMatchObject({ size: expect.any(Number) });
-}, 30_000);
+  // Full-resolution RAW preview and delivery can each take 30s in the native debug build.
+}, 120_000);
 
 async function waitForProcessExit(pid: number): Promise<void> {
   const deadline = Date.now() + 5_000;

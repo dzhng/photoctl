@@ -7,6 +7,7 @@ import {
 } from "@photoctl/protocol";
 import { dispatch, type DispatchContext } from "./dispatch.js";
 import {
+  DaemonConnectionError,
   ensureDaemon,
   daemonSocketPath,
   inspectDaemon,
@@ -95,7 +96,8 @@ export async function execute(
         context.stream,
         context.emit,
       );
-    } catch {
+    } catch (error) {
+      if (!(error instanceof DaemonConnectionError)) throw daemonRequestFailure(path, error);
       const recovered = await ensureDaemon(path, context.version, {
         ...daemonOptions(request),
         verifyExisting: true,
@@ -108,11 +110,8 @@ export async function execute(
           context.stream,
           context.emit,
         );
-      } catch (error) {
-        throw new PhotoctlError("daemon_unavailable", "The photoctl daemon did not respond", {
-          library: path,
-          ...(error instanceof Error ? { message: error.message } : {}),
-        });
+      } catch (retryError) {
+        throw daemonRequestFailure(path, retryError);
       }
     }
     return {
@@ -137,6 +136,17 @@ export async function execute(
   }
 }
 
+function daemonRequestFailure(path: string, error: unknown): PhotoctlError {
+  return new PhotoctlError("daemon_unavailable", "The photoctl daemon did not respond", {
+    library: path,
+    message:
+      error instanceof DaemonConnectionError
+        ? "Could not connect to the daemon. The command was not sent."
+        : "Command outcome is unknown. Inspect library state before retrying.",
+    ...(error instanceof Error ? { cause: error.message } : {}),
+  });
+}
+
 async function executeDaemonControl(
   request: CommandRequest,
   version: string,
@@ -147,7 +157,10 @@ async function executeDaemonControl(
   }
   const action = request.args[0];
   if (action === "start") {
-    const connection = await ensureDaemon(path, version, daemonOptions(request));
+    const connection = await ensureDaemon(path, version, {
+      ...daemonOptions(request),
+      verifyExisting: true,
+    });
     const status = await inspectDaemon(path);
     if (!status)
       throw new PhotoctlError("daemon_unavailable", "The photoctl daemon is not responding");

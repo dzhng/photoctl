@@ -35,8 +35,10 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   inherited crop exclusions, and removable extent, then wire generation in 12f3. Canvas owns the
   integrated migration 19 for immutable geometry/layer-authoring metadata; paid retention is integrated as 20.
   Migration 21 carries authored canvas composition. Crop/aspect, copy/reset/presets and graph undo
-  are verified; captured stages after border transforms, source-only SAM geometry, and
-  offline/purchased-density consumers remain in progress. General CLI undo remains unimplemented.
+  are verified; exact captured stages after border transforms are integrated. Source-only SAM geometry and
+  offline/purchased-density consumers remain in progress. General CLI undo remains unimplemented;
+  daemon recovery now refuses to replay an already-sent mutation after a lost response
+  (the [Slice 02](slices/02-daemon-and-contention.md) transport boundary).
   Keep live quality separate from deterministic evidence.
 - Slice 11 runtime, real parity-verified weights, and `wb masks` are integrated. Real-photo
   coarse subject tests pass; foliage/wire edges remain red. Full-command RSS passes the six-run
@@ -66,6 +68,8 @@ Convex support passed 78 merged geometry/pixel tests and typecheck; its canvas c
 Canvas core passed 156 merged consumer tests and typecheck. Native color/resampler accounting
 passed its merged build, typecheck, and 26 accounting/color/SAM-session/mask tests.
 Restriction activation passed 72 merged consumer tests, TypeScript build and typecheck.
+Daemon no-replay recovery and preview progress passed 22 lifecycle/client checks plus 11
+preview/progress checks; explicit broken-endpoint recovery remains available through `daemon start`.
 Retention passed 85 merged tests, atomic removal 18, and upscale/develop consumers 21, each with
 typecheck. The latter verifies exposure replacement without additional provider work.
 Earlier integrations passed focused tests, Rust tests, builds, typecheck,

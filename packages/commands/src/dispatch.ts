@@ -98,6 +98,7 @@ export async function dispatch(
         request.cwd,
         context.library,
         context.previewCoordinator,
+        context.emit,
       );
     if (request.verb === "cache")
       return await cacheCommand(

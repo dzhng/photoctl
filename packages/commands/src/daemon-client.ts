@@ -40,6 +40,9 @@ interface ExchangeResult {
   stream: unknown[];
 }
 
+// Recovery may retry only failures before the request could have reached the daemon.
+export class DaemonConnectionError extends Error {}
+
 export function daemonSocketPath(libraryPath: string, version: string): string {
   const hash = createHash("sha1")
     .update(`${resolve(libraryPath)}\0${version}\0schema:1`)
@@ -267,6 +270,7 @@ async function exchange(
     const events: StderrEvent[] = [];
     const stream: unknown[] = [];
     let settled = false;
+    let sending = false;
     let ended = false;
     let processing = Promise.resolve();
     let timeout: ReturnType<typeof setTimeout>;
@@ -279,11 +283,14 @@ async function exchange(
       settled = true;
       clearTimeout(timeout);
       socket.destroy();
-      if (error) reject(error);
+      if (error) reject(sending ? error : new DaemonConnectionError(String(error)));
       else if (result) resolveResult(result);
     };
     armTimeout();
-    socket.once("connect", () => socket.write(encodeFrame(frame)));
+    socket.once("connect", () => {
+      sending = true;
+      socket.write(encodeFrame(frame));
+    });
     socket.on("data", (chunk) => {
       socket.pause();
       processing = processing.then(async () => {
@@ -357,6 +364,7 @@ export function requestTimeout(request: CommandRequest): number {
     request.verb === "reimagine" ||
     request.verb === "relight" ||
     request.verb === "generate" ||
+    request.verb === "show" ||
     request.verb === "export"
   ) {
     return Math.max(31_000, queueDeadline);

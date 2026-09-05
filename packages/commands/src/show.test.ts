@@ -4,7 +4,7 @@ import { join, relative } from "node:path";
 import sharp from "sharp";
 import { expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
-import { showDataSchema } from "@photoctl/protocol";
+import { showDataSchema, type StderrEvent } from "@photoctl/protocol";
 import { PreviewCoordinator, srgb2014ProfilePath } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
 
@@ -307,6 +307,7 @@ test("show preserves a preview-cache destination failure", async () => {
 });
 
 test("show indexes a derived preview only after returning a readable artifact", async () => {
+  const events: StderrEvent[] = [];
   const directory = await mkdtemp(join(tmpdir(), "photoctl-show-index-"));
   const libraryPath = join(directory, "library");
   const cacheRoot = join(directory, "cache");
@@ -329,10 +330,19 @@ test("show indexes a derived preview only after returning a readable artifact", 
         cwd: directory,
         env: { noDaemon: true, libraryPath, cacheRoot },
       },
-      { version: "test", library: initialized.handle, previewCoordinator: coordinator },
+      {
+        version: "test",
+        library: initialized.handle,
+        previewCoordinator: coordinator,
+        emit: (event) => {
+          events.push(event);
+        },
+      },
     );
 
     expect(result.ok).toBe(true);
+    expect(events[0]).toEqual({ event: "progress", phase: "preview", done: 0, total: 1 });
+    expect(events.at(-1)).toEqual({ event: "progress", phase: "preview", done: 1, total: 1 });
     if (!result.ok || !("data" in result)) throw new Error("show failed");
     const path = (result.data as { preview: string }).preview;
     const bytes = (await stat(path)).size + (await stat(`${path}.json`)).size;

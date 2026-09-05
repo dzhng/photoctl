@@ -4459,3 +4459,23 @@
 - **Verdict:** **Sound.** The experiment isolates the failure without weakening the default
   gate or silently replacing a release artifact.
 - **Confidence:** High for the measured timing result; no release-equivalence claim.
+
+### Daemon recovery — Never replay an operation whose outcome is unknown
+
+- **When:** Public undo prerequisite, 2026-09-06.
+- **The choice:** A user duplicates a layer. The background library process commits the new layer,
+  but its connection closes before the CLI receives confirmation. Resending could create a second
+  layer; an undo replay could remove a second edit. The CLI therefore recovers and retries once only
+  if connection failure occurred before sending began. Once sending starts, lost confirmation returns
+  unavailable with an explicit unknown-outcome message, so the caller inspects the library first.
+  An accepting broken socket receives the same result because the CLI cannot establish non-delivery.
+  The existing `daemon start` command explicitly verifies and, when the library lock is free,
+  replaces that broken endpoint. Recovery restores access without resending the ambiguous command.
+- **The gap:** Automatic daemon recovery was required, but the plan did not define replay after
+  ambiguous delivery. Durable request IDs with saved responses could allow safe replay, but would
+  require a new cross-command transaction and retention contract that does not exist today.
+- **The reach:** All daemon commands share this rule, including paid operations, rather than a
+  growing list of supposedly safe verbs. No database or wire schema changes are introduced. This
+  prevents client-generated duplicate sends; it does not promise exactly-once execution.
+- **Verdict:** **Sound.** Recovery must not convert missing acknowledgement into another mutation.
+- **Confidence:** High.

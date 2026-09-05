@@ -7,7 +7,13 @@ import {
   xmpStateIsStale,
   type LibraryHandle,
 } from "@photoctl/library";
-import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@photoctl/protocol";
+import {
+  PhotoctlError,
+  type Envelope,
+  type ShowData,
+  type Warning,
+  type StderrEvent,
+} from "@photoctl/protocol";
 import {
   developHash,
   activeLayerStatus,
@@ -36,6 +42,7 @@ import {
   type GraphSourceCandidate,
 } from "../graph-source.js";
 import { loadPhoto, type StoredPhoto } from "../photo.js";
+import { createProgressHeartbeat } from "../progress.js";
 
 export async function showCommand(
   args: string[],
@@ -43,6 +50,7 @@ export async function showCommand(
   cwd: string,
   provided?: LibraryHandle,
   providedCoordinator?: PreviewCoordinator,
+  emit?: (event: StderrEvent) => void | Promise<void>,
 ): Promise<Envelope> {
   const parsed = parseArguments(args, {
     flags: ["--norm"],
@@ -53,8 +61,22 @@ export async function showCommand(
   }
   const lease = await openRequestLibrary(env, cwd, provided);
   const { handle } = lease;
+  const progress = createProgressHeartbeat({
+    emit:
+      emit &&
+      (async (event) => {
+        try {
+          await emit(event);
+        } catch {
+          // A disconnected progress consumer must not cancel a shared preview materialization.
+        }
+      }),
+    phase: "preview",
+    total: 1,
+  });
   try {
     const id = await resolvePhotoId(handle, parsed.positionals[0]);
+    await progress.start();
     const photo = await loadPhoto(handle, id);
     const libraryId = await readLibraryId(handle);
     const resolver = createVolumeResolver(env.volumeMap, handle.path);
@@ -218,8 +240,10 @@ export async function showCommand(
           }
         : null,
     };
+    await progress.advance(1);
     return { schema: 1, ok: true, data, warnings };
   } finally {
+    await progress.stop();
     await lease.release();
   }
 }

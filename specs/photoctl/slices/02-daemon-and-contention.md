@@ -63,6 +63,23 @@ window does not consume the caller's lock-wait budget. Recovery takes the adviso
 metadata as authoritative, so stale artifacts with a reused PID remain replaceable. The Unix socket and current-run log are
 owner-only, and daemon restarts truncate the prior log.
 
+Command recovery distinguishes connection failure from lost acknowledgement. Before any request
+can be sent, a failed connection may recover the daemon and try once. After sending starts, a lost
+response returns `daemon_unavailable` with an unknown-outcome message; the CLI must not replay a
+potentially committed edit or paid operation. This is not exactly-once delivery: callers inspect
+library state before retrying. Explicit `daemon start` verifies the endpoint and recovers a broken
+one only when the existing advisory lock permits replacement; it never resends the failed command.
+An accepting stale socket is indistinguishable from a daemon that
+committed and disconnected, so it receives the same conservative result. The real-socket lifecycle
+regression records a mutation before dropping its response and verifies one persisted operation.
+The imported-image lifecycle test allows the full RAW preview and delivery work to finish; its
+timeout is not a rendering-speed acceptance threshold. A measured host debug-build journey took
+about 64 seconds with matching preview/export hashes, so the old 30-second total budget could not
+test that lifecycle. Warm-preview performance remains a separate gate.
+Preview uses the existing progress heartbeat while materializing pixels, including native/detail
+work. A live long render therefore refreshes the daemon's idle-response deadline without relying on
+command replay or a larger timeout. Failed progress delivery does not cancel shared materialization.
+
 `bun run probe:race -- --clients 8 --rows 25` produced the committed G1 PASS verdict with 200 accepted
 and 200 persisted exact tag values. The 24-client overload test proves every refusal is
 `library_locked`/75 and accepted batches commit in full. Host performance covers 20 warm `show` calls
