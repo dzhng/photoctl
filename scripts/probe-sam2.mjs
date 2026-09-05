@@ -48,7 +48,7 @@ const segmenter = new Sam2Segmenter(async () => ({
     return result;
   },
 }));
-for (let run = 0; run < runs; run += 1) {
+async function prepare(run) {
   // Distinct photo buffers expose accidental full-image retention in cached mappings.
   const image = {
     w: width,
@@ -58,16 +58,21 @@ for (let run = 0; run < runs; run += 1) {
       (_, i) => (Math.sin(i * 0.001) + 1) / 2,
     ),
   };
-  encodeMs = undefined;
-  decodeMs = undefined;
-  const mask = await segmenter.segment({
+  return await segmenter.prepare({
     photoId: `probe-${run}`,
     tier: "develop",
     image,
+  });
+}
+for (let run = 0; run < runs; run += 1) {
+  encodeMs = undefined;
+  decodeMs = undefined;
+  const prepared = await prepare(run);
+  const mask = await prepared.segment({
     points: [[width / 2, height / 2]],
   });
-  assert.equal(mask.w, image.w);
-  assert.equal(mask.h, image.h);
+  assert.equal(mask.w, width);
+  assert.equal(mask.h, height);
   assert(
     Number.isFinite(encodeMs) && Number.isFinite(decodeMs),
     "each sample must execute both models",

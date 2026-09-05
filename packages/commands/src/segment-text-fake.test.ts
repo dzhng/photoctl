@@ -9,9 +9,106 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { createServer } from "node:http";
+import { createHash } from "node:crypto";
 import { dispatch, type SegmentationAdapter } from "./dispatch.js";
 
 const directories: string[] = [];
+
+test("empty production grounding preserves JPEG bytes without encoding or evicting features", async () => {
+  const fixture = await fixtureLibrary("empty-production");
+  let jpegHash: string | undefined;
+  let encodes = 0;
+  const server = createServer((request, response) => {
+    const chunks: Buffer[] = [];
+    request.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    request.on("end", () => {
+      const encoded = Buffer.concat(chunks)
+        .toString()
+        .match(/data:image\/jpeg;base64,([^"\\]+)/)?.[1];
+      jpegHash = encoded
+        ? createHash("sha256").update(Buffer.from(encoded, "base64")).digest("hex")
+        : undefined;
+      response.setHeader("content-type", "application/json");
+      response.end(JSON.stringify({ choices: [{ message: { content: '{"instances":[]}' } }] }));
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const cacheRoot = await pinFixture(fixture);
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("No fixture port");
+    const segmenter = new Sam2Segmenter(
+      async () => ({
+        encoderInputNames: () => [],
+        decoderInputNames: () => [],
+        runEncoder: async () => {
+          encodes++;
+          return [
+            [1, 32, 256, 256],
+            [1, 64, 128, 128],
+            [1, 256, 64, 64],
+          ].map((dimensions) => ({
+            dimensions,
+            data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
+          }));
+        },
+        runDecoder: async () => [
+          { dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) },
+        ],
+      }),
+      1,
+    );
+    const env = {
+      noDaemon: true,
+      cacheRoot,
+      gatewayApiKey: "fixture-key",
+      gatewayUrl: `http://127.0.0.1:${address.port}`,
+    };
+    const context = { version: "test", library: fixture.handle, segmenter };
+    const select = () =>
+      dispatch(
+        {
+          verb: "segment",
+          args: [fixture.id, "--at", "1,1", "--dry-run"],
+          cwd: fixture.parent,
+          env,
+        },
+        context,
+      );
+    expect(await select()).toMatchObject({
+      ok: true,
+      data: { instances: [{ mask: { pixels: 48 } }] },
+    });
+    expect(encodes).toBe(1);
+    const otherId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c156";
+    await fixture.handle.query(
+      "INSERT INTO photos (id,content_key,size,w,h,orientation) VALUES ($1,'ck_empty_second',1,8,6,1)",
+      [otherId],
+    );
+    await pinFixture({ ...fixture, id: otherId });
+    const response = await dispatch(
+      { verb: "segment", args: [otherId, "--text", "absent"], cwd: fixture.parent, env },
+      context,
+    );
+    expect(response).toMatchObject({
+      ok: true,
+      data: { instances: [], revision_id: null, gateway_calls: 1 },
+    });
+    expect(encodes).toBe(1);
+    expect(jpegHash).toBe("3191d767d9b33118252c00a322441de44882a5e339606163381aee50a04ce417");
+    expect(await select()).toMatchObject({
+      ok: true,
+      data: { instances: [{ mask: { pixels: 48 } }] },
+    });
+    expect(encodes).toBe(1);
+    expect((await fixture.handle.query("SELECT id FROM document_revisions")).rows).toEqual([]);
+  } finally {
+    await fixture.handle.close();
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+  }
+});
 
 test("production text grounding uses the cropped render box and commits masks in base coordinates", async () => {
   const fixture = await fixtureLibrary("grounded-production");

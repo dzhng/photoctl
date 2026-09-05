@@ -19,11 +19,22 @@ const featureShapes = [
 ];
 const featureNames = ["image_features_0", "image_features_1", "image_embeddings"];
 type Encoded = { features: Sam2TensorOutput[]; mapping: Sam2Letterbox };
+type EncoderInput = Awaited<ReturnType<typeof prepareSam2EncoderInput>>;
+type CacheEntry = { hash: string; result: Promise<Encoded> };
+type Prompt = {
+  points: Array<[number, number]>;
+  box?: [number, number, number, number];
+  projection?: { dimensions: { w: number; h: number }; baseToImage: TransformMatrix };
+};
+export interface PreparedSam2Image {
+  readonly dimensions: { w: number; h: number };
+  segment(request: Prompt): Promise<MaskImage>;
+}
 
 /** One library's lazy CPU sessions and bounded LRU of 16 MiB encoder feature sets. */
 export class Sam2Segmenter {
   #runtime?: Promise<Sam2OnnxRuntime>;
-  readonly #entries = new Map<string, { hash: string; result: Promise<Encoded> }>();
+  readonly #entries = new Map<string, CacheEntry>();
   constructor(
     private readonly load: () => Promise<Sam2OnnxRuntime>,
     private readonly capacity = 8,
@@ -41,47 +52,85 @@ export class Sam2Segmenter {
     this.#runtime = undefined;
   }
 
-  async segment(request: {
+  async prepare(request: {
     photoId: string;
     tier: "develop" | "offline";
     image: { w: number; h: number; data: Float32Array };
-    points: Array<[number, number]>;
-    box?: [number, number, number, number];
-    projection?: { dimensions: { w: number; h: number }; baseToImage: TransformMatrix };
-  }): Promise<MaskImage> {
-    const runtime = await this.runtime();
+  }): Promise<PreparedSam2Image> {
+    await this.runtime();
     const { image } = request;
     const hash = createHash("sha256")
       .update(`${image.w},${image.h}\0`)
       .update(new Uint8Array(image.data.buffer, image.data.byteOffset, image.data.byteLength))
       .digest("hex");
     const key = JSON.stringify([request.photoId, request.tier]);
-    let entry = this.#entries.get(key);
-    this.#entries.delete(key);
-    if (!entry || entry.hash !== hash) {
-      const result = prepareSam2EncoderInput(image.data, image, resamplePixels).then(
-        async ({ data, mapping }) => {
-          const features = await runtime.runEncoder(
-            [{ name: "image", dimensions: [1, 3, 1024, 1024], f32Data: data }],
-            featureNames,
-          );
-          if (features.length !== 3) throw new Error("SAM encoder returned incomplete features");
-          features.forEach((feature, index) => assertTensor(feature, featureShapes[index]!));
-          return { features, mapping };
-        },
-      );
-      entry = { hash, result };
-    }
-    this.#entries.set(key, entry);
-    while (this.#entries.size > this.capacity)
-      this.#entries.delete(this.#entries.keys().next().value!);
-    let encoded: Encoded;
-    try {
-      encoded = await entry.result;
-    } catch (error) {
-      if (this.#entries.get(key) === entry) this.#entries.delete(key);
-      throw error;
-    }
+    const entry = this.#entries.get(key);
+    return this.preparedHandle(
+      key,
+      hash,
+      { w: image.w, h: image.h },
+      entry?.hash === hash
+        ? undefined
+        : await prepareSam2EncoderInput(image.data, image, resamplePixels),
+      entry?.hash === hash ? entry : undefined,
+    );
+  }
+
+  // This separate scope cannot capture the source image or its caller's request.
+  private preparedHandle(
+    key: string,
+    hash: string,
+    dimensions: PreparedSam2Image["dimensions"],
+    input: EncoderInput | undefined,
+    pinned: CacheEntry | undefined,
+  ): PreparedSam2Image {
+    return {
+      dimensions,
+      segment: async (request) => {
+        if (!pinned) {
+          const cached = this.#entries.get(key);
+          if (cached?.hash === hash) pinned = cached;
+          else {
+            if (!input) throw new Error("SAM prepared input is unavailable");
+            pinned = { hash, result: this.encode(input) };
+            this.#entries.set(key, pinned);
+          }
+        }
+        const entry = pinned;
+        if (this.#entries.get(key) === entry) {
+          this.#entries.delete(key);
+          this.#entries.set(key, entry);
+        }
+        while (this.#entries.size > this.capacity)
+          this.#entries.delete(this.#entries.keys().next().value!);
+        let encoded: Encoded;
+        try {
+          encoded = await entry.result;
+          input = undefined;
+        } catch (error) {
+          if (this.#entries.get(key) === entry) this.#entries.delete(key);
+          if (input) pinned = undefined;
+          throw error;
+        }
+        return this.decode(encoded, request);
+      },
+    };
+  }
+
+  private async encode({ data, mapping }: EncoderInput): Promise<Encoded> {
+    const runtime = await this.runtime();
+    const features = await runtime.runEncoder(
+      [{ name: "image", dimensions: [1, 3, 1024, 1024], f32Data: data }],
+      featureNames,
+    );
+    if (features.length !== 3) throw new Error("SAM encoder returned incomplete features");
+    features.forEach((feature, index) => assertTensor(feature, featureShapes[index]!));
+    return { features, mapping };
+  }
+
+  private async decode(encoded: Encoded, request: Prompt): Promise<MaskImage> {
+    const runtime = await this.runtime();
+    const image = encoded.mapping.source;
     const points = request.points.map((point) => encoded.mapping.toModel(point));
     const labels = points.map(() => 1);
     if (request.box) {

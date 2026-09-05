@@ -1,0 +1,88 @@
+{
+  "modelHashes": {
+    "encoder": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+    "decoder": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d"
+  },
+  "fixture": {
+    "file": "fixtures/a7c2.ARW",
+    "w": 7008,
+    "h": 4672
+  },
+  "runs": [
+    {
+      "case": "sky",
+      "repetition": 0,
+      "seconds": 21.74,
+      "rss": 2748907520,
+      "footprint": 4100798864,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "identityPreserved": true,
+      "passed": true
+    },
+    {
+      "case": "road",
+      "repetition": 0,
+      "seconds": 21.55,
+      "rss": 2567323648,
+      "footprint": 4122671480,
+      "hash": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162",
+      "identityPreserved": true,
+      "passed": true
+    },
+    {
+      "case": "sky",
+      "repetition": 1,
+      "seconds": 20.95,
+      "rss": 3407233024,
+      "footprint": 4118427856,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "identityPreserved": true,
+      "passed": false
+    },
+    {
+      "case": "road",
+      "repetition": 1,
+      "seconds": 21.68,
+      "rss": 2834399232,
+      "footprint": 4118378584,
+      "hash": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162",
+      "identityPreserved": true,
+      "passed": true
+    },
+    {
+      "case": "sky",
+      "repetition": 2,
+      "seconds": 21.67,
+      "rss": 3021111296,
+      "footprint": 4129356416,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "identityPreserved": true,
+      "passed": false
+    },
+    {
+      "case": "road",
+      "repetition": 2,
+      "seconds": 22.11,
+      "rss": 3296985088,
+      "footprint": 4126751048,
+      "hash": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162",
+      "identityPreserved": true,
+      "passed": false
+    }
+  ],
+  "ownership": {
+    "ownershipVerified": true,
+    "observedDisplayBuffers": 1,
+    "explicitTestGc": true,
+    "resourceAcceptance": false,
+    "maskHash": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162"
+  },
+  "fullCommandResourcePassed": false,
+  "qualityVerified": false,
+  "largestPeak": {
+    "phase": "convertLinearRec2020ToDisplaySrgb:enqueued",
+    "elapsedMs": 11025.028125,
+    "rssBytes": 3407233024,
+    "precededPreparedInput": true
+  }
+}

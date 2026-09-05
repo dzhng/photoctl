@@ -74,7 +74,14 @@ export async function configuredSegmentation(
     ? (await readActiveDevelopState(handle, { photoId: photo.id, orientation: photo.orientation }))
         .develop
     : {};
-  const { frame, sourceContext, fallback } = await withGenerationSource(
+  const {
+    prepared,
+    point,
+    box: mapBox,
+    matrix,
+    grounding,
+    fallback,
+  } = await withGenerationSource(
     handle,
     env,
     cwd,
@@ -85,9 +92,30 @@ export async function configuredSegmentation(
       const { image } = await source();
       if (image.space !== "scene-linear-rec2020")
         throw new Error("SAM source is not scene-linear Rec.2020");
+      const frame = await prepareSam2Frame(image as SceneLinearImage, develop, photo);
+      let groundingImage;
+      if (text) {
+        const pixels = sam2GroundingPixels(frame.image);
+        groundingImage = {
+          bytes: await sharp(pixels.data, {
+            raw: { width: pixels.w, height: pixels.h, channels: 3 },
+          })
+            .jpeg()
+            .toBuffer(),
+          mediaType: "image/jpeg" as const,
+          dimensions: { w: frame.image.w, h: frame.image.h },
+        };
+      }
       return {
-        frame: await prepareSam2Frame(image as SceneLinearImage, develop, photo),
-        sourceContext: selectedContext,
+        prepared: await segmenter.prepare({
+          photoId: photo.id,
+          tier: selectedContext.tier === "pinned-preview" ? "offline" : "develop",
+          image: frame.image,
+        }),
+        point: frame.point,
+        box: frame.box,
+        matrix: frame.matrix,
+        grounding: groundingImage,
         fallback: selectedFallback,
       };
     },
@@ -98,35 +126,25 @@ export async function configuredSegmentation(
     warnings: sourceWarning ? [sourceWarning] : [],
     local: {
       segment: async ({ points, box, boxSpace }) => {
-        const mappedPoints = points.map(frame.point);
+        const mappedPoints = points.map(point);
         if (
-          mappedPoints.some(([x, y]) => x < 0 || y < 0 || x >= frame.image.w || y >= frame.image.h)
+          mappedPoints.some(
+            ([x, y]) => x < 0 || y < 0 || x >= prepared.dimensions.w || y >= prepared.dimensions.h,
+          )
         )
           throw new PhotoctlError("usage", "Segment point is outside the current develop crop", {
             id: photo.id,
           });
-        return await segmenter.segment({
-          photoId: photo.id,
-          tier: sourceContext.tier === "pinned-preview" ? "offline" : "develop",
-          image: frame.image,
-          projection: { dimensions: photo, baseToImage: frame.matrix },
+        return await prepared.segment({
+          projection: { dimensions: { w: photo.w, h: photo.h }, baseToImage: matrix },
           points: mappedPoints,
-          ...(box ? { box: boxSpace === "render" ? box : frame.box(box) } : {}),
+          ...(box ? { box: boxSpace === "render" ? box : mapBox(box) } : {}),
         });
       },
     },
   };
   if (text) {
-    const pixels = sam2GroundingPixels(frame.image);
-    dependencies.image = {
-      bytes: await sharp(pixels.data, {
-        raw: { width: pixels.w, height: pixels.h, channels: 3 },
-      })
-        .jpeg()
-        .toBuffer(),
-      mediaType: "image/jpeg",
-      dimensions: { w: frame.image.w, h: frame.image.h },
-    };
+    dependencies.image = grounding;
     dependencies.structured = new GatewayStructuredModelAdapter({
       gateway: new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl }),
       model: resolveModels((await readProviderSettings(handle)).models).structured,

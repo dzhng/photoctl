@@ -35,10 +35,12 @@ test("cropped quarter-turn SAM masks return to base space without selecting outs
       { dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) },
     ],
   }));
-  const mask = await engine.segment({
+  const prepared = await engine.prepare({
     photoId: "p",
     tier: "develop",
     image: frame.image,
+  });
+  const mask = await prepared.segment({
     points: [frame.point([2, 1.5])],
     projection: { dimensions: source, baseToImage: frame.matrix },
   });

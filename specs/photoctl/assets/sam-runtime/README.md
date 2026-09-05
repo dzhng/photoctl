@@ -60,5 +60,29 @@ eviction check does **not** replace the failed full-resolution resource check. R
 run count, and `--stop-on-memory-limit` options; defaults retain the original sixteen-request 1024-square benchmark.
 
 The report also preserves the rejected delayed-session experiment: constructing sessions only after encoder preprocessing
-increased RSS in both cold CLI comparisons. No such lifecycle change is implemented. Removing cached pixel references does
-not remove the command's live image closure, the resampler snapshot, or allocator residency; full-command G6 remains open.
+increased RSS in both cold CLI comparisons. No such lifecycle change is implemented. Cache cleanup alone does not constrain
+command-owned images, the resampler snapshot, or allocator residency; full-command G6 remains open.
+
+## Pixel-free prepared inputs
+
+The command's segmentation dependencies retain a prepared handle and geometry, not the full display image. A handle owns
+normalized encoder input or pins an existing feature entry for the active command. Image hash, letterboxing, grounding JPEG,
+and base-mask projection are unchanged. Source-pixel WeakRef tests explicitly collect garbage before first inference;
+reintroducing an image-bearing metadata reference makes that test fail. Production never forces collection.
+
+Preparation only peeks at the existing feature cache. Insertion, recency updates, and encoder singleflight remain at first
+segmentation, so empty grounding results neither encode nor evict other photos. Concurrent cold preparations may duplicate
+bounded preprocessing; they share encoding once used. A prepared handle is a pixel snapshot, not a persistent second cache.
+Active handles can keep their feature entry alive through eviction until that command finishes. New photo pixels require a
+new preparation. Failed commands can retry through fresh preparation without retaining rejected cache entries.
+
+The intentional timing tradeoff is that preprocessing now finishes before the external grounding request. Empty results
+still avoid inference, but incur preparation work; preprocessing errors surface before external spend. The grounding JPEG
+is generated from the same display pixels before they become unreachable. Regression tests pin its pre-change HTTP bytes,
+zero-result behavior, concurrent prompts, cache invalidation/eviction, retry, and projected masks.
+
+[Prepared-input measurements](prepared-memory.json) preserve exact sky/road masks in six no-GC full CLI runs, but three still
+exceed the 3 GB RSS band. The largest observed peak precedes input preparation, at display-conversion enqueue. A separate
+full CLI WeakRef diagnostic confirms display pixels are collectible at encoder entry; its explicit test GC result is
+ownership evidence only, never resource acceptance. This establishes an earlier release point, not full-command G6 or
+photographic quality acceptance.
