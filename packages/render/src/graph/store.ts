@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { frameForNode, savedRenderFrame } from "./frame.js";
 import {
   canonicalJson,
   canonicalNodeRecipe,
@@ -482,11 +483,27 @@ async function storePreparedExecution(
   if (expectedEvaluation !== execution.evaluationHash) {
     throw new Error("Prepared provider execution does not match its input artifacts");
   }
+  const dimensions = await transaction.query<{
+    w: number;
+    h: number;
+    catalog_w: number;
+    catalog_h: number;
+  }>(
+    "SELECT artifact.w, artifact.h, photo.w AS catalog_w, photo.h AS catalog_h FROM image_artifacts artifact CROSS JOIN photos photo WHERE artifact.artifact_hash = $1 AND photo.id = $2",
+    [execution.outputArtifactHash, photoId],
+  );
+  const size = dimensions.rows[0]!;
+  const frame = frameForNode(
+    node.kind,
+    node.parameters,
+    { w: size.catalog_w, h: size.catalog_h },
+    size,
+  );
   await transaction.query(
     `INSERT INTO node_executions (
        photo_id, execution_id, node_id, evaluation_hash, deterministic,
-       output_artifact_hash, provider_execution
-     ) VALUES ($1, $2, $3, $4, false, $5, $6::jsonb)`,
+       output_artifact_hash, provider_execution, render_frame
+     ) VALUES ($1, $2, $3, $4, false, $5, $6::jsonb, $7::jsonb)`,
     [
       photoId,
       execution.executionId,
@@ -509,6 +526,7 @@ async function storePreparedExecution(
         density_verdict: execution.provider.densityVerdict,
         warnings: execution.provider.warnings,
       }),
+      JSON.stringify(savedRenderFrame(frame)),
     ],
   );
   await mapInOrder(execution.inputArtifactHashes, async (hash, index) => {

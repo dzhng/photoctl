@@ -2,10 +2,12 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { resampleDisplaySrgb8, resampleDisplaySrgbRegion } from "@photoctl/img";
 import sharp from "sharp";
-import type { ExifOrientation } from "./coordinates.js";
+import { orientedDimensions, type ExifOrientation } from "./coordinates.js";
 import { srgb2014ProfilePath } from "./color.js";
 import type { ImageSource } from "./decoder.js";
 import { canonicalJson } from "./graph/recipes.js";
+import { developFrame, viewFrame, type RenderFrame } from "./graph/frame.js";
+import { developBaseRegion, projectDevelopView } from "./develop/geometry.js";
 import {
   readValidPreviewArtifact,
   writePreviewArtifact,
@@ -16,25 +18,24 @@ import { PreviewCoordinator, type PreviewIndexAdapter } from "./preview-coordina
 import { renderSource, type Image16 } from "./source-render.js";
 
 export { PreviewDestinationError } from "./preview-artifact.js";
-
 export interface ViewSpec {
   region: [number, number, number, number] | null;
   longEdge: number | "native";
 }
-
 export function viewHash(spec: ViewSpec): `v_${string}` {
-  const canonical = canonicalJson({
-    kind: "view",
-    long_edge: spec.longEdge,
-    recipe_version: 2,
-    region: spec.region,
-  });
-  return `v_${createHash("sha256").update(canonical).digest("hex")}`;
+  return `v_${createHash("sha256")
+    .update(
+      canonicalJson({
+        kind: "view",
+        long_edge: spec.longEdge,
+        recipe_version: 3,
+        region: spec.region,
+      }),
+    )
+    .digest("hex")}`;
 }
-
 export type PreviewCacheSource = "exact_view" | "sufficient_full_frame" | "render_master";
 export type { PreviewSourceTier } from "./preview-artifact.js";
-
 export interface MaterializedPreview {
   path: string;
   actualRegion: [number, number, number, number];
@@ -45,9 +46,10 @@ export interface MaterializedPreview {
   pixelScale: number;
   resolutionLimited: boolean;
   cacheSource: PreviewCacheSource;
+  frame: RenderFrame;
 }
 
-/** Materializes one view while preserving a single graph-evaluated full-frame master. */
+/** Public base-space views are planned against the exact raster retained with the master. */
 export async function materializePreview(request: {
   coordinator: PreviewCoordinator;
   index: PreviewIndexAdapter;
@@ -56,331 +58,197 @@ export async function materializePreview(request: {
   renderHash: string;
   photo: { orientation: ExifOrientation; w: number; h: number };
   source: ImageSource;
-  render?: () => Promise<Image16>;
+  render?: () => Promise<{ image: Image16; frame: RenderFrame }>;
+  logicalFrame?: RenderFrame;
   sourceTier?: PreviewSourceTier;
   view: ViewSpec;
-  cacheView?: ViewSpec;
 }): Promise<MaterializedPreview> {
-  const region = clampRegion(
-    request.view.region ?? [0, 0, request.photo.w, request.photo.h],
-    request.photo.w,
-    request.photo.h,
-  );
-  const requestedScale = requestedPixelScale(request.view, region);
-  const requestedWidth = Math.max(1, Math.round(region[2] * requestedScale));
-  const requestedHeight = Math.max(1, Math.round(region[3] * requestedScale));
+  const logical = request.logicalFrame ?? developFrame(request.photo, request.photo);
+  const target = planView(logical, request.view);
   const directory = join(request.cacheRoot, "view", request.photoId, request.renderHash);
-  const exactPath = join(directory, `${viewHash(request.cacheView ?? request.view)}.jpg`);
+  const exactPath = join(directory, `${viewHash(request.view)}.jpg`);
   const masterPath = join(directory, "master.jpg");
-  const nativeFullFrame = request.view.region === null && request.view.longEdge === "native";
-  const cheapOverview = request.view.region === null && request.view.longEdge === 1616;
-
-  if (nativeFullFrame) {
-    const master = await ensureMaster(request, masterPath, region, requestedWidth, requestedHeight);
+  const native = request.view.region === null && request.view.longEdge === "native";
+  const overview = request.view.region === null && request.view.longEdge === 1616;
+  let sourceLimit: Promise<{ w: number; h: number } | undefined> | undefined;
+  const atSourceLimit = async (artifact: ValidPreviewArtifact) => {
+    sourceLimit ??= (async () => {
+      if (request.source.kind !== "pinned-preview")
+        return orientedDimensions(
+          request.source,
+          request.source.orientation ?? request.photo.orientation,
+        );
+      // The terminal fallback may be smaller or larger than retained pixels; its kind is not a density.
+      try {
+        const metadata = await sharp(request.source.path).metadata();
+        if (!metadata.width || !metadata.height) return undefined;
+        return orientedDimensions(
+          { w: metadata.width, h: metadata.height },
+          request.source.orientation,
+        );
+      } catch {
+        // Retained pixels and their frame remain useful when the fallback itself is unavailable.
+        return undefined;
+      }
+    })();
+    const maximum = await sourceLimit;
+    if (!maximum) return true;
+    return artifact.frame.source.w >= maximum.w && artifact.frame.source.h >= maximum.h;
+  };
+  const sufficient = async (artifact: ValidPreviewArtifact) => {
+    const plan = planView(artifact.frame, request.view);
+    return (plan.w >= target.w && plan.h >= target.h) || (await atSourceLimit(artifact));
+  };
+  const render = async () => {
+    if (request.render) return await request.render();
+    const image = await renderSource(request.photo.orientation, request.source);
+    return { image, frame: developFrame(request.photo, image) };
+  };
+  const master = async () =>
+    await request.coordinator.materialize(
+      {
+        photoId: request.photoId,
+        renderHash: request.renderHash,
+        artifact: "master",
+        path: masterPath,
+      },
+      async () => {
+        const existing = await readValidPreviewArtifact(masterPath);
+        if (existing && (await sufficient(existing)))
+          return { path: masterPath, artifact: existing, created: false };
+        const rendered = await render();
+        await writePreviewArtifact(masterPath, await encodeJpeg(rendered.image), {
+          sourceTier: request.sourceTier ?? request.source.kind,
+          sourceDimensions: { w: rendered.image.w, h: rendered.image.h },
+          frame: rendered.frame,
+        });
+        const artifact = await readValidPreviewArtifact(masterPath);
+        if (!artifact) throw new Error(`Preview artifact failed validation: ${masterPath}`);
+        return { path: masterPath, artifact, created: true };
+      },
+      request.index,
+    );
+  if (native) {
+    const value = await master();
     return result(
-      master.path,
-      region,
-      master.artifact.w,
-      master.artifact.h,
-      master.artifact.sourceDimensions.w,
-      master.artifact.sourceDimensions.h,
-      master.artifact.sourceTier,
-      requestedScale,
-      master.created ? "render_master" : "exact_view",
+      masterPath,
+      value.artifact,
+      target,
+      value.created ? "render_master" : "exact_view",
     );
   }
-
   return await request.coordinator.materialize(
     {
       photoId: request.photoId,
       renderHash: request.renderHash,
-      artifact: `view:${viewHash(request.cacheView ?? request.view)}`,
+      artifact: `view:${viewHash(request.view)}`,
       path: exactPath,
     },
     async () => {
       const exact = await readValidPreviewArtifact(exactPath);
-      if (exact && exact.w >= requestedWidth && exact.h >= requestedHeight) {
-        return result(
-          exactPath,
-          region,
-          exact.w,
-          exact.h,
-          exact.sourceDimensions.w,
-          exact.sourceDimensions.h,
-          exact.sourceTier,
-          requestedScale,
-          "exact_view",
-        );
+      if (exact && ((exact.w >= target.w && exact.h >= target.h) || (await atSourceLimit(exact)))) {
+        return result(exactPath, exact, target, "exact_view");
       }
-
-      if (cheapOverview) {
-        const master = await request.coordinator.reuseValid(masterPath, request.index);
-        if (
-          master &&
-          isSufficient(master, request.photo, region, requestedWidth, requestedHeight)
-        ) {
-          return await deriveView(
-            master.bytes,
-            exactPath,
-            master,
-            request.photo,
-            region,
-            requestedScale,
-            "sufficient_full_frame",
-          );
-        }
-        // Keep the overview cheap when no sufficient master exists.
-        const image = await renderPreviewSource(request);
-        return await deriveRenderedView(
-          image,
-          exactPath,
-          request.photo,
-          region,
-          requestedScale,
-          request.sourceTier ?? request.source.kind,
-          "render_master",
+      if (overview) {
+        const existing = await request.coordinator.reuseValid(masterPath, request.index);
+        if (existing && (await sufficient(existing)))
+          return await derive(existing, exactPath, request.view, target, "sufficient_full_frame");
+        const rendered = await render();
+        const plan = planView(rendered.frame, request.view);
+        const pixels = resampleDisplaySrgbRegion(
+          rendered.image.data,
+          rendered.image.w,
+          rendered.image.h,
+          ...plan.region,
+          plan.w,
+          plan.h,
         );
+        const bytes = await encodeJpeg({ ...rendered.image, w: plan.w, h: plan.h, data: pixels });
+        const provenance = {
+          sourceTier: request.sourceTier ?? request.source.kind,
+          sourceDimensions: { w: rendered.image.w, h: rendered.image.h },
+          frame: plan.frame,
+        };
+        await writePreviewArtifact(exactPath, bytes, provenance);
+        return result(exactPath, { ...provenance, w: plan.w, h: plan.h }, target, "render_master");
       }
-
-      const master = await ensureMaster(
-        request,
-        masterPath,
-        region,
-        requestedWidth,
-        requestedHeight,
-      );
-      return await deriveView(
-        master.artifact.bytes,
+      const value = await master();
+      return await derive(
+        value.artifact,
         exactPath,
-        master.artifact,
-        request.photo,
-        region,
-        requestedScale,
-        master.created ? "render_master" : "sufficient_full_frame",
+        request.view,
+        target,
+        value.created ? "render_master" : "sufficient_full_frame",
       );
     },
     request.index,
   );
 }
 
-async function ensureMaster(
-  request: Parameters<typeof materializePreview>[0],
-  masterPath: string,
-  region: [number, number, number, number],
-  requestedWidth: number,
-  requestedHeight: number,
-): Promise<{ path: string; artifact: ValidPreviewArtifact; created: boolean }> {
-  return await request.coordinator.materialize(
-    {
-      photoId: request.photoId,
-      renderHash: request.renderHash,
-      artifact: "master",
-      path: masterPath,
-    },
-    async () => {
-      const existing = await readValidPreviewArtifact(masterPath);
-      if (
-        existing &&
-        isSufficient(existing, request.photo, region, requestedWidth, requestedHeight)
-      ) {
-        return { path: masterPath, artifact: existing, created: false };
-      }
-      const image = await renderPreviewSource(request);
-      const bytes = await encodeJpeg(image);
-      const provenance = {
-        sourceTier: request.source.kind,
-        sourceDimensions: { w: image.w, h: image.h },
-      };
-      await writePreviewArtifact(masterPath, bytes, provenance);
-      const artifact = await readValidPreviewArtifact(masterPath);
-      if (!artifact) throw new Error(`Preview artifact failed validation: ${masterPath}`);
-      return {
-        path: masterPath,
-        artifact,
-        created: true,
-      };
-    },
-    request.index,
-  );
+function planView(frame: RenderFrame, view: ViewSpec) {
+  const projected = projectDevelopView(view, { ...frame.raster, matrix: frame.baseToRaster }).view
+    .region ?? [0, 0, frame.raster.w, frame.raster.h];
+  const left = Math.max(0, Math.floor(projected[0]));
+  const top = Math.max(0, Math.floor(projected[1]));
+  const right = Math.min(frame.raster.w, Math.ceil(projected[0] + projected[2]));
+  const bottom = Math.min(frame.raster.h, Math.ceil(projected[1] + projected[3]));
+  const region: [number, number, number, number] = [left, top, right - left, bottom - top];
+  const scale =
+    view.longEdge === "native" ? 1 : Math.min(1, view.longEdge / Math.max(region[2], region[3]));
+  const w = Math.max(1, Math.round(region[2] * scale));
+  const h = Math.max(1, Math.round(region[3] * scale));
+  return { region, w, h, frame: viewFrame(frame, region, { w, h }) };
 }
 
-async function renderPreviewSource(
-  request: Parameters<typeof materializePreview>[0],
-): Promise<Image16> {
-  return request.render
-    ? await request.render()
-    : await renderSource(request.photo.orientation, request.source);
-}
-
-async function deriveRenderedView(
-  image: Image16,
+async function derive(
+  source: ValidPreviewArtifact,
   path: string,
-  photo: { w: number; h: number },
-  region: [number, number, number, number],
-  requestedScale: number,
-  sourceTier: PreviewSourceTier,
+  view: ViewSpec,
+  target: ReturnType<typeof planView>,
   cacheSource: PreviewCacheSource,
 ): Promise<MaterializedPreview> {
-  const { width, height, sourceRegion } = derivedViewGeometry(image, photo, region, requestedScale);
-  const pixels = resampleDisplaySrgbRegion(
-    image.data,
-    image.w,
-    image.h,
-    sourceRegion.left,
-    sourceRegion.top,
-    sourceRegion.width,
-    sourceRegion.height,
-    width,
-    height,
-  );
-  const output = await encodeJpeg({ ...image, w: width, h: height, data: pixels });
-  await writePreviewArtifact(path, output, {
-    sourceTier,
-    sourceDimensions: { w: image.w, h: image.h },
-  });
-  return result(
-    path,
-    region,
-    width,
-    height,
-    image.w,
-    image.h,
-    sourceTier,
-    requestedScale,
-    cacheSource,
-  );
-}
-
-async function deriveView(
-  bytes: Buffer,
-  outputPath: string,
-  source: {
-    w: number;
-    h: number;
-    sourceTier: PreviewSourceTier;
-    sourceDimensions: { w: number; h: number };
-  },
-  photo: { w: number; h: number },
-  region: [number, number, number, number],
-  requestedScale: number,
-  cacheSource: PreviewCacheSource,
-): Promise<MaterializedPreview> {
-  const { width, height, sourceRegion } = derivedViewGeometry(
-    source,
-    photo,
-    region,
-    requestedScale,
-  );
-  const { data, info } = await sharp(bytes, { failOn: "error" })
-    .extract(sourceRegion)
+  const plan = planView(source.frame, view);
+  const [left, top, width, height] = plan.region;
+  const { data, info } = await sharp(source.bytes, { failOn: "error" })
+    .extract({ left, top, width, height })
     .flatten({ background: "white" })
     .toColourspace("srgb")
     .raw()
     .toBuffer({ resolveWithObject: true });
-  const pixels = Buffer.from(resampleDisplaySrgb8(data, info.width, info.height, width, height));
-  const output = await sharp(pixels, { raw: { width, height, channels: 3 } })
+  const pixels = Buffer.from(resampleDisplaySrgb8(data, info.width, info.height, plan.w, plan.h));
+  const bytes = await sharp(pixels, { raw: { width: plan.w, height: plan.h, channels: 3 } })
     .jpeg({ quality: 88 })
     .withIccProfile(srgb2014ProfilePath)
     .toBuffer();
-  await writePreviewArtifact(outputPath, output, source);
-  return result(
-    outputPath,
-    region,
-    width,
-    height,
-    source.sourceDimensions.w,
-    source.sourceDimensions.h,
-    source.sourceTier,
-    requestedScale,
-    cacheSource,
-  );
-}
-
-function derivedViewGeometry(
-  source: { w: number; h: number },
-  photo: { w: number; h: number },
-  region: [number, number, number, number],
-  requestedScale: number,
-): {
-  width: number;
-  height: number;
-  sourceRegion: { left: number; top: number; width: number; height: number };
-} {
-  const availableScale = Math.min(source.w / photo.w, source.h / photo.h, 1);
-  const pixelScale = Math.min(requestedScale, availableScale);
-  const width = Math.max(1, Math.round(region[2] * pixelScale));
-  const height = Math.max(1, Math.round(region[3] * pixelScale));
-  return { width, height, sourceRegion: mapRegion(region, photo, source) };
+  const provenance = {
+    sourceTier: source.sourceTier,
+    sourceDimensions: source.sourceDimensions,
+    frame: plan.frame,
+  };
+  await writePreviewArtifact(path, bytes, provenance);
+  return result(path, { ...provenance, w: plan.w, h: plan.h }, target, cacheSource);
 }
 
 function result(
   path: string,
-  actualRegion: [number, number, number, number],
-  w: number,
-  h: number,
-  sourceWidth: number,
-  sourceHeight: number,
-  sourceTier: PreviewSourceTier,
-  requestedScale: number,
+  artifact: Pick<ValidPreviewArtifact, "frame" | "w" | "h" | "sourceTier" | "sourceDimensions">,
+  target: ReturnType<typeof planView>,
   cacheSource: PreviewCacheSource,
 ): MaterializedPreview {
-  const pixelScale = Math.min(w / actualRegion[2], h / actualRegion[3]);
+  const matrix = artifact.frame.baseToRaster;
+  const pixelScale = Math.min(Math.hypot(matrix[0], matrix[1]), Math.hypot(matrix[2], matrix[3]));
   return {
     path,
-    actualRegion,
-    w,
-    h,
-    sourceDimensions: { w: sourceWidth, h: sourceHeight },
-    sourceTier,
+    actualRegion: developBaseRegion([0, 0, artifact.w, artifact.h], matrix),
+    w: artifact.w,
+    h: artifact.h,
+    sourceDimensions: artifact.sourceDimensions,
+    sourceTier: artifact.sourceTier,
     pixelScale,
-    resolutionLimited: pixelScale + 1 / Math.max(actualRegion[2], actualRegion[3]) < requestedScale,
+    resolutionLimited: artifact.w + 1 < target.w || artifact.h + 1 < target.h,
     cacheSource,
+    frame: artifact.frame,
   };
-}
-
-function requestedPixelScale(view: ViewSpec, region: [number, number, number, number]): number {
-  return view.longEdge === "native"
-    ? 1
-    : Math.min(1, view.longEdge / Math.max(region[2], region[3]));
-}
-
-function isSufficient(
-  source: { w: number; h: number },
-  photo: { w: number; h: number },
-  region: [number, number, number, number],
-  requestedWidth: number,
-  requestedHeight: number,
-): boolean {
-  const mapped = mapRegion(region, photo, source);
-  return mapped.width >= requestedWidth && mapped.height >= requestedHeight;
-}
-
-function mapRegion(
-  region: [number, number, number, number],
-  photo: { w: number; h: number },
-  source: { w: number; h: number },
-): { left: number; top: number; width: number; height: number } {
-  const left = Math.max(0, Math.round(region[0] * (source.w / photo.w)));
-  const top = Math.max(0, Math.round(region[1] * (source.h / photo.h)));
-  return {
-    left,
-    top,
-    width: Math.max(1, Math.min(source.w - left, Math.round(region[2] * (source.w / photo.w)))),
-    height: Math.max(1, Math.min(source.h - top, Math.round(region[3] * (source.h / photo.h)))),
-  };
-}
-
-function clampRegion(
-  region: [number, number, number, number],
-  imageWidth: number,
-  imageHeight: number,
-): [number, number, number, number] {
-  const left = Math.max(0, Math.floor(region[0]));
-  const top = Math.max(0, Math.floor(region[1]));
-  const right = Math.min(imageWidth, Math.ceil(region[0] + region[2]));
-  const bottom = Math.min(imageHeight, Math.ceil(region[1] + region[3]));
-  if (right <= left || bottom <= top) throw new Error("Preview region is outside the image");
-  return [left, top, right - left, bottom - top];
 }
 
 async function encodeJpeg(image: Image16): Promise<Buffer> {

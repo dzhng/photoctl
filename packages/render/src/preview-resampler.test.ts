@@ -7,6 +7,7 @@ import { expect, test } from "vitest";
 import { srgb2014ProfilePath } from "./color.js";
 import { materializePreview } from "./preview.js";
 import { PreviewCoordinator } from "./preview-coordinator.js";
+import { developFrame } from "./graph/frame.js";
 
 test("preview pixels use Rust bilinear while Sharp performs no intermediate resize", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-resampler-"));
@@ -109,18 +110,23 @@ test("a rendered U16 view crops and resamples before 8-bit encoding", async () =
         h: 6,
       },
       render: async () => ({
-        w: 2_000,
-        h: 6,
-        channels: 3,
-        data,
-        space: "display-srgb",
-        orientationApplied: true,
+        frame: developFrame({ w: 2000, h: 6 }, { w: 2000, h: 6 }),
+        image: {
+          w: 2_000,
+          h: 6,
+          channels: 3,
+          data,
+          space: "display-srgb",
+          orientationApplied: true,
+        },
       }),
       view: { region: null, longEdge: 1_616 },
     });
 
     expect(rawOutputCalls).toBe(0);
     expect(preview).toMatchObject({ w: 1_616, h: 5 });
+    // Frame provenance contains dimensions and transforms, never the source's pixel transport.
+    expect((await readFile(`${preview.path}.json`)).length).toBeLessThan(2048);
     const expectedPixels = resampleDisplaySrgbRegion(data, 2_000, 6, 0, 0, 2_000, 6, 1_616, 5);
     const expected = await sharp(
       Buffer.from(Array.from(expectedPixels, (sample) => Math.round(sample / 257))),

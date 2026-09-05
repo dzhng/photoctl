@@ -212,6 +212,65 @@
   checkpoint useful through existing user commands, without introducing a disposable outpaint path.
 - **Confidence:** High.
 
+### Slice 12f1 — Recover old execution coordinates only when retained ancestry agrees
+
+- **When:** Shared realized-frame implementation, 2026-09-05.
+- **The choice:** An old execution is a saved render run whose database row predates coordinate
+  metadata. When it points to an input image shared by several historical runs, recovery compares
+  their frames—the source dimensions and mapping that locate those pixels in the original photo.
+  If every candidate agrees, the recovered frame is saved on the old row. If they disagree, recovery
+  reports ambiguity instead of borrowing the newest run's coordinates. Inspection stops at 64
+  candidates per input or 256 distinct executions overall. A preview with its own valid saved frame
+  needs none of this recovery and remains usable offline. The alternative was an unlimited walk or
+  a latest-row guess that silently moves selections; neither establishes which coordinates are true.
+- **The gap:** The approved execution metadata contract left historical recovery and its work limits open.
+- **The reach:** Old libraries upgrade without replaying paid generation. Very large or ambiguous
+  historical graphs can require fresh deterministic evaluation, while retained preview inspection
+  stays independent. The numeric limits are bounded operational policy, not evidence of ambiguity.
+- **Verdict:** **Sound.** Missing history must not become invented geometry; finite recovery prevents
+  an ordinary preview from triggering unbounded database work.
+- **Confidence:** Medium; the limits may need adjustment with real library measurements.
+
+### Slice 12f1 — Save coordinate meaning with each execution, not with shared pixel bytes
+
+- **When:** Shared realized-frame implementation, 2026-09-05; coordinated with the integrating agent.
+- **The choice:** Two differently sized black source images can round through crop/rotation to the
+  exact same 7×7 black output. The pixels therefore share one stored artifact, but their locations
+  in the original photo differ. Migration 17 adds nullable JSON frame metadata to each render run,
+  not to the shared artifact. Deterministic run identity also includes its input frames, so a cached
+  run cannot collapse those two meanings. Paid provider identities and saved images do not change.
+  Preview sidecars retain the same compact frame; their version and deterministic renderer identity
+  advance so older coordinate-less caches cannot masquerade as current ones.
+- **The gap:** The planned shared frame did not specify a durable storage owner. Existing execution
+  rows retained input artifact hashes but no coordinate metadata or exact input execution identity.
+- **The reach:** Future render consumers retrieve coordinates by exact execution identity. The
+  schema adds only optional metadata and does not duplicate image payloads; old rows use bounded
+  recovery. Choosing artifact-owned metadata instead would make identical pixels overwrite meanings.
+- **Verdict:** **Sound.** Coordinates belong to the run that produced the pixels, which the collision
+  regression demonstrates independently of implementation helpers.
+- **Confidence:** High.
+
+### Slice 12f1 — Treat the best declared source tier as a reusable preview ceiling
+
+- **When:** Shared realized-frame implementation, 2026-09-05.
+- **The choice:** A photo can have a 40×20 catalog size but only a declared 20×10 source available.
+  After rendering that source once, a saved native master records both its output frame and the
+  source tier that produced it. Detail requests reuse that master when it already represents the
+  best declared tier, even if a full-catalog-size request would prefer more pixels. A newly available
+  higher tier can still trigger a better render. The alternative repeatedly decoded the same small
+  source and failed after the source disappeared despite having valid cached pixels and coordinates.
+- **Additional boundary:** A pinned fallback's label does not prove its density. Read its available
+  image metadata once: keep a 20×10 cached master instead of a 10×5 pin, but improve a 4×2 master
+  from that same pin. If the pin is missing or unreadable, retain the valid cache and its truthful
+  frame. Native, cached detail, and newly extracted detail follow this rule without repeatedly
+  evaluating an already-warmed source.
+- **The gap:** Exact frame retention specified truthful resolution reporting, but not how a reduced
+  non-pinned source should prove that rendering again cannot improve detail.
+- **The reach:** Cached detail remains usable after source loss without pretending that upscaling
+  adds information. This relies on source-resolution metadata accurately describing the chosen tier.
+- **Verdict:** **Sound.** Reuse follows retained source provenance, not an output-width ratio.
+- **Confidence:** High.
+
 ### Renderer corrections select new derived caches without deleting old work
 
 - **When:** Fill projection integration, 2026-09-06.

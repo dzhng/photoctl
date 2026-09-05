@@ -4,12 +4,14 @@ import { basename, dirname } from "node:path";
 import sharp from "sharp";
 import { srgb2014ProfilePath } from "./color.js";
 import type { ImageSource } from "./decoder.js";
+import { parseRenderFrame, savedRenderFrame, type RenderFrame } from "./graph/frame.js";
 
 export type PreviewSourceTier = ImageSource["kind"];
 
 export interface PreviewProvenance {
   sourceTier: PreviewSourceTier;
   sourceDimensions: { w: number; h: number };
+  frame: RenderFrame;
 }
 
 export interface ValidPreviewArtifact extends PreviewProvenance {
@@ -46,6 +48,8 @@ export async function readValidPreviewArtifact(
       metadata.format !== "jpeg" ||
       !metadata.width ||
       !metadata.height ||
+      metadata.width !== provenance.frame.raster.w ||
+      metadata.height !== provenance.frame.raster.h ||
       !metadata.icc?.equals(expectedProfile) ||
       provenance.jpegSha256 !== createHash("sha256").update(bytes).digest("hex")
     ) {
@@ -58,6 +62,7 @@ export async function readValidPreviewArtifact(
       h: metadata.height,
       sourceTier: provenance.sourceTier,
       sourceDimensions: provenance.sourceDimensions,
+      frame: provenance.frame,
     };
   } catch {
     return undefined;
@@ -76,10 +81,11 @@ export async function writePreviewArtifact(
     directory,
     Buffer.from(
       `${JSON.stringify({
-        schema: 1,
+        schema: 2,
         jpeg_sha256: createHash("sha256").update(bytes).digest("hex"),
         source_tier: provenance.sourceTier,
         source_dimensions: provenance.sourceDimensions,
+        frame: savedRenderFrame(provenance.frame),
       })}\n`,
     ),
   );
@@ -111,9 +117,11 @@ function parseProvenance(bytes: Buffer): PreviewProvenance & { jpegSha256: strin
     jpeg_sha256?: unknown;
     source_tier?: unknown;
     source_dimensions?: { w?: unknown; h?: unknown };
+    frame?: unknown;
   };
   if (
-    value.schema !== 1 ||
+    value.schema !== 2 ||
+    !value.frame ||
     typeof value.jpeg_sha256 !== "string" ||
     !/^[0-9a-f]{64}$/.test(value.jpeg_sha256) ||
     !["online-file", "online-jpeg-range", "pinned-preview"].includes(value.source_tier as string) ||
@@ -131,6 +139,7 @@ function parseProvenance(bytes: Buffer): PreviewProvenance & { jpegSha256: strin
       w: Number(value.source_dimensions?.w),
       h: Number(value.source_dimensions?.h),
     },
+    frame: parseRenderFrame(value.frame),
   };
 }
 

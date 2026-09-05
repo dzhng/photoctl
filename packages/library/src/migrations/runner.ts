@@ -15,6 +15,7 @@ import { migration0013 } from "./0013-revision-metadata.js";
 import { migration0014 } from "./0014-standalone-generation.js";
 import { migration0015 } from "./0015-markup.js";
 import { migration0016 } from "./0016-effective-masks.js";
+import { migration0017 } from "./0017-execution-frames.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -39,6 +40,7 @@ const migrations = [
   { version: 14, sql: migration0014 },
   { version: 15, sql: migration0015 },
   { version: 16, sql: migration0016 },
+  { version: 17, sql: migration0017 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
@@ -130,6 +132,7 @@ const latestConstraints = [
   "node_executions_source_provenance_check",
   "node_executions_source_w_check",
   "node_executions_provider_execution_check",
+  "node_executions_render_frame_check",
   "photo_documents_photo_id_active_revision_id_fkey",
   "photo_documents_photo_id_fkey",
   "photo_documents_pkey",

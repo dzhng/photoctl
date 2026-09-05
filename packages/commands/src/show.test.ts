@@ -1,12 +1,154 @@
-import { access, mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import sharp from "sharp";
 import { expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
 import { showDataSchema } from "@photoctl/protocol";
-import { PreviewCoordinator } from "@photoctl/render";
+import { PreviewCoordinator, srgb2014ProfilePath } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
+
+test.each([
+  {
+    label: "reduced",
+    sourceW: 31,
+    sourceH: 23,
+    w: 16,
+    h: 15,
+    detailRegion: [5, 2, 11, 9],
+    expected: {
+      a: -0.06680308846083141,
+      b: 0.47532867299595377,
+      c: -0.47997687005331213,
+      d: -0.06745634995513376,
+      e: 21.158361440517286,
+      f: -5.676947178910977,
+    },
+  },
+  {
+    label: "full",
+    sourceW: 63,
+    sourceH: 47,
+    w: 34,
+    h: 33,
+    detailRegion: [12, 4, 20, 19],
+    expected: {
+      a: -0.14102874230619966,
+      b: 1.003471642991458,
+      c: -0.9852156806357459,
+      d: -0.13846303411843244,
+      e: 44.13037323417792,
+      f: -11.409124844599408,
+    },
+  },
+])(
+  "show preserves the exact $label frame through native and cached detail",
+  async ({ sourceW, sourceH, w, h, detailRegion, expected }) => {
+    const directory = await mkdtemp(join(tmpdir(), "photoctl-show-reduced-frame-"));
+    const libraryPath = join(directory, "library");
+    const cacheRoot = join(directory, "cache");
+    const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
+    const initialized = await initializeLibrary(libraryPath);
+    try {
+      await initialized.handle.query(
+        `INSERT INTO photos (id, content_key, size, w, h, orientation)
+       VALUES ($1, 'ck_0000000000000001', 1, 63, 47, 1)`,
+        [id],
+      );
+      const pinnedDirectory = join(cacheRoot, initialized.libraryId, "emb");
+      await mkdir(pinnedDirectory, { recursive: true });
+      const pixels = Buffer.alloc(sourceW * sourceH * 3);
+      for (let y = 0; y < sourceH; y++)
+        for (let x = 0; x < sourceW; x++) {
+          pixels.set(
+            [Math.round((x * 255) / (sourceW - 1)), Math.round((y * 255) / (sourceH - 1)), 75],
+            (y * sourceW + x) * 3,
+          );
+          const baseX = ((x + 0.5) * 63) / sourceW;
+          const baseY = ((y + 0.5) * 47) / sourceH;
+          if (baseX >= 28 && baseX <= 38 && baseY >= 23 && baseY <= 33)
+            pixels.set([30, 40, 245], (y * sourceW + x) * 3);
+        }
+      await sharp(pixels, { raw: { width: sourceW, height: sourceH, channels: 3 } })
+        .jpeg({ quality: 100, chromaSubsampling: "4:4:4" })
+        .toFile(join(pinnedDirectory, `${id}.jpg`));
+      const env = { noDaemon: true, libraryPath, cacheRoot };
+      const developed = await dispatch(
+        {
+          verb: "develop",
+          args: [
+            id,
+            "--set",
+            'crop={"x":12.25,"y":3.5,"w":37.5,"h":39.2}',
+            "rotate=90",
+            "straighten_deg=8",
+          ],
+          cwd: directory,
+          env,
+        },
+        { version: "test", library: initialized.handle },
+      );
+      expect(developed.ok).toBe(true);
+      const shown = await dispatch(
+        { verb: "show", args: [id, "--preview-size", "native"], cwd: directory, env },
+        { version: "test", library: initialized.handle },
+      );
+      expect(shown.ok).toBe(true);
+      if (!shown.ok || !("data" in shown)) throw new Error("show failed");
+      const data = showDataSchema.parse(shown.data);
+      expect(data.preview_info.actual).toMatchObject({ w, h });
+      // Independent affine arithmetic retains integer crop dimensions before straightening;
+      // the reduced raster is not a scaled full-resolution crop.
+      for (const coefficient of Object.keys(expected) as Array<keyof typeof expected>)
+        expect(data.preview_info.base_to_view[coefficient]).toBeCloseTo(expected[coefficient], 10);
+      expect(await sharp(data.preview).metadata()).toMatchObject({ width: w, height: h });
+      const matrix = data.preview_info.base_to_view;
+      const landmarkX = Math.floor(matrix.a * 33 + matrix.c * 28 + matrix.e);
+      const landmarkY = Math.floor(matrix.b * 33 + matrix.d * 28 + matrix.f);
+      const rendered = await sharp(data.preview).toColourspace("srgb").raw().toBuffer();
+      const landmark = rendered.subarray(
+        (landmarkY * w + landmarkX) * 3,
+        (landmarkY * w + landmarkX) * 3 + 3,
+      );
+      expect(landmark[2]).toBeGreaterThan(landmark[0] + 50);
+      expect(landmark[2]).toBeGreaterThan(landmark[1] + 50);
+      await rm(join(pinnedDirectory, `${id}.jpg`));
+      const cached = await dispatch(
+        { verb: "show", args: [id, "--preview-size", "native"], cwd: directory, env },
+        { version: "test", library: initialized.handle },
+      );
+      if (!cached.ok || !("data" in cached)) throw new Error(JSON.stringify(cached));
+      const cachedData = showDataSchema.parse(cached.data);
+      expect(cachedData.preview_info).toEqual({ ...data.preview_info, cache_source: "exact_view" });
+      const detail = await dispatch(
+        { verb: "show", args: [id, "--region", "20,10,15,17"], cwd: directory, env },
+        { version: "test", library: initialized.handle },
+      );
+      if (!detail.ok || !("data" in detail)) throw new Error(JSON.stringify(detail));
+      const detailData = showDataSchema.parse(detail.data);
+      const [left, top, width, height] = detailRegion;
+      expect(detailData.preview_info.actual).toMatchObject({ w: width, h: height });
+      const expectedDetail = { ...expected, e: expected.e - left, f: expected.f - top };
+      for (const coefficient of Object.keys(expectedDetail) as Array<keyof typeof expectedDetail>)
+        expect(detailData.preview_info.base_to_view[coefficient]).toBeCloseTo(
+          expectedDetail[coefficient],
+          10,
+        );
+      expect(detailData.preview_info.source_dimensions).toEqual({ w, h });
+      expect(detailData.preview_info.source_tier).toBe("pinned-preview");
+      expect(detailData.preview_info.cache_source).toBe("sufficient_full_frame");
+      const expectedJpeg = await sharp(data.preview)
+        .extract({ left, top, width, height })
+        .jpeg({ quality: 88 })
+        .withIccProfile(srgb2014ProfilePath)
+        .toBuffer();
+      expect(await readFile(detailData.preview)).toEqual(expectedJpeg);
+    } finally {
+      await initialized.handle.close();
+      await rm(directory, { recursive: true });
+    }
+  },
+);
 
 function imageMean(channels: Array<{ mean: number }>): number {
   return channels.slice(0, 3).reduce((sum, channel) => sum + channel.mean, 0) / 3;

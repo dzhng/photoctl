@@ -6,17 +6,17 @@ import {
   transformPixels,
 } from "@photoctl/img";
 import type { MarkupDocument } from "@photoctl/protocol";
-import type { TransformMatrix } from "../transforms.js";
+import type { RenderFrame } from "../graph/frame.js";
 
 export async function drawMarkup(
   image: { w: number; h: number; data: Float32Array },
   document: MarkupDocument,
-  projection: { baseW: number; baseH: number; matrix: TransformMatrix },
+  projection: RenderFrame,
 ) {
   const identity =
-    projection.baseW === image.w &&
-    projection.baseH === image.h &&
-    projection.matrix.every((value, index) => value === [1, 0, 0, 1, 0, 0][index]);
+    projection.source.w === image.w &&
+    projection.source.h === image.h &&
+    projection.sourceToRaster.every((value, index) => value === [1, 0, 0, 1, 0, 0][index]);
   if (identity) {
     return {
       ...image,
@@ -27,28 +27,28 @@ export async function drawMarkup(
   // Transform premultiplied color and coverage independently so antialiasing
   // remains correct through crop, quarter-turn, and straighten geometry.
   const overlay = await drawMarkupOverlay(
-    projection.baseW,
-    projection.baseH,
+    projection.source.w,
+    projection.source.h,
     JSON.stringify(document),
   );
   const [projectedPremultiplied, projectedAlpha] = await Promise.all([
     transformPixels(
       overlay.color,
-      projection.baseW,
-      projection.baseH,
+      projection.source.w,
+      projection.source.h,
       3,
       image.w,
       image.h,
-      projection.matrix,
+      projection.sourceToRaster,
       "lanczos3",
     ),
     transformMaskPixels(
       overlay.mask,
-      projection.baseW,
-      projection.baseH,
+      projection.source.w,
+      projection.source.h,
       image.w,
       image.h,
-      projection.matrix,
+      projection.sourceToRaster,
     ),
   ]);
   const color = new Float32Array(projectedPremultiplied.length);

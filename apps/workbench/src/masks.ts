@@ -98,14 +98,14 @@ export async function buildMasksReport(libraryPath: string, photo: string): Prom
       ["Cached", row.created_at],
       [
         "Density tier",
-        projection.baseW < projection.catalogBase.w || projection.baseH < projection.catalogBase.h
+        projection.source.w < projection.catalog.w || projection.source.h < projection.catalog.h
           ? "Reduced cached source"
           : "Full-resolution cached source",
       ],
       ["Rendered context", `${image.w} × ${image.h} px`],
       [
         "Source / catalog",
-        `${projection.baseW} × ${projection.baseH} / ${projection.catalogBase.w} × ${projection.catalogBase.h} px`,
+        `${projection.source.w} × ${projection.source.h} / ${projection.catalog.w} × ${projection.catalog.h} px`,
       ],
     ]
       .map(([label, value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value!)}</dd></div>`)

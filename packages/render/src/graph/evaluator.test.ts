@@ -11,9 +11,74 @@ import { readArtifactLinear } from "../artifacts/publication.js";
 import { evaluateGraphNode, SourceEvaluationError } from "./evaluator.js";
 import { canonicalNodeRecipe, logicalNodeId, recipeHash } from "./recipes.js";
 import { commitRevision } from "./store.js";
+import { loadBaseProjection } from "./projection.js";
 
 const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c011";
 const directories: string[] = [];
+
+test("equal RGB artifacts do not collapse executions with different realized frames", async () => {
+  const { db, library, nodeId: sourceId } = await sourceGraph();
+  try {
+    await db.query("UPDATE photos SET w = 63, h = 47 WHERE id = $1", [photoId]);
+    const document = await db.query<{ active_revision_id: string }>(
+      "SELECT active_revision_id FROM photo_documents WHERE photo_id = $1",
+      [photoId],
+    );
+    const revision = await commitRevision(db, {
+      photoId,
+      expectedRevisionId: document.rows[0].active_revision_id,
+      nodes: [
+        {
+          localKey: "develop",
+          kind: "develop",
+          recipeVersion: 1,
+          parameters: {
+            crop: { x: 12.25, y: 3.5, w: 37.5, h: 39.2 },
+            rotate: 90,
+            straighten_deg: 8,
+          },
+          inputs: [{ nodeId: sourceId }],
+        },
+        {
+          localKey: "output",
+          kind: "output",
+          recipeVersion: 1,
+          parameters: { format: "linear-rgb", color_space: "scene-linear-rec2020" },
+          inputs: [{ localKey: "develop" }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "output" } }],
+    });
+    const evaluate = async (w: number, h: number) =>
+      await evaluateGraphNode({
+        database: db,
+        libraryPath: library,
+        photoId,
+        nodeId: revision.nodes.output.id,
+        developBaseDimensions: { w: 63, h: 47 },
+        source: async () => sourceEvaluationFor(linearFixture(w, h, Array(w * h).fill(0))),
+      });
+    const first = await evaluate(14, 10);
+    const firstFrame = await loadBaseProjection(db, photoId, first);
+    const second = await evaluate(15, 11);
+    expect(first.artifact.artifactHash).toBe(second.artifact.artifactHash);
+    expect(firstFrame.raster).toEqual({ w: 7, h: 7 });
+    expect(second.executionId).not.toBe(first.executionId);
+    expect(await loadBaseProjection(db, photoId, first)).toEqual(firstFrame);
+    expect((await loadBaseProjection(db, photoId, second)).baseToRaster[1]).toBeCloseTo(
+      0.23766433649797689,
+      10,
+    );
+    await db.query("UPDATE node_executions SET render_frame = NULL WHERE execution_id = $1", [
+      first.executionId,
+    ]);
+    await expect(loadBaseProjection(db, photoId, first)).rejects.toThrow(
+      "ambiguous frame ancestry",
+    );
+  } finally {
+    await db.close();
+  }
+});
 
 afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));

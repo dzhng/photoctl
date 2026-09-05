@@ -16,6 +16,7 @@ import {
   publishArtifact,
   registerPublishedArtifact,
   writePreviewArtifact,
+  developFrame,
   srgb2014ProfilePath,
 } from "@photoctl/render";
 import { exitCodeFor, fillStrictDataSchema } from "@photoctl/protocol";
@@ -36,6 +37,47 @@ afterEach(async () => {
   if (server) await new Promise<void>((resolve) => server!.close(() => resolve()));
   server = undefined;
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
+});
+
+test("historical fill frames recover without replaying paid generation", async () => {
+  const fixture = await fillFixture();
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "8,6,8,8"]),
+    ) as { layer_id: string };
+    const filled = fillStrictDataSchema.parse(
+      success(
+        await command(fixture, "fill", [fixture.id, "--layer", segmented.layer_id, "--remove"]),
+      ),
+    );
+    const evaluate = async () =>
+      await evaluateGraphNode({
+        database: fixture.handle,
+        libraryPath: fixture.handle.path,
+        photoId: fixture.id,
+        nodeId: filled.composite.node,
+        source: fixture.sourceProducer,
+      });
+    const before = await evaluate();
+    const paidBefore = await fixture.handle.query(
+      "SELECT execution_id, output_artifact_hash FROM node_executions WHERE photo_id = $1 AND NOT deterministic",
+      [fixture.id],
+    );
+    await fixture.handle.query(
+      "UPDATE node_executions SET render_frame = NULL WHERE photo_id = $1",
+      [fixture.id],
+    );
+    const recovered = await evaluate();
+    expect(recovered.artifact.artifactHash).toBe(before.artifact.artifactHash);
+    expect(recovered.executionId).toBe(before.executionId);
+    const paid = await fixture.handle.query(
+      "SELECT execution_id, output_artifact_hash FROM node_executions WHERE photo_id = $1 AND NOT deterministic",
+      [fixture.id],
+    );
+    expect(paid.rows).toEqual(paidBefore.rows);
+  } finally {
+    await fixture.handle.close();
+  }
 });
 
 test("strict fill commits generated pixels through a mask composite without changing uncovered samples", async () => {
@@ -663,6 +705,7 @@ test("renderer correction bypasses warmed old pixels and views without replaying
     await writePreviewArtifact(oldPreview, wrongJpeg, {
       sourceTier: "online-file",
       sourceDimensions: { w: 40, h: 30 },
+      frame: developFrame({ w: 40, h: 30 }, { w: 40, h: 30 }),
     });
     const output = await evaluate(node.id);
     expect(output.artifact.artifactHash).not.toBe(wrong.artifactHash);

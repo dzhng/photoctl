@@ -1,7 +1,7 @@
 import { PhotoctlError, type Warning } from "@photoctl/protocol";
 import { publishArtifact, readArtifactImage } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
-import { loadBaseProjection, catalogToRenderMatrix } from "../graph/projection.js";
+import { loadBaseProjection } from "../graph/projection.js";
 import {
   canonicalNodeRecipe,
   evaluationHash,
@@ -169,7 +169,7 @@ export async function fillLayer(
   );
   const fit = request.fit ?? resolveFillFit(request.operation);
   const projection = await loadBaseProjection(database, request.photoId, baseEvaluation);
-  const baseToInput = catalogToRenderMatrix(projection);
+  const baseToInput = projection.baseToRaster;
   const effective = await prepareFillMask(database, libraryPath, request, selected, fit, {
     matrix: [...baseToInput],
     w: base.w,

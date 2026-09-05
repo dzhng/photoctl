@@ -11,11 +11,10 @@ import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@phot
 import {
   developHash,
   activeLayerStatus,
-  developBaseRegion,
-  developGeometryMatrix,
+  loadBaseProjection,
+  loadLogicalFrame,
   developPreviewProjection,
   DevelopRegionOutsideError,
-  projectDevelopView,
   materializePreview,
   evaluateGraphNode,
   PreviewDestinationError,
@@ -26,6 +25,7 @@ import {
   viewHash,
   type ImageSource,
   type ViewSpec,
+  type RenderFrame,
 } from "@photoctl/render";
 import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
@@ -91,16 +91,7 @@ export async function showCommand(
     }
     const renderHash = document.renderHash;
     const view = parseViewSpec(parsed.options, parsed.flags.has("--norm"), photo.w, photo.h);
-    const geometry = developGeometryMatrix(photo.w, photo.h, document.develop);
-    let projected: ReturnType<typeof projectDevelopView>;
-    try {
-      projected = projectDevelopView(view, geometry);
-    } catch (error) {
-      if (error instanceof DevelopRegionOutsideError) {
-        throw new PhotoctlError("usage", "--region does not intersect the visible image");
-      }
-      throw error;
-    }
+    const frame = await loadLogicalFrame(handle, id, document.outputNodeId);
     const pinned: ImageSource = {
       kind: "pinned-preview",
       path: pinnedEmbeddedJpegPath(cacheRoot, id),
@@ -119,10 +110,10 @@ export async function showCommand(
         id,
         cacheRoot,
         renderHash,
-        photo: { ...photo, w: geometry.w, h: geometry.h },
+        photo,
         developBaseDimensions: { w: photo.w, h: photo.h },
-        view: projected.view,
-        cacheView: view,
+        view,
+        frame,
         coordinator,
         index,
         handle,
@@ -161,10 +152,10 @@ export async function showCommand(
       });
     }
     const projection = developPreviewProjection(
-      materialized.preview.actualRegion,
+      [0, 0, materialized.preview.w, materialized.preview.h],
       materialized.preview.w,
       materialized.preview.h,
-      geometry.matrix,
+      materialized.preview.frame.baseToRaster,
     );
     const data: ShowData = {
       id,
@@ -191,7 +182,7 @@ export async function showCommand(
         view_hash: viewHash(view),
         requested: { region: view.region, long_edge: view.longEdge },
         actual: {
-          region: developBaseRegion(materialized.preview.actualRegion, geometry.matrix),
+          region: materialized.preview.actualRegion,
           w: materialized.preview.w,
           h: materialized.preview.h,
         },
@@ -306,7 +297,7 @@ async function materializeWithFallback(
     photo: StoredPhoto;
     developBaseDimensions: { w: number; h: number };
     view: ViewSpec;
-    cacheView: ViewSpec;
+    frame: RenderFrame;
     coordinator: PreviewCoordinator;
     index: CacheIndex;
     handle: LibraryHandle;
@@ -328,11 +319,14 @@ async function materializeWithFallback(
           sourceTier: candidate.source.kind,
           render: async () => await evaluatePreviewGraph(context, candidate),
           view: context.view,
-          cacheView: context.cacheView,
+          logicalFrame: context.frame,
         }),
         candidate,
       };
     } catch (error) {
+      if (error instanceof DevelopRegionOutsideError) {
+        throw new PhotoctlError("usage", "--region does not intersect the visible image");
+      }
       if (error instanceof PreviewDestinationError) {
         throw new PhotoctlError("volume_readonly", error.message, {
           path: error.path,
@@ -368,5 +362,8 @@ async function evaluatePreviewGraph(
     source: candidate.produce,
     developBaseDimensions: context.developBaseDimensions,
   });
-  return await readArtifactImage(evaluated.artifact.path);
+  return {
+    image: await readArtifactImage(evaluated.artifact.path),
+    frame: await loadBaseProjection(context.handle, context.id, evaluated),
+  };
 }

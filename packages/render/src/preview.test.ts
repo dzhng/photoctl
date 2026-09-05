@@ -7,6 +7,7 @@ import { expect, test } from "vitest";
 import { materializePreview, viewHash } from "./preview.js";
 import { PreviewCoordinator, type PreviewIndexAdapter } from "./preview-coordinator.js";
 import { srgb2014ProfilePath } from "./color.js";
+import { developFrame } from "./graph/frame.js";
 
 function testRenderHash(hex: string): `r_${string}` {
   return `r_${hex.repeat(64)}`;
@@ -15,13 +16,126 @@ function testRenderHash(hex: string): `r_${string}` {
 test("view hashes are stable canonical identities", () => {
   expect(viewHash({ region: null, longEdge: 1616 })).toBe(
     `v_${createHash("sha256")
-      .update('{"kind":"view","long_edge":1616,"recipe_version":2,"region":null}')
+      .update('{"kind":"view","long_edge":1616,"recipe_version":3,"region":null}')
       .digest("hex")}`,
   );
   expect(viewHash({ region: [1, 2, 3, 4], longEdge: "native" })).not.toBe(
     viewHash({ region: [1, 2, 3, 4], longEdge: 4 }),
   );
 });
+
+test("a native master at the best declared reduced tier serves detail without decoding again", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-reduced-master-"));
+  const sourcePath = join(directory, "source.png");
+  try {
+    await sharp({ create: { width: 20, height: 10, channels: 3, background: "red" } })
+      .png()
+      .toFile(sourcePath);
+    const request = {
+      coordinator: new PreviewCoordinator(),
+      index: { recordCompleted: async () => {}, touch: async () => {} },
+      cacheRoot: directory,
+      photoId: "reduced-source",
+      renderHash: testRenderHash("7"),
+      photo: { w: 40, h: 20, orientation: 1 as const },
+      source: {
+        kind: "online-file" as const,
+        path: sourcePath,
+        mediaType: "image/png",
+        w: 20,
+        h: 10,
+      },
+    };
+    await materializePreview({ ...request, view: { region: null, longEdge: "native" } });
+    await rm(sourcePath);
+    const detail = await materializePreview({
+      ...request,
+      view: { region: [0, 0, 20, 20], longEdge: "native" },
+    });
+    expect(detail).toMatchObject({
+      w: 10,
+      h: 10,
+      cacheSource: "sufficient_full_frame",
+      resolutionLimited: true,
+    });
+    expect((await sharp(detail.path).stats()).channels[0].mean).toBeGreaterThan(240);
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test.each([20, 4])(
+  "offline pinned fallback retains or improves a %i-pixel master",
+  async (width) => {
+    const directory = await mkdtemp(join(tmpdir(), "photoctl-pinned-density-"));
+    const sourcePath = join(directory, "source.png");
+    const pinnedPath = join(directory, "pinned.png");
+    try {
+      await sharp({ create: { width, height: width / 2, channels: 3, background: "red" } })
+        .png()
+        .toFile(sourcePath);
+      await sharp({ create: { width: 10, height: 5, channels: 3, background: "blue" } })
+        .png()
+        .toFile(pinnedPath);
+      const request = {
+        coordinator: new PreviewCoordinator(),
+        index: { recordCompleted: async () => {}, touch: async () => {} },
+        cacheRoot: directory,
+        photoId: "offline-density",
+        renderHash: testRenderHash("8"),
+        photo: { w: 40, h: 20, orientation: 1 as const },
+        source: {
+          kind: "online-file" as const,
+          path: sourcePath,
+          mediaType: "image/png",
+          w: width,
+          h: width / 2,
+        },
+      };
+      const view = { region: null, longEdge: "native" as const };
+      const master = await materializePreview({ ...request, view });
+      const masterBytes = await readFile(master.path);
+      const detailView = {
+        region: [0, 0, 20, 20] as [number, number, number, number],
+        longEdge: "native" as const,
+      };
+      await materializePreview({ ...request, view: detailView });
+      await rm(sourcePath);
+      const offline = {
+        ...request,
+        source: {
+          kind: "pinned-preview" as const,
+          path: pinnedPath,
+          mediaType: "image/png",
+          orientation: 1 as const,
+        },
+      };
+      const native = await materializePreview({ ...offline, view });
+      const best = Math.max(width, 10);
+      expect(native).toMatchObject({ w: best, h: best / 2 });
+      expect((await sharp(native.path).stats()).channels[width > 10 ? 0 : 2].mean).toBeGreaterThan(
+        240,
+      );
+      if (width > 10) expect(await readFile(native.path)).toEqual(masterBytes);
+      const exact = await materializePreview({ ...offline, view: detailView });
+      expect(exact).toMatchObject({ w: best / 2, h: best / 2 });
+      await rm(pinnedPath);
+      const warmed = await materializePreview({ ...offline, view });
+      expect(warmed).toMatchObject({ w: best, h: best / 2, cacheSource: "exact_view" });
+      const detail = await materializePreview({
+        ...offline,
+        view: { ...detailView, region: [20, 0, 20, 20] },
+      });
+      expect(detail).toMatchObject({
+        w: best / 2,
+        h: best / 2,
+        cacheSource: "sufficient_full_frame",
+      });
+    } finally {
+      await rm(directory, { recursive: true });
+    }
+  },
+);
 
 test("native full-frame creates a master and later regions reuse it without the source", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-master-"));
@@ -125,7 +239,10 @@ test("default overview derives from a sufficient master without rendering again"
     source: { kind: "online-file" as const, path: "unused", mediaType: "image/png" },
     render: async () => {
       renderCount += 1;
-      return { w: photo.w, h: photo.h, channels: 3 as const, data: pixels };
+      return {
+        image: { w: photo.w, h: photo.h, channels: 3 as const, data: pixels },
+        frame: developFrame(photo, photo),
+      };
     },
   };
   try {
@@ -174,10 +291,13 @@ test("default overview ignores a corrupt master and renders directly", async () 
     render: async () => {
       renderCount += 1;
       return {
-        w: photo.w,
-        h: photo.h,
-        channels: 3 as const,
-        data: new Uint16Array(photo.w * photo.h * 3).fill(32768),
+        frame: developFrame(photo, photo),
+        image: {
+          w: photo.w,
+          h: photo.h,
+          channels: 3 as const,
+          data: new Uint16Array(photo.w * photo.h * 3).fill(32768),
+        },
       };
     },
   };

@@ -150,10 +150,16 @@ async function writeProvenance(path: string, bytes: Buffer): Promise<void> {
   await writeFile(
     `${path}.json`,
     `${JSON.stringify({
-      schema: 1,
+      schema: 2,
       jpeg_sha256: createHash("sha256").update(bytes).digest("hex"),
       source_tier: "online-file",
       source_dimensions: { w: 2, h: 1 },
+      frame: {
+        catalog: { w: 2, h: 1 },
+        source: { w: 2, h: 1 },
+        raster: { w: 2, h: 1 },
+        sourceToRaster: [1, 0, 0, 1, 0, 0],
+      },
     })}\n`,
   );
 }

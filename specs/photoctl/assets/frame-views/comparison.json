@@ -1,0 +1,82 @@
+{
+  "full-master": {
+    "before": {
+      "w": 34,
+      "h": 33,
+      "sha256": "5dd062ce0dcdf3f35ea03e1d7f9d593629f6bbd39b5b09d5b5440329be6e65b8"
+    },
+    "after": {
+      "w": 34,
+      "h": 33,
+      "sha256": "5dd062ce0dcdf3f35ea03e1d7f9d593629f6bbd39b5b09d5b5440329be6e65b8"
+    },
+    "samePng": true,
+    "overlap": {
+      "w": 34,
+      "h": 33,
+      "rgbMae": 0,
+      "changedPixels": 0
+    },
+    "note": "Top-left overlap only; unequal dimensions are not normalized or hidden."
+  },
+  "full-detail": {
+    "before": {
+      "w": 20,
+      "h": 19,
+      "sha256": "ac1c156918b509be46f6c1ad7f165d09f4cc0c14b248d27ad8982878bfb58074"
+    },
+    "after": {
+      "w": 20,
+      "h": 19,
+      "sha256": "ac1c156918b509be46f6c1ad7f165d09f4cc0c14b248d27ad8982878bfb58074"
+    },
+    "samePng": true,
+    "overlap": {
+      "w": 20,
+      "h": 19,
+      "rgbMae": 0,
+      "changedPixels": 0
+    },
+    "note": "Top-left overlap only; unequal dimensions are not normalized or hidden."
+  },
+  "reduced-master": {
+    "before": {
+      "w": 16,
+      "h": 15,
+      "sha256": "f4a548b7501bd8d955d5c348523e0b2d0de32918df83c2a11c9e4c71df486325"
+    },
+    "after": {
+      "w": 16,
+      "h": 15,
+      "sha256": "f4a548b7501bd8d955d5c348523e0b2d0de32918df83c2a11c9e4c71df486325"
+    },
+    "samePng": true,
+    "overlap": {
+      "w": 16,
+      "h": 15,
+      "rgbMae": 0,
+      "changedPixels": 0
+    },
+    "note": "Top-left overlap only; unequal dimensions are not normalized or hidden."
+  },
+  "reduced-detail": {
+    "before": {
+      "w": 9,
+      "h": 9,
+      "sha256": "0fce81cad971fca9acdcb70b9bf8a04a055f9586a06acb608b4c75d65b67499b"
+    },
+    "after": {
+      "w": 11,
+      "h": 9,
+      "sha256": "2270952f846f8ba843af018898777ec12595fbf612c41d22236b9e58521c0068"
+    },
+    "samePng": false,
+    "overlap": {
+      "w": 9,
+      "h": 9,
+      "rgbMae": 12.872427983539094,
+      "changedPixels": 81
+    },
+    "note": "Top-left overlap only; unequal dimensions are not normalized or hidden."
+  }
+}

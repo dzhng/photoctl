@@ -2,7 +2,7 @@ import { normalizeMaskArtifact, publishArtifact } from "./artifacts/publication.
 import { commitRevision, type GraphDatabase, type NodeDraft } from "./graph/store.js";
 import { compositeV2Projection, type RevisionLayerDraft } from "./layers/model.js";
 import type { JsonValue } from "./graph/types.js";
-import { developGeometryMatrix } from "./develop/geometry.js";
+import { loadLogicalFrame } from "./graph/projection.js";
 import { readActiveDevelopState } from "./develop/state.js";
 import { invertTransformMatrix, transformPoint, type TransformMatrix } from "./transforms.js";
 
@@ -76,8 +76,11 @@ export async function createRetouchLayer(
     };
   }
 
-  const geometry = developGeometryMatrix(request.dimensions.w, request.dimensions.h, state.develop);
-  const mask = circularMask(request.dimensions, request.at, request.radius, geometry);
+  const frame = await loadLogicalFrame(database, request.photoId, state.baseNodeId);
+  const mask = circularMask(request.dimensions, request.at, request.radius, {
+    ...frame.raster,
+    matrix: frame.baseToRaster,
+  });
   const published = await publishArtifact(libraryPath, await normalizeMaskArtifact(mask));
   const nodes: NodeDraft[] = [
     {

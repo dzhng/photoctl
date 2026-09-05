@@ -1,0 +1,160 @@
+{
+  "kind": "screenshot-scene-metrics",
+  "generatedAt": "2026-09-05T18:22:53.002Z",
+  "note": "Absolute per-image telemetry, no reference involved. Low values locate flat, sparse, or empty captures; they never accept or reject an image on their own.",
+  "imageCount": 8,
+  "results": [
+    {
+      "id": "full-detail-4x",
+      "image": "../after/full-detail-4x.png",
+      "dimensions": {
+        "width": 80,
+        "height": 76
+      },
+      "sceneMetrics": {
+        "colorBuckets": 112,
+        "colorEntropyBits": 6.19681,
+        "edgeDensity": 0.03899,
+        "dominantColorShare": 0.04211,
+        "transparentShare": 0,
+        "luminanceMean": 89.99457,
+        "luminanceP5": 48.2094,
+        "luminanceP95": 130.0006,
+        "luminanceContrast": 81.7912
+      }
+    },
+    {
+      "id": "full-detail",
+      "image": "../after/full-detail.png",
+      "dimensions": {
+        "width": 20,
+        "height": 19
+      },
+      "sceneMetrics": {
+        "colorBuckets": 112,
+        "colorEntropyBits": 6.19681,
+        "edgeDensity": 0.13158,
+        "dominantColorShare": 0.04211,
+        "transparentShare": 0,
+        "luminanceMean": 89.99457,
+        "luminanceP5": 48.2094,
+        "luminanceP95": 130.0006,
+        "luminanceContrast": 81.7912
+      }
+    },
+    {
+      "id": "full-master-4x",
+      "image": "../after/full-master-4x.png",
+      "dimensions": {
+        "width": 136,
+        "height": 132
+      },
+      "sceneMetrics": {
+        "colorBuckets": 279,
+        "colorEntropyBits": 7.62311,
+        "edgeDensity": 0.03008,
+        "dominantColorShare": 0.01426,
+        "transparentShare": 0,
+        "luminanceMean": 113.62972,
+        "luminanceP5": 52.9496,
+        "luminanceP95": 183.3624,
+        "luminanceContrast": 130.4128
+      }
+    },
+    {
+      "id": "full-master",
+      "image": "../after/full-master.png",
+      "dimensions": {
+        "width": 34,
+        "height": 33
+      },
+      "sceneMetrics": {
+        "colorBuckets": 279,
+        "colorEntropyBits": 7.62311,
+        "edgeDensity": 0.10606,
+        "dominantColorShare": 0.01426,
+        "transparentShare": 0,
+        "luminanceMean": 113.62972,
+        "luminanceP5": 52.9496,
+        "luminanceP95": 183.3624,
+        "luminanceContrast": 130.4128
+      }
+    },
+    {
+      "id": "reduced-detail-4x",
+      "image": "../after/reduced-detail-4x.png",
+      "dimensions": {
+        "width": 44,
+        "height": 36
+      },
+      "sceneMetrics": {
+        "colorBuckets": 67,
+        "colorEntropyBits": 5.8679,
+        "edgeDensity": 0.11229,
+        "dominantColorShare": 0.05051,
+        "transparentShare": 0,
+        "luminanceMean": 87.21891,
+        "luminanceP5": 39.111,
+        "luminanceP95": 134.7764,
+        "luminanceContrast": 95.6654
+      }
+    },
+    {
+      "id": "reduced-detail",
+      "image": "../after/reduced-detail.png",
+      "dimensions": {
+        "width": 11,
+        "height": 9
+      },
+      "sceneMetrics": {
+        "colorBuckets": 67,
+        "colorEntropyBits": 5.8679,
+        "edgeDensity": 0.3875,
+        "dominantColorShare": 0.05051,
+        "transparentShare": 0,
+        "luminanceMean": 87.21891,
+        "luminanceP5": 39.111,
+        "luminanceP95": 134.7764,
+        "luminanceContrast": 95.6654
+      }
+    },
+    {
+      "id": "reduced-master-4x",
+      "image": "../after/reduced-master-4x.png",
+      "dimensions": {
+        "width": 64,
+        "height": 60
+      },
+      "sceneMetrics": {
+        "colorBuckets": 161,
+        "colorEntropyBits": 7.14467,
+        "edgeDensity": 0.08071,
+        "dominantColorShare": 0.025,
+        "transparentShare": 0,
+        "luminanceMean": 113.03336,
+        "luminanceP5": 56.1894,
+        "luminanceP95": 184.1912,
+        "luminanceContrast": 128.0018
+      }
+    },
+    {
+      "id": "reduced-master",
+      "image": "../after/reduced-master.png",
+      "dimensions": {
+        "width": 16,
+        "height": 15
+      },
+      "sceneMetrics": {
+        "colorBuckets": 161,
+        "colorEntropyBits": 7.14467,
+        "edgeDensity": 0.28571,
+        "dominantColorShare": 0.025,
+        "transparentShare": 0,
+        "luminanceMean": 113.03336,
+        "luminanceP5": 56.1894,
+        "luminanceP95": 184.1912,
+        "luminanceContrast": 128.0018
+      }
+    }
+  ]
+}

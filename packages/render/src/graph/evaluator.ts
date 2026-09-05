@@ -35,6 +35,7 @@ import type { Image16 } from "../source-render.js";
 import type { GraphDatabase, GraphTransaction } from "./store.js";
 import { applyDevelopArtifact, applyDevelopDeltaArtifact } from "../develop/pixels.js";
 import { developDictSchema } from "../develop/dict.js";
+import { frameForNode, savedRenderFrame } from "./frame.js";
 import {
   compositeMaskedPixels,
   featherMask,
@@ -201,11 +202,15 @@ async function evaluateOne(
     }
     normalizedSource = await normalizeArtifact(source.image);
   }
+  const inputFrames = await Promise.all(
+    inputs.map(async (input) => await loadBaseProjection(request.database, request.photoId, input)),
+  );
   const evaluation = evaluationHash({
     nodeRecipeHash: node.recipeHash,
     kind: node.kind,
     recipeVersion: node.recipeVersion,
     inputArtifactHashes: inputs.map((input) => input.artifact.artifactHash),
+    inputFrames: inputFrames.map((frame) => savedRenderFrame(frame)),
     source:
       source && normalizedSource
         ? { ...source.provenance, outputArtifactHash: normalizedSource.artifactHash }
@@ -272,14 +277,19 @@ async function evaluateOne(
     artifact = await publishArtifact(request.libraryPath, normalized);
   }
   await request.hooks?.beforeCommit?.();
+  const photo = await request.database.query<{ w: number; h: number }>(
+    "SELECT w, h FROM photos WHERE id = $1",
+    [request.photoId],
+  );
+  const frame = frameForNode(node.kind, node.parameters, photo.rows[0]!, artifact, inputFrames[0]);
   const stored = await request.database.transaction(async (transaction) => {
     await registerPublishedArtifact(transaction, artifact);
     await transaction.query(
       `INSERT INTO node_executions (
          photo_id, execution_id, node_id, evaluation_hash, deterministic,
          output_artifact_hash, source_locator, source_tier, source_w, source_h,
-         decoder_id, decoder_version, provider_execution
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13::jsonb)
+         decoder_id, decoder_version, provider_execution, render_frame
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb)
        ON CONFLICT (photo_id, execution_id) DO NOTHING`,
       [
         request.photoId,
@@ -295,6 +305,7 @@ async function evaluateOne(
         source?.provenance.decoderId ?? null,
         source?.provenance.decoderVersion ?? null,
         externalExecution ? JSON.stringify(storeExternalExecution(externalExecution)) : null,
+        JSON.stringify(savedRenderFrame(frame)),
       ],
     );
     for (const [index, input] of inputs.entries()) {
@@ -425,9 +436,9 @@ async function runOperation(
       return {
         image: await drawMarkup(
           image,
-          scaleMarkupDocument(markupDocumentSchema.parse(parsed.document), projection.catalogBase, {
-            w: projection.baseW,
-            h: projection.baseH,
+          scaleMarkupDocument(markupDocumentSchema.parse(parsed.document), projection.catalog, {
+            w: projection.source.w,
+            h: projection.source.h,
           }),
           projection,
         ),
@@ -570,7 +581,7 @@ async function evaluateMaskComposite(
     base,
   );
   let mask = await projectMaskToRender(
-    await readMaskInput(inputs[2], projection.catalogBase),
+    await readMaskInput(inputs[2], projection.catalog),
     projection,
     base,
   );
@@ -627,7 +638,7 @@ async function evaluateCompositeV2(
           base,
         )
       : await projectMaskToRender(
-          await readMaskInput(maskInput, projection.catalogBase),
+          await readMaskInput(maskInput, projection.catalog),
           projection,
           base,
         );

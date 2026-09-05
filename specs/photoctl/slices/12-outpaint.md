@@ -82,6 +82,32 @@ the integrated guard; reserve the root full gate for final closeout.
 Not delegated: changing coordinate units, projection order, rounding, source-tier claims, or public
 crop behavior to simplify the refactor.
 
+### 12f1 implementation evidence
+
+The frame owner now follows each node's geometry and retains the realized frame with its execution
+and preview artifact. A logical frame is recipe-derived; an evaluated frame is loaded by exact
+execution identity. Equal RGB bytes are insufficient evidence of equal coordinates: differently
+rounded source tiers can produce identical pixels with distinct mappings. Deterministic execution
+identity therefore includes input frames; paid identities and artifacts remain unchanged.
+
+Preview/show, evaluator RGB and coverage projection, fill preparation/refresh, SAM coordinates,
+mask inspection, retouch geometry, and markup now consume this shared frame contract. Export
+continues to deliver the evaluated raster. The affine transform node moves content within its
+unchanged canvas; the registered standalone crop recipe still has no built-in pixel evaluator.
+Implementing another raster-changing node requires extending the shared frame transition too.
+
+Migration 17 adds compact frame metadata to executions. Historical missing metadata is recovered
+only when bounded ancestry proves one frame; ambiguous pixel ancestry is never resolved by choosing
+the latest row. A valid cached preview retains enough frame data to serve offline native/detail
+inspection without that reconstruction. Public `source_dimensions` keeps its master-raster meaning;
+the underlying source-tier dimensions are a separate internal frame fact.
+
+Public full/reduced landmark and cached-detail regressions, identical-RGB/different-frame execution
+regression, historical paid-fill recovery, schema fixture upgrade, and the built preview journey
+cover this boundary. [Frame captures](../assets/frame-views/README.md) separate unchanged master
+pixels from corrected detail extraction. The existing ordered RGB/coverage projection stages remain
+unchanged; combined coordinate matrices do not authorize fusing pixel samplers.
+
 ## 12f2 — Canvas authoring and reversible extent
 
 **Decision checkpoint before coding:** use an asymmetric cropped, quarter-rotated, straightened

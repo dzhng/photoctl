@@ -8,7 +8,7 @@ import {
   type PublishedArtifact,
 } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
-import { loadBaseProjection, catalogToRenderMatrix } from "../graph/projection.js";
+import { loadBaseProjection } from "../graph/projection.js";
 import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
 import { prepareFillMask } from "./mask.js";
 import { planRefreshedFillCrop } from "./crop.js";
@@ -356,7 +356,7 @@ async function executeGenerationRefresh(
   );
   const projection = await loadBaseProjection(database, request.photoId, baseEvaluation);
   const baseToInput = composeTransformMatrices(
-    catalogToRenderMatrix(projection),
+    projection.baseToRaster,
     invertTransformMatrix(branch.generationInputMatrix),
   );
   let effectiveMask: Awaited<ReturnType<typeof prepareFillMask>> | undefined;

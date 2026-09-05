@@ -1,9 +1,10 @@
 import { applyDevelop } from "./develop/pixels.js";
-import { developGeometryMatrix, scaleDevelopGeometry } from "./develop/geometry.js";
+import { scaleDevelopGeometry } from "./develop/geometry.js";
+import { developFrame } from "./graph/frame.js";
 import type { DevelopDict } from "./develop/dict.js";
 import { linearRec2020ToDisplaySrgb } from "./color.js";
 import type { SceneLinearImage } from "./decoder.js";
-import { composeTransformMatrices, transformPoint } from "./transforms.js";
+import { transformPoint } from "./transforms.js";
 import { resampleDisplaySrgb8 } from "@photoctl/img";
 
 /** Keep grounding delivery bounded without introducing a second pixel resampler. */
@@ -29,15 +30,7 @@ export async function prepareSam2Frame(
   base: { w: number; h: number },
 ) {
   const parameters = scaleDevelopGeometry(develop, base, source);
-  const geometry = developGeometryMatrix(source.w, source.h, parameters);
-  const matrix = composeTransformMatrices(geometry.matrix, [
-    source.w / base.w,
-    0,
-    0,
-    source.h / base.h,
-    0,
-    0,
-  ]);
+  const matrix = developFrame(base, source, develop).baseToRaster;
   const developed = await applyDevelop(source, parameters);
   const image = {
     w: developed.w,
