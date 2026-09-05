@@ -22,3 +22,36 @@ test("drive-scale imports are not capped by the ordinary command timeout", () =>
 
   expect(timeout).toBeGreaterThanOrEqual(5 * 60 * 1_000);
 });
+
+test("embed idle timeout always leaves room for provider progress frames", () => {
+  const timeout = requestTimeout({
+    verb: "embed",
+    args: ["0199a7c2-0000-7000-8000-000000000001"],
+    cwd: "/",
+    env: { noDaemon: false, lockBudgetMs: "0" },
+  });
+
+  expect(timeout).toBeGreaterThan(5_000);
+});
+
+test("search idle timeout always leaves room for provider progress frames", () => {
+  const timeout = requestTimeout({
+    verb: "search",
+    args: ["ceremony"],
+    cwd: "/",
+    env: { noDaemon: false, lockBudgetMs: "0" },
+  });
+
+  expect(timeout).toBeGreaterThan(5_000);
+});
+
+test("embed timeout still honors a longer foreground queue budget", () => {
+  const timeout = requestTimeout({
+    verb: "embed",
+    args: ["0199a7c2-0000-7000-8000-000000000001"],
+    cwd: "/",
+    env: { noDaemon: false, lockBudgetMs: "60000" },
+  });
+
+  expect(timeout).toBe(61_000);
+});

@@ -4,6 +4,7 @@ export * from "./config.js";
 export * from "./cost.js";
 export * from "./adapters/image.js";
 export * from "./adapters/structured.js";
+export * from "./adapters/embedding.js";
 export * from "./upscale/adapter.js";
 export * from "./upscale/registry.js";
 export * from "./upscale/fake.js";

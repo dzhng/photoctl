@@ -1,4 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
+import { testDatabase } from "./migrations/test-database.js";
 import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -128,7 +129,7 @@ test("the internal library volume resolves without consulting platform volume di
 });
 
 test("a unique photo ID prefix resolves to the full ID", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await migrate(db);
     await insertPhoto(db, "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001", "ck_0000000000000001");
@@ -143,7 +144,7 @@ test("a unique photo ID prefix resolves to the full ID", async () => {
 });
 
 test("an ambiguous photo ID prefix is never resolved arbitrarily", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await migrate(db);
     await insertPhoto(db, "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001", "ck_0000000000000001");
@@ -159,7 +160,7 @@ test("an ambiguous photo ID prefix is never resolved arbitrarily", async () => {
 });
 
 test("a photo prefix cannot inject SQL wildcard matching", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await migrate(db);
     await insertPhoto(db, "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001", "ck_0000000000000001");

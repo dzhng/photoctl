@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 import { execute } from "@photoctl/commands";
-import { exitCodeFor, listDataSchema, listRowSchema } from "@photoctl/protocol";
+import {
+  exitCodeFor,
+  listDataSchema,
+  listRowSchema,
+  searchDataSchema,
+  searchHitSchema,
+} from "@photoctl/protocol";
 import { readFileSync } from "node:fs";
 import { renderHuman } from "./output.js";
 const rawArgs = process.argv.slice(2);
@@ -12,7 +18,7 @@ const { version } = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 ) as { version: string };
 const verb = args[0] === "--version" || args[0] === "-V" ? "version" : (args.shift() ?? "");
-const streaming = verb === "list" && args.includes("--stream");
+const streaming = (verb === "list" || verb === "search") && args.includes("--stream");
 const execution = await execute(
   {
     verb,
@@ -35,7 +41,12 @@ const execution = await execute(
     ...(streaming
       ? {
           stream: (row: unknown) =>
-            writeLine(process.stdout, JSON.stringify(listRowSchema.parse(row))),
+            writeLine(
+              process.stdout,
+              JSON.stringify(
+                verb === "search" ? searchHitSchema.parse(row) : listRowSchema.parse(row),
+              ),
+            ),
         }
       : {}),
     emit: async (event) => await writeLine(process.stderr, JSON.stringify(event)),
@@ -44,7 +55,8 @@ const execution = await execute(
 for (const event of execution.events) process.stderr.write(`${JSON.stringify(event)}\n`);
 const { envelope } = execution;
 if (streaming && envelope.ok && "data" in envelope) {
-  listDataSchema.parse(envelope.data);
+  if (verb === "search") searchDataSchema.parse(envelope.data);
+  else listDataSchema.parse(envelope.data);
 } else {
   process.stdout.write(human ? renderHuman(envelope) : `${JSON.stringify(envelope)}\n`);
 }

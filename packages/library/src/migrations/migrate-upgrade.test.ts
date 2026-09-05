@@ -1,10 +1,10 @@
-import { PGlite } from "@electric-sql/pglite";
 import { readFile } from "node:fs/promises";
 import { expect, test } from "vitest";
 import { LATEST_SCHEMA_VERSION, migrate } from "./runner.js";
+import { testDatabase } from "./test-database.js";
 
 test("the previous schema upgrades without losing library settings", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await db.exec(await fixture("schema-v1.pgsql"));
 
@@ -37,7 +37,7 @@ test("the previous schema upgrades without losing library settings", async () =>
 });
 
 test("the previous schema fixture gains daemon and tag state without losing photo facts", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await db.exec(await fixture("schema-v2.pgsql"));
 
@@ -83,7 +83,7 @@ test("the previous schema fixture gains daemon and tag state without losing phot
 });
 
 test("the current schema fixture preserves tags and daemon settings", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await db.exec(await fixture("schema-v3.pgsql"));
 
@@ -111,7 +111,7 @@ test("the current schema fixture preserves tags and daemon settings", async () =
 });
 
 test("the cull schema upgrades to the graph without losing promoted identity or cull state", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await db.exec(await fixture("schema-v4.pgsql"));
 
@@ -151,7 +151,7 @@ test("the cull schema upgrades to the graph without losing promoted identity or 
 });
 
 test("the current graph fixture preserves its active lazy source revision", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await db.exec(await fixture("schema-v5.pgsql"));
 
@@ -172,7 +172,11 @@ test("the current graph fixture preserves its active lazy source revision", asyn
          ON (node.photo_id, node.id) = (root.photo_id, root.node_id)`,
     );
 
-    expect(result).toEqual({ fromVersion: 5, toVersion: LATEST_SCHEMA_VERSION, applied: [6, 7] });
+    expect(result).toEqual({
+      fromVersion: 5,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [6, 7, 8],
+    });
     expect(document.rows).toEqual([
       {
         active_revision_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003",
@@ -188,7 +192,7 @@ test("the current graph fixture preserves its active lazy source revision", asyn
 });
 
 test("the current delivery fixture preserves export history", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await db.exec(await fixture("schema-v6.pgsql"));
 
@@ -199,7 +203,7 @@ test("the current delivery fixture preserves export history", async () => {
       bytes: string;
     }>("SELECT path, render_hash, bytes::text FROM exports");
 
-    expect(result).toEqual({ fromVersion: 6, toVersion: LATEST_SCHEMA_VERSION, applied: [7] });
+    expect(result).toEqual({ fromVersion: 6, toVersion: LATEST_SCHEMA_VERSION, applied: [7, 8] });
     expect(history.rows).toEqual([
       {
         path: "/delivery/a7c2.jpg",
@@ -213,7 +217,7 @@ test("the current delivery fixture preserves export history", async () => {
 });
 
 test("the current provider fixture has the bounded external-execution seam", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await db.exec(await fixture("schema-v7.pgsql"));
 
@@ -224,8 +228,43 @@ test("the current provider fixture has the bounded external-execution seam", asy
          AND column_name = 'provider_execution'`,
     );
 
-    expect(result).toEqual({ fromVersion: 7, toVersion: LATEST_SCHEMA_VERSION, applied: [] });
+    expect(result).toEqual({ fromVersion: 7, toVersion: LATEST_SCHEMA_VERSION, applied: [8] });
     expect(column.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
+    const search = await db.query<{ vector_type: string; searchable: string }>(
+      `SELECT pg_typeof(e.vec)::text AS vector_type,
+              p.searchable::text AS searchable
+       FROM photos p
+       JOIN embeddings e ON e.photo_id = p.id`,
+    );
+    expect(search.rows).toEqual([]);
+    const indexes = await db.query<{ indexname: string }>(
+      `SELECT indexname FROM pg_indexes
+       WHERE schemaname = 'public'
+         AND indexname IN ('embeddings_vec_hnsw_idx', 'photos_searchable_gin_idx')
+       ORDER BY indexname`,
+    );
+    expect(indexes.rows).toEqual([
+      { indexname: "embeddings_vec_hnsw_idx" },
+      { indexname: "photos_searchable_gin_idx" },
+    ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the current search fixture is already v8 and retains generated search text", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v8.pgsql"));
+
+    const result = await migrate(db);
+    const searchable = await db.query<{ matched: boolean }>(
+      `SELECT searchable @@ websearch_to_tsquery('english', 'ceremony') AS matched
+       FROM photos`,
+    );
+
+    expect(result).toEqual({ fromVersion: 8, toVersion: 8, applied: [] });
+    expect(searchable.rows).toEqual([{ matched: true }]);
   } finally {
     await db.close();
   }

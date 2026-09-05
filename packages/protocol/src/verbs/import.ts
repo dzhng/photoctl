@@ -18,6 +18,7 @@ export const importDataSchema = z.object({
   }),
   embeddings: z.object({
     queued: z.number().int().nonnegative(),
+    est_usd: z.number().nonnegative(),
     note: z.string(),
   }),
   elapsed_s: z.number().nonnegative(),

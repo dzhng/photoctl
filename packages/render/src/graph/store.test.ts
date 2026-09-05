@@ -1,4 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
+import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { expect, test } from "vitest";
 import {
@@ -337,7 +338,7 @@ function develop(
 }
 
 async function graphDatabase(): Promise<PGlite> {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   await migrate(db);
   await db.query(
     `INSERT INTO photos (id, content_key, size, w, h, orientation)

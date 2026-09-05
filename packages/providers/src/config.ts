@@ -1,3 +1,4 @@
+import { providerModelIdSchema } from "@photoctl/protocol";
 import { z } from "zod";
 import { DEFAULT_GATEWAY_URL } from "./gateway.js";
 import { DEFAULT_MODELS, resolveModels, type ResolvedModels } from "./table.js";
@@ -53,11 +54,11 @@ export function providerDiagnostics(
 
 const modelOverridesSchema = z
   .object({
-    edit: z.string().min(1).optional(),
-    generate: z.string().min(1).optional(),
-    structured: z.string().min(1).optional(),
-    embed: z.string().min(1).optional(),
-    upscale: z.string().min(1).optional(),
+    edit: providerModelIdSchema.optional(),
+    generate: providerModelIdSchema.optional(),
+    structured: providerModelIdSchema.optional(),
+    embed: providerModelIdSchema.optional(),
+    upscale: providerModelIdSchema.optional(),
   })
   .strip();
 const generationSchema = z.object({ upscale: z.enum(["auto", "off"]).default("auto") }).strip();

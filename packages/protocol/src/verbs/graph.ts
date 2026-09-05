@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { fullHashSchema } from "../hash.js";
 import { warningCodes } from "../envelope.js";
+import { providerModelIdSchema } from "../provider.js";
 
 const nodeId = fullHashSchema("node");
 const recipeHash = fullHashSchema("recipe");
@@ -18,7 +19,7 @@ const providerProvenanceSchema = z.object({
   adapter: z.string().max(256),
   adapter_version: z.string().max(256).nullable(),
   service: z.string().max(256),
-  model: z.string().max(256),
+  model: providerModelIdSchema,
   model_version: z.string().max(256).nullable(),
   provider_request_id: z.string().max(256).nullable(),
   seed: z.number().int().nullable(),

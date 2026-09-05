@@ -1,9 +1,9 @@
-import { PGlite } from "@electric-sql/pglite";
+import { testDatabase } from "./test-database.js";
 import { expect, test } from "vitest";
 import { LATEST_SCHEMA_VERSION, migrate, verifyLatestSchema } from "./runner.js";
 
 test("migrations are repeatable and record each version once", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     const first = await migrate(db);
     const second = await migrate(db);
@@ -75,7 +75,7 @@ test("migrations are repeatable and record each version once", async () => {
 });
 
 test("the latest schema supports promoted sampled-key collisions and cull state", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await migrate(db);
     const first = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
@@ -112,7 +112,7 @@ test.each([
   ["1,3"],
   [`${Array.from({ length: LATEST_SCHEMA_VERSION + 1 }, (_, index) => index + 1).join(",")}`],
 ])("rejects the non-prefix migration ledger %s before applying schema", async (ledger) => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await db.exec(
       `CREATE TABLE schema_version (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
@@ -132,7 +132,7 @@ test.each([
   ["constraint", "ALTER TABLE photos DROP CONSTRAINT photos_rating_check"],
   ["index", "DROP INDEX files_photo_id_idx"],
 ])("latest-schema verification rejects a missing required %s", async (_kind, statement) => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await migrate(db);
     await db.exec(statement);
@@ -143,7 +143,7 @@ test.each([
 });
 
 test("the graph schema separates logical nodes from reusable and attempted executions", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
   const artifact = `a_${"1".repeat(64)}`;
   const recipe = `recipe_${"2".repeat(64)}`;

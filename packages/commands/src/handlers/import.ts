@@ -35,6 +35,7 @@ import {
   type Warning,
 } from "@photoctl/protocol";
 import { orientedDimensions, parseExifOrientation } from "@photoctl/render";
+import { estimateEmbeddingCost, readProviderSettings, resolveModels } from "@photoctl/providers";
 import { constants } from "node:fs";
 import { access, copyFile, mkdir, rm, stat } from "node:fs/promises";
 import { basename, extname, join, relative, resolve } from "node:path";
@@ -148,6 +149,27 @@ export async function importCommand(
         });
       },
     );
+    const providerSettings = await readProviderSettings(handle);
+    const embedMode = await handle.query<{ value: string }>(
+      "SELECT value #>> '{}' AS value FROM settings WHERE key = 'embed_mode'",
+    );
+    const autoEmbed = embedMode.rows[0]?.value === "auto";
+    const embedModel = resolveModels(providerSettings.models).embed;
+    const queued = autoEmbed
+      ? Number(
+          (
+            await handle.query<{ count: string }>(
+              `SELECT COUNT(*)::text AS count
+               FROM photos p
+               LEFT JOIN embeddings e ON e.photo_id = p.id AND e.model = $2
+               WHERE p.id = ANY($1::uuid[]) AND e.photo_id IS NULL`,
+              [ids, embedModel],
+            )
+          ).rows[0]?.count ?? 0,
+        )
+      : 0;
+    const embeddingCost = estimateEmbeddingCost(embedModel, queued);
+    if (queued > 0 && embeddingCost.warning) warnings.push(embeddingCost.warning);
     return {
       schema: 1,
       ok: true,
@@ -166,7 +188,11 @@ export async function importCommand(
               },
         xmp_read: { sidecars_found: sidecarsFound, ratings, keywords, labels },
         previews: { embedded_extracted: embeddedExtracted, bytes: previewBytes },
-        embeddings: { queued: 0, note: "not queued" },
+        embeddings: {
+          queued,
+          est_usd: embeddingCost.usd,
+          note: autoEmbed ? "queued for background embedding" : "manual embedding mode",
+        },
         elapsed_s: (performance.now() - startedAt) / 1000,
       } satisfies ImportData,
       warnings,

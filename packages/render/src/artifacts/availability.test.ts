@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { PGlite } from "@electric-sql/pglite";
 import { afterEach, expect, test } from "vitest";
 import { migrate } from "../../../library/src/migrations/runner.js";
+import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { encodeDisplayTiff } from "../linear-tiff.js";
 import { reconcileArtifactAvailability } from "./availability.js";
 import { artifactPath } from "./publication.js";
@@ -18,7 +18,7 @@ afterEach(async () => {
 test("reconciliation invalidates legacy display artifacts", async () => {
   const library = await mkdtemp(join(tmpdir(), "photoctl-artifact-reconcile-"));
   directories.push(library);
-  const database = await PGlite.create();
+  const database = await testDatabase();
   await migrate(database);
   try {
     const bytes = await encodeDisplayTiff({

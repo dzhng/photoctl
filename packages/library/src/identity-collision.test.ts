@@ -1,4 +1,4 @@
-import { PGlite } from "@electric-sql/pglite";
+import { testDatabase } from "./migrations/test-database.js";
 import { mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -14,7 +14,7 @@ test("sample-key collisions promote both files and preserve distinct stable IDs"
   const secondBytes = Buffer.from(firstBytes);
   secondBytes.fill(13, 1024 * 1024, 1024 * 1024 + 64);
   const firstId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
-  const db = await PGlite.create();
+  const db = await testDatabase();
   try {
     await writeFile(firstPath, firstBytes);
     await writeFile(secondPath, secondBytes);
@@ -93,7 +93,7 @@ test("sample-key collisions promote both files and preserve distinct stable IDs"
 test("an offline unpromoted candidate never absorbs a sampled-key collision", async () => {
   const root = await mkdtemp(join(tmpdir(), "photoctl-collision-offline-"));
   const candidate = join(root, "candidate.bin");
-  const db = await PGlite.create();
+  const db = await testDatabase();
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c020";
   try {
     await writeFile(candidate, Buffer.alloc(2 * 1024 * 1024 + 1, 3));
@@ -135,7 +135,7 @@ test("an offline unpromoted candidate never absorbs a sampled-key collision", as
 test("a missing locator is relocation only on its confirmed-online volume", async () => {
   const root = await mkdtemp(join(tmpdir(), "photoctl-relocation-boundary-"));
   const candidate = join(root, "renamed.bin");
-  const db = await PGlite.create();
+  const db = await testDatabase();
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c030";
   try {
     await writeFile(candidate, Buffer.alloc(2 * 1024 * 1024 + 1, 9));
@@ -180,7 +180,7 @@ test("an exact unpromoted locator accepts stable mtime and refuses replacement i
   const firstBytes = Buffer.alloc(2 * 1024 * 1024 + 64, 4);
   const secondBytes = Buffer.from(firstBytes);
   secondBytes.fill(8, 1024 * 1024, 1024 * 1024 + 64);
-  const db = await PGlite.create();
+  const db = await testDatabase();
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c040";
   try {
     await writeFile(candidate, firstBytes);

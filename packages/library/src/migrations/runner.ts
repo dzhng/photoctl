@@ -6,6 +6,7 @@ import { migration0004 } from "./0004-import-and-cull.js";
 import { migration0005 } from "./0005-image-graph.js";
 import { migration0006 } from "./0006-export-history.js";
 import { migration0007 } from "./0007-provider-execution.js";
+import { migration0008 } from "./0008-search.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -21,6 +22,7 @@ const migrations = [
   { version: 5, sql: migration0005 },
   { version: 6, sql: migration0006 },
   { version: 7, sql: migration0007 },
+  { version: 8, sql: migration0008 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
@@ -29,6 +31,7 @@ const latestTables = [
   "document_revision_roots",
   "document_revisions",
   "exports",
+  "embeddings",
   "files",
   "image_artifacts",
   "node_execution_inputs",
@@ -96,6 +99,8 @@ const latestConstraints = [
   "photo_documents_pkey",
   "photos_h_check",
   "photos_label_check",
+  "embeddings_photo_id_fkey",
+  "embeddings_pkey",
   "photos_orientation_check",
   "photos_pkey",
   "photos_rating_check",
@@ -147,7 +152,7 @@ export async function migrate(db: PGlite): Promise<MigrationResult> {
 }
 
 export async function verifyLatestSchema(db: PGlite): Promise<void> {
-  const [tables, constraints, indexes] = await Promise.all([
+  const [tables, constraints, indexes, triggers] = await Promise.all([
     db.query<{ name: string }>(
       "SELECT tablename AS name FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename",
     ),
@@ -158,6 +163,10 @@ export async function verifyLatestSchema(db: PGlite): Promise<void> {
     ),
     db.query<{ name: string }>(
       "SELECT indexname AS name FROM pg_indexes WHERE schemaname = 'public'",
+    ),
+    db.query<{ name: string }>(
+      `SELECT tgname AS name FROM pg_trigger
+       WHERE NOT tgisinternal AND tgrelid IN ('files'::regclass, 'tags'::regclass)`,
     ),
   ]);
   const missing = [
@@ -174,15 +183,18 @@ export async function verifyLatestSchema(db: PGlite): Promise<void> {
         "node_executions_deterministic_eval_idx",
         "node_executions_node_id_idx",
         "exports_photo_at_idx",
+        "embeddings_vec_hnsw_idx",
         "photos_flag_idx",
         "photos_label_idx",
         "photos_promoted_content_hash_idx",
         "photos_rating_idx",
+        "photos_searchable_gin_idx",
         "photos_shot_id_idx",
         "photos_unpromoted_content_key_idx",
       ],
       indexes.rows,
     ),
+    ...missingNames(["files_refresh_search_text", "tags_refresh_search_text"], triggers.rows),
   ];
   if (missing.length > 0) throw new Error(`Library schema is incomplete: ${missing.join(",")}`);
 }

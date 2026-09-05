@@ -6,6 +6,8 @@ export * from "./cache-index.js";
 export * from "./backup.js";
 export * from "./restore.js";
 export * from "./migrations/runner.js";
+export * from "./search/rrf.js";
+export * from "./search/search.js";
 export * from "./xmp/read.js";
 export * from "./xmp/write.js";
 export * from "./xmp/errors.js";

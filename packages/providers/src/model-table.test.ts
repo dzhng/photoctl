@@ -23,3 +23,7 @@ test("symbolic moving model ids cannot enter resolved provenance", () => {
   expect(() => resolveModel("edit", {}, "latest")).toThrow("concrete model id");
   expect(() => resolveModels({ upscale: "auto" })).toThrow("concrete model id");
 });
+
+test("resolved model ids are bounded before entering provider or command frames", () => {
+  expect(() => resolveModel("embed", {}, `vendor/${"x".repeat(250)}`)).toThrow("at most 256 bytes");
+});

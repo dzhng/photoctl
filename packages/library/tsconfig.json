@@ -2,5 +2,5 @@
   "extends": "../typescript-config/base.json",
   "compilerOptions": { "rootDir": "src", "outDir": "dist" },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts", "src/migrations/test-database.ts"]
 }

@@ -1471,8 +1471,9 @@
 - **The choice:** Gateway calls make three total attempts for HTTP 429 only. A valid `Retry-After` value wins but is capped at two
   seconds; without one, retries wait 100 then 200 milliseconds. Each attempt has a 30-second abort ceiling. Tests may inject a
   one-to-five-attempt ceiling and a fake clock. Other HTTP failures remain immediate because the contract does not prove they are
-  safe to repeat: 400/401/403/404 map to unconfigured input or credentials, while other statuses and transport failures map to
-  temporary provider failure. URL-returned images have the same 30-second ceiling and a 64 MiB streaming cap. The fake gateway
+  safe to repeat: 401/403/404 map to shared credential/model/endpoint configuration, while 400 and other statuses plus transport
+  failures map to temporary per-request provider failure. A malformed individual image may cause 400 without invalidating the
+  remaining batch. URL-returned images have the same 30-second ceiling and a 64 MiB streaming cap. The fake gateway
   separately rejects request bodies above 32 MiB so malformed fixtures cannot consume unbounded memory.
 - **The gap:** The slice delegated the retry policy and required only that rate-limit retries be bounded.
 - **The reach:** All four gateway routes share the same latency ceiling and attempt provenance; a real deployment with sustained
@@ -1657,12 +1658,13 @@
 - **The gap:** Vercel's current model page says Gemini Embedding 2 supports interleaved image and text, while its public Gateway
   example and current AI SDK embedding interface remain text-only and do not specify the raw OpenAI-compatible multimodal body.
   The plan required a live smoke to settle that gap but did not define what qualifies as acceptance or what may be persisted.
-- **The reach:** 09c cannot silently ship a request that yields separate or wrong-width vectors. Once a keyed run succeeds, the
-  redacted evidence becomes the exact fixture its worker must follow; until then, the production embedding shape remains OPEN.
-- **Verdict:** **Sound.** The candidate is isolated to the probe, the acceptance test matches the catalog contract, and no
-  unaccepted dialect leaks into production code. A 200 response with the wrong shape records `response_shape`, the response's
-  scalar item count, and only the first eight observed vector widths. This diagnoses contract drift without copying an unbounded
-  provider response into durable evidence.
+- **The reach:** 09c cannot silently accept separate or wrong-width vectors. Until a keyed run succeeds, production can attempt
+  the named candidate only after explicit embed consent, one photo at a time, and must keep calling it provisional rather than
+  treating fake-gateway success as live acceptance. A rejected live run requires a new versioned candidate rather than fallback.
+- **Verdict:** **Sound.** The candidate is versioned and explicit-consent-gated in production, while only the purpose-key probe may
+  promote it to an accepted provider fixture. A 200 response with the wrong shape records `response_shape`, the response's scalar
+  item count, and only the first eight observed vector widths. This diagnoses contract drift without copying an unbounded provider
+  response into durable evidence.
 - **Confidence:** Medium; only the still-missing live Gateway response can validate the candidate dialect.
 
 ### Slice 09b — Live probes require purpose-specific invocation credentials
@@ -1703,6 +1705,239 @@
 - **Verdict:** **Sound.** Normalization makes different crops comparable, and explicitly refusing to turn the metric into a quality
   score avoids an automated product choice.
 - **Confidence:** Medium until live outputs show whether a perceptual metric would be more useful.
+
+### Slice 09c — Normalized catalog rows feed one generated full-text index
+
+- **When:** Slice 09c schema-v8 implementation, 2026-09-05.
+- **The choice:** A photo's searchable words live in two normalized tables: `files` holds paths and `tags` holds keywords. PostgreSQL
+  cannot make a generated column directly query those child tables. Schema v8 therefore has the database refresh a plain
+  `photos.search_text` string whenever a file or tag row changes; `photos.searchable` is the generated `tsvector`, PostgreSQL's
+  tokenized search document, and its GIN index is the fast lookup structure. For example, importing `weddings/first-look.ARW` and
+  adding tag `ceremony` causes the trigger to rebuild one string from all current paths and tags, then PostgreSQL regenerates and
+  indexes the tokenized form. The alternative was to duplicate refresh calls in import, tag, XMP, restore, and every future writer,
+  where one missed caller would make search silently stale.
+- **The gap:** The plan required a generated text-search value over normalized file and tag data, a shape PostgreSQL cannot express
+  as one generated-column formula, but did not select the synchronization owner.
+- **The reach:** New file/tag writers inherit correct indexing without command-layer bookkeeping. The materialized input is an
+  internal projection, not a second user-editable source of truth; direct child-row changes still refresh it.
+- **Verdict:** **Sound.** Database triggers cover every writer at the boundary where the normalized facts actually change, and the
+  generated/indexed value remains mechanically derived.
+- **Confidence:** High.
+
+### Slice 09c — Keyless catalog search uses PostgreSQL's English text configuration
+
+- **When:** Slice 09c full-text search implementation, 2026-09-05.
+- **The choice:** Both indexed documents and queries use PostgreSQL's `english` configuration. It tokenizes filename, folder, and
+  tag words and applies the same stemming and stop-word rules at write and read time. Before parsing, both sides replace runs of
+  non-alphanumeric punctuation with spaces; the query builds that document once and reuses it for matching and rank. A
+  punctuation-only query becomes no document and returns no hits. The alternative `simple` configuration would preserve every
+  token exactly but would not match ordinary English inflections such as singular and plural forms.
+- **The gap:** The plan required a generated `tsvector` and GIN index but did not choose a text-search configuration.
+- **The reach:** Keyless retrieval is intentionally English-oriented; filenames and tags in other languages still tokenize, but
+  they do not receive language-specific stemming. Changing this later requires rebuilding the generated column and index.
+- **Verdict:** **Sound.** The query is natural-language text, the selected rules are applied symmetrically, and vector retrieval
+  remains the multilingual/semantic arm whenever the explicitly configured provider is available.
+- **Confidence:** Medium; a multilingual catalog evaluation may justify a different or per-library configuration.
+
+### Slice 09c — Background batches yield the daemon command lane, not its lifetime kernel lock
+
+- **When:** Slice 09c worker integration, 2026-09-05.
+- **The choice:** photoctl already has exactly one process—the daemon—holding the library's kernel lock and one PGlite handle for
+  its lifetime. The embedding worker uses that same handle. It selects at most 50 photos, performs bounded per-photo provider work,
+  then pauses before selecting another batch; foreground socket commands take priority during that pause. The pause is derived as
+  twice the same polling ceiling the worker uses to notice foreground work, so changing one timing budget cannot invalidate the
+  other. The duet-agent alternative closed its independent database session between batches so another process could win the
+  lock. Copying that literally here would close the daemon's shared command handle and break the architecture that made the daemon
+  the sole lock owner.
+- **The gap:** The plan said to lift a cross-process relinquish shape from a repo whose worker and foreground were separate database
+  sessions, while photoctl's earlier slice deliberately centralized both in one daemon session.
+- **The reach:** Background embedding cannot monopolize a whole backlog, the daemon remains the sole lock owner, and later workers
+  must use the same cooperative foreground-priority lane rather than introduce a second lock/session model. Foreground requests
+  also replace the worker's key/endpoint/cache context for its next batch. A monotonic cursor completes the current catalog sweep
+  before one scalar retry deadline resets it, so failure state stays constant-size and foreground kicks cannot bypass cooldown.
+  Shutdown aborts active provider I/O and retry backoff rather than waiting behind an ordinary timeout or `Retry-After` delay.
+- **Verdict:** **Sound.** The 1,500-photo built-process gate proves foreground rating stays inside the stated p95 bound during all
+  30 batches, while the one-lock invariant remains intact.
+- **Confidence:** High.
+
+### Slice 09c review — Foreground dispatch waits for worker database quiescence
+
+- **When:** Slice 09c shared-handle integration review, 2026-09-05.
+- **The choice:** Before any foreground dispatch, the daemon marks the embedding worker paused, aborts active provider or retry
+  work, wakes sleeps, and awaits the worker promise. Only then may the command use the shared PGlite handle. Dispatch `finally`
+  resumes the same monotonic sweep; a pause-aborted batch does not advance its cursor or enter cooldown.
+- **The gap:** Checking a `foregroundBusy` flag before selecting 50 items left a time-of-check/time-of-use window in which a
+  foreground transaction could begin while a later worker UPSERT used the same connection and transaction scope.
+- **The reach:** Foreground transactions cannot absorb or roll back background embeddings, and foreground work waits for at most
+  the abort/safe-point boundary rather than the remainder of 50 provider requests. Completed pre-pause UPSERTs stay committed and
+  are naturally skipped on resume.
+- **Verdict:** **Sound.** One shared database handle requires explicit ownership transfer, not cooperative polling alone.
+- **Confidence:** High.
+
+### Slice 09c review — Provider errors end before catalog persistence begins
+
+- **When:** Slice 09c worker liveness review, 2026-09-05.
+- **The choice:** The adapter call owns provider error classification; once it returns a validated vector, the catalog UPSERT runs
+  outside that recovery boundary. A persistence failure therefore escapes a foreground batch or becomes one contained background
+  diagnostic, and automatic work stops until another command kicks it.
+- **The gap:** One broad per-item catch converted an UPSERT rejection into `provider_busy`, causing the worker to buy the same
+  vector again after cooldown while hiding the local database fault.
+- **The reach:** Per-photo provider failures remain isolated, but local durability failures are never retried as external work.
+  An operator-triggered retry after fixing the catalog can still regenerate because the first vector was never committed.
+- **Verdict:** **Sound.** Payment/retry policy must not cross the boundary where remote success becomes local persistence.
+- **Confidence:** High.
+
+### Slice 09c review — Mixed-model vector ranking is exact within a materialized model set
+
+- **When:** Slice 09c hybrid-search integration review, 2026-09-05.
+- **The choice:** Search first materializes all embeddings for the requested model, then applies exact cosine ordering and the
+  bounded candidate limit. Schema v8 retains its HNSW index, but this query deliberately does not use it while a single photo-keyed
+  table can contain rows from several model generations.
+- **The gap:** HNSW ordering followed by `WHERE model = ...` may approximate across every model and only then discard old-model
+  rows, underfilling the current-model arm during a partial backfill.
+- **The reach:** Current-model recall is correct during migrations at the cost of scanning that model's materialized rows. A future
+  model-aware physical index or partition can restore approximate indexed ranking without changing the search envelope.
+- **Verdict:** **Sound.** Correct model isolation is more important than claiming an index whose ordering domain is too broad.
+- **Confidence:** High; the pinned PGlite EXPLAIN proves a CTE scan plus exact sort and no HNSW post-filter.
+
+### Slice 09c — The provisional multimodal dialect stays one photo per provider request
+
+- **When:** Slice 09c provider integration, 2026-09-05.
+- **The choice:** The background worker's database batch contains up to 50 photos, but each external request contains exactly one
+  photo: fixed descriptive text plus that photo's pinned 1616-tier JPEG. The adapter accepts success only when that request returns
+  exactly one finite 3,072-number vector. Requests run one at a time within the database batch, so provider concurrency is bounded
+  at one. If photo 17 has a missing preview or malformed response, its result fails and photos 18–50 still run. Sending all 50
+  images in one request would invent a batch dialect that the already-unaccepted one-item live candidate never proposed, and one
+  malformed item would make the whole provider response ambiguous.
+- **The gap:** The slice fixed the database batch size but the live evidence defined only a one-item candidate request and did not
+  authorize a multi-image request body.
+- **The reach:** Provider payload cardinality, strict validation, bounded concurrency, and per-item failure isolation stay aligned.
+  A successful live smoke can promote this candidate; a rejection must produce a newly named request-shape version rather than a
+  silent fallback. Serial calls make a batch slower than controlled parallelism would.
+- **Verdict:** **Sound.** It spends more HTTP round trips and wall time to avoid claiming an unsupported provider contract, prevent
+  a 50-request burst, and keep every failure attributable to one catalog item.
+- **Confidence:** Medium until the live Gateway accepts or rejects the candidate.
+
+### Slice 09c — `embed --all` is an idempotent backfill; named IDs request refresh
+
+- **When:** Slice 09c manual command implementation, 2026-09-05.
+- **The choice:** `embed --all` pages through photos that have no vector for the currently configured model, including rows whose
+  stored model is stale, and leaves already-current rows alone. Running it again after a lost terminal response therefore costs
+  nothing and returns an empty successful batch. Passing explicit photo IDs means “refresh these,” so those rows are sent again and
+  UPSERTed even when already current. The alternative made every retry of `--all` upload an entire library and incur provider cost
+  merely because the caller could not tell whether the prior response arrived.
+- **The gap:** The plan offered `--all` and named-ID forms but did not say whether current embeddings were refreshed.
+- **The reach:** Automation gets safe replay for whole-library maintenance while operators retain a precise repair/re-embed path.
+  Model changes naturally backfill because a row from a different model is not current.
+- **Verdict:** **Sound.** It follows the repository's idempotent-operation rule and minimizes unasked paid work.
+- **Confidence:** High.
+
+### Slice 09c review — Slow foreground provider calls send activity frames
+
+- **When:** Slice 09c independent scale review, 2026-09-05.
+- **The choice:** Foreground embedding and search reuse daemon `progress` frames every five seconds while provider I/O, retry
+  backoff, or response parsing is pending. Embed also reports command start and each 50-row database batch. The client applies an
+  idle ceiling of at least 31 seconds, never shorter than a caller's queue-admission budget, and resets it on every frame. A single
+  provider call that takes 30 seconds therefore emits several small frames, while work queued behind a longer foreground command
+  keeps its requested admission window.
+- **The gap:** Serial one-photo provider calls can leave a command silent beyond the ordinary 31-second idle timeout, causing the
+  client to retry paid work. The plan required activity but did not choose its cadence or idle margin.
+- **The reach:** A single request near the gateway timeout and a complete retry sequence both stay visibly alive. Future
+  foreground provider commands should reuse the event seam rather than receive an unbounded total timeout.
+- **Verdict:** **Sound.** Five seconds is well inside the existing idle window without making progress output noisy at human scale.
+- **Confidence:** High.
+
+### Slice 09c review — Whole-library output keeps totals and only the first 100 failures
+
+- **When:** Slice 09c independent scale review, 2026-09-05.
+- **The choice:** `embed --all` counts every success and failure but does not keep successful item rows. It retains the first 100
+  failures in catalog order and reports how many later failures were omitted. Thus a million-photo success returns an empty result
+  list and exact totals; a million-photo failure returns 100 attributable examples, exact totals, and an explicit omitted count.
+- **The gap:** The review required a bounded aggregate but did not choose the failure-detail budget or which failures survive.
+- **The reach:** Direct memory and the terminal daemon frame no longer scale with library size. Operators see early deterministic
+  failures but must use explicit-ID batches when they need a complete per-photo repair report.
+- **Verdict:** **Sound.** One hundred ordered examples are enough to diagnose a systemic failure while keeping output fixed-size.
+- **Confidence:** Medium; later operator evidence may justify another cap without changing the response shape.
+
+### Slice 09c review — Explicit embed keeps per-item rows within a fixed request budget
+
+- **When:** Slice 09c independent scale review, 2026-09-05.
+- **The choice:** Explicit embedding accepts at most 1,000 photo IDs and returns one result for each. Model identifiers are bounded
+  to 256 bytes before entering any provider or command result, and each ID/prefix is rejected above its canonical 36-character
+  limit before it can be echoed in a failure row. Even the largest accepted explicit batch therefore remains far below the
+  daemon's 16 MiB frame; larger maintenance jobs use the aggregate `--all` contract.
+- **The gap:** The review allowed the per-item contract to remain only if argument and response memory were bounded, but supplied
+  neither an ID count nor a string-size ceiling.
+- **The reach:** Scripts keep precise attribution for repair batches, while direct programmatic dispatch cannot bypass the CLI's
+  operating-system argument limit and allocate an unbounded result array.
+- **Verdict:** **Sound.** The limit is conservative relative to the wire ceiling and makes the guarantee depend on schema bounds,
+  not typical string lengths.
+- **Confidence:** Medium; changing the count later is compatible, while widening model IDs must preserve the frame calculation.
+
+### Slice 09c review — A configuration rejection pauses automatic embedding until context refresh
+
+- **When:** Slice 09c failure-path review, 2026-09-05.
+- **The choice:** A 401/403/404 embedding rejection is treated as a failure of the shared credential/model/endpoint context, not 50
+  independent photo failures. The command records the remainder of the selected batch without more provider calls, and the
+  automatic worker stops until a later foreground command supplies current key/endpoint/cache context and kicks it. HTTP 400 is
+  an isolated per-image `provider_busy` result, so later photos continue; transient failures retain their five-minute retry wakeup.
+- **The gap:** Per-item isolation alone made a full 50-row batch immediately retry the same unusable request context forever.
+- **The reach:** Bad credentials or a missing shared endpoint/model produce one external request per automatic pass, avoiding spin
+  and repeated paid work, while one malformed image cannot stall the library and an operator can resume immediately by issuing a
+  command with corrected context.
+- **Verdict:** **Sound.** Configuration is shared across the batch; retrying it per photo adds no information.
+- **Confidence:** High.
+
+### Slice 09c review — Detached worker failures are contained at the daemon boundary
+
+- **When:** Slice 09c failure-path review, 2026-09-05.
+- **The choice:** A setup, schema, or catalog rejection from detached worker work is caught at `kick`, reported once as a bounded
+  single-line diagnostic, and left dormant until a later kick. `stop` still cancels active provider work and resolves normally.
+- **The gap:** A detached promise had cleanup but no rejection owner, so one local failure could become an unhandled rejection and
+  make daemon shutdown reject.
+- **The reach:** The foreground daemon remains usable after background infrastructure failures without hiding the diagnostic or
+  turning a persistent fault into a busy loop.
+- **Verdict:** **Sound.** The daemon owns the detached lifecycle and therefore owns containment and reporting at that boundary.
+- **Confidence:** High.
+
+### Slice 09c review — Provider failure drops only the optional vector search arm
+
+- **When:** Slice 09c failure-path review, 2026-09-05.
+- **The choice:** Query-embedding configuration, authentication, rate-limit, timeout, outage, and malformed HTTP-success JSON
+  failures return text-search hits with a provider warning. The Gateway maps parse failures to a bounded provider error without
+  retaining the response body. The local indexed-search and fusion path runs outside that recovery boundary, so its failures
+  remain hard command errors. Streaming emits the same warning event carried by the final envelope.
+- **The gap:** Keyless search already fell back to text, but a present yet expired or unavailable provider failed the whole search.
+- **The reach:** Catalog search remains useful during provider incidents without misrepresenting local database corruption as an
+  optional-service warning.
+- **Verdict:** **Sound.** The vector arm enriches recall; it does not own availability of the authoritative local catalog.
+- **Confidence:** High.
+
+### Slice 09c — Each retrieval arm contributes at most 200 ranked candidates
+
+- **When:** Slice 09c hybrid-search implementation, 2026-09-05.
+- **The choice:** Search returns at most 50 hits, but each text/vector arm supplies a candidate window of at least 50, normally four
+  times the requested count, and never more than 200 before reciprocal-rank fusion combines them. This lets an item moderately
+  ranked in both arms rise into the final page without reading an unbounded library into JavaScript. Fetching only the requested
+  count per arm would miss some cross-arm agreements; fetching every match would make latency and memory grow with the catalog.
+- **The gap:** The plan fixed the public limit and RRF constant but not the internal candidate window.
+- **The reach:** Recall quality beyond the first 200 candidates is intentionally bounded. Later relevance evaluation may change
+  this one policy without changing storage, score shape, or the command protocol.
+- **Verdict:** **Sound.** The cap is safely above the public page while preserving bounded work, though real-library evaluation may
+  justify a different multiplier.
+- **Confidence:** Medium.
+
+### Slice 09c — Search labels each hit with one deterministic catalog filename
+
+- **When:** Slice 09c search-result hydration, 2026-09-05.
+- **The choice:** A photo can have several file locators. Search reports the basename of its lexicographically first stored relative
+  path, without probing volumes or exposing an absolute path. Choosing an online locator would make relevance output depend on
+  which drive happens to be mounted and would turn one indexed query into per-hit filesystem work.
+- **The gap:** The public hit shape required one `file` string but did not define how to select it for multi-locator photos.
+- **The reach:** The label is stable and cheap but is descriptive, not a promise that this locator is currently online; `show` keeps
+  ownership of actual source resolution.
+- **Verdict:** **Sound.** It preserves bounded search and avoids leaking host paths while giving humans a recognizable filename.
+- **Confidence:** High.
 
 ## Needs user
 

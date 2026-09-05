@@ -40,6 +40,8 @@ import { xmpCommand } from "./handlers/xmp.js";
 import { developCommand } from "./handlers/develop.js";
 import { presetsCommand } from "./handlers/presets.js";
 import { renderCommand } from "./handlers/render.js";
+import { embedCommand } from "./handlers/embed.js";
+import { searchCommand } from "./handlers/search.js";
 import {
   flagCommand,
   labelCommand,
@@ -101,6 +103,23 @@ export async function dispatch(
       return await presetsCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "render")
       return await renderCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "embed")
+      return await embedCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.emit,
+      );
+    if (request.verb === "search")
+      return await searchCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.stream,
+        context.emit,
+      );
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "list")
@@ -128,7 +147,9 @@ export async function dispatch(
     if (request.verb === "migrate")
       return await migrateCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "init") {
-      const parsed = parseArguments(request.args, { options: ["--path", "--cache-max"] });
+      const parsed = parseArguments(request.args, {
+        options: ["--path", "--cache-max", "--embed"],
+      });
       if (parsed.positionals.length > 0) {
         throw new PhotoctlError("usage", `Unexpected argument: ${parsed.positionals[0]}`);
       }
@@ -138,9 +159,14 @@ export async function dispatch(
         ? resolve(request.cwd, pathOption)
         : libraryPath(request.env, request.cwd);
       const cacheMax = options.get("--cache-max");
+      const embed = options.get("--embed") ?? "manual";
+      if (embed !== "auto" && embed !== "manual") {
+        throw new PhotoctlError("usage", "--embed must be auto or manual");
+      }
       const initialized = await initializeLibrary(
         path,
         cacheMax ? parseByteSize(cacheMax) : DEFAULT_CACHE_MAX_BYTES,
+        embed,
       );
       try {
         return {
@@ -150,6 +176,7 @@ export async function dispatch(
             library: initialized.handle.path,
             db: await databaseDescription(initialized.handle),
             cache_max_bytes: initialized.cacheMaxBytes,
+            embed,
           } satisfies InitData,
           warnings: [],
         };

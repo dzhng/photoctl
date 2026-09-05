@@ -14,7 +14,7 @@ export interface GatewayOptions {
   fetch?: typeof fetch;
   maxAttempts?: number;
   requestTimeoutMs?: number;
-  sleep?: (milliseconds: number) => Promise<void>;
+  sleep?: (milliseconds: number, signal?: AbortSignal) => Promise<void>;
 }
 
 export class GatewayClient {
@@ -23,7 +23,7 @@ export class GatewayClient {
   private readonly fetcher: typeof fetch;
   private readonly maxAttempts: number;
   private readonly requestTimeoutMs: number;
-  private readonly sleep: (milliseconds: number) => Promise<void>;
+  private readonly sleep: (milliseconds: number, signal?: AbortSignal) => Promise<void>;
 
   constructor(options: GatewayOptions) {
     this.apiKey = options.apiKey;
@@ -32,7 +32,7 @@ export class GatewayClient {
     this.fetcher = options.fetch ?? fetch;
     this.maxAttempts = options.maxAttempts ?? 3;
     this.requestTimeoutMs = options.requestTimeoutMs ?? 30_000;
-    this.sleep = options.sleep ?? (async (milliseconds) => await delay(milliseconds));
+    this.sleep = options.sleep ?? delay;
     if (!Number.isSafeInteger(this.maxAttempts) || this.maxAttempts < 1 || this.maxAttempts > 5) {
       throw new Error("Gateway maxAttempts must be between 1 and 5");
     }
@@ -49,8 +49,11 @@ export class GatewayClient {
     return await this.request("chat/completions", jsonRequest(body));
   }
 
-  async embeddings(body: Record<string, unknown>): Promise<GatewayResponse<unknown>> {
-    return await this.request("embeddings", jsonRequest(body));
+  async embeddings(
+    body: Record<string, unknown>,
+    signal?: AbortSignal,
+  ): Promise<GatewayResponse<unknown>> {
+    return await this.request("embeddings", jsonRequest(body), signal);
   }
 
   async imageGenerations(body: Record<string, unknown>): Promise<GatewayResponse<unknown>> {
@@ -61,7 +64,11 @@ export class GatewayClient {
     return await this.request("images/edits", { method: "POST", body });
   }
 
-  private async request(path: string, init: RequestInit): Promise<GatewayResponse<unknown>> {
+  private async request(
+    path: string,
+    init: RequestInit,
+    signal?: AbortSignal,
+  ): Promise<GatewayResponse<unknown>> {
     if (!this.apiKey) {
       throw new PhotoctlError("provider_unconfigured", "AI_GATEWAY_API_KEY is not configured");
     }
@@ -70,7 +77,9 @@ export class GatewayClient {
       try {
         response = await this.fetcher(`${this.baseUrl}/${path}`, {
           ...init,
-          signal: AbortSignal.timeout(this.requestTimeoutMs),
+          signal: signal
+            ? AbortSignal.any([signal, AbortSignal.timeout(this.requestTimeoutMs)])
+            : AbortSignal.timeout(this.requestTimeoutMs),
           headers: {
             ...Object.fromEntries(new Headers(init.headers)),
             authorization: `Bearer ${this.apiKey}`,
@@ -87,22 +96,37 @@ export class GatewayClient {
             attempts: attempt,
           });
         }
-        await this.sleep(retryDelay(response, attempt));
+        try {
+          await abortableSleep(this.sleep, retryDelay(response, attempt), signal);
+        } catch (error) {
+          throw new PhotoctlError("provider_busy", "The provider retry was interrupted", {
+            message: error instanceof Error ? error.message : String(error),
+          });
+        }
         continue;
       }
       if (!response.ok) {
-        const configurationFailure = [400, 401, 403, 404].includes(response.status);
+        const configurationFailure = [401, 403, 404].includes(response.status);
         throw new PhotoctlError(
           configurationFailure ? "provider_unconfigured" : "provider_busy",
           `Gateway request failed with HTTP ${response.status}`,
           { status: response.status },
         );
       }
-      return {
-        data: (await response.json()) as unknown,
-        requestId: response.headers.get("x-request-id"),
-        attempts: attempt,
-      };
+      const requestId = response.headers.get("x-request-id");
+      try {
+        return {
+          data: (await response.json()) as unknown,
+          requestId,
+          attempts: attempt,
+        };
+      } catch {
+        throw new PhotoctlError(
+          "provider_busy",
+          "The provider returned invalid JSON",
+          requestId ? { requestId: requestId.slice(0, 256) } : {},
+        );
+      }
     }
     throw new Error("Unreachable gateway retry state");
   }
@@ -124,6 +148,41 @@ function retryDelay(response: Response, attempt: number): number {
     : Math.min(100 * 2 ** (attempt - 1), 2_000);
 }
 
-async function delay(milliseconds: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, milliseconds));
+async function abortableSleep(
+  sleep: (milliseconds: number, signal?: AbortSignal) => Promise<void>,
+  milliseconds: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (!signal) return await sleep(milliseconds);
+  if (signal.aborted) throw signal.reason;
+  let onAbort: (() => void) | undefined;
+  const aborted = new Promise<never>((_resolve, reject) => {
+    onAbort = () => reject(signal.reason);
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+  try {
+    await Promise.race([sleep(milliseconds, signal), aborted]);
+  } finally {
+    if (onAbort) signal.removeEventListener("abort", onAbort);
+  }
+}
+
+async function delay(milliseconds: number, signal?: AbortSignal): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    const finish = (): void => {
+      signal?.removeEventListener("abort", abort);
+      resolve();
+    };
+    const abort = (): void => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
+      reject(signal?.reason);
+    };
+    const timer = setTimeout(finish, milliseconds);
+    signal?.addEventListener("abort", abort, { once: true });
+  });
 }

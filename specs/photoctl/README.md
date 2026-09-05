@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08c1b, and provider slices 09a–09b are
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08c1b, and provider slices 09a–09c are
 implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -36,10 +36,10 @@ point and follow it exactly. Do not re-decide anything in the original decision 
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** slice 08c2 (masked highlights/shadows/vibrance), followed by slice 09c (embed worker/search).
-  Slice 08c2 inherits 08c1a's exact scene-linear artifact boundary and 08c1b's fixed-order native global pipeline. Slice 09c
-  inherits 09a's provider contracts and 09b's measured UPSERT verdict; the
-  live multimodal request remains manual until its explicit-key smoke produces an accepted fixture.
+- **Pickup point:** slice 08c2 (masked highlights/shadows/vibrance), followed by slice 10 (layers and composite).
+  Slice 08c2 inherits 08c1a's exact scene-linear artifact boundary and 08c1b's fixed-order native global pipeline. Slice 09c now
+  supplies schema v8, explicit-consent backfill, and hybrid search; its live multimodal request remains provisional until the
+  purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -60,7 +60,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [ ] 8c2+ masked/color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
-- [ ] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [ ] 9c embed worker + search — `slices/09-providers-embed-search.md`
+- [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [ ] 10 DAG-backed layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG, optional density-matching upscale, strict composite, person-move flow — `slices/12-fill.md`
@@ -158,7 +158,9 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 ## Global rules every slice inherits
 
 - **Batch verbs:** `rate flag label tag develop export xmp remove embed` accept `<id...>` and return
-  per-item `results` (D6/D10). Single-target verbs (`segment fill retouch layer markup`) take one id.
+  per-item `results` (D6/D10). Explicit `embed` is capped at 1,000 IDs so that contract stays below the daemon frame ceiling;
+  `embed --all` instead returns exact totals and at most 100 failure rows, with `data.failures_omitted` making truncation explicit.
+  Single-target verbs (`segment fill retouch layer markup`) take one id.
 - **Warn, never refuse** on soft state — `warnings[]` with a `WarningCode`, exit 0 (D28).
 - **No runtime capability discovery** — model IDs are a fixed table; gateway `modalities` fields are never read (D25).
   Upscaling uses a separate `UpscaleAdapter` registry: the release pins a generative default, a library may override it,
@@ -398,6 +400,35 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
 ## Implementation notes
 
 *(append-only; one entry per deviation: plan said / code revealed / call made / needs David?)*
+
+- **2026-09-05 — slice 09c daemon yield and provisional embedding request.** Plan said: lift a worker that relinquishes a
+  cross-process database lock between 50-row batches, while no accepted live multimodal request fixture exists yet. Code revealed:
+  photoctl's daemon is deliberately the one process holding the library lock for its lifetime; releasing that kernel lock from a
+  background worker would tear down the shared command handle rather than help foreground CLI requests, which already enter over
+  the daemon socket. Call: keep one lock owner, yield the daemon's database command lane between bounded batches using one policy
+  that derives the free window from the foreground poll ceiling, and prove the result through built `show`/`rate` processes during
+  a 30-batch drain. Production may send the named one-photo request candidate only after explicit `embed` or saved `init --embed
+  auto` consent, validates exactly one finite 3,072-value response, and never tries an alternate dialect after rejection. Needs
+  David: run the purpose-key smoke to accept or reject that versioned candidate; deterministic 09c remains complete either way.
+  Foreground `embed` sends `progress` frames at start, after each database batch, and every five seconds during provider I/O; the
+  client's idle deadline is at least 31 seconds, never shorter than its queue-admission budget, and resets on each frame.
+  Whole-library output retains exact totals but only 100 failure details,
+  while explicit batches are capped at 1,000 IDs, keeping direct and daemon response memory bounded.
+  A shared 401/403/404 embedding rejection stops the automatic pass after one provider request and requires a later foreground
+  context refresh to resume; HTTP 400 stays isolated to one image. Detached worker setup failures are bounded diagnostics and
+  cannot poison daemon shutdown. Search's
+  optional vector arm likewise degrades provider configuration, rate, timeout, outage, and malformed-success-body failures to a
+  warning plus text hits, while failures in the local indexed-search arm remain command errors. It shares embed's five-second
+  provider heartbeat, and daemon shutdown interrupts both active provider I/O and `Retry-After` backoff.
+  Automatic embedding traverses each catalog sweep with one monotonic cursor and one retry deadline; it never builds per-photo
+  exclusion state, and a foreground kick cannot bypass the retry cooldown. A successful provider call followed by a catalog
+  UPSERT failure is a local error and stops automatic work instead of purchasing another vector.
+  Foreground dispatch first pauses and aborts the worker, awaits a point with no worker query or UPSERT active, then resumes the
+  same sweep afterward; background writes therefore cannot join an unrelated foreground transaction on the shared PGlite handle.
+  Mixed-model vector search materializes only the requested model and ranks that finite set exactly. The schema retains HNSW for
+  future single-model/index-aware use, but current correctness evidence does not claim that index for the selected-model arm.
+  Text queries apply the same punctuation-to-space normalization as indexed paths and tags, reusing one parsed query document for
+  match and rank; punctuation-only input safely returns no hits.
 
 - **2026-09-05 — slice 09b live evidence gates.** Plan said: settle the multimodal embedding request and live upscaler model and
   controls only from configured calls. Code revealed: this checkout has neither a purpose-specific smoke key nor an explicitly

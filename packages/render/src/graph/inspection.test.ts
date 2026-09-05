@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop -- The test constructs and consumes an ordered revision/page chain. */
 import { createHash } from "node:crypto";
-import { PGlite } from "@electric-sql/pglite";
+import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { expect, test } from "vitest";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { inspectGraph } from "./inspection.js";
@@ -9,7 +9,7 @@ import { commitRevision } from "./store.js";
 const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c021";
 
 test("history pagination is bounded, duplicate-free, and remains bound to its starting revision", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   await migrate(db);
   await db.query(
     `INSERT INTO photos (id, content_key, size, w, h, orientation)
@@ -67,7 +67,7 @@ test("history pagination is bounded, duplicate-free, and remains bound to its st
 });
 
 test("cursor structure is validated before it reaches database casts", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   await migrate(db);
   try {
     const payload = Buffer.from(

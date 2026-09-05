@@ -43,7 +43,12 @@ export async function spawnPhotoctl(
         resolveResult({
           code: code ?? 1,
           json: streamMode
-            ? { schema: 1, ok: true, data: { rows: stream }, warnings: [] }
+            ? {
+                schema: 1,
+                ok: true,
+                data: args[0] === "search" ? { hits: stream } : { rows: stream },
+                warnings: [],
+              }
             : JSON.parse(stdout),
           events: stderr.trim()
             ? stderr

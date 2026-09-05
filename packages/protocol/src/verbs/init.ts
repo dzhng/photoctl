@@ -4,6 +4,7 @@ export const initDataSchema = z.object({
   library: z.string(),
   db: z.string(),
   cache_max_bytes: z.number().int().positive(),
+  embed: z.enum(["auto", "manual"]),
 });
 
 export type InitData = z.infer<typeof initDataSchema>;

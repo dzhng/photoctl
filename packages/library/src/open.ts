@@ -62,6 +62,7 @@ export async function readLibraryDiagnostics(handle: LibraryHandle): Promise<Lib
 export async function initializeLibrary(
   path: string,
   cacheMaxBytes = DEFAULT_CACHE_MAX_BYTES,
+  embedMode: "auto" | "manual" = "manual",
 ): Promise<{ handle: LibraryHandle; libraryId: string; cacheMaxBytes: number }> {
   const libraryPath = resolve(path);
   try {
@@ -79,7 +80,8 @@ export async function initializeLibrary(
     handle = await openLibrary(libraryPath, { initialize: true });
     const libraryId = newLibraryEntityId();
     await handle.query(
-      "INSERT INTO settings (key, value) VALUES ($1, $2::jsonb), ($3, $4::jsonb), ($5, $6::jsonb)",
+      `INSERT INTO settings (key, value) VALUES
+         ($1, $2::jsonb), ($3, $4::jsonb), ($5, $6::jsonb)`,
       [
         "library_id",
         JSON.stringify(libraryId),
@@ -89,6 +91,10 @@ export async function initializeLibrary(
         JSON.stringify(900_000),
       ],
     );
+    await handle.query("UPDATE settings SET value = $2::jsonb WHERE key = $1", [
+      "embed_mode",
+      JSON.stringify(embedMode),
+    ]);
     return { handle, libraryId, cacheMaxBytes };
   } catch (error) {
     try {

@@ -1,3 +1,5 @@
+import { providerModelIdSchema } from "@photoctl/protocol";
+
 export const DEFAULT_MODELS = {
   edit: "openai/gpt-image-2",
   generate: "openai/gpt-image-2",
@@ -26,6 +28,7 @@ export function resolveModel(
 }
 
 function assertConcreteModel(model: string): void {
+  providerModelIdSchema.parse(model);
   if (model === "auto" || model === "latest" || model.endsWith("/latest")) {
     throw new Error("Provider selection requires a concrete model id");
   }

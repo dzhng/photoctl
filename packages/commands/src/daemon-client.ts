@@ -346,7 +346,15 @@ export function requestTimeout(request: CommandRequest): number {
   // ceiling, reset by every daemon frame, rather than a cap on total drive time.
   if (request.verb === "import") return 10 * 60 * 1_000;
   const budget = Number(request.env.lockBudgetMs);
-  return Number.isSafeInteger(budget) && budget >= 0 ? Math.max(1_000, budget + 1_000) : 31_000;
+  const queueDeadline =
+    Number.isSafeInteger(budget) && budget >= 0 ? Math.max(1_000, budget + 1_000) : 31_000;
+  // Embed and search emit a progress heartbeat every five seconds, including
+  // while one provider request is pending. Keep their idle ceiling independent of the
+  // foreground queue budget without shortening a larger admission window.
+  if (request.verb === "embed" || request.verb === "search") {
+    return Math.max(31_000, queueDeadline);
+  }
+  return queueDeadline;
 }
 
 function daemonUnavailable(libraryPath: string, cause?: unknown): PhotoctlError {

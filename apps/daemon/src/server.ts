@@ -20,6 +20,7 @@ import { access, chmod, unlink } from "node:fs/promises";
 import { createServer, type Server, type Socket } from "node:net";
 import { basename, dirname, join, resolve } from "node:path";
 import { BackgroundRegistry } from "./workers/index.js";
+import { EmbedWorker } from "./workers/embed.js";
 
 interface QueuedRequest {
   request: CommandRequest;
@@ -51,6 +52,7 @@ export class DaemonServer {
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
   private drainTimer: ReturnType<typeof setTimeout> | undefined;
   private automaticBackup: Promise<void> | undefined;
+  private embedWorker: EmbedWorker | undefined;
   private idleMs = 900_000;
   private queueMax = 8;
   private running = false;
@@ -76,6 +78,20 @@ export class DaemonServer {
     });
     this.library = await openLibraryHoldingLock(this.libraryPath, this.lock);
     this.previewCoordinator = new PreviewCoordinator();
+    this.embedWorker = new EmbedWorker({
+      handle: this.library,
+      cwd: process.cwd(),
+      foregroundBusy: () => this.running || this.pending.length > 0,
+      env: {
+        noDaemon: false,
+        libraryPath: this.libraryPath,
+        cacheRoot: process.env.PHOTOCTL_CACHE,
+        gatewayUrl: process.env.PHOTOCTL_GATEWAY_URL,
+        gatewayApiKey: process.env.AI_GATEWAY_API_KEY,
+      },
+      pollCeilingMs: Number(process.env.PHOTOCTL_POLL_CEILING_MS ?? "100"),
+    });
+    this.registerBackground("embedding", () => this.embedWorker?.isBusy() === true);
     const settings = await this.library.query<{ key: string; value: number }>(
       "SELECT key, value::text::integer AS value FROM settings WHERE key IN ('daemon_idle_ms', 'daemon_queue_max')",
     );
@@ -97,6 +113,7 @@ export class DaemonServer {
     this.watchLibrary();
     this.startAutomaticBackup();
     this.armIdleTimer();
+    this.embedWorker.kick();
   }
 
   async stop(): Promise<void> {
@@ -104,6 +121,7 @@ export class DaemonServer {
     this.stopping = true;
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.watcher?.close();
+    await this.embedWorker?.stop();
     await new Promise<void>((resolveClose) => {
       if (!this.server) return resolveClose();
       this.server.close(() => resolveClose());
@@ -168,7 +186,9 @@ export class DaemonServer {
       if (waited > budget) {
         this.respond(item.socket, lockedEnvelope(item.request, waited));
       } else {
+        await this.embedWorker?.pause();
         item.request.env.libraryPath = this.libraryPath;
+        this.embedWorker?.updateContext(item.request.env, item.request.cwd);
         this.respond(
           item.socket,
           await dispatch(item.request, {
@@ -184,6 +204,7 @@ export class DaemonServer {
       }
     } finally {
       this.running = false;
+      this.embedWorker?.resume();
       this.armIdleTimer();
       void this.drain();
     }

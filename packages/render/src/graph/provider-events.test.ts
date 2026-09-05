@@ -1,4 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
+import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,7 +14,7 @@ import { commitRevision } from "./store.js";
 const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c031";
 
 test("generate and upscale attempts emit distinct events and retain bounded redacted provenance", async () => {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   const libraryPath = await mkdtemp(join(tmpdir(), "photoctl-provider-events-"));
   try {
     await migrate(db);

@@ -1,4 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
+import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -510,7 +511,7 @@ function providerResult() {
 }
 
 async function sourceGraph(): Promise<{ db: PGlite; library: string; nodeId: string }> {
-  const db = await PGlite.create();
+  const db = await testDatabase();
   await migrate(db);
   await db.query(
     `INSERT INTO photos (id, content_key, size, w, h, orientation)
