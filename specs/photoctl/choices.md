@@ -25,6 +25,24 @@
 
 ## Needs-user
 
+### Slice 12f plan — Removing borders preserves a later exterior crop
+
+- **When:** Outpaint viewport decision checkpoint, 2026-09-06; not implemented yet.
+- **The choice:** Crop into an added border at `[-20,100,60,80]`, then remove every border. Keep the
+  60×80 view and its position: the left 20 columns are opaque black with `canvas_uncovered`, while
+  the other 40 columns show the original. Even a fully unsupported crop stays the same size. The
+  alternative clips to the original bounds, silently changing later editing intent and leaving no
+  defined picture when the intersection is empty.
+- **The gap:** Source-only crop validation could not represent a formerly valid viewport after
+  removal of its generated support. Removing a layer is not authoring a new crop.
+- **The reach:** The output planner must distinguish viewport dimensions from available pixel
+  support. New crops still require intersection with the current visible canvas; existing intent
+  survives layer changes and can be restored by re-enabling a border without provider work.
+- **Verdict:** **Needs-user.** Provisionally retain the viewport, consistent with preserving later
+  absolute editing choices. The user has been asked; clipping remains a reversible planner policy
+  before canvas authoring. Original bytes and paid artifacts stay unchanged either way.
+- **Confidence:** Low; predictable geometry competes with the visual inconvenience of black areas.
+
 ### Slice 12f plan — Missing inner borders leave warned black canvas
 
 - **When:** Outpaint lifecycle planning, 2026-09-06; not implemented yet.
@@ -72,8 +90,11 @@
   remain current intent throughout, rather than reverting to the values used before outpaint.
 - **The gap:** The plan did not distinguish pre-border cropping from post-border viewing changes.
 - **The reach:** Immutable graph intent must encode those authored frames without a second mutable
-  geometry table or permanently discarding source pixels. Reorder and transform behavior still need
-  explicit validation before the canvas checkpoint can be implemented.
+  geometry table or permanently discarding source pixels. A later border must inherit earlier
+  exclusions, not merely its input rectangle: if its interior contains an earlier generated strip,
+  removing that strip cannot reveal hidden original pixels while the later boundary survives.
+  The nonzero-straighten witness in the outpaint plan separates these cases. Reorder changes paint
+  order, not authoring chronology; rendered lifecycle verification remains outstanding.
 - **Verdict:** **Needs-user.** Provisionally retain visible-input boundaries only while the owning
   borders are enabled. This makes generated borders reproducible and removable. A different product
   preference changes the plan before implementation; original source data remains untouched.
@@ -115,6 +136,25 @@
 - **Confidence:** Medium.
 
 ## Sound
+
+### Paid response artifacts — Classify bytes independently of how an execution uses them
+
+- **When:** Original-response retention recon, 2026-09-06; implementation remains pending.
+- **The choice:** A provider can return a TIFF that is already identical to the strict working TIFF
+  used by the graph. Keep one file and artifact row, with both execution links pointing to it. A
+  different, ordinary display TIFF is preserved as encoded image data but cannot be read as working
+  scene-linear RGB. A validation profile describes the content; the execution link describes whether
+  that content is an original response or working output. The alternative labels artifacts by their
+  use, causing the same bytes to collide or generic TIFF decoding to weaken working-image checks.
+- **The gap:** The existing TIFF MIME type implies strict working pixels, while exact paid responses
+  can use that same file format without those color/sample guarantees.
+- **The reach:** The existing artifact owner gains a content-classification column and dispatches
+  validation by it. Byte identity, publication, availability, and reachability stay shared. Original
+  and working readers retain their distinct requirements, and no accepted external image format is
+  silently narrowed to PNG merely to simplify storage.
+- **Verdict:** **Sound.** Content-addressed identity must depend on bytes, not the caller's purpose;
+  strict working validation must remain intact when additional encoded formats are retained.
+- **Confidence:** High; implementation and format-by-format tests remain required.
 
 ### Slice 12f plan — Track whether a crop is active, not only its numeric value
 

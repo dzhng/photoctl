@@ -69,11 +69,40 @@ TIFFs inside the graph. Do not introduce a second publication, availability, or 
 Historical missing originals remain explicitly unavailable; never re-encode working pixels and label
 them the original response or replay a paid request during repair/inspection.
 
-This checkpoint remains unbuilt. Before implementation, settle the typed encoded-artifact boundary
-and next migration against the frame/reference passes. Verify artifact-first atomic failure, exact
-byte recovery, same-response deduplication, historical absence, backup/restore availability and graph
-reachability through real command flows. It does not enable automatic canonical-artifact deletion:
-representative undo-history measurements must separately choose count/age/storage limits.
+This checkpoint remains unbuilt. The provider boundary must expose exact decoded response bytes
+before PNG normalization, separately from the working image. Generation and upscaling share that
+contract, including refresh and transform-triggered density work. For mapped upscales, retain the
+whole response before its working crop and keep the adapter's coordinate mapping in provenance.
+
+Use content classification, not execution role, to validate stored artifacts. The next migration
+after reference inputs adds an artifact validation profile and a nullable execution original-artifact
+foreign key. Backfill existing working RGB TIFFs, mask TIFFs, and reference PNGs without relaxing their
+validators. A provider TIFF that passes strict canonical validation has the same classification,
+hash, and file as identical working bytes; an ordinary encoded TIFF must never enter the working
+reader merely because its MIME type is `image/tiff`. Sniff the actual format and intrinsic dimensions,
+retain unchanged bytes, and dispatch availability checks by that content classification.
+
+The current adapter accepts more Sharp-decodable formats than PNG/JPEG/WebP. Preserve successful
+format acceptance (including encoded metadata and extra frames) while leaving current working-image
+conversion semantics unchanged; do not silently narrow acceptance or call a converted PNG original.
+Working readers remain strict. Both artifacts must be durable before a successful execution/revision
+transaction links them; an upscale fallback cannot hide failed original publication and claim retention.
+
+**Success and rejected-attempt boundaries are distinct.** First wire execution-linked originals
+through every successful generation/upscale producer and existing reuse. Historical NULL means
+not retained; a linked missing/corrupt file means unavailable. A valid paid image rejected for aspect,
+whole-frame, or density policy has no successful node execution today. Retaining those purchased
+images requires an explicit non-activated attempt/outcome record with provenance and reachability;
+publishing an orphan or inventing a dummy working image is not that contract. This second boundary
+remains required planning/implementation work, not implicitly satisfied by successful-execution links.
+Corrupt/non-image response bodies are not image artifacts with invented dimensions.
+
+Verify exact bytes and distinct original/working dimensions, same-response deduplication, undo/history
+reachability, pre-migration absence, backup/restore with intact/missing/corrupt files, and publication
+or revision-conflict failures through real command flows with zero automatic provider replay.
+Metadata-only backups do not become portable image-byte backups. These checkpoints do not enable
+automatic deletion: representative undo-history measurements must separately choose count/age/storage
+limits.
 
 ## Checkpoints: one artifact per sub-slice, one variable each; all inherit the root visual gates and non-blocking review rule.
 
