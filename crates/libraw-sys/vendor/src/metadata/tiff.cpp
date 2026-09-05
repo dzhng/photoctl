@@ -607,6 +607,8 @@ int LibRaw::parse_tiff_ifd(INT64 base)
                   65535  = Pentax PEF Compressed
                  */
       tiff_ifd[ifd].comp = getint(type);
+      // Preserve file metadata separately from decoder-dispatch normalization.
+      tiff_ifd[ifd].compression_tag = tiff_ifd[ifd].comp;
       break;
     case 0x0106: /* 262, PhotometricInterpretation */
       tiff_ifd[ifd].phint = get2();
@@ -1921,6 +1923,7 @@ void LibRaw::apply_tiff()
       raw_height = tiff_ifd[i].t_height;
       tiff_bps = tiff_ifd[i].bps;
       tiff_compress = tiff_ifd[i].comp;
+      libraw_internal_data.unpacker_data.tiff_compression_tag = tiff_ifd[i].compression_tag;
       tiff_sampleformat = tiff_ifd[i].sample_format;
       data_offset = tiff_ifd[i].offset;
       data_size = tiff_ifd[i].bytes;
@@ -2018,6 +2021,7 @@ void LibRaw::apply_tiff()
         raw_height = tiff_ifd[i].t_height;
         tiff_bps = tiff_ifd[i].bps;
         tiff_compress = tiff_ifd[i].comp;
+        libraw_internal_data.unpacker_data.tiff_compression_tag = tiff_ifd[i].compression_tag;
         tiff_sampleformat = tiff_ifd[i].sample_format;
         data_offset = tiff_ifd[i].offset;
         data_size = tiff_ifd[i].bytes;

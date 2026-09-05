@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { expect, test } from "vitest";
 import sharp from "sharp";
 import { resampleDisplaySrgb } from "@photoctl/img";
+import { readRawManifests } from "@photoctl/test-harness";
 import { CirawDecoder, FileImageDecoder, LibrawDecoder, type ImageSource } from "./decoder.js";
 
 test("the CIRAW adapter returns the shared linear-image contract from the helper wire", async () => {
@@ -125,34 +126,41 @@ test("the scaled file adapter uses the native bilinear pixel route", async () =>
   }
 });
 
-test("the LibRaw adapter reports compression and returns scaled camera-space pixels", async () => {
-  const fixture = join(process.cwd(), "fixtures/a7c2.ARW");
-  const source: ImageSource = {
-    kind: "online-file",
-    path: fixture,
-    mediaType: "image/x-sony-arw",
-    w: 7008,
-    h: 4672,
-  };
+test.each(await readRawManifests())(
+  "LibRaw reports RAW compression and preserves A7C II camera pixels: $file",
+  async (manifest) => {
+    const fixture = join(process.cwd(), "fixtures", manifest.file);
+    const [w, h] = manifest.raw.defaultCrop;
+    const source: ImageSource = {
+      kind: "online-file",
+      path: fixture,
+      mediaType: "image/x-sony-arw",
+      w,
+      h,
+    };
 
-  const decoder = new LibrawDecoder();
-  expect(await decoder.probe(source)).toEqual({
-    supported: true,
-    compression: 1,
-    decoderVersion: "0.22.2-Release",
-    notes: ["LibRaw 0.22.2-Release"],
-  });
-  const image = await decoder.decode(source, { scale: 0.25 });
-  expect(image).toMatchObject({
-    w: 1752,
-    h: 1168,
-    orientationApplied: true,
-    space: "camera",
-    whiteLevel: 15_871,
-    blackLevel: 0,
-    wbPreApplied: false,
-  });
-  expect(image.camXyz?.[0]).toBeCloseTo(0.746, 4);
-  expect(image.asShotWb?.[0]).toBeCloseTo(2.3164, 3);
-  expect(image.data).toHaveLength(1752 * 1168 * 3);
-}, 30_000);
+    const decoder = new LibrawDecoder();
+    expect(await decoder.probe(source)).toEqual({
+      supported: true,
+      compression: manifest.raw.compression,
+      decoderVersion: "0.22.2-Release",
+      notes: ["LibRaw 0.22.2-Release"],
+    });
+    const image = await decoder.decode(source, { scale: 0.25 });
+    expect(image).toMatchObject({
+      w: Math.floor(w / 4),
+      h: Math.floor(h / 4),
+      orientationApplied: true,
+      space: "camera",
+      whiteLevel: 15_871,
+      blackLevel: 0,
+      wbPreApplied: false,
+    });
+    expect(image.camXyz?.[0]).toBeCloseTo(0.746, 4);
+    expect(image.asShotWb).toEqual(manifest.libraw.as_shot_wb);
+    expect(image.data).toHaveLength(Math.floor(w / 4) * Math.floor(h / 4) * 3);
+    expect(image.data.every((value) => Number.isFinite(value) && value >= 0)).toBe(true);
+    expect(image.data.some((value) => value !== image.data[0])).toBe(true);
+  },
+  30_000,
+);

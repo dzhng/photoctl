@@ -1,0 +1,53 @@
+{
+  "file": "a7c2-lossless-l.ARW",
+  "size": 45903872,
+  "sha256": "342d893bd71fd050c273df181e3039d3f12d88947b0662de5de5325c84cc449b",
+  "content_key": "ck_b74d899d976b3963",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 44146,
+      "length": 7933
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 196770,
+      "length": 444405
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 643072,
+      "length": 6394284
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2023:10:02 18:19:39",
+    "OffsetTimeOriginal": "+02:00"
+  },
+  "provenance": {
+    "repository": "https://raw.pixls.us/json/getrepository.php?set=all",
+    "url": "https://raw.pixls.us/getfile.php/6867/nice/Sony%20-%20ILCE-7CM2%20-%2014bit%20(4:3).ARW",
+    "repository_id": 6867,
+    "repository_date": "2023-10-06",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "retrieved": "2026-09-06",
+    "classification": "Lossless L: SonyRawFileType 4 is lossless compressed RAW 2; DefaultCrop 7008x4672 is Sony's full-frame L size. The repository's 4:3 label is not used to establish developed dimensions."
+  },
+  "libraw": {
+    "as_shot_wb": [2.3134765625, 1, 1.654296875]
+  },
+  "raw": {
+    "width": 7168,
+    "height": 5120,
+    "compression": 7,
+    "sonyRawFileType": 4,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
+  }
+}

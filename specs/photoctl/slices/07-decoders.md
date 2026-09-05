@@ -6,8 +6,8 @@
   decoder boundary consumes its RGB-f32 wire format, `decode --with ciraw` writes linear 16-bit TIFF,
   and `doctor` exposes availability. The normal macOS host test is deterministic. G3 itself remains
   blocked because Remote Login is disabled; the evidence and rerunnable command live in
-  [`../assets/gates/G3-ciraw-headless.md`](../assets/gates/G3-ciraw-headless.md). File-decoder scaling still uses Sharp as a
-  transitional decode path; slice 10 must replace it with the one Rust resampler named by the global contract.
+  [`../assets/gates/G3-ciraw-headless.md`](../assets/gates/G3-ciraw-headless.md). File decoding uses Sharp for codec/profile
+  handling; scaled pixels pass through the shared Rust resampler, not Sharp resizing.
 - [x] **7b LibRaw:** vendored 0.22.2 builds into the optional per-platform napi package; decode runs
   AHD into oriented, black-subtracted camera space on a native worker; probe exposes compression and
   the camera matrix. The fixture, CLI, macOS dependency, and Docker evidence live in
@@ -42,7 +42,7 @@ Every imported photo can enter the same develop/render graph. A whole-file decod
 - **7b** `crates/libraw-sys` (vendored 0.22.2, CDDL, `build.rs` glob `src/**/*.cpp`, `--disable-openmp`, libc++ dynamic, pinned
   deployment target); `photoctl-image::decode` = unpack + metadata + demosaic AHD (`user_qual=3`) only → `space:"camera"`;
   `packages/img` per-platform packages. G2: `otool -L` free of `/opt/homebrew`/libomp; `|camXyz[0] − 0.7460| < 5e-4`; Docker builds it.
-  `probe()` reports the TIFF compression tag (OPEN Lossless-L).
+  `probe()` reports the original selected RAW IFD's TIFF compression tag, not LibRaw's normalized decoder-dispatch code.
 - **7c** `photoctl-image::develop::front` = levels → WB → cam_xyz→Rec.2020 (runs only for `space:"camera"`); TRC + `sRGB2014.icc`
   at the display stage. `wb oracle <id>` (three-way embedded/CIRAW/LibRaw). G4 contract, set now: mean ΔE00 ≤ 2.0 and p95 ≤ 5.0
   over a 64×64 patch grid, excluding patches where either decoder's Y > 0.9. The explicit linear-TIFF probe embeds the canonical
@@ -66,6 +66,19 @@ scene-linear Rec.2020 and the same result shape), `decoder-libraw.test.ts` (dims
 manifest rows), `decoder-unavailable.test.ts` (explicit adapter request fails; automatic photo rendering falls back);
 `linear-tiff-profile.test.ts` proves external readers see the same linear Rec.2020 space reported by the envelope.
 `cargo test -p libraw-sys`.
+
+The committed manifests now cover uncompressed, lossless-L and lossy A7C II RAWs. Lossless-L is established from its original
+SonyRawFileType and full-resolution default crop, not the download label. [Fixture provenance](../../../fixtures/README.md)
+owns the CC0 sources, immutable hashes and remaining M/S gap. The real lossless probe exposed a 7→6 metadata regression:
+LibRaw normalizes its mutable compression field while selecting a decoder. The existing per-IFD parser now retains the file
+tag separately and carries it with the selected RAW frame; decoder dispatch and pixel output stay unchanged. This small
+vendored patch must survive upstream source updates and requires a full native rebuild. Per-manifest adapter tests pin
+compression, dimensions, matrix, white balance and finite nonflat camera pixels; the public CLI suite
+imports and writes linear TIFFs for the same inventory. This is compression coverage, not M/S, headless CIRAW, real-drive or
+photographic-quality acceptance.
+
+[Exact pixel evidence](../assets/gates/libraw-compression.json) preserves same-host pre/post equality. The existing Linux
+decoder produces different whole-buffer hashes from macOS, so those hashes are not a portable default-test contract.
 
 ## Delegated: f32 wire format Swift→TS; cmake vs `cc`.
 ## Checkpoints: 7b — `wb oracle` framing/orientation only; 7c — accept G4 tolerance.

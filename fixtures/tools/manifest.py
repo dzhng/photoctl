@@ -25,7 +25,7 @@ for match in re.finditer(b"\\xff\\xd8\\xff",data):
 endian = "<" if data[:2] == b"II" else ">"
 u16=lambda offset: struct.unpack_from(endian+"H",data,offset)[0]
 u32=lambda offset: struct.unpack_from(endian+"I",data,offset)[0]
-queue=[u32(4)]; seen=set()
+queue=[u32(4)]; seen=set(); raw=None
 while queue:
     ifd=queue.pop()
     if ifd in seen or ifd+2 > len(data): continue
@@ -35,7 +35,7 @@ while queue:
         entry=ifd+2+index*12
         if entry+12 > len(data): break
         tag,kind,nvalues=u16(entry),u16(entry+2),u32(entry+4)
-        value=u32(entry+8)
+        value=u16(entry+8) if kind == 3 and nvalues == 1 else u32(entry+8)
         entries[tag]=(kind,nvalues,value)
         if tag in (0x14a,0x8769):
             offsets=[value] if nvalues == 1 else [u32(value+i*4) for i in range(nvalues)]
@@ -45,6 +45,15 @@ while queue:
         try: width,height=jpeg_dimensions(data[offset:offset+length])
         except ValueError: pass
         else: previews.append({"width":width,"height":height,"offset":offset,"length":length})
+    if 0x7000 in entries:
+        def values(tag):
+            kind,count,value=entries[tag]
+            if count == 1: return [value]
+            if kind != 4: raise ValueError("expected LONG array in RAW metadata")
+            return [u32(value+i*4) for i in range(count)]
+        raw={"width":values(0x100)[0],"height":values(0x101)[0],
+             "compression":values(0x103)[0],"sonyRawFileType":values(0x7000)[0],
+             "defaultCrop":values(0xc620)}
     next_at=ifd+2+count*12
     if next_at+4 <= len(data) and u32(next_at): queue.append(u32(next_at))
 wanted={(160,120),(1616,1080),(7008,4672)}
@@ -56,12 +65,10 @@ def find_ascii(pattern):
     found=re.search(pattern,data)
     if not found: raise ValueError(f"metadata not found: {pattern!r}")
     return found.group().decode("ascii")
-manifest={"file":path.name,"size":size,"sha256":hashlib.sha256(data).hexdigest(),"content_key":content_key,"previews":previews,"exif":{"DateTimeOriginal":find_ascii(rb"20\d\d:\d\d:\d\d \d\d:\d\d:\d\d"),"OffsetTimeOriginal":find_ascii(rb"[+-]\d\d:\d\d")}}
+if raw is None: raise ValueError("Sony RAW SubIFD metadata not found")
+manifest={"file":path.name,"size":size,"sha256":hashlib.sha256(data).hexdigest(),"content_key":content_key,"previews":previews,"exif":{"DateTimeOriginal":find_ascii(rb"20\d\d:\d\d:\d\d \d\d:\d\d:\d\d"),"OffsetTimeOriginal":find_ascii(rb"[+-]\d\d:\d\d")},"raw":raw}
 out=path.with_suffix(".json")
-# Subject annotations are authored from the image, not inferred by this byte probe.
-if out.exists():
-    previous=json.loads(out.read_text())
-    if previous.get("sha256") == manifest["sha256"] and "sam_probes" in previous:
-        manifest["sam_probes"]=previous["sam_probes"]
-out.write_text(json.dumps(manifest,indent=2)+"\n")
+# Preserve authored provenance and behavioral probes, not just measured file facts.
+authored=json.loads(out.read_text()) if out.exists() else {}
+out.write_text(json.dumps({**authored,**manifest},indent=2)+"\n")
 print(out)

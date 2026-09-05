@@ -1,0 +1,53 @@
+{
+  "file": "a7c2-lossy.ARW",
+  "size": 40185856,
+  "sha256": "3c1214b447b29fafd32b3a4c0a873362bcd516978037c77c31009bb598938fbc",
+  "content_key": "ck_994952a4297dc6bb",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 44146,
+      "length": 7754
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 192674,
+      "length": 438080
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 630784,
+      "length": 6547892
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2023:10:02 18:20:23",
+    "OffsetTimeOriginal": "+02:00"
+  },
+  "provenance": {
+    "repository": "https://raw.pixls.us/json/getrepository.php?set=all",
+    "url": "https://raw.pixls.us/getfile.php/6868/nice/Sony%20-%20ILCE-7CM2%20-%2014bit%20(3:2).ARW",
+    "repository_id": 6868,
+    "repository_date": "2023-10-06",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "retrieved": "2026-09-06",
+    "classification": "Lossy compressed: SonyRawFileType 2 and RAW Compression 32767 agree with the repository's explicit lossy compression label."
+  },
+  "libraw": {
+    "as_shot_wb": [2.310546875, 1, 1.65625]
+  },
+  "raw": {
+    "width": 7040,
+    "height": 4688,
+    "compression": 32767,
+    "sonyRawFileType": 2,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
+  }
+}

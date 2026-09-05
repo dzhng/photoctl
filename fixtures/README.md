@@ -6,6 +6,8 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | File | Kind | Proves |
 |---|---|---|
 | `a7c2.ARW` | known-good | Sony ILCE-7CM2, uncompressed ARW, 7008×4672, `OffsetTimeOriginal +02:00`, embedded JPEGs at 160×120 / 1616×1080 / 7008×4672. Decode, locator, content key, timezone rule, preview tiers, identity export. |
+| `a7c2-lossless-l.ARW` | known-good, CC0 | Full-resolution Sony lossless-L RAW decodes; its stored Compression=7 survives LibRaw's internal dispatch normalization. |
+| `a7c2-lossy.ARW` | known-good, CC0 | Sony lossy compressed RAW (Compression=32767) preserves the same camera-space decoder contract. |
 | `libraries/schema-v1.pgsql` | known-good | A real pgDump of the settings-only schema upgrades without losing library `0199a7c2-0000-7000-8000-000000000001` or its cache/daemon settings. |
 | `libraries/schema-v2.pgsql` | known-good | The current photo, volume, locator, and pinned-cache schema preserves the `a7c2` fixture facts. |
 | `libraries/schema-v3.pgsql` | known-good | The daemon settings and exact tag identity survive later schema upgrades. |
@@ -29,9 +31,22 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `tools/drive.mjs` | generator | `fixtures:drive -- --count N --out DIR` creates deterministic tail-distinct ARW copies and matching Classic-style sidecars. |
 | `tools/volume.mjs` | host generator | `fixtures:volume -- --path FILE --mount DIR` creates and attaches a macOS APFS disk image for real offline-volume checks. |
 
-Wanted (see [the photoctl spec](../specs/photoctl/README.md#known-unknowns-open-on-the-map-and-where-they-land)): one A7C II frame per compression mode (Lossless L / M / S, lossy), a portrait-orientation frame, and a truncated ARW (known-bad: import must report `unsupported`, never crash).
+Wanted (see [the photoctl spec](../specs/photoctl/README.md#known-unknowns-open-on-the-map-and-where-they-land)): A7C II Lossless M / S frames, a portrait-orientation frame, and a truncated ARW (known-bad: import must report `unsupported`, never crash). Compression coverage does not substitute for real-drive acceptance.
 
-Generate the independent machine-readable facts with `python3 fixtures/tools/manifest.py`.
+Each ARW's adjacent JSON is its manifest. Generate independent file/RAW-IFD facts with `python3 fixtures/tools/manifest.py <file>`;
+authored provenance and behavioral baselines survive regeneration. `raw` records bytes from the selected Sony RAW SubIFD,
+not decoder output. `libraw` separately pins decoded white-balance metadata. Exact decoded-pixel comparisons are scoped to
+their measured host in the [compression evidence](../specs/photoctl/assets/gates/libraw-compression.json), not treated as
+portable hashes or an independent photographic-quality oracle. Decoder suites discover the committed ARWs
+and consume these same manifests rather than maintaining another compression-mode inventory.
+
+The new compressed frames come from [raw.pixls.us](https://raw.pixls.us/), whose repository rows explicitly mark them CC0;
+their manifests retain source URLs, repository dates, license and SHA-256. Together they add 86,089,728 bytes (~82.1 MiB) to
+git. Keeping the originals makes decoder coverage offline and reproducible; resized/re-encoded substitutes cannot exercise
+the RAW codecs. SonyRawFileType=4 identifies lossless compressed RAW 2 according to [ExifTool's tag documentation](https://exiftool.org/TagNames/EXIF.html);
+the 7008×4672 default crop matches [Sony's full-frame L specification](https://www.sony.com/electronics/support/e-mount-body-ilce-7-series/ilce-7cm2/specifications).
+The repository's 4:3 label is not proof of the developed aspect ratio or M/S coverage; the crop is read from the file.
+
 The `sam_probes` annotations in `a7c2.json` are authored from visible subjects, not model outputs.
 Remeasurement preserves them only while the image SHA-256 is unchanged. Their area bands test coarse
 selection, not edge quality; [photographic evidence](../specs/photoctl/assets/sam-photographic/README.md)

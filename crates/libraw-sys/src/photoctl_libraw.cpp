@@ -8,7 +8,10 @@
 class PhotoctlLibRaw final : public LibRaw {
 public:
   unsigned compression() const {
-    return libraw_internal_data.unpacker_data.tiff_compress;
+    const auto &metadata = libraw_internal_data.unpacker_data;
+    // Non-TIFF readers have no original TIFF tag; retain their reported value.
+    return metadata.tiff_compression_tag ? metadata.tiff_compression_tag
+                                         : metadata.tiff_compress;
   }
 
   int oriented_index(int row, int column) { return flip_index(row, column); }

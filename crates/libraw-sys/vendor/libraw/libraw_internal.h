@@ -183,6 +183,7 @@ typedef struct
   unsigned tiff_samples;
   unsigned tiff_bps;
   unsigned tiff_compress;
+  unsigned tiff_compression_tag;
   unsigned tiff_sampleformat;
   unsigned zero_after_ff;
   unsigned tile_width, tile_length, load_flags;
@@ -229,6 +230,7 @@ struct decode
 struct tiff_ifd_t
 {
   int t_width, t_height, bps, comp, phint, t_flip, samples, extrasamples;
+  unsigned compression_tag;
   INT64 offset, bytes;
   int t_tile_width, t_tile_length, sample_format, predictor;
   int rows_per_strip;

@@ -42,5 +42,18 @@
   "exif": {
     "DateTimeOriginal": "2023:10:02 18:18:37",
     "OffsetTimeOriginal": "+02:00"
+  },
+  "libraw": {
+    "as_shot_wb": [2.31640625, 1, 1.6513671875]
+  },
+  "raw": {
+    "width": 7040,
+    "height": 4688,
+    "compression": 1,
+    "sonyRawFileType": 0,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
   }
 }

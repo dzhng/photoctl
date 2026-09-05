@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-06",
+  "scope": "Selected RAW IFD Compression metadata and unchanged decoding for the three committed A7C II modes",
+  "libraw_version": "0.22.2-Release",
+  "metadata_regression": {
+    "fixture": "a7c2-lossless-l.ARW",
+    "independent_raw_ifd_tag": 7,
+    "before_public_probe": 6,
+    "after_public_probe": 7,
+    "cause": "Upstream parse_tiff_ifd changes comp=7 to dispatch comp=6 after parsing the Sony lossless JPEG header; the old adapter exposed the mutable dispatch value.",
+    "fix": "Retain the original tag in existing per-IFD metadata and carry it with selected RAW IFD metadata; no decode dispatch or pixel arithmetic changes."
+  },
+  "macos_arm64_same_host_before_after": {
+    "scale": 0.25,
+    "pixel_encoding": "camera RGB-f32 native array bytes",
+    "exactly_equal": true,
+    "hashes": {
+      "a7c2.ARW": "a9eb23d37780943373108f00b04e5e6c8ebda82ad7fa7459eb1f17af54c4e2a1",
+      "a7c2-lossless-l.ARW": "15c3157a9116239c2ebc7dd86831b03888620aff2cc4ee9866ebdcef05526155",
+      "a7c2-lossy.ARW": "12af9b3be9299354c7d9971bf0447130463d717062efb1611ef333d3c3342d35"
+    }
+  },
+  "linux_arm64_portability_falsification": {
+    "image": "sha256:bee72a605b90d670811bec80c3731e5c16cb7557f520b81b8a03f11c26ebca18",
+    "metadata_patch_loaded": false,
+    "scale": 0.25,
+    "hashes": {
+      "a7c2.ARW": "35b5def768cee92cf61f7f6f072cf7260bb4e9b314e52c2a9287d9acf4726bf8",
+      "a7c2-lossless-l.ARW": "6f9f7fb2c116c04dcdbfa008a2fd22798245b7b27bd7af7c11f7616edec5a442",
+      "a7c2-lossy.ARW": "e4dbf1e6f238df62e692723485ed2442f8cb717fae13993afc4c33613b082627"
+    },
+    "interpretation": "Existing Linux output differs from macOS. Exact hashes are not asserted as a portable default contract. No corrected-Linux result is claimed without rebuilding that addon."
+  },
+  "test_falsification": {
+    "original_compression_getter": "Real lossless decoder probe failed: expected7, received6; corrected native build passed while preserving1/32767 and all same-host pixel hashes.",
+    "manifest_overwrite": "Discarding authored fields made provenance preservation fail with undefined instead of the authored source.",
+    "manifest_integrity": "Changing the lossless manifest SHA-256 first character made the exact-original integrity test fail; restoring the real digest passed.",
+    "non_tiff_getter": "Independent review found readers outside apply_tiff have no preserved tag. A C++ probe instantiated the actual PhotoctlLibRaw getter and set its metadata through existing get_internal_data_pointer(): dispatch=32767/tag=0 failed on the tag-only getter and passed after fallback; dispatch=6/tag=7 still returned7. This is getter-selection evidence, not real non-TIFF decode verification.",
+    "cli_wrong_width": "Returning image.w+1 made the real lossless CLI decode fail: expected1752, received1753."
+  },
+  "reproduction": "cargo build -p photoctl-image -j1; node scripts/package-native.mjs; bun run typecheck; bunx vitest run apps/cli/src/decoder-libraw.test.ts packages/render/src/decoder.test.ts fixtures/tools/manifest.test.ts --maxWorkers=1",
+  "limits": "No lossless-M/S, real-drive, headless CIRAW, photographic quality, or cross-platform bitwise-equivalence claim. Fixture provenance and immutable original hashes live in the adjacent per-ARW manifests."
+}
