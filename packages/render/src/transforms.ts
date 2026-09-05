@@ -73,6 +73,21 @@ export function composeTransformMatrices(
   ];
 }
 
+export function invertTransformMatrix(matrix: TransformMatrix): TransformMatrix {
+  const determinant = matrix[0] * matrix[3] - matrix[1] * matrix[2];
+  if (determinant === 0 || !Number.isFinite(determinant)) {
+    throw new Error("Transform matrix must have a finite inverse");
+  }
+  return [
+    matrix[3] / determinant,
+    -matrix[1] / determinant,
+    -matrix[2] / determinant,
+    matrix[0] / determinant,
+    (matrix[2] * matrix[5] - matrix[3] * matrix[4]) / determinant,
+    (matrix[1] * matrix[4] - matrix[0] * matrix[5]) / determinant,
+  ];
+}
+
 export function transformPoint(matrix: TransformMatrix, point: TransformPoint): TransformPoint {
   return {
     x: cleanZero(matrix[0] * point.x + matrix[2] * point.y + matrix[4]),

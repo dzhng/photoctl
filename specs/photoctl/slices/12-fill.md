@@ -180,11 +180,10 @@ One canonical branch descriptor now owns the topology, exact placement/composite
 provenance used by retry and refresh. Public results extend the established fill result with the selected old node and refreshed node,
 while graph, source, density, exact-composite, and ordered execution/reuse facts keep their existing meanings. Provider configuration
 remains consent even when an adapter is injected: an explicit upscale refresh with no configured stored model changes no revision.
-Generation refresh rejects a fill whose input was already transformed, before paid work or revision mutation, because rebinding that
-mask/crop geometry directly to the document base would address the wrong pixels.
+Generation refresh originally refused a fill whose input was already transformed; the 12d2 affine checkpoint below supersedes that
+temporary boundary.
 
-Transform-driven density reevaluation, historical upscale-cache selection, person movement, and live adapters remain 12d2 work.
-Its affine branch rebasing replaces the transformed-input refusal.
+Person movement and live adapters remain after the completed 12d2 keyless checkpoints.
 
 ## 12d workbench fill checkpoint — 2026-09-05
 
@@ -217,3 +216,24 @@ master hash/mtime jointly prove later H2/H3 shows and export do not revisit a pr
 difference measurements. Its flat fake fill validates state and cache mechanics only; photographic sharpness and mask-edge texture
 continuity remain owned by the named
 workbench/live visual gates.
+
+## 12d2 transform-density checkpoint — 2026-09-05
+
+A generated layer transform derives required sampling density from its transformed crop. Existing pinned direct upscale children of
+the exact generation are considered before external work, with the smallest sufficient matching artifact winning. A new request uses
+the original generation artifact—not an earlier upscale, resample, or composite—and chooses the smallest supported larger scale.
+Scale-down, move, flip, and quarter-turn operations reuse pinned pixels without contacting a provider; later scale-up can reuse the
+same historical result even after it is no longer active. Provider availability gates only new calls, not offline cache reuse.
+Changing only automatic-upscale intent on an otherwise reusable fill re-pins the same generation artifact under the current recipe;
+it does not repeat paid generation.
+
+The shared branch descriptor and rebuilder reduce legacy and affine fill ancestry to one intrinsic-generation placement plus one
+current layer transform. Resample-v2 owns intrinsic crop-to-oriented-base placement, while the permanent mask receives the same layer
+matrix before strict composite. Generation refresh reconstructs base and mask together in the original generation-input space, so
+pre-fill transforms no longer require 12d1's refusal. Generation refresh discards obsolete develop compensation; upscale-only refresh
+and transforms preserve it.
+
+If a larger upscale fails, the transform still commits with the best prior valid external artifact and returns soft success with
+`density_satisfied:false` and `upscale_failed`; no failed node or execution enters the graph. The layer-transform response exposes the
+shared upscale record for generated layers and `null` for other layers. Vacancy/person movement, the agent-preview visual journey,
+workbench fill, and live adapters remain outside this checkpoint.

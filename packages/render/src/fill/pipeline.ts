@@ -20,7 +20,7 @@ import {
   type NodeDraft,
   type NodeReference,
 } from "../graph/store.js";
-import type { ExternalExecutionProvenance } from "../graph/types.js";
+import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
 import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import type { Image16 } from "../source-render.js";
 import { planFillCrop } from "./crop.js";
@@ -196,6 +196,57 @@ export async function fillLayerStrict(
       returnedDimensions: { w: generated.w, h: generated.h },
       warnings: [],
     };
+    if (!reusable.generationRecipe.intentMatches) {
+      const executionId = newExecutionId();
+      const stored = reusable.generationRecipe.parameters;
+      const storedRequest = stored.request as Record<string, JsonValue>;
+      const parameters = {
+        ...stored,
+        request: {
+          ...storedRequest,
+          execution_id: executionId,
+          upscale: {
+            enabled: request.upscale.policy.upscale.enabled,
+            adapter: request.upscale.adapter?.id ?? null,
+            adapter_version: request.upscale.adapter?.version ?? null,
+            model: request.upscale.policy.upscale.model,
+            prompt_id: request.upscale.prompt.id,
+            prompt_version: request.upscale.prompt.version,
+            original_prompt: request.upscale.prompt.original,
+            derived_prompt: request.upscale.prompt.derived,
+          },
+        },
+      } as JsonValue;
+      generationDraft = {
+        localKey: "generation",
+        kind: "generate",
+        recipeVersion: reusable.generationRecipe.recipeVersion,
+        parameters,
+        inputs: [{ nodeId: reusable.generationRecipe.inputNodeId }],
+      };
+      const recipe = recipeHash(
+        canonicalNodeRecipe({
+          kind: "generate",
+          recipeVersion: generationDraft.recipeVersion,
+          parameters,
+          inputNodeIds: [reusable.generationRecipe.inputNodeId],
+        }),
+      );
+      generationNodeId = logicalNodeId(recipe) as `node_${string}`;
+      generationExecution = {
+        node: { localKey: "generation" },
+        executionId,
+        evaluationHash: evaluationHash({
+          nodeRecipeHash: recipe,
+          kind: "generate",
+          recipeVersion: generationDraft.recipeVersion,
+          inputArtifactHashes: reusable.generationRecipe.inputArtifactHashes,
+        }),
+        outputArtifactHash: reusable.artifact.artifactHash,
+        inputArtifactHashes: reusable.generationRecipe.inputArtifactHashes,
+        provider,
+      };
+    }
   } else {
     const cropPng = await cropImagePng(base, crop);
     const maskPng = await cropMaskPng(mask, crop);
@@ -239,6 +290,16 @@ export async function fillLayerStrict(
           tier: request.sourceContext.tier,
           pixel_scale: request.sourceContext.pixelScale,
           resolution_limited: request.sourceContext.resolutionLimited,
+        },
+        upscale: {
+          enabled: request.upscale.policy.upscale.enabled,
+          adapter: request.upscale.adapter?.id ?? null,
+          adapter_version: request.upscale.adapter?.version ?? null,
+          model: request.upscale.policy.upscale.model,
+          prompt_id: request.upscale.prompt.id,
+          prompt_version: request.upscale.prompt.version,
+          original_prompt: request.upscale.prompt.original,
+          derived_prompt: request.upscale.prompt.derived,
         },
         ...(request.seed === undefined ? {} : { seed: request.seed }),
       },

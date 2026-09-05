@@ -55,9 +55,9 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 
 - **Active wave:** Slice 12a owns keyless remove/prompt generation through the fake gateway, immutable provider execution,
   intrinsic provider dimensions, and strict base-pixel composite; 12b owns the pure density plan; 12c owns policy, the guarded prompt,
-  configured execution, and generation-preserving failure/retry; 12d1 owns explicit branch refresh. Continue with 12d2
-  transform-driven density maintenance and person-move/agent-preview integration. The fill workbench contract is complete, while its
-  photographic screenshot verdict remains part of the agent-preview gate. Slice 11 still needs the hosted SAM weights, real point probes, G6,
+  configured execution, and generation-preserving failure/retry; 12d1 owns explicit branch refresh; and 12d2 owns transform-driven
+  density maintenance, the fill workbench, and the keyless agent-preview journey. Continue with 12d3 person-move integration and
+  the remaining photographic/live evidence. Slice 11 still needs the hosted SAM weights, real point probes, G6,
   and `wb masks`; fake masks are not evidence for those gates. Slice 09c's live multimodal request also remains provisional until
   the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
@@ -83,7 +83,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
-- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [ ] 12d2 transform density/person move — `slices/12-fill.md`
+- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [ ] 12d3 person move/agent preview — `slices/12-fill.md`
 - [ ] 13a reimagine/relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`

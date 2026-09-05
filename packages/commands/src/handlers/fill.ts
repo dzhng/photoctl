@@ -14,6 +14,8 @@ import {
   resolveUpscalePolicy,
   RevisionConflictError,
   SourceEvaluationError,
+  transformFillLayer,
+  type Transform,
   type FillGenerationDependencies,
   type ImageSource,
 } from "@photoctl/render";
@@ -163,6 +165,53 @@ export type FillDependencies = FillGenerationDependencies & {
   upscaleSettings?: import("@photoctl/render").UpscalePolicySettings;
   sourceContext?: import("@photoctl/render").SourceContextDensity;
 };
+
+export async function executeFillTransform(
+  handle: LibraryHandle,
+  photoId: string,
+  layer: string,
+  transform: Transform,
+  relative: boolean,
+  frame: { w: number; h: number },
+  providedDependencies?: FillDependencies,
+) {
+  const document = await loadActiveDocument(handle, photoId);
+  if (!document) throw new Error("The active photo document is missing");
+  const layerId = await resolveLayerId(handle, photoId, layer);
+  const selected = document.layers.find(({ id }) => id === layerId);
+  if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
+  const branch = await describeFillBranch(handle, photoId, selected.contentNodeId);
+  if (!branch) return undefined;
+  const registry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
+  const settings = providedDependencies?.upscaleSettings ?? (await readProviderSettings(handle));
+  const identity = branch.upscaleIdentity;
+  const configured =
+    identity !== undefined && settings.providers?.upscale?.[identity.model]?.configured === true;
+  const selectedAdapter = identity && configured ? registry.get(identity.model) : undefined;
+  return await transformFillLayer(handle, handle.path, {
+    photoId,
+    layer,
+    transform,
+    relative,
+    frame,
+    source:
+      providedDependencies?.source ??
+      (async () => {
+        throw new Error("Generated transform unexpectedly evaluated the current source");
+      }),
+    ...(selectedAdapter
+      ? {
+          upscaleAdapter: {
+            id: selectedAdapter.id,
+            version: selectedAdapter.version,
+            supportedScales: selectedAdapter.supportedScales,
+            limits: selectedAdapter.limits,
+            execute: async (input) => await registry.execute(selectedAdapter, input),
+          },
+        }
+      : {}),
+  });
+}
 
 async function withFillSource<T>(
   handle: LibraryHandle,

@@ -1,4 +1,5 @@
 import { PhotoctlError, type Warning } from "@photoctl/protocol";
+import { transformMaskPixels, transformPixels } from "@photoctl/img";
 import {
   normalizeArtifact,
   publishArtifact,
@@ -32,7 +33,9 @@ import {
   decodeExternalImage,
   image16Png,
 } from "./external-pixels.js";
+import { strictEffectiveMask } from "./fit.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./pipeline.js";
+import { rebuildFillBranch } from "./rebuild.js";
 
 export interface RefreshFillRequest {
   photoId: string;
@@ -58,11 +61,6 @@ export async function refreshFillLayer(
   const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
   if (!branch) throw new Error("Layer does not contain a refreshable fill branch");
   const target = resolveFillRefreshTarget(branch, request.from);
-  if (target.kind === "generate" && branch.baseAncestry.some(({ kind }) => kind === "transform")) {
-    throw new Error(
-      "Generation refresh cannot rebase a transformed fill input until affine branch rebasing is available",
-    );
-  }
   const nodes: NodeDraft[] = [];
   const artifacts: Awaited<ReturnType<typeof publishArtifact>>[] = [];
   const executions: PreparedNodeExecution[] = [];
@@ -78,10 +76,10 @@ export async function refreshFillLayer(
       database,
       libraryPath,
       request,
-      branch.generation,
+      branch,
       branch.crop,
       document.roots.base,
-      branch.maskNodeId,
+      branch.permanentMaskNodeId,
     );
     nodes.push(refreshed.node);
     artifacts.push(refreshed.artifact);
@@ -168,31 +166,24 @@ export async function refreshFillLayer(
     ).artifact;
   }
 
-  const resampleKey = "refresh-resample";
-  nodes.push(cloneNode(branch.resample, resampleKey, [placementReference]));
-  const compositeKey = "refresh-mask-composite";
-  nodes.push(
-    cloneNode(branch.composite, compositeKey, [
-      { nodeId: generationRefreshed ? document.roots.base : branch.baseNodeId },
-      { localKey: resampleKey },
-      { nodeId: branch.maskNodeId },
-    ]),
-  );
-  let contentReference: NodeReference = { localKey: compositeKey };
-  const descendants = generationRefreshed
-    ? branch.descendants.filter(({ kind }) => kind !== "delta")
-    : branch.descendants;
-  for (const [index, descendant] of descendants.toReversed().entries()) {
-    const localKey = `refresh-descendant-${index}`;
-    nodes.push(cloneNode(descendant, localKey, [contentReference]));
-    contentReference = { localKey };
-  }
+  const rebuilt = rebuildFillBranch({
+    branch,
+    key: "refresh",
+    frame: branch.frame,
+    baseNodeId: generationRefreshed ? document.roots.base : branch.baseNodeId,
+    placement: placementReference,
+    placementDimensions: { w: placementArtifact.w, h: placementArtifact.h },
+    generationDimensions: branch.generationDimensions,
+    matrix: branch.currentMatrix,
+    preserveCompensations: !generationRefreshed,
+  });
+  nodes.push(...rebuilt.nodes);
   const layers: RevisionLayerDraft[] = document.layers.map((layer) => ({
     layer: { layerId: layer.id },
     name: layer.name,
     z: layer.z,
-    contentNode: layer.id === layerId ? contentReference : { nodeId: layer.contentNodeId },
-    maskNode: { nodeId: layer.maskNodeId },
+    contentNode: layer.id === layerId ? rebuilt.content : { nodeId: layer.contentNodeId },
+    maskNode: layer.id === layerId ? rebuilt.mask : { nodeId: layer.maskNodeId },
     opacity: layer.opacity,
     blend: layer.blend,
     enabled: layer.enabled,
@@ -257,7 +248,7 @@ export async function refreshFillLayer(
       warnings: warnings.filter(({ code }) => code.startsWith("upscale_")),
       reused: upscaleReused,
     },
-    compositeNode: committed.nodes[compositeKey]!.id as `node_${string}`,
+    compositeNode: committed.nodes[rebuilt.compositeKey]!.id as `node_${string}`,
     executions: [
       {
         kind: "generate" as const,
@@ -302,11 +293,12 @@ async function executeGenerationRefresh(
   database: GraphDatabase,
   libraryPath: string,
   request: RefreshFillRequest,
-  generation: FillBranchDescriptor["generation"],
+  branch: FillBranchDescriptor,
   cropRect: FillBranchDescriptor["crop"],
   baseNodeId: string,
   maskNodeId: string,
 ) {
+  const generation = branch.generation;
   const parameters = objectParameters(generation.parameters, "generate");
   const storedRequest = objectParameters(parameters.request, "generate request");
   const operation = storedRequest.operation;
@@ -332,14 +324,37 @@ async function executeGenerationRefresh(
       source: request.source,
     }),
   ]);
-  const base = await readArtifactImage(
+  let base = await readArtifactImage(
     baseEvaluation.artifact.path,
     baseEvaluation.artifact.artifactHash,
   );
-  const mask = await readArtifactMask(
+  let mask = await readArtifactMask(
     maskEvaluation.artifact.path,
     maskEvaluation.artifact.artifactHash,
   );
+  if (!identityMatrix(branch.generationInputMatrix)) {
+    const [transformedBase, transformedMask] = await Promise.all([
+      transformPixels(
+        Float32Array.from(base.data, (value) => value / 65_535),
+        base.w,
+        base.h,
+        3,
+        base.w,
+        base.h,
+        branch.generationInputMatrix,
+        "lanczos3",
+      ),
+      transformMaskPixels(mask.data, mask.w, mask.h, mask.w, mask.h, branch.generationInputMatrix),
+    ]);
+    base = {
+      ...base,
+      data: Uint16Array.from(transformedBase, (value) =>
+        Math.round(Math.max(0, Math.min(1, value)) * 65_535),
+      ),
+    };
+    mask = { ...mask, data: transformedMask };
+  }
+  mask = strictEffectiveMask(mask);
   const form = request.dependencies.adapter.buildEdit(
     operation,
     { png: await cropImagePng(base, cropRect), w: cropRect.w, h: cropRect.h },
@@ -377,6 +392,9 @@ async function executeGenerationRefresh(
         pixel_scale: request.sourceContext.pixelScale,
         resolution_limited: request.sourceContext.resolutionLimited,
       },
+      ...(!identityMatrix(branch.generationInputMatrix)
+        ? { input_matrix: [...branch.generationInputMatrix] }
+        : {}),
     },
   } as JsonValue;
   const node: NodeDraft = {
@@ -430,6 +448,10 @@ async function executeGenerationRefresh(
     execution,
     warnings: normalized.warnings,
   };
+}
+
+function identityMatrix(matrix: readonly number[]): boolean {
+  return matrix.every((value, index) => value === [1, 0, 0, 1, 0, 0][index]);
 }
 
 async function executeUpscaleRefresh(
@@ -546,21 +568,6 @@ async function executeUpscaleRefresh(
     execution,
     provider,
     warnings: result.warnings,
-  };
-}
-
-function cloneNode(
-  node: { kind: NodeDraft["kind"]; recipeVersion: number; parameters: unknown | null },
-  localKey: string,
-  inputs: NodeReference[],
-): NodeDraft {
-  if (node.parameters === null) throw new Error("Fill branch parameters are unavailable");
-  return {
-    localKey,
-    kind: node.kind,
-    recipeVersion: node.recipeVersion,
-    parameters: node.parameters as JsonValue,
-    inputs,
   };
 }
 

@@ -37,4 +37,6 @@ export * from "./fill/density.js";
 export * from "./fill/fit.js";
 export * from "./fill/pipeline.js";
 export * from "./fill/refresh.js";
+export * from "./fill/rebuild.js";
+export * from "./fill/transform-density.js";
 export * from "./fill/upscale-policy.js";

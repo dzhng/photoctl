@@ -91,13 +91,6 @@ export const layerShowDataSchema = z.object({
   }),
 });
 
-export const layerTransformDataSchema = z.object({
-  ...revisionFields,
-  layer_id: z.uuid(),
-  matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
-  layer: layerSummarySchema,
-});
-
 export const layerSetDataSchema = z.object({
   ...revisionFields,
   layer_id: z.uuid(),
@@ -164,6 +157,13 @@ const fillUpscaleSchema = z.object({
       id: z.string().optional(),
     }),
   ),
+});
+export const layerTransformDataSchema = z.object({
+  ...revisionFields,
+  layer_id: z.uuid(),
+  matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
+  layer: layerSummarySchema,
+  upscale: fillUpscaleSchema.nullable(),
 });
 const fillCompositeSchema = z.object({ node: nodeId, unmasked_bit_exact: z.literal(true) });
 const fillExecutionSchema = z.object({

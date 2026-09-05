@@ -5,6 +5,7 @@ import {
   describeFillBranch,
   loadActiveDocument,
 } from "@photoctl/render";
+import sharp from "sharp";
 import { describe, expect, test } from "vitest";
 import { fillUpscaleFixture, fixtureCommand, success } from "./fill-upscale-fixture.js";
 
@@ -254,7 +255,7 @@ describe.sequential("fill branch refresh", () => {
     }
   });
 
-  test("generation refresh refuses a transformed pre-fill input before paid work", async () => {
+  test("generation refresh rebases a transformed pre-fill input onto current pixels", async () => {
     const fixture = await fillUpscaleFixture({ generationMode: "smallerdims" });
     try {
       const segmented = success(
@@ -281,6 +282,16 @@ describe.sequential("fill branch refresh", () => {
         ]),
       ) as { graph: { revision: string } };
       const generationCalls = fixture.generationCalls();
+      expect(fixture.generationMasks()).toHaveLength(1);
+      expect(
+        await fixtureCommand(fixture, "layer", [
+          "transform",
+          fixture.id,
+          segmented.layer_id,
+          "--dx",
+          "3",
+        ]),
+      ).toMatchObject({ ok: true });
 
       const response = await fixtureCommand(fixture, "layer", [
         "refresh",
@@ -288,10 +299,78 @@ describe.sequential("fill branch refresh", () => {
         segmented.layer_id,
       ]);
 
-      expect(response).toMatchObject({ ok: false, code: "usage" });
-      expect(fixture.generationCalls()).toBe(generationCalls);
+      expect(response).toMatchObject({ ok: true });
+      expect(fixture.generationCalls()).toBe(generationCalls + 1);
+      const [originalMask, refreshedMask] = await Promise.all(
+        fixture.generationMasks().map(async (png) => await transparentBounds(png)),
+      );
+      expect(refreshedMask).toEqual(originalMask);
       const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
-      expect(document.revisionId).toBe(filled.graph.revision);
+      expect(document.revisionId).not.toBe(filled.graph.revision);
+      const shown = success(
+        await fixtureCommand(fixture, "layer", ["show", fixture.id, segmented.layer_id]),
+      ) as { chain: { mask: Array<{ kind: string; parameters: unknown }> } };
+      expect(shown.chain.mask[0]).toMatchObject({
+        kind: "transform",
+        parameters: { matrix: [1, 0, 0, 1, 3, 0] },
+      });
+      const refreshed = layerRefreshDataSchema.parse(success(response));
+      const refreshedGeneration = success(
+        await fixtureCommand(fixture, "graph", ["node", fixture.id, refreshed.generation.node]),
+      ) as { parameters: { request: { input_matrix?: number[] } } };
+      expect(refreshedGeneration.parameters.request.input_matrix).toEqual([1, 0, 0, 1, 2, 0]);
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  test("generation refresh renormalizes placement when intrinsic dimensions change", async () => {
+    const fixture = await fillUpscaleFixture({ generationUpscale: "off" });
+    try {
+      const segmented = success(
+        await fixtureCommand(fixture, "segment", [fixture.id, "--box", "8,8,16,16"]),
+      ) as { layer_id: string };
+      success(
+        await fixtureCommand(fixture, "fill", [
+          fixture.id,
+          "--layer",
+          segmented.layer_id,
+          "--remove",
+          "--pad",
+          "0",
+        ]),
+      );
+      const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
+      const selected = document.layers.find(({ id }) => id === segmented.layer_id)!;
+      const before = (await describeFillBranch(
+        fixture.handle,
+        fixture.id,
+        selected.contentNodeId,
+      ))!;
+      fixture.replaceGenerationMode("smallerdims");
+
+      const refreshed = layerRefreshDataSchema.parse(
+        success(
+          await fixtureCommand(fixture, "layer", ["refresh", fixture.id, segmented.layer_id]),
+        ),
+      );
+      const graph = success(
+        await fixtureCommand(fixture, "graph", ["show", fixture.id, "--layer", segmented.layer_id]),
+      ) as { nodes: Array<{ id: string; kind: string; recipe_version: number }> };
+      const resample = graph.nodes.find(
+        ({ kind, recipe_version }) => kind === "resample" && recipe_version === 2,
+      )!;
+      const inspected = success(
+        await fixtureCommand(fixture, "graph", ["node", fixture.id, resample.id]),
+      ) as { parameters: { matrix: number[] } };
+      expect(inspected.parameters.matrix).toEqual([
+        before.crop.w / refreshed.generation.returned.w,
+        0,
+        0,
+        before.crop.h / refreshed.generation.returned.h,
+        before.crop.x,
+        before.crop.y,
+      ]);
     } finally {
       await fixture.close();
     }
@@ -367,3 +446,21 @@ describe.sequential("fill branch refresh", () => {
     }
   });
 });
+
+async function transparentBounds(png: Buffer) {
+  const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  let left = info.width;
+  let top = info.height;
+  let right = -1;
+  let bottom = -1;
+  for (let pixel = 0; pixel < info.width * info.height; pixel += 1) {
+    if (data[pixel * info.channels + 3]! >= 128) continue;
+    const x = pixel % info.width;
+    const y = Math.floor(pixel / info.width);
+    left = Math.min(left, x);
+    top = Math.min(top, y);
+    right = Math.max(right, x);
+    bottom = Math.max(bottom, y);
+  }
+  return { x: left, y: top, w: right - left + 1, h: bottom - top + 1 };
+}

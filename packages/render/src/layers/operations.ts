@@ -651,7 +651,7 @@ function transformMatrixFrom(parameters: JsonValue): TransformMatrix {
   ];
 }
 
-async function maskCentroid(
+export async function maskCentroid(
   database: GraphDatabase,
   libraryPath: string,
   photoId: string,

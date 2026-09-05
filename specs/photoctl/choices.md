@@ -2997,3 +2997,47 @@
   a canonical mapping for the crop, generated placement, current result, and mask.
 - **Verdict:** **Sound.** A clear refusal preserves evidence integrity and matches the existing bounded transform refusal.
 - **Confidence:** High.
+
+### Slice 12d2 — Generation recipes retain later density intent
+
+- **When:** Slice 12d2 transform-density implementation, 2026-09-05.
+- **The choice:** Every new fill generation recipe stores whether automatic upscaling is enabled plus the exact adapter, model, and
+  guarded-prompt identity, even when the first generated raster already has enough density and no upscale node is created. The
+  alternative was inferring future policy from an optional active upscale child, which loses the user's intent on the no-call path.
+  When an otherwise identical refill changes only this intent, a new immutable generation recipe pins the existing artifact and
+  provider provenance; it does not call generation again.
+- **The gap:** The earlier recipe recorded an upscale only after external execution; it did not preserve enough information to decide
+  whether a later layer enlargement should call one.
+- **The reach:** Later transforms can reevaluate density from pinned generation pixels without source access. Historical reuse remains
+  strict to the current adapter version and stored model/prompt identity, so an adapter upgrade is paid at most once per sufficient
+  direct child.
+- **Verdict:** **Sound.** Durable intent belongs with the immutable generation recipe, while paid generation reuse remains governed
+  by generation inputs rather than downstream upscale policy.
+- **Confidence:** High.
+
+### Slice 12d2 — One affine rebuild owns generated placement and mask alignment
+
+- **When:** Slice 12d2 transform-density implementation, 2026-09-05.
+- **The choice:** The shared fill branch descriptor reduces old and new ancestry to one intrinsic-generation placement and current
+  layer matrix. One rebuilder composes those values into resample-v2 and applies the same current matrix to the permanent mask.
+  Generation refresh reconstructs both base and mask in the original generation-input space before cropping. This supersedes 12d1's
+  temporary transformed-input refusal.
+- **The gap:** Transform, refresh, and pre-fill transform ancestry previously expressed geometry in different node shapes, so cloning
+  recipes could silently pair pixels and masks from different coordinate spaces.
+- **The reach:** Move, flip, quarter-turn, scale, refresh, and an intrinsic-size change now share one forward-matrix convention;
+  strict composite alignment no longer depends on duplicating an ancestry parser at each command seam.
+- **Verdict:** **Sound.** Geometry has one parser and one reconstruction owner, with paid nodes left as immutable pixel sources.
+- **Confidence:** High.
+
+### Slice 12d2 — Failed density growth preserves the best valid external artifact
+
+- **When:** Slice 12d2 transform-density implementation, 2026-09-05.
+- **The choice:** A transform that needs a larger upscale always calls from the original pinned generation. If that call fails, the
+  transform still commits using the largest valid matching direct upscale child, or the generation when none exists, and reports
+  `density_satisfied:false` with `upscale_failed`. No node or execution represents the failed attempt.
+- **The gap:** The plan required soft failure after usable generated pixels exist, but did not spell out which historical raster wins
+  when several insufficient candidates remain.
+- **The reach:** Repeated transforms never compound pixels through upscale/resample/composite ancestry, never discard a sharper prior
+  paid result, and remain usable offline when provider consent or availability disappears.
+- **Verdict:** **Sound.** The rule maximizes usable density while preserving lineage and atomic graph truth.
+- **Confidence:** High.

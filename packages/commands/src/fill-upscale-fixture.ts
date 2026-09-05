@@ -52,20 +52,22 @@ export async function fillUpscaleFixture(
     apiKey: "fixture-key",
     baseUrl: `http://127.0.0.1:${address.port}/v1`,
   });
+  let generationMode = options.generationMode;
   let generationCalls = 0;
+  const generationMasks: Buffer[] = [];
   const gateway = {
     imageEdits: async (form: FormData) => {
       generationCalls += 1;
-      if (options.generationMode) form.set("fixture_mode", options.generationMode);
+      const mask = form.get("mask");
+      if (mask instanceof Blob) generationMasks.push(Buffer.from(await mask.arrayBuffer()));
+      if (generationMode) form.set("fixture_mode", generationMode);
       return await rawGateway.imageEdits(form);
     },
   };
-  const fake = new FakeUpscaleAdapter({
-    mode: options.upscaleMode,
-    limits: options.upscaleLimits,
-  });
+  let upscaleMode = options.upscaleMode;
   let upscaleCalls = 0;
   const createRegistry = (version: string) => {
+    const fake = new FakeUpscaleAdapter({ mode: upscaleMode, limits: options.upscaleLimits });
     const registry = new UpscaleRegistry("photoctl/fake-upscale-v1");
     registry.register({
       id: fake.id,
@@ -165,9 +167,17 @@ export async function fillUpscaleFixture(
     fill,
     sourceProducer,
     generationCalls: () => generationCalls,
+    generationMasks: () => generationMasks,
+    replaceGenerationMode: (mode: "smallerdims" | "wrongdims" | undefined) => {
+      generationMode = mode;
+    },
     upscaleCalls: () => upscaleCalls,
     replaceUpscaleAdapterVersion: (version: string) => {
       fill.upscaleRegistry = createRegistry(version);
+    },
+    replaceUpscaleMode: (mode: FakeUpscaleMode) => {
+      upscaleMode = mode;
+      fill.upscaleRegistry = createRegistry("1");
     },
     replaceGenerationAdapterVersion: (version: string) => {
       (fill.adapter as { version: string }).version = version;

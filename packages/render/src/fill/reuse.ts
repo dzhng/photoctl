@@ -16,6 +16,13 @@ interface ReusableExternalNode {
 export interface ReusableFillLineage extends ReusableExternalNode {
   baseNodeId: string;
   sourceContext: { tier: string; pixelScale: number; resolutionLimited: boolean };
+  generationRecipe: {
+    recipeVersion: number;
+    parameters: Record<string, unknown>;
+    inputNodeId: string;
+    inputArtifactHashes: string[];
+    intentMatches: boolean;
+  };
   cachedUpscale?: ReusableExternalNode;
 }
 
@@ -112,7 +119,19 @@ export async function findReusableFillLineage(
       crop?: unknown;
       seed?: unknown;
       source_context?: unknown;
+      upscale?: unknown;
     };
+  };
+  const storedUpscale = generationParameters.request
+    ? (generationParameters.request.upscale as Record<string, unknown> | undefined)
+    : undefined;
+  const expectedUpscale = {
+    enabled: request.upscale.policy.upscale.enabled,
+    model: request.upscale.policy.upscale.model,
+    prompt_id: request.upscale.prompt.id,
+    prompt_version: request.upscale.prompt.version,
+    original_prompt: request.upscale.prompt.original,
+    derived_prompt: request.upscale.prompt.derived,
   };
   if (
     generationParameters.adapter !== request.dependencies.adapter.id ||
@@ -132,6 +151,12 @@ export async function findReusableFillLineage(
   );
   const rawProvider = branch.generationProvider;
   if (!execution?.artifactAvailable || !rawProvider) return undefined;
+  const inputs = await database.query<{ input_artifact_hash: string }>(
+    `SELECT input_artifact_hash FROM node_execution_inputs
+     WHERE photo_id = $1 AND execution_id = $2 ORDER BY input_index`,
+    [request.photoId, execution.executionId],
+  );
+  if (inputs.rows.length !== generation.inputNodeIds.length) return undefined;
   return {
     ...(await loadExternalNode(
       database,
@@ -143,6 +168,15 @@ export async function findReusableFillLineage(
     )),
     baseNodeId: branch.baseNodeId,
     sourceContext: branch.sourceContext,
+    generationRecipe: {
+      recipeVersion: generation.recipeVersion,
+      parameters: generationParameters,
+      inputNodeId: generation.inputNodeIds[0]!,
+      inputArtifactHashes: inputs.rows.map(({ input_artifact_hash }) => input_artifact_hash),
+      intentMatches:
+        storedUpscale !== undefined &&
+        !Object.entries(expectedUpscale).some(([key, value]) => storedUpscale[key] !== value),
+    },
     ...(cachedUpscale ? { cachedUpscale } : {}),
   };
 }

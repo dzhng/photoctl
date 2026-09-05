@@ -17,7 +17,7 @@ import { PhotoctlError, type Envelope } from "@photoctl/protocol";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
-import { executeFillRefresh, type FillDependencies } from "./fill.js";
+import { executeFillRefresh, executeFillTransform, type FillDependencies } from "./fill.js";
 
 export async function layerCommand(
   args: string[],
@@ -92,21 +92,54 @@ export async function layerCommand(
         if (parsed.options.size === 0)
           throw new PhotoctlError("usage", "layer transform requires a transform option");
         const dimensions = orientedDimensions({ w: photo.w, h: photo.h }, photo.orientation);
-        const transformed = await transformLayer(lease.handle, lease.handle.path, {
-          photoId,
-          orientation: photo.orientation,
-          layer: target.layer!,
-          transform: parseTransform(parsed.options, parsed.flags.has("--norm"), dimensions),
-          relative: parsed.flags.has("--relative"),
-        });
-        return ok({
-          id: photoId,
-          layer_id: transformed.layer.id,
-          revision_id: transformed.revisionId,
-          render_hash: transformed.renderHash,
-          matrix: transformed.matrix,
-          layer: layerData(transformed.layer),
-        });
+        const transform = parseTransform(parsed.options, parsed.flags.has("--norm"), dimensions);
+        const transformed =
+          (await executeFillTransform(
+            lease.handle,
+            photoId,
+            target.layer!,
+            transform,
+            parsed.flags.has("--relative"),
+            dimensions,
+            providedFill,
+          )) ??
+          (await transformLayer(lease.handle, lease.handle.path, {
+            photoId,
+            orientation: photo.orientation,
+            layer: target.layer!,
+            transform,
+            relative: parsed.flags.has("--relative"),
+          }));
+        const generated = "upscale" in transformed;
+        return {
+          schema: 1,
+          ok: true,
+          data: {
+            id: photoId,
+            layer_id: transformed.layer.id,
+            revision_id: transformed.revisionId,
+            render_hash: transformed.renderHash,
+            matrix: transformed.matrix,
+            layer: layerData(transformed.layer),
+            upscale:
+              generated && transformed.upscale
+                ? {
+                    enabled: transformed.upscale.enabled,
+                    executed: transformed.upscale.executed,
+                    node: transformed.upscale.nodeId,
+                    adapter: transformed.upscale.adapter,
+                    model: transformed.upscale.model,
+                    input: transformed.upscale.input,
+                    target: transformed.upscale.target,
+                    generated: transformed.upscale.generated,
+                    final: transformed.upscale.final,
+                    density_satisfied: transformed.upscale.densitySatisfied,
+                    warnings: transformed.upscale.warnings,
+                  }
+                : null,
+          },
+          warnings: generated ? transformed.warnings : [],
+        };
       }
       if (action === "refresh") {
         const parsed = parseArguments(target.rest, { options: ["--from"] });
@@ -284,7 +317,6 @@ export async function layerCommand(
         message.startsWith("Transform values") ||
         message.startsWith("--from must name") ||
         message.startsWith("Ambiguous refresh node prefix") ||
-        message.startsWith("Generation refresh cannot rebase a transformed fill input") ||
         message === "Layer does not contain a refreshable fill branch"
       ) {
         throw new PhotoctlError("usage", message, { id: photoId, layer: target.layer });
