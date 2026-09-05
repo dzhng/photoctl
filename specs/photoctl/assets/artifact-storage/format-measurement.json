@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "scope": "bounded local format measurement; no live provider or library retention policy acceptance",
+  "method": {
+    "runtime": "v24.14.0",
+    "sharp": "0.35.4",
+    "conversion": "production normalizeArtifact → decodeArtifactLinearTiff → linearRec2020ToDisplaySrgb → clamp and round to RGB8",
+    "pngEncoding": "Sharp default PNG; source-proxy created from the committed embedded JPEG",
+    "limitations": [
+      "RGB8 opaque inputs only; no alpha/HDR/wide-gamut/external metadata preservation claims",
+      "No representative undo history, storage budget, age policy, or canonical-GC decision",
+      "Canonical graph format remains exact scene-linear Rec.2020 IEEE-f32 TIFF",
+      "Reconstructing display samples is not proof of original encoded-response byte retention"
+    ]
+  },
+  "cases": [
+    {
+      "name": "photographic-proxy",
+      "provenance": "A7C II fixture embedded 1616 preview, reduced to 1024 long edge; not a provider output",
+      "dimensions": {
+        "w": 1024,
+        "h": 684
+      },
+      "originalPngSha256": "ebaf6b3017b44d1d51c385d574d5af5522597eae224e3b0683c3399fc9badeee",
+      "originalPngBytes": 1304370,
+      "canonicalArtifactHash": "a_da0221ed5f459ab2cc69d3df2be0e680f87f307d117978ad8c95996ce218356c",
+      "canonicalFloatTiffBytes": 8405802,
+      "retainOriginalAdditionalPercent": 15.5175,
+      "canonicalRoundtripByteExact": true,
+      "display8Roundtrip": {
+        "changedSamples": 0,
+        "totalSamples": 2101248,
+        "maxAbsoluteDelta8": 0
+      },
+      "regeneratedPngBytes": 1304370,
+      "regeneratedPngByteExact": false
+    },
+    {
+      "name": "synthetic-texture",
+      "provenance": "committed synthetic upscale inspection source; not a provider output",
+      "dimensions": {
+        "w": 320,
+        "h": 240
+      },
+      "originalPngSha256": "260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
+      "originalPngBytes": 11816,
+      "canonicalArtifactHash": "a_398ec2a0a249424af04df7b99d7381c2b1c6f17084759f007bda52d69030557c",
+      "canonicalFloatTiffBytes": 922410,
+      "retainOriginalAdditionalPercent": 1.281,
+      "canonicalRoundtripByteExact": true,
+      "display8Roundtrip": {
+        "changedSamples": 0,
+        "totalSamples": 230400,
+        "maxAbsoluteDelta8": 0
+      },
+      "regeneratedPngBytes": 11255,
+      "regeneratedPngByteExact": false
+    },
+    {
+      "name": "fake-provider-flat",
+      "provenance": "committed fake upscaler result; not photographic quality evidence",
+      "dimensions": {
+        "w": 640,
+        "h": 480
+      },
+      "originalPngSha256": "b33a245ccb7e7755a27b17c14fe1346c24d5c5458873e6761a4ab9b5ffa453d6",
+      "originalPngBytes": 5747,
+      "canonicalArtifactHash": "a_c6bef67f503f9aac5d0012977f7dc76dfa3f559f10adcf8f3e4713101be3d59c",
+      "canonicalFloatTiffBytes": 3687210,
+      "retainOriginalAdditionalPercent": 0.1559,
+      "canonicalRoundtripByteExact": true,
+      "display8Roundtrip": {
+        "changedSamples": 0,
+        "totalSamples": 921600,
+        "maxAbsoluteDelta8": 0
+      },
+      "regeneratedPngBytes": 5747,
+      "regeneratedPngByteExact": true
+    }
+  ]
+}

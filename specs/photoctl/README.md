@@ -42,6 +42,9 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   experiment-wide identical-request reuse across inspection cases, then conduct the photographic
   comparisons in [Slice 13](slices/13-generative-extras-and-markup.md) when explicitly configured.
   Missing live prerequisites do not block deterministic work.
+- Finish execution-linked original paid-response retention through the existing artifact owner after
+  frame/reference migrations. [Bounded format evidence](assets/artifact-storage/) now exists; actual
+  retention and representative undo-history storage policy remain unfinished.
 - Before release, run the full integrated closeout gate once, audit the full requirements and choices
   ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
   optional and unspecified, rather than an implied requirement to invent an MCP product.
@@ -88,7 +91,7 @@ Update this handoff after each pass and continue to the next unfinished requirem
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [ ] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
-- [ ] 13a [x] reimagine/relight/generate · [ ] upscaler quality spike · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [ ] 13a [x] reimagine/relight/generate · [ ] upscaler quality spike · [ ] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 
@@ -415,7 +418,7 @@ migrate daemon(start|stop|status) embed decode render presets(show) search graph
 | ARW drive path | 14 (04 uses it if present) | `fixtures:drive` + `fixtures:volume` |
 | Gateway key + per-verb model IDs | 09a (`doctor`, `settings`); 12 | fake gateway; `provider_unconfigured` |
 | First live upscaler adapter/model + balanced creativity/resemblance values | 09b/13a | deterministic fake adapter; `upscale_unconfigured`; live spike runs only when explicitly configured credentials exist |
-| Paid provider/upscaler return retention encoding | 12/13a | working DAG conversion is settled; preserve/encode the original paid response only after PNG-vs-working-format size/round-trip evidence |
+| Paid provider/upscaler return retention encoding | 12/13a | [bounded format evidence](assets/artifact-storage/) supports retaining original bytes beside the working TIFF; execution-linked retention is still unbuilt |
 | Undo artifact count/age/storage limit | 08a measurement, then 10 | roots/reachability land; automatic canonical-artifact GC remains off until measured |
 | Smoke 1 mask polarity | 12 pre-gate | adapters `maskPolarity:"unverified"` → live native-mask fill refused (`provider_unverified_mask` 69) |
 | Live multimodal embedding dialect | post-09c purpose-key smoke | named one-photo candidate may run only after explicit command or saved auto consent; remains provisional until accepted |

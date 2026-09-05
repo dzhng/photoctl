@@ -58,6 +58,21 @@ category-validation sheets. Category labels are operator declarations, not image
 categories remain explicit. Provider-reported normalized controls are currently unavailable and must not be inferred from requests.
 Live photographic comparison and release-default selection remain unverified.
 
+## Paid response retention — remaining artifact contract
+
+The [bounded format measurement](../assets/artifact-storage/) distinguishes exact original encoded
+responses from canonical working pixels. Preserve original paid generation/upscaler bytes unchanged
+through the existing artifact owner, linked to their execution, while continuing to use exact linear
+TIFFs inside the graph. Do not introduce a second publication, availability, or retention lifecycle.
+Historical missing originals remain explicitly unavailable; never re-encode working pixels and label
+them the original response or replay a paid request during repair/inspection.
+
+This checkpoint remains unbuilt. Before implementation, settle the typed encoded-artifact boundary
+and next migration against the frame/reference passes. Verify artifact-first atomic failure, exact
+byte recovery, same-response deduplication, historical absence, backup/restore availability and graph
+reachability through real command flows. It does not enable automatic canonical-artifact deletion:
+representative undo-history measurements must separately choose count/age/storage limits.
+
 ## Checkpoints: one artifact per sub-slice, one variable each; all inherit the root visual gates and non-blocking review rule.
 
 Firewall: `unblur` cut; no generic local generative runners. A future local UpscaleAdapter is allowed only as a separately configured

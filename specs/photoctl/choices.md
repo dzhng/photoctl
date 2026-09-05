@@ -94,6 +94,26 @@
   preference changes the plan before implementation; original source data remains untouched.
 - **Confidence:** Medium.
 
+### Paid image responses — Retain original encoded bytes beside working pixels
+
+- **When:** Bounded format measurement, 2026-09-06; retention implementation remains pending.
+- **The choice:** After a paid generation returns a PNG, keep those exact bytes as well as the
+  scene-linear float TIFF consumed by the editing graph. On the 1024×684 photographic proxy,
+  retaining the original adds 1,304,370 bytes beside an 8,405,802-byte working artifact. Its RGB8
+  samples survive the working conversion exactly, but a reconstructed PNG is not the same encoded
+  response. The alternative saves space by keeping only working pixels and cannot recover the
+  original encoding or metadata later.
+- **The gap:** The spec deliberately left paid-return encoding open until a size/round-trip measurement.
+- **The reach:** Original-response availability must join existing execution provenance and artifact
+  reachability, not become an untracked directory or a second retention owner. Already-discarded
+  historical originals remain absent; no automatic provider replay is authorized to recover them.
+- **Verdict:** **Needs-user.** Provisionally preserve original bytes unchanged because they represent
+  purchased, non-reproducible output. The bounded measurement supports the format distinction, not a
+  universal compression ratio or storage budget. A different retention preference can change policy
+  before implementation; canonical graph pixels remain exact regardless.
+- **Confidence:** Medium; the tradeoff spends additional disk space, and representative library-history
+  measurements are still required before any automatic deletion policy.
+
 ## Sound
 
 ### Slice 12 — Regeneration revisits original selection intent under current visibility
