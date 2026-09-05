@@ -94,6 +94,62 @@ scene-linear graph artifacts · **8c1b** global per-pixel ops ·
   `color_space:"srgb",icc:"sRGB2014"`; viewers do not infer color from untagged JPEG bytes.
 - `scripts/gold-exam.sh` gains the develop step. `wb presets`, `wb ab`.
 
+## 8e — Local horizon detection and the crop command
+
+**Question:** can the public command level a visible horizon and apply the existing minimum trim,
+without another geometry owner or external inference? D24 and the original command inventory require
+this pass; manual develop keys alone do not satisfy it.
+
+`crop <id-or-prefix> [--aspect W:H] [--straighten degrees | --auto]` targets one photograph. Require
+at least one operation, reject unknown/mixed automatic and manual straighten arguments before image
+work, and parse values with the existing develop schemas. Manual options set the existing absolute
+aspect/straighten keys through `commitDevelopState`, retaining its atomic conflict check, immutable
+geometry activation, layer-delta/stale behavior and ordinary undo. Do not dispatch another public
+command after detection: commit against the same snapshot that supplied the pixels.
+
+For auto, provisionally detect from the snapped current photographic output before vector markup,
+including visible edits and canvas geometry. The user was asked about this reversible policy; no
+contrary answer is recorded. Resolve pixels through the existing graph-source ladder and output/frame
+owners, carrying offline/decode warnings. Detection returns a correction relative to the visible
+image; compose it into the absolute straighten control rather than replacing that control with a
+residual angle. An optional aspect constraint still uses the existing geometry owner's ordering.
+Minimal trim is the existing centered inscribed straighten raster, not a new stored crop rectangle.
+Keep crop/aspect activation distinct: automatic straightening must not reactivate a consumed crop.
+
+Use one deterministic portable Hough detector, not a macOS-only Vision path or provider. The
+[OpenCV line-transform explanation](https://docs.opencv.org/4.10.0/d9/db0/tutorial_hough_lines.html)
+grounds edge votes in angle/distance space; it is an algorithm reference, not a new dependency or a
+claim of OpenCV output parity. Keep analysis pixels bounded using the existing native resampler and
+preserve the actual frame mapping when converting a detected line direction back from a rounded
+analysis raster. Search the existing straighten range; do not silently narrow the supported tilt
+range to make examples pass. Favor long coherent line support and reject ambiguous or insufficient
+evidence. Detector thresholds, analysis resolution and tie handling are delegated reversible
+algorithm constants, to be documented with their failure witnesses, not user-facing knobs.
+
+If no reliable horizon exists, succeed without changing straighten. With no other requested edit,
+retain the revision/hash; an explicit aspect request may still apply. Successful `data` is
+`{id,develop_hash,render_hash,layers:{delta_applied,stale},auto}`. Manual edits return `auto:null`;
+automatic edits return `auto:{detected:boolean,correction_deg:number|null}`. An inconclusive estimate
+has `detected:false,correction_deg:null`; a detected already-level image reports zero correction.
+It introduces no database column, migration, saved auto mode, provider
+attempt or alternate native dependency. Ordinary `undo` reverses any committed change.
+
+**Verification:** start with one built/public command RED. Pin clockwise/counterclockwise synthetic
+horizons independently, a level repeat/no-op, blank and conflicting-line no-ops, a portrait/quarter-turn,
+existing manual straighten, crop/aspect and consumed-crop canvas state, markup exclusion, offline
+fallback, exact original bytes, revision conflict safety and preview/export identity. Pure detector
+tests pin angle/direction, contrast inversion and varied position/scale without copying its formula
+into the oracle. Tests run the same portable detector on host and Linux; no platform-dependent skips.
+
+The visual variable is horizon slope and the resulting trim. Capture matching pre/post public images
+and horizon-edge zooms from an asymmetric scene. Use `compare-screenshots` for changed pixels and
+framing, then a fresh `screenshot-critique` as the final visual check; judge slope against the authored
+level target, not similarity to the tilted baseline. Photograph aesthetics and semantic identification
+of every possible natural horizon are not established by synthetic lines. Open the captures for a
+non-blocking review window with `preview-shots`, record the evidence-based call and close them.
+Keep the existing develop, canvas, undo and built preview journey checks green. Review and audit
+choices before committing; the root release gate remains reserved for whole-spec closeout.
+
 ## Verification
 8a1's recipe/store/migration tests prove strict kind schemas, ordered shared inputs, photo scoping, immutable lazy replacement,
 cycle refusal, CAS revision undo, deterministic evaluation uniqueness, distinct nondeterministic attempt ids, and a root redirect in
