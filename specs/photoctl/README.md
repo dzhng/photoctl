@@ -68,10 +68,12 @@ Slice files and their assets hold the detailed acceptance evidence.
 **SAM pickup:** the release manifest now pins real export hashes with composed CPU parity checks.
 [Photographic evidence](assets/sam-photographic/) distinguishes passing coarse subject checks from
 failed detailed edges and a reproduced full-command memory breach. Pointwise buffer reuse and
-pixel-free cached dimensions are integrated; full-frame closure lifetime is the next memory pass.
-Actual photographic ONNX/PyTorch parity passes, so compare letterbox versus upstream square
-preprocessing before changing segmentation. [Native resource evidence](assets/sam-runtime/)
-covers inference alone; public model hosting and wiring Docker's model-fetch stage into the
+pixel-free cached dimensions and prepared inference handles are integrated (19 merged tests and
+typecheck). Full-command RSS remains red at an earlier native snapshot boundary; investigate real
+allocation ownership/accounting next. Photographic ONNX/PyTorch parity passes; square geometry alone
+does not resolve edges. Compare the full upstream predictor before changing segmentation.
+[Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
+public model hosting and wiring Docker's model-fetch stage into the
 functional gate remain unfinished. The host model test fails visibly without its documented weights.
 
 **External evidence still outstanding:**

@@ -177,6 +177,27 @@
   the targeted check supplies stronger evidence when needed.
 - **Confidence:** Medium; an eventual bulk verification command would need its own bounded-work contract.
 
+### SAM preparation — Release photographic pixels before waiting for inference
+
+- **When:** Prepared-input ownership correction, 2026-09-06.
+- **The choice:** A text selection first builds its unchanged grounding JPEG and a small normalized
+  model input, then releases the full photographic display buffer before waiting for the provider
+  and local inference. A prepared handle is a per-command object containing dimensions, coordinate
+  mapping, and either normalized input or cached encoder features—not the original photograph.
+  The alternative keeps the full photograph in a callback throughout the external wait and each
+  mask inference.
+- **The gap:** The runtime cache policy did not specify when commands release full-resolution
+  input or whether preparation must wait until text grounding finds a subject.
+- **The reach:** Empty grounding results now incur preprocessing but still perform no inference
+  and do not alter cache recency or evict another photo. Preparation failure happens before external
+  spend. Concurrent cold preparations may duplicate the bounded input tensor, but first inference
+  shares one encoder promise in the existing cache. Active handles can retain their own features
+  after eviction until the command ends; there is no second persistent cache. A retry after a failed
+  command prepares a new input. Production never forces garbage collection.
+- **Verdict:** **Sound.** Lifetime is explicit and tested without changing pixels, grounding bytes,
+  model identities, or projection. This does not guarantee the separate whole-command RSS budget.
+- **Confidence:** Medium; bounded duplicate preprocessing is an explicit concurrency tradeoff.
+
 ### Editable develop input — Preserve the whole purchased RGB branch
 
 - **When:** Standalone upscale consumer correction, 2026-09-06.

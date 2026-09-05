@@ -69,9 +69,12 @@ the actual input tensor hash. Scratch tensors are not release artifacts.
 
 This rules out substantial ONNX numerical drift for these inputs, not inappropriate input
 preprocessing or insufficient model quality. The pinned upstream SAM2 transforms resize directly
-to a square, whereas this spec prescribes centered letterboxing. Next: a controlled photographic
-comparison of those coordinate/preprocessing contracts before changing the explicit letterbox
-decision. Do not weaken the edge target or claim the coarse test proves it.
+to a square, whereas this spec prescribes centered letterboxing. The controlled
+[square-geometry comparison](square-geometry/README.md) improves wires/path but worsens foliage;
+both fail detailed edges. Production letterboxing is unchanged. Next: the full pinned upstream
+predictor as a reference, including its display-range conversion and antialiased resize. That
+multi-variable reference can assess achievable quality but cannot alone establish the cause of a
+difference. Do not weaken the edge target or claim the coarse test proves it.
 
 ## Identity and resource boundaries
 

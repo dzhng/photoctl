@@ -1,0 +1,32 @@
+{
+  "method": "Square mapping only; same native bilinear float RGB and normalization, unchanged model/projection threshold. Not stock TorchVision preprocessing.",
+  "base": "a_9be2e0a4d83571011d196064efd18c86a687db17fc2c301a42dc38bc2ae28fa1",
+  "displaySamples": {
+    "minimum": -0.4353073537349701,
+    "maximum": 1.251679539680481,
+    "belowZero": 685760,
+    "aboveOne": 34,
+    "count": 98224128
+  },
+  "inputSha256": "5cc115c8da257965abaacb5c155952c872a7889de18e9232895cd535a62c984c",
+  "sky": {
+    "points": [
+      584.4749145507812,
+      131.50685119628906
+    ],
+    "selected": 10105889,
+    "areaPercent": 30.865804173899104,
+    "changedFromLetterbox": 194247,
+    "includesClick": 1
+  },
+  "road": {
+    "points": [
+      642.92236328125,
+      767.123291015625
+    ],
+    "selected": 1595706,
+    "areaPercent": 4.873668107290299,
+    "changedFromLetterbox": 32381,
+    "includesClick": 1
+  }
+}

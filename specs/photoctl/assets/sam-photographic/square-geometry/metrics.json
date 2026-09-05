@@ -1,0 +1,26 @@
+{
+  "sky-foliage": {
+    "selectedShare": 0.2979098901098901,
+    "changedShare": 0.006030769230769231,
+    "left": 2900,
+    "top": 1050,
+    "width": 700,
+    "height": 650
+  },
+  "sky-wires": {
+    "selectedShare": 0.7578384615384616,
+    "changedShare": 0.030992307692307694,
+    "left": 800,
+    "top": 650,
+    "width": 800,
+    "height": 650
+  },
+  "road-path": {
+    "selectedShare": 0.5260416666666666,
+    "changedShare": 0.016089583333333334,
+    "left": 2300,
+    "top": 2500,
+    "width": 800,
+    "height": 600
+  }
+}
