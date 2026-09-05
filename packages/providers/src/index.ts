@@ -1,4 +1,5 @@
 export * from "./gateway.js";
+export * from "./image-capture.js";
 export * from "./table.js";
 export * from "./config.js";
 export * from "./cost.js";

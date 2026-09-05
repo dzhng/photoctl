@@ -79,6 +79,13 @@ describe.sequential("generated layer density transforms", () => {
     );
     expect(reused.upscale).toMatchObject({ density_satisfied: true, generated: { w: 64, h: 60 } });
     expect(fixture.upscaleCalls()).toBe(2);
+    const attempts = await fixture.handle.query(
+      "SELECT attempt.id, attempt.state, artifact.w, artifact.h FROM provider_image_attempts attempt JOIN node_executions execution ON execution.provider_image_attempt_id = attempt.id JOIN image_artifacts artifact ON artifact.artifact_hash = attempt.original_artifact_hash WHERE attempt.request->>'operation' = 'upscale' ORDER BY artifact.w",
+    );
+    expect(attempts.rows).toEqual([
+      { id: expect.any(String), state: "committed", w: 32, h: 30 },
+      { id: expect.any(String), state: "committed", w: 64, h: 60 },
+    ]);
   });
 
   test("auto intent survives a sufficient no-upscale fill for later scaling", async () => {

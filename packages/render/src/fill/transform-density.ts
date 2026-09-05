@@ -1,5 +1,6 @@
 import type { Warning } from "@photoctl/protocol";
-import { normalizeArtifact, publishArtifact, readArtifactImage } from "../artifacts/publication.js";
+import { readArtifactImage } from "../artifacts/publication.js";
+import { executeRetainedUpscale } from "../provider-images/upscale.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
 import {
   canonicalNodeRecipe,
@@ -28,7 +29,7 @@ import {
 } from "../transforms.js";
 import { describeFillBranch, directUpscaleChildren } from "./branch.js";
 import { planOutputDensity } from "./density.js";
-import { cropMappedExternalImage, decodeExternalImage, image16Png } from "./external-pixels.js";
+import { image16Png } from "./external-pixels.js";
 import type { FillUpscaleDependencies } from "./pipeline.js";
 import { rebuildFillBranch } from "./rebuild.js";
 
@@ -211,7 +212,7 @@ export async function transformFillLayer(
       item.kind === "upscale",
   );
   if (adapter && identity && operation) {
-    const result = await adapter.execute({
+    const result = await executeRetainedUpscale(database, libraryPath, adapter, {
       artifact: {
         bytes: await image16Png(generationImage),
         mediaType: "image/png",
@@ -225,14 +226,7 @@ export async function transformFillLayer(
     appendWarnings(warnings, result.warnings);
     if (result.ok) {
       try {
-        const bytes = result.value.frameMapping
-          ? await cropMappedExternalImage(
-              result.value.artifact.bytes,
-              result.value.frameMapping.output,
-            )
-          : result.value.artifact.bytes;
-        const image = await decodeExternalImage(bytes, result.samplingDimensions);
-        const artifact = await publishArtifact(libraryPath, await normalizeArtifact(image));
+        const { artifact } = result;
         const executionId = newExecutionId();
         const parameters = {
           adapter: adapter.id,
@@ -271,6 +265,7 @@ export async function transformFillLayer(
         artifacts.push(artifact);
         executions.push({
           node: { localKey: "density-upscale" },
+          providerImageAttemptId: result.attemptId,
           executionId,
           evaluationHash: evaluationHash({
             nodeRecipeHash: recipe,

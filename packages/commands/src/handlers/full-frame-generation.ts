@@ -103,7 +103,8 @@ export async function executeFullFrameGeneration(
                     version: selected.version,
                     supportedScales: selected.supportedScales,
                     limits: selected.limits,
-                    execute: async (input) => await upscaleRegistry.execute(selected, input),
+                    execute: async (input, capture) =>
+                      await upscaleRegistry.execute(selected, input, capture),
                   },
                 }
               : {}),

@@ -17,6 +17,7 @@ export interface ReusableFillLineage extends ReusableExternalNode {
   baseNodeId: string;
   sourceContext: { tier: string; pixelScale: number; resolutionLimited: boolean };
   generationRecipe: {
+    providerImageAttemptId: string | null;
     recipeVersion: number;
     parameters: Record<string, unknown>;
     inputNodeIds: string[];
@@ -184,6 +185,7 @@ export async function findReusableFillLineage(
     baseNodeId: branch.baseNodeId,
     sourceContext: branch.sourceContext,
     generationRecipe: {
+      providerImageAttemptId: execution.providerImageAttemptId,
       recipeVersion: generation.recipeVersion,
       parameters: generationParameters,
       inputNodeIds: generation.inputNodeIds,

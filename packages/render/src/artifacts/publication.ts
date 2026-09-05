@@ -21,45 +21,86 @@ import {
 } from "../mask-tiff.js";
 
 export const MASK_ARTIFACT_MEDIA_TYPE = "image/vnd.photoctl.mask+tiff" as const;
+export type ArtifactValidationProfile = "linear-rgb-tiff" | "mask-tiff" | "encoded-image";
+export const artifactExtensions = {
+  "image/tiff": "tif",
+  [MASK_ARTIFACT_MEDIA_TYPE]: "tif",
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/svg+xml": "svg",
+  "image/avif": "avif",
+  "image/heif": "heif",
+} as const;
 
 export interface NormalizedArtifact {
   artifactHash: `a_${string}`;
   bytes: Buffer;
-  extension: "tif" | "png";
-  mediaType: "image/tiff" | "image/png" | typeof MASK_ARTIFACT_MEDIA_TYPE;
+  extension: (typeof artifactExtensions)[keyof typeof artifactExtensions];
+  mediaType: keyof typeof artifactExtensions;
+  validationProfile: ArtifactValidationProfile;
   w: number;
   h: number;
 }
 
-/** Encoded reference intent retains alpha; the RGB working artifact is a separate projection. */
-export async function normalizeEncodedPngArtifact(bytes: Buffer): Promise<NormalizedArtifact> {
-  const dimensions = await validateEncodedPng(bytes);
+/** Content classification is independent of whether these bytes were a provider original or graph output. */
+export async function normalizeEncodedArtifact(bytes: Buffer): Promise<NormalizedArtifact> {
+  let validationProfile: ArtifactValidationProfile = "encoded-image";
+  const image = sharp(bytes, { failOn: "error" });
+  const metadata = await image.metadata();
+  if (!metadata.width || !metadata.height) throw new Error("Encoded image dimensions are missing");
+  const formats = {
+    png: "image/png",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    tiff: "image/tiff",
+    gif: "image/gif",
+    svg: "image/svg+xml",
+    heif: metadata.compression === "av1" ? "image/avif" : "image/heif",
+  } as const;
+  const mediaType = formats[metadata.format as keyof typeof formats];
+  if (!mediaType) throw new Error(`Unsupported encoded image format: ${metadata.format}`);
+  if (metadata.format === "tiff") {
+    try {
+      await validateArtifactLinearTiff(bytes);
+      validationProfile = "linear-rgb-tiff";
+    } catch {
+      try {
+        validateMaskTiff(bytes);
+        validationProfile = "mask-tiff";
+      } catch {
+        /* An ordinary encoded TIFF is not a working artifact. */
+      }
+    }
+  }
+  if (validationProfile === "encoded-image") await image.stats();
+  const type = validationProfile === "mask-tiff" ? MASK_ARTIFACT_MEDIA_TYPE : mediaType;
   return {
     artifactHash: `a_${createHash("sha256").update(bytes).digest("hex")}`,
     bytes,
-    extension: "png",
-    mediaType: "image/png",
-    ...dimensions,
+    extension: artifactExtensions[type],
+    mediaType: type,
+    validationProfile,
+    w: metadata.width,
+    h: metadata.height,
   };
 }
 
-export async function readEncodedPngArtifactBytes(
+export async function readEncodedArtifactBytes(
   path: string,
   expectedHash: string,
-  expectedDimensions: { w: number; h: number },
+  expected: Pick<NormalizedArtifact, "w" | "h" | "validationProfile" | "mediaType">,
 ): Promise<Buffer> {
   const bytes = await readVerifiedArtifactBytes(path, expectedHash);
-  assertDimensions(path, await validateEncodedPng(bytes), expectedDimensions);
+  const artifact = await normalizeEncodedArtifact(bytes);
+  assertDimensions(path, artifact, expected);
+  if (
+    artifact.mediaType !== expected.mediaType ||
+    artifact.validationProfile !== expected.validationProfile
+  )
+    throw new Error(`Artifact content classification mismatch: ${path}`);
   return bytes;
-}
-
-async function validateEncodedPng(bytes: Buffer): Promise<{ w: number; h: number }> {
-  const image = sharp(bytes, { failOn: "error" });
-  const metadata = await image.metadata();
-  if (metadata.format !== "png" || !metadata.width || !metadata.height)
-    throw new Error("Encoded reference artifacts require PNG pixels");
-  await image.stats(); // Decode the complete image without allocating a JavaScript raster.
-  return { w: metadata.width, h: metadata.height };
 }
 
 export async function normalizeMaskArtifact(mask: MaskImage): Promise<NormalizedArtifact> {
@@ -69,6 +110,7 @@ export async function normalizeMaskArtifact(mask: MaskImage): Promise<Normalized
     bytes,
     extension: "tif",
     mediaType: MASK_ARTIFACT_MEDIA_TYPE,
+    validationProfile: "mask-tiff",
     w: mask.w,
     h: mask.h,
   };
@@ -85,19 +127,33 @@ export async function registerPublishedArtifact(
 ): Promise<void> {
   await database.query(
     `INSERT INTO image_artifacts
-       (artifact_hash, media_type, bytes, w, h, artifact_available)
-     VALUES ($1, $2, $3, $4, $5, true)
+       (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+     VALUES ($1, $2, $3, $4, $5, true, $6)
      ON CONFLICT (artifact_hash) DO UPDATE SET artifact_available = true`,
-    [artifact.artifactHash, artifact.mediaType, artifact.storageBytes, artifact.w, artifact.h],
+    [
+      artifact.artifactHash,
+      artifact.mediaType,
+      artifact.storageBytes,
+      artifact.w,
+      artifact.h,
+      artifact.validationProfile,
+    ],
   );
-  const stored = await database.query<{ media_type: string; bytes: string; w: number; h: number }>(
-    `SELECT media_type, bytes::text, w, h FROM image_artifacts WHERE artifact_hash = $1`,
+  const stored = await database.query<{
+    media_type: string;
+    validation_profile: string;
+    bytes: string;
+    w: number;
+    h: number;
+  }>(
+    `SELECT media_type, validation_profile, bytes::text, w, h FROM image_artifacts WHERE artifact_hash = $1`,
     [artifact.artifactHash],
   );
   const row = stored.rows[0];
   if (
     !row ||
     row.media_type !== artifact.mediaType ||
+    row.validation_profile !== artifact.validationProfile ||
     Number(row.bytes) !== artifact.storageBytes ||
     row.w !== artifact.w ||
     row.h !== artifact.h
@@ -142,6 +198,7 @@ export async function normalizeArtifact(image: LinearImage | Image16): Promise<N
     bytes,
     extension: "tif",
     mediaType: "image/tiff",
+    validationProfile: "linear-rgb-tiff",
     w: linear.w,
     h: linear.h,
   };
@@ -208,6 +265,7 @@ export async function publishArtifact(
     artifactHash: artifact.artifactHash,
     extension: artifact.extension,
     mediaType: artifact.mediaType,
+    validationProfile: artifact.validationProfile,
     path,
     storageBytes: artifact.bytes.length,
     w: artifact.w,
@@ -319,6 +377,7 @@ export async function normalizeValidatedArtifactBytes(
     bytes,
     extension: "tif",
     mediaType: "image/tiff",
+    validationProfile: "linear-rgb-tiff",
     ...expectedDimensions,
   };
 }

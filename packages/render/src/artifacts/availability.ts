@@ -3,10 +3,9 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import {
   artifactPath,
-  MASK_ARTIFACT_MEDIA_TYPE,
-  readArtifactLinear,
-  readMaskArtifactBytes,
-  readEncodedPngArtifactBytes,
+  artifactExtensions,
+  readEncodedArtifactBytes,
+  type NormalizedArtifact,
 } from "./publication.js";
 
 interface ArtifactDatabase {
@@ -34,7 +33,7 @@ export async function findOrphanArtifacts(
   for (const prefix of prefixes.toSorted()) {
     if (!/^[0-9a-f]{2}$/.test(prefix)) continue;
     for (const name of (await readdir(join(root, prefix))).toSorted()) {
-      const match = /^(a_[0-9a-f]{64})\.(?:tif|png)$/.exec(name);
+      const match = /^(a_[0-9a-f]{64})\.(?:tif|png|jpg|webp|gif|svg|avif|heif)$/.exec(name);
       if (match && !known.has(match[1])) paths.push(join(root, prefix, name));
     }
   }
@@ -48,31 +47,23 @@ export async function reconcileArtifactAvailability(
   const artifacts = await database.query<{
     artifact_hash: string;
     media_type: string;
+    validation_profile: NormalizedArtifact["validationProfile"];
     w: number;
     h: number;
-  }>("SELECT artifact_hash, media_type, w, h FROM image_artifacts ORDER BY artifact_hash");
+  }>(
+    "SELECT artifact_hash, media_type, validation_profile, w, h FROM image_artifacts ORDER BY artifact_hash",
+  );
   let available = 0;
   let unavailable = 0;
   for (const artifact of artifacts.rows) {
     let present = false;
-    if (artifact.media_type === "image/tiff" || artifact.media_type === MASK_ARTIFACT_MEDIA_TYPE) {
-      const path = artifactPath(libraryPath, artifact.artifact_hash, "tif");
+    if (artifact.media_type in artifactExtensions) {
       try {
-        if (artifact.media_type === MASK_ARTIFACT_MEDIA_TYPE) {
-          await readMaskArtifactBytes(path, artifact.artifact_hash, artifact);
-        } else {
-          await readArtifactLinear(path, artifact.artifact_hash);
-        }
-        present = true;
-      } catch {
-        present = false;
-      }
-    } else if (artifact.media_type === "image/png") {
-      try {
-        await readEncodedPngArtifactBytes(
-          artifactPath(libraryPath, artifact.artifact_hash, "png"),
+        const mediaType = artifact.media_type as NormalizedArtifact["mediaType"];
+        await readEncodedArtifactBytes(
+          artifactPath(libraryPath, artifact.artifact_hash, artifactExtensions[mediaType]),
           artifact.artifact_hash,
-          artifact,
+          { ...artifact, mediaType, validationProfile: artifact.validation_profile },
         );
         present = true;
       } catch {
@@ -116,6 +107,8 @@ export async function retainedArtifacts(
        JOIN retained_nodes AS retained
          ON (retained.photo_id, retained.node_id) = (edge.photo_id, edge.node_id)
      ), retained_artifacts(artifact_hash) AS (
+       SELECT original_artifact_hash FROM provider_image_attempts WHERE original_artifact_hash IS NOT NULL
+       UNION
        SELECT execution.output_artifact_hash
        FROM retained_nodes AS retained
        JOIN node_executions AS execution

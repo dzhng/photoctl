@@ -19,8 +19,16 @@ test("reimagine keeps successful generation active when density matching fails",
       upscale: { executed: false, node: null, density_satisfied: false },
       executions: [{ kind: "generate" }],
     });
+    const attempt = await fixture.handle.query<{ id: string }>(
+      "SELECT id FROM provider_image_attempts WHERE request->>'operation' = 'upscale'",
+    );
+    expect(attempt.rows).toEqual([{ id: expect.any(String) }]);
     expect(result.upscale.warnings).toEqual([
-      { code: "upscale_failed", message: "Fake upscaler transport failed" },
+      {
+        code: "upscale_failed",
+        message: `Fake upscaler transport failed (attempt ${attempt.rows[0]!.id})`,
+        attempt_id: attempt.rows[0]!.id,
+      },
     ]);
     expect(fixture.generationCalls()).toBe(1);
     expect(fixture.upscaleCalls()).toBe(1);

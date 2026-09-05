@@ -30,7 +30,13 @@ const providerProvenanceSchema = z.object({
   attempt: z.number().int().positive().max(5),
   density_verdict: z.enum(["satisfied", "limited", "not-applicable"]),
   warnings: z
-    .array(z.object({ code: z.enum(warningCodes), message: z.string().max(1_024) }))
+    .array(
+      z.object({
+        code: z.enum(warningCodes),
+        message: z.string().max(1_024),
+        attempt_id: z.uuid().optional(),
+      }),
+    )
     .max(16),
   output: z.object({
     dimensions: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
@@ -100,6 +106,7 @@ export const graphNodeDataSchema = graphNodeSummarySchema.extend({
     .array(
       z.object({
         execution_id: executionId,
+        provider_image_attempt_id: z.uuid().nullable(),
         evaluation_hash: evaluationHash,
         deterministic: z.boolean(),
         output_artifact_hash: artifactHash,
@@ -114,3 +121,46 @@ export const graphNodeDataSchema = graphNodeSummarySchema.extend({
 
 export type GraphShowData = z.infer<typeof graphShowDataSchema>;
 export type GraphNodeData = z.infer<typeof graphNodeDataSchema>;
+
+const attemptState = z.enum(["started", "retained", "committed", "rejected", "failed"]);
+export const graphAttemptsDataSchema = z.object({
+  attempts: z
+    .array(
+      z.object({
+        id: z.uuid(),
+        state: attemptState,
+        created_at: z.iso.datetime(),
+        operation: z.string().max(32),
+        model: z.string().max(256),
+        original: z
+          .object({ artifact_hash: artifactHash, recorded_available: z.boolean() })
+          .nullable(),
+      }),
+    )
+    .max(100),
+  next_cursor: z.string().nullable(),
+});
+export const graphAttemptDataSchema = z.object({
+  id: z.uuid(),
+  state: attemptState,
+  created_at: z.iso.datetime(),
+  updated_at: z.iso.datetime(),
+  request: z.unknown().nullable(),
+  provenance: z.unknown().nullable(),
+  outcome: z.unknown().nullable(),
+  original: z
+    .object({
+      artifact_hash: artifactHash,
+      path: z.string(),
+      media_type: z.string(),
+      validation_profile: z.enum(["linear-rgb-tiff", "mask-tiff", "encoded-image"]),
+      w: z.number().int().positive(),
+      h: z.number().int().positive(),
+      available: z.boolean(),
+    })
+    .nullable(),
+  executions: z.array(z.object({ photo_id: z.uuid(), execution_id: executionId })).max(64),
+  record_truncated: z.boolean(),
+});
+export type GraphAttemptsData = z.infer<typeof graphAttemptsDataSchema>;
+export type GraphAttemptData = z.infer<typeof graphAttemptDataSchema>;

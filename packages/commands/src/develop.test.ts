@@ -328,8 +328,8 @@ async function addLayer(libraryPath: string, id: string): Promise<string> {
     const artifactHash = `a_${"5".repeat(64)}`;
     await opened.query(
       `INSERT INTO image_artifacts
-         (artifact_hash, media_type, bytes, w, h, artifact_available)
-       VALUES ($1, $2, 4, 1, 1, true)`,
+         (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+       VALUES ($1, $2, 4, 1, 1, true, 'mask-tiff')`,
       [artifactHash, MASK_ARTIFACT_MEDIA_TYPE],
     );
     const layers = [

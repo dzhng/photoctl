@@ -60,7 +60,7 @@ export async function createReimagineLayer(
     );
   }
   const inputPng = await image16Png(base);
-  const generation = await executeFreshGeneration(libraryPath, {
+  const generation = await executeFreshGeneration(database, libraryPath, {
     inputNodeId: state.baseNodeId,
     inputArtifactHash: baseEvaluation.artifact.artifactHash,
     sentDimensions: { w: base.w, h: base.h },
@@ -99,7 +99,7 @@ export async function createReimagineLayer(
     }),
     targetPixels: request.dimensions.w * request.dimensions.h,
   });
-  const density = await executeGenerationDensity(libraryPath, {
+  const density = await executeGenerationDensity(database, libraryPath, {
     generation,
     target: { kind: "oriented_full_frame", dimensions: request.dimensions },
     targetDimensions: request.dimensions,

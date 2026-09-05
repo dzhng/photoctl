@@ -4,6 +4,8 @@ import {
   ensurePhotoDocument,
   inspectGraph,
   inspectGraphNode,
+  inspectProviderImageAttempts,
+  inspectProviderImageAttempt,
   resolveLayerId,
 } from "@photoctl/render";
 import { parseArguments } from "../arguments.js";
@@ -16,8 +18,38 @@ export async function graphCommand(
   provided?: LibraryHandle,
 ): Promise<Envelope> {
   const action = args[0];
+  if (action === "attempts" || action === "attempt") {
+    const parsed = parseArguments(args.slice(1), {
+      flags: [],
+      options: action === "attempts" ? ["--limit", "--cursor"] : [],
+    });
+    if (parsed.positionals.length !== (action === "attempt" ? 1 : 0))
+      throw new PhotoctlError(
+        "usage",
+        action === "attempt"
+          ? "graph attempt requires one attempt UUID"
+          : "graph attempts takes no photo ID",
+      );
+    const lease = await openRequestLibrary(env, cwd, provided);
+    try {
+      const data =
+        action === "attempts"
+          ? await inspectProviderImageAttempts(lease.handle, {
+              limit: parseLimit(parsed.options.get("--limit")),
+              cursor: parsed.options.get("--cursor"),
+            })
+          : await inspectProviderImageAttempt(
+              lease.handle,
+              lease.handle.path,
+              parsed.positionals[0]!,
+            );
+      return { schema: 1, ok: true, data, warnings: [] };
+    } finally {
+      await lease.release();
+    }
+  }
   if (action !== "show" && action !== "node") {
-    throw new PhotoctlError("usage", "graph requires show or node");
+    throw new PhotoctlError("usage", "graph requires show, node, attempts, or attempt");
   }
   const parsed = parseArguments(args.slice(1), {
     flags: action === "show" ? ["--history"] : [],
@@ -144,6 +176,7 @@ export async function graphCommand(
         consumer_count: node.consumerCount,
         executions: node.executions.map((execution) => ({
           execution_id: execution.executionId,
+          provider_image_attempt_id: execution.providerImageAttemptId,
           evaluation_hash: execution.evaluationHash,
           deterministic: execution.deterministic,
           output_artifact_hash: execution.outputArtifactHash,

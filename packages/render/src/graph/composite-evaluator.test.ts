@@ -106,7 +106,7 @@ test("a permanent mask pin refuses an RGB artifact with the same file extension"
         newLayers: [{ localKey: "wrong", role: "subject" }],
         layers,
       }),
-    ).rejects.toThrow("Mask artifact");
+    ).rejects.toThrow("wrong media type");
   } finally {
     await db.close();
   }
@@ -252,12 +252,26 @@ async function publishMask(db: PGlite, library: string, data: Float32Array) {
 
 async function registerArtifact(
   db: PGlite,
-  artifact: { artifactHash: string; mediaType: string; storageBytes: number; w: number; h: number },
+  artifact: {
+    artifactHash: string;
+    mediaType: string;
+    validationProfile: string;
+    storageBytes: number;
+    w: number;
+    h: number;
+  },
 ) {
   await db.query(
-    `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available)
-     VALUES ($1, $2, $3, $4, $5, true)`,
-    [artifact.artifactHash, artifact.mediaType, artifact.storageBytes, artifact.w, artifact.h],
+    `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+     VALUES ($1, $2, $3, $4, $5, true, $6)`,
+    [
+      artifact.artifactHash,
+      artifact.mediaType,
+      artifact.storageBytes,
+      artifact.w,
+      artifact.h,
+      artifact.validationProfile,
+    ],
   );
 }
 

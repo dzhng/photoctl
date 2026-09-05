@@ -55,6 +55,7 @@ export interface GraphNodeRecord extends GraphNodeSummary {
   consumerCount: number;
   executions: Array<{
     executionId: string;
+    providerImageAttemptId: string | null;
     evaluationHash: string;
     deterministic: boolean;
     outputArtifactHash: string;
@@ -281,6 +282,7 @@ export async function inspectGraphNode(
     ),
     database.query<{
       execution_id: string;
+      provider_image_attempt_id: string | null;
       evaluation_hash: string;
       deterministic: boolean;
       output_artifact_hash: string;
@@ -296,7 +298,7 @@ export async function inspectGraphNode(
       output_w: number;
       output_h: number;
     }>(
-      `SELECT execution.execution_id, execution.evaluation_hash, execution.deterministic,
+      `SELECT execution.execution_id, execution.provider_image_attempt_id, execution.evaluation_hash, execution.deterministic,
          execution.output_artifact_hash, artifact.artifact_available,
          execution.source_locator, execution.source_tier, execution.source_w,
          execution.source_h, execution.decoder_id, execution.decoder_version,
@@ -340,6 +342,7 @@ export async function inspectGraphNode(
     consumerCount,
     executions: executionRows.map((execution) => ({
       executionId: execution.execution_id,
+      providerImageAttemptId: execution.provider_image_attempt_id,
       evaluationHash: execution.evaluation_hash,
       deterministic: execution.deterministic,
       outputArtifactHash: execution.output_artifact_hash,

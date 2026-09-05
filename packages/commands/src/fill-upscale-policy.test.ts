@@ -1,9 +1,45 @@
 import { fillStrictDataSchema } from "@photoctl/protocol";
 import { evaluateGraphNode } from "@photoctl/render";
 import { describe, expect, test } from "vitest";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import sharp from "sharp";
 import { fillUpscaleFixture, fixtureCommand, success } from "./fill-upscale-fixture.js";
 
 describe.sequential("fill upscale policy", () => {
+  test("changing only upscale policy preserves the generation attempt across execution aliases", async () => {
+    const fixture = await fillUpscaleFixture({ generationMode: "smallerdims" });
+    try {
+      const segmented = success(
+        await fixtureCommand(fixture, "segment", [fixture.id, "--box", "18,7,5,5"]),
+      ) as { layer_id: string };
+      const args = [fixture.id, "--layer", segmented.layer_id, "--remove", "--pad", "0"];
+      success(await fixtureCommand(fixture, "fill", [...args, "--no-upscale"]));
+      const first = await fixture.handle.query<{ id: string }>(
+        "SELECT id FROM provider_image_attempts WHERE request->>'operation' = 'edit'",
+      );
+      expect(first.rows).toEqual([{ id: expect.any(String) }]);
+      success(await fixtureCommand(fixture, "fill", [...args, "--upscale"]));
+      const executions = await fixture.handle.query(
+        "SELECT execution.provider_image_attempt_id FROM node_executions execution JOIN image_nodes node ON (node.photo_id, node.id) = (execution.photo_id, execution.node_id) WHERE node.kind = 'generate'",
+      );
+      expect(executions.rows).toEqual([
+        { provider_image_attempt_id: first.rows[0]!.id },
+        { provider_image_attempt_id: first.rows[0]!.id },
+      ]);
+      expect(
+        (
+          await fixture.handle.query(
+            "SELECT id FROM provider_image_attempts WHERE request->>'operation' = 'edit'",
+          )
+        ).rows,
+      ).toEqual(first.rows);
+      expect(fixture.generationCalls()).toBe(1);
+      expect(fixture.upscaleCalls()).toBe(1);
+    } finally {
+      await fixture.close();
+    }
+  });
   test("configured auto upscale owns policy and inserts one upscale before placement", async () => {
     const fixture = await fillUpscaleFixture({ generationMode: "smallerdims" });
     try {
@@ -250,6 +286,44 @@ describe.sequential("fill upscale policy", () => {
         generated: { w: 16, h: 16 },
         density_satisfied: true,
       });
+      const retained = await fixture.handle.query<{
+        id: string;
+        original_artifact_hash: string;
+        w: number;
+        h: number;
+        provenance: unknown;
+      }>(
+        `SELECT attempt.id, attempt.original_artifact_hash, artifact.w, artifact.h, attempt.provenance
+         FROM provider_image_attempts attempt JOIN image_artifacts artifact ON artifact.artifact_hash = attempt.original_artifact_hash
+         WHERE attempt.request->>'operation' = 'upscale'`,
+      );
+      expect(retained.rows).toEqual([
+        {
+          id: expect.any(String),
+          original_artifact_hash: expect.any(String),
+          w: 18,
+          h: 18,
+          provenance: expect.objectContaining({
+            frame_mapping: { source: [0, 0, 8, 8], output: [1, 1, 16, 16] },
+          }),
+        },
+      ]);
+      const original = retained.rows[0]!;
+      const bytes = await readFile(
+        join(
+          fixture.handle.path,
+          "artifacts",
+          "sha256",
+          original.original_artifact_hash.slice(2, 4),
+          `${original.original_artifact_hash}.png`,
+        ),
+      );
+      expect(await sharp(bytes).metadata()).toMatchObject({ width: 18, height: 18 });
+      const executions = await fixture.handle.query(
+        "SELECT provider_image_attempt_id FROM node_executions WHERE provider_image_attempt_id = $1",
+        [original.id],
+      );
+      expect(executions.rows).toEqual([{ provider_image_attempt_id: original.id }]);
       const graph = success(await fixtureCommand(fixture, "graph", ["show", fixture.id])) as {
         nodes: Array<{ kind: string }>;
       };

@@ -1,5 +1,10 @@
-import { PhotoctlError, type Warning } from "@photoctl/protocol";
-import type { ImageInit, ImageModelAdapter, SentImage } from "@photoctl/providers";
+import { PhotoctlError } from "@photoctl/protocol";
+import type {
+  ImageInit,
+  ImageModelAdapter,
+  SentImage,
+  UpscaleExecutionAdapter,
+} from "@photoctl/providers";
 import { prepareReferenceArtifact } from "./reference.js";
 import { readArtifactImage } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
@@ -55,54 +60,7 @@ export interface FillGenerationDependencies {
 export interface FillUpscaleDependencies {
   policy: ResolvedUpscalePolicy;
   prompt: { id: string; version: number; original: string; derived: string };
-  adapter?: {
-    readonly id: string;
-    readonly version: string | null;
-    readonly supportedScales: readonly number[];
-    readonly limits: {
-      maxInputPixels: number;
-      maxOutputPixels: number;
-      maxOutputEdge: number;
-    };
-    execute(input: {
-      artifact: {
-        bytes: Buffer;
-        mediaType: "image/png";
-        hash: `a_${string}`;
-        dimensions: { w: number; h: number };
-      };
-      scale: number;
-      prompt: string;
-      seed?: number;
-    }): Promise<
-      | {
-          ok: true;
-          value: {
-            artifact: { bytes: Buffer; dimensions: { w: number; h: number } };
-            dimensions: { w: number; h: number };
-            frameMapping?: {
-              source: [number, number, number, number];
-              output: [number, number, number, number];
-            };
-            provenance: {
-              adapter: string;
-              adapterVersion: string | null;
-              service: string;
-              model: string;
-              modelVersion: string | null;
-              requestId: string | null;
-              seed: number | null;
-              durationMs: number;
-              costUsd: number;
-            };
-          };
-          samplingDimensions: { w: number; h: number };
-          densitySatisfied: boolean;
-          warnings: Warning[];
-        }
-      | { ok: false; code: "upscale_failed"; message: string; warnings: Warning[] }
-    >;
-  };
+  adapter?: UpscaleExecutionAdapter;
 }
 
 export async function fillLayer(
@@ -240,6 +198,9 @@ export async function fillLayer(
       generation.executions = [
         {
           node: { localKey: "generation" },
+          ...(reusable.generationRecipe.providerImageAttemptId
+            ? { providerImageAttemptId: reusable.generationRecipe.providerImageAttemptId }
+            : {}),
           executionId,
           evaluationHash: evaluationHash({
             nodeRecipeHash: recipe,
@@ -255,7 +216,7 @@ export async function fillLayer(
     }
   } else {
     const sent = await fillProviderInputs(base, mask, crop, request.fullResolution, baseToInput);
-    generation = await executeFreshGeneration(libraryPath, {
+    generation = await executeFreshGeneration(database, libraryPath, {
       inputNodeId: fillBaseNodeId,
       inputArtifactHash: baseEvaluation.artifact.artifactHash,
       ...(reference ? { reference } : {}),
@@ -321,7 +282,7 @@ export async function fillLayer(
   }
   const { nodeId: generationNodeId, provider } = generation;
   const cachedUpscale = reusable?.cachedUpscale;
-  const density = await executeGenerationDensity(libraryPath, {
+  const density = await executeGenerationDensity(database, libraryPath, {
     generation,
     target: {
       kind: "base_space_provider_crop",

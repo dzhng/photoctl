@@ -16,7 +16,7 @@ import {
   artifactPath,
   MASK_ARTIFACT_MEDIA_TYPE,
   normalizeMaskArtifact,
-  normalizeEncodedPngArtifact,
+  normalizeEncodedArtifact,
   registerPublishedArtifact,
   publishArtifact,
 } from "./publication.js";
@@ -38,7 +38,7 @@ test("encoded PNG publication shares orphan discovery and registration", async (
     })
       .png()
       .toBuffer();
-    const artifact = await publishArtifact(library, await normalizeEncodedPngArtifact(png));
+    const artifact = await publishArtifact(library, await normalizeEncodedArtifact(png));
     expect(await findOrphanArtifacts(database, library)).toEqual([artifact.path]);
     await registerPublishedArtifact(database, artifact);
     expect(await findOrphanArtifacts(database, library)).toEqual([]);
@@ -70,8 +70,8 @@ test("reconciliation invalidates legacy display artifacts", async () => {
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, bytes);
     await database.query(
-      `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available)
-       VALUES ($1, 'image/tiff', $2, 1, 1, true)`,
+      `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+       VALUES ($1, 'image/tiff', $2, 1, 1, true, 'linear-rgb-tiff')`,
       [hash, bytes.length],
     );
 
@@ -103,8 +103,8 @@ test("reconciliation recognizes canonical masks and rejects corrupt mask bytes",
       await normalizeMaskArtifact({ w: 2, h: 1, data: new Float32Array([0, 1]) }),
     );
     await database.query(
-      `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available)
-       VALUES ($1, $2, $3, $4, $5, false)`,
+      `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+       VALUES ($1, $2, $3, $4, $5, false, 'mask-tiff')`,
       [mask.artifactHash, mask.mediaType, mask.storageBytes, mask.w, mask.h],
     );
     expect(await reconcileArtifactAvailability(database, library)).toEqual({
@@ -180,10 +180,10 @@ test("retention follows disabled layer content and masks as immutable revision r
       [photo, revision, layer, content, mask],
     );
     await database.query(
-      `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available)
-       VALUES ($1, 'image/tiff', 1, 1, 1, true),
-              ($2, 'image/tiff', 1, 1, 1, true),
-              ($3, $4, 1, 1, 1, true)`,
+      `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+       VALUES ($1, 'image/tiff', 1, 1, 1, true, 'linear-rgb-tiff'),
+              ($2, 'image/tiff', 1, 1, 1, true, 'linear-rgb-tiff'),
+              ($3, $4, 1, 1, 1, true, 'mask-tiff')`,
       [...artifacts, MASK_ARTIFACT_MEDIA_TYPE],
     );
     await database.query(

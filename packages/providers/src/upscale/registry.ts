@@ -1,5 +1,6 @@
 import type { Warning } from "@photoctl/protocol";
 import type { UpscaleAdapter, UpscaleInput, UpscaleResult } from "./adapter.js";
+import { ProviderImageCaptureError, InvalidProviderImageError } from "../image-capture.js";
 
 export type UpscaleExecutionResult =
   | {
@@ -10,6 +11,16 @@ export type UpscaleExecutionResult =
       warnings: Warning[];
     }
   | { ok: false; code: "upscale_failed"; message: string; warnings: Warning[] };
+
+export type UpscaleExecutionAdapter = Pick<
+  UpscaleAdapter,
+  "id" | "version" | "supportedScales" | "limits"
+> & {
+  execute(
+    input: UpscaleInput,
+    onReceivedResult?: (value: UpscaleResult) => Promise<void>,
+  ): Promise<UpscaleExecutionResult>;
+};
 
 export class UpscaleRegistry {
   private readonly adapters = new Map<string, UpscaleAdapter>();
@@ -30,9 +41,22 @@ export class UpscaleRegistry {
     return this.adapters.get(model);
   }
 
-  async execute(adapter: UpscaleAdapter, input: UpscaleInput): Promise<UpscaleExecutionResult> {
+  async execute(
+    adapter: UpscaleAdapter,
+    input: UpscaleInput,
+    onReceivedResult?: (value: UpscaleResult) => Promise<void>,
+  ): Promise<UpscaleExecutionResult> {
     try {
       const value = await adapter.upscale(input);
+      if (onReceivedResult) {
+        try {
+          await onReceivedResult(value);
+        } catch (error) {
+          throw error instanceof InvalidProviderImageError
+            ? error
+            : new ProviderImageCaptureError(error);
+        }
+      }
       const source = input.artifact.dimensions;
       const output = value.dimensions;
       if (!validDimensions(output) || !validDimensions(value.artifact.dimensions)) {
@@ -73,6 +97,7 @@ export class UpscaleRegistry {
             ],
       };
     } catch (error) {
+      if (error instanceof ProviderImageCaptureError) throw error;
       return failure(error instanceof Error ? error.message : "Upscaler failed");
     }
   }

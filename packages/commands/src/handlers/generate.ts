@@ -2,6 +2,7 @@ import { cacheRootForLibrary } from "@photoctl/importer";
 import type { LibraryHandle } from "@photoctl/library";
 import {
   prepareStandaloneGeneratedPhoto,
+  failProviderImageAttempts,
   resolveUpscalePolicy,
   type FillUpscaleDependencies,
 } from "@photoctl/render";
@@ -64,6 +65,7 @@ export async function generateCommand(
     total: 1,
   });
   let progressStarted = false;
+  let pendingAttemptIds: string[] = [];
   try {
     await progress.start();
     progressStarted = true;
@@ -98,14 +100,14 @@ export async function generateCommand(
                 version: selected.version,
                 supportedScales: selected.supportedScales,
                 limits: selected.limits,
-                execute: async (input) => await registry.execute(selected, input),
+                execute: async (input, capture) => await registry.execute(selected, input, capture),
               },
             }
           : {}),
       };
     }
     const preparedRequest = adapter.buildGeneration(prompt, dimensions, seed, reference);
-    const prepared = await prepareStandaloneGeneratedPhoto(lease.handle.path, {
+    const prepared = await prepareStandaloneGeneratedPhoto(lease.handle, lease.handle.path, {
       dimensions,
       prompt,
       promptVersion: 1,
@@ -115,6 +117,9 @@ export async function generateCommand(
       preparedRequest,
       ...(upscale ? { upscale } : {}),
     });
+    pendingAttemptIds = prepared.executions.flatMap((execution) =>
+      execution.providerImageAttemptId ? [execution.providerImageAttemptId] : [],
+    );
     const cacheRoot = cacheRootForLibrary(await readLibraryId(lease.handle), cacheBase(env, cwd));
     const imported = await importGeneratedArtifact({
       path: prepared.finalArtifact.path,
@@ -204,9 +209,24 @@ export async function generateCommand(
       warnings: prepared.warnings,
     };
   } catch (error) {
-    if (error instanceof PhotoctlError) throw error;
+    try {
+      await failProviderImageAttempts(lease.handle, pendingAttemptIds, error);
+    } catch {
+      /* Keep the last durable journal state if catalog persistence failed. */
+    }
+    if (error instanceof PhotoctlError) {
+      if (!pendingAttemptIds.length) throw error;
+      throw new PhotoctlError(error.code, error.message, {
+        ...(typeof error.data === "object" && error.data ? error.data : {}),
+        attempt_id: pendingAttemptIds[0],
+        attempt_ids: pendingAttemptIds,
+      });
+    }
     throw new PhotoctlError("catalog_unreadable", "Could not commit generated photo", {
       reason: error instanceof Error ? error.message : String(error),
+      ...(pendingAttemptIds.length
+        ? { attempt_id: pendingAttemptIds[0], attempt_ids: pendingAttemptIds }
+        : {}),
     });
   } finally {
     try {

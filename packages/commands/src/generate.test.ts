@@ -300,6 +300,13 @@ test("explicit generate upscale reaches the requested size and sends a normalize
   });
   expect(uploads[0]).toMatchObject({ fields: { size: "40x30" } });
   expect(uploads[0]!.files).toEqual(new Set(["image[]"]));
+  const originals = await handle.query(
+    `SELECT attempt.request->>'operation' AS operation, attempt.state, artifact.w, artifact.h FROM provider_image_attempts attempt JOIN image_artifacts artifact ON artifact.artifact_hash = attempt.original_artifact_hash ORDER BY attempt.created_at, attempt.id`,
+  );
+  expect(originals.rows).toEqual([
+    { operation: "generate", state: "committed", w: 20, h: 15 },
+    { operation: "upscale", state: "committed", w: 40, h: 30 },
+  ]);
 });
 
 test("generate provider geometry failure leaves no catalog or graph state", async () => {

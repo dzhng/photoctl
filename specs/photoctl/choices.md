@@ -160,6 +160,22 @@
 - **Confidence:** High for the ownership decision; full-command photographic memory remains a
   separate gate beyond the isolated native resource measurement.
 
+### Paid response inspection — Keep metadata listing separate from file verification
+
+- **When:** Retention closeout, 2026-09-06; approved during integration review.
+- **The choice:** Listing a page of attempts reads catalog metadata and labels its availability flag
+  `recorded_available`. Inspecting one attempt verifies its original file and returns `available`.
+  If a file disappeared outside photoctl, the list can still report its last recorded presence while
+  detail correctly reports it missing. The alternative fully decodes every original on every page.
+- **The gap:** Bounded list/detail inspection was specified without choosing whether a list refreshes
+  file availability. A hundred large images would make a metadata query depend on their total pixels.
+- **The reach:** The public names state the freshness difference explicitly. Detail remains read-only;
+  repair and restore retain their existing availability owner. No compatibility alias is needed for
+  this previously unshipped command surface.
+- **Verdict:** **Sound.** Bounded metadata browsing stays cheap without claiming live file presence;
+  the targeted check supplies stronger evidence when needed.
+- **Confidence:** Medium; an eventual bulk verification command would need its own bounded-work contract.
+
 ### Paid response retention — Record attempts before deciding whether their images can be used
 
 - **When:** Retention producer audit, 2026-09-06; implementation remains pending.

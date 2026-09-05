@@ -52,6 +52,17 @@ describe.sequential("fill branch refresh", () => {
         composite: { unmasked_bit_exact: true },
       });
       expect(refreshed.refreshed.node).not.toBe(filled.generation.node);
+      const attempt = await fixture.handle.query(
+        "SELECT attempt.id, attempt.state, attempt.original_artifact_hash FROM provider_image_attempts attempt JOIN node_executions execution ON execution.provider_image_attempt_id = attempt.id WHERE execution.node_id = $1 AND attempt.request->>'operation' = 'edit'",
+        [refreshed.refreshed.node],
+      );
+      expect(attempt.rows).toEqual([
+        {
+          id: expect.any(String),
+          state: "committed",
+          original_artifact_hash: expect.stringMatching(/^a_[a-f0-9]{64}$/),
+        },
+      ]);
       expect(refreshed.graph.revision).not.toBe(filled.graph.revision);
       expect(refreshed.graph.render_hash).not.toBe(developed.results[0]!.render_hash);
 
@@ -146,6 +157,14 @@ describe.sequential("fill branch refresh", () => {
       expect(nextUpscale.executions[0]!.execution_id).not.toBe(
         firstUpscale.executions[0]!.execution_id,
       );
+      const attempts = await fixture.handle.query<{ id: string }>(
+        "SELECT attempt.id FROM provider_image_attempts attempt JOIN node_executions execution ON execution.provider_image_attempt_id = attempt.id WHERE execution.execution_id = $1 AND attempt.state = 'committed' AND attempt.request->>'operation' = 'upscale'",
+        [nextUpscale.executions[0]!.execution_id],
+      );
+      expect(attempts.rows).toEqual([{ id: expect.any(String) }]);
+      expect(nextUpscale.executions[0]).toMatchObject({
+        provider_image_attempt_id: attempts.rows[0]!.id,
+      });
       const graph = success(
         await fixtureCommand(fixture, "graph", ["show", fixture.id, "--layer", segmented.layer_id]),
       ) as { nodes: Array<{ kind: string }> };

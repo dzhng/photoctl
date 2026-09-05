@@ -1148,10 +1148,10 @@ async function graphDatabase(): Promise<PGlite> {
   );
   await db.query(
     `INSERT INTO image_artifacts
-       (artifact_hash, media_type, bytes, w, h, artifact_available)
-     VALUES ($1, $4, 1, 1, 1, true),
-            ($2, $4, 1, 1, 1, true),
-            ($3, $4, 1, 1, 1, true)`,
+       (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+     VALUES ($1, $4, 1, 1, 1, true, 'mask-tiff'),
+            ($2, $4, 1, 1, 1, true, 'mask-tiff'),
+            ($3, $4, 1, 1, 1, true, 'mask-tiff')`,
     [...["1", "2", "3"].map((digit) => `a_${digit.repeat(64)}`), MASK_ARTIFACT_MEDIA_TYPE],
   );
   return db;

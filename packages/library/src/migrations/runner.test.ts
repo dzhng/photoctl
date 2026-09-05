@@ -237,8 +237,8 @@ test("the graph schema separates logical nodes from reusable and attempted execu
     ).rejects.toThrow();
     await db.query(
       `INSERT INTO image_artifacts
-         (artifact_hash, media_type, bytes, w, h, artifact_available)
-       VALUES ($1, 'application/x-photoctl-test', 1, 1, 1, true)`,
+         (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+       VALUES ($1, 'application/x-photoctl-test', 1, 1, 1, true, 'encoded-image')`,
       [artifact],
     );
     await db.query(

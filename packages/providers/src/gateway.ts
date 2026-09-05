@@ -87,6 +87,7 @@ export class GatewayClient {
         });
       } catch (error) {
         throw new PhotoctlError("provider_busy", "The provider request did not complete", {
+          attempts: attempt,
           message: error instanceof Error ? error.message : String(error),
         });
       }
@@ -100,6 +101,7 @@ export class GatewayClient {
           await abortableSleep(this.sleep, retryDelay(response, attempt), signal);
         } catch (error) {
           throw new PhotoctlError("provider_busy", "The provider retry was interrupted", {
+            attempts: attempt,
             message: error instanceof Error ? error.message : String(error),
           });
         }
@@ -110,7 +112,7 @@ export class GatewayClient {
         throw new PhotoctlError(
           configurationFailure ? "provider_unconfigured" : "provider_busy",
           `Gateway request failed with HTTP ${response.status}`,
-          { status: response.status },
+          { status: response.status, attempts: attempt },
         );
       }
       const requestId = response.headers.get("x-request-id");
@@ -121,11 +123,10 @@ export class GatewayClient {
           attempts: attempt,
         };
       } catch {
-        throw new PhotoctlError(
-          "provider_busy",
-          "The provider returned invalid JSON",
-          requestId ? { requestId: requestId.slice(0, 256) } : {},
-        );
+        throw new PhotoctlError("provider_busy", "The provider returned invalid JSON", {
+          attempts: attempt,
+          ...(requestId ? { requestId: requestId.slice(0, 256) } : {}),
+        });
       }
     }
     throw new Error("Unreachable gateway retry state");

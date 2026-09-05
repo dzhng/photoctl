@@ -1,4 +1,9 @@
 import { PhotoctlError, type Warning } from "@photoctl/protocol";
+import {
+  runProviderImageAttempt,
+  imageAttemptRequestDetails,
+} from "../provider-images/attempts.js";
+import { executeRetainedUpscale } from "../provider-images/upscale.js";
 import { transformMaskPixels } from "@photoctl/img";
 import {
   normalizeArtifact,
@@ -32,12 +37,7 @@ import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
 import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { planPhotographicOutput } from "../graph/output.js";
 import { describeFillBranch, type FillBranchDescriptor } from "./branch.js";
-import {
-  fillProviderInputs,
-  cropMappedExternalImage,
-  decodeExternalImage,
-  image16Png,
-} from "./external-pixels.js";
+import { fillProviderInputs, decodeExternalImage, image16Png } from "./external-pixels.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./pipeline.js";
 import { rebuildFillBranch } from "./rebuild.js";
 
@@ -141,6 +141,7 @@ export async function refreshFillLayer(
       });
     } else {
       const refreshed = await executeUpscaleRefresh(
+        database,
         libraryPath,
         request,
         branch.upscale,
@@ -414,118 +415,153 @@ async function executeGenerationRefresh(
     { init, ...(reference ? { reference } : {}) },
   );
   const started = (request.dependencies.now ?? Date.now)();
-  const response = await request.dependencies.gateway.imageEdits(prepared.body);
-  const normalized = await request.dependencies.adapter.normalize(response.data, sent.image);
-  normalized.warnings.unshift(...prepared.warnings);
-  if (effectiveMask && effectiveMask.clippedPixels > 0)
-    normalized.warnings.push({
-      code: "mask_clipped",
-      message:
-        "Refreshed fill coverage was clipped to the current visible frame; the original selection is unchanged",
-    });
-  if (normalized.wholeFrame && (!branch.fit || branch.fit.mode === "strict")) {
-    throw new PhotoctlError(
-      "provider_whole_frame",
-      "Refresh refused a provider result that edited the whole frame",
+  return (
+    await runProviderImageAttempt(
+      database,
+      libraryPath,
       {
-        id: request.photoId,
+        operation: "edit",
+        adapter: request.dependencies.adapter.id,
+        adapter_version: request.dependencies.adapter.version,
+        ...imageAttemptRequestDetails(prepared),
+        model: request.dependencies.model,
+        prompt,
+        dimensions: sent.image,
+        input_artifact_hashes: [
+          baseEvaluation.artifact.artifactHash,
+          ...(reference ? [reference.workingArtifactHash] : []),
+        ],
+        ...(seed === undefined ? {} : { seed }),
       },
-    );
-  }
-  const image = await decodeExternalImage(normalized.png, normalized.returnedDimensions);
-  const artifact = await publishArtifact(libraryPath, await normalizeArtifact(image));
-  const executionId = newExecutionId();
-  const nextParameters = {
-    ...parameters,
-    adapter_version: request.dependencies.adapter.version,
-    request: {
-      ...storedRequest,
-      controls: {
-        requested_init: init,
-        applied_init: prepared.appliedControls.init,
-        reference_used: prepared.appliedControls.reference,
+      async (attempt) => {
+        const response = await request.dependencies.gateway.imageEdits(prepared.body);
+        const normalized = await request.dependencies.adapter.normalize(
+          response.data,
+          sent.image,
+          async (bytes) =>
+            await attempt.retain(bytes, {
+              request_id: response.requestId,
+              transport_attempts: response.attempts,
+              cost_usd: null,
+            }),
+        );
+        normalized.warnings.unshift(...prepared.warnings);
+        if (effectiveMask && effectiveMask.clippedPixels > 0)
+          normalized.warnings.push({
+            code: "mask_clipped",
+            message:
+              "Refreshed fill coverage was clipped to the current visible frame; the original selection is unchanged",
+          });
+        if (normalized.wholeFrame && (!branch.fit || branch.fit.mode === "strict")) {
+          throw new PhotoctlError(
+            "provider_whole_frame",
+            "Refresh refused a provider result that edited the whole frame",
+            {
+              id: request.photoId,
+            },
+          );
+        }
+        const image = await decodeExternalImage(normalized.png, normalized.returnedDimensions);
+        const artifact = await publishArtifact(libraryPath, await normalizeArtifact(image));
+        const executionId = newExecutionId();
+        const nextParameters = {
+          ...parameters,
+          adapter_version: request.dependencies.adapter.version,
+          request: {
+            ...storedRequest,
+            controls: {
+              requested_init: init,
+              applied_init: prepared.appliedControls.init,
+              reference_used: prepared.appliedControls.reference,
+            },
+            execution_id: executionId,
+            returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
+            sent: [sent.image.w, sent.image.h],
+            full_res: storedRequest.full_res !== false,
+            crop: [cropRect.x, cropRect.y, cropRect.w, cropRect.h],
+            sampling: {
+              base_to_input: [...baseToInput],
+              input_dimensions: [base.w, base.h],
+              outside_visible: "black-protected",
+            },
+            source_context: {
+              tier: request.sourceContext.tier,
+              pixel_scale: request.sourceContext.pixelScale,
+              resolution_limited: request.sourceContext.resolutionLimited,
+            },
+            ...(!identityMatrix(branch.generationInputMatrix)
+              ? { input_matrix: [...branch.generationInputMatrix] }
+              : {}),
+          },
+        } as JsonValue;
+        const node: NodeDraft = {
+          localKey: "refresh-generation",
+          kind: "generate",
+          recipeVersion: generation.recipeVersion,
+          parameters: nextParameters,
+          inputs: [
+            { nodeId: baseNodeId },
+            ...(referenceNodeId ? [{ nodeId: referenceNodeId }] : []),
+          ],
+        };
+        const recipe = recipeHash(
+          canonicalNodeRecipe({
+            kind: node.kind,
+            recipeVersion: node.recipeVersion,
+            parameters: node.parameters,
+            inputNodeIds: [baseNodeId, ...(referenceNodeId ? [referenceNodeId] : [])],
+          }),
+        );
+        const provider: ExternalExecutionProvenance = {
+          adapter: request.dependencies.adapter.id,
+          adapterVersion: request.dependencies.adapter.version,
+          service: request.dependencies.service ?? "gateway",
+          model: request.dependencies.model,
+          modelVersion: null,
+          providerRequestId: response.requestId,
+          seed: seed ?? null,
+          durationMs: Math.max(0, (request.dependencies.now ?? Date.now)() - started),
+          costUsd: 0,
+          inputPx:
+            sent.image.w * sent.image.h +
+            (reference && prepared.appliedControls.reference ? reference.w * reference.h : 0),
+          targetPx: cropRect.w * cropRect.h,
+          attempt: response.attempts,
+          densityVerdict: "not-applicable",
+          warnings: normalized.warnings,
+        };
+        const execution: PreparedNodeExecution = {
+          providerImageAttemptId: attempt.id,
+          node: { localKey: node.localKey },
+          executionId,
+          evaluationHash: evaluationHash({
+            nodeRecipeHash: recipe,
+            kind: node.kind,
+            recipeVersion: node.recipeVersion,
+            inputArtifactHashes: [
+              baseEvaluation.artifact.artifactHash,
+              ...(reference ? [reference.workingArtifactHash] : []),
+            ],
+          }),
+          outputArtifactHash: artifact.artifactHash,
+          inputArtifactHashes: [
+            baseEvaluation.artifact.artifactHash,
+            ...(reference ? [reference.workingArtifactHash] : []),
+          ],
+          provider,
+        };
+        return {
+          node,
+          nodeId: logicalNodeId(recipe),
+          artifact,
+          execution,
+          warnings: normalized.warnings,
+          effectiveMask,
+          crop: cropRect,
+        };
       },
-      execution_id: executionId,
-      returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
-      sent: [sent.image.w, sent.image.h],
-      full_res: storedRequest.full_res !== false,
-      crop: [cropRect.x, cropRect.y, cropRect.w, cropRect.h],
-      sampling: {
-        base_to_input: [...baseToInput],
-        input_dimensions: [base.w, base.h],
-        outside_visible: "black-protected",
-      },
-      source_context: {
-        tier: request.sourceContext.tier,
-        pixel_scale: request.sourceContext.pixelScale,
-        resolution_limited: request.sourceContext.resolutionLimited,
-      },
-      ...(!identityMatrix(branch.generationInputMatrix)
-        ? { input_matrix: [...branch.generationInputMatrix] }
-        : {}),
-    },
-  } as JsonValue;
-  const node: NodeDraft = {
-    localKey: "refresh-generation",
-    kind: "generate",
-    recipeVersion: generation.recipeVersion,
-    parameters: nextParameters,
-    inputs: [{ nodeId: baseNodeId }, ...(referenceNodeId ? [{ nodeId: referenceNodeId }] : [])],
-  };
-  const recipe = recipeHash(
-    canonicalNodeRecipe({
-      kind: node.kind,
-      recipeVersion: node.recipeVersion,
-      parameters: node.parameters,
-      inputNodeIds: [baseNodeId, ...(referenceNodeId ? [referenceNodeId] : [])],
-    }),
-  );
-  const provider: ExternalExecutionProvenance = {
-    adapter: request.dependencies.adapter.id,
-    adapterVersion: request.dependencies.adapter.version,
-    service: request.dependencies.service ?? "gateway",
-    model: request.dependencies.model,
-    modelVersion: null,
-    providerRequestId: response.requestId,
-    seed: seed ?? null,
-    durationMs: Math.max(0, (request.dependencies.now ?? Date.now)() - started),
-    costUsd: 0,
-    inputPx:
-      sent.image.w * sent.image.h +
-      (reference && prepared.appliedControls.reference ? reference.w * reference.h : 0),
-    targetPx: cropRect.w * cropRect.h,
-    attempt: response.attempts,
-    densityVerdict: "not-applicable",
-    warnings: normalized.warnings,
-  };
-  const execution: PreparedNodeExecution = {
-    node: { localKey: node.localKey },
-    executionId,
-    evaluationHash: evaluationHash({
-      nodeRecipeHash: recipe,
-      kind: node.kind,
-      recipeVersion: node.recipeVersion,
-      inputArtifactHashes: [
-        baseEvaluation.artifact.artifactHash,
-        ...(reference ? [reference.workingArtifactHash] : []),
-      ],
-    }),
-    outputArtifactHash: artifact.artifactHash,
-    inputArtifactHashes: [
-      baseEvaluation.artifact.artifactHash,
-      ...(reference ? [reference.workingArtifactHash] : []),
-    ],
-    provider,
-  };
-  return {
-    node,
-    nodeId: logicalNodeId(recipe),
-    artifact,
-    execution,
-    warnings: normalized.warnings,
-    effectiveMask,
-    crop: cropRect,
-  };
+    )
+  ).value;
 }
 
 function identityMatrix(matrix: readonly number[]): boolean {
@@ -533,6 +569,7 @@ function identityMatrix(matrix: readonly number[]): boolean {
 }
 
 async function executeUpscaleRefresh(
+  database: GraphDatabase,
   libraryPath: string,
   request: RefreshFillRequest,
   upscale: NonNullable<FillBranchDescriptor["upscale"]>,
@@ -554,7 +591,7 @@ async function executeUpscaleRefresh(
     generationArtifact.path,
     generationArtifact.artifactHash,
   );
-  const result = await adapter.execute({
+  const result = await executeRetainedUpscale(database, libraryPath, adapter, {
     artifact: {
       bytes: await image16Png(generationImage),
       mediaType: "image/png",
@@ -566,26 +603,7 @@ async function executeUpscaleRefresh(
     ...(seed === undefined ? {} : { seed }),
   });
   if (!result.ok) return { ok: false as const, warnings: result.warnings };
-  let normalized: Awaited<ReturnType<typeof normalizeArtifact>>;
-  try {
-    const bytes = result.value.frameMapping
-      ? await cropMappedExternalImage(result.value.artifact.bytes, result.value.frameMapping.output)
-      : result.value.artifact.bytes;
-    const image = await decodeExternalImage(bytes, result.samplingDimensions);
-    normalized = await normalizeArtifact(image);
-  } catch (error) {
-    return {
-      ok: false as const,
-      warnings: [
-        ...result.warnings,
-        {
-          code: "upscale_failed" as const,
-          message: error instanceof Error ? error.message : "Upscaler returned unreadable pixels",
-        },
-      ],
-    };
-  }
-  const artifact = await publishArtifact(libraryPath, normalized);
+  const artifact = result.artifact;
   const executionId = newExecutionId();
   const provenance = result.value.provenance;
   const nextParameters = {
@@ -626,6 +644,7 @@ async function executeUpscaleRefresh(
     warnings: result.warnings,
   };
   const execution: PreparedNodeExecution = {
+    providerImageAttemptId: result.attemptId,
     node: { localKey: node.localKey },
     executionId,
     evaluationHash: evaluationHash({

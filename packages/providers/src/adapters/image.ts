@@ -59,6 +59,7 @@ export interface ImageModelAdapter {
   normalize(
     response: unknown,
     sentDimensions: { w: number; h: number },
+    onDecodedImage?: (bytes: Buffer) => Promise<void>,
   ): Promise<NormalizedImageResponse>;
 }
 
@@ -223,6 +224,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
   async normalize(
     response: unknown,
     sentDimensions: { w: number; h: number },
+    onDecodedImage?: (bytes: Buffer) => Promise<void>,
   ): Promise<NormalizedImageResponse> {
     const parsed = imageResponseSchema.parse(response);
     const item = parsed.data[0]!;
@@ -232,6 +234,9 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     const metadata = await sharp(bytes, { failOn: "error" }).metadata();
     if (!metadata.width || !metadata.height)
       throw new Error("Provider image dimensions are missing");
+    if (onDecodedImage) {
+      await onDecodedImage(bytes);
+    }
     if (metadata.width * sentDimensions.h !== metadata.height * sentDimensions.w) {
       throw new PhotoctlError(
         "provider_whole_frame",

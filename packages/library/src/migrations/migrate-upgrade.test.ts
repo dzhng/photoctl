@@ -423,6 +423,14 @@ test("the v14 fixture preserves a source-less generated photo and its provider p
     expect(generated.rows).toEqual([
       { tag: "generated", recipe_version: 2, inputs: "0", output_kind: "output", seed: 7 },
     ]);
+    expect(
+      (
+        await db.query(
+          "SELECT provider_image_attempt_id FROM node_executions WHERE NOT deterministic",
+        )
+      ).rows,
+    ).toEqual([{ provider_image_attempt_id: null }]);
+    expect((await db.query("SELECT id FROM provider_image_attempts")).rows).toEqual([]);
   } finally {
     await db.close();
   }
@@ -489,6 +497,40 @@ async function fixture(name: string): Promise<string> {
   return await readFile(new URL(`../../../../fixtures/libraries/${name}`, import.meta.url), "utf8");
 }
 
+test("the v20 fixture keeps paid originals and independent attempt outcomes through restore", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v20.pgsql"));
+    await migrate(db);
+    expect(
+      (
+        await db.query(`SELECT attempt.state, artifact.media_type, artifact.validation_profile,
+      (SELECT count(*)::int FROM node_executions execution WHERE execution.provider_image_attempt_id = attempt.id) AS executions
+      FROM provider_image_attempts attempt JOIN image_artifacts artifact ON artifact.artifact_hash = attempt.original_artifact_hash
+      ORDER BY attempt.state`)
+      ).rows,
+    ).toEqual([
+      {
+        state: "committed",
+        media_type: "image/png",
+        validation_profile: "encoded-image",
+        executions: 1,
+      },
+      {
+        state: "rejected",
+        media_type: "image/png",
+        validation_profile: "encoded-image",
+        executions: 0,
+      },
+    ]);
+    expect((await db.query("SELECT count(*)::int AS count FROM photos")).rows).toEqual([
+      { count: 1 },
+    ]);
+  } finally {
+    await db.close();
+  }
+});
+
 test("the v19 fixture retains immutable geometry intent and layer authoring relations", async () => {
   const db = await testDatabase();
   try {
@@ -544,6 +586,18 @@ test("the v18 fixture retains both reference encodings without a source executio
     expect(result.rows).toEqual([
       { working_type: "image/tiff", encoded_type: "image/png", executions: 0 },
     ]);
+    expect(
+      (
+        await db.query(
+          "SELECT DISTINCT media_type, validation_profile FROM image_artifacts ORDER BY media_type",
+        )
+      ).rows,
+    ).toEqual([
+      { media_type: "image/png", validation_profile: "encoded-image" },
+      { media_type: "image/tiff", validation_profile: "linear-rgb-tiff" },
+      { media_type: "image/vnd.photoctl.mask+tiff", validation_profile: "mask-tiff" },
+    ]);
+    expect((await db.query("SELECT id FROM provider_image_attempts")).rows).toEqual([]);
   } finally {
     await db.close();
   }

@@ -18,6 +18,7 @@ import { migration0016 } from "./0016-effective-masks.js";
 import { migration0017 } from "./0017-execution-frames.js";
 import { migration0018 } from "./0018-reference-images.js";
 import { migration0019 } from "./0019-canvas-intent.js";
+import { migration0020 } from "./0020-provider-image-attempts.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -45,6 +46,7 @@ const migrations = [
   { version: 17, sql: migration0017 },
   { version: 18, sql: migration0018 },
   { version: 19, sql: migration0019 },
+  { version: 20, sql: migration0020 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;
@@ -64,6 +66,7 @@ const latestTables = [
   "markup",
   "node_executions",
   "photo_documents",
+  "provider_image_attempts",
   "photos",
   "schema_version",
   "settings",
@@ -105,6 +108,7 @@ const latestConstraints = [
   "image_artifacts_h_check",
   "image_artifacts_pkey",
   "image_artifacts_w_check",
+  "image_artifacts_validation_profile_check",
   "image_node_inputs_not_self_check",
   "image_node_inputs_input_index_check",
   "image_node_inputs_photo_id_node_id_fkey",
@@ -138,6 +142,14 @@ const latestConstraints = [
   "node_executions_source_w_check",
   "node_executions_provider_execution_check",
   "node_executions_render_frame_check",
+  "node_executions_provider_image_attempt_id_fkey",
+  "provider_image_attempts_pkey",
+  "provider_image_attempts_request_check",
+  "provider_image_attempts_provenance_check",
+  "provider_image_attempts_original_artifact_hash_fkey",
+  "provider_image_attempts_state_check",
+  "provider_image_attempts_outcome_check",
+  "provider_image_attempts_check",
   "photo_documents_photo_id_active_revision_id_fkey",
   "photo_documents_photo_id_fkey",
   "photo_documents_pkey",
@@ -228,6 +240,8 @@ export async function verifyLatestSchema(db: PGlite): Promise<void> {
         "layers_one_vacancy_per_subject_idx",
         "node_executions_deterministic_eval_idx",
         "node_executions_node_id_idx",
+        "node_executions_provider_image_attempt_idx",
+        "provider_image_attempts_created_idx",
         "exports_photo_at_idx",
         "embeddings_vec_hnsw_idx",
         "photos_flag_idx",

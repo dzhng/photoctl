@@ -31,8 +31,8 @@ test("restore marks a referenced canonical artifact unavailable when its file is
   );
   await initialized.handle.query(
     `INSERT INTO image_artifacts
-       (artifact_hash, media_type, bytes, w, h, artifact_available)
-     VALUES ($1, 'image/tiff', 1, 1, 1, true)`,
+       (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+     VALUES ($1, 'image/tiff', 1, 1, 1, true, 'linear-rgb-tiff')`,
     [artifactHash],
   );
   await initialized.handle.query(

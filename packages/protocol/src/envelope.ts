@@ -36,6 +36,7 @@ export const warningCodes = [
 ] as const;
 export type WarningCode = (typeof warningCodes)[number];
 export interface Warning {
+  attempt_id?: string;
   code: WarningCode;
   id?: string;
   message: string;

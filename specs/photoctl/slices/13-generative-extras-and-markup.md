@@ -61,24 +61,25 @@ Completed provider work is shared by exact request identity across inspection ca
 purchase identical work again. Source/detail files and provider-accounting evidence remain separate from photographic acceptance.
 Live photographic comparison and release-default selection remain unverified.
 
-## Paid response retention — remaining artifact contract
+## Paid response retention — shared artifact and attempt ownership
 
 The [bounded format measurement](../assets/artifact-storage/) distinguishes exact original encoded
-responses from canonical working pixels. Preserve original paid generation/upscaler bytes unchanged
-through the existing artifact owner, linked to their execution, while continuing to use exact linear
+responses from canonical working pixels. Original paid generation/upscaler bytes stay unchanged
+through the existing artifact owner, linked to their library attempt, while the graph uses exact linear
 TIFFs inside the graph. Do not introduce a second publication, availability, or retention lifecycle.
 Historical missing originals remain explicitly unavailable; never re-encode working pixels and label
 them the original response or replay a paid request during repair/inspection.
 
-This checkpoint remains unbuilt. The provider boundary must expose exact decoded response bytes
-before PNG normalization, separately from the working image. Generation and upscaling share that
-contract, including refresh and transform-triggered density work. For mapped upscales, retain the
-whole response before its working crop and keep the adapter's coordinate mapping in provenance.
+The provider boundary now awaits exact decoded response capture before PNG normalization, separately
+from the working image. Generation and upscaling share that contract, including refresh and
+transform-triggered density work. Mapped upscales retain the whole response before its working crop
+and keep the adapter's coordinate mapping in provenance. A custom adapter that omits required capture
+cannot commit a successful library execution; artifact persistence failures cannot become ordinary
+upscale fallbacks.
 
-Use content classification, not execution role, to validate stored artifacts. A migration after
-reference inputs adds an artifact validation profile. Backfill existing working RGB TIFFs, mask TIFFs,
-and reference PNGs without relaxing their
-validators. A provider TIFF that passes strict canonical validation has the same classification,
+Content classification, not execution role, validates stored artifacts. Migration20 adds the artifact
+validation profile and backfills working RGB TIFFs, mask TIFFs, and reference PNGs without relaxing
+their validators. A provider TIFF that passes strict canonical validation has the same classification,
 hash, and file as identical working bytes; an ordinary encoded TIFF must never enter the working
 reader merely because its MIME type is `image/tiff`. Sniff the actual format and intrinsic dimensions,
 retain unchanged bytes, and dispatch availability checks by that content classification.
@@ -119,6 +120,26 @@ or revision-conflict failures through real command flows with zero automatic pro
 Metadata-only backups do not become portable image-byte backups. These checkpoints do not enable
 automatic deletion: representative undo-history measurements must separately choose count/age/storage
 limits.
+
+The implementation boundary is [`provider-images/`](../../../packages/render/src/provider-images/):
+the journal orchestrates the existing artifact owner, and revision commits attach prepared executions
+atomically. One attempt may be referenced by multiple execution aliases when graph intent changes
+without buying the image again. Historical execution links remain NULL rather than inventing an original.
+`graph attempts` is a bounded metadata listing: `recorded_available` is the catalog's last-known state.
+`graph attempt <uuid>` validates that original's current bytes and returns `available`; neither command
+repairs files or invokes providers. Lists omit image bytes; oversized detail records are explicitly truncated.
+
+The schema20 fixture comes from accepted and rejected public fake-gateway generation calls. Public
+regressions cover retention before policy, mapped pre-crop bytes, refresh and density work, reuse,
+independent-attempt deduplication, typed commit/cache failures and metadata-only restore. Format tests
+preserve metadata, orientation and extra encoded frames while independently enforcing working validators.
+No live provider or photographic quality claim is made by these retention checks.
+
+**Open deletion checkpoint:** the public `generate` → `show` → `remove` flow currently fails at the
+existing raw photo DELETE with `image_node_inputs_photo_id_input_node_id_fkey`. The attempt journal
+has no photo owner and is included directly in artifact retention, but public deletion retention is
+not yet verified. A focused follow-on must fix graph-photo teardown in the existing remove transaction
+and rerun that public journey; manually removing graph relations is not evidence that `remove` works.
 
 ## Checkpoints: one artifact per sub-slice, one variable each; all inherit the root visual gates and non-blocking review rule.
 

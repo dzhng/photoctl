@@ -99,8 +99,8 @@ async function layeredDocument(): Promise<PGlite> {
   const artifactHash = `a_${"4".repeat(64)}`;
   await database.query(
     `INSERT INTO image_artifacts
-       (artifact_hash, media_type, bytes, w, h, artifact_available)
-     VALUES ($1, $2, 4, 1, 1, true)`,
+       (artifact_hash, media_type, bytes, w, h, artifact_available, validation_profile)
+     VALUES ($1, $2, 4, 1, 1, true, 'mask-tiff')`,
     [artifactHash, MASK_ARTIFACT_MEDIA_TYPE],
   );
   const layers = [

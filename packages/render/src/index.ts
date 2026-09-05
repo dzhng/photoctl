@@ -43,6 +43,8 @@ export * from "./markup/flatten.js";
 export * from "./markup/state.js";
 export * from "./reimagine.js";
 export * from "./generate.js";
+export { failProviderImageAttempts } from "./provider-images/attempts.js";
+export * from "./provider-images/inspection.js";
 export * from "./fill/crop.js";
 export * from "./fill/branch.js";
 export * from "./fill/density.js";

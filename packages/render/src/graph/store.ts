@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { PhotoctlError } from "@photoctl/protocol";
+import { failProviderImageAttempts } from "../provider-images/attempts.js";
 import { frameForNode, savedRenderFrame } from "./frame.js";
 import {
   canonicalJson,
@@ -72,6 +74,7 @@ export interface CommitRevisionRequest {
   markupDocument?: MarkupDocument;
 }
 export interface PreparedNodeExecution {
+  providerImageAttemptId?: string;
   node: NodeReference;
   executionId: string;
   evaluationHash: string;
@@ -222,9 +225,35 @@ export async function commitRevision(
   database: GraphDatabase,
   request: CommitRevisionRequest,
 ): Promise<CommitRevisionResult> {
-  return await database.transaction(
-    async (transaction) => await commitRevisionInTransaction(transaction, request),
-  );
+  try {
+    return await database.transaction(
+      async (transaction) => await commitRevisionInTransaction(transaction, request),
+    );
+  } catch (error) {
+    const ids = (request.executions ?? []).flatMap((execution) =>
+      execution.providerImageAttemptId ? [execution.providerImageAttemptId] : [],
+    );
+    if (!ids.length) throw error;
+    try {
+      await failProviderImageAttempts(database, ids, error);
+    } catch {
+      /* An unavailable database leaves the last durable journal state. */
+    }
+    throw new PhotoctlError(
+      error instanceof PhotoctlError
+        ? error.code
+        : error instanceof RevisionConflictError
+          ? "library_locked"
+          : "catalog_unreadable",
+      error instanceof Error ? error.message : "Could not commit provider image",
+      {
+        id: request.photoId,
+        attempt_id: ids[0],
+        attempt_ids: ids,
+        ...(error instanceof RevisionConflictError ? { reason: "revision_conflict" } : {}),
+      },
+    );
+  }
 }
 
 /** Commits a revision inside a caller-owned transaction, for atomic catalog creation. */
@@ -533,8 +562,8 @@ async function storePreparedExecution(
   await transaction.query(
     `INSERT INTO node_executions (
        photo_id, execution_id, node_id, evaluation_hash, deterministic,
-       output_artifact_hash, provider_execution, render_frame
-     ) VALUES ($1, $2, $3, $4, false, $5, $6::jsonb, $7::jsonb)`,
+       output_artifact_hash, provider_execution, render_frame, provider_image_attempt_id
+     ) VALUES ($1, $2, $3, $4, false, $5, $6::jsonb, $7::jsonb, $8)`,
     [
       photoId,
       execution.executionId,
@@ -558,8 +587,17 @@ async function storePreparedExecution(
         warnings: execution.provider.warnings,
       }),
       JSON.stringify(savedRenderFrame(frame)),
+      execution.providerImageAttemptId ?? null,
     ],
   );
+  if (execution.providerImageAttemptId) {
+    const updated = await transaction.query<{ id: string }>(
+      "UPDATE provider_image_attempts SET state = 'committed', updated_at = CASE WHEN state = 'retained' THEN now() ELSE updated_at END WHERE id = $1 AND state IN ('retained', 'committed') AND original_artifact_hash IS NOT NULL RETURNING id",
+      [execution.providerImageAttemptId],
+    );
+    if (!updated.rows.length)
+      throw new Error("Provider execution requires a retained image attempt");
+  }
   await mapInOrder(execution.inputArtifactHashes, async (hash, index) => {
     await transaction.query(
       `INSERT INTO node_execution_inputs

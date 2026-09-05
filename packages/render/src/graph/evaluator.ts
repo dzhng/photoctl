@@ -768,6 +768,7 @@ async function loadPinnedArtifact(
     artifactHash: artifactHash as `a_${string}`,
     extension: "tif",
     mediaType,
+    validationProfile: mediaType === MASK_ARTIFACT_MEDIA_TYPE ? "mask-tiff" : "linear-rgb-tiff",
     path,
     storageBytes: Number(row.bytes),
     w: row.w,
@@ -931,6 +932,8 @@ async function loadByExecutionId(
       artifactHash: row.output_artifact_hash as `a_${string}`,
       extension: "tif",
       mediaType: row.media_type as PublishedArtifact["mediaType"],
+      validationProfile:
+        row.media_type === MASK_ARTIFACT_MEDIA_TYPE ? "mask-tiff" : "linear-rgb-tiff",
       path,
       storageBytes: Number(row.bytes),
       w: row.w,

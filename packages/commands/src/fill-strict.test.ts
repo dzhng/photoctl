@@ -276,6 +276,17 @@ test("strict fill rejects a whole-frame provider result with data exit 65 and no
     ]);
 
     expect(refused).toMatchObject({ ok: false, code: "provider_whole_frame" });
+    const attempts = await fixture.handle.query(
+      "SELECT id, state, original_artifact_hash FROM provider_image_attempts",
+    );
+    expect(attempts.rows).toEqual([
+      {
+        id: expect.any(String),
+        state: "rejected",
+        original_artifact_hash: expect.stringMatching(/^a_[a-f0-9]{64}$/),
+      },
+    ]);
+    expect(refused).toMatchObject({ data: { attempt_id: attempts.rows[0]!.id } });
     expect(exitCodeFor("provider_whole_frame")).toBe(65);
     expect(await revisionCount(fixture)).toBe(before);
     expect(await generatedExecutionCount(fixture)).toBe(0);

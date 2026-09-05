@@ -2,9 +2,9 @@ import type { SentImage } from "@photoctl/providers";
 import {
   artifactPath,
   normalizeArtifact,
-  normalizeEncodedPngArtifact,
+  normalizeEncodedArtifact,
   publishArtifact,
-  readEncodedPngArtifactBytes,
+  readEncodedArtifactBytes,
 } from "../artifacts/publication.js";
 import { canonicalNodeRecipe, logicalNodeId, recipeHash } from "../graph/recipes.js";
 import type { NodeDraft } from "../graph/store.js";
@@ -15,7 +15,7 @@ import { decodeExternalImage } from "./external-pixels.js";
 export async function prepareReferenceArtifact(libraryPath: string, image: SentImage) {
   const encodedArtifact = await publishArtifact(
     libraryPath,
-    await normalizeEncodedPngArtifact(image.png),
+    await normalizeEncodedArtifact(image.png),
   );
   const artifact = await publishArtifact(
     libraryPath,
@@ -73,7 +73,11 @@ export async function readReferenceArtifact(
   const path = artifactPath(libraryPath, artifact.artifact_hash, "png");
   try {
     return {
-      png: await readEncodedPngArtifactBytes(path, artifact.artifact_hash, artifact),
+      png: await readEncodedArtifactBytes(path, artifact.artifact_hash, {
+        ...artifact,
+        mediaType: "image/png",
+        validationProfile: "encoded-image",
+      }),
       w: artifact.w,
       h: artifact.h,
       workingArtifactHash: artifact.working_artifact_hash,

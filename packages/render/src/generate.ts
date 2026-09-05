@@ -2,15 +2,21 @@ import { resampleDisplaySrgb } from "@photoctl/img";
 import { normalizeArtifact, publishArtifact } from "./artifacts/publication.js";
 import { executeGenerationDensity, executeStandaloneGeneration } from "./fill/generation.js";
 import type { FillUpscaleDependencies } from "./fill/pipeline.js";
-import type { NodeDraft, NodeReference, PreparedNodeExecution } from "./graph/store.js";
+import type {
+  GraphDatabase,
+  NodeDraft,
+  NodeReference,
+  PreparedNodeExecution,
+} from "./graph/store.js";
 
 export async function prepareStandaloneGeneratedPhoto(
+  database: GraphDatabase,
   libraryPath: string,
-  request: Parameters<typeof executeStandaloneGeneration>[1] & {
+  request: Parameters<typeof executeStandaloneGeneration>[2] & {
     upscale?: FillUpscaleDependencies;
   },
 ) {
-  const generation = await executeStandaloneGeneration(libraryPath, request);
+  const generation = await executeStandaloneGeneration(database, libraryPath, request);
   let nodes: NodeDraft[] = [...generation.nodes];
   let artifacts = [...generation.artifacts];
   let executions: PreparedNodeExecution[] = [...generation.executions];
@@ -39,7 +45,7 @@ export async function prepareStandaloneGeneratedPhoto(
     (generation.returnedDimensions.w < request.dimensions.w ||
       generation.returnedDimensions.h < request.dimensions.h);
   if (needsRequestedPixels && request.upscale) {
-    const density = await executeGenerationDensity(libraryPath, {
+    const density = await executeGenerationDensity(database, libraryPath, {
       generation,
       target: { kind: "oriented_full_frame", dimensions: request.dimensions },
       targetDimensions: request.dimensions,

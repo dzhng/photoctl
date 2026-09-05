@@ -211,7 +211,8 @@ export async function executeFillTransform(
             version: selectedAdapter.version,
             supportedScales: selectedAdapter.supportedScales,
             limits: selectedAdapter.limits,
-            execute: async (input) => await registry.execute(selectedAdapter, input),
+            execute: async (input, capture) =>
+              await registry.execute(selectedAdapter, input, capture),
           },
         }
       : {}),
@@ -282,7 +283,8 @@ export async function executeFillRefresh(
               version: upscaleAdapter.version,
               supportedScales: upscaleAdapter.supportedScales,
               limits: upscaleAdapter.limits,
-              execute: async (input) => await upscaleRegistry.execute(upscaleAdapter, input),
+              execute: async (input, capture) =>
+                await upscaleRegistry.execute(upscaleAdapter, input, capture),
             },
           }
         : {}),
@@ -394,7 +396,8 @@ async function fillGenerationCommand(
                     version: upscaleAdapter.version,
                     supportedScales: upscaleAdapter.supportedScales,
                     limits: upscaleAdapter.limits,
-                    execute: async (input) => await upscaleRegistry.execute(upscaleAdapter, input),
+                    execute: async (input, capture) =>
+                      await upscaleRegistry.execute(upscaleAdapter, input, capture),
                   },
                 }
               : {}),

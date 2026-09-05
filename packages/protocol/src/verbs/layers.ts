@@ -161,6 +161,7 @@ export const fillUpscaleSchema = z.object({
       code: z.enum(warningCodes),
       message: z.string().min(1),
       id: z.string().optional(),
+      attempt_id: z.uuid().optional(),
     }),
   ),
 });
