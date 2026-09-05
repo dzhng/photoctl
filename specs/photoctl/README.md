@@ -51,9 +51,10 @@ point and follow it exactly. Do not re-decide anything in the original decision 
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Active wave:** slice 11a implements the keyless SAM runtime/download/cache contract while the hosted weight URL remains open.
-  Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
-  its live multimodal request remains provisional until the purpose-key smoke produces an accepted fixture.
+- **Active wave:** slice 11 has keyless runtime and injectable command seams. Next, connect the CLI/daemon to the cached SAM
+  runtime and developed-image source once the exported release weights are hosted; then run the real point probes, G6, and
+  `wb masks` checkpoint. Do not treat fake masks as evidence for those gates. Slice 09c's live multimodal request also remains
+  provisional until the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -131,6 +132,7 @@ See Slice 10's local dependency graph for its serialization details.
 | 10b3 develop delta/stale | `3e054f3` |
 | 10c1 manual segment/layer commands | `6b0aa16` |
 | 10c2 vacancy moves/warnings | `bf93625` |
+| 11a keyless SAM runtime | `a2305bd`, corrected through `e0803af` |
 
 ## Precedent repos — where to look before designing anything
 

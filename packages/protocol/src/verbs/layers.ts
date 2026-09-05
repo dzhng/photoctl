@@ -31,6 +31,28 @@ export const segmentDataSchema = z.object({
   }),
 });
 
+const segmentMaskSchema = z.object({
+  artifact_hash: fullHashSchema("a").nullable(),
+  bbox: z.tuple([z.number(), z.number(), z.number().positive(), z.number().positive()]),
+  pixels: z.number().int().positive(),
+});
+
+export const segmentInstancesDataSchema = z.object({
+  id: z.uuid(),
+  revision_id: z.uuid().nullable(),
+  render_hash: fullHashSchema("r").nullable(),
+  gateway_calls: z.number().int().min(0).max(1),
+  instances: z.array(
+    z.object({
+      i: z.number().int().nonnegative(),
+      label: z.string().min(1),
+      bbox: z.tuple([z.number(), z.number(), z.number().positive(), z.number().positive()]),
+      layer_id: z.uuid().nullable(),
+      mask: segmentMaskSchema,
+    }),
+  ),
+});
+
 export const layerListDataSchema = z.object({
   ...revisionFields,
   layers: z.array(layerSummarySchema),
@@ -107,6 +129,7 @@ export const fillMoveDataSchema = z.object({
 });
 
 export type SegmentData = z.infer<typeof segmentDataSchema>;
+export type SegmentInstancesData = z.infer<typeof segmentInstancesDataSchema>;
 export type LayerListData = z.infer<typeof layerListDataSchema>;
 export type LayerShowData = z.infer<typeof layerShowDataSchema>;
 export type LayerTransformData = z.infer<typeof layerTransformDataSchema>;

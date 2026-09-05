@@ -37,6 +37,11 @@ export interface ManualLayerResult {
   pixels: number;
 }
 
+export interface MaskLayerInput {
+  mask: MaskImage;
+  name?: string;
+}
+
 export async function createManualLayer(
   database: GraphDatabase,
   libraryPath: string,
@@ -47,14 +52,44 @@ export async function createManualLayer(
     shape: ManualMaskShape;
   },
 ): Promise<ManualLayerResult> {
+  const raster = rasterizeManualMask(request.dimensions, request.shape);
+  const result = await createMaskLayers(database, libraryPath, {
+    photoId: request.photoId,
+    orientation: request.orientation,
+    layers: [{ mask: raster.mask }],
+  });
+  return { ...result.layers[0]!, bbox: raster.bbox, pixels: raster.pixels };
+}
+
+/** Commits a set of independently predicted masks as one document revision. */
+export async function createMaskLayers(
+  database: GraphDatabase,
+  libraryPath: string,
+  request: {
+    photoId: string;
+    orientation: number;
+    layers: MaskLayerInput[];
+  },
+): Promise<{ revisionId: string; renderHash: `r_${string}`; layers: ManualLayerResult[] }> {
+  if (request.layers.length === 0) throw new Error("At least one mask is required");
   await ensurePhotoDocument(database, {
     photoId: request.photoId,
     orientation: request.orientation,
   });
   const current = await loadActiveDocument(database, request.photoId);
   if (!current) throw new Error("The active photo document is missing");
-  const raster = rasterizeManualMask(request.dimensions, request.shape);
-  const published = await publishArtifact(libraryPath, await normalizeMaskArtifact(raster.mask));
+  const prepared = await Promise.all(
+    request.layers.map(async ({ mask, name }, index) => {
+      const raster = summarizeMask(mask);
+      return {
+        ...raster,
+        name,
+        published: await publishArtifact(libraryPath, await normalizeMaskArtifact(mask)),
+        layerKey: `mask-layer-${index}`,
+        maskKey: `mask-node-${index}`,
+      };
+    }),
+  );
   const layers: RevisionLayerDraft[] = [
     ...current.layers.map((layer) => ({
       layer: { layerId: layer.id },
@@ -66,44 +101,51 @@ export async function createManualLayer(
       blend: layer.blend,
       enabled: layer.enabled,
     })),
-    {
-      layer: { localKey: "manual-layer" },
-      name: `Segment ${current.layers.length + 1}`,
-      z: current.layers.length,
+    ...prepared.map((item, index) => ({
+      layer: { localKey: item.layerKey },
+      name: item.name ?? `Segment ${current.layers.length + index + 1}`,
+      z: current.layers.length + index,
       contentNode: { nodeId: current.roots.base },
-      maskNode: { localKey: "manual-mask" },
+      maskNode: { localKey: item.maskKey },
       opacity: 1,
-      blend: "normal",
+      blend: "normal" as const,
       enabled: true,
-    },
+    })),
   ];
   const projection = compositeV2Projection({ nodeId: current.roots.base }, layers);
   const committed = await commitRevision(database, {
     photoId: request.photoId,
     expectedRevisionId: current.revisionId,
-    artifacts: [published],
+    artifacts: prepared.map(({ published }) => published),
     nodes: [
-      {
-        localKey: "manual-mask",
-        kind: "mask",
-        recipeVersion: 1,
-        parameters: { artifact_hash: published.artifactHash },
-        inputs: [],
-      },
+      ...prepared.map(
+        (item) =>
+          ({
+            localKey: item.maskKey,
+            kind: "mask",
+            recipeVersion: 1,
+            parameters: { artifact_hash: item.published.artifactHash },
+            inputs: [],
+          }) satisfies NodeDraft,
+      ),
       { localKey: "composite", kind: "composite", recipeVersion: 2, ...projection },
     ],
     rootUpdates: [{ root: "output", node: { localKey: "composite" } }],
-    newLayers: [{ localKey: "manual-layer", role: "subject" }],
+    newLayers: prepared.map(({ layerKey }) => ({ localKey: layerKey, role: "subject" })),
     layers,
   });
   if (!committed.renderHash) throw new Error("A layer revision must have a render hash");
   return {
-    layerId: committed.newLayers["manual-layer"],
     revisionId: committed.revisionId,
     renderHash: committed.renderHash as `r_${string}`,
-    artifactHash: published.artifactHash,
-    bbox: raster.bbox,
-    pixels: raster.pixels,
+    layers: prepared.map((item) => ({
+      layerId: committed.newLayers[item.layerKey],
+      revisionId: committed.revisionId,
+      renderHash: committed.renderHash as `r_${string}`,
+      artifactHash: item.published.artifactHash,
+      bbox: item.bbox,
+      pixels: item.pixels,
+    })),
   };
 }
 
@@ -662,6 +704,30 @@ export function rasterizeManualMask(
     bbox: shape.kind === "box" ? shape.bbox : polygonBounds(shape.points),
     pixels,
   };
+}
+
+export function summarizeMask(mask: MaskImage): {
+  bbox: [number, number, number, number];
+  pixels: number;
+} {
+  if (mask.data.length !== mask.w * mask.h) throw new Error("Mask dimensions do not match samples");
+  let left = mask.w;
+  let top = mask.h;
+  let right = 0;
+  let bottom = 0;
+  let pixels = 0;
+  for (let index = 0; index < mask.data.length; index += 1) {
+    if (mask.data[index] <= 0) continue;
+    const x = index % mask.w;
+    const y = Math.floor(index / mask.w);
+    left = Math.min(left, x);
+    top = Math.min(top, y);
+    right = Math.max(right, x + 1);
+    bottom = Math.max(bottom, y + 1);
+    pixels += 1;
+  }
+  if (pixels === 0) throw new Error("Segment mask does not cover any pixels");
+  return { bbox: [left, top, right - left, bottom - top], pixels };
 }
 
 function boxContains([x, y, w, h]: [number, number, number, number]) {

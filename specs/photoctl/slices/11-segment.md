@@ -22,3 +22,11 @@
 
 ## 11a keyless checkpoint (2026-09-05)
 The pinned export, manifest, hash-fetch/cache, CPU ONNX session, 1024 letterbox, base-mask logit, and daemon encoder-cache contracts are implemented without inventing release bytes. The checked-in manifest remains `awaiting_export`, so `doctor --fetch-models` and the Docker `models` target fail loudly until David supplies the hosted base URL and a real export populates both hashes. G6 and the `wb masks` visual checkpoint remain open for that release-weight run; 11b verbs are not part of this checkpoint.
+
+## 11b keyless command checkpoint (2026-09-05)
+
+The command boundary accepts repeated base-coordinate point prompts, an optional box, text grounding, and non-mutating dry runs.
+Text grounding uses the strict structured-provider schema, whose adapter is the only owner of normalized-box conversion; all
+returned masks enter one atomic document revision, one subject layer per instance. Injectable local and structured adapters keep
+the command contract keyless and make an empty text match a successful no-op. Production CLI/daemon construction of those adapters,
+real `segment-at` probes, `a7c2` thresholds, the `wb masks` visual checkpoint, and G6 remain open with the release weights.

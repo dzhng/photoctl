@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "vitest";
 import type { Server } from "node:http";
 import { startGatewayFixture } from "@photoctl/test-harness/gateway-fixture";
 import { GatewayClient } from "./gateway.js";
-import { GatewayStructuredModelAdapter } from "./adapters/structured.js";
+import { GatewayStructuredModelAdapter, groundedInstancesSchema } from "./adapters/structured.js";
 import { GatewayImageModelAdapter } from "./adapters/image.js";
 import sharp from "sharp";
 import { PhotoctlError } from "@photoctl/protocol";
@@ -204,4 +204,54 @@ test("the structured adapter rejects reversed provider boxes", async () => {
       "Find the subject",
     ),
   ).rejects.toThrow("ordered");
+});
+
+test("segment grounding validates labels and converts every normalized box to base pixels", async () => {
+  const adapter = new GatewayStructuredModelAdapter({
+    gateway: new GatewayClient({
+      apiKey: "fixture-key",
+      fetch: async () =>
+        Response.json({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  instances: [
+                    { box_2d: [100, 200, 600, 700], label: "person" },
+                    { box_2d: [0, 0, 1_000, 1_000], label: "frame" },
+                  ],
+                }),
+              },
+            },
+          ],
+        }),
+    }),
+    model: "fake/grounding-v1",
+  });
+
+  const answer = await adapter.ask(
+    groundedInstancesSchema,
+    [{ bytes: Buffer.from("jpeg"), mediaType: "image/jpeg", dimensions: { w: 800, h: 600 } }],
+    "Find people",
+  );
+  expect(answer.value.instances).toEqual([
+    { box_2d: [160, 60, 400, 300], label: "person" },
+    { box_2d: [0, 0, 800, 600], label: "frame" },
+  ]);
+});
+
+test("segment grounding bounds provider-controlled instance fan-out", () => {
+  expect(() =>
+    groundedInstancesSchema.parse({
+      instances: Array.from({ length: 101 }, (_, index) => ({
+        box_2d: [index, 0, 1, 1],
+        label: `instance ${index}`,
+      })),
+    }),
+  ).toThrow();
+  expect(() =>
+    groundedInstancesSchema.parse({
+      instances: [{ box_2d: [0, 0, 1, 1], label: "person", confidence: 0.9 }],
+    }),
+  ).toThrow();
 });

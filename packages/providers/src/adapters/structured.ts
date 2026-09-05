@@ -30,6 +30,64 @@ export interface StructuredModelAdapter {
   ): Promise<StructuredAnswer<Value>>;
 }
 
+export interface GroundedInstance {
+  /** Base-image [x,y,w,h], converted from the provider's normalized box by this adapter. */
+  box_2d: [number, number, number, number];
+  label: string;
+}
+
+const MAX_GROUNDED_INSTANCES = 100;
+
+export const groundedInstancesSchema: StructuredSchema<{ instances: GroundedInstance[] }> = {
+  name: "photoctl_segment_instances",
+  jsonSchema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      instances: {
+        type: "array",
+        maxItems: MAX_GROUNDED_INSTANCES,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            box_2d: {
+              type: "array",
+              items: { type: "number" },
+              minItems: 4,
+              maxItems: 4,
+            },
+            label: { type: "string", minLength: 1, maxLength: 256 },
+          },
+          required: ["box_2d", "label"],
+        },
+      },
+    },
+    required: ["instances"],
+  },
+  parse: (value) =>
+    z
+      .object({
+        instances: z
+          .array(
+            z
+              .object({
+                box_2d: z
+                  .tuple([z.number(), z.number(), z.number(), z.number()])
+                  .refine(
+                    (box) => box[2] > 0 && box[3] > 0,
+                    "Converted box must have positive area",
+                  ),
+                label: z.string().min(1).max(256),
+              })
+              .strict(),
+          )
+          .max(MAX_GROUNDED_INSTANCES),
+      })
+      .strict()
+      .parse(value),
+};
+
 export class GatewayStructuredModelAdapter implements StructuredModelAdapter {
   readonly id = "gateway-structured-v1";
   readonly version = "1";
@@ -112,10 +170,12 @@ function convertBox(
   if (bottom <= top || right <= left) {
     throw new Error("Provider box coordinates must be ordered with positive area");
   }
+  const x = Math.round((left / 1_000) * dimensions.w);
+  const y = Math.round((top / 1_000) * dimensions.h);
   return [
-    Math.round((left / 1_000) * dimensions.w),
-    Math.round((top / 1_000) * dimensions.h),
-    Math.round(((right - left) / 1_000) * dimensions.w),
-    Math.round(((bottom - top) / 1_000) * dimensions.h),
+    x,
+    y,
+    Math.round((right / 1_000) * dimensions.w) - x,
+    Math.round((bottom / 1_000) * dimensions.h) - y,
   ];
 }

@@ -47,7 +47,7 @@ import { presetsCommand } from "./handlers/presets.js";
 import { renderCommand } from "./handlers/render.js";
 import { embedCommand } from "./handlers/embed.js";
 import { searchCommand } from "./handlers/search.js";
-import { segmentCommand } from "./handlers/segment.js";
+import { segmentCommand, type SegmentationDependencies } from "./handlers/segment.js";
 import { layerCommand } from "./handlers/layer.js";
 import { fillCommand } from "./handlers/fill.js";
 import {
@@ -64,6 +64,7 @@ export interface DispatchContext {
   emit?: (event: StderrEvent) => void | Promise<void>;
   stream?: (row: unknown) => void | Promise<void>;
   previewCoordinator?: PreviewCoordinator;
+  segmentation?: SegmentationDependencies;
 }
 export async function dispatch(
   request: CommandRequest,
@@ -129,7 +130,13 @@ export async function dispatch(
         context.emit,
       );
     if (request.verb === "segment")
-      return await segmentCommand(request.args, request.env, request.cwd, context.library);
+      return await segmentCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.segmentation,
+      );
     if (request.verb === "layer")
       return await layerCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "fill")

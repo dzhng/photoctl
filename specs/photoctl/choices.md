@@ -2666,3 +2666,41 @@
 - **Verdict:** **Needs-user.** These are isolated reversible policies; validate edge quality and timing with the real weights before
   treating them as release-tuned defaults.
 - **Confidence:** Medium until the live G6 and visual gate run.
+
+### Slice 11b — One text command commits all matched masks in one revision
+
+- **When:** Slice 11b keyless command checkpoint, 2026-09-05.
+- **The choice:** Suppose text grounding finds three people. The command first asks local segmentation for all three masks, then
+  adds the three subject layers in one document revision. A revision is the catalog's atomic snapshot of an edit: either all three
+  layers become active together, or none do. The alternative was three sequential revisions, which could leave only the first one
+  or two people selected if a later mask or database write failed.
+- **The gap:** The slice required one layer per instance but did not say whether a multi-instance command was one edit or several.
+- **The reach:** Undo, render hashes, graph inspection, and later person-move operations see one coherent text-selection action.
+- **Verdict:** **Sound.** It preserves the existing immutable-document owner and prevents partial multi-instance edits.
+- **Confidence:** High.
+
+### Slice 11b — Grounding fan-out is provisionally capped at 100 instances
+
+- **When:** Slice 11b keyless command checkpoint, 2026-09-05.
+- **The choice:** A structured model controls how many matching boxes it returns. The adapter accepts at most 100, so one crowded
+  or malformed answer cannot launch unlimited local decoder work or create an unbounded layer snapshot. A legitimate empty answer
+  remains a successful no-op. The alternative was no cap, letting an external response decide the command's CPU and catalog growth.
+- **The gap:** The plan required every returned instance to become a layer but supplied no maximum result count.
+- **The reach:** Text segmentation latency, maximum layers added by one command, and provider response validation inherit this
+  bound. Raising or lowering the single adapter constant changes both its JSON request schema and response validator together.
+- **Verdict:** **Needs-user.** Keep 100 as a reversible safety ceiling aligned with existing graph page bounds; tune it after real
+  crowded-frame use if photographers need a different maximum.
+- **Confidence:** Medium until tested on representative group photographs.
+
+### Slice 11b — Dry runs and committed segmentation share one instance response
+
+- **When:** Slice 11b keyless command checkpoint, 2026-09-05.
+- **The choice:** Both modes return ordered instances with labels, base-coordinate mask bounds, and covered-pixel counts. A dry run
+  carries null layer, artifact, revision, and render identities because it wrote nothing; a committed run fills those identities.
+  The alternative was unrelated preview and commit shapes, forcing an agent to translate between two contracts before deciding
+  whether to persist a selection.
+- **The gap:** The spec required dry-run to create zero rows but did not define its JSON shape or how it relates to the commit result.
+- **The reach:** CLI agents and future workbench clients can compare a previewed selection with the resulting persisted layers by
+  instance order while still distinguishing non-mutating output explicitly.
+- **Verdict:** **Sound.** One response vocabulary makes mutation state explicit without claiming an artifact exists before commit.
+- **Confidence:** Medium; a later visual client may justify adding confidence/source fields without changing these identities.
