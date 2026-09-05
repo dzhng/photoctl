@@ -2145,7 +2145,63 @@
 - **Verdict:** **Sound.** Persistence must not silently change an identity-bearing recipe parameter.
 - **Confidence:** High.
 
+### Slice 10b1 — Resampling maps pixel centers and widens Lanczos support when reducing
+
+- **When:** Slice 10b1 native resample/transform implementation, 2026-09-05.
+- **The choice:** A destination pixel maps from its center to the corresponding source-pixel center. Affine transforms pass that
+  center through the canonical base-image edge-coordinate matrix before converting back to a sample index. Bilinear preview reads clamp
+  at the source edge. Lanczos3 widens its radius-three sampling footprint in proportion to any reduction, including reduction caused
+  by a layer's uniform transform matrix, then normalizes the contributing weights. For example, shrinking a four-pixel row to two
+  pixels integrates a wider neighborhood instead of choosing two sharp point samples; enlarging retains ordinary radius-three
+  Lanczos. Transform taps outside the source contribute zero, so a partially overlapping footprint fades continuously and a fully
+  outside footprint returns zero. An integral lattice transform such as a flip or quarter-turn copies the exact source sample and
+  bypasses every filter.
+- **The gap:** The plan selected bilinear, Lanczos3, and exact right-angle geometry but did not define pixel-center mapping, edge
+  behavior, transform-edge coverage, or how the Lanczos footprint changes during reduction.
+- **The reach:** Preview, provider normalization, and future RGB/mask layer callers share one coordinate convention. Downscaled
+  layers anti-alias; exact flips and quarter-turns remain bit-identical; translated empty space stays empty for later composition.
+- **Verdict:** **Sound.** Center mapping is symmetric, scaled support prevents avoidable aliasing, and the integer fast path makes
+  the exactness requirement structural rather than tolerance-based.
+- **Confidence:** High for the pinned asymmetric grids and integer identities; medium for later mask-edge treatment, which 10b2
+  must judge with its explicit coverage contract.
+
+### Slice 10b1 — Native resampling preserves caller sample depth and bounds full-raster admission
+
+- **When:** Slice 10b1 N-API and preview integration, 2026-09-05.
+- **The choice:** Float layer resample/transform copies JavaScript's typed array once, then runs on a native worker and resolves a
+  new typed array. Display-preview resampling instead borrows the caller's 8- or 16-bit typed array for the duration of a synchronous
+  native call and allocates only the final-sized output. The generic layer route retains Float32 because scene-linear RGB and future
+  masks require it. Sharp decodes the selected preview region and encodes the already-final-sized JPEG, but never receives a resize
+  instruction. Imported preview decode admits at most one full raster at a time even though the surrounding import pipeline prepares
+  four candidates; the cheap rendered-view path crops and downsamples its existing U16 raster before 8-bit conversion. The file
+  decoder preserves its 16-bit display contract through the same typed native bilinear owner before color conversion.
+- **The cache boundary:** Derived-view recipe version 2 identifies the Rust bilinear pixel algorithm, so version-1 artifacts made
+  by Sharp are not reused after upgrade. Full-frame masters retain their render-hash identity because they are not downsampled.
+- **The gap:** The plan assigned pixel ownership to Rust but did not specify scheduling or the typed-array safety/memory boundary.
+- **The reach:** Float worker inputs cannot race JavaScript mutation; borrowed display inputs finish before control returns to
+  JavaScript. Preview resampling adds no full-raster transport copy or Float32 expansion, concurrent import preparation retains at
+  most one decoded preview raster, and future scene-linear layer operations have an asynchronous Float32 seam without another pixel
+  implementation.
+- **Verdict:** **Sound.** Ownership and admission are explicit, and each caller pays only for the precision its contract needs.
+- **Confidence:** High; the production preview regression observes zero Sharp resize calls and exact equality with the native
+  output on pixels where Sharp's default differs.
+
 ## Needs user
+
+### Slice 10b1 — Lanczos transforms reject kernels above 4,096 source taps per output sample
+
+- **When:** Slice 10b1 independent review, 2026-09-05.
+- **The choice:** A reducing affine transform widens Lanczos3 support for antialiasing, but rejects a request when the resulting
+  two-dimensional kernel exceeds 4,096 source taps per output sample. This keeps a tiny positive scale from occupying a native
+  worker effectively forever. The caller receives a validation error instead of a lower-quality silent fallback.
+- **The gap:** The plan requires positive transform scales and scaled Lanczos support but does not bound the minimum useful scale,
+  kernel work, or define a multistage reduction strategy.
+- **The reach:** Extreme layer reductions must be expressed as a bounded resize plus transform in a later renderer, or rejected;
+  routine reductions through one-eighth scale remain supported by the direct transform kernel.
+- **Verdict:** **Needs-user.** The cap is isolated and reversible; replace it with a measured limit or a multistage affine path if
+  real layer workflows need smaller direct scales.
+- **Confidence:** Medium. The independent review caught the unbounded-work failure and the regression pins prompt rejection, but
+  production image-size benchmarks should select the long-term limit.
 
 ### Slice 09a — The fake upscaler is the provisional release default
 

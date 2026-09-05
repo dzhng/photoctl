@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { join } from "node:path";
+import { resampleDisplaySrgb8, resampleDisplaySrgbRegion } from "@photoctl/img";
 import sharp from "sharp";
 import type { ExifOrientation } from "./coordinates.js";
 import { srgb2014ProfilePath } from "./color.js";
@@ -25,7 +26,7 @@ export function viewHash(spec: ViewSpec): `v_${string}` {
   const canonical = canonicalJson({
     kind: "view",
     long_edge: spec.longEdge,
-    recipe_version: 1,
+    recipe_version: 2,
     region: spec.region,
   });
   return `v_${createHash("sha256").update(canonical).digest("hex")}`;
@@ -134,7 +135,6 @@ export async function materializePreview(request: {
       );
       return await deriveView(
         master.artifact.bytes,
-        master.path,
         exactPath,
         master.artifact,
         request.photo,
@@ -205,20 +205,31 @@ async function deriveRenderedView(
   sourceTier: PreviewSourceTier,
   cacheSource: PreviewCacheSource,
 ): Promise<MaterializedPreview> {
-  const bytes = image8BitBytes(image);
-  return await deriveView(
-    bytes,
+  const { width, height, sourceRegion } = derivedViewGeometry(image, photo, region, requestedScale);
+  const pixels = resampleDisplaySrgbRegion(
+    image.data,
+    image.w,
+    image.h,
+    sourceRegion.left,
+    sourceRegion.top,
+    sourceRegion.width,
+    sourceRegion.height,
+    width,
+    height,
+  );
+  const output = await encodeJpeg({ ...image, w: width, h: height, data: pixels });
+  await writePreviewArtifact(path, output, {
+    sourceTier,
+    sourceDimensions: { w: image.w, h: image.h },
+  });
+  return result(
     path,
-    path,
-    {
-      w: image.w,
-      h: image.h,
-      rawChannels: image.channels,
-      sourceTier,
-      sourceDimensions: { w: image.w, h: image.h },
-    },
-    photo,
     region,
+    width,
+    height,
+    image.w,
+    image.h,
+    sourceTier,
     requestedScale,
     cacheSource,
   );
@@ -226,12 +237,10 @@ async function deriveRenderedView(
 
 async function deriveView(
   bytes: Buffer,
-  sourcePath: string,
   outputPath: string,
   source: {
     w: number;
     h: number;
-    rawChannels?: 3;
     sourceTier: PreviewSourceTier;
     sourceDimensions: { w: number; h: number };
   },
@@ -240,25 +249,24 @@ async function deriveView(
   requestedScale: number,
   cacheSource: PreviewCacheSource,
 ): Promise<MaterializedPreview> {
-  const availableScale = Math.min(source.w / photo.w, source.h / photo.h, 1);
-  const pixelScale = Math.min(requestedScale, availableScale);
-  const width = Math.max(1, Math.round(region[2] * pixelScale));
-  const height = Math.max(1, Math.round(region[3] * pixelScale));
-  const sourceRegion = mapRegion(region, photo, source);
-  const pipeline = source.rawChannels
-    ? sharp(bytes, { raw: { width: source.w, height: source.h, channels: source.rawChannels } })
-    : sharp(bytes, { failOn: "error" });
-  const output = await pipeline
+  const { width, height, sourceRegion } = derivedViewGeometry(
+    source,
+    photo,
+    region,
+    requestedScale,
+  );
+  const { data, info } = await sharp(bytes, { failOn: "error" })
     .extract(sourceRegion)
-    .resize({ width, height, fit: "fill", withoutEnlargement: true })
     .flatten({ background: "white" })
     .toColourspace("srgb")
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const pixels = Buffer.from(resampleDisplaySrgb8(data, info.width, info.height, width, height));
+  const output = await sharp(pixels, { raw: { width, height, channels: 3 } })
     .jpeg({ quality: 88 })
     .withIccProfile(srgb2014ProfilePath)
     .toBuffer();
-  if (outputPath !== sourcePath || source.rawChannels) {
-    await writePreviewArtifact(outputPath, output, source);
-  }
+  await writePreviewArtifact(outputPath, output, source);
   return result(
     outputPath,
     region,
@@ -270,6 +278,23 @@ async function deriveView(
     requestedScale,
     cacheSource,
   );
+}
+
+function derivedViewGeometry(
+  source: { w: number; h: number },
+  photo: { w: number; h: number },
+  region: [number, number, number, number],
+  requestedScale: number,
+): {
+  width: number;
+  height: number;
+  sourceRegion: { left: number; top: number; width: number; height: number };
+} {
+  const availableScale = Math.min(source.w / photo.w, source.h / photo.h, 1);
+  const pixelScale = Math.min(requestedScale, availableScale);
+  const width = Math.max(1, Math.round(region[2] * pixelScale));
+  const height = Math.max(1, Math.round(region[3] * pixelScale));
+  return { width, height, sourceRegion: mapRegion(region, photo, source) };
 }
 
 function result(

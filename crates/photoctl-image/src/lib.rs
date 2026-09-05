@@ -2,6 +2,7 @@
 
 mod develop;
 mod publication;
+mod resample;
 mod tone_curve;
 
 use std::path::Path;
@@ -17,6 +18,11 @@ use develop::{
     display_srgb_to_linear_rec2020, linear_rec2020_to_display_srgb, validate_artifact_samples,
 };
 use publication::{AtomicRenameOutcome, atomic_rename_no_replace as rename_no_replace};
+use resample::{Filter as ResampleFilter, resize};
+pub use resample::{
+    resample_display_srgb, resample_display_srgb_region, resample_display_srgb8, resample_pixels,
+    transform_pixels,
+};
 
 #[derive(Debug)]
 pub struct CameraImage {
@@ -43,7 +49,15 @@ fn decode_libraw(path: &Path, scale: f64) -> Result<CameraImage, String> {
     let data = if width == source_width && height == source_height {
         decoded.data
     } else {
-        resample_rgb(&decoded.data, source_width, source_height, width, height)
+        resize(
+            &decoded.data,
+            source_width,
+            source_height,
+            3,
+            width,
+            height,
+            ResampleFilter::Bilinear,
+        )?
     };
     let green = decoded.metadata.as_shot_wb[1];
     let as_shot_wb = if green.is_finite() && green > 0.0 {
@@ -179,36 +193,6 @@ pub fn convert_linear_rec2020_to_display_srgb(data: Float32Array) -> AsyncTask<D
     AsyncTask::new(DisplayBackTask {
         data: data.to_vec(),
     })
-}
-
-#[napi]
-pub fn resample_display_srgb(
-    data: Uint16Array,
-    source_width: u32,
-    source_height: u32,
-    output_width: u32,
-    output_height: u32,
-) -> napi::Result<Uint16Array> {
-    if source_width == 0 || source_height == 0 || output_width == 0 || output_height == 0 {
-        return Err(Error::new(
-            Status::InvalidArg,
-            "image dimensions must be positive",
-        ));
-    }
-    if data.len() != source_width as usize * source_height as usize * 3 {
-        return Err(Error::new(
-            Status::InvalidArg,
-            "display image must contain RGB16 samples",
-        ));
-    }
-    Ok(resample_rgb16(
-        &data,
-        source_width,
-        source_height,
-        output_width,
-        output_height,
-    )
-    .into())
 }
 
 #[napi]
@@ -511,87 +495,9 @@ impl From<CameraImage> for LibrawImageResult {
     }
 }
 
-fn resample_rgb(
-    input: &[f32],
-    source_width: u32,
-    source_height: u32,
-    output_width: u32,
-    output_height: u32,
-) -> Vec<f32> {
-    assert_eq!(
-        input.len(),
-        source_width as usize * source_height as usize * 3
-    );
-    assert!(output_width > 0 && output_height > 0);
-    let mut output = vec![0.0; output_width as usize * output_height as usize * 3];
-    let x_scale = source_width as f32 / output_width as f32;
-    let y_scale = source_height as f32 / output_height as f32;
-    for y in 0..output_height {
-        let source_y = ((y as f32 + 0.5) * y_scale - 0.5).clamp(0.0, source_height as f32 - 1.0);
-        let y0 = source_y.floor() as u32;
-        let y1 = (y0 + 1).min(source_height - 1);
-        let y_fraction = source_y - y0 as f32;
-        for x in 0..output_width {
-            let source_x = ((x as f32 + 0.5) * x_scale - 0.5).clamp(0.0, source_width as f32 - 1.0);
-            let x0 = source_x.floor() as u32;
-            let x1 = (x0 + 1).min(source_width - 1);
-            let x_fraction = source_x - x0 as f32;
-            for channel in 0..3usize {
-                let sample = |sample_x: u32, sample_y: u32| {
-                    input[((sample_y * source_width + sample_x) * 3) as usize + channel]
-                };
-                let top = sample(x0, y0) * (1.0 - x_fraction) + sample(x1, y0) * x_fraction;
-                let bottom = sample(x0, y1) * (1.0 - x_fraction) + sample(x1, y1) * x_fraction;
-                output[((y * output_width + x) * 3) as usize + channel] =
-                    top * (1.0 - y_fraction) + bottom * y_fraction;
-            }
-        }
-    }
-    output
-}
-
-fn resample_rgb16(
-    input: &[u16],
-    source_width: u32,
-    source_height: u32,
-    output_width: u32,
-    output_height: u32,
-) -> Vec<u16> {
-    resample_rgb(
-        &input
-            .iter()
-            .map(|sample| f32::from(*sample))
-            .collect::<Vec<_>>(),
-        source_width,
-        source_height,
-        output_width,
-        output_height,
-    )
-    .into_iter()
-    .map(|sample| sample.round().clamp(0.0, 65_535.0) as u16)
-    .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn resamples_camera_rgb_at_pixel_centers() {
-        let input = vec![0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0, 6.0, 6.0];
-
-        assert_eq!(resample_rgb(&input, 2, 2, 1, 1), vec![3.0, 3.0, 3.0]);
-    }
-
-    #[test]
-    fn resamples_display_rgb16_through_the_shared_pixel_center_kernel() {
-        let input = vec![0, 0, 0, 65_535, 65_535, 65_535];
-
-        assert_eq!(
-            resample_rgb16(&input, 2, 1, 1, 1),
-            vec![32_768, 32_768, 32_768]
-        );
-    }
 
     #[test]
     fn decodes_the_libraw_fixture_at_the_requested_scale() {

@@ -50,6 +50,43 @@ interface NativeBinding {
     outputWidth: number,
     outputHeight: number,
   ): Uint16Array;
+  resampleDisplaySrgb8(
+    data: Uint8Array,
+    sourceWidth: number,
+    sourceHeight: number,
+    outputWidth: number,
+    outputHeight: number,
+  ): Uint8Array;
+  resampleDisplaySrgbRegion(
+    data: Uint16Array,
+    sourceWidth: number,
+    sourceHeight: number,
+    left: number,
+    top: number,
+    width: number,
+    height: number,
+    outputWidth: number,
+    outputHeight: number,
+  ): Uint16Array;
+  resamplePixels(
+    data: Float32Array,
+    sourceWidth: number,
+    sourceHeight: number,
+    channels: number,
+    outputWidth: number,
+    outputHeight: number,
+    filter: ResampleFilter,
+  ): Promise<Float32Array>;
+  transformPixels(
+    data: Float32Array,
+    sourceWidth: number,
+    sourceHeight: number,
+    channels: number,
+    outputWidth: number,
+    outputHeight: number,
+    matrix: readonly number[],
+    filter: ResampleFilter,
+  ): Promise<Float32Array>;
   applyDevelopPixels(
     data: Float32Array,
     width: number,
@@ -72,6 +109,7 @@ interface NativeBinding {
 }
 
 export type AtomicRenameOutcome = "installed" | "exists" | "unsupported";
+export type ResampleFilter = "bilinear" | "lanczos3";
 
 export interface NativeDevelopParameters {
   brilliance?: number;
@@ -165,6 +203,93 @@ export function resampleDisplaySrgb(
     sourceHeight,
     outputWidth,
     outputHeight,
+  );
+}
+
+export function resampleDisplaySrgb8(
+  data: Uint8Array,
+  sourceWidth: number,
+  sourceHeight: number,
+  outputWidth: number,
+  outputHeight: number,
+): Uint8Array {
+  const result = requiredBinding().resampleDisplaySrgb8(
+    data,
+    sourceWidth,
+    sourceHeight,
+    outputWidth,
+    outputHeight,
+  );
+  return result instanceof Uint8Array ? result : new Uint8Array(result);
+}
+
+export function resampleDisplaySrgbRegion(
+  data: Uint16Array,
+  sourceWidth: number,
+  sourceHeight: number,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  outputWidth: number,
+  outputHeight: number,
+): Uint16Array {
+  return requiredBinding().resampleDisplaySrgbRegion(
+    data,
+    sourceWidth,
+    sourceHeight,
+    left,
+    top,
+    width,
+    height,
+    outputWidth,
+    outputHeight,
+  );
+}
+
+export async function resamplePixels(
+  data: Float32Array,
+  sourceWidth: number,
+  sourceHeight: number,
+  channels: number,
+  outputWidth: number,
+  outputHeight: number,
+  filter: ResampleFilter,
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().resamplePixels(
+      data,
+      sourceWidth,
+      sourceHeight,
+      channels,
+      outputWidth,
+      outputHeight,
+      filter,
+    ),
+  );
+}
+
+export async function transformPixels(
+  data: Float32Array,
+  sourceWidth: number,
+  sourceHeight: number,
+  channels: number,
+  outputWidth: number,
+  outputHeight: number,
+  matrix: readonly [number, number, number, number, number, number],
+  filter: ResampleFilter,
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().transformPixels(
+      data,
+      sourceWidth,
+      sourceHeight,
+      channels,
+      outputWidth,
+      outputHeight,
+      matrix,
+      filter,
+    ),
   );
 }
 

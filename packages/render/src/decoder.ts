@@ -9,15 +9,11 @@ import {
   inspectLibraw,
   inspectNativeImageRuntime,
   probeLibraw,
+  resampleDisplaySrgb,
 } from "@photoctl/img";
 import sharp, { type Sharp } from "sharp";
 import { displaySrgbToLinearRec2020 } from "./color.js";
-import {
-  orientationTransform,
-  orientedDimensions,
-  parseExifOrientation,
-  type ExifOrientation,
-} from "./coordinates.js";
+import { orientationTransform, parseExifOrientation, type ExifOrientation } from "./coordinates.js";
 
 const executeFile = promisify(execFile);
 
@@ -133,28 +129,24 @@ export class FileImageDecoder implements Decoder {
         ? parseExifOrientation(metadata.orientation ?? 1)
         : (source.orientation ?? 1));
     image = orient(image, orientation);
-    if (options.scale !== 1) {
-      const dimensions = orientedDimensions({ w: metadata.width, h: metadata.height }, orientation);
-      image = image.resize({
-        width: Math.floor(dimensions.w * options.scale),
-        height: Math.floor(dimensions.h * options.scale),
-        fit: "fill",
-      });
-    }
     const { data, info } = await image
       .withIccProfile("srgb")
       .toColourspace("rgb16")
       .removeAlpha()
       .raw({ depth: "ushort" })
       .toBuffer({ resolveWithObject: true });
+    const pixels = new Uint16Array(
+      data.buffer,
+      data.byteOffset,
+      data.byteLength / Uint16Array.BYTES_PER_ELEMENT,
+    );
+    if (options.scale === 1) return { w: info.width, h: info.height, data: pixels };
+    const width = Math.floor(info.width * options.scale);
+    const height = Math.floor(info.height * options.scale);
     return {
-      w: info.width,
-      h: info.height,
-      data: new Uint16Array(
-        data.buffer,
-        data.byteOffset,
-        data.byteLength / Uint16Array.BYTES_PER_ELEMENT,
-      ),
+      w: width,
+      h: height,
+      data: resampleDisplaySrgb(pixels, info.width, info.height, width, height),
     };
   }
 }

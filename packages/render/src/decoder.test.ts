@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import sharp from "sharp";
+import { resampleDisplaySrgb } from "@photoctl/img";
 import { CirawDecoder, FileImageDecoder, LibrawDecoder, type ImageSource } from "./decoder.js";
 
 test("the CIRAW adapter returns the shared linear-image contract from the helper wire", async () => {
@@ -90,6 +91,38 @@ test("the file adapter decodes content with a wrong extension into linear Rec.20
   expect(image.data[1]).toBeCloseTo(0.0691, 3);
   expect(image.data[2]).toBeCloseTo(0.0164, 3);
   await rm(directory, { recursive: true });
+});
+
+test("the scaled file adapter uses the native bilinear pixel route", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-file-resample-"));
+  const input = join(directory, "source.png");
+  const pixels = Buffer.from([
+    0, 0, 0, 20, 0, 0, 80, 0, 0, 160, 0, 0, 255, 0, 0, 0, 100, 0, 20, 100, 0, 80, 100, 0, 160, 100,
+    0, 255, 100, 0, 0, 255, 0, 20, 255, 0, 80, 255, 0, 160, 255, 0, 255, 255, 0,
+  ]);
+  try {
+    await sharp(pixels, { raw: { width: 5, height: 3, channels: 3 } })
+      .png()
+      .toFile(input);
+    const decoder = new FileImageDecoder();
+    const source: ImageSource = {
+      kind: "online-file",
+      path: input,
+      mediaType: "image/png",
+      w: 5,
+      h: 3,
+    };
+    const full = await decoder.decodeDisplay(source, { scale: 1 });
+    const scaled = await decoder.decodeDisplay(source, { scale: 0.5 });
+
+    expect(scaled).toEqual({
+      w: 2,
+      h: 1,
+      data: resampleDisplaySrgb(full.data, full.w, full.h, 2, 1),
+    });
+  } finally {
+    await rm(directory, { recursive: true });
+  }
 });
 
 test("the LibRaw adapter reports compression and returns scaled camera-space pixels", async () => {

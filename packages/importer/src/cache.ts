@@ -2,9 +2,12 @@ import { homedir } from "node:os";
 import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
-import sharp from "sharp";
+import { resampleDisplaySrgb8 } from "@photoctl/img";
+import sharp, { type Sharp } from "sharp";
 import { srgb2014ProfilePath } from "@photoctl/render";
 import { readFileRange } from "./file-range.js";
+
+let decodedPreviewAdmission = Promise.resolve();
 
 export function cacheRootForLibrary(libraryId: string, baseOverride?: string): string {
   const base = baseOverride
@@ -52,14 +55,9 @@ export async function pinnedEmbeddedJpegMatches(
 }
 
 export async function createDecodedPreviewJpeg(sourcePath: string): Promise<Buffer> {
-  return await sharp(sourcePath, { failOn: "error" })
-    .rotate()
-    .flatten({ background: "white" })
-    .toColourspace("srgb")
-    .resize({ width: 1616, height: 1616, fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality: 88 })
-    .withIccProfile(srgb2014ProfilePath)
-    .toBuffer();
+  return await withDecodedPreviewAdmission(
+    async () => await encodePinnedPreview(sharp(sourcePath, { failOn: "error" }).rotate()),
+  );
 }
 
 export async function pinnedPreviewMatches(
@@ -111,19 +109,48 @@ export async function createEmbeddedPreviewJpeg(
   range: { offset: number; length: number },
   orientation: number,
 ): Promise<Buffer> {
-  const bytes = await readPinnedSourceRange(sourcePath, range);
-  let image = sharp(bytes, { failOn: "error" });
-  if (orientation === 2) image = image.flop();
-  if (orientation === 3) image = image.rotate(180);
-  if (orientation === 4) image = image.flip();
-  if (orientation === 5) image = image.flip().rotate(90);
-  if (orientation === 6) image = image.rotate(90);
-  if (orientation === 7) image = image.flop().rotate(90);
-  if (orientation === 8) image = image.rotate(270);
-  return await image
+  return await withDecodedPreviewAdmission(async () => {
+    const bytes = await readPinnedSourceRange(sourcePath, range);
+    let image = sharp(bytes, { failOn: "error" });
+    if (orientation === 2) image = image.flop();
+    if (orientation === 3) image = image.rotate(180);
+    if (orientation === 4) image = image.flip();
+    if (orientation === 5) image = image.flip().rotate(90);
+    if (orientation === 6) image = image.rotate(90);
+    if (orientation === 7) image = image.flop().rotate(90);
+    if (orientation === 8) image = image.rotate(270);
+    return await encodePinnedPreview(image);
+  });
+}
+
+async function withDecodedPreviewAdmission<T>(work: () => Promise<T>): Promise<T> {
+  const preceding = decodedPreviewAdmission;
+  let release!: () => void;
+  decodedPreviewAdmission = new Promise<void>((admitNext) => {
+    release = admitNext;
+  });
+  await preceding;
+  try {
+    return await work();
+  } finally {
+    release();
+  }
+}
+
+async function encodePinnedPreview(image: Sharp): Promise<Buffer> {
+  const { data, info } = await image
     .flatten({ background: "white" })
     .toColourspace("srgb")
-    .resize({ width: 1616, height: 1616, fit: "inside", withoutEnlargement: true })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const scale = Math.min(1, 1_616 / Math.max(info.width, info.height));
+  const width = Math.max(1, Math.round(info.width * scale));
+  const height = Math.max(1, Math.round(info.height * scale));
+  const pixels =
+    width === info.width && height === info.height
+      ? data
+      : resampleDisplaySrgb8(data, info.width, info.height, width, height);
+  return await sharp(pixels, { raw: { width, height, channels: 3 } })
     .jpeg({ quality: 88 })
     .withIccProfile(srgb2014ProfilePath)
     .toBuffer();

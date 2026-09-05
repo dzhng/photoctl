@@ -15,7 +15,7 @@ function testRenderHash(hex: string): `r_${string}` {
 test("view hashes are stable canonical identities", () => {
   expect(viewHash({ region: null, longEdge: 1616 })).toBe(
     `v_${createHash("sha256")
-      .update('{"kind":"view","long_edge":1616,"recipe_version":1,"region":null}')
+      .update('{"kind":"view","long_edge":1616,"recipe_version":2,"region":null}')
       .digest("hex")}`,
   );
   expect(viewHash({ region: [1, 2, 3, 4], longEdge: "native" })).not.toBe(

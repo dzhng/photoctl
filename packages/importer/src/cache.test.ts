@@ -3,8 +3,10 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
+import { resampleDisplaySrgb8 } from "@photoctl/img";
 import { srgb2014ProfilePath } from "@photoctl/render";
 import {
+  createDecodedPreviewJpeg,
   pinEmbeddedJpeg,
   PinnedPreviewDestinationError,
   PinnedPreviewSourceError,
@@ -126,4 +128,77 @@ describe("pinEmbeddedJpeg", () => {
       await rm(directory, { recursive: true });
     }
   });
+});
+
+test("decoded preview pixels use the native bilinear route before JPEG encoding", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-cache-resample-"));
+  const source = join(directory, "source.png");
+  const width = 2_000;
+  const height = 6;
+  const pixels = Buffer.alloc(width * height * 3);
+  for (let index = 0; index < pixels.length; index += 1) pixels[index] = (index * 37) % 256;
+  try {
+    await sharp(pixels, { raw: { width, height, channels: 3 } })
+      .png()
+      .toFile(source);
+    const actual = await createDecodedPreviewJpeg(source);
+    const { data, info } = await sharp(source)
+      .rotate()
+      .flatten({ background: "white" })
+      .toColourspace("srgb")
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const outputWidth = 1_616;
+    const outputHeight = Math.max(1, Math.round((height * outputWidth) / width));
+    const resized = resampleDisplaySrgb8(data, info.width, info.height, outputWidth, outputHeight);
+    const expected = await sharp(resized, {
+      raw: { width: outputWidth, height: outputHeight, channels: 3 },
+    })
+      .jpeg({ quality: 88 })
+      .withIccProfile(srgb2014ProfilePath)
+      .toBuffer();
+
+    expect(actual).toEqual(expected);
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("concurrent preview creation admits only one decoded raster at a time", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-cache-admission-"));
+  const first = join(directory, "first.png");
+  const second = join(directory, "second.png");
+  const probe = sharp({ create: { width: 2, height: 2, channels: 3, background: "red" } });
+  const prototype = Object.getPrototypeOf(probe) as {
+    toBuffer: typeof probe.toBuffer;
+  };
+  const originalToBuffer = prototype.toBuffer;
+  let activeDecodedRasters = 0;
+  let peakDecodedRasters = 0;
+  prototype.toBuffer = function (...arguments_: unknown[]) {
+    const result = Reflect.apply(originalToBuffer, this, arguments_);
+    const options = arguments_[0] as { resolveWithObject?: boolean } | undefined;
+    if (!options?.resolveWithObject) return result;
+    activeDecodedRasters += 1;
+    peakDecodedRasters = Math.max(peakDecodedRasters, activeDecodedRasters);
+    return Promise.resolve(result).finally(() => {
+      activeDecodedRasters -= 1;
+    });
+  } as typeof originalToBuffer;
+  try {
+    await Promise.all([
+      sharp({ create: { width: 2_000, height: 6, channels: 3, background: "red" } })
+        .png()
+        .toFile(first),
+      sharp({ create: { width: 2_000, height: 6, channels: 3, background: "blue" } })
+        .png()
+        .toFile(second),
+    ]);
+    await Promise.all([createDecodedPreviewJpeg(first), createDecodedPreviewJpeg(second)]);
+
+    expect(peakDecodedRasters).toBe(1);
+  } finally {
+    prototype.toBuffer = originalToBuffer;
+    await rm(directory, { recursive: true });
+  }
 });

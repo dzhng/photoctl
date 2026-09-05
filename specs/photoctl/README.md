@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08d2, provider slices 09a–09c, and layer identity slice 10a are
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08d2, provider slices 09a–09c, and layer slices 10a–10b1 are
 implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -32,15 +32,16 @@ hashes. Exact scene-linear Rec.2020 f32 artifacts now remain canonical through t
 applies global exposure, brightness, contrast, black point, saturation, masked highlights/shadows, skin-protected vibrance,
 white balance, cast, levels, OpenColorIO-style scene-linear curves, and deterministic local contrast in the native Rust owner.
 Schema v9 stores stable layer identities and complete immutable revision snapshots; typed base/output roots and composite-v2
-projection keep layer metadata, graph reachability, and pixel recipe identity in one atomic document contract.*
+projection keep layer metadata, graph reachability, and pixel recipe identity in one atomic document contract. The native image owner
+provides bilinear preview resampling plus Lanczos3 float resample/transform, retaining exact integer flips and quarter-turns.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Active wave:** slice 08d3 (geometry) follows the accepted native noise-reduction seam while 10b1 may continue independently
-  with generic resample/transform and preview resampling. Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
+- **Active wave:** slice 08d3 reuses 10b1's native transform owner; 10b2 and 10b3 are also unblocked, with mask/composite and
+  develop/delta ownership kept separate. Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
   its live multimodal request remains provisional until the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
@@ -63,7 +64,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [ ] 8d3–8d4 geometry/filters → **gold exam green** — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
-- [ ] 10: [x] 10a identity/revisions · [ ] 10b1 resample/transform · [ ] 10b2 masks/composite · [ ] 10b3 delta · [ ] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
+- [ ] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [ ] 10b2 masks/composite · [ ] 10b3 delta · [ ] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG, optional density-matching upscale, strict composite, person-move flow — `slices/12-fill.md`
 - [ ] 13a reimagine/relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · 13d retouch — `slices/13-generative-extras-and-markup.md`
@@ -305,7 +306,7 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 | Embed worker; RRF search | `apps/daemon/src/workers/embed.ts`; `packages/library/search` | 09c |
 | User-facing layer stack and output-node roots (roles subject/vacancy/reimagine/retouch), transforms (S→R→T matrix once) | `packages/render/{layers,transforms}` | 10 |
 | Fill DAG planning (mask fit, crop policy, generation, optional upscale/density plan, exact composite) | `packages/render/fill` | 12 |
-| Masks, resample, composite, lift, SAM, heal, draw | `crates/photoctl-image` | 10–13 |
+| Resample/transform; masks, composite, lift, SAM, heal, draw | `crates/photoctl-image` | 10–13 |
 | Markup model + flatten | `packages/render/markup` | 13c |
 | Fixture manifest + generator | `fixtures/README.md`, `fixtures/a7c2.json`, `fixtures/tools/` | 00 |
 

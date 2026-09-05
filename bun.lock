@@ -93,6 +93,7 @@
       "name": "@photoctl/importer",
       "version": "0.1.0",
       "dependencies": {
+        "@photoctl/img": "workspace:*",
         "@photoctl/render": "workspace:*",
         "exifr": "7.1.3",
         "sharp": "0.35.4",
