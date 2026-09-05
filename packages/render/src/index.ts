@@ -32,6 +32,7 @@ export * from "./layers/model.js";
 export * from "./layers/operations.js";
 export * from "./transforms.js";
 export * from "./fill/crop.js";
+export * from "./fill/density.js";
 export * from "./fill/fit.js";
 export * from "./fill/pipeline.js";
 export * from "./fill/density.js";

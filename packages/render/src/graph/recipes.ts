@@ -30,6 +30,36 @@ export interface ImageNodeDefinition {
   recipeVersions: readonly number[];
 }
 
+export const resampleParametersSchema = z
+  .object({
+    w: z.number().int().positive(),
+    h: z.number().int().positive(),
+    kernel: z.enum(["nearest", "bilinear", "bicubic", "lanczos3"]),
+    target: z
+      .object({
+        x: z.number().int().nonnegative(),
+        y: z.number().int().nonnegative(),
+        w: z.number().int().positive(),
+        h: z.number().int().positive(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict()
+  .superRefine((parameters, context) => {
+    if (
+      parameters.target &&
+      (parameters.target.x + parameters.target.w > parameters.w ||
+        parameters.target.y + parameters.target.h > parameters.h)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Resample target rectangle must fit inside its output canvas",
+        path: ["target"],
+      });
+    }
+  });
+
 export const imageNodeRegistry = {
   source: definition(
     z
@@ -73,18 +103,7 @@ export const imageNodeRegistry = {
     1,
     false,
   ),
-  resample: definition(
-    z
-      .object({
-        w: z.number().int().positive(),
-        h: z.number().int().positive(),
-        kernel: z.enum(["nearest", "bilinear", "bicubic", "lanczos3"]),
-      })
-      .strict(),
-    1,
-    1,
-    true,
-  ),
+  resample: definition(resampleParametersSchema, 1, 1, true),
   transform: definition(
     z
       .object({

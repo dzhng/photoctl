@@ -95,13 +95,15 @@ Repeat after the live smoke only when configured credentials exist; its absence 
 ## 12a keyless checkpoint — 2026-09-05
 
 `fill <id> --layer <layer> --remove|--prompt <text>` now resolves the existing image-model adapter and fake gateway, plans a clipped
-base-space crop from the immutable layer mask, and commits the paid generation execution with canonical generate, resample,
+base-space crop from the immutable layer mask, and commits the paid intrinsic-crop generation execution with canonical generate, resample/place,
 mask-composite, replacement-layer, and output-root state in one revision. The mutation stays lazy: it publishes the provider result
 needed by the graph but does not create a review preview. The strict compositor remains the protection owner, so every zero-mask
 sample is copied from that node's base input exactly.
 
 The adapter owns provider-frame normalization. A same-ratio size mismatch takes the existing deterministic display-sRGB resampler;
-an unexplained aspect change or the fake whole-frame signal returns `provider_whole_frame` (exit 65), and neither result enters the
+the generation recipe separately retains returned sampling dimensions, while its artifact remains crop-sized and the canonical
+resample recipe owns placement into the base canvas. This distinction is the input to 12b/12c density planning and upscaling.
+An unexplained aspect change or the fake whole-frame signal returns `provider_whole_frame` (exit 65), and neither result enters the
 catalog. The default live adapter remains fail-closed while native edit-mask polarity is unverified. Focused public-command tests use
 an injected source plus the real adapter against the HTTP fake; they cover exact protected pixels, crop/pad metadata, wrong-size
 normalization, whole-frame/aspect rejection without a revision, versioned prompt storage, and continued `fill --move` behavior.

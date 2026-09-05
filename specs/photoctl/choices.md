@@ -7,8 +7,9 @@
 - **When:** Slice 12a strict-fill implementation, 2026-09-05.
 - **The choice:** Provider bytes are normalized and published first, but the artifact row, immutable generate execution, canonical
   descendants, replacement layer snapshot, and output root enter the catalog in one revision transaction. A failed or structurally
-  invalid provider response therefore has no catalog execution and no new undo state. The alternative was a visible intermediate
-  generation revision or an execution row that no active graph could reach.
+  invalid provider response therefore has no catalog execution and no new undo state. A prepared execution must also remain
+  reachable from the revision's resulting document roots; retaining an inactive node elsewhere in the catalog is not enough. The
+  alternative was a visible intermediate generation revision or an execution row that no active graph could reach.
 - **The gap:** The graph store previously committed deterministic nodes and revisions separately from provider execution recording.
 - **The reach:** Fill, later refresh, and future paid mutations inherit a transaction boundary that cannot expose a paid node without
   its exact output or activate a replacement layer piecemeal.
@@ -28,19 +29,22 @@
 - **Verdict:** **Sound.** Nondeterministic pixels become stable graph inputs while refresh remains an explicit later operation.
 - **Confidence:** High.
 
-### Slice 12a — Strict composite uses a full-base generated artifact
+### Slice 12a — Generation preserves crop sampling; resample owns base placement
 
 - **When:** Slice 12a crop-to-graph integration, 2026-09-05.
-- **The choice:** The adapter normalizes the returned crop to the sent crop dimensions, then the fill pipeline places it into a copy
-  of the base-sized image before publishing the generate execution. The canonical resample targets base dimensions and the strict
-  mask compositor consumes three dimension-matched inputs. The alternative required introducing a second crop-placement node and
-  coordinate vocabulary before the plan assigns that owner.
-- **The gap:** The slice requires provider cropping and canonical graph nodes but does not define a graph node that pastes a generated
-  crop back into base coordinates; the existing compositor requires all inputs to share dimensions.
-- **The reach:** Crop coordinates stay immutable in the generation recipe, current composite invariants remain intact, and protected
-  samples come directly from the original base branch. The stored generated artifact includes unchanged base pixels outside the crop.
-- **Verdict:** **Sound.** It reuses the established base-coordinate contract without adding an undocumented node kind.
-- **Confidence:** Medium; 12b density and 12d refresh should retain this placement rule or explicitly replace it with a canonical node.
+- **The choice:** The paid generate execution publishes only its normalized provider crop. Its artifact keeps the crop dimensions,
+  while the recipe also retains the provider's returned dimensions as the distinct sampling-density fact. The existing canonical
+  resample node owns both deterministic sizing and placement through an optional base-canvas target rectangle; pixels outside that
+  rectangle are zero because the following strict compositor copies the base wherever its mask is zero.
+- **The gap:** The existing compositor requires dimension-matched inputs, but storing a copied full-base image as the generation
+  artifact erased which pixels the provider actually returned and made the 12b density planner believe a small crop already had
+  full-frame sampling.
+- **The reach:** Future upscale runs from the original paid crop, density uses returned sampling dimensions even when adapter
+  normalization changed its storage dimensions, and crop-to-base geometry has one immutable recipe owner. The strict compositor
+  still protects every unmasked base sample exactly.
+- **Verdict:** **Sound after correction.** It preserves provider evidence and the required generate → upscale → resample/place →
+  mask-composite sequence without a compatibility branch.
+- **Confidence:** High; asymmetric placement and smaller-provider-output tracers pin artifact, sampling, and base-canvas dimensions.
 
 ### Slice 08c3 — Normalized controls use OpenColorIO's scene-linear curve domain
 

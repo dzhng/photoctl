@@ -3,6 +3,7 @@ import { initializeLibrary } from "@photoctl/library";
 import { GatewayClient, GatewayImageModelAdapter } from "@photoctl/providers";
 import {
   evaluateGraphNode,
+  planOutputDensity,
   readArtifactLinear,
   readArtifactMask,
 } from "@photoctl/render";
@@ -120,7 +121,7 @@ test("same-ratio provider dimensions are normalized deterministically and record
   const fixture = await fillFixture("wrongdims");
   try {
     const segmented = success(
-      await command(fixture, "segment", [fixture.id, "--box", "8,6,8,8"]),
+      await command(fixture, "segment", [fixture.id, "--box", "18,7,5,5"]),
     ) as { layer_id: string };
     const filled = fillStrictDataSchema.parse(
       success(
@@ -148,16 +149,71 @@ test("same-ratio provider dimensions are normalized deterministically and record
     ) as {
       parameters: unknown;
     };
-    expect(resample.parameters).toEqual({
-      w: 40,
-      h: 30,
-      kernel: "lanczos3",
-    });
     const generationId = graph.nodes.find(({ kind }) => kind === "generate")?.id;
     const generation = success(
       await command(fixture, "graph", ["node", fixture.id, generationId!]),
     ) as { parameters: { request: { crop: number[] } } };
-    expect(generation.parameters.request.crop).toEqual([0, 0, 16, 16]);
+    expect(generation.parameters.request.crop).toEqual([16, 0, 16, 16]);
+    const generated = await evaluateGraphNode({
+      database: fixture.handle,
+      libraryPath: fixture.handle.path,
+      photoId: fixture.id,
+      nodeId: generationId!,
+      source: fixture.sourceProducer,
+    });
+    expect(generated.artifact).toMatchObject({ w: 16, h: 16 });
+    expect(
+      planOutputDensity({
+        target: {
+          kind: "base_space_provider_crop",
+          dimensionsIncludingPad: { w: 16, h: 16 },
+        },
+        generated: {
+          id: generated.artifact.artifactHash,
+          dimensions: { w: generated.artifact.w, h: generated.artifact.h },
+        },
+        cachedUpscales: [],
+        supportedScales: [2, 4],
+        limits: {
+          maxInputPixels: 16_000_000,
+          maxOutputPixels: 64_000_000,
+          maxOutputEdge: 16_384,
+        },
+        sourceContext: { tier: "fixture", pixelScale: 1, resolutionLimited: false },
+      }).requiredScale,
+    ).toBe(1);
+    expect(resample.parameters).toEqual({
+      w: 40,
+      h: 30,
+      kernel: "lanczos3",
+      target: { x: 16, y: 0, w: 16, h: 16 },
+    });
+    const placed = await evaluateGraphNode({
+      database: fixture.handle,
+      libraryPath: fixture.handle.path,
+      photoId: fixture.id,
+      nodeId: resampleId!,
+      source: fixture.sourceProducer,
+    });
+    const generatedPixels = (
+      await readArtifactLinear(generated.artifact.path, generated.artifact.artifactHash)
+    ).data;
+    const placedPixels = (
+      await readArtifactLinear(placed.artifact.path, placed.artifact.artifactHash)
+    ).data;
+    for (let y = 0; y < 30; y += 1) {
+      for (let x = 0; x < 40; x += 1) {
+        const target = (y * 40 + x) * 3;
+        if (x >= 16 && x < 32 && y < 16) {
+          const source = (y * 16 + x - 16) * 3;
+          expect(placedPixels.slice(target, target + 3)).toEqual(
+            generatedPixels.slice(source, source + 3),
+          );
+        } else {
+          expect(placedPixels.slice(target, target + 3)).toEqual(new Float32Array(3));
+        }
+      }
+    }
     const evaluated = await evaluateGraphNode({
       database: fixture.handle,
       libraryPath: fixture.handle.path,
@@ -190,6 +246,75 @@ test("strict fill rejects a whole-frame provider result with data exit 65 and no
     expect(exitCodeFor("provider_whole_frame")).toBe(65);
     expect(await revisionCount(fixture)).toBe(before);
     expect(await generatedExecutionCount(fixture)).toBe(0);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("provider sampling dimensions remain distinct from the normalized crop artifact", async () => {
+  const fixture = await fillFixture("smallerdims");
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "18,7,5,5"]),
+    ) as { layer_id: string };
+    const filled = fillStrictDataSchema.parse(
+      success(
+        await command(fixture, "fill", [
+          fixture.id,
+          "--layer",
+          segmented.layer_id,
+          "--remove",
+          "--pad",
+          "0",
+        ]),
+      ),
+    );
+    const generated = await evaluateGraphNode({
+      database: fixture.handle,
+      libraryPath: fixture.handle.path,
+      photoId: fixture.id,
+      nodeId: filled.generation.node,
+      source: fixture.sourceProducer,
+    });
+    expect(generated.artifact).toMatchObject({ w: 16, h: 16 });
+    expect(filled.generation.returned).toEqual({ w: 8, h: 8 });
+    const generation = success(
+      await command(fixture, "graph", ["node", fixture.id, filled.generation.node]),
+    ) as { parameters: { request: { returned: [number, number] } } };
+    expect(generation.parameters.request.returned).toEqual([8, 8]);
+    expect(
+      planOutputDensity({
+        target: {
+          kind: "base_space_provider_crop",
+          dimensionsIncludingPad: { w: 16, h: 16 },
+        },
+        generated: {
+          id: generated.artifact.artifactHash,
+          dimensions: { w: generated.artifact.w, h: generated.artifact.h },
+          samplingDimensions: {
+            w: generation.parameters.request.returned[0],
+            h: generation.parameters.request.returned[1],
+          },
+        },
+        cachedUpscales: [],
+        supportedScales: [2, 4],
+        limits: {
+          maxInputPixels: 16_000_000,
+          maxOutputPixels: 64_000_000,
+          maxOutputEdge: 16_384,
+        },
+        sourceContext: { tier: "fixture", pixelScale: 1, resolutionLimited: false },
+      }),
+    ).toMatchObject({
+      requiredScale: 2,
+      upscale: {
+        generated: { w: 32, h: 32 },
+        operations: [
+          { kind: "upscale", scale: 2, expectedDimensions: { w: 32, h: 32 } },
+          { kind: "resize", dimensions: { w: 16, h: 16 } },
+        ],
+      },
+    });
   } finally {
     await fixture.handle.close();
   }
@@ -240,7 +365,7 @@ test("prompt fill stores the exact instruction in its immutable generation recip
   }
 });
 
-async function fillFixture(mode?: "wrongdims" | "wholeframe" | "wrongaspect") {
+async function fillFixture(mode?: "wrongdims" | "smallerdims" | "wholeframe" | "wrongaspect") {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-fill-strict-"));
   directories.push(parent);
   const source = join(parent, "source.png");

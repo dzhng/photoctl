@@ -20,6 +20,7 @@ import {
   evaluationHash,
   imageNodeRegistry,
   newExecutionId,
+  resampleParametersSchema,
 } from "./recipes.js";
 import type { ImageNodeKind, JsonValue, SourceExecutionProvenance } from "./types.js";
 import type { ExternalExecutionProvenance } from "./types.js";
@@ -409,19 +410,30 @@ async function evaluateResample(
   inputs: EvaluatedNode[],
 ): Promise<LinearImage> {
   if (inputs.length !== 1) throw new Error("Resample evaluation requires one input artifact");
-  const parsed = z
-    .object({
-      w: z.number().int().positive(),
-      h: z.number().int().positive(),
-      kernel: z.enum(["nearest", "bilinear", "bicubic", "lanczos3"]),
-    })
-    .strict()
-    .parse(parameters);
+  const parsed = resampleParametersSchema.parse(parameters);
   const image = await readRgbInput(inputs[0]);
-  if (image.w === parsed.w && image.h === parsed.h)
+  if (!parsed.target && image.w === parsed.w && image.h === parsed.h)
     return linearImage(image, new Float32Array(image.data));
   if (parsed.kernel === "nearest" || parsed.kernel === "bicubic") {
     throw new Error(`The ${parsed.kernel} graph resample kernel is not implemented`);
+  }
+  if (parsed.target) {
+    const target = parsed.target;
+    return {
+      ...image,
+      w: parsed.w,
+      h: parsed.h,
+      data: await transformPixels(
+        image.data,
+        image.w,
+        image.h,
+        3,
+        parsed.w,
+        parsed.h,
+        [target.w / image.w, 0, 0, target.h / image.h, target.x, target.y],
+        parsed.kernel,
+      ),
+    };
   }
   return {
     ...image,

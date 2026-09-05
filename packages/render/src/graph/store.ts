@@ -308,6 +308,12 @@ export async function commitRevision(
       resultingRoots.output,
       ...layers.flatMap((layer) => [layer.contentNodeId, layer.maskNodeId]),
     ]);
+    await assertPreparedExecutionsReachable(
+      transaction,
+      request.photoId,
+      resultingRoots,
+      preparedNodeIds,
+    );
     await mapInOrder([...retainedRoots], async (nodeId) => {
       await assertMaskArtifactsAvailable(transaction, request.photoId, nodeId);
     });
@@ -377,6 +383,32 @@ export async function commitRevision(
       renderHash: roots.output ? renderHashForNode(roots.output) : null,
     };
   });
+}
+
+async function assertPreparedExecutionsReachable(
+  transaction: GraphTransaction,
+  photoId: string,
+  roots: { base?: string; output?: string },
+  preparedNodeIds: ReadonlySet<string>,
+): Promise<void> {
+  if (preparedNodeIds.size === 0) return;
+  const reachable = await transaction.query<{ node_id: string }>(
+    `WITH RECURSIVE reachable(node_id) AS (
+       SELECT root.node_id
+       FROM unnest($2::text[]) AS root(node_id)
+       UNION
+       SELECT edge.input_node_id
+       FROM reachable
+       JOIN image_node_inputs AS edge
+         ON edge.photo_id = $1 AND edge.node_id = reachable.node_id
+     )
+     SELECT node_id FROM reachable`,
+    [photoId, [roots.base, roots.output].filter((nodeId): nodeId is string => Boolean(nodeId))],
+  );
+  const reachableIds = new Set(reachable.rows.map(({ node_id }) => node_id));
+  if ([...preparedNodeIds].some((nodeId) => !reachableIds.has(nodeId))) {
+    throw new Error("A prepared provider execution must be reachable from the resulting roots");
+  }
 }
 
 async function storePreparedExecution(

@@ -12,6 +12,7 @@ import {
 } from "./store.js";
 import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { MASK_ARTIFACT_MEDIA_TYPE } from "../artifacts/publication.js";
+import { canonicalNodeRecipe, evaluationHash, logicalNodeId, recipeHash } from "./recipes.js";
 
 const firstPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
 const secondPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
@@ -292,6 +293,108 @@ test("unreachable drafts and node-only revisions are refused without debris", as
     ).rejects.toThrow("redirect a document root or replace the layer snapshot");
     expect((await db.query("SELECT 1 FROM image_nodes")).rows).toEqual([]);
     expect((await db.query("SELECT 1 FROM document_revisions")).rows).toEqual([]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("a prepared provider execution must be reachable from the resulting roots", async () => {
+  const db = await graphDatabase();
+  try {
+    const sourceDraft = source("source");
+    const sourceRecipe = recipeHash(
+      canonicalNodeRecipe({
+        kind: sourceDraft.kind,
+        recipeVersion: sourceDraft.recipeVersion,
+        parameters: sourceDraft.parameters,
+        inputNodeIds: [],
+      }),
+    );
+    const executionId = `exec_${"4".repeat(64)}`;
+    const parameters = {
+      adapter: "gateway-image-v1",
+      adapter_version: "1",
+      model: "paid-v1",
+      model_version: null,
+      prompt: "restore",
+      prompt_version: 1,
+      request: { execution_id: executionId },
+    };
+    const generationRecipe = recipeHash(
+      canonicalNodeRecipe({
+        kind: "generate",
+        recipeVersion: 1,
+        parameters,
+        inputNodeIds: [logicalNodeId(sourceRecipe)],
+      }),
+    );
+    const prepared = {
+      node: { localKey: "generation" } as const,
+      executionId,
+      evaluationHash: evaluationHash({
+        nodeRecipeHash: generationRecipe,
+        kind: "generate" as const,
+        recipeVersion: 1,
+        inputArtifactHashes: [`a_${"1".repeat(64)}`],
+      }),
+      outputArtifactHash: `a_${"2".repeat(64)}`,
+      inputArtifactHashes: [`a_${"1".repeat(64)}`],
+      provider: {
+        adapter: "gateway-image-v1",
+        adapterVersion: "1",
+        service: "gateway",
+        model: "paid-v1",
+        modelVersion: null,
+        providerRequestId: "request-1",
+        seed: null,
+        durationMs: 1,
+        costUsd: 0,
+        inputPx: 1,
+        targetPx: 1,
+        attempt: 1,
+        densityVerdict: "not-applicable" as const,
+        warnings: [],
+      },
+    };
+    const initial = await commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: null,
+      nodes: [
+        sourceDraft,
+        {
+          localKey: "generation",
+          kind: "generate",
+          recipeVersion: 1,
+          parameters,
+          inputs: [{ localKey: "source" }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "generation" } }],
+      executions: [prepared],
+    });
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: initial.revisionId,
+        nodes: [],
+        rootUpdates: [{ root: "output", node: { nodeId: initial.nodes.source.id } }],
+        executions: [
+          {
+            ...prepared,
+            node: { nodeId: initial.nodes.generation.id },
+            executionId: `exec_${"5".repeat(64)}`,
+          },
+        ],
+      }),
+    ).rejects.toThrow("reachable from the resulting roots");
+    expect(
+      (await db.query<{ count: string }>("SELECT count(*)::text AS count FROM node_executions"))
+        .rows,
+    ).toEqual([{ count: "1" }]);
+    expect(
+      (await db.query<{ count: string }>("SELECT count(*)::text AS count FROM document_revisions"))
+        .rows,
+    ).toEqual([{ count: "1" }]);
   } finally {
     await db.close();
   }

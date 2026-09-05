@@ -128,7 +128,7 @@ export async function fillLayerStrict(
       { id: request.photoId, layer: layerId },
     );
   }
-  const generated = await placeCrop(base, normalized.png, crop);
+  const generated = await decodeGeneratedCrop(normalized.png, crop);
   const published = await publishArtifact(libraryPath, await normalizeArtifact(generated));
   const generationParameters = {
     adapter: request.dependencies.adapter.id,
@@ -183,7 +183,12 @@ export async function fillLayerStrict(
       localKey: "resample",
       kind: "resample",
       recipeVersion: 1,
-      parameters: { w: base.w, h: base.h, kernel: "lanczos3" },
+      parameters: {
+        w: base.w,
+        h: base.h,
+        kernel: "lanczos3",
+        target: { x: crop.x, y: crop.y, w: crop.w, h: crop.h },
+      },
       inputs: [{ localKey: "generation" }],
     },
     {
@@ -275,8 +280,7 @@ async function cropMaskPng(
     .toBuffer();
 }
 
-async function placeCrop(
-  base: Image16,
+async function decodeGeneratedCrop(
   png: Buffer,
   crop: { x: number; y: number; w: number; h: number },
 ): Promise<Image16> {
@@ -285,15 +289,15 @@ async function placeCrop(
     .toColourspace("srgb")
     .raw({ depth: "ushort" })
     .toBuffer();
-  const data = new Uint16Array(base.data);
-  for (let y = 0; y < crop.h; y += 1) {
-    for (let x = 0; x < crop.w; x += 1) {
-      for (let channel = 0; channel < 3; channel += 1) {
-        const source = (y * crop.w + x) * 3 + channel;
-        const target = ((crop.y + y) * base.w + crop.x + x) * 3 + channel;
-        data[target] = decoded.readUInt16LE(source * 2);
-      }
-    }
+  if (decoded.byteLength !== crop.w * crop.h * 3 * Uint16Array.BYTES_PER_ELEMENT) {
+    throw new Error("Normalized provider crop dimensions disagree with the fill plan");
   }
-  return { ...base, data };
+  return {
+    w: crop.w,
+    h: crop.h,
+    channels: 3,
+    data: new Uint16Array(decoded.buffer, decoded.byteOffset, decoded.byteLength / 2),
+    space: "display-srgb",
+    orientationApplied: true,
+  };
 }

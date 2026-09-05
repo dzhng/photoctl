@@ -8,6 +8,7 @@ export interface PixelDimensions {
 export interface DensityArtifact {
   id: string;
   dimensions: PixelDimensions;
+  samplingDimensions?: PixelDimensions;
 }
 
 export interface CachedUpscaleArtifact extends DensityArtifact {
@@ -74,14 +75,14 @@ export function planOutputDensity(input: DensityPlanInput): OutputDensityPlan {
   validateLimits(input.limits);
 
   const requiredScale = Math.max(
-    target.w / input.generated.dimensions.w,
-    target.h / input.generated.dimensions.h,
+    target.w / samplingDimensions(input.generated).w,
+    target.h / samplingDimensions(input.generated).h,
   );
-  const generationCovers = covers(input.generated.dimensions, target);
+  const generationCovers = covers(samplingDimensions(input.generated), target);
   const sufficient = generationCovers
     ? input.generated
     : input.cachedUpscales
-        .filter(({ dimensions }) => covers(dimensions, target))
+        .filter((artifact) => covers(samplingDimensions(artifact), target))
         .toSorted(
           (left, right) =>
             pixelCount(left.dimensions) - pixelCount(right.dimensions) ||
@@ -109,7 +110,8 @@ export function planOutputDensity(input: DensityPlanInput): OutputDensityPlan {
       };
     }
     const generated = scaledDimensions(input.generated.dimensions, scale);
-    const densitySatisfied = generated.w >= target.w && generated.h >= target.h;
+    const generatedSampling = scaledDimensions(samplingDimensions(input.generated), scale);
+    const densitySatisfied = covers(generatedSampling, target);
     return {
       requiredScale,
       sourceContext: { ...input.sourceContext },
@@ -208,6 +210,19 @@ function pixelCount(dimensions: PixelDimensions): number {
 function validateArtifact(label: string, artifact: DensityArtifact): void {
   if (artifact.id.length === 0) throw new Error(`${label} artifact id must not be empty`);
   validateDimensions(`${label} dimensions`, artifact.dimensions);
+  if (artifact.samplingDimensions) {
+    validateDimensions(`${label} sampling dimensions`, artifact.samplingDimensions);
+    if (
+      artifact.samplingDimensions.w > artifact.dimensions.w ||
+      artifact.samplingDimensions.h > artifact.dimensions.h
+    ) {
+      throw new Error(`${label} sampling dimensions cannot exceed its raster dimensions`);
+    }
+  }
+}
+
+function samplingDimensions(artifact: DensityArtifact): PixelDimensions {
+  return artifact.samplingDimensions ?? artifact.dimensions;
 }
 
 function validateDimensions(label: string, dimensions: PixelDimensions): void {
