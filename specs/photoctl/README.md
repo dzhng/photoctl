@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08c3, provider slices 09a–09c, and layer identity slice 10a are
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08d1, provider slices 09a–09c, and layer identity slice 10a are
 implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -30,16 +30,16 @@ check followed by atomic displacement and no-clobber installation keep external 
 silently losing an observed edit. Develop dictionaries and package/library presets now live in typed immutable nodes with full
 hashes. Exact scene-linear Rec.2020 f32 artifacts now remain canonical through the DAG, and the first deterministic pixel pass
 applies global exposure, brightness, contrast, black point, saturation, masked highlights/shadows, skin-protected vibrance,
-white balance, cast, levels, and OpenColorIO-style scene-linear curves in the native Rust owner. Schema v9
-now stores stable layer identities and complete immutable revision snapshots; typed base/output roots and composite-v2 projection
-keep layer metadata, graph reachability, and pixel recipe identity in one atomic document contract.*
+white balance, cast, levels, OpenColorIO-style scene-linear curves, and deterministic local contrast in the native Rust owner.
+Schema v9 stores stable layer identities and complete immutable revision snapshots; typed base/output roots and composite-v2
+projection keep layer metadata, graph reachability, and pixel recipe identity in one atomic document contract.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Active wave:** slices 08d1 and 10b1 may run in parallel. Slice 08d1 owns local contrast in the Rust develop seam; 10b1 owns
+- **Active wave:** slices 08d2 and 10b1 may run in parallel. Slice 08d2 owns native luminance/chroma noise reduction; 10b1 owns
   generic resample/transform and preview resampling. Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
   its live multimodal request remains provisional until the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
@@ -61,7 +61,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [ ] 8d local ops/geometry → **gold exam green** — `slices/08-develop.md`
+- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [ ] 8d2–8d4 NR/geometry/filters → **gold exam green** — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [ ] 10: [x] 10a identity/revisions · [ ] 10b1 resample/transform · [ ] 10b2 masks/composite · [ ] 10b3 delta · [ ] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`

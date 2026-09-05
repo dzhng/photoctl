@@ -230,6 +230,64 @@ test("masked and curve controls cross the canonical artifact worker seam in fixe
   expect(decoded.data).toEqual(memory.data);
 });
 
+test("local contrast controls cross the canonical artifact seam in fixed order", async () => {
+  const width = 33;
+  const source = {
+    w: width,
+    h: 1,
+    data: Float32Array.from({ length: width * 3 }, (_, index) => {
+      const x = Math.floor(index / 3);
+      const channel = index % 3;
+      const luminance = x === 16 ? 0.85 : 0.12 + x * 0.01;
+      return luminance * [1, 0.8, 0.6][channel]!;
+    }),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const parameters = { brilliance: 35, definition: 45, sharpen: 55 };
+
+  const memory = await applyDevelop(source, parameters);
+  const artifact = await applyDevelopArtifact(
+    await encodeArtifactLinearTiff(source),
+    { w: source.w, h: source.h },
+    parameters,
+  );
+  const decoded = await decodeArtifactLinearTiff(artifact.bytes);
+
+  expect(decoded.data).toEqual(memory.data);
+  expect(memory.data).not.toEqual(source.data);
+});
+
+test("local contrast output is byte-deterministic", async () => {
+  const source = {
+    w: 17,
+    h: 5,
+    data: Float32Array.from({ length: 17 * 5 * 3 }, (_, index) => ((index * 17) % 101) / 100),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const parameters = { brilliance: -20, definition: 30, sharpen: 70 };
+
+  const first = await applyDevelopArtifact(
+    await encodeArtifactLinearTiff(source),
+    { w: source.w, h: source.h },
+    parameters,
+  );
+  const second = await applyDevelopArtifact(
+    await encodeArtifactLinearTiff(source),
+    { w: source.w, h: source.h },
+    parameters,
+  );
+
+  expect(second.bytes).toEqual(first.bytes);
+});
+
 test("develop rejects camera-space pixels at its public boundary", async () => {
   const camera = {
     w: 1,
@@ -274,7 +332,7 @@ test("develop grades canonical artifact bytes asynchronously without a JS pixel 
   );
 });
 
-test("full-frame artifact grading leaves the JavaScript event loop responsive", async () => {
+test("full-frame local grading leaves the JavaScript event loop responsive", async () => {
   const width = 768;
   const height = 512;
   const bytes = await encodeArtifactLinearTiff({
@@ -292,7 +350,11 @@ test("full-frame artifact grading leaves the JavaScript event loop responsive", 
     heartbeats += 1;
   }, 1);
   try {
-    await applyDevelopArtifact(bytes, { w: width, h: height }, { exposure: 1 });
+    await applyDevelopArtifact(
+      bytes,
+      { w: width, h: height },
+      { brilliance: 20, definition: 20, sharpen: 20 },
+    );
   } finally {
     clearInterval(timer);
   }

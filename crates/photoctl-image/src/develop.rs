@@ -1,6 +1,12 @@
 const D65_XYZ: [f64; 3] = [0.95047, 1.0, 1.08883];
+const BRILLIANCE_RADIUS: usize = 15;
+const BRILLIANCE_STOPS_AT_FULL_SCALE: f32 = 0.2;
+const DEFINITION_RADIUS_FRACTION: f32 = 0.03;
+const DEFINITION_GAIN_AT_FULL_SCALE: f32 = 0.25;
+const SHARPEN_GAIN_AT_FULL_SCALE: f32 = 0.5;
 
 use crate::tone_curve::{ToneCurve, from_log, prepare as prepare_tone_curve, to_log};
+use std::collections::VecDeque;
 
 // Linear sRGB (D65) to linear Rec.2020.
 const SRGB_TO_REC2020: [[f64; 3]; 3] = [
@@ -41,7 +47,8 @@ const BRADFORD_INVERSE: [[f64; 3]; 3] = [
 ];
 
 #[derive(Clone, Debug, Default)]
-pub(crate) struct GlobalDevelop {
+pub(crate) struct Develop {
+    pub brilliance: f32,
     pub exposure: f32,
     pub highlights: f32,
     pub shadows: f32,
@@ -55,6 +62,8 @@ pub(crate) struct GlobalDevelop {
     pub cast: f32,
     pub curves: Option<CurveParameters>,
     pub levels: Option<LevelsParameters>,
+    pub definition: f32,
+    pub sharpen: f32,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -72,10 +81,7 @@ pub(crate) struct LevelsParameters {
     pub white: f32,
 }
 
-pub(crate) fn apply_global_in_place(
-    data: &mut [f32],
-    parameters: GlobalDevelop,
-) -> Result<(), String> {
+pub(crate) fn apply_global_in_place(data: &mut [f32], parameters: Develop) -> Result<(), String> {
     if data.len() % 3 != 0 {
         return Err("global develop expects interleaved RGB samples".to_owned());
     }
@@ -89,15 +95,25 @@ pub(crate) fn apply_global_in_place(
     Ok(())
 }
 
-pub(crate) fn apply_global_artifact_in_place(
+pub(crate) fn apply_develop_artifact_in_place(
     data: &mut [u8],
     pixel_offset: usize,
     pixel_bytes: usize,
-    parameters: GlobalDevelop,
+    width: usize,
+    height: usize,
+    parameters: Develop,
 ) -> Result<(), String> {
-    if pixel_bytes % 12 != 0 || pixel_offset.checked_add(pixel_bytes) != Some(data.len()) {
-        return Err("global develop artifact has an invalid pixel span".to_owned());
+    if width == 0
+        || height == 0
+        || width
+            .checked_mul(height)
+            .and_then(|pixels| pixels.checked_mul(12))
+            != Some(pixel_bytes)
+        || pixel_offset.checked_add(pixel_bytes) != Some(data.len())
+    {
+        return Err("develop artifact has an invalid pixel span".to_owned());
     }
+    let local = LocalDevelop::from(&parameters);
     let prepared = prepare_global(parameters)?;
     for pixel in data[pixel_offset..].chunks_exact_mut(12) {
         let source = [
@@ -110,7 +126,334 @@ pub(crate) fn apply_global_artifact_in_place(
             pixel[channel * 4..channel * 4 + 4].copy_from_slice(&sample.to_le_bytes());
         }
     }
+    if !local.is_identity() {
+        apply_local_bytes_in_place(&mut data[pixel_offset..], width, height, local)?;
+    }
     Ok(())
+}
+
+pub(crate) fn apply_develop_in_place(
+    data: &mut [f32],
+    width: usize,
+    height: usize,
+    parameters: Develop,
+) -> Result<(), String> {
+    if width == 0
+        || height == 0
+        || width
+            .checked_mul(height)
+            .and_then(|pixels| pixels.checked_mul(3))
+            != Some(data.len())
+    {
+        return Err("develop dimensions do not match interleaved RGB samples".to_owned());
+    }
+    let local = LocalDevelop::from(&parameters);
+    apply_global_in_place(data, parameters)?;
+    apply_local_in_place(data, width, height, local)
+}
+
+#[derive(Clone, Copy)]
+struct LocalDevelop {
+    brilliance: f32,
+    definition: f32,
+    sharpen: f32,
+}
+
+impl From<&Develop> for LocalDevelop {
+    fn from(parameters: &Develop) -> Self {
+        Self {
+            brilliance: parameters.brilliance / 100.0,
+            definition: parameters.definition / 100.0 * DEFINITION_GAIN_AT_FULL_SCALE,
+            sharpen: parameters.sharpen / 100.0 * SHARPEN_GAIN_AT_FULL_SCALE,
+        }
+    }
+}
+
+impl LocalDevelop {
+    fn is_identity(self) -> bool {
+        self.brilliance == 0.0 && self.definition == 0.0 && self.sharpen == 0.0
+    }
+}
+
+fn apply_local_bytes_in_place(
+    data: &mut [u8],
+    width: usize,
+    height: usize,
+    parameters: LocalDevelop,
+) -> Result<(), String> {
+    if parameters.brilliance != 0.0 {
+        apply_box_operator(
+            data,
+            width,
+            height,
+            BRILLIANCE_RADIUS,
+            BoxOperator::Brilliance(parameters.brilliance),
+        );
+    }
+    if parameters.definition != 0.0 {
+        apply_box_operator(
+            data,
+            width,
+            height,
+            ((width.max(height) as f32 * DEFINITION_RADIUS_FRACTION).round() as usize).max(1),
+            BoxOperator::Unsharp(parameters.definition),
+        );
+    }
+    if parameters.sharpen != 0.0 {
+        apply_box_operator(
+            data,
+            width,
+            height,
+            1,
+            BoxOperator::Unsharp(parameters.sharpen),
+        );
+    }
+    if data
+        .chunks_exact(4)
+        .any(|sample| !f32::from_le_bytes(sample.try_into().unwrap()).is_finite())
+    {
+        return Err("local develop produced a non-finite sample".to_owned());
+    }
+    Ok(())
+}
+
+fn apply_local_in_place(
+    data: &mut [f32],
+    width: usize,
+    height: usize,
+    parameters: LocalDevelop,
+) -> Result<(), String> {
+    if parameters.brilliance != 0.0 {
+        apply_box_operator(
+            data,
+            width,
+            height,
+            BRILLIANCE_RADIUS,
+            BoxOperator::Brilliance(parameters.brilliance),
+        );
+    }
+    if parameters.definition != 0.0 {
+        apply_box_operator(
+            data,
+            width,
+            height,
+            ((width.max(height) as f32 * DEFINITION_RADIUS_FRACTION).round() as usize).max(1),
+            BoxOperator::Unsharp(parameters.definition),
+        );
+    }
+    if parameters.sharpen != 0.0 {
+        apply_box_operator(
+            data,
+            width,
+            height,
+            1,
+            BoxOperator::Unsharp(parameters.sharpen),
+        );
+    }
+    if data.iter().any(|sample| !sample.is_finite()) {
+        return Err("local develop produced a non-finite sample".to_owned());
+    }
+    Ok(())
+}
+
+trait SampleStorage {
+    fn read_sample(&self, index: usize) -> f32;
+    fn write_sample(&mut self, index: usize, sample: f32);
+}
+
+impl SampleStorage for [f32] {
+    fn read_sample(&self, index: usize) -> f32 {
+        self[index]
+    }
+
+    fn write_sample(&mut self, index: usize, sample: f32) {
+        self[index] = sample;
+    }
+}
+
+impl SampleStorage for [u8] {
+    fn read_sample(&self, index: usize) -> f32 {
+        let offset = index * 4;
+        f32::from_le_bytes(self[offset..offset + 4].try_into().unwrap())
+    }
+
+    fn write_sample(&mut self, index: usize, sample: f32) {
+        let offset = index * 4;
+        self[offset..offset + 4].copy_from_slice(&sample.to_le_bytes());
+    }
+}
+
+#[derive(Clone, Copy)]
+enum BoxOperator {
+    Brilliance(f32),
+    Unsharp(f32),
+}
+
+impl BoxOperator {
+    fn channels(self) -> usize {
+        match self {
+            Self::Brilliance(_) => 1,
+            Self::Unsharp(_) => 3,
+        }
+    }
+
+    fn source<S: SampleStorage + ?Sized>(self, data: &S, pixel: usize, channel: usize) -> f32 {
+        match self {
+            Self::Brilliance(_) => rec2020_luminance([
+                data.read_sample(pixel * 3),
+                data.read_sample(pixel * 3 + 1),
+                data.read_sample(pixel * 3 + 2),
+            ]),
+            Self::Unsharp(_) => data.read_sample(pixel * 3 + channel),
+        }
+    }
+
+    fn apply<S: SampleStorage + ?Sized>(self, data: &mut S, pixel: usize, blurred: &[f32]) {
+        match self {
+            Self::Brilliance(amount) => {
+                let source = [
+                    data.read_sample(pixel * 3),
+                    data.read_sample(pixel * 3 + 1),
+                    data.read_sample(pixel * 3 + 2),
+                ];
+                let luma = rec2020_luminance(source);
+                let difference = meaningful_difference(luma, blurred[0]);
+                let local_contrast = (difference / blurred[0].abs().max(0.18)).clamp(-1.0, 1.0);
+                let gain = (BRILLIANCE_STOPS_AT_FULL_SCALE * amount * local_contrast).exp2();
+                for (channel, sample) in source.into_iter().enumerate() {
+                    data.write_sample(pixel * 3 + channel, sample * gain);
+                }
+            }
+            Self::Unsharp(amount) => {
+                for (channel, reference) in blurred.iter().copied().enumerate() {
+                    let index = pixel * 3 + channel;
+                    let sample = data.read_sample(index);
+                    data.write_sample(
+                        index,
+                        sample + amount * meaningful_difference(sample, reference),
+                    );
+                }
+            }
+        }
+    }
+}
+
+fn meaningful_difference(value: f32, reference: f32) -> f32 {
+    let difference = value - reference;
+    if difference.abs() <= 8.0 * f32::EPSILON * value.abs().max(reference.abs()).max(1.0) {
+        0.0
+    } else {
+        difference
+    }
+}
+
+fn apply_box_operator<S: SampleStorage + ?Sized>(
+    data: &mut S,
+    width: usize,
+    height: usize,
+    radius: usize,
+    operator: BoxOperator,
+) {
+    // Scan along the long axis so the delayed output ring stays a radius-sized fraction of a
+    // frame even for panoramas. A source slice is overwritten only after it leaves the window.
+    let scan_rows = height >= width;
+    let scan_length = if scan_rows { height } else { width };
+    let slice_length = if scan_rows { width } else { height };
+    let channels = operator.channels();
+    let pixel_at = |scan: usize, slice: usize| {
+        if scan_rows {
+            scan * width + slice
+        } else {
+            slice * width + scan
+        }
+    };
+    let mut columns = vec![0.0_f64; slice_length * channels];
+    for scan in 0..=radius.min(scan_length - 1) {
+        for slice in 0..slice_length {
+            let pixel = pixel_at(scan, slice);
+            for channel in 0..channels {
+                columns[slice * channels + channel] +=
+                    f64::from(operator.source(data, pixel, channel));
+            }
+        }
+    }
+    let mut pending = VecDeque::with_capacity(radius.min(scan_length) + 1);
+    let mut next_write = 0;
+    for scan in 0..scan_length {
+        let scan_start = scan.saturating_sub(radius);
+        let scan_end = scan.saturating_add(radius).min(scan_length - 1);
+        let mut output = vec![0.0; slice_length * channels];
+        for channel in 0..channels {
+            let mut sum = 0.0_f64;
+            for slice in 0..=radius.min(slice_length - 1) {
+                sum += columns[slice * channels + channel];
+            }
+            for slice in 0..slice_length {
+                let slice_start = slice.saturating_sub(radius);
+                let slice_end = slice.saturating_add(radius).min(slice_length - 1);
+                output[slice * channels + channel] = (sum
+                    / ((slice_end - slice_start + 1) * (scan_end - scan_start + 1)) as f64)
+                    as f32;
+                let next_start = (slice + 1).saturating_sub(radius);
+                let next_end = (slice + 1).saturating_add(radius).min(slice_length - 1);
+                if next_start > slice_start {
+                    sum -= columns[slice_start * channels + channel];
+                }
+                if next_end > slice_end {
+                    sum += columns[(slice_end + 1) * channels + channel];
+                }
+            }
+        }
+        pending.push_back(output);
+        let next_start = (scan + 1).saturating_sub(radius);
+        let next_end = (scan + 1).saturating_add(radius).min(scan_length - 1);
+        if next_start > scan_start {
+            for slice in 0..slice_length {
+                let pixel = pixel_at(scan_start, slice);
+                for channel in 0..channels {
+                    columns[slice * channels + channel] -=
+                        f64::from(operator.source(data, pixel, channel));
+                }
+            }
+        }
+        if next_end > scan_end {
+            for slice in 0..slice_length {
+                let pixel = pixel_at(scan_end + 1, slice);
+                for channel in 0..channels {
+                    columns[slice * channels + channel] +=
+                        f64::from(operator.source(data, pixel, channel));
+                }
+            }
+        }
+        if next_start > scan_start {
+            apply_output_slice(
+                data,
+                &pixel_at,
+                next_write,
+                pending.pop_front().unwrap(),
+                operator,
+                channels,
+            );
+            next_write += 1;
+        }
+    }
+    for output in pending {
+        apply_output_slice(data, &pixel_at, next_write, output, operator, channels);
+        next_write += 1;
+    }
+}
+
+fn apply_output_slice<S: SampleStorage + ?Sized>(
+    data: &mut S,
+    pixel_at: &impl Fn(usize, usize) -> usize,
+    scan: usize,
+    output: Vec<f32>,
+    operator: BoxOperator,
+    channels: usize,
+) {
+    for (slice, blurred) in output.chunks_exact(channels).enumerate() {
+        operator.apply(data, pixel_at(scan, slice), blurred);
+    }
 }
 
 pub(crate) fn validate_artifact_samples(
@@ -151,7 +494,7 @@ struct PreparedCurves {
     channels: [Option<ToneCurve>; 3],
 }
 
-fn prepare_global(parameters: GlobalDevelop) -> Result<PreparedGlobal, String> {
+fn prepare_global(parameters: Develop) -> Result<PreparedGlobal, String> {
     // Primary order and equations follow OpenColorIO's BSD-3 GradingPrimary LIN renderer;
     // the control normalizations below are photoctl data, not copied implementation code.
     Ok(PreparedGlobal {
@@ -542,9 +885,20 @@ fn invert_3x3(matrix: [[f64; 3]; 3]) -> Result<[[f64; 3]; 3], String> {
 mod tests {
     use super::*;
 
-    fn apply_global(data: &[f32], parameters: GlobalDevelop) -> Result<Vec<f32>, String> {
+    fn apply_global(data: &[f32], parameters: Develop) -> Result<Vec<f32>, String> {
         let mut output = data.to_vec();
         apply_global_in_place(&mut output, parameters)?;
+        Ok(output)
+    }
+
+    fn apply_develop(
+        data: &[f32],
+        width: usize,
+        height: usize,
+        parameters: Develop,
+    ) -> Result<Vec<f32>, String> {
+        let mut output = data.to_vec();
+        apply_develop_in_place(&mut output, width, height, parameters)?;
         Ok(output)
     }
 
@@ -554,9 +908,9 @@ mod tests {
         let allocation = actual.as_ptr();
         apply_global_in_place(
             &mut actual,
-            GlobalDevelop {
+            Develop {
                 exposure: 1.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -574,9 +928,9 @@ mod tests {
         let input = [0.1, 0.25, 0.8];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 brightness: 25.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -589,9 +943,9 @@ mod tests {
         let input = [0.045, 0.18, 0.72];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 contrast: 100.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -606,9 +960,9 @@ mod tests {
         let input = [0.8, 0.2, 0.1];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 saturation: -100.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -624,9 +978,9 @@ mod tests {
         let input = [0.8, 0.2, 0.1];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 saturation: 75.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -642,9 +996,9 @@ mod tests {
         let input = [0.02, 0.02, 0.02, 0.18, 0.18, 0.18, 1.2, 1.2, 1.2];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 highlights: -50.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -659,9 +1013,9 @@ mod tests {
         let input = [0.02, 0.02, 0.02, 0.18, 0.18, 0.18, 1.2, 1.2, 1.2];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 shadows: 50.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -681,9 +1035,9 @@ mod tests {
         ];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 vibrance: 80.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -714,13 +1068,13 @@ mod tests {
         ];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 levels: Some(LevelsParameters {
                     black: 0.2,
                     midpoint: 2.0,
                     white: 0.8,
                 }),
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -740,12 +1094,12 @@ mod tests {
         let input = [0.18, 0.18, 0.18];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 curves: Some(CurveParameters {
                     rgb: Some(vec![vec![0.0, 0.0], vec![1.0, 0.5]]),
                     ..CurveParameters::default()
                 }),
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -756,13 +1110,181 @@ mod tests {
     }
 
     #[test]
+    fn brilliance_uses_a_fixed_thirty_one_pixel_local_light_map() {
+        let mut input = vec![0.2; 33 * 3];
+        input[16 * 3..17 * 3].fill(0.8);
+        let actual = apply_develop(
+            &input,
+            33,
+            1,
+            Develop {
+                brilliance: 100.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+
+        assert!(actual[16 * 3] > input[16 * 3]);
+        assert!(actual[3] < input[3]);
+        assert_eq!(actual[0], input[0]);
+        assert_eq!(actual[32 * 3], input[32 * 3]);
+    }
+
+    #[test]
+    fn definition_radius_is_three_percent_of_the_long_edge() {
+        let mut input = vec![0.2; 100 * 3];
+        input[50 * 3..51 * 3].fill(0.8);
+        let actual = apply_develop(
+            &input,
+            100,
+            1,
+            Develop {
+                definition: 100.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+
+        assert!(actual[50 * 3] > input[50 * 3]);
+        assert!(actual[47 * 3] < input[47 * 3]);
+        assert_eq!(actual[46 * 3], input[46 * 3]);
+    }
+
+    #[test]
+    fn sharpen_uses_a_one_pixel_radius() {
+        let mut input = vec![0.2; 7 * 3];
+        input[3 * 3..4 * 3].fill(0.8);
+        let actual = apply_develop(
+            &input,
+            7,
+            1,
+            Develop {
+                sharpen: 100.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+
+        assert!(actual[3 * 3] > input[3 * 3]);
+        assert!(actual[2 * 3] < input[2 * 3]);
+        assert_eq!(actual[1 * 3], input[1 * 3]);
+    }
+
+    #[test]
+    fn local_contrast_preserves_flat_extended_scene_linear_fields() {
+        let input = vec![1.4, -0.2, 0.5].repeat(25);
+        let actual = apply_develop(
+            &input,
+            5,
+            5,
+            Develop {
+                brilliance: 100.0,
+                definition: -100.0,
+                sharpen: 100.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(actual, input);
+    }
+
+    #[test]
+    fn definition_preserves_a_full_resolution_long_edge_flat_field() {
+        let input = vec![0.2; 7_008 * 3];
+        let actual = apply_develop(
+            &input,
+            7_008,
+            1,
+            Develop {
+                definition: 100.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(actual, input);
+    }
+
+    #[test]
+    fn local_contrast_has_one_fixed_operator_order() {
+        let input = (0..17)
+            .flat_map(|x| {
+                let value = if x == 8 { 0.9 } else { 0.1 + x as f32 * 0.01 };
+                [value, value * 0.8, value * 0.6]
+            })
+            .collect::<Vec<_>>();
+        let parameters = Develop {
+            brilliance: 35.0,
+            definition: 45.0,
+            sharpen: 55.0,
+            ..Develop::default()
+        };
+
+        let combined = apply_develop(&input, 17, 1, parameters).unwrap();
+        let brilliance = apply_develop(
+            &input,
+            17,
+            1,
+            Develop {
+                brilliance: 35.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+        let definition = apply_develop(
+            &brilliance,
+            17,
+            1,
+            Develop {
+                definition: 45.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+        let ordered = apply_develop(
+            &definition,
+            17,
+            1,
+            Develop {
+                sharpen: 55.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(combined, ordered);
+    }
+
+    #[test]
+    fn spatial_develop_rejects_dimensions_that_do_not_describe_the_buffer() {
+        let mut input = vec![0.2; 6];
+
+        let error = apply_develop_in_place(
+            &mut input,
+            1,
+            1,
+            Develop {
+                sharpen: 20.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error,
+            "develop dimensions do not match interleaved RGB samples"
+        );
+    }
+
+    #[test]
     fn global_black_point_moves_the_black_pivot_while_preserving_white() {
         let input = [0.1, 0.5, 1.0];
         let actual = apply_global(
             &input,
-            GlobalDevelop {
+            Develop {
                 black_point: 50.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -777,17 +1299,17 @@ mod tests {
         let neutral = [0.4, 0.4, 0.4];
         let warm = apply_global(
             &neutral,
-            GlobalDevelop {
+            Develop {
                 temperature_offset_k: 1_000.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
         let cool = apply_global(
             &neutral,
-            GlobalDevelop {
+            Develop {
                 temperature_offset_k: -1_000.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -809,12 +1331,12 @@ mod tests {
     #[test]
     fn white_balance_is_continuous_at_d65_zero() {
         let neutral = [0.4, 0.4, 0.4];
-        let zero = apply_global(&neutral, GlobalDevelop::default()).unwrap();
+        let zero = apply_global(&neutral, Develop::default()).unwrap();
         let near_zero = apply_global(
             &neutral,
-            GlobalDevelop {
+            Develop {
                 temperature_offset_k: 0.001,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
@@ -829,17 +1351,17 @@ mod tests {
         let neutral = [0.4, 0.4, 0.4];
         let tinted = apply_global(
             &neutral,
-            GlobalDevelop {
+            Develop {
                 tint: 50.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();
         let casted = apply_global(
             &neutral,
-            GlobalDevelop {
+            Develop {
                 cast: 50.0,
-                ..GlobalDevelop::default()
+                ..Develop::default()
             },
         )
         .unwrap();

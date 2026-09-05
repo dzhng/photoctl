@@ -50,15 +50,19 @@ interface NativeBinding {
     outputWidth: number,
     outputHeight: number,
   ): Uint16Array;
-  applyGlobalDevelop(
+  applyDevelopPixels(
     data: Float32Array,
-    parameters: GlobalDevelopParameters,
+    width: number,
+    height: number,
+    parameters: NativeDevelopParameters,
   ): Promise<Float32Array>;
-  applyGlobalDevelopArtifact(
+  applyDevelopArtifact(
     data: Uint8Array,
     pixelOffset: number,
     pixelBytes: number,
-    parameters: GlobalDevelopParameters,
+    width: number,
+    height: number,
+    parameters: NativeDevelopParameters,
   ): Promise<Uint8Array>;
   validateLinearArtifactSamples(
     data: Uint8Array,
@@ -69,7 +73,8 @@ interface NativeBinding {
 
 export type AtomicRenameOutcome = "installed" | "exists" | "unsupported";
 
-export interface GlobalDevelopParameters {
+export interface NativeDevelopParameters {
+  brilliance?: number;
   exposure?: number;
   highlights?: number;
   shadows?: number;
@@ -88,6 +93,8 @@ export interface GlobalDevelopParameters {
     blue?: [number, number][];
   };
   levels?: { black: number; midpoint: number; white: number };
+  definition?: number;
+  sharpen?: number;
 }
 
 export class NativeImageUnavailableError extends Error {}
@@ -159,23 +166,31 @@ export function resampleDisplaySrgb(
   );
 }
 
-export async function applyGlobalDevelop(
+export async function applyDevelopPixels(
   data: Float32Array,
-  parameters: GlobalDevelopParameters,
+  width: number,
+  height: number,
+  parameters: NativeDevelopParameters,
 ): Promise<Float32Array> {
-  return asFloat32Array(await requiredBinding().applyGlobalDevelop(data, parameters));
+  return asFloat32Array(
+    await requiredBinding().applyDevelopPixels(data, width, height, parameters),
+  );
 }
 
-export async function applyGlobalDevelopArtifact(
+export async function applyDevelopArtifact(
   data: Uint8Array,
   pixelOffset: number,
   pixelBytes: number,
-  parameters: GlobalDevelopParameters,
+  width: number,
+  height: number,
+  parameters: NativeDevelopParameters,
 ): Promise<Uint8Array> {
-  return await requiredBinding().applyGlobalDevelopArtifact(
+  return await requiredBinding().applyDevelopArtifact(
     data,
     pixelOffset,
     pixelBytes,
+    width,
+    height,
     parameters,
   );
 }

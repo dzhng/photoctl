@@ -13,7 +13,7 @@ use napi::{
 use napi_derive::napi;
 
 use develop::{
-    GlobalDevelop, apply_global_artifact_in_place, apply_global_in_place, camera_front,
+    Develop, apply_develop_artifact_in_place, apply_develop_in_place, camera_front,
     display_srgb_to_linear_rec2020, linear_rec2020_to_display_srgb, validate_artifact_samples,
 };
 use publication::{AtomicRenameOutcome, atomic_rename_no_replace as rename_no_replace};
@@ -100,7 +100,8 @@ pub struct DevelopedImageResult {
 }
 
 #[napi(object)]
-pub struct GlobalDevelopParameters {
+pub struct DevelopParameters {
+    pub brilliance: Option<f64>,
     pub exposure: Option<f64>,
     pub highlights: Option<f64>,
     pub shadows: Option<f64>,
@@ -114,6 +115,8 @@ pub struct GlobalDevelopParameters {
     pub cast: Option<f64>,
     pub curves: Option<DevelopCurvesParameters>,
     pub levels: Option<DevelopLevelsParameters>,
+    pub definition: Option<f64>,
+    pub sharpen: Option<f64>,
 }
 
 #[napi(object)]
@@ -207,33 +210,42 @@ pub fn resample_display_srgb(
 }
 
 #[napi]
-pub fn apply_global_develop(
+pub fn apply_develop_pixels(
     data: Float32Array,
-    parameters: GlobalDevelopParameters,
-) -> AsyncTask<GlobalDevelopTask> {
-    AsyncTask::new(GlobalDevelopTask {
+    width: u32,
+    height: u32,
+    parameters: DevelopParameters,
+) -> AsyncTask<DevelopTask> {
+    AsyncTask::new(DevelopTask {
         data: data.to_vec(),
-        parameters: global_develop(parameters),
+        width: width as usize,
+        height: height as usize,
+        parameters: develop_parameters(parameters),
     })
 }
 
 #[napi]
-pub fn apply_global_develop_artifact(
+pub fn apply_develop_artifact(
     data: Uint8Array,
     pixel_offset: u32,
     pixel_bytes: u32,
-    parameters: GlobalDevelopParameters,
-) -> AsyncTask<GlobalDevelopArtifactTask> {
-    AsyncTask::new(GlobalDevelopArtifactTask {
+    width: u32,
+    height: u32,
+    parameters: DevelopParameters,
+) -> AsyncTask<DevelopArtifactTask> {
+    AsyncTask::new(DevelopArtifactTask {
         data: data.to_vec(),
         pixel_offset: pixel_offset as usize,
         pixel_bytes: pixel_bytes as usize,
-        parameters: global_develop(parameters),
+        width: width as usize,
+        height: height as usize,
+        parameters: develop_parameters(parameters),
     })
 }
 
-fn global_develop(parameters: GlobalDevelopParameters) -> GlobalDevelop {
-    GlobalDevelop {
+fn develop_parameters(parameters: DevelopParameters) -> Develop {
+    Develop {
+        brilliance: parameters.brilliance.unwrap_or_default() as f32,
         exposure: parameters.exposure.unwrap_or_default() as f32,
         highlights: parameters.highlights.unwrap_or_default() as f32,
         shadows: parameters.shadows.unwrap_or_default() as f32,
@@ -256,6 +268,8 @@ fn global_develop(parameters: GlobalDevelopParameters) -> GlobalDevelop {
             midpoint: levels.midpoint as f32,
             white: levels.white as f32,
         }),
+        definition: parameters.definition.unwrap_or_default() as f32,
+        sharpen: parameters.sharpen.unwrap_or_default() as f32,
     }
 }
 
@@ -323,16 +337,20 @@ pub struct DisplayBackTask {
     data: Vec<f32>,
 }
 
-pub struct GlobalDevelopTask {
+pub struct DevelopTask {
     data: Vec<f32>,
-    parameters: GlobalDevelop,
+    width: usize,
+    height: usize,
+    parameters: Develop,
 }
 
-pub struct GlobalDevelopArtifactTask {
+pub struct DevelopArtifactTask {
     data: Vec<u8>,
     pixel_offset: usize,
     pixel_bytes: usize,
-    parameters: GlobalDevelop,
+    width: usize,
+    height: usize,
+    parameters: Develop,
 }
 
 pub struct ValidateLinearArtifactTask {
@@ -341,16 +359,21 @@ pub struct ValidateLinearArtifactTask {
     pixel_bytes: usize,
 }
 
-impl Task for GlobalDevelopTask {
+impl Task for DevelopTask {
     type Output = Vec<f32>;
     type JsValue = Float32Array;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        // N-API typed arrays may still be mutated by JavaScript, so the entry point makes one
-        // owned copy before scheduling. Mutate that copy in place: peak pixel storage is the JS
-        // input plus one Rust frame, never the previous second Rust output frame.
-        apply_global_in_place(&mut self.data, std::mem::take(&mut self.parameters))
-            .map_err(|message| Error::new(Status::InvalidArg, message))?;
+        // N-API typed arrays may still be mutated by JavaScript, so the entry point owns a copy.
+        // Spatial passes delay only the source slices still needed by the moving kernel; scanning
+        // the long axis keeps this ring a radius-sized fraction of a frame.
+        apply_develop_in_place(
+            &mut self.data,
+            self.width,
+            self.height,
+            std::mem::take(&mut self.parameters),
+        )
+        .map_err(|message| Error::new(Status::InvalidArg, message))?;
         Ok(std::mem::take(&mut self.data))
     }
 
@@ -359,15 +382,17 @@ impl Task for GlobalDevelopTask {
     }
 }
 
-impl Task for GlobalDevelopArtifactTask {
+impl Task for DevelopArtifactTask {
     type Output = Vec<u8>;
     type JsValue = Uint8Array;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        apply_global_artifact_in_place(
+        apply_develop_artifact_in_place(
             &mut self.data,
             self.pixel_offset,
             self.pixel_bytes,
+            self.width,
+            self.height,
             std::mem::take(&mut self.parameters),
         )
         .map_err(|message| Error::new(Status::InvalidArg, message))?;

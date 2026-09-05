@@ -1,14 +1,15 @@
 import {
-  applyGlobalDevelop,
-  applyGlobalDevelopArtifact as applyGlobalDevelopArtifactNative,
-  type GlobalDevelopParameters,
+  applyDevelopPixels,
+  applyDevelopArtifact as applyDevelopArtifactNative,
+  type NativeDevelopParameters,
 } from "@photoctl/img";
 import type { SceneLinearImage } from "../decoder.js";
 import { inspectArtifactLinearTiff } from "../linear-tiff.js";
 import { developDictSchema, type DevelopDict } from "./dict.js";
 
-const GLOBAL_KEYS = new Set([
+const IMPLEMENTED_KEYS = new Set([
   "preset",
+  "brilliance",
   "exposure",
   "highlights",
   "shadows",
@@ -21,9 +22,11 @@ const GLOBAL_KEYS = new Set([
   "cast",
   "curves",
   "levels",
+  "definition",
+  "sharpen",
 ]);
 
-/** Runs the deterministic global grade in Rust; TypeScript owns only color-space transport. */
+/** Runs deterministic develop in Rust; TypeScript owns only color-space transport. */
 export async function applyDevelop(
   image: SceneLinearImage,
   unparsed: DevelopDict,
@@ -32,13 +35,13 @@ export async function applyDevelop(
     throw new Error("Develop requires oriented scene-linear Rec.2020 pixels");
   }
   const parameters = developDictSchema.parse(unparsed);
-  const unsupported = Object.keys(parameters).find((key) => !GLOBAL_KEYS.has(key));
+  const unsupported = Object.keys(parameters).find((key) => !IMPLEMENTED_KEYS.has(key));
   if (unsupported) throw new Error(`Develop operation is not implemented: ${unsupported}`);
 
   if (Object.keys(parameters).every((key) => key === "preset")) {
     return image;
   }
-  const data = await applyGlobalDevelop(image.data, nativeParameters(parameters));
+  const data = await applyDevelopPixels(image.data, image.w, image.h, nativeParameters(parameters));
   return {
     ...image,
     data,
@@ -52,16 +55,18 @@ export async function applyDevelopArtifact(
   unparsed: DevelopDict,
 ): Promise<{ bytes: Buffer; w: number; h: number; pixelOffset: number }> {
   const parameters = developDictSchema.parse(unparsed);
-  const unsupported = Object.keys(parameters).find((key) => !GLOBAL_KEYS.has(key));
+  const unsupported = Object.keys(parameters).find((key) => !IMPLEMENTED_KEYS.has(key));
   if (unsupported) throw new Error(`Develop operation is not implemented: ${unsupported}`);
   const layout = await inspectArtifactLinearTiff(bytes);
   if (layout.width !== dimensions.w || layout.height !== dimensions.h) {
     throw new Error("Develop artifact dimensions do not match graph metadata");
   }
-  const developed = await applyGlobalDevelopArtifactNative(
+  const developed = await applyDevelopArtifactNative(
     bytes,
     layout.pixelOffset,
     layout.pixelBytes,
+    layout.width,
+    layout.height,
     nativeParameters(parameters),
   );
   return {
@@ -72,8 +77,9 @@ export async function applyDevelopArtifact(
   };
 }
 
-function nativeParameters(parameters: DevelopDict): GlobalDevelopParameters {
+function nativeParameters(parameters: DevelopDict): NativeDevelopParameters {
   return {
+    brilliance: parameters.brilliance,
     exposure: parameters.exposure,
     highlights: parameters.highlights,
     shadows: parameters.shadows,
@@ -87,5 +93,7 @@ function nativeParameters(parameters: DevelopDict): GlobalDevelopParameters {
     cast: parameters.cast,
     curves: parameters.curves,
     levels: parameters.levels,
+    definition: parameters.definition,
+    sharpen: parameters.sharpen,
   };
 }

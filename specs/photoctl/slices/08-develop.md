@@ -4,7 +4,7 @@ Sub-slices, one seam or judged variable each: **8a1** immutable logical DAG/sche
 artifact publication, evaluator, graph inspection · **8b** develop dict/presets as a node (no pixels) · **8c1a** exact
 scene-linear graph artifacts · **8c1b** global per-pixel ops ·
 **8c2** masked ops (highlights/shadows/vibrance; skin crop) ✓ · **8c3** curves/levels ✓ · **8d1** local contrast
-(brilliance/definition/sharpen) · **8d2** NR (texture crop) · **8d3** geometry (exact tests) · **8d4** filters + B&W (data).
+(brilliance/definition/sharpen) ✓ · **8d2** NR (texture crop) · **8d3** geometry (exact tests) · **8d4** filters + B&W (data).
 
 ## API seam
 - **8a1** replaces the current linear `renderPhoto` state model with `packages/render/src/graph/{types,recipes,store}.ts`.
@@ -153,6 +153,12 @@ same production route. The render hashes and pixel telemetry prove the curve rea
 scene-linear artifact path; fresh review technically accepted and preferred the stronger grade while
 flagging its cyan/green saturation as the main aesthetic caveat.
 
+Slice 08d1's [G8 checkpoint](../assets/gates/G8-local-contrast.md) compared brilliance, definition,
+and sharpen independently before stacking them. The first stacked tuning was rejected for crushed
+shadows and crunchy foliage. A reduced tuning was initially accepted, but the final fresh review of
+the current bounded-memory implementation still rejected definition and the stack; G8 remains a
+recorded non-acceptance rather than a recommended preset.
+
 ## Must stay green: 01–07. Deps: 7b (functional), 7a (macos). Firewall: no layers, no providers, no learned NR, no CoreML, no VLM.
 
 ## Implementation notes
@@ -217,3 +223,10 @@ flagging its cyan/green saturation as the main aesthetic caveat.
   midpoint gamma, preserving negative and greater-than-one scene-linear samples. Both the in-memory and canonical-TIFF routes call
   the same Rust owner and retain the established artifact publication path. Needs David: no for the deterministic seam; the G7
   curve is intentionally strong and received technical, not aesthetic, acceptance.
+
+- **2026-09-05 — 8d1 local contrast.** The existing asynchronous native develop seam now carries image dimensions so its Rust
+  owner can run spatial operators without a second renderer. Global grading is followed by a 31×31 luminance light map,
+  large-radius definition at 3% of the long edge, then one-pixel sharpen. Each pass scans the long axis with f64 column sums and a
+  radius-sized delayed-slice ring rather than a third full-frame buffer; identity local controls allocate neither. The operators keep extended scene-linear samples and publish
+  through the existing canonical artifact path. Needs David:
+  no for the deterministic seam; G8's final current-output review did not accept definition or the combined tuning.

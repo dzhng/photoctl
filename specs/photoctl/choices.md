@@ -1368,6 +1368,22 @@
 
 ## Sound
 
+### Slice 08d1 — Spatial develop extends the existing native worker with dimensions
+
+- **When:** Slice 08d1 local-contrast implementation, 2026-09-05.
+- **The choice:** A develop request already crosses from TypeScript into one asynchronous Rust worker with scene-linear pixels.
+  Brilliance, definition, and sharpen need to know which samples are neighbors, so that same call now also carries image width and
+  height. Rust validates that `width × height × 3` equals the sample count, applies the per-pixel grade, then runs the spatial
+  stages in their fixed order. The alternative was a second local-contrast renderer or a TypeScript pixel pass beside the native
+  owner, either of which could disagree with canonical TIFF evaluation.
+- **The gap:** The plan assigned all develop pixels to Rust and named the spatial kernels, but the earlier per-pixel call did not
+  need dimensions and therefore omitted them from the boundary.
+- **The reach:** In-memory tests, canonical graph artifacts, previews, and exports now use one spatial implementation and one
+  dimension check. Later native noise reduction and geometry can extend this owner rather than creating parallel pixel paths.
+- **Verdict:** **Sound.** Dimensions are the minimum missing input for an image-neighborhood operator and keep the established
+  color-space and artifact owners intact.
+- **Confidence:** High; public memory/artifact equality, dimension validation, determinism, and evaluator tests cover the seam.
+
 ### Slice 08c1a — Canonical graph artifacts preserve exact scene-linear working pixels
 
 - **When:** Slice 08c1a artifact correction, 2026-09-05.
