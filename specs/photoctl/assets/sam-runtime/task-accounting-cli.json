@@ -1,0 +1,86 @@
+{
+  "date": "2026-09-06",
+  "implementationCommit": "cc1c66c",
+  "host": "Apple M5 Pro, macOS, Node 24.14.0",
+  "source": "fixtures/a7c2.ARW; 7008x4672; develop{}; linked original; no-daemon",
+  "modelHashes": {
+    "encoder": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+    "decoder": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d"
+  },
+  "command": "/usr/bin/time -l node --import <native-boundary-observer> apps/cli/dist/bin.js segment <photo-id> --at <4000,600|4400,3500>",
+  "controls": [
+    "Same fixture, frozen models, isolated library/cache and 10ms native-boundary observer as prepared-memory.json.",
+    "Three alternating sky/road pairs; no forced GC, no daemon, no concurrent builds/model runs, no thread or allocator tuning.",
+    "Original mask artifacts remain exactly equal. Native boundary observer samples resource counters; it does not change pixels or call GC."
+  ],
+  "rssLimitBytes": 3000000000,
+  "recordedRssWitnessPassed": true,
+  "observations": [
+    {
+      "case": "sky",
+      "repetition": 0,
+      "seconds": 23.39,
+      "rss": 2040430592,
+      "footprint": 3030054520,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "identityPreserved": true,
+      "passed": true
+    },
+    {
+      "case": "road",
+      "repetition": 0,
+      "seconds": 22.99,
+      "rss": 2129461248,
+      "footprint": 3018880440,
+      "hash": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162",
+      "identityPreserved": true,
+      "passed": true
+    },
+    {
+      "case": "sky",
+      "repetition": 1,
+      "seconds": 22.86,
+      "rss": 2099838976,
+      "footprint": 3031365288,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "identityPreserved": true,
+      "passed": true
+    },
+    {
+      "case": "road",
+      "repetition": 1,
+      "seconds": 23.39,
+      "rss": 2046935040,
+      "footprint": 3002300000,
+      "hash": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162",
+      "identityPreserved": true,
+      "passed": true
+    },
+    {
+      "case": "sky",
+      "repetition": 2,
+      "seconds": 23.3,
+      "rss": 2177712128,
+      "footprint": 3040916992,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "identityPreserved": true,
+      "passed": true
+    },
+    {
+      "case": "road",
+      "repetition": 2,
+      "seconds": 23.02,
+      "rss": 2267922432,
+      "footprint": 3323721696,
+      "hash": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162",
+      "identityPreserved": true,
+      "passed": true
+    }
+  ],
+  "limits": [
+    "This is a recorded host/fixture RSS witness, not photographic quality or all-platform acceptance.",
+    "Peak memory footprint is a separate measured metric; its range exceeds 3 GB and is not relabeled RSS.",
+    "Historical prepared-input measurements are not an interleaved current-machine A/B; RSS residency/compression can affect causal comparisons.",
+    "Other native snapshots remain outside the new accounting guard."
+  ]
+}

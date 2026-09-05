@@ -34,6 +34,6 @@
     "GC is test-only diagnostic instrumentation, not production memory-pressure tuning or a full-command resource measurement.",
     "No arithmetic, caller-buffer ownership, model, resampler or global thread-pool changes.",
     "Other native task snapshots are not covered by this checkpoint.",
-    "Full-command G6 and photographic quality remain open."
+    "Counter tests alone do not establish full-command G6 or photographic quality."
   ]
 }

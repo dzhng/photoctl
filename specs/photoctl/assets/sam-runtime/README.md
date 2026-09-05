@@ -101,3 +101,9 @@ backing-store bytes, while `--trace-gc-verbose` prints the manual external-memor
 uses the latter at controlled phases, with test-only GC to print diagnostics. It does not add a product inspection API,
 force production collection, or establish an RSS improvement. Pending, transferred, and rejected work are measured through
 the real native bindings; pixel and caller-snapshot tests independently preserve the color contract.
+
+[Full-command accounting measurements](task-accounting-cli.json) record six subsequent sky/road runs with no forced GC:
+all preserve the baseline masks and stay below the 3 GB RSS limit, ranging from 2.04 to 2.27 GB. Peak memory footprint is a
+different metric and ranges from 3.00 to 3.32 GB. This passes the recorded RSS witness on this host and fixture, not the
+photographic-quality gate or every platform. The historical prepared-input runs are not an interleaved A/B experiment;
+allocator residency and memory compression can influence causal comparisons. Other native snapshots remain unaccounted.
