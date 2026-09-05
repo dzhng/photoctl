@@ -82,3 +82,27 @@ unrelated files, and tamper detection. Code review found a carriage-return filen
 the regression failed with `shasum -c`, then passed after adopting its supported escaping.
 [Report layout evidence](../assets/gold-report/README.md) records desktop/mobile inspection and the
 independent visual critique. These screenshots are fixture presentation evidence only.
+
+## External-input recheck — 2026-09-06
+
+Read-only checks on the local Mac found no newly runnable real-input acceptance gate:
+
+- `diskutil list external physical` succeeded with no disks listed. `/Volumes` contained only the
+  system-volume alias and Conductor, which `diskutil info` identifies as a read-only disk image.
+  No real-drive ARW folder was available to name for the gold script.
+- The committed RAW inventory still contains only `a7c2.ARW`; the native LibRaw probe confirmed
+  compression tag `1`. The [fixture inventory](../../../fixtures/README.md) distinguishes its
+  hand-authored Classic-style XMP from actual Classic exports. Filename searches in Pictures,
+  Downloads, Desktop and Documents found no additional ARWs or Classic catalogs/sidecars; the XMP
+  hits were unrelated Xilinx project files. The Photos library denied access, so this is not proof
+  that no usable originals exist there. No privacy permission was changed.
+- IPv4 and IPv6 localhost port 22 refused connections, and `launchctl print system/com.openssh.sshd`
+  found no service. The Remote Login settings query required administrator access; its setting value
+  was not obtained. `Davids-Mac-mini-7.local` did not resolve here, which does **not** establish the
+  connected remote app host's state or whether another SSH-capable Mac exists.
+
+Remaining inputs are an accessible external-drive folder with at least ten distinct A7C II originals,
+actual Classic sidecars, the missing compression-mode frames, and a usable SSH Mac session for
+[G3](../assets/gates/G3-ciraw-headless.md). The current shell also has no `photoctl` on PATH; the
+documented clean-prefix install supplies it when a real source folder is available. No source files or
+services were changed, no credentials were inspected, and no whole gate or paid request was run.
