@@ -141,10 +141,12 @@ weakening them. Attempts and artifacts remain library-owned, including originals
 photos. The public generated-photo removal journey retains inspectable originals without provider
 replay; a forced post-teardown failure restores the graph together with staged source/cache files.
 
-**Separate output checkpoint:** standalone generation with explicit upscale currently fails `show`
-at the develop-state traversal with “Develop state cannot be replaced beneath upscale before layers
-land.” Retention and removal do not change that traversal; the upscaled standalone display journey
-still needs its own correction and regression.
+The editable develop input is an immutable RGB branch, not necessarily a source leaf. The shared
+[`base-input`](../../../packages/render/src/graph/base-input.ts) reader unwraps only the direct editable
+develop node beneath the base output. It preserves a purchased upscale and any exact final resample
+as the input for later edits, rather than tracing back to generation and discarding processing.
+Public show/develop/export regressions prove unchanged target dimensions, replacement rather than
+stacking of exposure edits, matching current delivery pixels and no additional provider work.
 
 ## Checkpoints: one artifact per sub-slice, one variable each; all inherit the root visual gates and non-blocking review rule.
 

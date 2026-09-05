@@ -13,18 +13,15 @@ import { unfilledVacancyLayerIds } from "../layers/status.js";
 import { developDictSchema, type DevelopDict } from "./dict.js";
 import { applyDevelopCompensation, planDevelopChange } from "./tiers.js";
 import { markupFreeOutputNode } from "../markup/graph.js";
+import { readBaseDevelopInput, type BaseDevelopInput } from "../graph/base-input.js";
 
-export interface ActiveDevelopState {
+export interface ActiveDevelopState extends BaseDevelopInput {
   photoId: string;
   revisionId: string;
   outputNodeId: string;
   /** Current RGB output without the final editable markup presentation node. */
   pixelOutputNodeId: string;
   baseNodeId: string;
-  sourceNodeId: string;
-  outputParameters: JsonValue;
-  develop: DevelopDict;
-  hasDevelopNode: boolean;
   layers: RevisionLayer[];
   layerDevelop: Record<string, DevelopDict>;
   renderHash: `r_${string}`;
@@ -62,16 +59,12 @@ export async function readActiveDevelopState(
   await ensurePhotoDocument(database, request);
   const document = await loadActiveDocument(database, request.photoId);
   if (!document) throw new Error("The active photo document is missing");
-  const output = await loadNode(database, request.photoId, document.roots.base);
+  const base = await readBaseDevelopInput(database, request.photoId, document.roots.base);
   const pixelOutputNodeId = await markupFreeOutputNode(
     database,
     request.photoId,
     document.roots.output,
   );
-  if (output.kind !== "output") throw new Error("The active base root is not an output node");
-  const outputInputs = await loadInputs(database, request.photoId, output.id);
-  if (outputInputs.length !== 1) throw new Error("The active output node must have one input");
-  const input = await loadNode(database, request.photoId, outputInputs[0]);
   const layerDevelop = Object.fromEntries(
     await Promise.all(
       document.layers.map(async (layer) => [
@@ -80,60 +73,18 @@ export async function readActiveDevelopState(
       ]),
     ),
   );
-  if (isDevelopSource(input)) {
-    return {
-      photoId: request.photoId,
-      revisionId: document.revisionId,
-      outputNodeId: document.roots.output,
-      pixelOutputNodeId,
-      baseNodeId: document.roots.base,
-      sourceNodeId: input.id,
-      outputParameters: output.parameters,
-      develop: {},
-      hasDevelopNode: false,
-      layers: document.layers,
-      layerDevelop,
-      renderHash: document.renderHash,
-      revisionMetadata: document.metadata,
-    };
-  }
-  if (input.kind !== "develop") {
-    throw new Error(`Develop state cannot be replaced beneath ${input.kind} before layers land`);
-  }
-  const developInputs = await loadInputs(database, request.photoId, input.id);
-  if (developInputs.length !== 1) throw new Error("The active develop node must have one input");
-  const source = await loadNode(database, request.photoId, developInputs[0]);
-  if (!isDevelopSource(source))
-    throw new Error("The active develop node must consume the source node");
   return {
+    ...base,
     photoId: request.photoId,
     revisionId: document.revisionId,
     outputNodeId: document.roots.output,
     pixelOutputNodeId,
     baseNodeId: document.roots.base,
-    sourceNodeId: source.id,
-    outputParameters: output.parameters,
-    develop: developDictSchema.parse(input.parameters),
-    hasDevelopNode: true,
     layers: document.layers,
     layerDevelop,
     renderHash: document.renderHash,
     revisionMetadata: document.metadata,
   };
-}
-
-function isDevelopSource(node: {
-  kind: ImageNodeKind;
-  recipeVersion: number;
-  parameters: JsonValue;
-}): boolean {
-  return (
-    node.kind === "source" ||
-    (node.kind === "generate" &&
-      (node.recipeVersion === 2 ||
-        (node.recipeVersion === 3 &&
-          (node.parameters as { request: { scope?: string } }).request.scope === "standalone")))
-  );
 }
 
 export async function commitDevelopState(
@@ -162,7 +113,7 @@ export async function commitDevelopState(
       kind: "develop",
       recipeVersion: 1,
       parameters: develop,
-      inputs: [{ nodeId: current.sourceNodeId }],
+      inputs: [{ nodeId: current.developInputNodeId }],
     },
     {
       localKey: "base-output",
@@ -257,36 +208,4 @@ async function readLayerDevelop(
     }
   }
   return develop;
-}
-
-async function loadNode(
-  database: GraphDatabase,
-  photoId: string,
-  nodeId: string,
-): Promise<{ id: string; kind: ImageNodeKind; recipeVersion: number; parameters: JsonValue }> {
-  const result = await database.query<{
-    id: string;
-    kind: ImageNodeKind;
-    recipe_version: number;
-    parameters: JsonValue;
-  }>(
-    "SELECT id, kind, recipe_version, parameters FROM image_nodes WHERE photo_id = $1 AND id = $2",
-    [photoId, nodeId],
-  );
-  const node = result.rows[0];
-  if (!node) throw new Error(`Graph node does not exist for photo: ${nodeId}`);
-  return { ...node, recipeVersion: node.recipe_version };
-}
-
-async function loadInputs(
-  database: GraphDatabase,
-  photoId: string,
-  nodeId: string,
-): Promise<string[]> {
-  const result = await database.query<{ input_node_id: string }>(
-    `SELECT input_node_id FROM image_node_inputs
-     WHERE photo_id = $1 AND node_id = $2 ORDER BY input_index`,
-    [photoId, nodeId],
-  );
-  return result.rows.map((row) => row.input_node_id);
 }
