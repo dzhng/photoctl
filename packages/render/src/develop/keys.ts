@@ -89,13 +89,13 @@ export const DEVELOP_OPERATORS = {
   curves: {
     range: null,
     operator: "grading_rgb_curve",
-    formula: "OpenColorIO GradingRGBCurve piecewise interpolation",
+    formula: "OpenColorIO scene-linear monotonic quadratic B-spline",
     tier: 2,
   },
   levels: {
     range: null,
     operator: "grading_rgb_curve",
-    formula: "black/midpoint/white GradingRGBCurve",
+    formula: "signed black/midpoint/white gamma without scene-linear clipping",
     tier: 2,
   },
   definition: {

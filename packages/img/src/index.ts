@@ -81,6 +81,13 @@ export interface GlobalDevelopParameters {
   temperatureOffsetK?: number;
   tint?: number;
   cast?: number;
+  curves?: {
+    rgb?: [number, number][];
+    red?: [number, number][];
+    green?: [number, number][];
+    blue?: [number, number][];
+  };
+  levels?: { black: number; midpoint: number; white: number };
 }
 
 export class NativeImageUnavailableError extends Error {}

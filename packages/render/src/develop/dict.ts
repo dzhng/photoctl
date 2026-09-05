@@ -13,6 +13,10 @@ const channelCurve = z
   .refine(
     (points) => points.every((current, index) => index === 0 || current[0] > points[index - 1][0]),
     "curve input coordinates must be strictly increasing",
+  )
+  .refine(
+    (points) => points.every((current, index) => index === 0 || current[1] >= points[index - 1][1]),
+    "curve output coordinates must be non-decreasing",
   );
 
 export const presetNameSchema = z.string().regex(/^[a-z0-9][a-z0-9_-]{0,63}$/u);

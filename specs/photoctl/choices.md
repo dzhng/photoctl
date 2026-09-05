@@ -2,6 +2,36 @@
 
 ## Sound
 
+### Slice 08c3 — Normalized controls use OpenColorIO's scene-linear curve domain
+
+- **When:** Slice 08c3 curve implementation, 2026-09-05.
+- **The choice:** A curve point such as `[0.5,0.6]` is UI-normalized data, not a direct linear-light coordinate. Photoctl maps
+  both axes from zero-to-one onto OpenColorIO's -7-to-+7 `GRADING_LIN` log domain, fits OpenColorIO's monotonic quadratic
+  B-spline, applies red/green/blue channel curves first and the RGB master second, then returns to scene-linear Rec.2020.
+  Values beyond the first and last controls follow the endpoint tangent instead of being clipped. The unbuilt alternative was a
+  simple piecewise-linear curve over raw scene samples, which would give the same UI point a different photographic meaning and
+  discard the operator named by the plan.
+- **The gap:** The plan named OpenColorIO `GradingRGBCurve` and normalized schema points but did not spell out the normalized-to-log
+  mapping, interpolation shape, channel/master order, or endpoint behavior.
+- **The reach:** Presets, copied develop dictionaries, in-memory previews, and canonical artifacts now share one stable curve
+  meaning. Curve outputs must be non-decreasing because that is the monotonic spline's contract.
+- **Verdict:** **Sound.** It follows the authoritative operator's scene-linear path and preserves extended-range pixels.
+- **Confidence:** High for algorithm and ordering; medium for the UI-domain mapping until a broader preset corpus is judged.
+
+### Slice 08c3 — Levels preserve extended scene-linear samples
+
+- **When:** Slice 08c3 levels implementation, 2026-09-05.
+- **The choice:** Levels first maps black to zero and white to one, then applies reciprocal midpoint gamma. For a sample below
+  black, or above white, the same calculation continues with a sign-preserving power instead of clipping it into display range.
+  Levels runs after the existing primary/masked/color controls and immediately before curves. The unbuilt alternative was to clamp
+  at black and white, which would silently destroy recoverable scene-linear highlights and negative working values.
+- **The gap:** The schema fixed black, midpoint, and white ranges, but the plan did not state extended-range behavior or where levels
+  sits relative to the other fixed-order operators.
+- **The reach:** Later local, geometry, and output operators receive finite extended-range samples, while both native entry points
+  use identical level math and order.
+- **Verdict:** **Sound.** It preserves the established no-clipping invariant and familiar midpoint semantics.
+- **Confidence:** Medium; exact ramp tests pin the math, while product feel remains subject to real presets.
+
 ### Slice 08c1b — Global develop has one native owner and a fixed scene-linear order
 
 - **When:** Slice 08c1b pixel implementation, 2026-09-05.

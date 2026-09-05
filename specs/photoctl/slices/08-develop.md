@@ -3,7 +3,7 @@
 Sub-slices, one seam or judged variable each: **8a1** immutable logical DAG/schema/revisions/full hashes · **8a2** canonical
 artifact publication, evaluator, graph inspection · **8b** develop dict/presets as a node (no pixels) · **8c1a** exact
 scene-linear graph artifacts · **8c1b** global per-pixel ops ·
-**8c2** masked ops (highlights/shadows/vibrance; skin crop) ✓ · **8c3** curves/levels · **8d1** local contrast
+**8c2** masked ops (highlights/shadows/vibrance; skin crop) ✓ · **8c3** curves/levels ✓ · **8d1** local contrast
 (brilliance/definition/sharpen) · **8d2** NR (texture crop) · **8d3** geometry (exact tests) · **8d4** filters + B&W (data).
 
 ## API seam
@@ -148,6 +148,11 @@ but fresh critique did not prefer it and found the source's existing edge fringi
 the committed fixture contains no person, skin protection remains verified by deterministic equal-saturation pixel
 tests rather than a visual acceptance claim.
 
+Slice 08c3's [G7 checkpoint](../assets/gates/G7-curves-levels.md) used one master curve through the
+same production route. The render hashes and pixel telemetry prove the curve reached the canonical
+scene-linear artifact path; fresh review technically accepted and preferred the stronger grade while
+flagging its cyan/green saturation as the main aesthetic caveat.
+
 ## Must stay green: 01–07. Deps: 7b (functional), 7a (macos). Firewall: no layers, no providers, no learned NR, no CoreML, no VLM.
 
 ## Implementation notes
@@ -205,3 +210,10 @@ tests rather than a visual acceptance claim.
   low-saturation colors more strongly; skin classification converts the working primaries before measuring hue. Needs David: the
   deterministic seam is complete, but broader fixtures should tune the delegated masks and a committed portrait crop must judge
   skin protection visually before aesthetic acceptance.
+
+- **2026-09-05 — 8c3 curves and levels.** Normalized curve points are mapped onto OpenColorIO's `GRADING_LIN` log domain,
+  evaluated by its monotonic quadratic B-spline shape, and linearly extrapolated beyond the endpoint controls. Per-channel curves
+  run before the RGB master curve. Levels run immediately before curves as a signed black/white normalization plus reciprocal
+  midpoint gamma, preserving negative and greater-than-one scene-linear samples. Both the in-memory and canonical-TIFF routes call
+  the same Rust owner and retain the established artifact publication path. Needs David: no for the deterministic seam; the G7
+  curve is intentionally strong and received technical, not aesthetic, acceptance.

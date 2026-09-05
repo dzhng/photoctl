@@ -91,6 +91,14 @@ test("unknown keys and out-of-range values are rejected instead of entering cano
   expect(() => applyDevelopMutation({}, { set: ["rotate=45"] })).toThrow();
   expect(() => applyDevelopMutation({}, { set: ["aspect_ratio=0:3"] })).toThrow();
   expect(() => applyDevelopMutation({}, { set: ["aspect_ratio=3:0"] })).toThrow();
+  expect(() =>
+    applyDevelopMutation(
+      {},
+      {
+        set: ['curves={"rgb":[[0,0],[0.5,0.8],[1,0.7]]}'],
+      },
+    ),
+  ).toThrow("curve output coordinates must be non-decreasing");
 });
 
 test("bundled preset lookup ignores inherited object properties", async () => {

@@ -19,6 +19,8 @@ const GLOBAL_KEYS = new Set([
   "vibrance",
   "white_balance",
   "cast",
+  "curves",
+  "levels",
 ]);
 
 /** Runs the deterministic global grade in Rust; TypeScript owns only color-space transport. */
@@ -83,5 +85,7 @@ function nativeParameters(parameters: DevelopDict): GlobalDevelopParameters {
     temperatureOffsetK: parameters.white_balance?.temp_offset_k,
     tint: parameters.white_balance?.tint,
     cast: parameters.cast,
+    curves: parameters.curves,
+    levels: parameters.levels,
   };
 }

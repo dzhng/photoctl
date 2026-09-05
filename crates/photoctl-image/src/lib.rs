@@ -2,6 +2,7 @@
 
 mod develop;
 mod publication;
+mod tone_curve;
 
 use std::path::Path;
 
@@ -111,6 +112,23 @@ pub struct GlobalDevelopParameters {
     pub temperature_offset_k: Option<f64>,
     pub tint: Option<f64>,
     pub cast: Option<f64>,
+    pub curves: Option<DevelopCurvesParameters>,
+    pub levels: Option<DevelopLevelsParameters>,
+}
+
+#[napi(object)]
+pub struct DevelopCurvesParameters {
+    pub rgb: Option<Vec<Vec<f64>>>,
+    pub red: Option<Vec<Vec<f64>>>,
+    pub green: Option<Vec<Vec<f64>>>,
+    pub blue: Option<Vec<Vec<f64>>>,
+}
+
+#[napi(object)]
+pub struct DevelopLevelsParameters {
+    pub black: f64,
+    pub midpoint: f64,
+    pub white: f64,
 }
 
 #[napi]
@@ -227,7 +245,25 @@ fn global_develop(parameters: GlobalDevelopParameters) -> GlobalDevelop {
         temperature_offset_k: parameters.temperature_offset_k.unwrap_or_default() as f32,
         tint: parameters.tint.unwrap_or_default() as f32,
         cast: parameters.cast.unwrap_or_default() as f32,
+        curves: parameters.curves.map(|curves| develop::CurveParameters {
+            rgb: curves.rgb.map(curve_points),
+            red: curves.red.map(curve_points),
+            green: curves.green.map(curve_points),
+            blue: curves.blue.map(curve_points),
+        }),
+        levels: parameters.levels.map(|levels| develop::LevelsParameters {
+            black: levels.black as f32,
+            midpoint: levels.midpoint as f32,
+            white: levels.white as f32,
+        }),
     }
+}
+
+fn curve_points(points: Vec<Vec<f64>>) -> Vec<Vec<f32>> {
+    points
+        .into_iter()
+        .map(|point| point.into_iter().map(|value| value as f32).collect())
+        .collect()
 }
 
 #[napi]
@@ -313,7 +349,7 @@ impl Task for GlobalDevelopTask {
         // N-API typed arrays may still be mutated by JavaScript, so the entry point makes one
         // owned copy before scheduling. Mutate that copy in place: peak pixel storage is the JS
         // input plus one Rust frame, never the previous second Rust output frame.
-        apply_global_in_place(&mut self.data, self.parameters)
+        apply_global_in_place(&mut self.data, std::mem::take(&mut self.parameters))
             .map_err(|message| Error::new(Status::InvalidArg, message))?;
         Ok(std::mem::take(&mut self.data))
     }
@@ -332,7 +368,7 @@ impl Task for GlobalDevelopArtifactTask {
             &mut self.data,
             self.pixel_offset,
             self.pixel_bytes,
-            self.parameters,
+            std::mem::take(&mut self.parameters),
         )
         .map_err(|message| Error::new(Status::InvalidArg, message))?;
         Ok(std::mem::take(&mut self.data))

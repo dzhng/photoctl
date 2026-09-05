@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08c2, and provider slices 09a–09c are
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08c3, and provider slices 09a–09c are
 implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -30,16 +30,16 @@ check followed by atomic displacement and no-clobber installation keep external 
 silently losing an observed edit. Develop dictionaries and package/library presets now live in typed immutable nodes with full
 hashes. Exact scene-linear Rec.2020 f32 artifacts now remain canonical through the DAG, and the first deterministic pixel pass
 applies global exposure, brightness, contrast, black point, saturation, masked highlights/shadows, skin-protected vibrance,
-white balance, and cast in the native Rust owner.*
+white balance, cast, levels, and OpenColorIO-style scene-linear curves in the native Rust owner.*
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Active wave:** slices 08c3 and 10a run in parallel. Slice 08c3 owns curves and levels in the Rust develop seam; 10a owns only
-  schema-v9 layer identity, immutable revisions, and its specified pure coordinate proof. No 10b pass begins until 08c3 releases
-  the shared Rust/evaluator/preview owners. Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search; its live
+- **Active wave:** slices 08d1 and 10a may run in parallel. Slice 08d1 owns local contrast in the Rust develop seam; 10a owns only
+  schema-v9 layer identity, immutable revisions, and its specified pure coordinate proof. Slice 09c supplies schema v8,
+  explicit-consent backfill, and hybrid search; its live
   multimodal request remains provisional until the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
@@ -60,7 +60,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [ ] 8c3+ curves/local ops/geometry → **gold exam green** — `slices/08-develop.md`
+- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [ ] 8d local ops/geometry → **gold exam green** — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [ ] 10: [ ] 10a identity/revisions · [ ] 10b1 resample/transform · [ ] 10b2 masks/composite · [ ] 10b3 delta · [ ] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
@@ -397,7 +397,7 @@ projects · D's package split with C's names plus a `commands` package so `proto
 **runs** `dispatch` over its own frame protocol (the spike's `pglite-socket` mechanism dropped; D6 unchanged)
 · session-sample envelope · offline export = warn-if-fallback-else-69 · sharp = encode + delivery downscale
 only, Rust owns every other resample · one color core in Rust with `LinearImage.space` · CIRAW before LibRaw
-with verdict files G1–G6 · C's no-env-skip Docker gate + real-HTTP fake gateway · D's workbench · `tag` lands
+with verdict files G1–G7 · C's no-env-skip Docker gate + real-HTTP fake gateway · D's workbench · `tag` lands
 with the race (02) · `generate` lands once (13a) · fixture manifest from an independent tool · strict never
 fails on geometry (D27) · `migrate_required` → `restore` (pgDump is the cross-PG-version path) · prune by a
 cache index, never atime · IPTC delivered as XMP `dc:*` + EXIF `Artist/Copyright` through sharp · Swift helper

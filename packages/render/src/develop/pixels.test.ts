@@ -103,7 +103,98 @@ test("develop vibrance protects warm skin hues", async () => {
   expect(skinGain).toBeLessThan(greenGain - 0.15);
 });
 
-test("masked develop controls cross the canonical artifact worker seam", async () => {
+test("develop curves apply channel curves before the master curve", async () => {
+  const source = {
+    w: 1,
+    h: 1,
+    data: new Float32Array([0.25, 0.5, 0.75]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const rgb = [
+    [0, 0],
+    [0.5, 0.75],
+    [1, 1],
+  ] as [number, number][];
+  const red = [
+    [0, 0],
+    [1, 0.5],
+  ] as [number, number][];
+
+  const developed = await applyDevelop(source, { curves: { rgb, red } });
+  const channelThenMaster = await applyDevelop(await applyDevelop(source, { curves: { red } }), {
+    curves: { rgb },
+  });
+  const masterThenChannel = await applyDevelop(await applyDevelop(source, { curves: { rgb } }), {
+    curves: { red },
+  });
+
+  developed.data.forEach((sample, index) => {
+    expect(sample).toBeCloseTo(channelThenMaster.data[index]!, 5);
+  });
+  expect(developed.data[0]).not.toBeCloseTo(masterThenChannel.data[0]!, 4);
+});
+
+test("develop levels map black, midpoint, and white without clipping extended samples", async () => {
+  const source = {
+    w: 5,
+    h: 1,
+    data: new Float32Array([
+      -0.4, -0.4, -0.4, 0.2, 0.2, 0.2, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1.4, 1.4, 1.4,
+    ]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, {
+    levels: { black: 0.2, midpoint: 2, white: 0.8 },
+  });
+
+  expect(developed.data[0]).toBeCloseTo(-1, 6);
+  expect(developed.data[3]).toBeCloseTo(0, 6);
+  expect(developed.data[6]).toBeCloseTo(Math.SQRT1_2, 6);
+  expect(developed.data[9]).toBeCloseTo(1, 6);
+  expect(developed.data[12]).toBeCloseTo(Math.SQRT2, 6);
+});
+
+test("develop applies levels before curves", async () => {
+  const source = {
+    w: 1,
+    h: 1,
+    data: new Float32Array([0.35, 0.5, 0.75]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const levels = { black: 0.1, midpoint: 1.4, white: 0.9 };
+  const curves = {
+    rgb: [
+      [0, 0],
+      [0.5, 0.7],
+      [1, 1],
+    ] as [number, number][],
+  };
+
+  const developed = await applyDevelop(source, { levels, curves });
+  const levelsThenCurves = await applyDevelop(await applyDevelop(source, { levels }), { curves });
+  const curvesThenLevels = await applyDevelop(await applyDevelop(source, { curves }), { levels });
+
+  developed.data.forEach((sample, index) => {
+    expect(sample).toBeCloseTo(levelsThenCurves.data[index]!, 5);
+  });
+  expect(developed.data[0]).not.toBeCloseTo(curvesThenLevels.data[0]!, 4);
+});
+
+test("masked and curve controls cross the canonical artifact worker seam in fixed order", async () => {
   const source = {
     w: 3,
     h: 1,
@@ -114,7 +205,19 @@ test("masked develop controls cross the canonical artifact worker seam", async (
     blackLevel: 0,
     wbPreApplied: true,
   };
-  const parameters = { highlights: -30, shadows: 25, vibrance: 40 };
+  const parameters = {
+    highlights: -30,
+    shadows: 25,
+    vibrance: 40,
+    levels: { black: 0.05, midpoint: 1.1, white: 0.95 },
+    curves: {
+      rgb: [
+        [0, 0],
+        [0.5, 0.6],
+        [1, 1],
+      ] as [number, number][],
+    },
+  };
 
   const memory = await applyDevelop(source, parameters);
   const artifact = await applyDevelopArtifact(

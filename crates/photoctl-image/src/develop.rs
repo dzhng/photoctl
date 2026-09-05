@@ -1,5 +1,7 @@
 const D65_XYZ: [f64; 3] = [0.95047, 1.0, 1.08883];
 
+use crate::tone_curve::{ToneCurve, from_log, prepare as prepare_tone_curve, to_log};
+
 // Linear sRGB (D65) to linear Rec.2020.
 const SRGB_TO_REC2020: [[f64; 3]; 3] = [
     [0.627_403_9, 0.329_283, 0.043_313_1],
@@ -38,7 +40,7 @@ const BRADFORD_INVERSE: [[f64; 3]; 3] = [
     [-0.008_528_7, 0.040_042_8, 0.968_486_7],
 ];
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct GlobalDevelop {
     pub exposure: f32,
     pub highlights: f32,
@@ -51,6 +53,23 @@ pub(crate) struct GlobalDevelop {
     pub temperature_offset_k: f32,
     pub tint: f32,
     pub cast: f32,
+    pub curves: Option<CurveParameters>,
+    pub levels: Option<LevelsParameters>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct CurveParameters {
+    pub rgb: Option<Vec<Vec<f32>>>,
+    pub red: Option<Vec<Vec<f32>>>,
+    pub green: Option<Vec<Vec<f32>>>,
+    pub blue: Option<Vec<Vec<f32>>>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct LevelsParameters {
+    pub black: f32,
+    pub midpoint: f32,
+    pub white: f32,
 }
 
 pub(crate) fn apply_global_in_place(
@@ -64,7 +83,7 @@ pub(crate) fn apply_global_in_place(
     for destination in data.chunks_exact_mut(3) {
         destination.copy_from_slice(&grade_pixel(
             [destination[0], destination[1], destination[2]],
-            prepared,
+            &prepared,
         )?);
     }
     Ok(())
@@ -86,7 +105,7 @@ pub(crate) fn apply_global_artifact_in_place(
             f32::from_le_bytes(pixel[4..8].try_into().unwrap()),
             f32::from_le_bytes(pixel[8..12].try_into().unwrap()),
         ];
-        let graded = grade_pixel(source, prepared)?;
+        let graded = grade_pixel(source, &prepared)?;
         for (channel, sample) in graded.into_iter().enumerate() {
             pixel[channel * 4..channel * 4 + 4].copy_from_slice(&sample.to_le_bytes());
         }
@@ -110,7 +129,7 @@ pub(crate) fn validate_artifact_samples(
     Ok(())
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct PreparedGlobal {
     exposure: f32,
     highlights: f32,
@@ -122,6 +141,14 @@ struct PreparedGlobal {
     vibrance: f32,
     white_balance: [[f64; 3]; 3],
     cast: f32,
+    curves: PreparedCurves,
+    levels: Option<LevelsParameters>,
+}
+
+#[derive(Clone, Default)]
+struct PreparedCurves {
+    rgb: Option<ToneCurve>,
+    channels: [Option<ToneCurve>; 3],
 }
 
 fn prepare_global(parameters: GlobalDevelop) -> Result<PreparedGlobal, String> {
@@ -138,10 +165,12 @@ fn prepare_global(parameters: GlobalDevelop) -> Result<PreparedGlobal, String> {
         vibrance: parameters.vibrance / 100.0,
         white_balance: white_balance_matrix(parameters.temperature_offset_k, parameters.tint)?,
         cast: parameters.cast * 0.001,
+        curves: prepare_curves(parameters.curves)?,
+        levels: prepare_levels(parameters.levels)?,
     })
 }
 
-fn grade_pixel(source: [f32; 3], parameters: PreparedGlobal) -> Result<[f32; 3], String> {
+fn grade_pixel(source: [f32; 3], parameters: &PreparedGlobal) -> Result<[f32; 3], String> {
     if !source.into_iter().all(f32::is_finite) {
         return Err("global develop artifact contains a non-finite sample".to_owned());
     }
@@ -183,10 +212,82 @@ fn grade_pixel(source: [f32; 3], parameters: PreparedGlobal) -> Result<[f32; 3],
         let factor = 1.0 + parameters.vibrance * (1.0 - saturation) * skin_protection;
         graded = graded.map(|sample| luma + factor * (sample - luma));
     }
+    if let Some(levels) = parameters.levels {
+        graded = graded.map(|sample| apply_levels(sample, levels));
+    }
+    if parameters.curves.rgb.is_some() || parameters.curves.channels.iter().any(Option::is_some) {
+        let mut encoded = graded.map(to_log);
+        for (channel, curve) in parameters.curves.channels.iter().enumerate() {
+            if let Some(curve) = curve {
+                encoded[channel] = curve.evaluate(encoded[channel]);
+            }
+        }
+        if let Some(curve) = &parameters.curves.rgb {
+            encoded = encoded.map(|sample| curve.evaluate(sample));
+        }
+        graded = encoded.map(from_log);
+    }
     if !graded.into_iter().all(f32::is_finite) {
         return Err("global develop produced a non-finite sample".to_owned());
     }
     Ok(graded)
+}
+
+fn prepare_levels(
+    parameters: Option<LevelsParameters>,
+) -> Result<Option<LevelsParameters>, String> {
+    let Some(parameters) = parameters else {
+        return Ok(None);
+    };
+    if !parameters.black.is_finite()
+        || !parameters.midpoint.is_finite()
+        || !parameters.white.is_finite()
+        || !(0.0..=1.0).contains(&parameters.black)
+        || !(0.0..=1.0).contains(&parameters.white)
+        || parameters.black >= parameters.white
+        || !(0.0..=10.0).contains(&parameters.midpoint)
+        || parameters.midpoint == 0.0
+    {
+        return Err(
+            "develop levels require normalized black/white and a positive midpoint".to_owned(),
+        );
+    }
+    Ok(Some(parameters))
+}
+
+fn apply_levels(value: f32, parameters: LevelsParameters) -> f32 {
+    let normalized = (value - parameters.black) / (parameters.white - parameters.black);
+    normalized.signum() * normalized.abs().powf(parameters.midpoint.recip())
+}
+
+fn prepare_curves(parameters: Option<CurveParameters>) -> Result<PreparedCurves, String> {
+    let Some(parameters) = parameters else {
+        return Ok(PreparedCurves::default());
+    };
+    Ok(PreparedCurves {
+        rgb: parameters
+            .rgb
+            .map(prepare_tone_curve)
+            .transpose()?
+            .flatten(),
+        channels: [
+            parameters
+                .red
+                .map(prepare_tone_curve)
+                .transpose()?
+                .flatten(),
+            parameters
+                .green
+                .map(prepare_tone_curve)
+                .transpose()?
+                .flatten(),
+            parameters
+                .blue
+                .map(prepare_tone_curve)
+                .transpose()?
+                .flatten(),
+        ],
+    })
 }
 
 fn apply_tonal_gain(pixel: [f32; 3], stops: f32, mask: f32) -> [f32; 3] {
@@ -603,6 +704,54 @@ mod tests {
                 .abs()
                     < 1e-6
             );
+        }
+    }
+
+    #[test]
+    fn levels_apply_midpoint_gamma_without_clipping_extended_samples() {
+        let input = [
+            -0.4, -0.4, -0.4, 0.2, 0.2, 0.2, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1.4, 1.4, 1.4,
+        ];
+        let actual = apply_global(
+            &input,
+            GlobalDevelop {
+                levels: Some(LevelsParameters {
+                    black: 0.2,
+                    midpoint: 2.0,
+                    white: 0.8,
+                }),
+                ..GlobalDevelop::default()
+            },
+        )
+        .unwrap();
+
+        for (actual, expected) in
+            actual
+                .iter()
+                .step_by(3)
+                .zip([-1.0, 0.0, 0.5_f32.sqrt(), 1.0, 2.0_f32.sqrt()])
+        {
+            assert!((actual - expected).abs() < 1e-6, "{actual} != {expected}");
+        }
+    }
+
+    #[test]
+    fn scene_linear_curve_uses_the_ocio_log_encoding_without_clipping() {
+        let input = [0.18, 0.18, 0.18];
+        let actual = apply_global(
+            &input,
+            GlobalDevelop {
+                curves: Some(CurveParameters {
+                    rgb: Some(vec![vec![0.0, 0.0], vec![1.0, 0.5]]),
+                    ..CurveParameters::default()
+                }),
+                ..GlobalDevelop::default()
+            },
+        )
+        .unwrap();
+
+        for sample in actual {
+            assert!((sample - 0.016_053_8).abs() < 1e-6, "{sample}");
         }
     }
 
