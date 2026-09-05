@@ -1,4 +1,4 @@
-import { access, mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -99,6 +99,101 @@ test("native full-frame creates a master and later regions reuse it without the 
       cacheSource: "sufficient_full_frame",
     });
     await expect(sharp(region.path).metadata()).resolves.toMatchObject({ width: 20, height: 15 });
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("default overview derives from a sufficient master without rendering again", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-overview-master-"));
+  const photo = { contentKey: "ck_1111111111111112", orientation: 1 as const, w: 2000, h: 1000 };
+  const renderHash = testRenderHash("3");
+  const index: PreviewIndexAdapter = {
+    recordCompleted: async () => {},
+    touch: async () => {},
+  };
+  const coordinator = new PreviewCoordinator();
+  let renderCount = 0;
+  const pixels = new Uint16Array(photo.w * photo.h * 3).fill(32768);
+  const base = {
+    coordinator,
+    index,
+    cacheRoot: directory,
+    photoId: "photo-overview-master",
+    renderHash,
+    photo,
+    source: { kind: "online-file" as const, path: "unused", mediaType: "image/png" },
+    render: async () => {
+      renderCount += 1;
+      return { w: photo.w, h: photo.h, channels: 3 as const, data: pixels };
+    },
+  };
+  try {
+    const master = await materializePreview({
+      ...base,
+      view: { region: null, longEdge: "native" },
+    });
+    const overview = await materializePreview({
+      ...base,
+      view: { region: null, longEdge: 1616 },
+    });
+    const detail = await materializePreview({
+      ...base,
+      view: { region: [200, 100, 400, 300], longEdge: "native" },
+    });
+
+    expect(renderCount).toBe(1);
+    expect(overview).toMatchObject({
+      w: 1616,
+      h: 808,
+      sourceDimensions: { w: 2000, h: 1000 },
+      cacheSource: "sufficient_full_frame",
+    });
+    expect(detail).toMatchObject({ w: 400, h: 300, cacheSource: "sufficient_full_frame" });
+    expect(overview.path).not.toBe(master.path);
+    expect(detail.path).not.toBe(master.path);
+    expect(detail.path).not.toBe(overview.path);
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("default overview ignores a corrupt master and renders directly", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-corrupt-master-"));
+  const photo = { contentKey: "ck_1111111111111113", orientation: 1 as const, w: 80, h: 60 };
+  const renderHash = testRenderHash("4");
+  let renderCount = 0;
+  const base = {
+    coordinator: new PreviewCoordinator(),
+    index: { recordCompleted: async () => {}, touch: async () => {} },
+    cacheRoot: directory,
+    photoId: "photo-corrupt-master",
+    renderHash,
+    photo,
+    source: { kind: "online-file" as const, path: "unused", mediaType: "image/png" },
+    render: async () => {
+      renderCount += 1;
+      return {
+        w: photo.w,
+        h: photo.h,
+        channels: 3 as const,
+        data: new Uint16Array(photo.w * photo.h * 3).fill(32768),
+      };
+    },
+  };
+  try {
+    const master = await materializePreview({
+      ...base,
+      view: { region: null, longEdge: "native" },
+    });
+    await writeFile(master.path, "corrupt");
+    const overview = await materializePreview({
+      ...base,
+      view: { region: null, longEdge: 1616 },
+    });
+    expect(renderCount).toBe(2);
+    expect(overview).toMatchObject({ w: 80, h: 60, cacheSource: "render_master" });
+    await expect(sharp(overview.path).metadata()).resolves.toMatchObject({ width: 80, height: 60 });
   } finally {
     await rm(directory, { recursive: true });
   }

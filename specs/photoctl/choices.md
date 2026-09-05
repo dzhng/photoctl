@@ -2851,3 +2851,19 @@
 - **Verdict:** **Sound.** It reuses the existing forward affine owner instead of introducing a second matrix convention at the
   graph boundary.
 - **Confidence:** High.
+
+### Slice 12d preview foundation — Reusing a valid preview artifact repairs its cache accounting
+
+- **When:** Slice 12d preview-cache foundation, 2026-09-05.
+- **The choice:** A display master is the full-frame JPEG from which smaller inspection views are cropped. When `show` finds that
+  JPEG and its integrity sidecar valid, it reads it under the same path lease used by writers and cache pruning, then upserts its
+  byte count and last-used time before deriving the overview. If a crash left the JPEG complete but its cache-index row missing,
+  this read repairs the row. The alternative was only updating an existing row, which would leave that valid orphan invisible to
+  storage accounting and eligible to survive outside the configured cache budget.
+- **The gap:** The plan required validated reuse, prune safety, and post-access grace, but did not say whether reuse should repair a
+  missing cache-index row left by an interrupted prior materialization.
+- **The reach:** Every future consumer that reuses a preview artifact through the coordinator inherits one race-free validation and
+  accounting boundary; cache pruning sees the bytes that `show` can actually return.
+- **Verdict:** **Sound.** Repairing accounting from the already validated file restores the cache invariant without rendering or
+  inventing a second source of pixel truth.
+- **Confidence:** High.

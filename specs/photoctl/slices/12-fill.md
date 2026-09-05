@@ -146,3 +146,10 @@ generation path with `upscale_failed`, no failed image node, and unsatisfied den
 fill branch, reuses its pinned generation execution and original base, and retries the upscaler; an exact cached upscale also reuses
 its pinned execution during ordinary evaluation. Live adapter credentials, quality/polarity evidence, refresh, general transform
 ancestry, person movement, and visual continuity remain open for 12d and the named live gates.
+
+## 12d preview-cache foundation — 2026-09-05
+
+Once the current render state has a validated full-frame display master, default overview inspection projects that master instead
+of evaluating the graph again. The cheap direct overview remains the cold-cache path and never creates a master by itself. Existing
+master reads use the preview coordinator's path lease and cache accounting, so reuse cannot race pruning and a valid file can repair
+a missing index row. The full agent-preview journey remains the owner of visual continuity evidence across fill revisions.

@@ -2,6 +2,7 @@ import {
   readValidPreviewArtifact,
   removePreviewArtifact,
   removePreviewTemps,
+  type ValidPreviewArtifact,
 } from "./preview-artifact.js";
 
 export interface PreviewIndexAdapter {
@@ -60,6 +61,22 @@ export class PreviewCoordinator {
 
   leasedPaths(): ReadonlySet<string> {
     return new Set(this.leased.keys());
+  }
+
+  async reuseValid(
+    path: string,
+    index: PreviewIndexAdapter,
+  ): Promise<ValidPreviewArtifact | undefined> {
+    const lease = await this.acquirePath(path);
+    try {
+      const artifact = await readValidPreviewArtifact(path);
+      if (artifact) {
+        await index.recordCompleted({ path, bytes: artifact.storageBytes, lastUsed: this.now() });
+      }
+      return artifact;
+    } finally {
+      lease.release();
+    }
   }
 
   tryLeaseForPrune(path: string): PathLease | undefined {

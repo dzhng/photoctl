@@ -4,6 +4,7 @@ import { join, relative } from "node:path";
 import sharp from "sharp";
 import { expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
+import { showDataSchema } from "@photoctl/protocol";
 import { PreviewCoordinator } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
 
@@ -288,6 +289,99 @@ test("show materializes pixels from the active global develop node", async () =>
     expect(editedData.render_hash).not.toBe(neutralData.render_hash);
     expect(editedData.preview).not.toBe(neutralData.preview);
     expect(imageMean(editedStats.channels)).toBeGreaterThan(imageMean(neutralStats.channels) * 1.2);
+  } finally {
+    await initialized.handle.close();
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("show derives overview and detail from the current native master", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-show-master-projections-"));
+  const libraryPath = join(directory, "library");
+  const cacheRoot = join(directory, "cache");
+  const source = join(directory, "photo.png");
+  const initialized = await initializeLibrary(libraryPath);
+  try {
+    const pixels = Buffer.alloc(320 * 180 * 3);
+    for (let y = 0; y < 180; y += 1) {
+      for (let x = 0; x < 320; x += 1) {
+        const offset = (y * 320 + x) * 3;
+        pixels[offset] = Math.round((x / 319) * 255);
+        pixels[offset + 1] = Math.round((y / 179) * 255);
+        pixels[offset + 2] = (x + y) % 2 === 0 ? 64 : 192;
+      }
+    }
+    await sharp(pixels, { raw: { width: 320, height: 180, channels: 3 } })
+      .png()
+      .toFile(source);
+    const env = {
+      noDaemon: true,
+      libraryPath,
+      cacheRoot,
+      volumeMap: `${directory}=fixture-volume:online`,
+    };
+    const imported = await dispatch(
+      { verb: "import", args: [source, "--link"], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    if (!imported.ok || !("data" in imported)) throw new Error("import failed");
+    const id = (imported.data as { ids: string[] }).ids[0]!;
+    await dispatch(
+      { verb: "develop", args: [id, "--set", "exposure=0.5"], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+
+    const native = await dispatch(
+      { verb: "show", args: [id, "--preview-size", "native"], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    if (!native.ok || !("data" in native)) throw new Error("native show failed");
+    const executionCount = async () =>
+      Number(
+        (
+          await initialized.handle.query<{ count: string }>(
+            "SELECT count(*)::text AS count FROM node_executions",
+          )
+        ).rows[0]!.count,
+      );
+    const before = await executionCount();
+    const detail = await dispatch(
+      { verb: "show", args: [id, "--region", "40,30,80,60"], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    const overview = await dispatch(
+      { verb: "show", args: [id], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    if (!detail.ok || !("data" in detail) || !overview.ok || !("data" in overview)) {
+      throw new Error("derived show failed");
+    }
+    const nativeData = showDataSchema.parse(native.data);
+    const detailData = showDataSchema.parse(detail.data);
+    const overviewData = showDataSchema.parse(overview.data);
+
+    expect(await executionCount()).toBe(before);
+    expect(nativeData.preview_info.actual).toEqual({ region: [0, 0, 320, 180], w: 320, h: 180 });
+    expect(detailData.preview_info).toMatchObject({
+      actual: { region: [40, 30, 80, 60], w: 80, h: 60 },
+      cache_source: "sufficient_full_frame",
+    });
+    expect(overviewData.preview_info).toMatchObject({
+      actual: { region: [0, 0, 320, 180], w: 320, h: 180 },
+      cache_source: "sufficient_full_frame",
+    });
+    expect(new Set([nativeData.preview, detailData.preview, overviewData.preview]).size).toBe(3);
+
+    const [masterPixels, overviewPixels] = await Promise.all([
+      sharp(nativeData.preview).raw().toBuffer(),
+      sharp(overviewData.preview).raw().toBuffer(),
+    ]);
+    const meanAbsoluteDifference =
+      masterPixels.reduce(
+        (sum, value, index) => sum + Math.abs(value - overviewPixels[index]!),
+        0,
+      ) / masterPixels.length;
+    expect(meanAbsoluteDifference).toBeLessThan(1);
   } finally {
     await initialized.handle.close();
     await rm(directory, { recursive: true });

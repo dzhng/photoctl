@@ -49,6 +49,30 @@ test("concurrent callers join one artifact materialization and each receives a v
   }
 });
 
+test("reusing an existing artifact refreshes its index entry under a path lease", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-reuse-"));
+  const path = join(directory, "view.jpg");
+  const records: Array<{ path: string; bytes: number; lastUsed: Date }> = [];
+  const index: PreviewIndexAdapter = {
+    recordCompleted: async (artifact) => {
+      records.push(artifact);
+    },
+    touch: async () => {},
+  };
+  const now = new Date("2026-09-05T10:00:00.000Z");
+  const coordinator = new PreviewCoordinator(() => now);
+  try {
+    await writeArtifact(path);
+    const artifact = await coordinator.reuseValid(path, index);
+    if (!artifact) throw new Error("expected valid artifact");
+    expect(artifact).toMatchObject({ w: 2, h: 1 });
+    expect(records).toEqual([{ path, bytes: artifact.storageBytes, lastUsed: now }]);
+    expect(coordinator.leasedPaths()).toEqual(new Set());
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
 test("a failed writer clears its flight, artifact, and temporary residue before retry", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-retry-"));
   const path = join(directory, "view.jpg");

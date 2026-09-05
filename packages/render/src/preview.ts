@@ -113,8 +113,23 @@ export async function materializePreview(request: {
         );
       }
 
-      // The default overview is deliberately cheap and does not create a full-frame master.
       if (cheapOverview) {
+        const master = await request.coordinator.reuseValid(masterPath, request.index);
+        if (
+          master &&
+          isSufficient(master, request.photo, region, requestedWidth, requestedHeight)
+        ) {
+          return await deriveView(
+            master.bytes,
+            exactPath,
+            master,
+            request.photo,
+            region,
+            requestedScale,
+            "sufficient_full_frame",
+          );
+        }
+        // Keep the overview cheap when no sufficient master exists.
         const image = await renderPreviewSource(request);
         return await deriveRenderedView(
           image,
