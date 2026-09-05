@@ -14,7 +14,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 ## Next Agent Prompt
 
 *Last updated: 2026-09-05. Status: slices 00–10, the keyless Slice 11 command seam, and the bounded
-Slice 12a strict-fill, 12b density-planning, and the bounded 12c upscale checkpoints are implemented.
+Slice 12a strict-fill, 12b density-planning, the bounded 12c upscale checkpoints, and the Slice 12 fill workbench report are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
 the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
@@ -56,7 +56,8 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - **Active wave:** Slice 12a owns keyless remove/prompt generation through the fake gateway, immutable provider execution,
   intrinsic provider dimensions, and strict base-pixel composite; 12b owns the pure density plan; 12c owns policy, the guarded prompt,
   configured execution, and generation-preserving failure/retry; 12d1 owns explicit branch refresh. Continue with 12d2
-  transform-driven density maintenance and person-move/agent-preview integration. Slice 11 still needs the hosted SAM weights, real point probes, G6,
+  transform-driven density maintenance and person-move/agent-preview integration. The fill workbench contract is complete, while its
+  photographic screenshot verdict remains part of the agent-preview gate. Slice 11 still needs the hosted SAM weights, real point probes, G6,
   and `wb masks`; fake masks are not evidence for those gates. Slice 09c's live multimodal request also remains provisional until
   the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this

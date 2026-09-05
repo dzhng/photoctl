@@ -185,3 +185,18 @@ mask/crop geometry directly to the document base would address the wrong pixels.
 
 Transform-driven density reevaluation, historical upscale-cache selection, person movement, the agent preview journey, live adapters,
 and visual gates remain 12d2 work. Its affine branch rebasing replaces the transformed-input refusal.
+
+## 12d workbench fill checkpoint — 2026-09-05
+
+`wb fill <id> --layer <layer>` now resolves the active canonical fill branch and renders a self-contained HTML comparison from its
+immutable artifacts. Before-fill pixels, the accepted generated placement, the current layer result, and a cyan mask-edge view all
+use the exact same base-space crop at native sampling. The report carries the active revision, render identity, paid-node identity,
+provider provenance, and escaped prompt so the image being judged stays tied to the graph that produced it.
+
+The workbench never constructs a provider client or reads the original photo. It rebuilds only deterministic graph descendants,
+feeding the evaluator the exact cached and hash-verified source execution chained to the pinned generation input so generate/upscale
+nodes can only reuse their committed outputs. A missing cached source, a noncanonical fill branch, or a later transformed mask is a
+refusal rather than a network fallback or a misleading coordinate-space comparison. Focused tests cover the exact CLI grammar,
+fill-branch validation, transformed-branch refusal, HTML escaping, self-contained native crop dimensions, and a disabled global network
+seam while the report is built. These synthetic fixtures prove the report contract, not photographic boundary quality; the named
+fake-gateway agent-preview journey still owns screenshot comparison, fresh critique, and human continuity evidence.

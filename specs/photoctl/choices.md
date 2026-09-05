@@ -2936,3 +2936,48 @@
 - **Verdict:** **Sound.** Safety follows from not sending a native mask and from the local compositor, so it does not depend on a
   remote server honestly identifying itself.
 - **Confidence:** High.
+
+### Slice 12d workbench fill — Inspection may materialize deterministic nodes only from cached lineage
+
+- **When:** Slice 12d workbench-fill checkpoint, 2026-09-05.
+- **The choice:** When a human opens a fill report before the active layer composite has been rendered, the workbench may execute the
+  graph's deterministic steps, such as exact resampling and strict mask compositing. A deterministic step always produces the same
+  pixels from the same inputs. The source input is reconstructed by following the fill execution's exact input hashes back to its
+  cached, content-hashed source artifact. Paid generate or upscale nodes can only load the exact output pinned in their immutable
+  execution record. If that cache is missing,
+  the report refuses. The unbuilt alternative was to reopen the original photo or construct provider clients, either of which would
+  turn visual inspection into new external work and make an offline report depend on mutable inputs.
+- **The gap:** The checkpoint required existing artifacts and prohibited provider execution, but did not say whether a report could
+  materialize lazy deterministic descendants or must fail until another command had rendered them.
+- **The reach:** Workbench inspection remains useful immediately after a lazy fill commit and while the original volume is offline,
+  without creating a second external execution. It can add only reproducible canonical artifacts and execution rows already implied
+  by the committed graph.
+- **Verdict:** **Sound.** It preserves the DAG's lazy deterministic contract while making the provider boundary mechanically
+  unreachable from the workbench.
+- **Confidence:** High.
+
+### Slice 12d workbench fill — Cyan marks the canonical mask edge without obscuring its texture
+
+- **When:** Slice 12d workbench-fill checkpoint, 2026-09-05.
+- **The choice:** The fourth comparison panel copies the current native-detail crop and changes only pixels on the inside edge of the
+  stored mask to bright cyan. The other three panels remain untouched, so a reviewer can inspect real texture first and then use the
+  cyan trace to find the exact seam. The unbuilt alternatives were a translucent filled overlay, which hides texture across the whole
+  edited region, or no overlay, which makes an irregular boundary hard to locate.
+- **The gap:** The plan required the same mask boundary before and after but did not choose its display color or overlay style.
+- **The reach:** Every fill report uses one legible edge convention; changing the taste later affects only workbench presentation and
+  never graph data or image artifacts.
+- **Verdict:** **Needs-user.** The provisional cyan inside-edge trace is high contrast on typical photographs and reversible after the
+  photographic screenshot gate if it distracts or disappears against real subjects.
+- **Confidence:** Medium; this is a visual taste call that synthetic fixtures cannot settle.
+
+### Slice 12d workbench fill — Refuse transformed branches until crop coordinates can follow them
+
+- **When:** Slice 12d workbench-fill checkpoint, 2026-09-05.
+- **The choice:** The report accepts a canonical fill whose active mask is still the strict composite's mask. If a later move, rotate,
+  flip, or scale has transformed that mask, the report refuses instead of placing the old base-space crop and boundary over transformed
+  current pixels. The unbuilt alternative was to show those mismatched coordinate spaces as though they were comparable.
+- **The gap:** The checkpoint asked for one exact crop and boundary but transform-driven branch rebasing remains explicit 12d2 work.
+- **The reach:** Reports stay trustworthy for the completed strict-fill checkpoint; transformed fills become reportable when 12d2 owns
+  a canonical mapping for the crop, generated placement, current result, and mask.
+- **Verdict:** **Sound.** A clear refusal preserves evidence integrity and matches the existing bounded transform refusal.
+- **Confidence:** High.

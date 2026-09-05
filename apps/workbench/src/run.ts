@@ -13,6 +13,7 @@ import { renderPresetsReport } from "./presets.js";
 import { buildAbReport } from "./ab.js";
 import { runUpscaleSpike, type UpscaleSpikeDependencies } from "./upscale-spike.js";
 import { buildLayersReport } from "./layers.js";
+import { buildFillReport } from "./fill.js";
 
 export async function runWorkbench(
   args: string[],
@@ -35,11 +36,25 @@ export async function runWorkbench(
       "ab",
       "upscale-spike",
       "layers",
+      "fill",
     ].includes(command)
   )
     throw new Error(
-      "usage: wb envelope|race|library|oracle|sheet|graph|layers|export|presets|ab|upscale-spike",
+      "usage: wb envelope|race|library|oracle|sheet|graph|layers|fill|export|presets|ab|upscale-spike",
     );
+  if (command === "fill") {
+    if (rest.length !== 3 || rest[1] !== "--layer") {
+      throw new Error("usage: wb fill <photo-id> --layer <layer-id>");
+    }
+    const library = env.PHOTOCTL_LIBRARY
+      ? resolve(cwd, env.PHOTOCTL_LIBRARY)
+      : join(homedir(), "Pictures", "photoctl");
+    const outputDirectory = join(cwd, "out", "wb");
+    await mkdir(outputDirectory, { recursive: true });
+    const output = join(outputDirectory, "fill.html");
+    await writeFile(output, await buildFillReport(library, rest[0], rest[2]), "utf8");
+    return output;
+  }
   if (command === "upscale-spike") {
     const outputDirectory = join(cwd, "out", "wb");
     await mkdir(outputDirectory, { recursive: true });
