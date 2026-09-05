@@ -111,11 +111,14 @@ See Slice 10's local dependency graph for its serialization details.
 | 08c3 curves/levels | `bb857e1`, corrected by `481bb9c` |
 | 08d1 local operators (G8 partial) | `fa0af32` |
 | 08d2 luminance/chroma NLM (G8 partial) | `ca0be55`, corrected through `34c4d39` |
+| 08d3 develop geometry (G9) | `cd1f142` |
 | 09a provider contracts | `90b03c4` |
 | 09b evidence | `cf34507` |
 | 09c embed/search | `ea2c715` |
 | 10a layer identity/revisions | `2c03b4e` |
 | 10b1 native resample/transform | `8fd2636` |
+| 10b2 typed masks/composite | `096e67d`, integrated by `2123858` |
+| 10b3 develop delta/stale | `3e054f3` |
 
 ## Precedent repos — where to look before designing anything
 
