@@ -11,6 +11,7 @@ export * from "./graph/types.js";
 export * from "./graph/recipes.js";
 export * from "./graph/store.js";
 export * from "./graph/evaluator.js";
+export { loadBaseProjection, projectMaskToRender } from "./graph/projection.js";
 export * from "./graph/inspection.js";
 export * from "./artifacts/publication.js";
 export * from "./artifacts/availability.js";

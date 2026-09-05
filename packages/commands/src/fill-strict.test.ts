@@ -8,6 +8,15 @@ import {
   readArtifactMask,
   loadActiveDocument,
   describeFillBranch,
+  applyDevelopGeometry,
+  inspectGraphNode,
+  canonicalJson,
+  deterministicExecutionId,
+  normalizeArtifact,
+  publishArtifact,
+  registerPublishedArtifact,
+  writePreviewArtifact,
+  srgb2014ProfilePath,
 } from "@photoctl/render";
 import { exitCodeFor, fillStrictDataSchema } from "@photoctl/protocol";
 import { startGatewayFixture } from "@photoctl/test-harness/gateway-fixture";
@@ -16,6 +25,7 @@ import { access, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
+import { createHash } from "node:crypto";
 import { afterEach, expect, test } from "vitest";
 import { dispatch } from "./dispatch.js";
 
@@ -369,14 +379,14 @@ test("expanded fill changes the final document outside the selection and preserv
       const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
       const layer = document.layers.find(({ id }) => id === segmented.layer_id)!;
       const branch = (await describeFillBranch(fixture.handle, fixture.id, layer.contentNodeId))!;
-      const evaluated = await evaluateGraphNode({
+      const evaluatedMask = await evaluateGraphNode({
         database: fixture.handle,
         libraryPath: fixture.handle.path,
         photoId: fixture.id,
         nodeId: branch.maskNodeId,
         source: fixture.sourceProducer,
       });
-      return (await readArtifactMask(evaluated.artifact.path)).data;
+      return (await readArtifactMask(evaluatedMask.artifact.path)).data;
     };
     success(
       await command(fixture, "layer", ["transform", fixture.id, segmented.layer_id, "--dx", "3"]),
@@ -505,6 +515,166 @@ test("feather coverage is applied once through fill, fractional transforms, and 
     expect(movedMask).not.toEqual(originalMask);
     success(await command(fixture, "layer", ["refresh", fixture.id, segmented.layer_id]));
     expect(await assertCoverage()).toEqual(movedMask);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test.each([
+  { name: "fractional online", offline: false, geometry: { straighten_deg: 5 } },
+  { name: "fractional offline", offline: true, geometry: { straighten_deg: 5 } },
+  { name: "same-size rotation", offline: false, geometry: { rotate: 180 as const } },
+  { name: "origin crop", offline: false, geometry: { crop: { x: 0, y: 0, w: 24, h: 20 } } },
+])("develop projection preserves single coverage: $name", async ({ offline, geometry }) => {
+  const fixture = await fillFixture();
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "16,10,8,8"]),
+    ) as { layer_id: string };
+    success(
+      await command(fixture, "fill", [
+        fixture.id,
+        "--layer",
+        segmented.layer_id,
+        "--remove",
+        "--strength",
+        "0.03125",
+        "--pad",
+        "0",
+      ]),
+    );
+    expect(
+      await command(fixture, "develop", [
+        fixture.id,
+        ...Object.entries(geometry).flatMap(([key, value]) => [
+          "--set",
+          `${key}=${JSON.stringify(value)}`,
+        ]),
+      ]),
+    ).toMatchObject({ ok: true });
+    const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
+    const layer = document.layers.find(({ id }) => id === segmented.layer_id)!;
+    const source = async () => {
+      const original = await fixture.sourceProducer();
+      return offline
+        ? {
+            image: {
+              ...original.image,
+              w: 20,
+              h: 15,
+              data: new Float32Array(20 * 15 * 3).fill(0.25),
+            },
+            provenance: {
+              ...original.provenance,
+              w: 20,
+              h: 15,
+              tier: "pinned-preview" as const,
+              locator: { kind: "pinned-preview" as const, cache_path: "fixture-offline.jpg" },
+            },
+          }
+        : original;
+    };
+    const pixels = async (nodeId: string) => {
+      const evaluated = await evaluateGraphNode({
+        database: fixture.handle,
+        libraryPath: fixture.handle.path,
+        photoId: fixture.id,
+        nodeId,
+        source,
+      });
+      return await readArtifactLinear(evaluated.artifact.path);
+    };
+    const content = await applyDevelopGeometry(await pixels(layer.contentNodeId), geometry);
+    const background = await applyDevelopGeometry((await source()).image, geometry);
+    const output = await pixels(document.roots.output!);
+    const base = await pixels(document.roots.base);
+    expect(output.data.slice(0, 3)).toEqual(base.data.slice(0, 3));
+    let boundary = 0;
+    for (let pixel = 0; pixel < output.w * output.h; pixel++) {
+      const i = pixel * 3;
+      if (content.data[i]! < background.data[i]! - 0.00001) {
+        boundary++;
+        expect(output.data.slice(i, i + 3)).toEqual(content.data.slice(i, i + 3));
+      }
+    }
+    expect([output.w, output.h]).toEqual([content.w, content.h]);
+    expect(boundary).toBeGreaterThan(0);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("renderer correction bypasses warmed old pixels and views without replaying paid generation", async () => {
+  const fixture = await fillFixture();
+  try {
+    const layer = (
+      success(await command(fixture, "segment", [fixture.id, "--box", "8,6,8,8"])) as {
+        layer_id: string;
+      }
+    ).layer_id;
+    const filled = fillStrictDataSchema.parse(
+      success(await command(fixture, "fill", [fixture.id, "--layer", layer, "--remove"])),
+    );
+    expect(await command(fixture, "develop", [fixture.id, "--set", "rotate=180"])).toMatchObject({
+      ok: true,
+    });
+    const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
+    const node = await inspectGraphNode(fixture.handle, {
+      photoId: fixture.id,
+      nodeId: document.roots.output!,
+    });
+    const evaluate = async (nodeId: string) =>
+      await evaluateGraphNode({
+        database: fixture.handle,
+        libraryPath: fixture.handle.path,
+        photoId: fixture.id,
+        nodeId,
+        source: fixture.sourceProducer,
+      });
+    const inputs = await Promise.all(node.inputNodeIds.map(evaluate));
+    // This is the actual pre-projection renderer cache format, deliberately warmed with wrong pixels.
+    const oldEvaluation = `eval_${legacyCacheHash(canonicalJson({ input_artifact_hashes: inputs.map((input) => input.artifact.artifactHash), kind: node.kind, node_recipe_hash: node.recipeHash, recipe_version: node.recipeVersion, source: null }))}`;
+    const wrong = await publishArtifact(
+      fixture.handle.path,
+      await normalizeArtifact({
+        ...(await fixture.sourceProducer()).image,
+        data: new Float32Array(40 * 30 * 3).fill(0.75),
+      }),
+    );
+    await registerPublishedArtifact(fixture.handle, wrong);
+    await fixture.handle.query(
+      `INSERT INTO node_executions (photo_id, execution_id, node_id, evaluation_hash, deterministic, output_artifact_hash) VALUES ($1,$2,$3,$4,true,$5)`,
+      [
+        fixture.id,
+        deterministicExecutionId(oldEvaluation),
+        node.id,
+        oldEvaluation,
+        wrong.artifactHash,
+      ],
+    );
+    const oldRender = `r_${legacyCacheHash(node.id)}`;
+    const oldPreview = join(fixture.env.cacheRoot, "view", fixture.id, oldRender, "master.jpg");
+    const wrongJpeg = await sharp({
+      create: { width: 40, height: 30, channels: 3, background: "#ff0000" },
+    })
+      .withIccProfile(srgb2014ProfilePath)
+      .jpeg()
+      .toBuffer();
+    await writePreviewArtifact(oldPreview, wrongJpeg, {
+      sourceTier: "online-file",
+      sourceDimensions: { w: 40, h: 30 },
+    });
+    const output = await evaluate(node.id);
+    expect(output.artifact.artifactHash).not.toBe(wrong.artifactHash);
+    expect(output.evaluationHash).not.toBe(oldEvaluation);
+    expect((await loadActiveDocument(fixture.handle, fixture.id))!.renderHash).not.toBe(oldRender);
+    const shown = success(
+      await command(fixture, "show", [fixture.id, "--preview-size", "native"]),
+    ) as { preview: string };
+    expect(shown.preview).not.toBe(oldPreview);
+    await expect(access(oldPreview)).resolves.toBeUndefined();
+    expect((await evaluate(filled.generation.node)).reused).toBe(true);
+    expect(await generatedExecutionCount(fixture)).toBe(1);
   } finally {
     await fixture.handle.close();
   }
@@ -657,6 +827,10 @@ test("prompt fill stores the exact instruction in its immutable generation recip
     await fixture.handle.close();
   }
 });
+
+function legacyCacheHash(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 async function fillFixture(mode?: "wrongdims" | "smallerdims" | "wholeframe" | "wrongaspect") {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-fill-strict-"));

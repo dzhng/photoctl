@@ -1,0 +1,22 @@
+[
+  {
+    "fit": "strict",
+    "changedPixels": 4096,
+    "totalPixels": 49152,
+    "renderHash": "r_32160360537a8ee1d118ea98c9b30d27668210ecf95df580e19b885c0722aa58"
+  },
+  {
+    "fit": "expand=24",
+    "changedPixels": 12544,
+    "totalPixels": 49152,
+    "renderHash": "r_274991bb55d24c6adc9dce9d80d1a1ea783cc94949e952bee391835b459b84f4",
+    "differentChannelsFromStrict": 25344
+  },
+  {
+    "fit": "free",
+    "changedPixels": 21872,
+    "totalPixels": 49152,
+    "renderHash": "r_4f37d73700150092e0daf337733497cbdb3e45d09a036de4343cbc23893774cb",
+    "differentChannelsFromStrict": 40396
+  }
+]

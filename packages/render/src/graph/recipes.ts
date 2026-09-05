@@ -14,6 +14,9 @@ const pinnedMaskParametersSchema = z
   .object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) })
   .strict();
 
+// Pixel-kernel semantics select derived artifacts/views, never paid execution identities.
+const rendererSemanticRevision = 2;
+
 const jsonSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
     z.null(),
@@ -295,7 +298,10 @@ export function logicalNodeId(recipe: string): `node_${string}` {
 
 export function renderHashForNode(nodeId: string): `r_${string}` {
   assertHash(nodeId, "node");
-  return hashIdentity("r", nodeId);
+  return hashIdentity(
+    "r",
+    canonicalJson({ node_id: nodeId, renderer_semantic_revision: rendererSemanticRevision }),
+  );
 }
 
 export function evaluationHash(input: {
@@ -327,6 +333,9 @@ export function evaluationHash(input: {
       kind: input.kind,
       node_recipe_hash: input.nodeRecipeHash,
       recipe_version: input.recipeVersion,
+      ...(imageNodeRegistry[input.kind].deterministic
+        ? { renderer_semantic_revision: rendererSemanticRevision }
+        : {}),
       source: input.source ? canonicalSourceProvenance(input.source) : null,
     }),
   );

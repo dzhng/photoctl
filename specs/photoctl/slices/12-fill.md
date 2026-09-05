@@ -48,6 +48,22 @@ Public-command tests cover final-output expansion, repeat stability, single frac
 movement and refresh, fit defaults, strength override, original-selection movement, and strict-only
 whole-frame refusal. Controlled solid-patch renders distinguish hard selection edges, expanded support,
 and soft coverage; the synthetic boundary check is not photographic acceptance.
+The [controlled coverage evidence](../assets/fill-fit/README.md) preserves the full images, boundary crops,
+telemetry, and critique limits.
+
+### Evaluated-frame ownership
+
+The [graph projection owner](../../../packages/render/src/graph/projection.ts) derives a layer's frame
+from its exact execution lineage, not from matching image dimensions. Explicit resampling establishes a
+canvas; intrinsic provider crop dimensions are not the photograph's coordinate system. The strict
+compositor projects generated pixels and effective coverage into its actual evaluated base frame, including
+reduced offline sources. The document compositor then moves both through the same frame stages into the
+current develop frame and derives binary support last. Native interpolation and mask clamping make a fused
+catalog-to-final mask transform different from those staged RGB operations.
+
+The renderer semantic revision in the recipe identity owner selects corrected deterministic evaluations
+and new render/view paths. Old artifacts remain historical; paid execution identities and artifacts remain
+reusable. No cache deletion, paid-history migration, or user configuration flag is involved.
 
 ## Pre-gate (with key, first): `smoke:mask-polarity` → each adapter's `maskPolarity` + a fake-gateway fixture. Until recorded,
 live native-mask fills refuse `provider_unverified_mask` 69; fake-gateway runs are unaffected.
