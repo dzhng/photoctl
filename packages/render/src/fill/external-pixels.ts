@@ -44,19 +44,19 @@ export async function decodeExternalImage(
   png: Buffer,
   dimensions: { w: number; h: number },
 ): Promise<Image16> {
-  const decoded = await sharp(png)
-    .removeAlpha()
-    .toColourspace("srgb")
-    .raw({ depth: "ushort" })
-    .toBuffer();
-  if (decoded.byteLength !== dimensions.w * dimensions.h * 3 * Uint16Array.BYTES_PER_ELEMENT) {
+  const decoded = await sharp(png).removeAlpha().toColourspace("srgb").raw().toBuffer();
+  if (decoded.byteLength !== dimensions.w * dimensions.h * 3) {
     throw new Error("Provider pixels disagree with their declared intrinsic dimensions");
+  }
+  const expanded = new Uint16Array(decoded.byteLength);
+  for (let index = 0; index < decoded.byteLength; index += 1) {
+    expanded[index] = decoded[index]! * 257;
   }
   return {
     w: dimensions.w,
     h: dimensions.h,
     channels: 3,
-    data: new Uint16Array(decoded.buffer, decoded.byteOffset, decoded.byteLength / 2),
+    data: expanded,
     space: "display-srgb",
     orientationApplied: true,
   };

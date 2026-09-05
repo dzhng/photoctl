@@ -35,6 +35,7 @@ export * from "./layers/status.js";
 export * from "./transforms.js";
 export * from "./retouch.js";
 export * from "./reimagine.js";
+export * from "./generate.js";
 export * from "./fill/crop.js";
 export * from "./fill/branch.js";
 export * from "./fill/density.js";

@@ -34,11 +34,17 @@ import {
   type StderrEvent,
   type Warning,
 } from "@photoctl/protocol";
-import { orientedDimensions, parseExifOrientation } from "@photoctl/render";
+import {
+  commitRevisionInTransaction,
+  orientedDimensions,
+  parseExifOrientation,
+  type CommitRevisionRequest,
+  type CommitRevisionResult,
+} from "@photoctl/render";
 import { estimateEmbeddingCost, readProviderSettings, resolveModels } from "@photoctl/providers";
 import { constants } from "node:fs";
-import { access, copyFile, mkdir, rm, stat } from "node:fs/promises";
-import { basename, extname, join, relative, resolve } from "node:path";
+import { access, copyFile, mkdir, realpath, rm, stat } from "node:fs/promises";
+import { basename, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
 import { cacheWriteError, sourceChangedError, sourceReadError } from "../errors.js";
@@ -214,6 +220,58 @@ interface PreparedCandidate {
   xmp: ReadXmp | undefined;
 }
 
+export async function importGeneratedArtifact(options: {
+  path: string;
+  handle: LibraryHandle;
+  cacheRoot: string;
+  revision: (photoId: string) => Omit<CommitRevisionRequest, "photoId">;
+}): Promise<{
+  photoId: string;
+  revision: CommitRevisionResult;
+  previewWritten: boolean;
+}> {
+  const resolver = await generatedArtifactResolver(options.handle.path);
+  const candidate = await prepareCandidate(options.path, resolver);
+  if (!candidate) throw new Error("The canonical generated artifact is not importable");
+  const imported = await commitCandidate({
+    candidate,
+    copy: false,
+    handle: options.handle,
+    resolver,
+    cacheRoot: options.cacheRoot,
+    libraryPath: options.handle.path,
+    initialTags: ["generated"],
+    revision: options.revision,
+  });
+  return {
+    photoId: imported.photoId,
+    revision: imported.revision!,
+    previewWritten: imported.previewWritten,
+  };
+}
+
+async function generatedArtifactResolver(libraryPath: string): Promise<VolumeResolver> {
+  const libraryRoot = await realpath(libraryPath);
+  const libraryResolver = createVolumeResolver(undefined, libraryRoot);
+  return {
+    locate: async (sourcePath) => {
+      const source = await realpath(sourcePath);
+      const relPath = relative(libraryRoot, source);
+      if (relPath === ".." || relPath.startsWith(`..${sep}`) || isAbsolute(relPath)) {
+        throw new Error("Generated artifacts must be published inside the library");
+      }
+      return {
+        uuid: LIBRARY_VOLUME_UUID,
+        label: "photoctl library",
+        mount: libraryRoot,
+        relPath,
+        online: true,
+      };
+    },
+    resolve: async (volumeUuid, relPath) => await libraryResolver.resolve(volumeUuid, relPath),
+  };
+}
+
 async function prepareCandidate(
   sourcePath: string,
   resolver: VolumeResolver,
@@ -257,7 +315,14 @@ async function commitCandidate(options: {
   resolver: VolumeResolver;
   cacheRoot: string;
   libraryPath: string;
-}): Promise<{ photoId: string; alreadyPresent: boolean; previewWritten: boolean }> {
+  initialTags?: string[];
+  revision?: (photoId: string) => Omit<CommitRevisionRequest, "photoId">;
+}): Promise<{
+  photoId: string;
+  alreadyPresent: boolean;
+  previewWritten: boolean;
+  revision?: CommitRevisionResult;
+}> {
   const { candidate, handle, resolver, cacheRoot } = options;
   let copiedPath: string | undefined;
   let pinnedPath: string | undefined;
@@ -277,6 +342,9 @@ async function commitCandidate(options: {
       [resolved.photoId],
     );
     const alreadyPresent = existing.rows[0]?.exists === true;
+    if (alreadyPresent && options.revision) {
+      throw new Error("The generated pixels already exist in this library");
+    }
     const copied = options.copy
       ? await copyIntoLibrary(
           candidate.sourcePath,
@@ -376,6 +444,20 @@ async function commitCandidate(options: {
     if (candidate.xmp) {
       await applyImportedXmp(handle, resolved.photoId, candidate.xmp, !alreadyPresent);
     }
+    if (options.initialTags?.length) {
+      await handle.query(
+        `INSERT INTO tags (photo_id, tag)
+         SELECT $1, tag FROM unnest($2::text[]) AS tag
+         ON CONFLICT DO NOTHING`,
+        [resolved.photoId, options.initialTags],
+      );
+    }
+    const revision = options.revision
+      ? await commitRevisionInTransaction(handle, {
+          photoId: resolved.photoId,
+          ...options.revision(resolved.photoId),
+        })
+      : undefined;
     const after = await stat(storedPath);
     if (
       after.size !== storedIdentity.size ||
@@ -385,7 +467,7 @@ async function commitCandidate(options: {
     }
     await handle.query("COMMIT");
     await previousPreview?.commit().catch(() => undefined);
-    return { photoId: resolved.photoId, alreadyPresent, previewWritten: !previewMatches };
+    return { photoId: resolved.photoId, alreadyPresent, previewWritten: !previewMatches, revision };
   } catch (error) {
     await handle.query("ROLLBACK");
     if (copiedPath) await rm(copiedPath, { force: true });

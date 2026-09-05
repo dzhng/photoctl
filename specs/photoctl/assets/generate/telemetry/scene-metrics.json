@@ -1,0 +1,26 @@
+{
+  "kind": "screenshot-scene-metrics",
+  "note": "Absolute per-image telemetry, no reference involved. Low values locate flat, sparse, or empty captures; they never accept or reject an image on their own.",
+  "imageCount": 1,
+  "results": [
+    {
+      "id": "generated",
+      "image": "generated.png",
+      "dimensions": {
+        "width": 96,
+        "height": 64
+      },
+      "sceneMetrics": {
+        "colorBuckets": 682,
+        "colorEntropyBits": 8.89093,
+        "edgeDensity": 0.09774,
+        "dominantColorShare": 0.00472,
+        "transparentShare": 0,
+        "luminanceMean": 128.04445,
+        "luminanceP5": 34.6112,
+        "luminanceP95": 225.6434,
+        "luminanceContrast": 191.0322
+      }
+    }
+  ]
+}

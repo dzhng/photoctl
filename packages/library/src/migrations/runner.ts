@@ -12,6 +12,7 @@ import { migration0010 } from "./0010-solid-image-nodes.js";
 import { migration0011 } from "./0011-affine-resample.js";
 import { migration0012 } from "./0012-heal-nodes.js";
 import { migration0013 } from "./0013-revision-metadata.js";
+import { migration0014 } from "./0014-standalone-generation.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -33,6 +34,7 @@ const migrations = [
   { version: 11, sql: migration0011 },
   { version: 12, sql: migration0012 },
   { version: 13, sql: migration0013 },
+  { version: 14, sql: migration0014 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;

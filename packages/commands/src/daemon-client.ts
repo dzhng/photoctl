@@ -355,7 +355,8 @@ export function requestTimeout(request: CommandRequest): number {
     request.verb === "embed" ||
     request.verb === "search" ||
     request.verb === "reimagine" ||
-    request.verb === "relight"
+    request.verb === "relight" ||
+    request.verb === "generate"
   ) {
     return Math.max(31_000, queueDeadline);
   }

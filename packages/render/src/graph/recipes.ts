@@ -130,9 +130,10 @@ export const imageNodeRegistry = {
         request: externalExecutionRequestSchema,
       })
       .strict(),
-    1,
+    0,
     1,
     false,
+    [1, 2],
   ),
   upscale: definition(
     z
@@ -421,6 +422,15 @@ function assertInputCount(
 }
 
 function assertVersionedInputCount(kind: ImageNodeKind, version: number, count: number): void {
+  if (kind === "generate") {
+    if (version === 1 && count !== 1) {
+      throw new Error("generate recipe version 1 requires one input");
+    }
+    if (version === 2 && count !== 0) {
+      throw new Error("generate recipe version 2 requires no inputs");
+    }
+    return;
+  }
   if (kind !== "composite") return;
   if (version === 1 && count < 2) {
     throw new Error("composite recipe version 1 requires at least two inputs");

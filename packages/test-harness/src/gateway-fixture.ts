@@ -10,7 +10,13 @@ const ROUTES = new Set([
 ]);
 
 export interface GatewayFixtureOptions {
-  imageMode?: "normal" | "wrongdims" | "smallerdims" | "wrongaspect" | "wholeframe";
+  imageMode?:
+    | "normal"
+    | "wrongdims"
+    | "smallerdims"
+    | "wrongaspect"
+    | "wholeframe"
+    | "checkerboard";
   structuredResponse?: unknown;
   onRequest?: (request: { path: string; body?: Record<string, unknown> }) => void;
   onImageRequest?: (request: {
@@ -119,16 +125,37 @@ async function handleRequest(
         : mode === "wrongaspect"
           ? { w: sent.w + 1, h: sent.h }
           : sent;
-  const png = await sharp({
-    create: { width: output.w, height: output.h, channels: 4, background: "#336699ff" },
-  })
-    .png()
-    .toBuffer();
+  const png =
+    mode === "checkerboard"
+      ? await checkerboard(output)
+      : await sharp({
+          create: { width: output.w, height: output.h, channels: 4, background: "#336699ff" },
+        })
+          .png()
+          .toBuffer();
   sendJson(response, 200, {
     created: 0,
     data: [{ b64_json: png.toString("base64") }],
     photoctl_fixture: { wholeframe: mode === "wholeframe" },
   });
+}
+
+async function checkerboard(dimensions: { w: number; h: number }): Promise<Buffer> {
+  const pixels = Buffer.alloc(dimensions.w * dimensions.h * 3);
+  for (let y = 0; y < dimensions.h; y += 1) {
+    for (let x = 0; x < dimensions.w; x += 1) {
+      const offset = (y * dimensions.w + x) * 3;
+      const light = (Math.floor(x / 16) + Math.floor(y / 16)) % 2 === 0;
+      pixels[offset] = light ? 230 : 30;
+      pixels[offset + 1] = Math.round((255 * x) / Math.max(1, dimensions.w - 1));
+      pixels[offset + 2] = Math.round((255 * y) / Math.max(1, dimensions.h - 1));
+    }
+  }
+  return await sharp(pixels, {
+    raw: { width: dimensions.w, height: dimensions.h, channels: 3 },
+  })
+    .png()
+    .toBuffer();
 }
 
 async function readBody(request: IncomingMessage): Promise<Buffer> {

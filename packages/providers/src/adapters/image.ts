@@ -33,6 +33,12 @@ export interface ImageModelAdapter {
     seed?: number,
   ): FormData;
   buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): FormData;
+  buildGeneration(
+    prompt: string,
+    dimensions: { w: number; h: number },
+    seed?: number,
+    reference?: { png: Buffer },
+  ): Record<string, unknown>;
   normalize(
     response: unknown,
     sentDimensions: { w: number; h: number },
@@ -116,6 +122,24 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     form.set("output_format", "png");
     if (seed !== undefined) form.set("seed", String(seed));
     return form;
+  }
+
+  buildGeneration(
+    prompt: string,
+    dimensions: { w: number; h: number },
+    seed?: number,
+    reference?: { png: Buffer },
+  ): Record<string, unknown> {
+    return {
+      model: this.model,
+      prompt,
+      size: `${dimensions.w}x${dimensions.h}`,
+      output_format: "png",
+      ...(seed === undefined ? {} : { seed }),
+      ...(reference
+        ? { reference_image: `data:image/png;base64,${reference.png.toString("base64")}` }
+        : {}),
+    };
   }
 
   async normalize(

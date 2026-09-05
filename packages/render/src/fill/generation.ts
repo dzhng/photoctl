@@ -27,6 +27,124 @@ export interface PreparedGeneration {
   executions: PreparedNodeExecution[];
 }
 
+export interface StandaloneGenerationDependencies {
+  adapter: {
+    readonly id: string;
+    readonly version: string | null;
+    normalize(
+      response: unknown,
+      sentDimensions: { w: number; h: number },
+    ): Promise<{
+      png: Buffer;
+      returnedDimensions: { w: number; h: number };
+      wholeFrame: boolean;
+      warnings: Warning[];
+    }>;
+  };
+  gateway: {
+    imageGenerations(body: Record<string, unknown>): Promise<{
+      data: unknown;
+      requestId: string | null;
+      attempts: number;
+    }>;
+  };
+  model: string;
+  service?: string;
+  now?: () => number;
+}
+
+/** Executes a source-less generation and prepares its immutable v2 graph root. */
+export async function executeStandaloneGeneration(
+  libraryPath: string,
+  input: {
+    dimensions: { w: number; h: number };
+    prompt: string;
+    promptVersion: number;
+    seed?: number;
+    referencePixels: number;
+    referenceUsed: boolean;
+    dependencies: StandaloneGenerationDependencies;
+    body: Record<string, unknown>;
+  },
+): Promise<PreparedGeneration> {
+  const executionId = newExecutionId();
+  const started = (input.dependencies.now ?? Date.now)();
+  const response = await input.dependencies.gateway.imageGenerations(input.body);
+  const normalized = await input.dependencies.adapter.normalize(response.data, input.dimensions);
+  const image = await decodeExternalImage(normalized.png, normalized.returnedDimensions);
+  const artifact = await publishArtifact(libraryPath, await normalizeArtifact(image));
+  const parameters: JsonValue = {
+    adapter: input.dependencies.adapter.id,
+    adapter_version: input.dependencies.adapter.version,
+    model: input.dependencies.model,
+    model_version: null,
+    prompt: input.prompt,
+    prompt_version: input.promptVersion,
+    request: {
+      execution_id: executionId,
+      scope: "standalone",
+      requested: [input.dimensions.w, input.dimensions.h],
+      returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
+      reference_used: input.referenceUsed,
+      ...(input.seed === undefined ? {} : { seed: input.seed }),
+    },
+  };
+  const recipe = recipeHash(
+    canonicalNodeRecipe({ kind: "generate", recipeVersion: 2, parameters, inputNodeIds: [] }),
+  );
+  const nodeId = logicalNodeId(recipe) as `node_${string}`;
+  const provider: ExternalExecutionProvenance = {
+    adapter: input.dependencies.adapter.id,
+    adapterVersion: input.dependencies.adapter.version,
+    service: input.dependencies.service ?? "gateway",
+    model: input.dependencies.model,
+    modelVersion: null,
+    providerRequestId: response.requestId,
+    seed: input.seed ?? null,
+    durationMs: Math.max(0, (input.dependencies.now ?? Date.now)() - started),
+    costUsd: 0,
+    inputPx: input.referencePixels,
+    targetPx: input.dimensions.w * input.dimensions.h,
+    attempt: response.attempts,
+    densityVerdict: "not-applicable",
+    warnings: normalized.warnings,
+  };
+  return {
+    nodeId,
+    reference: { localKey: "generation" },
+    provider,
+    image,
+    artifact,
+    returnedDimensions: normalized.returnedDimensions,
+    warnings: normalized.warnings,
+    nodes: [
+      {
+        localKey: "generation",
+        kind: "generate",
+        recipeVersion: 2,
+        parameters,
+        inputs: [],
+      },
+    ],
+    artifacts: [artifact],
+    executions: [
+      {
+        node: { localKey: "generation" },
+        executionId,
+        evaluationHash: evaluationHash({
+          nodeRecipeHash: recipe,
+          kind: "generate",
+          recipeVersion: 2,
+          inputArtifactHashes: [],
+        }),
+        outputArtifactHash: artifact.artifactHash,
+        inputArtifactHashes: [],
+        provider,
+      },
+    ],
+  };
+}
+
 export async function executeFreshGeneration(
   libraryPath: string,
   input: {

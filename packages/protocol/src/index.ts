@@ -27,3 +27,4 @@ export * from "./verbs/layers.js";
 export * from "./verbs/retouch.js";
 export * from "./verbs/reimagine.js";
 export * from "./verbs/relight.js";
+export * from "./verbs/generate.js";

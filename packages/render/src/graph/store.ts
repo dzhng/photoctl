@@ -203,201 +203,209 @@ export async function commitRevision(
   database: GraphDatabase,
   request: CommitRevisionRequest,
 ): Promise<CommitRevisionResult> {
-  assertRequestShape(request);
-  return await database.transaction(async (transaction) => {
-    const activeRevisionId = await lockDocument(transaction, request.photoId);
-    if (activeRevisionId !== request.expectedRevisionId) {
-      throw new RevisionConflictError();
-    }
-    await mapInOrder(request.artifacts ?? [], async (artifact) => {
-      await registerPublishedArtifact(transaction, artifact);
-    });
+  return await database.transaction(
+    async (transaction) => await commitRevisionInTransaction(transaction, request),
+  );
+}
 
-    const drafts = new Map(request.nodes.map((node) => [node.localKey, node]));
-    const resolved = new Map<string, StoredImageNode>();
-    const resolving = new Set<string>();
-    const resolveReference = async (reference: NodeReference): Promise<StoredImageNode> => {
-      if ("nodeId" in reference) {
-        return await loadNode(transaction, request.photoId, reference.nodeId);
-      }
-      const cached = resolved.get(reference.localKey);
-      if (cached) return cached;
-      const draft = drafts.get(reference.localKey);
-      if (!draft) throw new Error(`Unknown local graph node: ${reference.localKey}`);
-      if (resolving.has(reference.localKey)) throw new Error("Image graph cycle refused");
-      resolving.add(reference.localKey);
-      const inputs = await mapInOrder(draft.inputs, resolveReference);
-      const parameters = canonicalParameters(draft.kind, draft.recipeVersion, draft.parameters);
-      const recipe = recipeHash(
-        canonicalNodeRecipe({
-          kind: draft.kind,
-          recipeVersion: draft.recipeVersion,
-          parameters,
-          inputNodeIds: inputs.map((input) => input.id),
-        }),
-      );
-      const node: StoredImageNode = {
-        id: logicalNodeId(recipe),
-        photoId: request.photoId,
+/** Commits a revision inside a caller-owned transaction, for atomic catalog creation. */
+export async function commitRevisionInTransaction(
+  transaction: GraphTransaction,
+  request: CommitRevisionRequest,
+): Promise<CommitRevisionResult> {
+  assertRequestShape(request);
+  const activeRevisionId = await lockDocument(transaction, request.photoId);
+  if (activeRevisionId !== request.expectedRevisionId) {
+    throw new RevisionConflictError();
+  }
+  await mapInOrder(request.artifacts ?? [], async (artifact) => {
+    await registerPublishedArtifact(transaction, artifact);
+  });
+
+  const drafts = new Map(request.nodes.map((node) => [node.localKey, node]));
+  const resolved = new Map<string, StoredImageNode>();
+  const resolving = new Set<string>();
+  const resolveReference = async (reference: NodeReference): Promise<StoredImageNode> => {
+    if ("nodeId" in reference) {
+      return await loadNode(transaction, request.photoId, reference.nodeId);
+    }
+    const cached = resolved.get(reference.localKey);
+    if (cached) return cached;
+    const draft = drafts.get(reference.localKey);
+    if (!draft) throw new Error(`Unknown local graph node: ${reference.localKey}`);
+    if (resolving.has(reference.localKey)) throw new Error("Image graph cycle refused");
+    resolving.add(reference.localKey);
+    const inputs = await mapInOrder(draft.inputs, resolveReference);
+    const parameters = canonicalParameters(draft.kind, draft.recipeVersion, draft.parameters);
+    const recipe = recipeHash(
+      canonicalNodeRecipe({
         kind: draft.kind,
         recipeVersion: draft.recipeVersion,
         parameters,
-        recipeHash: recipe,
-      };
-      await storeNode(transaction, node, inputs);
-      resolving.delete(reference.localKey);
-      resolved.set(reference.localKey, node);
-      return node;
-    };
-
-    const rootUpdates = new Map<"base" | "output", string>(
-      await mapInOrder(request.rootUpdates, async (update) => {
-        const node = await resolveReference(update.node);
-        return [update.root, node.id];
+        inputNodeIds: inputs.map((input) => input.id),
       }),
     );
-    const inheritedRoots = activeRevisionId
-      ? await loadRevisionRoots(transaction, request.photoId, activeRevisionId)
-      : {};
-    const resultingRoots = { ...inheritedRoots, ...Object.fromEntries(rootUpdates) };
-    if (!resultingRoots.output) throw new Error("A revision requires an output root");
-    if (!resultingRoots.base) resultingRoots.base = resultingRoots.output;
+    const node: StoredImageNode = {
+      id: logicalNodeId(recipe),
+      photoId: request.photoId,
+      kind: draft.kind,
+      recipeVersion: draft.recipeVersion,
+      parameters,
+      recipeHash: recipe,
+    };
+    await storeNode(transaction, node, inputs);
+    resolving.delete(reference.localKey);
+    resolved.set(reference.localKey, node);
+    return node;
+  };
 
-    const preparedNodeIds = new Set<string>();
-    await mapInOrder(request.executions ?? [], async (execution) => {
-      if ("localKey" in execution.node && !resolved.has(execution.node.localKey)) {
-        throw new Error("A prepared provider execution must be reachable from an updated root");
-      }
-      const node = await resolveReference(execution.node);
-      if (node.kind !== "generate" && node.kind !== "upscale") {
-        throw new Error("Prepared provider execution requires a generate or upscale node");
-      }
-      await storePreparedExecution(transaction, request.photoId, node, execution);
-      preparedNodeIds.add(node.id);
-    });
+  const rootUpdates = new Map<"base" | "output", string>(
+    await mapInOrder(request.rootUpdates, async (update) => {
+      const node = await resolveReference(update.node);
+      return [update.root, node.id];
+    }),
+  );
+  const inheritedRoots = activeRevisionId
+    ? await loadRevisionRoots(transaction, request.photoId, activeRevisionId)
+    : {};
+  const resultingRoots = { ...inheritedRoots, ...Object.fromEntries(rootUpdates) };
+  if (!resultingRoots.output) throw new Error("A revision requires an output root");
+  if (!resultingRoots.base) resultingRoots.base = resultingRoots.output;
 
-    const newLayerIds = await storeLayerIdentities(
-      transaction,
-      request.photoId,
-      request.newLayers ?? [],
-    );
-    const layerDrafts = request.layers ?? (activeRevisionId ? undefined : []);
-    const layers = layerDrafts
-      ? await resolveLayerSnapshot(
-          transaction,
-          request.photoId,
-          layerDrafts,
-          newLayerIds,
-          resolveReference,
-          preparedNodeIds,
-        )
-      : await loadRevisionLayers(transaction, request.photoId, activeRevisionId!);
-    if (
-      request.layers === undefined &&
-      layers.length === 0 &&
-      rootUpdates.has("output") &&
-      !rootUpdates.has("base")
-    ) {
-      resultingRoots.base = resultingRoots.output;
-      rootUpdates.set("base", resultingRoots.base);
-    } else if (
-      request.layers === undefined &&
-      layers.length === 0 &&
-      rootUpdates.has("base") &&
-      !rootUpdates.has("output")
-    ) {
-      resultingRoots.output = resultingRoots.base;
-      rootUpdates.set("output", resultingRoots.output);
+  const preparedNodeIds = new Set<string>();
+  await mapInOrder(request.executions ?? [], async (execution) => {
+    if ("localKey" in execution.node && !resolved.has(execution.node.localKey)) {
+      throw new Error("A prepared provider execution must be reachable from an updated root");
     }
-    const snapshottedLayerIds = new Set(layers.map(({ id }) => id));
-    if (Object.values(newLayerIds).some((id) => !snapshottedLayerIds.has(id))) {
-      throw new Error("Every new layer identity must appear in the resulting snapshot");
+    const node = await resolveReference(execution.node);
+    if (node.kind !== "generate" && node.kind !== "upscale") {
+      throw new Error("Prepared provider execution requires a generate or upscale node");
     }
-    const retainedRoots = new Set([
-      resultingRoots.base,
-      resultingRoots.output,
-      ...layers.flatMap((layer) => [layer.contentNodeId, layer.maskNodeId]),
-    ]);
-    await assertPreparedExecutionsReachable(
+    await storePreparedExecution(transaction, request.photoId, node, execution);
+    preparedNodeIds.add(node.id);
+  });
+
+  const newLayerIds = await storeLayerIdentities(
+    transaction,
+    request.photoId,
+    request.newLayers ?? [],
+  );
+  const layerDrafts = request.layers ?? (activeRevisionId ? undefined : []);
+  const layers = layerDrafts
+    ? await resolveLayerSnapshot(
+        transaction,
+        request.photoId,
+        layerDrafts,
+        newLayerIds,
+        resolveReference,
+        preparedNodeIds,
+      )
+    : await loadRevisionLayers(transaction, request.photoId, activeRevisionId!);
+  if (
+    request.layers === undefined &&
+    layers.length === 0 &&
+    rootUpdates.has("output") &&
+    !rootUpdates.has("base")
+  ) {
+    resultingRoots.base = resultingRoots.output;
+    rootUpdates.set("base", resultingRoots.base);
+  } else if (
+    request.layers === undefined &&
+    layers.length === 0 &&
+    rootUpdates.has("base") &&
+    !rootUpdates.has("output")
+  ) {
+    resultingRoots.output = resultingRoots.base;
+    rootUpdates.set("output", resultingRoots.output);
+  }
+  const snapshottedLayerIds = new Set(layers.map(({ id }) => id));
+  if (Object.values(newLayerIds).some((id) => !snapshottedLayerIds.has(id))) {
+    throw new Error("Every new layer identity must appear in the resulting snapshot");
+  }
+  const retainedRoots = new Set([
+    resultingRoots.base,
+    resultingRoots.output,
+    ...layers.flatMap((layer) => [layer.contentNodeId, layer.maskNodeId]),
+  ]);
+  await assertPreparedExecutionsReachable(
+    transaction,
+    request.photoId,
+    resultingRoots,
+    preparedNodeIds,
+  );
+  await mapInOrder([...retainedRoots], async (nodeId) => {
+    await assertMaskArtifactsAvailable(transaction, request.photoId, nodeId);
+  });
+  await mapInOrder([...rootUpdates.values()], async (nodeId) => {
+    await assertRootActivationAllowed(
       transaction,
-      request.photoId,
-      resultingRoots,
+      await loadNode(transaction, request.photoId, nodeId),
       preparedNodeIds,
     );
-    await mapInOrder([...retainedRoots], async (nodeId) => {
-      await assertMaskArtifactsAvailable(transaction, request.photoId, nodeId);
-    });
-    await mapInOrder([...rootUpdates.values()], async (nodeId) => {
-      await assertRootActivationAllowed(
-        transaction,
-        await loadNode(transaction, request.photoId, nodeId),
-        preparedNodeIds,
-      );
-    });
-    await assertCompositeProjection(
-      transaction,
-      request.photoId,
-      resultingRoots.base,
-      resultingRoots.output,
-      layers,
+  });
+  await assertCompositeProjection(
+    transaction,
+    request.photoId,
+    resultingRoots.base,
+    resultingRoots.output,
+    layers,
+  );
+  if (resolved.size !== drafts.size) {
+    throw new Error(
+      "Every supplied graph node must be reachable from a resulting document root or layer",
     );
-    if (resolved.size !== drafts.size) {
-      throw new Error(
-        "Every supplied graph node must be reachable from a resulting document root or layer",
-      );
-    }
+  }
 
-    const revisionId = randomUUID();
-    await transaction.query(
-      `INSERT INTO document_revisions (id, photo_id, parent_revision_id, metadata)
+  const revisionId = randomUUID();
+  await transaction.query(
+    `INSERT INTO document_revisions (id, photo_id, parent_revision_id, metadata)
        VALUES ($1, $2, $3, $4::jsonb)`,
-      [
-        revisionId,
-        request.photoId,
-        activeRevisionId,
-        request.metadata === undefined ? null : canonicalJson(request.metadata),
-      ],
-    );
-    if (activeRevisionId) {
-      await transaction.query(
-        `INSERT INTO document_revision_roots (revision_id, photo_id, root_name, node_id)
+    [
+      revisionId,
+      request.photoId,
+      activeRevisionId,
+      request.metadata === undefined ? null : canonicalJson(request.metadata),
+    ],
+  );
+  if (activeRevisionId) {
+    await transaction.query(
+      `INSERT INTO document_revision_roots (revision_id, photo_id, root_name, node_id)
          SELECT $1, photo_id, root_name, node_id FROM document_revision_roots
          WHERE photo_id = $2 AND revision_id = $3`,
-        [revisionId, request.photoId, activeRevisionId],
-      );
-    }
-    await mapInOrder([...rootUpdates], async ([root, nodeId]) => {
-      await transaction.query(
-        `INSERT INTO document_revision_roots (revision_id, photo_id, root_name, node_id)
+      [revisionId, request.photoId, activeRevisionId],
+    );
+  }
+  await mapInOrder([...rootUpdates], async ([root, nodeId]) => {
+    await transaction.query(
+      `INSERT INTO document_revision_roots (revision_id, photo_id, root_name, node_id)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (photo_id, revision_id, root_name)
          DO UPDATE SET node_id = EXCLUDED.node_id`,
-        [revisionId, request.photoId, root, nodeId],
-      );
-    });
-    if (!rootUpdates.has("base")) {
-      await transaction.query(
-        `INSERT INTO document_revision_roots (revision_id, photo_id, root_name, node_id)
+      [revisionId, request.photoId, root, nodeId],
+    );
+  });
+  if (!rootUpdates.has("base")) {
+    await transaction.query(
+      `INSERT INTO document_revision_roots (revision_id, photo_id, root_name, node_id)
          VALUES ($1, $2, 'base', $3)
          ON CONFLICT (photo_id, revision_id, root_name) DO UPDATE SET node_id = EXCLUDED.node_id`,
-        [revisionId, request.photoId, resultingRoots.base],
-      );
-    }
-    await storeRevisionLayers(transaction, request.photoId, revisionId, layers);
-    await transaction.query(
-      "UPDATE photo_documents SET active_revision_id = $1 WHERE photo_id = $2",
-      [revisionId, request.photoId],
+      [revisionId, request.photoId, resultingRoots.base],
     );
-    const roots = await loadRevisionRoots(transaction, request.photoId, revisionId);
-    return {
-      revisionId,
-      nodes: Object.fromEntries(resolved),
-      roots,
-      newLayers: newLayerIds,
-      layers,
-      renderHash: roots.output ? renderHashForNode(roots.output) : null,
-    };
-  });
+  }
+  await storeRevisionLayers(transaction, request.photoId, revisionId, layers);
+  await transaction.query(
+    "UPDATE photo_documents SET active_revision_id = $1 WHERE photo_id = $2",
+    [revisionId, request.photoId],
+  );
+  const roots = await loadRevisionRoots(transaction, request.photoId, revisionId);
+  return {
+    revisionId,
+    nodes: Object.fromEntries(resolved),
+    roots,
+    newLayers: newLayerIds,
+    layers,
+    renderHash: roots.output ? renderHashForNode(roots.output) : null,
+  };
 }
 
 async function assertPreparedExecutionsReachable(
@@ -853,6 +861,7 @@ async function nodePixelKind(
   if (row.kind === "source") return "rgb";
   if (row.kind === "solid") return "rgb";
   if (row.kind === "mask") return "mask";
+  if (row.kind === "generate" && row.recipe_version === 2) return "rgb";
   const inputIds = await loadPixelInputs(transaction, photoId, nodeId, row.kind);
   const inputKinds = await mapInOrder(inputIds, async (input) => {
     return await nodePixelKind(transaction, photoId, input);

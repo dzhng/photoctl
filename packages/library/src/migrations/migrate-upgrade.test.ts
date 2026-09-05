@@ -176,7 +176,7 @@ test("the current graph fixture preserves its active lazy source revision", asyn
     expect(result).toEqual({
       fromVersion: 5,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [6, 7, 8, 9, 10, 11, 12, 13],
+      applied: [6, 7, 8, 9, 10, 11, 12, 13, 14],
     });
     expect(document.rows).toEqual([
       {
@@ -213,7 +213,7 @@ test("the current delivery fixture preserves export history", async () => {
     expect(result).toEqual({
       fromVersion: 6,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [7, 8, 9, 10, 11, 12, 13],
+      applied: [7, 8, 9, 10, 11, 12, 13, 14],
     });
     expect(history.rows).toEqual([
       {
@@ -242,7 +242,7 @@ test("the current provider fixture has the bounded external-execution seam", asy
     expect(result).toEqual({
       fromVersion: 7,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [8, 9, 10, 11, 12, 13],
+      applied: [8, 9, 10, 11, 12, 13, 14],
     });
     expect(column.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
     const revisionMetadata = await db.query<{ is_nullable: string; data_type: string }>(
@@ -292,7 +292,7 @@ test("the v8 search fixture gains typed base and output roots without changing i
     expect(result).toEqual({
       fromVersion: 8,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [9, 10, 11, 12, 13],
+      applied: [9, 10, 11, 12, 13, 14],
     });
     expect(document.rows).toEqual([
       { root_name: "base", node_id: `node_${"1".repeat(64)}`, matched: true },
@@ -347,7 +347,7 @@ test("the v9 layer fixture gains the explicit deterministic solid RGB node kind"
     expect(result).toEqual({
       fromVersion: 9,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [10, 11, 12, 13],
+      applied: [10, 11, 12, 13, 14],
     });
     expect(kinds.rows).toEqual([{ kind: "solid" }]);
   } finally {
@@ -367,7 +367,7 @@ test("the v13 revision-metadata fixture preserves its auto-enhance undo contract
        WHERE id = '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003'`,
     );
 
-    expect(result).toEqual({ fromVersion: 13, toVersion: 13, applied: [] });
+    expect(result).toEqual({ fromVersion: 13, toVersion: LATEST_SCHEMA_VERSION, applied: [14] });
     expect(revision.rows).toEqual([
       {
         metadata: {
@@ -376,6 +376,44 @@ test("the v13 revision-metadata fixture preserves its auto-enhance undo contract
           provider_execution: { operation: "auto-enhance" },
         },
       },
+    ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the v14 fixture preserves a source-less generated photo and its provider provenance", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v14.pgsql"));
+
+    const result = await migrate(db);
+    const generated = await db.query<{
+      tag: string;
+      recipe_version: number;
+      inputs: string;
+      output_kind: string;
+      seed: number;
+    }>(
+      `SELECT tag.tag, node.recipe_version,
+        (SELECT count(*)::text FROM image_node_inputs
+         WHERE photo_id = node.photo_id AND node_id = node.id) AS inputs,
+        output.kind AS output_kind,
+        (execution.provider_execution->>'seed')::integer AS seed
+       FROM image_nodes AS node
+       JOIN tags AS tag ON tag.photo_id = node.photo_id
+       JOIN node_executions AS execution
+         ON execution.photo_id = node.photo_id AND execution.node_id = node.id
+       JOIN image_node_inputs AS output_input
+         ON output_input.photo_id = node.photo_id AND output_input.input_node_id = node.id
+       JOIN image_nodes AS output
+         ON output.photo_id = output_input.photo_id AND output.id = output_input.node_id
+       WHERE node.kind = 'generate'`,
+    );
+
+    expect(result).toEqual({ fromVersion: 14, toVersion: 14, applied: [] });
+    expect(generated.rows).toEqual([
+      { tag: "generated", recipe_version: 2, inputs: "0", output_kind: "output", seed: 7 },
     ]);
   } finally {
     await db.close();

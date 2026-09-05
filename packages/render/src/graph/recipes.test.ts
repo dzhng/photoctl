@@ -75,6 +75,32 @@ test("solid RGB is an explicit deterministic zero-input recipe", () => {
   );
 });
 
+test("standalone generation is versioned separately from input-bound edits", () => {
+  const parameters = {
+    adapter: "gateway-image-v1",
+    adapter_version: "1",
+    model: "openai/gpt-image-2",
+    model_version: null,
+    prompt: "blue hour mountains",
+    prompt_version: 1,
+    request: { execution_id: `exec_${"1".repeat(64)}`, scope: "standalone" },
+  };
+  expect(() =>
+    canonicalNodeRecipe({ kind: "generate", recipeVersion: 2, parameters, inputNodeIds: [] }),
+  ).not.toThrow();
+  expect(() =>
+    canonicalNodeRecipe({ kind: "generate", recipeVersion: 1, parameters, inputNodeIds: [] }),
+  ).toThrow("generate recipe version 1 requires one input");
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "generate",
+      recipeVersion: 2,
+      parameters,
+      inputNodeIds: [`node_${"2".repeat(64)}`],
+    }),
+  ).toThrow("generate recipe version 2 requires no inputs");
+});
+
 test("heal is a deterministic RGB plus mask recipe with separate reconstruction controls", () => {
   const recipe = canonicalNodeRecipe({
     kind: "heal",

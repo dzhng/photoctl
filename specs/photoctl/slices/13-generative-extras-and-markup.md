@@ -16,9 +16,12 @@
   layer named Relight, retains `drift:"full-frame"`, stays lazy, and inherits the exact-base and atomic-failure contracts.
   The deterministic built-CLI captures and comparison telemetry live in
   [`../assets/relight-journey/`](../assets/relight-journey/).
-  `generate --prompt [--ref] [--size 1024x1024] [--seed] [--model]` → canonical generated artifact → imported photo tagged
+  ✓ `generate --prompt [--ref] [--size 1024x1024] [--seed] [--model]` → canonical generated artifact → imported photo tagged
   `generated`; it has no base-density target, so library `auto` does not invent one. Explicit `--upscale` uses the requested
-  `--size` only when the provider returned fewer pixels. Tests: `reimagine-layer.test.ts` (full target dimensions; remove restores),
+  `--size` only when the provider returned fewer pixels. Its standalone `generate@2` graph root has no invented source input; an
+  output wrapper lets the imported photo enter ordinary show/develop/export flows while the pinned execution retains provider
+  provenance and never reruns during lazy display. The deterministic visual checkpoint lives in [`../assets/generate/`](../assets/generate/).
+  Tests: `reimagine-layer.test.ts` (full target dimensions; remove restores),
   `reimagine-upscale-fallback.test.ts` (generation survives upscaler failure), `reimagine-journey.test.ts` (built CLI),
   `generate.test.ts`, `relight-template.test.ts`. Deps 12.
 - **13b** `develop <id> --auto-enhance`: `develop/stats.ts` on the 1024 sRGB preview (Rec.709 Y; p02/p50/p98/clipped/mean_sat/est_wb_k)

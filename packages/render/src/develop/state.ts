@@ -75,7 +75,7 @@ export async function readActiveDevelopState(
       ]),
     ),
   );
-  if (input.kind === "source") {
+  if (isDevelopSource(input)) {
     return {
       photoId: request.photoId,
       revisionId: document.revisionId,
@@ -97,7 +97,7 @@ export async function readActiveDevelopState(
   const developInputs = await loadInputs(database, request.photoId, input.id);
   if (developInputs.length !== 1) throw new Error("The active develop node must have one input");
   const source = await loadNode(database, request.photoId, developInputs[0]);
-  if (source.kind !== "source")
+  if (!isDevelopSource(source))
     throw new Error("The active develop node must consume the source node");
   return {
     photoId: request.photoId,
@@ -113,6 +113,10 @@ export async function readActiveDevelopState(
     renderHash: document.renderHash,
     revisionMetadata: document.metadata,
   };
+}
+
+function isDevelopSource(node: { kind: ImageNodeKind; recipeVersion: number }): boolean {
+  return node.kind === "source" || (node.kind === "generate" && node.recipeVersion === 2);
 }
 
 export async function commitDevelopState(
@@ -257,18 +261,19 @@ async function loadNode(
   database: GraphDatabase,
   photoId: string,
   nodeId: string,
-): Promise<{ id: string; kind: ImageNodeKind; parameters: JsonValue }> {
+): Promise<{ id: string; kind: ImageNodeKind; recipeVersion: number; parameters: JsonValue }> {
   const result = await database.query<{
     id: string;
     kind: ImageNodeKind;
+    recipe_version: number;
     parameters: JsonValue;
-  }>("SELECT id, kind, parameters FROM image_nodes WHERE photo_id = $1 AND id = $2", [
-    photoId,
-    nodeId,
-  ]);
+  }>(
+    "SELECT id, kind, recipe_version, parameters FROM image_nodes WHERE photo_id = $1 AND id = $2",
+    [photoId, nodeId],
+  );
   const node = result.rows[0];
   if (!node) throw new Error(`Graph node does not exist for photo: ${nodeId}`);
-  return node;
+  return { ...node, recipeVersion: node.recipe_version };
 }
 
 async function loadInputs(

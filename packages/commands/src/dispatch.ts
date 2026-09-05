@@ -53,6 +53,7 @@ import { fillCommand, type FillDependencies } from "./handlers/fill.js";
 import { retouchCommand } from "./handlers/retouch.js";
 import { reimagineCommand } from "./handlers/reimagine.js";
 import { relightCommand } from "./handlers/relight.js";
+import { generateCommand, type GenerateDependencies } from "./handlers/generate.js";
 import {
   flagCommand,
   labelCommand,
@@ -70,6 +71,7 @@ export interface DispatchContext {
   segmentation?: SegmentationDependencies;
   fill?: FillDependencies;
   develop?: DevelopDependencies;
+  generate?: GenerateDependencies;
 }
 export async function dispatch(
   request: CommandRequest,
@@ -183,6 +185,15 @@ export async function dispatch(
         request.cwd,
         context.library,
         context.fill,
+        context.emit,
+      );
+    if (request.verb === "generate")
+      return await generateCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.generate,
         context.emit,
       );
     if (request.verb === "tag")

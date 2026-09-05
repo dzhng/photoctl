@@ -1,6 +1,76 @@
 # Implementation choices
 
+## Needs-user
+
+### Slice 13a generate — Reference images use the gateway's generic JSON image field provisionally
+
+- **When:** Slice 13a standalone generation, 2026-09-05.
+- **The choice:** `generate --ref photo.jpg` rotates and normalizes the reference to PNG, then places one data URL in a
+  `reference_image` field on the existing OpenAI-compatible `images/generations` request. The command records only that a reference
+  was used, not the local path or image bytes. The fake gateway pins that wire shape. [Vercel's current GPT Image 2 surface](https://vercel.com/ai-gateway/models/gpt-image-2) advertises
+  reference images, but the public raw-REST material inspected during the pass did not name the exact field; its higher-level SDK
+  instead models a prompt as text plus an images array. The alternative is a model-specific multipart edit request, which would move
+  `--ref` off the generation route and require capability-specific adapter evidence.
+- **The gap:** The slice requires `--ref` and fixes the gateway route, but does not version the raw reference-image dialect or supply
+  live acceptance evidence.
+- **The reach:** A live gateway can reject only reference-bearing calls while text-only generation remains valid. The uncertainty is
+  isolated to `ImageModelAdapter.buildGeneration`; catalog, graph, import, and result schemas do not depend on the field name.
+- **Verdict:** **Needs-user.** Keep the keyless contract provisionally, then run one reference-image smoke with the configured release
+  model before claiming live support. If rejected, replace the adapter's request shape from provider evidence without changing the
+  command or graph contracts.
+- **Confidence:** Low; product intent is clear, but the raw transport spelling is not evidenced yet.
+
 ## Sound
+
+### Slice 13a generate — Standalone paid pixels are a source-less generation recipe
+
+- **When:** Slice 13a standalone generation, 2026-09-05.
+- **The choice:** A generated photo starts at `generate` recipe version 2 with zero graph inputs. Version 1 remains the edit/fill
+  recipe and still requires exactly one upstream photo node. An ordinary output wrapper becomes both document roots, so `show`,
+  `develop`, and `export` can treat the generated photo like any other photo without manufacturing a blank or hidden source image.
+  The provider execution pins the canonical artifact under the source-less node, so reopening or previewing the photo reuses paid
+  pixels instead of calling the provider again.
+- **The gap:** The graph's only generation recipe was defined for editing existing pixels and therefore required an input, while this
+  command intentionally has no base-density target or source photo.
+- **The reach:** Schema v14 permits version 2 only for the node kinds that genuinely own it. Future generated-photo edits build above
+  the output wrapper, and existing fill/reimagine recipes keep their old identities and arity.
+- **Verdict:** **Sound.** Versioning states the semantic difference directly and keeps all downstream image behavior on the shared
+  document graph.
+- **Confidence:** High; recipe, migration, built-show, and later-develop tests exercise both sides.
+
+### Slice 13a generate — Catalog creation and the first graph revision share the import transaction
+
+- **When:** Slice 13a standalone generation, 2026-09-05.
+- **The choice:** Provider pixels are first normalized into the existing content-addressed canonical artifact store. The ordinary
+  import preparation then identifies that TIFF, builds its pinned preview, and opens one catalog transaction. Inside that same
+  transaction it creates the photo and locator, adds the `generated` tag, registers artifacts and executions, and activates the first
+  revision. If any catalog or graph validation fails, none of those rows survive and staged preview files are rolled back. Published
+  content-addressed bytes may remain as harmless unreferenced repair/cache material, matching existing graph publication semantics.
+  Generated locators are explicitly rooted at the portable `photoctl-library` volume; host disk discovery never reclassifies an
+  artifact that already lives inside the library.
+- **The gap:** Calling the public `import` and `tag` commands sequentially would expose a half-imported photo and could not attach the
+  paid execution atomically. The graph revision owner previously always opened its own transaction.
+- **The reach:** The graph store now exposes the same revision implementation for a caller-owned transaction; regular callers still
+  use its transaction-opening wrapper. A byte-identical generated result is refused within the transaction rather than overwriting an
+  existing photo's edit history.
+- **Verdict:** **Sound.** One import owner still controls identity/cache/catalog work, and all user-visible state crosses a single
+  commit boundary.
+- **Confidence:** Medium; the duplicate-content refusal is safer than silently replacing existing intent, but future product UX may
+  want a distinct duplicate result code.
+
+### Slice 13a generate — External 8-bit samples are expanded before canonical color conversion
+
+- **When:** Slice 13a visual gate, 2026-09-05.
+- **The choice:** Sharp's decoded provider bytes are explicitly expanded from `0..255` to `0..65535` before entering the shared
+  display-sRGB 16-bit image type. Previously the buffer requested a 16-bit container, but Sharp retained the original numeric sample
+  range; dividing those values for preview made ordinary colors nearly black. The conversion now maps 128 to 32896 and 255 to 65535,
+  which preserves the full normalized display range before the canonical scene-linear conversion.
+- **The gap:** Existing fill tests asserted geometry and protected pixels but never pinned the numeric range of provider color
+  samples; the standalone visual checkpoint made the latent black-output defect visible.
+- **The reach:** Generate, fill, reimagine, and future external-image consumers share correct brightness and color scaling. No recipe
+  or stored schema changes; previously generated near-black artifacts remain immutable evidence of the old execution.
+- **Verdict:** **Sound.** The mapping is exact for every 8-bit code value and a pure boundary test owns it.
+- **Confidence:** High; the failed visual metrics, direct pixel probe, corrected telemetry, and focused unit test agree.
 
 ### Slice 12d3 — Vacancy workflow state comes from content lineage, not role
 
