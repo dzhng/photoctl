@@ -277,6 +277,49 @@ test.each([
           { version: "test", library: handle },
         );
         expect(shown).toMatchObject({ ok: true });
+        expect(
+          await dispatch(
+            {
+              verb: "segment",
+              args: [execution.photo_id, "--box", "0,0,2,2"],
+              cwd: directory,
+              env: { noDaemon: true, cacheRoot: join(directory, "cache") },
+            },
+            { version: "test", library: handle },
+          ),
+        ).toMatchObject({ ok: true });
+        await writeFile(path, expected);
+        expect(
+          await dispatch(
+            {
+              verb: "remove",
+              args: [execution.photo_id],
+              cwd: directory,
+              env: { noDaemon: true, cacheRoot: join(directory, "cache") },
+            },
+            { version: "test", library: handle },
+          ),
+        ).toMatchObject({ ok: true });
+        expect(
+          await dispatch(
+            {
+              verb: "graph",
+              args: ["attempt", attempt.id],
+              cwd: directory,
+              env: { noDaemon: true },
+            },
+            { version: "test", library: handle },
+          ),
+        ).toMatchObject({
+          ok: true,
+          data: {
+            state: "committed",
+            original: { artifact_hash: attempt.original_artifact_hash, available: true },
+            executions: [],
+          },
+        });
+        expect((await handle.query("SELECT id FROM photos")).rows).toEqual([]);
+        expect(await readFile(path)).toEqual(expected);
       }
       if (mode === "wrongaspect") {
         const backup = (await createBackup(handle)).path;

@@ -10,6 +10,7 @@ export * from "./mask-tiff.js";
 export * from "./graph/types.js";
 export * from "./graph/recipes.js";
 export * from "./graph/store.js";
+export * from "./graph/removal.js";
 export * from "./graph/output.js";
 export * from "./graph/evaluator.js";
 export { loadBaseProjection, loadLogicalFrame, projectMaskToRender } from "./graph/projection.js";

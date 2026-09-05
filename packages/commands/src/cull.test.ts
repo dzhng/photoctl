@@ -1,5 +1,6 @@
 import { initializeLibrary, newLibraryEntityId } from "@photoctl/library";
 import type { CommandRequest } from "@photoctl/protocol";
+import { ensurePhotoDocument } from "@photoctl/render";
 import { access, mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -280,53 +281,90 @@ test.each([[["--from-disk"]], [[]]])(
   },
 );
 
-test("remove commits catalog deletion only after source trash and cache staging succeed", async () => {
-  const root = await mkdtemp(join(tmpdir(), "photoctl-remove-"));
-  const mount = join(root, "drive");
-  const cache = join(root, "cache");
-  const library = await initializeLibrary(join(root, "library"));
-  const id = newLibraryEntityId();
-  const source = join(mount, "frame.jpg");
-  try {
-    await mkdir(mount);
-    await writeFile(source, "source");
-    await seedPhoto(library.handle, id, "ck_6000000000000001", "2025-01-01T10:00:00Z");
-    await seedLocator(library.handle, id, "frame.jpg");
-    const preview = join(cache, library.libraryId, "emb", `${id}.jpg`);
-    await mkdir(join(cache, library.libraryId, "emb"), { recursive: true });
-    await writeFile(preview, "preview");
-    await library.handle.query(
-      "INSERT INTO cache_index (path, bytes, last_used, pinned) VALUES ($1, 7, now(), true)",
-      [`emb/${id}.jpg`],
-    );
+test.each([false, true])(
+  "remove restores source, cache and graph when post-teardown failure is %s",
+  async (failDelete) => {
+    const root = await mkdtemp(join(tmpdir(), "photoctl-remove-"));
+    const mount = join(root, "drive");
+    const cache = join(root, "cache");
+    const library = await initializeLibrary(join(root, "library"));
+    const id = newLibraryEntityId();
+    const source = join(mount, "frame.jpg");
+    try {
+      await mkdir(mount);
+      await writeFile(source, "source");
+      await seedPhoto(library.handle, id, "ck_6000000000000001", "2025-01-01T10:00:00Z");
+      await seedLocator(library.handle, id, "frame.jpg");
+      const graph = await ensurePhotoDocument(library.handle, { photoId: id, orientation: 1 });
+      if (failDelete) {
+        await library.handle.query(
+          "CREATE FUNCTION reject_photo_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced photo delete failure'; END $$",
+        );
+        await library.handle.query(
+          "CREATE TRIGGER reject_photo_delete BEFORE DELETE ON photos FOR EACH ROW EXECUTE FUNCTION reject_photo_delete()",
+        );
+      }
+      const preview = join(cache, library.libraryId, "emb", `${id}.jpg`);
+      await mkdir(join(cache, library.libraryId, "emb"), { recursive: true });
+      await writeFile(preview, "preview");
+      await library.handle.query(
+        "INSERT INTO cache_index (path, bytes, last_used, pinned) VALUES ($1, 7, now(), true)",
+        [`emb/${id}.jpg`],
+      );
 
-    const result = await dispatch(
-      {
-        ...request("remove", [id, "--from-disk"], `${mount}=test-volume:online`),
-        env: {
-          noDaemon: true,
-          volumeMap: `${mount}=test-volume:online`,
-          cacheRoot: cache,
+      const pending = dispatch(
+        {
+          ...request("remove", [id, "--from-disk"], `${mount}=test-volume:online`),
+          env: {
+            noDaemon: true,
+            volumeMap: `${mount}=test-volume:online`,
+            cacheRoot: cache,
+          },
         },
-      },
-      { version: "test", library: library.handle },
-    );
+        { version: "test", library: library.handle },
+      );
 
-    expect(result).toMatchObject({ ok: true, summary: { ok: 1, failed: 0 } });
-    await expect(access(source)).rejects.toMatchObject({ code: "ENOENT" });
-    await expect(access(preview)).rejects.toMatchObject({ code: "ENOENT" });
-    expect(
-      (await readdir(join(mount, ".trash"))).some((name) => name.startsWith("frame.jpg.")),
-    ).toBe(true);
-    const count = await library.handle.query<{ count: string }>(
-      "SELECT count(*)::text AS count FROM photos",
-    );
-    expect(count.rows).toEqual([{ count: "0" }]);
-  } finally {
-    await library.handle.close();
-    await rm(root, { recursive: true });
-  }
-});
+      if (failDelete) {
+        await expect(pending).rejects.toThrow("forced photo delete failure");
+        await expect(access(source)).resolves.toBeUndefined();
+        await expect(access(preview)).resolves.toBeUndefined();
+        expect(
+          (
+            await library.handle.query(
+              "SELECT active_revision_id FROM photo_documents WHERE photo_id = $1",
+              [id],
+            )
+          ).rows,
+        ).toEqual([{ active_revision_id: graph.revisionId }]);
+        expect(
+          (
+            await library.handle.query(
+              "SELECT node_id FROM document_revision_roots WHERE photo_id = $1 AND root_name = 'output'",
+              [id],
+            )
+          ).rows,
+        ).toEqual([{ node_id: graph.outputNodeId }]);
+        expect((await library.handle.query("SELECT path FROM cache_index")).rows).toEqual([
+          { path: `emb/${id}.jpg` },
+        ]);
+        return;
+      }
+      expect(await pending).toMatchObject({ ok: true, summary: { ok: 1, failed: 0 } });
+      await expect(access(source)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(access(preview)).rejects.toMatchObject({ code: "ENOENT" });
+      expect(
+        (await readdir(join(mount, ".trash"))).some((name) => name.startsWith("frame.jpg.")),
+      ).toBe(true);
+      const count = await library.handle.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM photos",
+      );
+      expect(count.rows).toEqual([{ count: "0" }]);
+    } finally {
+      await library.handle.close();
+      await rm(root, { recursive: true });
+    }
+  },
+);
 
 test("rollback failure is surfaced with every path that could not be restored", async () => {
   await expect(

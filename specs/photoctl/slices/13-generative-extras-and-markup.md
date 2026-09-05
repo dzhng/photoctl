@@ -135,11 +135,16 @@ independent-attempt deduplication, typed commit/cache failures and metadata-only
 preserve metadata, orientation and extra encoded frames while independently enforcing working validators.
 No live provider or photographic quality claim is made by these retention checks.
 
-**Open deletion checkpoint:** the public `generate` → `show` → `remove` flow currently fails at the
-existing raw photo DELETE with `image_node_inputs_photo_id_input_node_id_fkey`. The attempt journal
-has no photo owner and is included directly in artifact retention, but public deletion retention is
-not yet verified. A focused follow-on must fix graph-photo teardown in the existing remove transaction
-and rerun that public journey; manually removing graph relations is not evidence that `remove` works.
+Photo removal clears the selected photo's graph references inside the existing catalog-removal
+transaction before deleting the photo. This ordering satisfies immutable graph foreign keys without
+weakening them. Attempts and artifacts remain library-owned, including originals shared by other
+photos. The public generated-photo removal journey retains inspectable originals without provider
+replay; a forced post-teardown failure restores the graph together with staged source/cache files.
+
+**Separate output checkpoint:** standalone generation with explicit upscale currently fails `show`
+at the develop-state traversal with “Develop state cannot be replaced beneath upscale before layers
+land.” Retention and removal do not change that traversal; the upscaled standalone display journey
+still needs its own correction and regression.
 
 ## Checkpoints: one artifact per sub-slice, one variable each; all inherit the root visual gates and non-blocking review rule.
 

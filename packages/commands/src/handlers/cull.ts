@@ -1,4 +1,5 @@
 import { cacheRootForLibrary, formatShotInstant, pinnedEmbeddedJpegPath } from "@photoctl/importer";
+import { deletePhotoGraphs } from "@photoctl/render";
 import {
   createVolumeResolver,
   DirTrash,
@@ -300,6 +301,7 @@ export async function removeCommand(
     }
     await lease.handle.query("BEGIN");
     try {
+      await deletePhotoGraphs(lease.handle, ids);
       await lease.handle.query("DELETE FROM photos WHERE id = ANY($1::uuid[])", [ids]);
       await lease.handle.query(
         `DELETE FROM cache_index
