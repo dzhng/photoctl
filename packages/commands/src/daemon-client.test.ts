@@ -85,3 +85,14 @@ test("embed timeout still honors a longer foreground queue budget", () => {
 
   expect(timeout).toBe(61_000);
 });
+
+test("export idle timeout permits heartbeat frames even with immediate queue admission", () => {
+  const timeout = requestTimeout({
+    verb: "export",
+    args: ["0199a7c2-0000-7000-8000-000000000001", "--to", "/tmp/delivery"],
+    cwd: "/",
+    env: { noDaemon: false, lockBudgetMs: "0" },
+  });
+
+  expect(timeout).toBeGreaterThan(5_000);
+});

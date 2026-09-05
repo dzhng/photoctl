@@ -107,7 +107,13 @@ export async function dispatch(
         context.previewCoordinator,
       );
     if (request.verb === "export")
-      return await exportCommand(request.args, request.env, request.cwd, context.library);
+      return await exportCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.emit,
+      );
     if (request.verb === "decode")
       return await decodeCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "graph")

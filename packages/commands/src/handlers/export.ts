@@ -4,6 +4,7 @@ import {
   type Envelope,
   type ErrorCode,
   type ExportResult,
+  type StderrEvent,
   type Warning,
 } from "@photoctl/protocol";
 import { cacheRootForLibrary, formatShotInstant } from "@photoctl/importer";
@@ -43,6 +44,7 @@ import {
 } from "../graph-source.js";
 import { loadPhoto, type StoredPhoto } from "../photo.js";
 import { runSerially } from "../serial.js";
+import { createProgressHeartbeat } from "../progress.js";
 
 interface EffectiveExportOptions {
   to: string;
@@ -75,6 +77,7 @@ export async function exportCommand(
   env: RequestEnv,
   cwd: string,
   provided?: LibraryHandle,
+  emit?: (event: StderrEvent) => void | Promise<void>,
 ): Promise<Envelope> {
   const parsed = parseExportArguments(args);
   if (parsed.inputs.length === 0)
@@ -82,6 +85,19 @@ export async function exportCommand(
 
   const lease = await openRequestLibrary(env, cwd, provided);
   const { handle } = lease;
+  const progress = createProgressHeartbeat({
+    emit:
+      emit &&
+      (async (event) => {
+        try {
+          await emit(event);
+        } catch {
+          // Progress is advisory; a broken side channel must not abort file delivery.
+        }
+      }),
+    phase: "export",
+    total: parsed.inputs.length,
+  });
   try {
     const options = await effectiveOptions(parsed.overrides, handle.path, cwd);
     const outputDirectory = resolve(cwd, options.to);
@@ -92,6 +108,7 @@ export async function exportCommand(
         path: outputDirectory,
       });
     }
+    await progress.start();
     const snapshots = await snapshotBatch(handle, parsed.inputs);
     const libraryId = await readLibraryId(handle);
     const resolver = createVolumeResolver(env.volumeMap, handle.path);
@@ -104,6 +121,7 @@ export async function exportCommand(
       async ({ snapshot, sequence }) => {
         if ("failure" in snapshot) {
           results.push(snapshot.failure);
+          await progress.advance(1);
           return;
         }
         warnings.push(...snapshot.warnings);
@@ -131,6 +149,8 @@ export async function exportCommand(
             return;
           }
           throw error;
+        } finally {
+          await progress.advance(1);
         }
       },
     );
@@ -148,7 +168,11 @@ export async function exportCommand(
     }
     return { schema: 1, ok: true, summary: { ok: results.length, failed: 0 }, results, warnings };
   } finally {
-    await lease.release();
+    try {
+      await progress.stop();
+    } finally {
+      await lease.release();
+    }
   }
 }
 

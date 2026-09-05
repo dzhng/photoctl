@@ -1,6 +1,6 @@
 import type { StderrEvent } from "@photoctl/protocol";
 
-export const PROVIDER_PROGRESS_INTERVAL_MS = 5_000;
+const PROGRESS_INTERVAL_MS = 5_000;
 
 export function createProgressHeartbeat(options: {
   emit?: (event: StderrEvent) => void | Promise<void>;
@@ -33,7 +33,7 @@ export function createProgressHeartbeat(options: {
             await new Promise<void>((resolveSleep) => {
               const timer = setTimeout(
                 resolveSleep,
-                options.intervalMs ?? PROVIDER_PROGRESS_INTERVAL_MS,
+                options.intervalMs ?? PROGRESS_INTERVAL_MS,
               );
               wake = () => {
                 clearTimeout(timer);

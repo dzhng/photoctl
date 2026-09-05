@@ -4,6 +4,7 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
+import type { StderrEvent } from "@photoctl/protocol";
 import { commitRevision } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
 
@@ -11,54 +12,67 @@ function imageMean(stats: Awaited<ReturnType<typeof sharp.prototype.stats>>): nu
   return stats.channels.slice(0, 3).reduce((sum, channel) => sum + channel.mean, 0) / 3;
 }
 
-test("a preview and following export identify the same snapped render state", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "photoctl-export-hash-"));
-  const source = join(directory, "photo.jpg");
-  const libraryPath = join(directory, "library");
-  const cacheRoot = join(directory, "cache");
-  const initialized = await initializeLibrary(libraryPath);
-  try {
-    await sharp({ create: { width: 120, height: 80, channels: 3, background: "#864" } })
-      .jpeg()
-      .toFile(source);
-    const env = {
-      noDaemon: true,
-      libraryPath,
-      cacheRoot,
-      volumeMap: `${directory}=fixture-volume:online`,
-    };
-    const imported = await dispatch(
-      { verb: "import", args: [source, "--link"], cwd: directory, env },
-      { version: "test", library: initialized.handle },
-    );
-    if (!imported.ok || !("data" in imported)) throw new Error("fixture import failed");
-    const id = (imported.data as { ids: string[] }).ids[0];
-    const shown = await dispatch(
-      { verb: "show", args: [id], cwd: directory, env },
-      { version: "test", library: initialized.handle },
-    );
-    const exported = await dispatch(
-      { verb: "export", args: [id, "--to", join(directory, "out")], cwd: directory, env },
-      { version: "test", library: initialized.handle },
-    );
+test.each([false, true])(
+  "a preview and following export identify the same snapped render state (broken progress: %s)",
+  async (brokenProgress) => {
+    const directory = await mkdtemp(join(tmpdir(), "photoctl-export-hash-"));
+    const source = join(directory, "photo.jpg");
+    const libraryPath = join(directory, "library");
+    const cacheRoot = join(directory, "cache");
+    const initialized = await initializeLibrary(libraryPath);
+    try {
+      await sharp({ create: { width: 120, height: 80, channels: 3, background: "#864" } })
+        .jpeg()
+        .toFile(source);
+      const env = {
+        noDaemon: true,
+        libraryPath,
+        cacheRoot,
+        volumeMap: `${directory}=fixture-volume:online`,
+      };
+      const imported = await dispatch(
+        { verb: "import", args: [source, "--link"], cwd: directory, env },
+        { version: "test", library: initialized.handle },
+      );
+      if (!imported.ok || !("data" in imported)) throw new Error("fixture import failed");
+      const id = (imported.data as { ids: string[] }).ids[0];
+      const shown = await dispatch(
+        { verb: "show", args: [id], cwd: directory, env },
+        { version: "test", library: initialized.handle },
+      );
+      const events: StderrEvent[] = [];
+      const exported = await dispatch(
+        { verb: "export", args: [id, "--to", join(directory, "out")], cwd: directory, env },
+        {
+          version: "test",
+          library: initialized.handle,
+          emit: (event) => {
+            events.push(event);
+            if (brokenProgress) throw new Error("Progress connection closed");
+          },
+        },
+      );
 
-    expect(shown).toMatchObject({ schema: 1, ok: true });
-    expect(exported).toMatchObject({ schema: 1, ok: true });
-    expect((exported as { results: Array<{ render_hash: string }> }).results[0].render_hash).toBe(
-      (shown as { data: { render_hash: string } }).data.render_hash,
-    );
-    const preview = (shown as { data: { preview: string } }).data.preview;
-    const output = (exported as { results: Array<{ file: string }> }).results[0].file;
-    const [sourceMean, previewMean, outputMean] = await Promise.all(
-      [source, preview, output].map(async (path) => imageMean(await sharp(path).stats())),
-    );
-    expect(previewMean).toBeCloseTo(sourceMean, 0);
-    expect(outputMean).toBeCloseTo(sourceMean, 0);
-  } finally {
-    await initialized.handle.close();
-    await rm(directory, { recursive: true });
-  }
-});
+      expect(shown).toMatchObject({ schema: 1, ok: true });
+      expect(exported).toMatchObject({ schema: 1, ok: true });
+      expect(events[0]).toEqual({ event: "progress", phase: "export", done: 0, total: 1 });
+      expect(events.at(-1)).toEqual({ event: "progress", phase: "export", done: 1, total: 1 });
+      expect((exported as { results: Array<{ render_hash: string }> }).results[0].render_hash).toBe(
+        (shown as { data: { render_hash: string } }).data.render_hash,
+      );
+      const preview = (shown as { data: { preview: string } }).data.preview;
+      const output = (exported as { results: Array<{ file: string }> }).results[0].file;
+      const [sourceMean, previewMean, outputMean] = await Promise.all(
+        [source, preview, output].map(async (path) => imageMean(await sharp(path).stats())),
+      );
+      expect(previewMean).toBeCloseTo(sourceMean, 0);
+      expect(outputMean).toBeCloseTo(sourceMean, 0);
+    } finally {
+      await initialized.handle.close();
+      await rm(directory, { recursive: true });
+    }
+  },
+);
 
 test("export evaluates the snapped output node to a canonical artifact", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-export-evaluator-"));
