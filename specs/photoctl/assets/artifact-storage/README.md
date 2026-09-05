@@ -38,3 +38,19 @@ These small opaque RGB8 examples do not settle alpha, HDR, wide-gamut, provider 
 memory, or representative undo-history storage. Automatic canonical-artifact deletion stays disabled;
 there is still no measured count/age/storage policy. The tiny flat fake's compression ratio must not be
 used to estimate photographic libraries.
+
+## Full-resolution local history
+
+The [native-history witness](history-measurement.json) drives the built CLI through import,
+two exposure changes, an identical repeated change, a crop and reset on the full A7C II frame.
+It compares actual canonical-file sizes with catalog rows after stopping the daemon. Distinct
+rendered grades retain separate full-frame float TIFFs; a half-width/half-height crop adds a
+quarter-area artifact. Repeating the edit and resetting add no pixel files, even though reset
+has its own logical render state. Pixel reuse and revision count therefore cannot be treated
+as the same storage quantity.
+
+This closes the missing full-resolution local-size witness, not representative paid-history
+measurement or a retention policy. A bounded policy must separately account for active graph
+dependencies, original paid responses, pinned snapshots and reconstructible working pixels;
+an artifact count alone does not express their different recovery costs. Timings in the report
+were collected under concurrent build/test load and are not performance acceptance.

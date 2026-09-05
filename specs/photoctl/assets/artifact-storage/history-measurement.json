@@ -1,0 +1,296 @@
+{
+  "date": "2026-09-06",
+  "scope": "Full-resolution local develop-history storage witness; no automatic deletion or representative paid-history policy acceptance",
+  "base_commit": "baa0359",
+  "fixture": "fixtures/a7c2.ARW",
+  "fixture_sha256": "55de0ff9abbd11c2d166fdd8cfa99129ef8478f2895a65105253e6fcdfdba430",
+  "method": {
+    "runtime": "Node 24.14.0",
+    "route": "Built CLI through one persistent daemon; full native show after each edit; actual artifact files statted and then checked against the catalog after stopping the daemon",
+    "steps": [
+      "import --link; show --preview-size native",
+      "develop --set exposure=0.3; native show",
+      "develop --set exposure=0.6; native show",
+      "repeat exposure=0.6; native show",
+      "develop --set crop={x:500,y:300,w:3504,h:2336}; native show",
+      "develop --reset; native show"
+    ],
+    "conditions": "Concurrent isolated ORT compilation and focused tests; command timings are diagnostic, not performance acceptance",
+    "no_provider_calls": true,
+    "no_original_writes": true,
+    "daemon_stopped": true
+  },
+  "stages": [
+    {
+      "name": "source",
+      "render_hash": "r_2bb40ec3ab2690533ea1c9d293012027d675dd77e8f364d9aff37ad87b42b258",
+      "actual": {
+        "region": [
+          0,
+          0,
+          7008,
+          4672
+        ],
+        "w": 7008,
+        "h": 4672
+      },
+      "source_tier": "online-file",
+      "files": [
+        {
+          "name": "a_9be2e0a4d83571011d196064efd18c86a687db17fc2c301a42dc38bc2ae28fa1.tif",
+          "bytes": 392897322
+        }
+      ],
+      "total_bytes": 392897322
+    },
+    {
+      "name": "exposure_0_3",
+      "render_hash": "r_4539a4fcf00a7ba427d474c3bc9fb89e3ad522a663f90e73dbc7da11e629f4fa",
+      "actual": {
+        "region": [
+          0,
+          0,
+          7008,
+          4672
+        ],
+        "w": 7008,
+        "h": 4672
+      },
+      "source_tier": "online-file",
+      "files": [
+        {
+          "name": "a_1e56f99f2000674f53e6f70b8dbc2de2f283bfb032abfff50265593e0c01d5a0.tif",
+          "bytes": 392897322
+        },
+        {
+          "name": "a_9be2e0a4d83571011d196064efd18c86a687db17fc2c301a42dc38bc2ae28fa1.tif",
+          "bytes": 392897322
+        }
+      ],
+      "total_bytes": 785794644
+    },
+    {
+      "name": "exposure_0_6",
+      "render_hash": "r_749ff08877f647e1e8fcedbba60099574b70cca56213ffc479b37a3145d6aab2",
+      "actual": {
+        "region": [
+          0,
+          0,
+          7008,
+          4672
+        ],
+        "w": 7008,
+        "h": 4672
+      },
+      "source_tier": "online-file",
+      "files": [
+        {
+          "name": "a_1e56f99f2000674f53e6f70b8dbc2de2f283bfb032abfff50265593e0c01d5a0.tif",
+          "bytes": 392897322
+        },
+        {
+          "name": "a_9be2e0a4d83571011d196064efd18c86a687db17fc2c301a42dc38bc2ae28fa1.tif",
+          "bytes": 392897322
+        },
+        {
+          "name": "a_a382f2996cafe88aeb595e840ecce3141d0483252d3f38770b3c93b286a9ff86.tif",
+          "bytes": 392897322
+        }
+      ],
+      "total_bytes": 1178691966
+    },
+    {
+      "name": "repeat_0_6",
+      "render_hash": "r_749ff08877f647e1e8fcedbba60099574b70cca56213ffc479b37a3145d6aab2",
+      "actual": {
+        "region": [
+          0,
+          0,
+          7008,
+          4672
+        ],
+        "w": 7008,
+        "h": 4672
+      },
+      "source_tier": "online-file",
+      "files": [
+        {
+          "name": "a_1e56f99f2000674f53e6f70b8dbc2de2f283bfb032abfff50265593e0c01d5a0.tif",
+          "bytes": 392897322
+        },
+        {
+          "name": "a_9be2e0a4d83571011d196064efd18c86a687db17fc2c301a42dc38bc2ae28fa1.tif",
+          "bytes": 392897322
+        },
+        {
+          "name": "a_a382f2996cafe88aeb595e840ecce3141d0483252d3f38770b3c93b286a9ff86.tif",
+          "bytes": 392897322
+        }
+      ],
+      "total_bytes": 1178691966
+    },
+    {
+      "name": "half_dimensions_crop",
+      "render_hash": "r_5b37d72c5eb35850dbdc13e50277d36e108ed55200f589cc4208374c0fac1181",
+      "actual": {
+        "region": [
+          500,
+          300,
+          3504,
+          2336
+        ],
+        "w": 3504,
+        "h": 2336
+      },
+      "source_tier": "online-file",
+      "files": [
+        {
+          "name": "a_10dbf4bafe978060c41cdbddfce83f3593ba4ab97a3436c2d256280be88c7003.tif",
+          "bytes": 98224938
+        },
+        {
+          "name": "a_1e56f99f2000674f53e6f70b8dbc2de2f283bfb032abfff50265593e0c01d5a0.tif",
+          "bytes": 392897322
+        },
+        {
+          "name": "a_9be2e0a4d83571011d196064efd18c86a687db17fc2c301a42dc38bc2ae28fa1.tif",
+          "bytes": 392897322
+        },
+        {
+          "name": "a_a382f2996cafe88aeb595e840ecce3141d0483252d3f38770b3c93b286a9ff86.tif",
+          "bytes": 392897322
+        }
+      ],
+      "total_bytes": 1276916904
+    },
+    {
+      "name": "reset",
+      "render_hash": "r_02a2b7250ab73d88b5bc38476b8e2d2544aafe9babb03fba0cf9dc5b24866f34",
+      "actual": {
+        "region": [
+          0,
+          0,
+          7008,
+          4672
+        ],
+        "w": 7008,
+        "h": 4672
+      },
+      "source_tier": "online-file",
+      "files": [
+        {
+          "name": "a_10dbf4bafe978060c41cdbddfce83f3593ba4ab97a3436c2d256280be88c7003.tif",
+          "bytes": 98224938
+        },
+        {
+          "name": "a_1e56f99f2000674f53e6f70b8dbc2de2f283bfb032abfff50265593e0c01d5a0.tif",
+          "bytes": 392897322
+        },
+        {
+          "name": "a_9be2e0a4d83571011d196064efd18c86a687db17fc2c301a42dc38bc2ae28fa1.tif",
+          "bytes": 392897322
+        },
+        {
+          "name": "a_a382f2996cafe88aeb595e840ecce3141d0483252d3f38770b3c93b286a9ff86.tif",
+          "bytes": 392897322
+        }
+      ],
+      "total_bytes": 1276916904
+    }
+  ],
+  "revisions": 5,
+  "artifacts": [
+    {
+      "media_type": "image/tiff",
+      "validation_profile": "linear-rgb-tiff",
+      "w": 7008,
+      "h": 4672,
+      "bytes": "392897322"
+    },
+    {
+      "media_type": "image/tiff",
+      "validation_profile": "linear-rgb-tiff",
+      "w": 7008,
+      "h": 4672,
+      "bytes": "392897322"
+    },
+    {
+      "media_type": "image/tiff",
+      "validation_profile": "linear-rgb-tiff",
+      "w": 7008,
+      "h": 4672,
+      "bytes": "392897322"
+    },
+    {
+      "media_type": "image/tiff",
+      "validation_profile": "linear-rgb-tiff",
+      "w": 3504,
+      "h": 2336,
+      "bytes": "98224938"
+    }
+  ],
+  "command_timings": [
+    {
+      "command": "init",
+      "elapsed_ms": 1789
+    },
+    {
+      "command": "import",
+      "elapsed_ms": 192
+    },
+    {
+      "command": "show",
+      "elapsed_ms": 30957
+    },
+    {
+      "command": "develop",
+      "elapsed_ms": 228
+    },
+    {
+      "command": "show",
+      "elapsed_ms": 61660
+    },
+    {
+      "command": "develop",
+      "elapsed_ms": 385
+    },
+    {
+      "command": "show",
+      "elapsed_ms": 83854
+    },
+    {
+      "command": "develop",
+      "elapsed_ms": 256
+    },
+    {
+      "command": "show",
+      "elapsed_ms": 803
+    },
+    {
+      "command": "develop",
+      "elapsed_ms": 205
+    },
+    {
+      "command": "show",
+      "elapsed_ms": 52440
+    },
+    {
+      "command": "develop",
+      "elapsed_ms": 200
+    },
+    {
+      "command": "show",
+      "elapsed_ms": 37417
+    },
+    {
+      "command": "daemon",
+      "elapsed_ms": 383
+    }
+  ],
+  "limits": [
+    "One uncompressed A7C II photograph and local edits only; not a multi-photo or paid provider workload.",
+    "Canonical TIFF bytes exclude PGlite, previews, source originals, process memory and filesystem physical allocation.",
+    "The reset has its own logical render hash, but reuses already-published pixel bytes. No claim of recipe equivalence.",
+    "Count/age/storage retention policy remains open; this measurement neither deletes artifacts nor proves arbitrary undo histories are bounded."
+  ]
+}
