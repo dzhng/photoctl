@@ -7,12 +7,13 @@ mod mask;
 mod publication;
 mod resample;
 pub mod sam2;
+mod task_memory;
 mod tone_curve;
 
 use std::path::Path;
 
 use napi::{
-    Error, Status, Task,
+    Env, Error, Status, Task,
     bindgen_prelude::{AsyncTask, Float32Array, Uint8Array, Uint16Array},
 };
 use napi_derive::napi;
@@ -32,6 +33,7 @@ pub use resample::{
     resample_display_srgb, resample_display_srgb_region, resample_display_srgb8,
     resample_mask_region, resample_pixels, transform_pixels,
 };
+use task_memory::TaskMemory;
 
 #[napi]
 pub fn draw_markup_pixels(
@@ -336,21 +338,25 @@ fn solid_rgb(samples: usize, rgb: [f32; 3]) -> Vec<f32> {
 
 #[napi]
 pub fn develop_camera_front(
+    env: Env,
     data: Float32Array,
     white_level: f64,
     black_level: f64,
     cam_xyz: Vec<f64>,
     as_shot_wb: Vec<f64>,
     wb_pre_applied: bool,
-) -> AsyncTask<CameraFrontTask> {
-    AsyncTask::new(CameraFrontTask {
-        data: data.to_vec(),
+) -> napi::Result<AsyncTask<CameraFrontTask>> {
+    let data = data.to_vec();
+    let memory = TaskMemory::for_vec(env, &data)?;
+    Ok(AsyncTask::new(CameraFrontTask {
+        data,
+        memory,
         white_level: white_level as f32,
         black_level: black_level as f32,
         cam_xyz,
         as_shot_wb,
         wb_pre_applied,
-    })
+    }))
 }
 
 #[napi]
@@ -361,10 +367,13 @@ pub fn convert_display_srgb_to_linear_rec2020(data: Uint16Array) -> AsyncTask<Di
 }
 
 #[napi]
-pub fn convert_linear_rec2020_to_display_srgb(data: Float32Array) -> AsyncTask<DisplayBackTask> {
-    AsyncTask::new(DisplayBackTask {
-        data: data.to_vec(),
-    })
+pub fn convert_linear_rec2020_to_display_srgb(
+    env: Env,
+    data: Float32Array,
+) -> napi::Result<AsyncTask<DisplayBackTask>> {
+    let data = data.to_vec();
+    let memory = TaskMemory::for_vec(env, &data)?;
+    Ok(AsyncTask::new(DisplayBackTask { data, memory }))
 }
 
 #[napi]
@@ -552,6 +561,7 @@ pub fn validate_linear_artifact_samples(
 
 pub struct CameraFrontTask {
     data: Vec<f32>,
+    memory: TaskMemory,
     white_level: f32,
     black_level: f32,
     cam_xyz: Vec<f64>,
@@ -576,6 +586,7 @@ impl Task for CameraFrontTask {
     }
 
     fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        self.memory.release()?;
         Ok(DevelopedImageResult {
             data: data.into(),
             space: "scene-linear-rec2020".to_owned(),
@@ -592,6 +603,7 @@ pub struct DisplayFrontTask {
 
 pub struct DisplayBackTask {
     data: Vec<f32>,
+    memory: TaskMemory,
 }
 
 pub struct DevelopTask {
@@ -845,6 +857,7 @@ impl Task for DisplayBackTask {
     }
 
     fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        self.memory.release()?;
         Ok(data.into())
     }
 }

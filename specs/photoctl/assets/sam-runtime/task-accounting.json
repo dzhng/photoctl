@@ -1,0 +1,39 @@
+{
+  "date": "2026-09-06",
+  "scope": "camera-front and display-back asynchronous pointwise task snapshots",
+  "runtime": "Node 24.14.0, napi-rs 3.12.2, Apple M5 Pro",
+  "oracle": {
+    "metric": "trace-gc-verbose External memory reported",
+    "units": "KiB",
+    "source": "https://github.com/nodejs/node/blob/v24.14.0/deps/v8/src/heap/heap.cc#L623-L626",
+    "excludedMetric": "process.memoryUsage().external and v8.getHeapStatistics().external_memory report backing_store_bytes, not the manual counter",
+    "excludedMetricSource": "https://github.com/nodejs/node/blob/v24.14.0/deps/v8/src/api/api.cc#L9561-L9564",
+    "testOnlyGc": true,
+    "rssAcceptance": false
+  },
+  "reproduction": "bunx vitest run packages/img/src/color-memory.test.ts packages/render/src/color.test.ts after building and packaging the native addon",
+  "pending": {
+    "snapshotBytes": 3145728,
+    "expectedIncreaseKiB": 3072,
+    "disabledAccountingIncreaseKiB": { "camera": 0, "display": 0 },
+    "accountedIncreaseKiB": { "camera": 3072, "display": 3072 }
+  },
+  "transfer": {
+    "expectedIncreaseKiB": 3072,
+    "disabledDischargeIncreaseKiB": { "camera": 6144, "display": 6144 },
+    "dischargedIncreaseKiB": { "camera": 3072, "display": 3072 }
+  },
+  "rejection": {
+    "attempts": 4,
+    "snapshotBytesPerAttempt": 3146752,
+    "expectedRetainedChargeKiB": 0,
+    "disabledDischargeRetainedChargeKiB": { "camera": 12292, "display": 12292 },
+    "dischargedRetainedChargeKiB": { "camera": 0, "display": 0 }
+  },
+  "limits": [
+    "GC is test-only diagnostic instrumentation, not production memory-pressure tuning or a full-command resource measurement.",
+    "No arithmetic, caller-buffer ownership, model, resampler or global thread-pool changes.",
+    "Other native task snapshots are not covered by this checkpoint.",
+    "Full-command G6 and photographic quality remain open."
+  ]
+}
