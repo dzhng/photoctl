@@ -36,10 +36,10 @@ point and follow it exactly. Do not re-decide anything in the original decision 
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Pickup point:** slice 08c2 (masked highlights/shadows/vibrance), followed by slice 10 (layers and composite).
-  Slice 08c2 inherits 08c1a's exact scene-linear artifact boundary and 08c1b's fixed-order native global pipeline. Slice 09c now
-  supplies schema v8, explicit-consent backfill, and hybrid search; its live multimodal request remains provisional until the
-  purpose-key smoke produces an accepted fixture.
+- **Active wave:** slices 08c2 and 10a run in parallel. Slice 08c2 owns masked highlights/shadows/vibrance in the Rust develop seam;
+  10a owns only schema-v9 layer identity and immutable revision structure. Continue 08c3 after 08c2. No 10b pass begins until
+  08c2/08c3 release the shared Rust/evaluator/preview owners. Slice 09c now supplies schema v8, explicit-consent backfill, and
+  hybrid search; its live multimodal request remains provisional until the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -61,7 +61,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [ ] 8c2+ masked/color/local ops/geometry → **gold exam green** — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
-- [ ] 10 DAG-backed layers, transforms, composite, vacancy, A′ — `slices/10-layers-and-composite.md`
+- [ ] 10: [ ] 10a identity/revisions · [ ] 10b1 resample/transform · [ ] 10b2 masks/composite · [ ] 10b3 delta · [ ] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG, optional density-matching upscale, strict composite, person-move flow — `slices/12-fill.md`
 - [ ] 13a reimagine/relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · 13d retouch — `slices/13-generative-extras-and-markup.md`
@@ -78,14 +78,31 @@ real drive in 14.
 
 ## Slice graph
 
+```text
+00 → 01a → 01b → 02a → 03a → 03b → 04 → 05 → 06
+                         └→ 02b
+04 ────────────────────────────→ 09a → 09b → 09c ✓
+07c → 08a1 → 08a2 → 08b → 08c1a → 08c1b
+                                      ├→ 08c2 → 08c3 → 08d1 → 08d2 → 08d3 → 08d4 → 14
+                                      └→ 10a
+09c ────────────────────────────────→ 10a
+08c1a/b ────────────────────────────→ 10b1
+08c2 + 08c3 ───────────────────────→ 10b2 + 10b3
+10a + 10b1 + 10b2 → 10c1 → 10c2 → 11 → 12 → 13 → 14 → 15
 ```
-00 ─ 01a ─ 01b ─ 02a ─ 03a ─ 03b ─ 04 ─ 05 ─ 06
-                      └─ 02b
-          └─ 07 (7a → 7b → 7c) ─ 08a DAG ─ 08b+ develop ★gold ────────────── 14 ─ 15
-                                             ├─ 09 providers (also needs 04) ─┐
-                                             └─ 10 layers ─ 11 segment ──────┴─ 12 fill ─ 13a/b
-                                                          └──────────────────── 13c markup / 13d retouch
-```
+
+See Slice 10's local dependency graph for its serialization details.
+
+| Accepted checkpoint | Main commit |
+|---|---|
+| 08a1 logical DAG | `6776134` |
+| 08a2 evaluator/artifacts | `903ef5a` |
+| 08b develop state | `60d0e5b` |
+| 08c1a linear artifacts | `8548f1d`, corrected by `2963cca` |
+| 08c1b global operators | `cf0dd93` |
+| 09a provider contracts | `90b03c4` |
+| 09b evidence | `cf34507` |
+| 09c embed/search | `ea2c715` |
 
 ## Precedent repos — where to look before designing anything
 
@@ -239,7 +256,8 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 - **Backup scope:** automatic/manual `backup` remains a metadata-only PGlite recovery snapshot. Once canonical
   artifacts exist, `restore` replaces database state while preserving `artifacts/`, originals, and cache directories;
   it does not claim to recover artifact files already lost outside PGlite.
-- **Determinism:** no float atomics, fixed rayon chunking; the same dict + decoder → byte-identical 16-bit output.
+- **Determinism:** no float atomics, fixed rayon chunking; the same dict + decoder produces a byte-identical scene-linear
+  canonical artifact, and deterministic display/delivery conversion is separately byte-identical.
 - **Migrations** are numbered at land time ("next number"); each schema slice adds `fixtures/libraries/schema-vN.pgsql`
   and extends `migrate-upgrade.test.ts`. Columns exist only when a verb writes them.
 
@@ -354,12 +372,11 @@ migrate daemon(start|stop|status) embed decode render presets(show) search graph
 | ARW drive path | 14 (04 uses it if present) | `fixtures:drive` + `fixtures:volume` |
 | Gateway key + per-verb model IDs | 09a (`doctor`, `settings`); 12 | fake gateway; `provider_unconfigured` |
 | First live upscaler adapter/model + balanced creativity/resemblance values | 09b/13a | deterministic fake adapter; `upscale_unconfigured`; live spike runs only when explicitly configured credentials exist |
-| Canonical provider/upscale artifact encoding | 08a/09b | lossless fake-adapter artifact; choose after PNG-vs-working-format size/round-trip measurement |
+| Paid provider/upscaler return retention encoding | 12/13a | working DAG conversion is settled; preserve/encode the original paid response only after PNG-vs-working-format size/round-trip evidence |
 | Undo artifact count/age/storage limit | 08a measurement, then 10 | roots/reachability land; automatic canonical-artifact GC remains off until measured |
 | Smoke 1 mask polarity | 12 pre-gate | adapters `maskPolarity:"unverified"` → live native-mask fill refused (`provider_unverified_mask` 69) |
-| Smoke 2 multimodal embedding shape | 09b | fake gateway vectors; real mode stays manual |
+| Live multimodal embedding dialect | post-09c purpose-key smoke | named one-photo candidate may run only after explicit command or saved auto consent; remains provisional until accepted |
 | Lossless-L tag 6/7, M/S pseudo-RAW | 07b probe; 14 fixtures | uncompressed a7c2 only |
-| PGlite TOAST on wide vectors | 09b, gates 09c | append-only writes if reproduced |
 | SAM 2.1 ONNX hosting URL | 11a | export script committed; download URL `settings.models_base_url` |
 | Founder checklist (Classic masters + XMP) | 04/14 | hand-authored Classic-style sidecars in `fixtures/xmp/` |
 
@@ -405,46 +422,17 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   cross-process database lock between 50-row batches, while no accepted live multimodal request fixture exists yet. Code revealed:
   photoctl's daemon is deliberately the one process holding the library lock for its lifetime; releasing that kernel lock from a
   background worker would tear down the shared command handle rather than help foreground CLI requests, which already enter over
-  the daemon socket. Call: keep one lock owner, yield the daemon's database command lane between bounded batches using one policy
-  that derives the free window from the foreground poll ceiling, and prove the result through built `show`/`rate` processes during
-  a 30-batch drain. Production may send the named one-photo request candidate only after explicit `embed` or saved `init --embed
-  auto` consent, validates exactly one finite 3,072-value response, and never tries an alternate dialect after rejection. Needs
-  David: run the purpose-key smoke to accept or reject that versioned candidate; deterministic 09c remains complete either way.
-  Foreground `embed` sends `progress` frames at start, after each database batch, and every five seconds during provider I/O; the
-  client's idle deadline is at least 31 seconds, never shorter than its queue-admission budget, and resets on each frame.
-  Whole-library output retains exact totals but only 100 failure details,
-  while explicit batches are capped at 1,000 IDs, keeping direct and daemon response memory bounded.
-  A shared 401/403/404 embedding rejection stops the automatic pass after one provider request and requires a later foreground
-  context refresh to resume; HTTP 400 stays isolated to one image. Detached worker setup failures are bounded diagnostics and
-  cannot poison daemon shutdown. Search's
-  optional vector arm likewise degrades provider configuration, rate, timeout, outage, and malformed-success-body failures to a
-  warning plus text hits, while failures in the local indexed-search arm remain command errors. It shares embed's five-second
-  provider heartbeat, and daemon shutdown interrupts both active provider I/O and `Retry-After` backoff.
-  Automatic embedding traverses each catalog sweep with one monotonic cursor and one retry deadline; it never builds per-photo
-  exclusion state, and a foreground kick cannot bypass the retry cooldown. A successful provider call followed by a catalog
-  UPSERT failure is a local error and stops automatic work instead of purchasing another vector.
-  Foreground dispatch first pauses and aborts the worker, awaits a point with no worker query or UPSERT active, then resumes the
-  same sweep afterward; background writes therefore cannot join an unrelated foreground transaction on the shared PGlite handle.
-  Mixed-model vector search materializes only the requested model and ranks that finite set exactly. The schema retains HNSW for
-  future single-model/index-aware use, but current correctness evidence does not claim that index for the selected-model arm.
-  Text queries apply the same punctuation-to-space normalization as indexed paths and tags, reusing one parsed query document for
-  match and rank; punctuation-only input safely returns no hits.
+  the daemon socket. Call: keep one lock owner and yield the daemon's database command lane between bounded batches, with foreground
+  dispatch awaiting worker database quiescence. Production may send the named one-photo request candidate only after explicit
+  `embed` or saved `init --embed auto` consent; it never probes alternate dialects after rejection. Needs David: run the purpose-key
+  smoke to accept or reject that versioned candidate; deterministic 09c remains complete either way.
 
 - **2026-09-05 — slice 09b live evidence gates.** Plan said: settle the multimodal embedding request and live upscaler model and
   controls only from configured calls. Code revealed: this checkout has neither a purpose-specific smoke key nor an explicitly
   configured live upscaler adapter; the general Gateway key, if ambient, is not consent for either experiment. Call: ship
-  rerunnable probes that record `not_run:unconfigured`, leave accepted-request/model/control fields empty, and produce no live
-  visual artifact rather than fabricating provider evidence. The upscaler runner accepts explicitly registered adapters plus
-  caller-owned source crops and controls, and its configured fake regression proves both comparison arms and contact-sheet output.
-  Needs David: rerun `smoke:embed-shape` with
-  `PHOTOCTL_EMBED_SMOKE_API_KEY`, and configure a real `UpscaleAdapter` before the live comparison can settle those OPEN choices;
-  neither blocks deterministic 09c work.
-
-- **2026-09-05 — slice 09b halfvec update strategy.** Plan said: reproduce the historical PGlite TOAST failure with 5,000
-  `halfvec(3072)` rows updated through 20 UPSERT cycles, and require DELETE+INSERT only if it occurs. Code revealed: all 20 cycles
-  completed, and all 5,000 high-entropy final vectors remained readable and equal to the last written value; the failure did not
-  reproduce. Call: 09c may use UPSERT on the pinned PGlite/vector versions, while keeping `probe:toast` as rerunnable machine
-  evidence if either dependency changes. Needs David: no; this follows the predeclared G5 fork.
+  rerunnable probes and preserve their unconfigured evidence without inventing a live result. Needs David: rerun
+  `smoke:embed-shape` with `PHOTOCTL_EMBED_SMOKE_API_KEY`, and configure a real `UpscaleAdapter` before those OPEN choices settle;
+  neither blocks deterministic work.
 
 - **2026-09-05 — slice 08a2 checkpoint capture.** Plan said: open the structure-only `wb graph` checkpoint and run the
   unprimed visual critique. Code revealed: the available in-app browser was disabled and the enabled Chrome surface rejected

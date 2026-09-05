@@ -1317,6 +1317,8 @@
 - **Verdict:** **Sound.** It preserves the direct parameter shape and makes uncertainty visible at the registry boundary.
 - **Confidence:** Medium; later slices still own the final fields and version transitions for their kinds.
 
+## Superseded
+
 ### Slice 08a2 implementation — Display RGB16 as the canonical graph artifact was unsound
 
 - **When:** Slice 08a2 artifact-publication implementation, 2026-09-05.
@@ -1333,6 +1335,8 @@
   whether or how its original bytes are retained.
 - **Verdict:** **Unsound.** A graph artifact must preserve the scene-linear values consumed by later pixel operators.
 - **Confidence:** Medium; storage cost is intentionally unoptimized until representative artifacts are measured.
+
+## Sound
 
 ### Slice 08c1a — Canonical graph artifacts preserve exact scene-linear working pixels
 
@@ -1756,8 +1760,7 @@
   also replace the worker's key/endpoint/cache context for its next batch. A monotonic cursor completes the current catalog sweep
   before one scalar retry deadline resets it, so failure state stays constant-size and foreground kicks cannot bypass cooldown.
   Shutdown aborts active provider I/O and retry backoff rather than waiting behind an ordinary timeout or `Retry-After` delay.
-- **Verdict:** **Sound.** The 1,500-photo built-process gate proves foreground rating stays inside the stated p95 bound during all
-  30 batches, while the one-lock invariant remains intact.
+- **Verdict:** **Sound.** Foreground work stays bounded during automatic backfill while the one-lock invariant remains intact.
 - **Confidence:** High.
 
 ### Slice 09c review — Foreground dispatch waits for worker database quiescence
