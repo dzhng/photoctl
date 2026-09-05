@@ -1,6 +1,7 @@
 import { PhotoctlError, type Warning } from "@photoctl/protocol";
 import { publishArtifact, readArtifactImage } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
+import { loadBaseProjection, catalogToRenderMatrix } from "../graph/projection.js";
 import {
   canonicalNodeRecipe,
   evaluationHash,
@@ -167,9 +168,16 @@ export async function fillLayer(
     baseEvaluation.artifact.artifactHash,
   );
   const fit = request.fit ?? resolveFillFit(request.operation);
-  const effective = await prepareFillMask(database, libraryPath, request, selected, fit);
+  const projection = await loadBaseProjection(database, request.photoId, baseEvaluation);
+  const baseToInput = catalogToRenderMatrix(projection);
+  const effective = await prepareFillMask(database, libraryPath, request, selected, fit, {
+    matrix: [...baseToInput],
+    w: base.w,
+    h: base.h,
+  });
   const mask = effective.mask;
-  if (base.w !== mask.w || base.h !== mask.h) throw new Error("Fill content and mask disagree");
+  if (!mask.data.some((value) => value > 0))
+    throw new PhotoctlError("usage", "The effective selection is not visible in the current frame");
   const crop = planFillCrop(mask, request.pad);
   const reusable = fillingVacancy
     ? undefined
@@ -180,8 +188,8 @@ export async function fillLayer(
         selected,
         crop,
         {
-          w: base.w,
-          h: base.h,
+          w: mask.w,
+          h: mask.h,
         },
       );
   const strictBaseNodeId = reusable?.baseNodeId ?? fillBaseNodeId;
@@ -259,7 +267,7 @@ export async function fillLayer(
       };
     }
   } else {
-    const sent = await fillProviderInputs(base, mask, crop, request.fullResolution);
+    const sent = await fillProviderInputs(base, mask, crop, request.fullResolution, baseToInput);
     const prepared = await executeFreshGeneration(libraryPath, {
       inputNodeId: fillBaseNodeId,
       inputArtifactHash: baseEvaluation.artifact.artifactHash,
@@ -291,6 +299,12 @@ export async function fillLayer(
         crop: [crop.x, crop.y, crop.w, crop.h],
         sent: [sent.image.w, sent.image.h],
         full_res: request.fullResolution ?? false,
+        pad: request.pad ?? 64,
+        sampling: {
+          base_to_input: [...baseToInput],
+          input_dimensions: [base.w, base.h],
+          outside_visible: "black-protected",
+        },
         returned: [returned.w, returned.h],
         source_context: {
           tier: request.sourceContext.tier,
@@ -351,16 +365,29 @@ export async function fillLayer(
     ...(cachedUpscale ? { cachedUpscale } : {}),
   });
   const { nodes, artifacts, executions, warnings } = density;
+  if (effective.clippedPixels > 0)
+    warnings.push({
+      code: "mask_clipped",
+      message:
+        "Fill coverage was clipped to the current visible frame; the original selection is unchanged",
+    });
   const placementInput = density.output;
   nodes.push(
     ...effective.nodes,
+    {
+      localKey: "fill-support",
+      kind: "mask",
+      recipeVersion: 2,
+      parameters: { operation: "support" },
+      inputs: [{ localKey: "effective-mask" }],
+    },
     {
       localKey: "resample",
       kind: "resample",
       recipeVersion: 1,
       parameters: {
-        w: base.w,
-        h: base.h,
+        w: mask.w,
+        h: mask.h,
         kernel: "lanczos3",
         target: { x: crop.x, y: crop.y, w: crop.w, h: crop.h },
       },

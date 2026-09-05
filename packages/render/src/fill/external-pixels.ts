@@ -1,5 +1,6 @@
 import sharp from "sharp";
-import { resampleDisplaySrgbRegion, resampleMaskRegion } from "@photoctl/img";
+import { clipMaskToFrame, resampleDisplaySrgbRegion, resampleMaskRegion } from "@photoctl/img";
+import { composeTransformMatrices, type TransformMatrix } from "../transforms.js";
 import type { MaskImage } from "../mask-tiff.js";
 import type { Image16 } from "../source-render.js";
 
@@ -9,11 +10,12 @@ export async function fillProviderInputs(
   mask: MaskImage,
   crop: { x: number; y: number; w: number; h: number },
   fullResolution = false,
+  baseToInput?: TransformMatrix,
 ) {
   const scale = fullResolution ? 1 : Math.min(1, 1536 / Math.max(crop.w, crop.h));
   const w = Math.max(1, Math.round(crop.w * scale));
   const h = Math.max(1, Math.round(crop.h * scale));
-  if (scale === 1) {
+  if (scale === 1 && !baseToInput) {
     return {
       image: { png: await cropImagePng(base, crop), w, h },
       mask: await cropMaskPng(mask, crop),
@@ -29,8 +31,9 @@ export async function fillProviderInputs(
     crop.h,
     w,
     h,
+    baseToInput,
   );
-  const reducedMask = resampleMaskRegion(
+  let reducedMask = resampleMaskRegion(
     mask.data,
     mask.w,
     mask.h,
@@ -41,6 +44,18 @@ export async function fillProviderInputs(
     w,
     h,
   );
+  if (baseToInput) {
+    // Interpolation can mix visible neighbors into an unseen sample; protect exactly where RGB is padded.
+    const sentToInput = composeTransformMatrices(baseToInput, [
+      crop.w / w,
+      0,
+      0,
+      crop.h / h,
+      crop.x,
+      crop.y,
+    ]);
+    reducedMask = clipMaskToFrame(reducedMask, w, h, sentToInput, base.w, base.h);
+  }
   return {
     image: {
       png: await image16Png({

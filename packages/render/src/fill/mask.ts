@@ -1,10 +1,11 @@
-import { transformMaskPixels } from "@photoctl/img";
+import { clipMaskToFrame, transformMaskPixels } from "@photoctl/img";
 import { readArtifactMask } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
 import { inspectGraphNode } from "../graph/inspection.js";
 import { canonicalNodeRecipe, logicalNodeId, recipeHash } from "../graph/recipes.js";
 import type { GraphDatabase, NodeDraft, NodeReference } from "../graph/store.js";
 import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
+import { transformPoint } from "../transforms.js";
 import { describeFillBranch } from "./branch.js";
 import { applyEffectiveMask, type FillFit } from "../mask-operations.js";
 
@@ -15,6 +16,7 @@ export async function prepareFillMask(
   request: { photoId: string; source: EvaluateGraphNodeRequest["source"] },
   selected: { contentNodeId: string; maskNodeId: string },
   fit: FillFit,
+  visible?: NonNullable<FillFit["visible"]>,
 ) {
   const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
   const layerMask = await inspectGraphNode(database, {
@@ -69,31 +71,42 @@ export async function prepareFillMask(
       data: await transformMaskPixels(mask.data, mask.w, mask.h, mask.w, mask.h, matrix),
     };
   }
+  const coverage = await applyEffectiveMask(mask, fit);
+  const needsClip =
+    visible &&
+    [
+      { x: 0.5, y: 0.5 },
+      { x: coverage.w - 0.5, y: 0.5 },
+      { x: 0.5, y: coverage.h - 0.5 },
+      { x: coverage.w - 0.5, y: coverage.h - 0.5 },
+    ].some((point) => {
+      const { x, y } = transformPoint(visible.matrix, point);
+      return x < 0 || y < 0 || x >= visible.w || y >= visible.h;
+    });
+  const clipped = needsClip
+    ? clipMaskToFrame(coverage.data, coverage.w, coverage.h, visible.matrix, visible.w, visible.h)
+    : coverage.data;
+  const clippedPixels = coverage.data.reduce(
+    (count, value, index) => count + (value > clipped[index]! ? 1 : 0),
+    0,
+  );
+  const effectiveFit = clippedPixels > 0 ? { ...fit, visible } : fit;
   const effectiveNodeId = logicalNodeId(
     recipeHash(
       canonicalNodeRecipe({
         kind: "mask",
         recipeVersion: 2,
-        parameters: fit,
+        parameters: effectiveFit,
         inputNodeIds: [inputNodeId],
       }),
     ),
   );
-  nodes.push(
-    {
-      localKey: "effective-mask",
-      kind: "mask",
-      recipeVersion: 2,
-      parameters: fit,
-      inputs: [selection],
-    },
-    {
-      localKey: "fill-support",
-      kind: "mask",
-      recipeVersion: 2,
-      parameters: { operation: "support" },
-      inputs: [{ localKey: "effective-mask" }],
-    },
-  );
-  return { mask: await applyEffectiveMask(mask, fit), nodes, effectiveNodeId };
+  nodes.push({
+    localKey: "effective-mask",
+    kind: "mask",
+    recipeVersion: 2,
+    parameters: effectiveFit,
+    inputs: [selection],
+  });
+  return { mask: { ...coverage, data: clipped }, nodes, effectiveNodeId, clippedPixels };
 }

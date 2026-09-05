@@ -15,7 +15,7 @@ const pinnedMaskParametersSchema = z
   .strict();
 
 // Pixel-kernel semantics select derived artifacts/views, never paid execution identities.
-const rendererSemanticRevision = 2;
+const rendererSemanticRevision = 3;
 
 const jsonSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([

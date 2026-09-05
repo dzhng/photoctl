@@ -106,7 +106,7 @@ export async function projectMaskToRender(
       };
 }
 
-function catalogToRenderMatrix(projection: Awaited<ReturnType<typeof loadBaseProjection>>) {
+export function catalogToRenderMatrix(projection: Awaited<ReturnType<typeof loadBaseProjection>>) {
   return composeTransformMatrices(projection.matrix, [
     projection.baseW / projection.catalogBase.w,
     0,

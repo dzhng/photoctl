@@ -1,4 +1,4 @@
-import { featherMask, morphologyMask, thresholdMask } from "@photoctl/img";
+import { clipMaskToFrame, featherMask, morphologyMask, thresholdMask } from "@photoctl/img";
 import { z } from "zod";
 import type { MaskImage } from "./mask-tiff.js";
 
@@ -10,6 +10,21 @@ export const effectiveMaskParametersSchema = z.discriminatedUnion("operation", [
       mode: z.enum(["strict", "expand", "free"]),
       expand_px: z.number().int().min(0).max(4096),
       feather_px: z.number().int().min(0).max(64),
+      visible: z
+        .object({
+          matrix: z.tuple([
+            z.number().finite(),
+            z.number().finite(),
+            z.number().finite(),
+            z.number().finite(),
+            z.number().finite(),
+            z.number().finite(),
+          ]),
+          w: z.number().int().positive(),
+          h: z.number().int().positive(),
+        })
+        .strict()
+        .optional(),
     })
     .strict()
     .refine((value) => value.mode === "expand" || value.expand_px === 0),
@@ -33,5 +48,14 @@ export async function applyEffectiveMask(
     data = await morphologyMask(data, mask.w, mask.h, parameters.expand_px, "dilate");
   if (parameters.feather_px > 0)
     data = await featherMask(data, mask.w, mask.h, parameters.feather_px);
+  if (parameters.visible)
+    data = clipMaskToFrame(
+      data,
+      mask.w,
+      mask.h,
+      parameters.visible.matrix,
+      parameters.visible.w,
+      parameters.visible.h,
+    );
   return { ...mask, data };
 }

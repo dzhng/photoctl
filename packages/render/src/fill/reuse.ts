@@ -38,6 +38,7 @@ export async function findReusableFillLineage(
     effectiveMaskNodeId?: string;
     seed?: number;
     fullResolution?: boolean;
+    pad?: number;
     source: EvaluateGraphNodeRequest["source"];
     dependencies: FillGenerationDependencies;
     upscale: FillUpscaleDependencies;
@@ -121,6 +122,7 @@ export async function findReusableFillLineage(
       crop?: unknown;
       seed?: unknown;
       full_res?: unknown;
+      pad?: unknown;
       source_context?: unknown;
       upscale?: unknown;
     };
@@ -147,6 +149,7 @@ export async function findReusableFillLineage(
       JSON.stringify([crop.x, crop.y, crop.w, crop.h]) ||
     generationParameters.request.seed !== request.seed ||
     (generationParameters.request.full_res ?? true) !== (request.fullResolution ?? false) ||
+    (generationParameters.request.pad ?? 64) !== (request.pad ?? 64) ||
     typeof generationParameters.request.execution_id !== "string"
   )
     return undefined;

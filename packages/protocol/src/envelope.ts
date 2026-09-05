@@ -24,6 +24,7 @@ export const warningCodes = [
   "vacancy_unfilled",
   "provider_unconfigured",
   "provider_warning",
+  "mask_clipped",
   "upscale_unconfigured",
   "upscale_resolution_limited",
   "upscale_failed",

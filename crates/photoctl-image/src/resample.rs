@@ -64,7 +64,38 @@ pub fn resample_display_srgb_region(
     height: u32,
     output_width: u32,
     output_height: u32,
+    base_to_source: Option<Vec<f64>>,
 ) -> napi::Result<Uint16Array> {
+    if let Some(matrix) = base_to_source {
+        if width == 0 || height == 0 {
+            return Err(invalid_argument(
+                "sampling region dimensions must be positive".to_owned(),
+            ));
+        }
+        let matrix: [f64; 6] = matrix
+            .try_into()
+            .map_err(|_| invalid_argument("sampling matrix must contain six values".to_owned()))?;
+        let sx = f64::from(width) / f64::from(output_width);
+        let sy = f64::from(height) / f64::from(output_height);
+        return Ok(sample_integer_affine(
+            &data,
+            source_width,
+            source_height,
+            3,
+            output_width,
+            output_height,
+            [
+                matrix[0] * sx,
+                matrix[1] * sx,
+                matrix[2] * sy,
+                matrix[3] * sy,
+                matrix[0] * f64::from(left) + matrix[2] * f64::from(top) + matrix[4],
+                matrix[1] * f64::from(left) + matrix[3] * f64::from(top) + matrix[5],
+            ],
+        )
+        .map_err(invalid_argument)?
+        .into());
+    }
     Ok(resize_integer_region_bilinear(
         &data,
         source_width,
@@ -523,6 +554,56 @@ fn resize_integer_bilinear<T: IntegerSample>(
     )
 }
 
+// Borrow the full source. Work and allocation are bounded by the requested output, not source size.
+#[allow(clippy::too_many_arguments)]
+fn sample_integer_affine<T: IntegerSample>(
+    input: &[T],
+    source_width: u32,
+    source_height: u32,
+    channels: u32,
+    output_width: u32,
+    output_height: u32,
+    output_to_source: [f64; 6],
+) -> Result<Vec<T>, String> {
+    let len = validate_len(
+        input.len(),
+        source_width,
+        source_height,
+        channels,
+        output_width,
+        output_height,
+    )?;
+    if output_to_source.iter().any(|value| !value.is_finite()) {
+        return Err("sampling matrix values must be finite".to_owned());
+    }
+    let mut output = vec![T::default(); len];
+    let [a, b, c, d, tx, ty] = output_to_source;
+    for y in 0..output_height {
+        for x in 0..output_width {
+            let source_x = a * (f64::from(x) + 0.5) + c * (f64::from(y) + 0.5) + tx;
+            let source_y = b * (f64::from(x) + 0.5) + d * (f64::from(y) + 0.5) + ty;
+            if source_x < 0.0
+                || source_y < 0.0
+                || source_x >= f64::from(source_width)
+                || source_y >= f64::from(source_height)
+            {
+                continue;
+            }
+            let (x0, x1, fx) = linear_coordinates(source_x - 0.5, source_width);
+            let (y0, y1, fy) = linear_coordinates(source_y - 0.5, source_height);
+            for channel in 0..channels {
+                let sample =
+                    |x, y| input[pixel_index(source_width, channels, x, y, channel)].to_f64();
+                let upper = sample(x0, y0) * (1.0 - fx) + sample(x1, y0) * fx;
+                let lower = sample(x0, y1) * (1.0 - fx) + sample(x1, y1) * fx;
+                output[pixel_index(output_width, channels, x, y, channel)] =
+                    T::from_f64(upper * (1.0 - fy) + lower * fy);
+            }
+        }
+    }
+    Ok(output)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn resize_integer_region_bilinear<T: IntegerSample>(
     input: &[T],
@@ -887,7 +968,33 @@ fn linear_coordinates(position: f64, length: u32) -> (u32, u32, f64) {
 
 #[cfg(test)]
 mod tests {
-    use super::{Filter, lanczos_contributors, resize, resize_integer_region_bilinear, transform};
+    use super::{
+        Filter, lanczos_contributors, resize, resize_integer_region_bilinear,
+        sample_integer_affine, transform,
+    };
+
+    #[test]
+    fn affine_integer_sampling_preserves_quarter_turn_coordinates() {
+        let input = [10_u16, 20, 30, 40, 50, 60];
+        assert_eq!(
+            sample_integer_affine(&input, 3, 2, 1, 2, 3, [0.0, -1.0, 1.0, 0.0, 0.0, 2.0]).unwrap(),
+            [40, 10, 50, 20, 60, 30]
+        );
+        assert_eq!(input, [10, 20, 30, 40, 50, 60]);
+    }
+
+    #[test]
+    fn affine_integer_sampling_interpolates_inside_and_zero_pads_unseen_context() {
+        let input = [10_u16, 20, 30];
+        assert_eq!(
+            sample_integer_affine(&input, 3, 1, 1, 3, 1, [1.0, 0.0, 0.0, 1.0, 0.5, 0.0]).unwrap(),
+            [15, 25, 0]
+        );
+        assert_eq!(
+            sample_integer_affine(&input, 3, 1, 1, 5, 1, [1.0, 0.0, 0.0, 1.0, -1.0, 0.0]).unwrap(),
+            [0, 10, 20, 30, 0]
+        );
+    }
 
     #[test]
     fn bilinear_resizes_an_asymmetric_grid_at_pixel_centers() {

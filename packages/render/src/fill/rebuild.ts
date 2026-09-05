@@ -14,6 +14,7 @@ export function rebuildFillBranch(input: {
   generationDimensions: { w: number; h: number };
   matrix: TransformMatrix;
   preserveCompensations: boolean;
+  effectiveMask?: NodeReference;
 }): {
   nodes: NodeDraft[];
   content: NodeReference;
@@ -63,7 +64,7 @@ export function rebuildFillBranch(input: {
             : input.matrix),
         ],
       },
-      inputs: [{ nodeId: input.branch.permanentMaskNodeId }],
+      inputs: [input.effectiveMask ?? { nodeId: input.branch.permanentMaskNodeId }],
     },
     {
       localKey: supportKey,

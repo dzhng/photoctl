@@ -52,3 +52,43 @@ The final adversarial inspection therefore asked:
 Verdict: accept the deterministic coverage and projection correction. Photographic edge continuity,
 irregular-subject quality, and live provider polarity remain separate open evidence gates.
 The non-blocking Preview review window ended without a changed verdict; the opened shots were closed.
+
+## Fill creation in a cropped frame
+
+Target: only the visible part of a base-coordinate selection may change. Removing the crop must not
+retroactively create hidden edits; explicit generation refresh may regenerate the original selection
+under the newly visible context.
+
+The complete sequence is [before fill](creation-baseline.png), [filled crop](creation-filled-crop.png),
+[uncropped](creation-uncropped.png), and [explicitly regenerated](creation-regenerated.png).
+The 4× nearest-neighbor details are [filled boundary](creation-filled-crop-edge.png),
+[uncropped boundary](creation-uncropped-edge.png), and [regenerated boundary](creation-regenerated-edge.png).
+The flat baseline is intentional: it measures an unchanged gray source, not photographic content.
+
+These captures use a 256×192 gray source, crop `[96,24,128,144]`, original box `[32,64,128,64]`, strict
+fit, pad 0, the fake gateway's blue patch, and no upscaler. Details are 80×80 crops at `[0,32]` in the
+cropped frame and `[24,56]` in both uncropped frames. [Canonical telemetry](creation-metrics.json)
+records 0→4,096→4,096→8,192 changed base samples. The comparable first pair differs at 4,096 of 18,432
+pixels (grayscale MAE 8.444444, RMSE 17.913372); the uncropped pair differs at 4,096 of 49,152
+(MAE 3.166667, RMSE 10.969655). Different-size frames are not compared as aligned images.
+The skill's comparison script lacked its `pngjs` dependency; these measurements use Sharp decoding.
+
+Adversarial self-review, recorded before acceptance:
+
+- The blue patch touching the left crop edge could be accidental clipping. It is exactly the visible
+  intersection in the full crop, while the detail shows a clean hard edge without a halo.
+- The smaller blue square after uncrop could mean part of the selection was lost. Its unchanged area
+  is intentional: no new provider call occurred, and formerly hidden coverage remains protected.
+- The wider regenerated rectangle could be overpainting. It follows the original selection only after
+  explicit refresh; straight boundaries and unchanged exterior remain visible in both full and detail views.
+
+The creation sub-agent could not obtain another fresh reviewer; the integrating task then obtained an
+independent critique of all seven images. It found no definite defects: high-confidence crisp straight
+boundaries, clean corners, and no halos, blur, or stray pixels. It noted that a flush-right crop is
+intent-dependent and that flat regions cannot establish readability or photographic quality. The
+integrating agent independently inspected all seven images and agreed with the mechanical geometry.
+Verdict: accept this deterministic creation/visibility correction, with those visual limitations.
+Deterministic command tests also
+check uploaded quadrant colors, zero context padding, active canonical mask coverage, final protected
+pixels, nonvisible refusal, and refresh crop expansion. No photographic or live-provider approval follows
+from this synthetic evidence.

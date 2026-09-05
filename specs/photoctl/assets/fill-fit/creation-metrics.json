@@ -1,0 +1,34 @@
+[
+  {
+    "name": "creation-baseline",
+    "w": 128,
+    "h": 144,
+    "renderHash": "r_9731c51e20cad0912ae498512630db708fd0b80dc5eb91750a6707bc17991380",
+    "artifactHash": "a_22f0d1aa3a8b4dab5f52437a5bbc2327d70f672a77aae91a316d9af9dca5ae99",
+    "nonGrayPixels": 0
+  },
+  {
+    "name": "creation-filled-crop",
+    "w": 128,
+    "h": 144,
+    "renderHash": "r_3244394575b0305569e36731237c1af489e7cea422ae27eeca085fe543fa41cb",
+    "artifactHash": "a_f9f5ede6148016436a7f88c96f12a52fd529328aa9fc3b670912f15e3f69f5cc",
+    "nonGrayPixels": 4096
+  },
+  {
+    "name": "creation-uncropped",
+    "w": 256,
+    "h": 192,
+    "renderHash": "r_4d236b96437d9e85a4095fe44930bb8288647b99ccaab1def7d687427452ba07",
+    "artifactHash": "a_b445bfb1cf9aa40e42d048ab744ee3b285cbbe7a94ba73814078976330bf5aca",
+    "nonGrayPixels": 4096
+  },
+  {
+    "name": "creation-regenerated",
+    "w": 256,
+    "h": 192,
+    "renderHash": "r_c1bbf452bffaea25a665900d3244f1f8b11536771260bbbc8cc3ee271fe31e77",
+    "artifactHash": "a_7796e513e1aed24271bb74206f2ccaedc76bb9fdf2dc1ebd13004b67997b643e",
+    "nonGrayPixels": 8192
+  }
+]

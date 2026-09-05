@@ -31,3 +31,17 @@ export function planFillCrop(mask: MaskImage, pad = 64): FillCrop {
   const bottom = Math.min(mask.h, Math.ceil((ymax + 1 + pad) / 16) * 16);
   return { x, y, w: right - x, h: bottom - y };
 }
+
+/** Refresh restores padding intent; historical recipes can retain only their recorded padded bounds. */
+export function planRefreshedFillCrop(mask: MaskImage, previous: FillCrop, pad?: number): FillCrop {
+  if (pad !== undefined) return planFillCrop(mask, pad);
+  const support = planFillCrop(mask, 0);
+  const x = Math.min(previous.x, support.x);
+  const y = Math.min(previous.y, support.y);
+  return {
+    x,
+    y,
+    w: Math.max(previous.x + previous.w, support.x + support.w) - x,
+    h: Math.max(previous.y + previous.h, support.y + support.h) - y,
+  };
+}

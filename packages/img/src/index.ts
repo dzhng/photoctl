@@ -29,6 +29,14 @@ export interface DevelopedImage {
 }
 
 interface NativeBinding {
+  clipMaskToFrame(
+    data: Float32Array,
+    width: number,
+    height: number,
+    matrix: number[],
+    frameWidth: number,
+    frameHeight: number,
+  ): Float32Array;
   thresholdMask(
     data: Float32Array,
     width: number,
@@ -115,6 +123,7 @@ interface NativeBinding {
     height: number,
     outputWidth: number,
     outputHeight: number,
+    baseToSource?: number[],
   ): Uint16Array;
   resampleMaskRegion(
     data: Float32Array,
@@ -430,6 +439,7 @@ export function resampleDisplaySrgbRegion(
   height: number,
   outputWidth: number,
   outputHeight: number,
+  baseToSource?: readonly number[],
 ): Uint16Array {
   return requiredBinding().resampleDisplaySrgbRegion(
     data,
@@ -441,6 +451,20 @@ export function resampleDisplaySrgbRegion(
     height,
     outputWidth,
     outputHeight,
+    baseToSource ? [...baseToSource] : undefined,
+  );
+}
+
+export function clipMaskToFrame(
+  data: Float32Array,
+  width: number,
+  height: number,
+  matrix: readonly number[],
+  frameWidth: number,
+  frameHeight: number,
+): Float32Array {
+  return asFloat32Array(
+    requiredBinding().clipMaskToFrame(data, width, height, [...matrix], frameWidth, frameHeight),
   );
 }
 

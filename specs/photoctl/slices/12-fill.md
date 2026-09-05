@@ -85,6 +85,36 @@ The renderer semantic revision in the recipe identity owner selects corrected de
 and new render/view paths. Old artifacts remain historical; paid execution identities and artifacts remain
 reusable. No cache deletion, paid-history migration, or user configuration flag is involved.
 
+### Creating and refreshing inside an evaluated frame
+
+The provider-input sampler maps the immutable base-coordinate crop into the exact evaluated RGB frame.
+Its borrowed native Uint16 boundary allocates only the requested provider-sized output; it does not
+rebuild a full base-sized float canvas. Image context outside the visible frame is black padding, not
+recovered source content. Generation provenance records `sampling.base_to_input`, `input_dimensions`,
+and `outside_visible:"black-protected"`, separately from source tier/density and final placement.
+After downsampling, the small uploaded mask is clipped in the same sampled frame so interpolation
+cannot reintroduce edit coverage over black padding; the cap regression catches a 43/255 leaked edge sample.
+
+Effective coverage is intersected with the visible footprint before either upload or composition.
+That footprint is persisted in the fit recipe as `visible:{matrix,w,h}` only when it clips coverage;
+the original selection is untouched. Partial intersections return `mask_clipped`. A fully invisible
+selection returns usage before a provider call or document revision. Merely uncropping cannot expose
+invented edits in formerly hidden pixels.
+
+Generation refresh is an explicit regeneration from original selection intent under current visibility.
+It replans the crop with the recorded `pad` and rebuilds placement for the returned intrinsic dimensions;
+this can deliberately fill newly visible selection pixels. Historical recipes without recorded pad retain
+their existing padded bounds, enlarged only as needed to include regenerated support. Repeat reuse includes
+padding intent. Native sampling also absorbs the original generation-input affine transform during refresh,
+without allocating a second full-frame float image. The renderer semantic revision is 3 because direct
+develop evaluation now derives missing authored dimensions from the catalog, including offline crop scaling.
+
+`fill-input-frame.test.ts` checks actual uploaded quadrant colors/masks for nonorigin crop, quarter turn,
+fractional straighten, and reduced source, then reads final canonical pixels. Its partial-clipping journey
+checks context padding, unchanged hidden pixels after uncrop, refusal of fully hidden edits, and explicit
+refresh expansion into the newly visible selection. These controlled tests do not establish photographic
+quality or live provider behavior.
+
 ## Pre-gate (with key, first): `smoke:mask-polarity` → each adapter's `maskPolarity` + a fake-gateway fixture. Until recorded,
 live native-mask fills refuse `provider_unverified_mask` 69; fake-gateway runs are unaffected.
 

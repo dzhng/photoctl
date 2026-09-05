@@ -7,6 +7,42 @@ use std::collections::VecDeque;
 
 use crate::resample::{Filter, transform};
 
+/// Intersect coverage with an authored visible footprint without changing selection ancestry.
+#[napi]
+pub fn clip_mask_to_frame(
+    data: Float32Array,
+    width: u32,
+    height: u32,
+    matrix: Vec<f64>,
+    frame_width: u32,
+    frame_height: u32,
+) -> napi::Result<Float32Array> {
+    validate_mask(&data, width, height)?;
+    let [a, b, c, d, tx, ty]: [f64; 6] = matrix
+        .try_into()
+        .map_err(|_| invalid("visible frame matrix must contain six values"))?;
+    if [a, b, c, d, tx, ty].iter().any(|value| !value.is_finite())
+        || frame_width == 0
+        || frame_height == 0
+    {
+        return Err(invalid(
+            "visible frame must have finite geometry and positive dimensions",
+        ));
+    }
+    let mut output = data.to_vec();
+    for y in 0..height {
+        for x in 0..width {
+            let fx = a * (f64::from(x) + 0.5) + c * (f64::from(y) + 0.5) + tx;
+            let fy = b * (f64::from(x) + 0.5) + d * (f64::from(y) + 0.5) + ty;
+            if fx < 0.0 || fy < 0.0 || fx >= f64::from(frame_width) || fy >= f64::from(frame_height)
+            {
+                output[(y * width + x) as usize] = 0.0;
+            }
+        }
+    }
+    Ok(output.into())
+}
+
 #[napi]
 pub fn threshold_mask(
     data: Float32Array,

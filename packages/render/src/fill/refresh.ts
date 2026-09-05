@@ -1,5 +1,5 @@
 import { PhotoctlError, type Warning } from "@photoctl/protocol";
-import { transformMaskPixels, transformPixels } from "@photoctl/img";
+import { transformMaskPixels } from "@photoctl/img";
 import {
   normalizeArtifact,
   publishArtifact,
@@ -8,6 +8,10 @@ import {
   type PublishedArtifact,
 } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
+import { loadBaseProjection, catalogToRenderMatrix } from "../graph/projection.js";
+import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
+import { prepareFillMask } from "./mask.js";
+import { planRefreshedFillCrop } from "./crop.js";
 import {
   canonicalNodeRecipe,
   evaluationHash,
@@ -56,7 +60,7 @@ export async function refreshFillLayer(
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  let branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
   if (!branch) throw new Error("Layer does not contain a refreshable fill branch");
   const target = resolveFillRefreshTarget(branch, request.from);
   const nodes: NodeDraft[] = [];
@@ -69,6 +73,7 @@ export async function refreshFillLayer(
   let generationProvider = branch.generationProvider;
   let generationArtifact: { artifact: PublishedArtifact } | undefined;
   let generationRefreshed = false;
+  let refreshedMask: Awaited<ReturnType<typeof prepareFillMask>> | undefined;
   if (target.kind === "generate") {
     const refreshed = await executeGenerationRefresh(
       database,
@@ -80,6 +85,8 @@ export async function refreshFillLayer(
       branch.permanentMaskNodeId,
     );
     nodes.push(refreshed.node);
+    refreshedMask = refreshed.effectiveMask;
+    if (refreshedMask) nodes.push(...refreshedMask.nodes);
     artifacts.push(refreshed.artifact);
     executions.push(refreshed.execution);
     appendWarnings(warnings, refreshed.warnings);
@@ -88,6 +95,22 @@ export async function refreshFillLayer(
     generationProvider = refreshed.execution.provider;
     generationArtifact = {
       artifact: refreshed.artifact,
+    };
+    branch = {
+      ...branch,
+      crop: refreshed.crop,
+      generationDimensions: { w: refreshed.artifact.w, h: refreshed.artifact.h },
+      generationPlacementMatrix: composeTransformMatrices(
+        invertTransformMatrix(branch.generationInputMatrix),
+        [
+          refreshed.crop.w / refreshed.artifact.w,
+          0,
+          0,
+          refreshed.crop.h / refreshed.artifact.h,
+          refreshed.crop.x,
+          refreshed.crop.y,
+        ],
+      ),
     };
     generationRefreshed = true;
   } else {
@@ -166,6 +189,7 @@ export async function refreshFillLayer(
 
   const rebuilt = rebuildFillBranch({
     branch,
+    ...(refreshedMask ? { effectiveMask: { localKey: "effective-mask" } } : {}),
     key: "refresh",
     frame: branch.frame,
     baseNodeId: generationRefreshed ? document.roots.base : branch.baseNodeId,
@@ -322,7 +346,7 @@ async function executeGenerationRefresh(
       source: request.source,
     }),
   ]);
-  let base = await readArtifactImage(
+  const base = await readArtifactImage(
     baseEvaluation.artifact.path,
     baseEvaluation.artifact.artifactHash,
   );
@@ -330,38 +354,50 @@ async function executeGenerationRefresh(
     maskEvaluation.artifact.path,
     maskEvaluation.artifact.artifactHash,
   );
-  if (!identityMatrix(branch.generationInputMatrix)) {
-    const [transformedBase, transformedMask] = await Promise.all([
-      transformPixels(
-        Float32Array.from(base.data, (value) => value / 65_535),
-        base.w,
-        base.h,
-        3,
-        base.w,
-        base.h,
+  const projection = await loadBaseProjection(database, request.photoId, baseEvaluation);
+  const baseToInput = composeTransformMatrices(
+    catalogToRenderMatrix(projection),
+    invertTransformMatrix(branch.generationInputMatrix),
+  );
+  let effectiveMask: Awaited<ReturnType<typeof prepareFillMask>> | undefined;
+  if (branch.fit && branch.selectionNodeId) {
+    const { visible: _previousVisible, ...fit } = branch.fit;
+    effectiveMask = await prepareFillMask(
+      database,
+      libraryPath,
+      request,
+      { contentNodeId: branch.generation.id, maskNodeId: branch.selectionNodeId },
+      fit,
+      { matrix: [...baseToInput], w: base.w, h: base.h },
+    );
+    mask = effectiveMask.mask;
+  } else if (!identityMatrix(branch.generationInputMatrix)) {
+    mask = {
+      ...mask,
+      data: await transformMaskPixels(
+        mask.data,
+        mask.w,
+        mask.h,
+        mask.w,
+        mask.h,
         branch.generationInputMatrix,
-        "lanczos3",
-      ),
-      branch.fit
-        ? Promise.resolve(mask.data)
-        : transformMaskPixels(
-            mask.data,
-            mask.w,
-            mask.h,
-            mask.w,
-            mask.h,
-            branch.generationInputMatrix,
-          ),
-    ]);
-    base = {
-      ...base,
-      data: Uint16Array.from(transformedBase, (value) =>
-        Math.round(Math.max(0, Math.min(1, value)) * 65_535),
       ),
     };
-    mask = { ...mask, data: transformedMask };
   }
-  const sent = await fillProviderInputs(base, mask, cropRect, storedRequest.full_res !== false);
+  if (!mask.data.some((value) => value > 0))
+    throw new PhotoctlError("usage", "The effective selection is not visible in the current frame");
+  cropRect = planRefreshedFillCrop(
+    mask,
+    cropRect,
+    numberOrUndefined(storedRequest.pad, "generate pad"),
+  );
+  const sent = await fillProviderInputs(
+    base,
+    mask,
+    cropRect,
+    storedRequest.full_res !== false,
+    baseToInput,
+  );
   const form = await request.dependencies.adapter.buildEdit(
     operation,
     sent.image,
@@ -372,6 +408,12 @@ async function executeGenerationRefresh(
   const started = (request.dependencies.now ?? Date.now)();
   const response = await request.dependencies.gateway.imageEdits(form);
   const normalized = await request.dependencies.adapter.normalize(response.data, sent.image);
+  if (effectiveMask && effectiveMask.clippedPixels > 0)
+    normalized.warnings.push({
+      code: "mask_clipped",
+      message:
+        "Refreshed fill coverage was clipped to the current visible frame; the original selection is unchanged",
+    });
   if (normalized.wholeFrame && (!branch.fit || branch.fit.mode === "strict")) {
     throw new PhotoctlError(
       "provider_whole_frame",
@@ -393,6 +435,12 @@ async function executeGenerationRefresh(
       returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
       sent: [sent.image.w, sent.image.h],
       full_res: storedRequest.full_res !== false,
+      crop: [cropRect.x, cropRect.y, cropRect.w, cropRect.h],
+      sampling: {
+        base_to_input: [...baseToInput],
+        input_dimensions: [base.w, base.h],
+        outside_visible: "black-protected",
+      },
       source_context: {
         tier: request.sourceContext.tier,
         pixel_scale: request.sourceContext.pixelScale,
@@ -453,6 +501,8 @@ async function executeGenerationRefresh(
     artifact,
     execution,
     warnings: normalized.warnings,
+    effectiveMask,
+    crop: cropRect,
   };
 }
 

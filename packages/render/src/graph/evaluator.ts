@@ -368,13 +368,23 @@ async function runOperation(
         h: input.h,
       });
       const parsed = developDictSchema.parse(parameters);
+      const authoredDimensions =
+        request.developBaseDimensions ??
+        (kind === "develop"
+          ? (
+              await request.database.query<{ w: number; h: number }>(
+                "SELECT w, h FROM photos WHERE id = $1",
+                [request.photoId],
+              )
+            ).rows[0]
+          : undefined);
       const developed =
         kind === "develop"
           ? await applyDevelopArtifact(
               bytes,
               { w: input.w, h: input.h },
               parsed,
-              request.developBaseDimensions,
+              authoredDimensions,
             )
           : await applyDevelopDeltaArtifact(bytes, { w: input.w, h: input.h }, parsed);
       return {
