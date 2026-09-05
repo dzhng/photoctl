@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { containingFrame, developFrame } from "./frame.js";
-import { expandCanvasFrame, reorientCanvas } from "./canvas.js";
+import { containingFrame, developFrame, canvasGeometryPlan } from "./frame.js";
+import { expandCanvasFrame } from "./canvas.js";
 
 const limits = { maxOutputEdge: 16_384, maxOutputPixels: 64_000_000 };
 
@@ -57,12 +57,14 @@ test("orientation replaces the tail against the stable authored outer frame with
   expect(input.raster).toEqual({ w: 135, h: 382 });
   const outer = expandCanvasFrame(input, { padding: 20 }, limits).frame;
   expect(outer.raster).toEqual({ w: 175, h: 422 });
-  const tilted = reorientCanvas(outer, authored, { rotate: 90, straighten_deg: 5 }).frame;
+  const tilted = canvasGeometryPlan(outer, authored, { rotate: 90, straighten_deg: 5 }).frame;
   expect(tilted.raster.w).toBeLessThan(outer.raster.w);
   expect(tilted.raster.h).toBeLessThan(outer.raster.h);
-  expect(reorientCanvas(outer, authored, authored).frame).toEqual(outer);
-  expect(reorientCanvas(outer, authored, { rotate: 180, straighten_deg: 10 }).frame.raster).toEqual(
-    { w: 422, h: 175 },
+  expect(canvasGeometryPlan(outer, authored, authored).frame).toEqual(outer);
+  expect(
+    canvasGeometryPlan(outer, authored, { rotate: 180, straighten_deg: 10 }).frame.raster,
+  ).toEqual({ w: 422, h: 175 });
+  expect(canvasGeometryPlan(outer, authored, { rotate: 90, straighten_deg: 5 }).frame).toEqual(
+    tilted,
   );
-  expect(reorientCanvas(outer, authored, { rotate: 90, straighten_deg: 5 }).frame).toEqual(tilted);
 });

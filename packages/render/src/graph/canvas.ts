@@ -1,5 +1,4 @@
 import { PhotoctlError } from "@photoctl/protocol";
-import { developGeometryPlan } from "../develop/geometry.js";
 import type { DevelopDict } from "../develop/dict.js";
 import { composeTransformMatrices } from "../transforms.js";
 import {
@@ -259,41 +258,4 @@ export function expandCanvasFrame(
       composeTransformMatrices([1, 0, 0, 1, offset.x, offset.y], input.sourceToRaster),
     ),
   };
-}
-
-/** Always starts from the immutable authored outer frame, not the previously shortened viewport. */
-export function reorientCanvas(
-  authoredFrame: RenderFrame,
-  authored: Pick<DevelopDict, "rotate" | "straighten_deg">,
-  current: Pick<DevelopDict, "rotate" | "straighten_deg">,
-) {
-  const degrees =
-    (current.rotate ?? 0) +
-    (current.straighten_deg ?? 0) -
-    (authored.rotate ?? 0) -
-    (authored.straighten_deg ?? 0);
-  const turns = Math.round(degrees / 90);
-  const rotate = ((((turns % 4) + 4) % 4) * 90) as 0 | 90 | 180 | 270;
-  const geometry = developGeometryPlan(authoredFrame.raster.w, authoredFrame.raster.h, {
-    rotate,
-    straighten_deg: degrees - turns * 90,
-  });
-  const stages = [
-    rasterFrame(
-      authoredFrame.catalog,
-      authoredFrame.source,
-      { w: geometry.straightenSourceW, h: geometry.straightenSourceH },
-      composeTransformMatrices(geometry.cropAndRotate, authoredFrame.sourceToRaster),
-    ),
-  ];
-  if (geometry.straighten)
-    stages.push(
-      rasterFrame(
-        authoredFrame.catalog,
-        authoredFrame.source,
-        geometry,
-        composeTransformMatrices(geometry.straighten, stages[0]!.sourceToRaster),
-      ),
-    );
-  return { frame: stages.at(-1)!, stages };
 }

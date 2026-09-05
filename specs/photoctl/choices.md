@@ -83,6 +83,30 @@
   alternately grow width and height; exact-ratio integer dimensions make the second request a no-op.
 - **Confidence:** Medium.
 
+### Canvas restrictions — Aspect edits start from the stable authored canvas
+
+- **When:** 12f2 restriction-activation pass, 2026-09-06.
+- **The choice:** Crop and straighten a photograph, then expand it. Setting only an aspect ratio
+  afterward crops the expanded canvas, not the old source crop. The ratio still has its familiar
+  before-quarter-turn meaning: a 2:1 ratio on a canvas authored at 90 degrees produces a portrait
+  restriction. The aspect crop happens first, then the existing relative quarter-turn/straighten
+  stages replace the current view. A 175×422 canvas authored at 90/10 becomes 175×350 with aspect
+  2:1, then 146×338 at 90/5 or 338×146 at 180/5. Returning to 90/10 restores exactly 175×350;
+  clearing the aspect restores the original 175×422 authored canvas.
+- **The gap:** The source editor applies aspect before rotation and straightening, but that does
+  not say whether a later aspect edit should replay those operations on the pre-border source.
+  Replaying would reactivate consumed restrictions and can reveal excluded content or erase the
+  border. Applying the ratio directly to screen axes would silently reverse its meaning at 90 degrees.
+- **The reach:** Each crop/aspect activation is tested separately against the supporting checkpoint.
+  Same-value edits can reactivate one restriction without the other. Preflight validates the aspect
+  that is actually active, not a consumed absolute value retained for later fallback. The existing
+  geometry owner handles integer stages and complete mappings; no extra interpolation is inserted
+  simply to make the ratio appear correct.
+- **Verdict:** **Sound.** Stable-canvas restriction preserves reversible editing and the established
+  quarter-turn convention without inventing source pixels or accumulating shrink.
+- **Confidence:** Medium; post-border aspect is explicitly a canvas restriction rather than a replay
+  of the pre-border source operation, a product distinction future editing interfaces must preserve.
+
 ### Canvas core — Separate historical order from support that remains active
 
 - **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.

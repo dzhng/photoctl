@@ -202,6 +202,48 @@ export function developFrames(
   return stages;
 }
 
+/** Replace the tail from the stable authored frame; never rerun its consumed source crop/straighten. */
+export function canvasGeometryPlan(
+  authoredFrame: RenderFrame,
+  authored: Pick<DevelopDict, "rotate" | "straighten_deg">,
+  current: Pick<DevelopDict, "rotate" | "straighten_deg">,
+  aspectRatio?: DevelopDict["aspect_ratio"],
+) {
+  const degrees =
+    (current.rotate ?? 0) +
+    (current.straighten_deg ?? 0) -
+    (authored.rotate ?? 0) -
+    (authored.straighten_deg ?? 0);
+  const turns = Math.round(degrees / 90);
+  const rotate = ((((turns % 4) + 4) % 4) * 90) as 0 | 90 | 180 | 270;
+  const geometry = developGeometryPlan(authoredFrame.raster.w, authoredFrame.raster.h, {
+    aspect_ratio:
+      aspectRatio && (authored.rotate === 90 || authored.rotate === 270)
+        ? aspectRatio.split(":").toReversed().join(":")
+        : aspectRatio,
+    rotate,
+    straighten_deg: degrees - turns * 90,
+  });
+  const stages = [
+    rasterFrame(
+      authoredFrame.catalog,
+      authoredFrame.source,
+      { w: geometry.straightenSourceW, h: geometry.straightenSourceH },
+      composeTransformMatrices(geometry.cropAndRotate, authoredFrame.sourceToRaster),
+    ),
+  ];
+  if (geometry.straighten)
+    stages.push(
+      rasterFrame(
+        authoredFrame.catalog,
+        authoredFrame.source,
+        geometry,
+        composeTransformMatrices(geometry.straighten, stages[0]!.sourceToRaster),
+      ),
+    );
+  return { frame: stages.at(-1)!, stages };
+}
+
 export function rasterFrame(
   catalog: Dimensions,
   source: Dimensions,

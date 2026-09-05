@@ -11,11 +11,12 @@ import {
   containingFrame,
   placedFrame,
   assertNewRasterSize,
+  canvasGeometryPlan,
 } from "./frame.js";
-import { loadGeometryAncestry } from "./geometry-intent.js";
+import { loadGeometryAncestry, geometryNodeParametersSchema } from "./geometry-intent.js";
 import type { DevelopDict } from "../develop/dict.js";
+import type { ActiveDevelopState } from "../develop/state.js";
 import { isDeepStrictEqual } from "node:util";
-import { reorientCanvas } from "./canvas.js";
 import { readBaseDevelopInput } from "./base-input.js";
 import { loadLogicalFrame } from "./projection.js";
 import { composeTransformMatrices } from "../transforms.js";
@@ -65,7 +66,10 @@ export async function readCanvasStatus(
 
 export async function planDevelopIntent(
   transaction: GraphTransaction,
-  current: { photoId: string; outputNodeId: string; geometryNodeId?: string; develop: DevelopDict },
+  current: Pick<
+    ActiveDevelopState,
+    "photoId" | "outputNodeId" | "geometryNodeId" | "develop" | "layers"
+  >,
   develop: DevelopDict,
   touched: readonly ("crop" | "aspect_ratio")[],
 ): Promise<{
@@ -74,11 +78,29 @@ export async function planDevelopIntent(
   rootUpdates: Array<{ root: "geometry"; node: NodeReference }>;
 }> {
   const changed = !isDeepStrictEqual(current.develop, develop);
+  const ancestry = current.geometryNodeId
+    ? await loadGeometryAncestry(transaction, current.photoId, current.geometryNodeId)
+    : undefined;
+  if (ancestry && ancestry.parameters.type !== "intent")
+    throw new Error("Expected current geometry intent");
+  const parameters = ancestry
+    ? {
+        ...ancestry.parameters,
+        ...(touched.includes("crop") ? { crop_activation: ancestry.parameters.sequence } : {}),
+        ...(touched.includes("aspect_ratio")
+          ? { aspect_activation: ancestry.parameters.sequence }
+          : {}),
+      }
+    : undefined;
+  const latest = ancestry ? latestBorderCheckpoint(current.layers, ancestry) : undefined;
   if (touched.includes("crop") && develop.crop) {
     const visible = await loadLogicalFrame(transaction, current.photoId, current.outputNodeId);
     const requested = developFrame(visible.catalog, visible.catalog, {
       crop: develop.crop,
-      aspect_ratio: develop.aspect_ratio,
+      aspect_ratio:
+        latest && parameters!.aspect_activation <= latest.aspect_activation
+          ? undefined
+          : develop.aspect_ratio,
     });
     assertNewRasterSize(requested.raster, visible.catalog);
     const polygon = (frame: typeof visible) => frame.visibleBasePolygon.map(([x, y]) => ({ x, y }));
@@ -86,16 +108,7 @@ export async function planDevelopIntent(
       throw new PhotoctlError("usage", "A new crop must intersect the current visible canvas");
     }
   }
-  if (!current.geometryNodeId) return { changed, nodes: [], rootUpdates: [] };
-  const ancestry = await loadGeometryAncestry(transaction, current.photoId, current.geometryNodeId);
-  if (ancestry.parameters.type !== "intent") throw new Error("Expected current geometry intent");
-  const parameters = {
-    ...ancestry.parameters,
-    ...(touched.includes("crop") ? { crop_activation: ancestry.parameters.sequence } : {}),
-    ...(touched.includes("aspect_ratio")
-      ? { aspect_activation: ancestry.parameters.sequence }
-      : {}),
-  };
+  if (!ancestry || !parameters) return { changed, nodes: [], rootUpdates: [] };
   if (isDeepStrictEqual(parameters, ancestry.parameters))
     return { changed, nodes: [], rootUpdates: [] };
   return {
@@ -154,10 +167,7 @@ export async function planPhotographicOutput(
     };
     borders.forEach((layer) => retainSupport(layer.authoredCheckpointNodeId!));
     const ordered = [...checkpoints.entries()].sort((a, b) => a[1].sequence - b[1].sequence);
-    const latest = borders
-      .map((layer) => checkpoints.get(layer.authoredCheckpointNodeId!)!)
-      .sort((a, b) => a.sequence - b.sequence)
-      .at(-1)!;
+    const latest = latestBorderCheckpoint(borders, ancestry)!;
     let outer = parseRenderFrame(latest.outer_frame);
     const stagesAfter = (sequence: number) =>
       ordered
@@ -170,18 +180,9 @@ export async function planPhotographicOutput(
             .map((nodeId) => checkpoints.get(nodeId)!)
             .sort((a, b) => a.sequence - b.sequence)
             .at(-1);
-          const activeRestriction =
-            !parent ||
-            (checkpoint.geometry.crop && checkpoint.crop_activation > parent.crop_activation) ||
-            (checkpoint.geometry.aspect_ratio &&
-              checkpoint.aspect_activation > parent.aspect_activation);
-          const stages = activeRestriction
-            ? developFrames(input.catalog, input.catalog, checkpoint.geometry)
-            : reorientCanvas(
-                parseRenderFrame(parent.outer_frame),
-                parent.geometry,
-                checkpoint.geometry,
-              ).stages;
+          const stages = parent
+            ? canvasViewportStages(parseRenderFrame(parent.outer_frame), parent, checkpoint)
+            : developFrames(input.catalog, input.catalog, checkpoint.geometry);
           return [...stages.map(savedRenderFrame), checkpoint.input_frame];
         });
     const borderFrames = new Map(
@@ -206,18 +207,12 @@ export async function planPhotographicOutput(
       ...parseRenderFrame(latest.input_frame).visibleBasePolygon.map(([x, y]) => ({ x, y })),
       ...admissibleCanvasSupport([], [...borderFrames.values()]).flat(),
     ]);
-    const tail: ReturnType<typeof savedRenderFrame>[] = [];
-    if (
-      (controls.crop && ancestry.parameters.crop_activation > latest.crop_activation) ||
-      (controls.aspect_ratio && ancestry.parameters.aspect_activation > latest.aspect_activation)
-    ) {
-      tail.push(...developFrames(outer.catalog, outer.catalog, controls).map(savedRenderFrame));
-      outer = parseRenderFrame(tail.at(-1)!);
-    } else {
-      const orientation = reorientCanvas(outer, latest.geometry, controls);
-      tail.push(...orientation.stages.map(savedRenderFrame));
-      outer = orientation.frame;
-    }
+    const tail = canvasViewportStages(outer, latest, {
+      geometry: controls,
+      crop_activation: ancestry.parameters.crop_activation,
+      aspect_activation: ancestry.parameters.aspect_activation,
+    }).map(savedRenderFrame);
+    outer = parseRenderFrame(tail.at(-1)!);
     canvas = {
       frame: savedRenderFrame(outer),
       uncovered: hasUncoveredCanvas(
@@ -304,6 +299,47 @@ export async function planPhotographicOutput(
     ],
     rootUpdates: [{ root: "output", node: { localKey: "photographic-output" } }],
   };
+}
+
+type GeometryCheckpoint = Extract<
+  z.infer<typeof geometryNodeParametersSchema>,
+  { type: "checkpoint" }
+>;
+
+function latestBorderCheckpoint(
+  layers: readonly RevisionLayer[],
+  ancestry: Awaited<ReturnType<typeof loadGeometryAncestry>>,
+) {
+  return layers
+    .filter((layer) => layer.enabled && layer.role === "border")
+    .map((layer) => {
+      const checkpoint = ancestry.nodes.get(layer.authoredCheckpointNodeId!)!.parameters;
+      if (checkpoint.type !== "checkpoint")
+        throw new Error("A border requires its authored checkpoint");
+      return checkpoint;
+    })
+    .sort((a, b) => a.sequence - b.sequence)
+    .at(-1);
+}
+
+function canvasViewportStages(
+  frame: ReturnType<typeof parseRenderFrame>,
+  authored: GeometryCheckpoint,
+  current: Pick<GeometryCheckpoint, "geometry" | "crop_activation" | "aspect_activation">,
+) {
+  const crop =
+    current.crop_activation > authored.crop_activation ? current.geometry.crop : undefined;
+  const aspect =
+    current.aspect_activation > authored.aspect_activation
+      ? current.geometry.aspect_ratio
+      : undefined;
+  return crop
+    ? developFrames(frame.catalog, frame.catalog, {
+        ...current.geometry,
+        crop,
+        aspect_ratio: aspect,
+      })
+    : canvasGeometryPlan(frame, authored.geometry, current.geometry, aspect).stages;
 }
 
 export function compositeV2Projection<Reference = NodeReference>(

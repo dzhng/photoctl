@@ -5,8 +5,10 @@ import {
   loadActiveDocument,
   readArtifactLinear,
   artifactPath,
+  undoRevision,
 } from "@photoctl/render";
 import { showDataSchema, segmentDataSchema } from "@photoctl/protocol";
+import type { StructuredModelAdapter } from "@photoctl/providers";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -281,6 +283,234 @@ test("a new crop validates the visible intersection after its requested aspect c
     );
     expect(rejected).toMatchObject({ ok: false, code: "usage" });
     expect((await loadActiveDocument(fixture.handle, fixture.id))!.revisionId).toBe(revision);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("aspect activation restricts the authored canvas without reactivating its consumed crop", async () => {
+  const fixture = await createCanvasFixture();
+  try {
+    await fixture.command("develop", [fixture.id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    await fixture.author(2, "red");
+    await fixture.command("develop", [fixture.id, "--set", "aspect_ratio=1:1"]);
+    const view = showDataSchema.parse(
+      await fixture.command("show", [fixture.id, "--preview-size", "native"]),
+    );
+    expect(view.preview_info.actual).toMatchObject({ w: 8, h: 8 });
+    await fixture.author(1, "blue");
+    await fixture.command("develop", [fixture.id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    const cropOnly = showDataSchema.parse(
+      await fixture.command("show", [fixture.id, "--preview-size", "native"]),
+    );
+    expect(cropOnly.preview_info.actual).toMatchObject({ w: 6, h: 4 });
+    await fixture.command("develop", [fixture.id, "--set", "aspect_ratio=1:1"]);
+    const combined = showDataSchema.parse(
+      await fixture.command("show", [fixture.id, "--preview-size", "native"]),
+    );
+    expect(combined.preview_info.actual).toMatchObject({ w: 4, h: 4 });
+    await fixture.command("develop", [fixture.id, "--unset", "aspect_ratio"]);
+    const clearedAspect = showDataSchema.parse(
+      await fixture.command("show", [fixture.id, "--preview-size", "native"]),
+    );
+    expect(clearedAspect.preview_info.actual).toMatchObject({ w: 6, h: 4 });
+    await fixture.command("develop", [fixture.id, "--unset", "crop"]);
+    const clearedBoth = showDataSchema.parse(
+      await fixture.command("show", [fixture.id, "--preview-size", "native"]),
+    );
+    expect(clearedBoth.preview_info.actual).toMatchObject({ w: 10, h: 10 });
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("post-border aspect precedes the replaceable orientation tail and restores exact authored pixels", async () => {
+  const fixture = await createCanvasFixture(1000, 800);
+  const { id, command, author, currentPixels } = fixture;
+  try {
+    await command("develop", [
+      id,
+      "--set",
+      'crop={"x":100,"y":200,"w":400,"h":200}',
+      "--set",
+      "rotate=90",
+      "--set",
+      "straighten_deg=10",
+    ]);
+    await author(20, "red");
+    await command("show", [id, "--preview-size", "native"]);
+    const authored = await currentPixels();
+    await command("develop", [id, "--set", "aspect_ratio=2:1"]);
+    const restricted = showDataSchema.parse(
+      await command("show", [id, "--preview-size", "native"]),
+    );
+    expect(restricted.preview_info.actual).toMatchObject({ w: 175, h: 350 });
+    const restrictedPixels = await currentPixels();
+    await command("develop", [id, "--set", "straighten_deg=5"]);
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 146, h: 338 });
+    await command("develop", [id, "--set", "rotate=180"]);
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 338, h: 146 });
+    await command("develop", [id, "--set", "rotate=90", "--set", "straighten_deg=10"]);
+    await command("show", [id, "--preview-size", "native"]);
+    expect((await currentPixels()).data).toEqual(restrictedPixels.data);
+    await command("develop", [id, "--unset", "aspect_ratio"]);
+    await command("show", [id, "--preview-size", "native"]);
+    expect((await currentPixels()).data).toEqual(authored.data);
+  } finally {
+    await fixture.close();
+  }
+}, 30_000);
+
+test("new crop validation ignores a consumed aspect instead of refusing a visible intersection", async () => {
+  const fixture = await createCanvasFixture();
+  try {
+    await fixture.command("develop", [
+      fixture.id,
+      "--set",
+      'crop={"x":0,"y":0,"w":4,"h":4}',
+      "--set",
+      "aspect_ratio=1:1",
+    ]);
+    await fixture.author(2, "red");
+    await fixture.command("develop", [fixture.id, "--set", 'crop={"x":5,"y":0,"w":12,"h":4}']);
+    const view = showDataSchema.parse(
+      await fixture.command("show", [fixture.id, "--preview-size", "native"]),
+    );
+    expect(view.preview_info.actual).toMatchObject({ w: 12, h: 4 });
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("auto-enhance and its undo inherit consumed geometry without reactivating restrictions", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, handle, command } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    await fixture.author(2, "red");
+    const before = (await loadActiveDocument(handle, id))!;
+    const structured: StructuredModelAdapter = {
+      id: "canvas-structured-fixture",
+      version: "1",
+      ask: async <Value>(schema: { parse(value: unknown): Value }) => ({
+        value: schema.parse({ contrast: 9 }),
+        model: "fixture/structured",
+        requestId: "canvas-auto",
+        attempts: 1,
+      }),
+    };
+    const automatic = await dispatch(
+      {
+        verb: "develop",
+        args: [id, "--auto-enhance"],
+        cwd: fixture.parent,
+        env: {
+          noDaemon: true,
+          cacheRoot: join(fixture.parent, "cache"),
+          volumeMap: `${fixture.parent}=fixture:online`,
+        },
+      },
+      { version: "test", library: handle, develop: { structured } },
+    );
+    expect(automatic).toMatchObject({ ok: true });
+    expect((await loadActiveDocument(handle, id))!.roots.geometry).toBe(before.roots.geometry);
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 10, h: 8 });
+    await command("develop", [id, "--undo-auto"]);
+    const undone = (await loadActiveDocument(handle, id))!;
+    expect(undone.roots.geometry).toBe(before.roots.geometry);
+    expect(undone.metadata).toBeNull();
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 10, h: 8 });
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("preset overlays preserve consumed crop while copy and reset explicitly replace its intent", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, handle } = fixture;
+  try {
+    const copySource = join(fixture.parent, "copy-source.png");
+    await sharp({ create: { width: 16, height: 12, channels: 3, background: "#607080" } })
+      .png()
+      .toFile(copySource);
+    const other = ((await command("import", [copySource, "--link"])) as { ids: string[] }).ids[0]!;
+    await command("develop", [other, "--set", "contrast=9"]);
+    await command("presets", ["save", "canvas-tone", "--from", other]);
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    const border = await fixture.author(2, "red");
+    await command("develop", [id, "--preset", "canvas-tone"]);
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 10, h: 8 });
+    await command("develop", [other, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    await command("develop", [id, "--copy-from", other]);
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 6, h: 4 });
+    const copied = (await loadActiveDocument(handle, id))!.revisionId;
+    await command("develop", [id, "--copy-from", other]);
+    expect((await loadActiveDocument(handle, id))!.revisionId).toBe(copied);
+    await command("develop", [id, "--reset"]);
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 10, h: 8 });
+    await command("layer", ["remove", id, border.layerId]);
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 16, h: 12 });
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("revision undo restores border pixels and consumed geometry after removal and a later crop", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, handle, command, currentPixels } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    const border = await fixture.author(2, "red");
+    await command("show", [id, "--preview-size", "native"]);
+    const before = (await loadActiveDocument(handle, id))!;
+    const pixels = await currentPixels();
+    await command("layer", ["remove", id, border.layerId]);
+    const removed = (await loadActiveDocument(handle, id))!;
+    await undoRevision(handle, { photoId: id, expectedRevisionId: removed.revisionId });
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 10, h: 8 });
+    expect((await currentPixels()).data).toEqual(pixels.data);
+    expect((await loadActiveDocument(handle, id))!.roots.geometry).toBe(before.roots.geometry);
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    const cropped = (await loadActiveDocument(handle, id))!;
+    await undoRevision(handle, { photoId: id, expectedRevisionId: cropped.revisionId });
+    await command("show", [id, "--preview-size", "native"]);
+    expect((await currentPixels()).data).toEqual(pixels.data);
+    expect((await loadActiveDocument(handle, id))!.roots.geometry).toBe(before.roots.geometry);
+    const exported = await fixture.response("export", [
+      id,
+      "--to",
+      join(fixture.parent, "undone-delivery"),
+    ]);
+    expect(exported).toMatchObject({
+      results: [expect.objectContaining({ id, w: 10, h: 8, render_hash: before.renderHash })],
+    });
   } finally {
     await fixture.close();
   }

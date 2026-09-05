@@ -154,8 +154,6 @@ through its writer; migration 19's DDL remains immutable.
 
 Continue from this reviewed core in these bounded consumer passes:
 
-- Restriction activation: independently replace crop and aspect, copy/reset/presets, and restore
-  geometry intent through auto-enhance undo and ordinary revision undo.
 - Layer lifecycle: public duplicate/reorder/clear, arbitrary rotated support and overlapping copies;
   later borders must keep authored coordinates when earlier support changes.
 - Shared consumers: SAM sees source-only pixels with the same geometry/support plan, without
@@ -170,6 +168,30 @@ preserving source-sized operations. New crops may extend beyond the original but
 current visible canvas; removing support never turns a previously valid crop into a rejected new
 request. Unsupported pixels remain opaque black. The immutable support verdict reaches show/export
 before cache hits or export collision skips, independently of border opacity.
+
+### Restriction activation
+
+The [before/after restriction evidence](../assets/outpaint-activation/README.md) records
+the matching public previews, native corner crops, and fresh independent visual verdict.
+
+Public activation, copy/reset/preset and auto-undo regressions are green; ordinary revision undo
+uses the existing graph API with subsequent public show/export. The remaining consumer/layer
+passes above still prevent full 12f2 acceptance.
+
+Crop and aspect activate independently. An aspect-only edit restricts the stable authored canvas;
+it does not replay a consumed source crop or source straighten. Its ratio retains the existing
+before-quarter-turn meaning, followed by the replaceable relative orientation stages. For the
+175×422 canvas authored at rotate 90/straighten 10, a new 2:1 aspect gives 175×350. Changing to
+90/5 gives 146×338; 180/5 gives 338×146. Returning to 90/10 restores the exact restricted pixels,
+and clearing aspect restores the exact authored canvas. Both stages use the existing frame and
+develop geometry owners, without inverse-sampling hidden source pixels or adding an interpolation
+merely to change the aspect convention.
+
+The current auto-enhance proposal permits no geometry fields, so ordinary immutable-root
+inheritance preserves its geometry through auto-enhance and `--undo-auto`; no extra metadata
+snapshot is needed. Revision undo is verified through the existing `undoRevision` API followed by
+public show/export. There is no general CLI undo verb today: this does not prove the literal
+built-CLI undo requirement in 12f3, which still needs public-boundary reconciliation.
 
 **Decision checkpoint before coding:** use an asymmetric cropped, quarter-rotated, straightened
 example to settle the viewport policy. Merely retaining the prior final crop hides the extension;
