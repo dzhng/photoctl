@@ -2918,3 +2918,21 @@
 - **Verdict:** **Sound as a bounded checkpoint.** Refusal is truthful and reversible, and it keeps affine geometry under one later
   owner instead of introducing a point implementation here.
 - **Confidence:** High; the public regression proves no paid call and no revision, while the remaining limitation is named in 12d2.
+
+### Slice 12d provider runtime — The fake image path is authorized by a safe local profile, not a gateway claim
+
+- **When:** Slice 12d provider-runtime foundation, 2026-09-05.
+- **The choice:** A keyless fill test names a reserved concrete image model. Photoctl maps that model locally to an
+  instruction-and-composite adapter: it asks for replacement pixels without sending a native mask, then applies the resulting
+  pixels through Photoctl's strict compositor, which copies every pixel outside the mask from the original input. Merely pointing
+  the gateway URL at the fixture does nothing; the ordinary live model still stops before network I/O because its native-mask
+  polarity has not been verified. The unbuilt alternative was to trust a fixture hostname, response header, or capability probe
+  and let that remote claim bypass the native-mask gate.
+- **The gap:** The slice said deterministic fake-gateway runs were unaffected by the live polarity gate, but it did not define how
+  the built CLI distinguishes that fake without turning an arbitrary URL into authority.
+- **The reach:** Functional and agent-journey tests can exercise the production CLI, HTTP transport, immutable execution
+  provenance, and strict composite without pretending to prove a live provider's mask convention. A spoofed fixture response can
+  still change only the region the fill operation authorized; aspect and reported whole-frame failures remain atomic.
+- **Verdict:** **Sound.** Safety follows from not sending a native mask and from the local compositor, so it does not depend on a
+  remote server honestly identifying itself.
+- **Confidence:** High.

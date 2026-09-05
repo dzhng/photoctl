@@ -9,9 +9,17 @@ const ROUTES = new Set([
   "/v1/images/generations",
 ]);
 
-export async function startGatewayFixture(port = 0): Promise<Server> {
+export interface GatewayFixtureOptions {
+  imageMode?: "normal" | "wrongdims" | "smallerdims" | "wrongaspect" | "wholeframe";
+  onRequest?: (request: { path: string }) => void;
+}
+
+export async function startGatewayFixture(
+  port = 0,
+  options: GatewayFixtureOptions = {},
+): Promise<Server> {
   const server = createServer((request, response) => {
-    void handleRequest(request, response).catch((error: unknown) => {
+    void handleRequest(request, response, options).catch((error: unknown) => {
       response.writeHead(500, { "content-type": "application/json" });
       response.end(
         JSON.stringify({ error: error instanceof Error ? error.message : "fixture error" }),
@@ -24,12 +32,17 @@ export async function startGatewayFixture(port = 0): Promise<Server> {
   });
 }
 
-async function handleRequest(request: IncomingMessage, response: ServerResponse): Promise<void> {
+async function handleRequest(
+  request: IncomingMessage,
+  response: ServerResponse,
+  options: GatewayFixtureOptions,
+): Promise<void> {
   const path = new URL(request.url ?? "/", "http://gateway.fixture").pathname;
   if (request.method !== "POST" || !ROUTES.has(path)) {
     sendJson(response, 404, { error: "route not found" });
     return;
   }
+  options.onRequest?.({ path });
   const bytes = await readBody(request);
   if (path === "/v1/embeddings") {
     const body = parseJson(bytes);
@@ -65,13 +78,30 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
     });
     return;
   }
-  const multipart = path === "/v1/images/edits";
-  const fields = multipart
-    ? parseMultipartFields(bytes, request.headers["content-type"])
-    : parseJson(bytes);
+  const multipart =
+    path === "/v1/images/edits"
+      ? parseMultipart(bytes, request.headers["content-type"])
+      : undefined;
+  const fields = multipart?.fields ?? parseJson(bytes);
+  if (path === "/v1/images/edits" && fields.model === "photoctl/fake-image-edit-v1") {
+    if (multipart!.files.has("mask")) {
+      sendJson(response, 400, { error: "fixture image edits must not send a mask" });
+      return;
+    }
+    if (
+      typeof fields.prompt !== "string" ||
+      !fields.prompt.split(/\r?\n/).includes("[photoctl:instruction-composite:v1]")
+    ) {
+      sendJson(response, 400, { error: "fixture image edits require instruction-composite v1" });
+      return;
+    }
+  }
   const sent = parseDimensions(fields);
   const mode = String(
-    fields.fixture_mode ?? request.headers["x-photoctl-fixture-mode"] ?? "normal",
+    fields.fixture_mode ??
+      request.headers["x-photoctl-fixture-mode"] ??
+      options.imageMode ??
+      "normal",
   );
   const output =
     mode === "wrongdims"
@@ -112,10 +142,10 @@ function parseJson(bytes: Buffer): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function parseMultipartFields(
+function parseMultipart(
   bytes: Buffer,
   contentType: string | undefined,
-): Record<string, unknown> {
+): { fields: Record<string, unknown>; files: Set<string> } {
   const boundary = /boundary=(?:"([^"]+)"|([^;]+))/
     .exec(contentType ?? "")
     ?.slice(1)
@@ -123,13 +153,18 @@ function parseMultipartFields(
   if (!boundary) throw new Error("multipart boundary required");
   const text = bytes.toString("latin1");
   const fields: Record<string, unknown> = {};
+  const files = new Set<string>();
   for (const part of text.split(`--${boundary}`)) {
     const name = /name="([^"]+)"/.exec(part)?.[1];
     const split = part.indexOf("\r\n\r\n");
-    if (!name || split < 0 || /filename=/.test(part.slice(0, split))) continue;
+    if (!name || split < 0) continue;
+    if (/filename=/.test(part.slice(0, split))) {
+      files.add(name);
+      continue;
+    }
     fields[name] = part.slice(split + 4).replace(/\r\n$/, "");
   }
-  return fields;
+  return { fields, files };
 }
 
 function parseDimensions(fields: Record<string, unknown>): { w: number; h: number } {

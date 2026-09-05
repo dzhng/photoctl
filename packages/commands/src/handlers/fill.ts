@@ -18,8 +18,8 @@ import {
   type ImageSource,
 } from "@photoctl/render";
 import {
+  createGatewayImageModelAdapter,
   GatewayClient,
-  GatewayImageModelAdapter,
   REMOVE_PROMPT_VERSION,
   buildGuardedUpscalePrompt,
   createUpscaleRegistry,
@@ -352,11 +352,7 @@ async function fillGenerationCommand(
     const dependencies =
       providedDependencies ??
       ({
-        adapter: new GatewayImageModelAdapter({
-          model,
-          mask: "native",
-          maskPolarity: "unverified",
-        }),
+        adapter: createGatewayImageModelAdapter({ model }),
         gateway: new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl }),
         model,
       } satisfies FillDependencies);

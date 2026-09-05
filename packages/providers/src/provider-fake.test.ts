@@ -3,7 +3,11 @@ import type { Server } from "node:http";
 import { startGatewayFixture } from "@photoctl/test-harness/gateway-fixture";
 import { GatewayClient } from "./gateway.js";
 import { GatewayStructuredModelAdapter, groundedInstancesSchema } from "./adapters/structured.js";
-import { GatewayImageModelAdapter } from "./adapters/image.js";
+import {
+  FAKE_IMAGE_EDIT_MODEL,
+  createGatewayImageModelAdapter,
+  GatewayImageModelAdapter,
+} from "./adapters/image.js";
 import sharp from "sharp";
 import { PhotoctlError } from "@photoctl/protocol";
 
@@ -128,6 +132,78 @@ test("an unverified native mask is refused before pixels leave the process", asy
 
   expect(error).toBeInstanceOf(PhotoctlError);
   expect(error).toMatchObject({ code: "provider_unverified_mask" });
+});
+
+test("the reserved image fixture uses a distinct instruction-composite adapter profile", () => {
+  const adapter = createGatewayImageModelAdapter({ model: FAKE_IMAGE_EDIT_MODEL });
+  const form = adapter.buildEdit(
+    "remove",
+    { png: Buffer.from("crop"), w: 10, h: 8 },
+    Buffer.from("mask"),
+    "remove the distraction",
+  );
+
+  expect(adapter).toMatchObject({
+    id: "gateway-image-instruction-composite-v1",
+    version: "1",
+    mask: "instruction+composite",
+    maskPolarity: "unverified",
+  });
+  expect(form.has("mask")).toBe(false);
+  expect(form.get("prompt")).toBe(
+    "remove the distraction\n[photoctl:instruction-composite:v1]\nOnly perform the remove inside the supplied crop.",
+  );
+});
+
+test("the fake gateway rejects a native mask for its reserved instruction-composite model", async () => {
+  server = await startGatewayFixture();
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Fixture address unavailable");
+  const input = await sharp({
+    create: { width: 10, height: 8, channels: 4, background: "#ffffffff" },
+  })
+    .png()
+    .toBuffer();
+  const form = new GatewayImageModelAdapter({
+    model: FAKE_IMAGE_EDIT_MODEL,
+    mask: "native",
+    maskPolarity: "transparent-edits",
+  }).buildEdit("remove", { png: input, w: 10, h: 8 }, input, "remove the distraction");
+
+  const response = await fetch(`http://127.0.0.1:${address.port}/v1/images/edits`, {
+    method: "POST",
+    body: form,
+  });
+
+  expect(response.status).toBe(400);
+  expect(await response.json()).toEqual({ error: "fixture image edits must not send a mask" });
+});
+
+test("the fake gateway requires the exact instruction-composite prompt marker", async () => {
+  server = await startGatewayFixture();
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Fixture address unavailable");
+  const input = await sharp({
+    create: { width: 10, height: 8, channels: 4, background: "#ffffffff" },
+  })
+    .png()
+    .toBuffer();
+  const form = new FormData();
+  form.set("model", FAKE_IMAGE_EDIT_MODEL);
+  form.set("image", new Blob([Uint8Array.from(input)], { type: "image/png" }), "crop.png");
+  form.set("prompt", "remove the distraction");
+  form.set("size", "10x8");
+  form.set("output_format", "png");
+
+  const response = await fetch(`http://127.0.0.1:${address.port}/v1/images/edits`, {
+    method: "POST",
+    body: form,
+  });
+
+  expect(response.status).toBe(400);
+  expect(await response.json()).toEqual({
+    error: "fixture image edits require instruction-composite v1",
+  });
 });
 
 test("the structured adapter sends a JSON-schema request through the real HTTP gateway seam", async () => {

@@ -161,6 +161,12 @@ capability: the existing policy still requires persisted, purpose-scoped consent
 fake therefore supports built command-path verification without becoming an ambient opt-in or a live-model selection. Callers may
 still inject a registry at the same boundary for failure modes and future adapter evidence.
 
+The keyless image fixture is also a fixed provider-owned adapter profile selected by its reserved concrete model ID, never by the
+gateway URL or a remotely advertised capability. It sends no native mask: a versioned instruction marks the deterministic harness
+request, and the strict compositor remains the only owner of protected pixels. The built CLI therefore reaches the real HTTP and
+immutable-provenance path for deterministic fill checks, while the live default still refuses before network I/O until native-mask
+polarity is verified. Provider geometry failures remain atomic and leave the active revision unchanged.
+
 ## 12d1 branch-refresh checkpoint — 2026-09-05
 
 Explicit refresh treats the active canonical fill ancestry as a stored program rather than as a flattened image. Generation refresh

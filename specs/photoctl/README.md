@@ -22,7 +22,9 @@ recursive import commits through a bounded deterministic pipeline, collision buc
 and culling/list/next/remove remain usable from pinned previews while source volumes are offline. Immutable photo-scoped logical
 nodes, atomic document revisions, full hash identities, canonical artifact publication, graph evaluation/inspection, and
 restore-time artifact reconciliation are now in place. Gateway and independent upscaler contracts now resolve fixed models,
-require explicit provider consent, and attach bounded external-execution provenance to the existing DAG execution record. Delivery
+require explicit provider consent, and attach bounded external-execution provenance to the existing DAG execution record. The
+reserved keyless image-fixture profile uses instruction plus strict composite instead of claiming a native-mask polarity;
+the live default remains fail-closed until its polarity smoke is accepted. Delivery
 exports snapshot that immutable identity, encode the canonical evaluated artifact without unasked clobbering, and record successful
 writes in schema v6. Explicit XMP writes now merge catalog cull metadata into sidecars without touching originals or foreign
 metadata; pull sync and mtime divergence reporting share that owner. Opened-file snapshots and a strong pre-publication identity

@@ -5,6 +5,7 @@ import { buildInstructionCompositePrompt } from "../prompts/image.js";
 
 export type ImageMaskMode = "native" | "instruction+composite";
 export type MaskPolarity = "transparent-edits" | "white-edits" | "unverified";
+export const FAKE_IMAGE_EDIT_MODEL = "photoctl/fake-image-edit-v1";
 
 export interface SentImage {
   png: Buffer;
@@ -37,8 +38,17 @@ export interface ImageModelAdapter {
   ): Promise<NormalizedImageResponse>;
 }
 
+interface GatewayImageModelAdapterOptions {
+  model: string;
+  mask: ImageMaskMode;
+  maskPolarity: MaskPolarity;
+  fetch?: typeof fetch;
+  maxResponseBytes?: number;
+  responseTimeoutMs?: number;
+}
+
 export class GatewayImageModelAdapter implements ImageModelAdapter {
-  readonly id = "gateway-image-v1";
+  readonly id: string;
   readonly version = "1";
   readonly mask: ImageMaskMode;
   readonly maskPolarity: MaskPolarity;
@@ -47,14 +57,9 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
   private readonly maxResponseBytes: number;
   private readonly responseTimeoutMs: number;
 
-  constructor(options: {
-    model: string;
-    mask: ImageMaskMode;
-    maskPolarity: MaskPolarity;
-    fetch?: typeof fetch;
-    maxResponseBytes?: number;
-    responseTimeoutMs?: number;
-  }) {
+  constructor(options: GatewayImageModelAdapterOptions) {
+    this.id =
+      options.mask === "native" ? "gateway-image-v1" : "gateway-image-instruction-composite-v1";
     this.model = options.model;
     this.mask = options.mask;
     this.maskPolarity = options.maskPolarity;
@@ -132,6 +137,22 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
         : [],
     };
   }
+}
+
+export function createGatewayImageModelAdapter(
+  options: Omit<GatewayImageModelAdapterOptions, "mask" | "maskPolarity">,
+): GatewayImageModelAdapter {
+  return options.model === FAKE_IMAGE_EDIT_MODEL
+    ? new GatewayImageModelAdapter({
+        ...options,
+        mask: "instruction+composite",
+        maskPolarity: "unverified",
+      })
+    : new GatewayImageModelAdapter({
+        ...options,
+        mask: "native",
+        maskPolarity: "unverified",
+      });
 }
 
 async function downloadImage(
