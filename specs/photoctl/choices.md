@@ -2704,3 +2704,47 @@
   instance order while still distinguishing non-mutating output explicitly.
 - **Verdict:** **Sound.** One response vocabulary makes mutation state explicit without claiming an artifact exists before commit.
 - **Confidence:** Medium; a later visual client may justify adding confidence/source fields without changing these identities.
+
+### Slice 12b — Cached density artifacts are bound to one generation and selected deterministically
+
+- **When:** Slice 12b density-planner implementation, 2026-09-05.
+- **The choice:** A cached upscale names the generation artifact it came from. The planner rejects a cache entry from another
+  generation instead of silently borrowing its pixels. When several cached artifacts all cover the requested width and height,
+  it chooses the one with the fewest pixels, breaking an exact tie by artifact ID. For example, an unordered cache containing both
+  a sufficient 2× result and a 4× result always reuses the 2× result; the alternative was to let database row order choose, which
+  could change the plan between otherwise identical runs.
+- **The gap:** The plan required reuse of a sufficient pre-resize artifact, but did not define how the planner proves lineage or
+  resolves several sufficient cache hits.
+- **The reach:** Refresh, retry, and later transform-driven density maintenance inherit a stable rule that cannot mix outputs from
+  different external executions.
+- **Verdict:** **Sound.** Explicit lineage protects image identity, while smallest-sufficient selection minimizes deterministic
+  downsampling work without changing output-density truth.
+- **Confidence:** High.
+
+### Slice 12b — A provider with no valid output falls back to the usable generation
+
+- **When:** Slice 12b density-planner implementation, 2026-09-05.
+- **The choice:** Suppose every advertised upscale would exceed the provider's input-pixel, output-pixel, or edge limit. There is
+  then no legal paid request to make, so the plan uses the already successful generation as its input, performs the one exact
+  deterministic resize, reports `density_satisfied:false`, and emits `upscale_resolution_limited`. The alternative was to fail
+  planning even though usable generated pixels already exist, or knowingly schedule a request outside the adapter contract.
+- **The gap:** The plan said to use the largest valid provider output when limits stop short, but did not define the zero-valid-scale
+  case.
+- **The reach:** Tiny provider ceilings and oversized inputs remain soft density outcomes; generation stays the successful boundary
+  for the later Slice 12c executor.
+- **Verdict:** **Sound.** It preserves usable work and reports the sampling deficit honestly without inventing an invalid call.
+- **Confidence:** High.
+
+### Slice 12b — Fractional advertised scales must still land on whole pixels
+
+- **When:** Slice 12b density-planner implementation, 2026-09-05.
+- **The choice:** Supported scale factors may be fractional because the provider contract models them as numbers, but applying a
+  factor must produce whole, safe pixel dimensions for both axes. A 1.5× scale is valid for a 1000×800 artifact and plans
+  1500×1200; the same factor on dimensions that produce half pixels is rejected loudly. Restricting every adapter to integer
+  factors was the unbuilt alternative.
+- **The gap:** The plan required supported uniform scales and loud invalid-input handling without saying whether a scale itself had
+  to be an integer or only its resulting raster dimensions did.
+- **The reach:** Future adapters may advertise fractional native scales without making executor geometry ambiguous.
+- **Verdict:** **Sound.** It follows the existing numeric provider seam while preserving the integer raster contract.
+- **Confidence:** Medium; the current fake adapter advertises only integer scales, so the first fractional live adapter should
+  confirm its rounding convention matches this exact-output rule.
