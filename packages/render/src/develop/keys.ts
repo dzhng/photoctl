@@ -109,13 +109,13 @@ export const DEVELOP_OPERATORS = {
   "noise_reduction.luminance": {
     range: [0, 100],
     operator: "nlm",
-    formula: "non-local means luminance",
+    formula: "3x3-patch/5x5-search NLM luminance; h=0.012 at full scale",
     tier: 2,
   },
   "noise_reduction.color": {
     range: [0, 100],
     operator: "nlm",
-    formula: "non-local means chroma",
+    formula: "3x3-patch/5x5-search NLM Rec.2020 chroma; h=0.010 at full scale",
     tier: 2,
   },
   "bw.intensity": {

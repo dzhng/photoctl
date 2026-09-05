@@ -95,6 +95,8 @@ export interface NativeDevelopParameters {
   levels?: { black: number; midpoint: number; white: number };
   definition?: number;
   sharpen?: number;
+  noiseReductionLuminance?: number;
+  noiseReductionColor?: number;
 }
 
 export class NativeImageUnavailableError extends Error {}

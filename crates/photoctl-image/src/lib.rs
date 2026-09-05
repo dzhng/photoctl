@@ -117,6 +117,8 @@ pub struct DevelopParameters {
     pub levels: Option<DevelopLevelsParameters>,
     pub definition: Option<f64>,
     pub sharpen: Option<f64>,
+    pub noise_reduction_luminance: Option<f64>,
+    pub noise_reduction_color: Option<f64>,
 }
 
 #[napi(object)]
@@ -270,6 +272,8 @@ fn develop_parameters(parameters: DevelopParameters) -> Develop {
         }),
         definition: parameters.definition.unwrap_or_default() as f32,
         sharpen: parameters.sharpen.unwrap_or_default() as f32,
+        noise_reduction_luminance: parameters.noise_reduction_luminance.unwrap_or_default() as f32,
+        noise_reduction_color: parameters.noise_reduction_color.unwrap_or_default() as f32,
     }
 }
 

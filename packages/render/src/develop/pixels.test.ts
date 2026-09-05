@@ -288,6 +288,108 @@ test("local contrast output is byte-deterministic", async () => {
   expect(second.bytes).toEqual(first.bytes);
 });
 
+test("noise reduction crosses the canonical artifact seam in fixed order", async () => {
+  const source = {
+    w: 7,
+    h: 5,
+    data: Float32Array.from({ length: 7 * 5 * 3 }, (_, index) => {
+      const pixel = Math.floor(index / 3);
+      const channel = index % 3;
+      const base = 0.12 + (pixel % 7) * 0.015;
+      const noise = pixel === 17 ? [0.08, -0.04, 0.06][channel]! : 0;
+      return base * [1, 0.85, 0.7][channel]! + noise;
+    }),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const parameters = {
+    sharpen: 20,
+    noise_reduction: { luminance: 65, color: 80 },
+  };
+
+  const memory = await applyDevelop(source, parameters);
+  const artifact = await applyDevelopArtifact(
+    await encodeArtifactLinearTiff(source),
+    { w: source.w, h: source.h },
+    parameters,
+  );
+  const repeatedArtifact = await applyDevelopArtifact(
+    await encodeArtifactLinearTiff(source),
+    { w: source.w, h: source.h },
+    parameters,
+  );
+  const decoded = await decodeArtifactLinearTiff(artifact.bytes);
+  const sharpened = await applyDevelop(source, { sharpen: 20 });
+  const ordered = await applyDevelop(sharpened, {
+    noise_reduction: { luminance: 65, color: 80 },
+  });
+
+  expect(decoded.data).toEqual(memory.data);
+  expect(repeatedArtifact.bytes).toEqual(artifact.bytes);
+  expect(memory.data).toEqual(ordered.data);
+  expect(memory.data).not.toEqual(source.data);
+});
+
+test("zero noise reduction is an exact canonical no-op", async () => {
+  const source = {
+    w: 3,
+    h: 2,
+    data: new Float32Array([
+      -0.1, 0.2, 1.4, 0.1, 0.11, 0.12, 0.8, 0.4, 0.2, 0.3, 0.2, 0.1, 1.2, 1.1, 1, 0.03, 0.04, 0.05,
+    ]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const input = await encodeArtifactLinearTiff(source);
+
+  const output = await applyDevelopArtifact(
+    input,
+    { w: source.w, h: source.h },
+    { noise_reduction: { luminance: 0, color: 0 } },
+  );
+
+  expect(output.bytes).toEqual(input);
+});
+
+test("noise reduction leaves the JavaScript event loop responsive", async () => {
+  const width = 128;
+  const height = 96;
+  const bytes = await encodeArtifactLinearTiff({
+    w: width,
+    h: height,
+    data: Float32Array.from(
+      { length: width * height * 3 },
+      (_, index) => 0.2 + ((index * 17) % 19) * 0.0005,
+    ),
+    space: "scene-linear-rec2020",
+    orientationApplied: true,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  });
+  let heartbeats = 0;
+  const timer = setInterval(() => {
+    heartbeats += 1;
+  }, 1);
+  try {
+    await applyDevelopArtifact(
+      bytes,
+      { w: width, h: height },
+      { noise_reduction: { luminance: 50, color: 50 } },
+    );
+  } finally {
+    clearInterval(timer);
+  }
+
+  expect(heartbeats).toBeGreaterThan(2);
+});
+
 test("develop rejects camera-space pixels at its public boundary", async () => {
   const camera = {
     w: 1,

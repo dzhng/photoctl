@@ -159,6 +159,12 @@ shadows and crunchy foliage. A reduced tuning was initially accepted, but the fi
 the current bounded-memory implementation still rejected definition and the stack; G8 remains a
 recorded non-acceptance rather than a recommended preset.
 
+Slice 08d2's [G8 noise-reduction checkpoint](../assets/gates/G8-noise-reduction.md) used the same
+production native seam on a 700×518 100%-pixel grass crop. The first delegated tuning was rejected
+for watercolor texture loss. The retuned luminance, chroma, and combined controls were accepted by
+fresh review; combined was preferred narrowly, with mild microtexture attenuation recorded as its
+tradeoff rather than hidden.
+
 ## Must stay green: 01–07. Deps: 7b (functional), 7a (macos). Firewall: no layers, no providers, no learned NR, no CoreML, no VLM.
 
 ## Implementation notes
@@ -230,3 +236,10 @@ recorded non-acceptance rather than a recommended preset.
   radius-sized delayed-slice ring rather than a third full-frame buffer; identity local controls allocate neither. The operators keep extended scene-linear samples and publish
   through the existing canonical artifact path. Needs David:
   no for the deterministic seam; G8's final current-output review did not accept definition or the combined tuning.
+
+- **2026-09-05 — 8d2 noise reduction.** Luminance and chroma NLM run in Rust after sharpen, using
+  separate Rec.2020 luminance and zero-luminance chroma representations. A 3×3 comparison patch and
+  5×5 search window stream through delayed rows, so scratch memory is bounded by image width and
+  neighborhood radius rather than another full frame. Zero controls preserve canonical bytes exactly;
+  nonzero controls remain deterministic across the in-memory and canonical-TIFF paths. Needs David:
+  no for the seam; the accepted G8 tuning remains reversible operator data.

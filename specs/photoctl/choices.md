@@ -1368,6 +1368,42 @@
 
 ## Sound
 
+### Slice 08d2 — NLM streams delayed rows instead of allocating a denoised frame
+
+- **When:** Slice 08d2 noise-reduction implementation, 2026-09-05.
+- **The choice:** Non-local means (NLM) compares each pixel's small neighborhood with nearby
+  neighborhoods and averages the most similar ones. A straightforward implementation writes every
+  result into a second full-size image. This implementation instead holds only the few completed rows
+  whose source neighborhoods are still needed; once a row can no longer affect a future comparison,
+  its result replaces that input row. The existing asynchronous native call still owns the one input
+  buffer required to keep JavaScript memory safe.
+- **The gap:** The plan required deterministic bounded-memory NLM but did not choose the streaming
+  strategy or exact scratch-space bound.
+- **The reach:** A full-resolution RAW uses scratch space proportional to image width and the fixed
+  neighborhood radius, not image height. Future spatial operators can use the same safe-overwrite
+  rule only when they prove how long each source row remains live.
+- **Verdict:** **Sound.** The overwrite delay follows the search radius plus patch radius, and public
+  artifact/in-memory parity proves that storage form does not change pixels.
+- **Confidence:** High.
+
+### Slice 08d2 — Luminance NLM precedes chroma NLM in one fixed native order
+
+- **When:** Slice 08d2 noise-reduction implementation, 2026-09-05.
+- **The choice:** The luminance control averages brightness while adding the same brightness delta to
+  all three working channels, so it leaves their color differences unchanged. The color control then
+  averages two zero-brightness color components and reconstructs RGB at the source brightness. Running
+  brightness first gives the color comparison a quieter signal; running the stages in separate calls
+  produces the same bytes as one combined request. The alternative order would make the controls valid
+  individually but give a different combined result.
+- **The gap:** The plan named separate luminance and color controls and required fixed operator order,
+  but did not order those two sub-stages or define their working representation.
+- **The reach:** Presets, copied edits, canonical artifact hashes, previews, and exports now share this
+  combined-control meaning. Reordering it later would intentionally change rendered identity.
+- **Verdict:** **Sound.** Each control preserves the dimension it does not own, and deterministic tests
+  pin the combined order through the public native seam.
+- **Confidence:** Medium; broader noisy-camera fixtures may motivate different delegated strength data,
+  but not a second pixel owner or ambiguous order.
+
 ### Slice 08d1 — Spatial develop extends the existing native worker with dimensions
 
 - **When:** Slice 08d1 local-contrast implementation, 2026-09-05.

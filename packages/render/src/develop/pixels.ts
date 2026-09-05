@@ -24,6 +24,7 @@ const IMPLEMENTED_KEYS = new Set([
   "levels",
   "definition",
   "sharpen",
+  "noise_reduction",
 ]);
 
 /** Runs deterministic develop in Rust; TypeScript owns only color-space transport. */
@@ -95,5 +96,7 @@ function nativeParameters(parameters: DevelopDict): NativeDevelopParameters {
     levels: parameters.levels,
     definition: parameters.definition,
     sharpen: parameters.sharpen,
+    noiseReductionLuminance: parameters.noise_reduction?.luminance,
+    noiseReductionColor: parameters.noise_reduction?.color,
   };
 }

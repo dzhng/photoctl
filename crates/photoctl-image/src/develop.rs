@@ -4,6 +4,7 @@ const BRILLIANCE_STOPS_AT_FULL_SCALE: f32 = 0.2;
 const DEFINITION_RADIUS_FRACTION: f32 = 0.03;
 const DEFINITION_GAIN_AT_FULL_SCALE: f32 = 0.25;
 const SHARPEN_GAIN_AT_FULL_SCALE: f32 = 0.5;
+mod noise_reduction;
 
 use crate::tone_curve::{ToneCurve, from_log, prepare as prepare_tone_curve, to_log};
 use std::collections::VecDeque;
@@ -64,6 +65,8 @@ pub(crate) struct Develop {
     pub levels: Option<LevelsParameters>,
     pub definition: f32,
     pub sharpen: f32,
+    pub noise_reduction_luminance: f32,
+    pub noise_reduction_color: f32,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -157,6 +160,8 @@ struct LocalDevelop {
     brilliance: f32,
     definition: f32,
     sharpen: f32,
+    noise_reduction_luminance: f32,
+    noise_reduction_color: f32,
 }
 
 impl From<&Develop> for LocalDevelop {
@@ -165,13 +170,19 @@ impl From<&Develop> for LocalDevelop {
             brilliance: parameters.brilliance / 100.0,
             definition: parameters.definition / 100.0 * DEFINITION_GAIN_AT_FULL_SCALE,
             sharpen: parameters.sharpen / 100.0 * SHARPEN_GAIN_AT_FULL_SCALE,
+            noise_reduction_luminance: parameters.noise_reduction_luminance / 100.0,
+            noise_reduction_color: parameters.noise_reduction_color / 100.0,
         }
     }
 }
 
 impl LocalDevelop {
     fn is_identity(self) -> bool {
-        self.brilliance == 0.0 && self.definition == 0.0 && self.sharpen == 0.0
+        self.brilliance == 0.0
+            && self.definition == 0.0
+            && self.sharpen == 0.0
+            && self.noise_reduction_luminance == 0.0
+            && self.noise_reduction_color == 0.0
     }
 }
 
@@ -181,33 +192,7 @@ fn apply_local_bytes_in_place(
     height: usize,
     parameters: LocalDevelop,
 ) -> Result<(), String> {
-    if parameters.brilliance != 0.0 {
-        apply_box_operator(
-            data,
-            width,
-            height,
-            BRILLIANCE_RADIUS,
-            BoxOperator::Brilliance(parameters.brilliance),
-        );
-    }
-    if parameters.definition != 0.0 {
-        apply_box_operator(
-            data,
-            width,
-            height,
-            ((width.max(height) as f32 * DEFINITION_RADIUS_FRACTION).round() as usize).max(1),
-            BoxOperator::Unsharp(parameters.definition),
-        );
-    }
-    if parameters.sharpen != 0.0 {
-        apply_box_operator(
-            data,
-            width,
-            height,
-            1,
-            BoxOperator::Unsharp(parameters.sharpen),
-        );
-    }
+    apply_local_operators(data, width, height, parameters);
     if data
         .chunks_exact(4)
         .any(|sample| !f32::from_le_bytes(sample.try_into().unwrap()).is_finite())
@@ -223,6 +208,19 @@ fn apply_local_in_place(
     height: usize,
     parameters: LocalDevelop,
 ) -> Result<(), String> {
+    apply_local_operators(data, width, height, parameters);
+    if data.iter().any(|sample| !sample.is_finite()) {
+        return Err("local develop produced a non-finite sample".to_owned());
+    }
+    Ok(())
+}
+
+fn apply_local_operators<S: SampleStorage + ?Sized>(
+    data: &mut S,
+    width: usize,
+    height: usize,
+    parameters: LocalDevelop,
+) {
     if parameters.brilliance != 0.0 {
         apply_box_operator(
             data,
@@ -250,10 +248,24 @@ fn apply_local_in_place(
             BoxOperator::Unsharp(parameters.sharpen),
         );
     }
-    if data.iter().any(|sample| !sample.is_finite()) {
-        return Err("local develop produced a non-finite sample".to_owned());
+    if parameters.noise_reduction_luminance != 0.0 {
+        noise_reduction::apply(
+            data,
+            width,
+            height,
+            noise_reduction::Component::Luminance,
+            parameters.noise_reduction_luminance,
+        );
     }
-    Ok(())
+    if parameters.noise_reduction_color != 0.0 {
+        noise_reduction::apply(
+            data,
+            width,
+            height,
+            noise_reduction::Component::Color,
+            parameters.noise_reduction_color,
+        );
+    }
 }
 
 trait SampleStorage {
@@ -1254,6 +1266,55 @@ mod tests {
         .unwrap();
 
         assert_eq!(combined, ordered);
+    }
+
+    #[test]
+    fn luminance_nlm_reduces_impulse_noise_without_moving_chroma() {
+        let mut input = vec![0.2, 0.1, 0.05].repeat(25);
+        input[12 * 3..12 * 3 + 3].copy_from_slice(&[0.21, 0.11, 0.06]);
+
+        let actual = apply_develop(
+            &input,
+            5,
+            5,
+            Develop {
+                noise_reduction_luminance: 100.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+
+        let center = &actual[12 * 3..12 * 3 + 3];
+        assert!(rec2020_luminance(center.try_into().unwrap()) < 0.13);
+        assert!((center[0] - center[1] - 0.1).abs() < 1e-6);
+        assert!((center[1] - center[2] - 0.05).abs() < 1e-6);
+    }
+
+    #[test]
+    fn color_nlm_reduces_chroma_noise_without_moving_luminance() {
+        let mut input = vec![0.2; 25 * 3];
+        let green = (0.2 - 0.262_700_2 * 0.21 - 0.059_301_7 * 0.19) / 0.677_998_1;
+        input[12 * 3..12 * 3 + 3].copy_from_slice(&[0.21, green, 0.19]);
+
+        let actual = apply_develop(
+            &input,
+            5,
+            5,
+            Develop {
+                noise_reduction_color: 100.0,
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+
+        let before: [f32; 3] = input[12 * 3..12 * 3 + 3].try_into().unwrap();
+        let after: [f32; 3] = actual[12 * 3..12 * 3 + 3].try_into().unwrap();
+        let chroma = |pixel: [f32; 3]| {
+            pixel.into_iter().fold(f32::NEG_INFINITY, f32::max)
+                - pixel.into_iter().fold(f32::INFINITY, f32::min)
+        };
+        assert!(chroma(after) < chroma(before) * 0.75);
+        assert!((rec2020_luminance(after) - rec2020_luminance(before)).abs() < 1e-6);
     }
 
     #[test]
