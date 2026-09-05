@@ -52,6 +52,20 @@ and soft coverage; the synthetic boundary check is not photographic acceptance.
 ## Pre-gate (with key, first): `smoke:mask-polarity` → each adapter's `maskPolarity` + a fake-gateway fixture. Until recorded,
 live native-mask fills refuse `provider_unverified_mask` 69; fake-gateway runs are unaffected.
 
+The runner requires `PHOTOCTL_MASK_SMOKE_API_KEY`, `PHOTOCTL_MASK_SMOKE_MODEL`, and an explicit
+`PHOTOCTL_MASK_SMOKE_POLARITY` candidate (`white-edits` or `transparent-edits`). It never reads the
+ambient gateway key. `bun run smoke:mask-polarity --out <evidence-directory>` makes one request with
+no retry, using the production adapter. The saved input, coverage, actual wire mask, and uncomposited
+return have SHA-256 hashes in `report.json`. Its prompt requests both colored rectangles change,
+while the mask protects the right rectangle: instruction following alone cannot establish polarity.
+Capture remains `captured_needs_review`, never automatic acceptance. Inspect both regions with
+`compare-screenshots`, then run unprimed `screenshot-critique` before recording a verified adapter
+polarity. A fake response or a successful HTTP status is only evidence that the runner works.
+The adapter owns coverage-to-alpha conversion for transparent-edit providers; fill and refresh await
+that encoding before sending the request. White-edit providers retain the original coverage PNG.
+Fractional values are inverted, not thresholded. Live native-mask profiles remain unverified until
+the independent smoke review supplies evidence; adding the encoding does not enable those profiles.
+
 ## API seam
 `packages/render/src/fill/{pipeline.ts,fit.ts,crop.ts}` + `providers/prompts/{remove,outpaint}.ts` (C1/C2, versioned ids).
 Slice 12 extends protocol `WarningCode` with `upscale_unconfigured`, `upscale_failed`, `upscale_resolution_limited`, and

@@ -29,6 +29,7 @@
     "probe:race": "bun run build:ts && node scripts/probe-race.mjs",
     "probe:toast": "node scripts/probe-toast.mjs",
     "smoke:embed-shape": "node scripts/smoke-embed-shape.mjs",
+    "smoke:mask-polarity": "bun run build:ts && node scripts/smoke-mask-polarity.mjs",
     "verify": "bun run fmt:check && bun run lint && bun run typecheck && bun run build && bun run test",
     "publish:npm": "node scripts/publish-npm.mjs",
     "version": "node scripts/sync-versions.mjs && bun install --lockfile-only && git add apps/*/package.json packages/*/package.json helpers/mac/Sources/photoctl-mac/ReleaseVersion.swift bun.lock"

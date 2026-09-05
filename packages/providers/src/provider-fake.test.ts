@@ -9,12 +9,29 @@ import {
   GatewayImageModelAdapter,
 } from "./adapters/image.js";
 import sharp from "sharp";
-import { PhotoctlError } from "@photoctl/protocol";
 
 let server: Server | undefined;
 afterEach(async () => {
   if (server) await new Promise<void>((resolve) => server!.close(() => resolve()));
   server = undefined;
+});
+
+test("transparent edit masks preserve fractional coverage as inverse alpha", async () => {
+  const adapter = new GatewayImageModelAdapter({
+    model: "fixture-mask-model",
+    mask: "native",
+    maskPolarity: "transparent-edits",
+  });
+  const mask = await sharp(Buffer.from([0, 128, 255]), {
+    raw: { width: 3, height: 1, channels: 1 },
+  })
+    .png()
+    .toBuffer();
+  const form = await adapter.buildEdit("replace", { png: mask, w: 3, h: 1 }, mask, "replace");
+  const wire = Buffer.from(await (form.get("mask") as File).arrayBuffer());
+  const { data, info } = await sharp(wire).raw().toBuffer({ resolveWithObject: true });
+  expect(info.channels).toBe(4);
+  expect([data[3], data[7], data[11]]).toEqual([255, 127, 0]);
 });
 
 test("the image adapter preserves the provider's intrinsic same-ratio raster", async () => {
@@ -35,7 +52,13 @@ test("the image adapter preserves the provider's intrinsic same-ratio raster", a
   })
     .png()
     .toBuffer();
-  const form = adapter.buildEdit("replace", { png: input, w: 20, h: 12 }, input, "blue sky", 7);
+  const form = await adapter.buildEdit(
+    "replace",
+    { png: input, w: 20, h: 12 },
+    input,
+    "blue sky",
+    7,
+  );
   form.set("fixture_mode", "wrongdims");
   const response = await gateway.imageEdits(form);
 
@@ -85,7 +108,13 @@ test("whole-frame fake responses surface the adapter warning", async () => {
   })
     .png()
     .toBuffer();
-  const form = adapter.buildEdit("replace", { png: input, w: 10, h: 8 }, input, "blue sky", 7);
+  const form = await adapter.buildEdit(
+    "replace",
+    { png: input, w: 10, h: 8 },
+    input,
+    "blue sky",
+    7,
+  );
   form.set("fixture_mode", "wholeframe");
 
   const response = await gateway.imageEdits(form);
@@ -117,26 +146,19 @@ test("an unverified native mask is refused before pixels leave the process", asy
     maskPolarity: "unverified",
   });
 
-  const error = (() => {
-    try {
-      adapter.buildEdit(
-        "replace",
-        { png: Buffer.from("crop"), w: 10, h: 8 },
-        Buffer.from("mask"),
-        "blue sky",
-      );
-    } catch (cause) {
-      return cause;
-    }
-  })();
-
-  expect(error).toBeInstanceOf(PhotoctlError);
-  expect(error).toMatchObject({ code: "provider_unverified_mask" });
+  await expect(
+    adapter.buildEdit(
+      "replace",
+      { png: Buffer.from("crop"), w: 10, h: 8 },
+      Buffer.from("mask"),
+      "blue sky",
+    ),
+  ).rejects.toMatchObject({ code: "provider_unverified_mask" });
 });
 
-test("the reserved image fixture uses a distinct instruction-composite adapter profile", () => {
+test("the reserved image fixture uses a distinct instruction-composite adapter profile", async () => {
   const adapter = createGatewayImageModelAdapter({ model: FAKE_IMAGE_EDIT_MODEL });
-  const form = adapter.buildEdit(
+  const form = await adapter.buildEdit(
     "remove",
     { png: Buffer.from("crop"), w: 10, h: 8 },
     Buffer.from("mask"),
@@ -181,7 +203,7 @@ test("the fake gateway rejects a native mask for its reserved instruction-compos
   })
     .png()
     .toBuffer();
-  const form = new GatewayImageModelAdapter({
+  const form = await new GatewayImageModelAdapter({
     model: FAKE_IMAGE_EDIT_MODEL,
     mask: "native",
     maskPolarity: "transparent-edits",

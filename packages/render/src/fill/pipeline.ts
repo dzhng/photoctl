@@ -43,7 +43,7 @@ export interface FillGenerationDependencies {
       mask: Buffer,
       prompt: string,
       seed?: number,
-    ): FormData;
+    ): Promise<FormData>;
     buildFullFrameEdit(
       crop: { png: Buffer; w: number; h: number },
       prompt: string,

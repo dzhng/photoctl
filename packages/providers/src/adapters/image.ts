@@ -31,7 +31,7 @@ export interface ImageModelAdapter {
     mask: Buffer,
     prompt: string,
     seed?: number,
-  ): FormData;
+  ): Promise<FormData>;
   buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): FormData;
   buildGeneration(
     prompt: string,
@@ -56,7 +56,7 @@ interface GatewayImageModelAdapterOptions {
 
 export class GatewayImageModelAdapter implements ImageModelAdapter {
   readonly id: string;
-  readonly version = "1";
+  readonly version: string;
   readonly mask: ImageMaskMode;
   readonly maskPolarity: MaskPolarity;
   private readonly model: string;
@@ -67,6 +67,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
   constructor(options: GatewayImageModelAdapterOptions) {
     this.id =
       options.mask === "native" ? "gateway-image-v1" : "gateway-image-instruction-composite-v1";
+    this.version = options.mask === "native" ? "2" : "1";
     this.model = options.model;
     this.mask = options.mask;
     this.maskPolarity = options.maskPolarity;
@@ -81,13 +82,13 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     }
   }
 
-  buildEdit(
+  async buildEdit(
     operation: string,
     crop: SentImage,
     mask: Buffer,
     prompt: string,
     seed?: number,
-  ): FormData {
+  ): Promise<FormData> {
     if (this.mask === "native" && this.maskPolarity === "unverified") {
       throw new PhotoctlError(
         "provider_unverified_mask",
@@ -98,7 +99,27 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     form.set("model", this.model);
     form.set("image", pngBlob(crop.png), "crop.png");
     if (this.mask === "native") {
-      form.set("mask", pngBlob(mask), "mask.png");
+      let wireMask = mask;
+      if (this.maskPolarity === "transparent-edits") {
+        // Internal PNG coverage is white=edit; this provider expresses edit coverage as transparency.
+        const { data, info } = await sharp(mask)
+          .extractChannel(0)
+          .raw()
+          .toBuffer({ resolveWithObject: true });
+        for (let index = 0; index < data.length; index += 1) data[index] = 255 - data[index]!;
+        wireMask = await sharp({
+          create: {
+            width: info.width,
+            height: info.height,
+            channels: 3,
+            background: "#ffffff",
+          },
+        })
+          .joinChannel(data, { raw: { width: info.width, height: info.height, channels: 1 } })
+          .png()
+          .toBuffer();
+      }
+      form.set("mask", pngBlob(wireMask), "mask.png");
     }
     form.set(
       "prompt",

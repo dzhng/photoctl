@@ -156,7 +156,7 @@ export async function executeFreshGeneration(
     seed?: number;
     dependencies: FillGenerationDependencies;
     request: (executionId: `exec_${string}`, returned: { w: number; h: number }) => JsonValue;
-    buildRequest: () => FormData;
+    buildRequest: () => FormData | Promise<FormData>;
     validate?: (response: {
       wholeFrame: boolean;
       returnedDimensions: { w: number; h: number };
@@ -166,7 +166,7 @@ export async function executeFreshGeneration(
 ): Promise<PreparedGeneration> {
   const executionId = newExecutionId();
   const started = (input.dependencies.now ?? Date.now)();
-  const response = await input.dependencies.gateway.imageEdits(input.buildRequest());
+  const response = await input.dependencies.gateway.imageEdits(await input.buildRequest());
   const normalized = await input.dependencies.adapter.normalize(
     response.data,
     input.sentDimensions,

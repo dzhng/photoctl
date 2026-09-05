@@ -22,6 +22,24 @@
 
 ## Sound
 
+### Slice 12 — Mask-polarity probes capture evidence without enabling a provider
+
+- **When:** Mask smoke and adapter encoding pass, 2026-09-06.
+- **The choice:** An explicitly keyed probe makes one request for one named model and polarity
+  candidate, using synthetic rectangles rather than a private photo. It saves the actual outgoing
+  mask and uncomposited return with hashes, but always leaves polarity unverified. The prompt asks
+  both rectangles to change while the mask protects one, so prompt obedience cannot masquerade as
+  mask enforcement. A reviewer must judge that evidence before a production profile is enabled.
+- **The gap:** The spec required live polarity evidence but did not define the probe's consent,
+  fixture, request budget, or acceptance mechanism.
+- **The reach:** A purpose-specific key is required; an ambient gateway key never starts the probe.
+  One attempt avoids accidental duplicate charges. The same asynchronous adapter encoding serves
+  both ordinary fills and probes, preserving fractional coverage when it becomes inverse alpha.
+- **Verdict:** **Sound.** Transport success is not a mask-quality verdict, and provider-specific
+  encoding has one owner without modifying the compositor's internal white-means-edit convention.
+- **Confidence:** Medium; the evidence capture is deterministic, but real provider behavior still
+  requires the specified independent visual review.
+
 ### Slice 14 — Source and installed CLI use the same editing journey
 
 - **When:** Packed full-feature journey integration, 2026-09-05.

@@ -362,7 +362,7 @@ async function executeGenerationRefresh(
     mask = { ...mask, data: transformedMask };
   }
   const sent = await fillProviderInputs(base, mask, cropRect, storedRequest.full_res !== false);
-  const form = request.dependencies.adapter.buildEdit(
+  const form = await request.dependencies.adapter.buildEdit(
     operation,
     sent.image,
     sent.mask,
