@@ -4479,3 +4479,36 @@
   prevents client-generated duplicate sends; it does not promise exactly-once execution.
 - **Verdict:** **Sound.** Recovery must not convert missing acknowledgement into another mutation.
 - **Confidence:** High.
+
+### RAW compression — Preserve the file's tag separately from decoder routing
+
+- **When:** RAW codec fixture integration, 2026-09-06.
+- **The choice:** A Sony lossless file contains compression tag 7, but LibRaw changes its working
+  value to 6 while selecting a decoder. Photoctl now retains the original tag in LibRaw's existing
+  per-image-directory metadata and carries it when selecting the RAW frame. The public probe reports
+  7; decoding still follows the same internal routing. Non-TIFF readers retain their previous
+  reporting when there is no original TIFF tag. An alternative reverse mapping from 6 to 7 could
+  mislabel files genuinely carrying 6, and a second parser would duplicate the decoder's selection.
+- **The gap:** The plan required original compression reporting but did not prescribe how to survive
+  LibRaw's metadata normalization.
+- **The reach:** Two internal C++ fields require rebuilding the vendored library and addon together
+  and preserving this patch on dependency upgrades. No C wire, image arithmetic, or database changes.
+- **Verdict:** **Sound.** Preserve the fact at its existing parser rather than infer it afterward.
+- **Confidence:** High.
+
+### Fixture annotations — Bind authored facts to immutable image bytes
+
+- **When:** RAW manifest integration, 2026-09-06.
+- **The choice:** A fixture manifest contains measured tags plus authored provenance and subject
+  annotations. Remeasuring the same SHA-256 refreshes measured fields and keeps authored ones. If
+  someone replaces the image under the same filename, regeneration refuses to overwrite the old
+  manifest until its annotations are explicitly reviewed. Otherwise a new photograph could inherit
+  the old photograph's selection points and source attribution while appearing freshly verified.
+- **The gap:** Adding multiple RAW manifests exposed the need to retain authored fields beyond SAM
+  annotations without silently transferring them between images.
+- **The reach:** Tests discover committed ARWs and use their adjacent manifests; the generator remains
+  scoped to these A7C II fixtures and known preview dimensions. Whole-buffer decode hashes are retained
+  only as same-host before/after evidence because actual Linux bytes differed from macOS. This does
+  not establish cross-platform pixel equivalence or replace photographic-quality acceptance.
+- **Verdict:** **Sound.** Identity is the image hash, not its filename; measured evidence keeps its scope.
+- **Confidence:** High.

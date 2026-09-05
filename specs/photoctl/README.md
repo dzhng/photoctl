@@ -70,6 +70,8 @@ passed its merged build, typecheck, and 26 accounting/color/SAM-session/mask tes
 Restriction activation passed 72 merged consumer tests, TypeScript build and typecheck.
 Daemon no-replay recovery and preview progress passed 22 lifecycle/client checks plus 11
 preview/progress checks; explicit broken-endpoint recovery remains available through `daemon start`.
+Captured canvas/lifecycle, migration and manifest integration passed 44 checks. The rebuilt native
+RAW boundary passed nine adapter/public-CLI checks across three compression modes and two Rust checks.
 Retention passed 85 merged tests, atomic removal 18, and upscale/develop consumers 21, each with
 typecheck. The latter verifies exposure replacement without additional provider work.
 Earlier integrations passed focused tests, Rust tests, builds, typecheck,
@@ -96,8 +98,9 @@ native-addon static initialization before application logger setup. It violates 
 stderr contract; fix the upstream load boundary without filtering the test harness. That gate is not yet passing.
 
 **External evidence still outstanding:**
-G3 still requires an SSH-capable Mac session. The real-drive path, additional ARW compression fixtures,
-and actual Classic sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
+G3 still requires an SSH-capable Mac session. Public CC0 RAW fixtures now cover lossless-L and lossy
+alongside uncompressed; lossless-M/S, portrait orientation, the real-drive path, and actual Classic
+sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
 require their explicitly configured credentials and consent; an ambient key is not acceptance evidence.
 
 **Carry-forward invariants:** one daemon library handle; one atomic document/revision owner; exact
@@ -460,7 +463,7 @@ migrate daemon(start|stop|status) embed decode render presets(show) search graph
 | Undo artifact count/age/storage limit | 08a measurement, then 10 | roots/reachability land; automatic canonical-artifact GC remains off until measured |
 | Smoke 1 mask polarity | 12 pre-gate | adapters `maskPolarity:"unverified"` → live native-mask fill refused (`provider_unverified_mask` 69) |
 | Live multimodal embedding dialect | post-09c purpose-key smoke | named one-photo candidate may run only after explicit command or saved auto consent; remains provisional until accepted |
-| Lossless-L tag 6/7, M/S pseudo-RAW | 07b probe; 14 fixtures | uncompressed a7c2 only |
+| Lossless M/S pseudo-RAW and portrait orientation | 07b probe; 14 fixtures | committed uncompressed, lossless-L (original tag 7), and lossy fixtures |
 | SAM 2.1 ONNX hosting URL | 11a | export script committed; download URL `settings.models_base_url` |
 | Founder checklist (Classic masters + XMP) | 04/14 | hand-authored Classic-style sidecars in `fixtures/xmp/` |
 
