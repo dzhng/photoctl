@@ -111,6 +111,7 @@ See Slice 10's local dependency graph for its serialization details.
 | 09b evidence | `cf34507` |
 | 09c embed/search | `ea2c715` |
 | 10a layer identity/revisions | `2c03b4e` |
+| 10b1 native resample/transform | `8fd2636` |
 
 ## Precedent repos — where to look before designing anything
 
