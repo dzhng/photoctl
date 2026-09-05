@@ -32,7 +32,9 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   use documented image edits and unsupported controls warn explicitly. The speculative standalone
   reference field is removed. Follow [12f2](slices/12-outpaint.md) for immutable geometry intent,
   inherited crop exclusions, and removable extent, then wire generation in 12f3. Canvas owns the
-  next migration 19; paid retention follows with 20. Keep live quality separate from deterministic evidence.
+  integrated migration 19 for immutable geometry/layer-authoring metadata; paid retention follows with 20.
+  Canvas pixel lifecycle remains unbuilt and will use a later migration if required. Keep live quality
+  separate from deterministic evidence.
 - Slice 11 runtime, real parity-verified weights, and `wb masks` are integrated. Real-photo
   coarse subject tests pass; foliage/wire edges and full-command G6 remain red. The report selects
   cached current-develop context, not historical SAM input. See [Slice 11](slices/11-segment.md).
@@ -53,7 +55,10 @@ below; record evidence-driven deviations in the owning slice and audit new decis
 
 **Current evidence:** slices 00–10 and the deterministic Slice 12 editing contracts are committed.
 Slice 13's reimagine, relight, generate, auto-enhance, markup, and retouch checkpoints are committed.
-The last integration passed focused migration/graph/command tests, Rust tests, builds, typecheck,
+The geometry prerequisite passed 77 merged migration/graph/command tests and typecheck; the exact
+pointwise color-buffer reuse passed its merged native build and focused color/SAM tests. These are
+allocation and storage checkpoints, not canvas completion or a passing whole-command resource gate.
+Earlier integrations passed focused tests, Rust tests, builds, typecheck,
 formatting, and lint. It did not run the root full-suite release gate. The preview-loop blend oracle
 now compares lossless graph outputs at Float32 precision; JPEG views independently prove freshness.
 Slice files and their assets hold the detailed acceptance evidence.

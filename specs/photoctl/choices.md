@@ -4103,3 +4103,21 @@
 - **Verdict:** **Sound.** Optional metadata preserves historical identities and avoids manufacturing
   authoring history during schema migration.
 - **Confidence:** High.
+
+### Pointwise color — Reuse private storage without changing caller ownership
+
+- **When:** Native allocation checkpoint, 2026-09-06.
+- **The choice:** A JavaScript caller starts a color conversion and can immediately reuse or mutate
+  its input. The native asynchronous boundary still snapshots those pixels, preserving that contract.
+  The conversion now transforms its private snapshot in place and returns it instead of allocating a
+  second complete output. For a 7008×4672 RGB float image, that avoids one 392.9 MB allocation per
+  conversion without changing any pixel arithmetic or operation order.
+- **The gap:** The spec set a process-memory target but did not choose an ownership strategy for
+  pointwise operations. Removing the input snapshot would reduce storage further but break existing
+  asynchronous caller semantics.
+- **The reach:** No public API, stored schema, cache identity, or color semantics changes. This is
+  an allocation guarantee, not an RSS guarantee: garbage collection and native residency can keep
+  process memory high even after logical ownership ends. The full-command memory gate stays separate.
+- **Verdict:** **Sound.** Consume memory already owned exclusively by the task; preserve caller buffers
+  and exact output rather than introducing global GC, allocator, or thread-policy changes.
+- **Confidence:** High.
