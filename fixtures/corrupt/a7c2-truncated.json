@@ -1,0 +1,10 @@
+{
+  "file": "a7c2-truncated.ARW",
+  "size": 64,
+  "sha256": "389bfafbf208ba5a0bc8d6b039b50aaab638edee2e70e41e260b3f8fe0692d6e",
+  "source": "../a7c2.ARW",
+  "source_sha256": "55de0ff9abbd11c2d166fdd8cfa99129ef8478f2895a65105253e6fcdfdba430",
+  "derivation": "Exact first 64 bytes of the source; no rewritten header or payload.",
+  "structure": "Little-endian TIFF magic 42; first IFD offset 8, entry count 20. The declared directory requires bytes through offset 253, beyond this truncated file. No embedded JPEG payload remains.",
+  "expected": "Import skips the unsupported file without creating a photo or crashing."
+}

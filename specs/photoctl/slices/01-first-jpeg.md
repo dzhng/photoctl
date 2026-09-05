@@ -113,6 +113,14 @@ deletes/corrupts preview bytes and deletes the index row in separate cases, then
 single-frame decodable bytes are accepted, and corrupt/animated/multipage/undecodable bytes are skipped; unit
 `exif.timezone.test.ts`, `coordinates.orientation.test.ts`.
 
+The committed `fixtures/corrupt/a7c2-truncated.ARW` preserves a real TIFF header but ends inside its
+first directory, before any usable preview. The built CLI test verifies the fixture hash, successful
+unsupported-file accounting and an empty public photo list, alongside the existing plain-text case.
+Both pass without a production change. Deliberately allowing the TIFF parser exception to escape
+the format probe made the truncated case fail with missing CLI JSON; restoring the existing probe
+boundary and rebuilding returned both cases to green. This witnesses malformed-container handling,
+not a blanket refusal of damaged RAW payloads whose embedded preview remains usable.
+
 ## Delegated: UUIDv7 lib; `--human` table renderer; JSON key order.
 ## Checkpoint (01b)
 

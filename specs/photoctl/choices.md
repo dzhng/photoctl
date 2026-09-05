@@ -4720,3 +4720,18 @@
 - **Verdict:** **Sound.** Actual original supply must participate in cache sufficiency when a local
   layer can otherwise conceal its shortfall. Public reconnect, repeat, and export checks pin it.
 - **Confidence:** High.
+
+### Corrupt RAW fixture — Truncate before any usable preview, preserving genuine container structure
+
+- **When:** Structured truncated-RAW coverage, 2026-09-06.
+- **The choice:** A file copy stops after 64 bytes of the committed Sony RAW. It still declares a
+  real TIFF directory larger than the remaining file, but contains no usable JPEG preview. Public
+  import must skip it and leave the photo list empty. The fixture's hash and source prefix are
+  recorded beside it; it lives outside the known-good decoder inventory.
+- **The gap:** The requested truncated-RAW witness did not specify where the cut occurs. Cutting
+  only the RAW pixel payload could leave a usable embedded preview and legitimately succeed under
+  the existing capability-based import contract.
+- **The reach:** This guards malformed container handling without adding an extension-based refusal
+  or declaring every partially damaged RAW unsupported. No production, schema or dependency changes.
+- **Verdict:** **Sound.** Exercise a real structural failure without contradicting preview-based admission.
+- **Confidence:** High.

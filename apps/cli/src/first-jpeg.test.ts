@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -357,26 +358,45 @@ test("import counts an unsupported file without opening it as a photo", async ()
   });
 }, 30_000);
 
-test("import skips corrupt bytes without creating a photo", async () => {
-  const parent = await mkdtemp(join(tmpdir(), "photoctl-corrupt-arw-"));
-  directories.push(parent);
-  const library = join(parent, "library");
-  const corrupt = join(parent, "broken.arw");
-  await writeFile(corrupt, "not a TIFF\n");
-  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+test.each(["plain text", "truncated TIFF"])(
+  "import skips %s without creating a photo",
+  async (kind) => {
+    const parent = await mkdtemp(join(tmpdir(), "photoctl-corrupt-arw-"));
+    directories.push(parent);
+    const library = join(parent, "library");
+    const corrupt = join(parent, "broken.arw");
+    await writeFile(
+      corrupt,
+      kind === "plain text"
+        ? "not a TIFF\n"
+        : await readFile(resolve("fixtures/corrupt/a7c2-truncated.ARW")),
+    );
+    if (kind === "truncated TIFF") {
+      const manifest = JSON.parse(
+        await readFile(resolve("fixtures/corrupt/a7c2-truncated.json"), "utf8"),
+      );
+      const bytes = await readFile(corrupt);
+      expect(createHash("sha256").update(bytes).digest("hex")).toBe(manifest.sha256);
+    }
+    expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
 
-  const imported = await spawnPhotoctl(["import", corrupt, "--link"], {
-    libraryDir: library,
-    env: { PHOTOCTL_VOLUME_MAP: `${parent}=fixture-volume:online` },
-  });
+    const imported = await spawnPhotoctl(["import", corrupt, "--link"], {
+      libraryDir: library,
+      env: { PHOTOCTL_VOLUME_MAP: `${parent}=fixture-volume:online` },
+    });
 
-  expect(imported.code).toBe(0);
-  expect(imported.json).toMatchObject({
-    schema: 1,
-    ok: true,
-    data: { imported: 0, skipped_unsupported: 1, ids: [], volume: null },
-  });
-}, 30_000);
+    expect(imported.code).toBe(0);
+    expect(imported.json).toMatchObject({
+      schema: 1,
+      ok: true,
+      data: { imported: 0, skipped_unsupported: 1, ids: [], volume: null },
+    });
+    const listed = await spawnPhotoctl(["list"], { libraryDir: library });
+    expect(listed.code).toBe(0);
+    expect(listed.json).toMatchObject({ ok: true, data: { rows: [], total: 0 } });
+  },
+  30_000,
+);
 
 test("a bad export id does not starve a later valid photo", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-partial-export-"));

@@ -8,6 +8,7 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `a7c2.ARW` | known-good | Sony ILCE-7CM2, uncompressed ARW, 7008×4672, `OffsetTimeOriginal +02:00`, embedded JPEGs at 160×120 / 1616×1080 / 7008×4672. Decode, locator, content key, timezone rule, preview tiers, identity export. |
 | `a7c2-lossless-l.ARW` | known-good, CC0 | Full-resolution Sony lossless-L RAW decodes; its stored Compression=7 survives LibRaw's internal dispatch normalization. |
 | `a7c2-lossy.ARW` | known-good, CC0 | Sony lossy compressed RAW (Compression=32767) preserves the same camera-space decoder contract. |
+| `corrupt/a7c2-truncated.ARW` | known-bad | A genuine TIFF header and truncated first directory are skipped by public import without a crash or catalog photo. Its adjacent JSON records the exact source prefix and hash. |
 | `libraries/schema-v1.pgsql` | known-good | A real pgDump of the settings-only schema upgrades without losing library `0199a7c2-0000-7000-8000-000000000001` or its cache/daemon settings. |
 | `libraries/schema-v2.pgsql` | known-good | The current photo, volume, locator, and pinned-cache schema preserves the `a7c2` fixture facts. |
 | `libraries/schema-v3.pgsql` | known-good | The daemon settings and exact tag identity survive later schema upgrades. |
@@ -31,7 +32,13 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `tools/drive.mjs` | generator | `fixtures:drive -- --count N --out DIR` creates deterministic tail-distinct ARW copies and matching Classic-style sidecars. |
 | `tools/volume.mjs` | host generator | `fixtures:volume -- --path FILE --mount DIR` creates and attaches a macOS APFS disk image for real offline-volume checks. |
 
-Wanted (see [the photoctl spec](../specs/photoctl/README.md#known-unknowns-open-on-the-map-and-where-they-land)): A7C II Lossless M / S frames, a portrait-orientation frame, and a truncated ARW (known-bad: import must report `unsupported`, never crash). Compression coverage does not substitute for real-drive acceptance.
+Wanted (see [the photoctl spec](../specs/photoctl/README.md#known-unknowns-open-on-the-map-and-where-they-land)): A7C II Lossless M / S frames and a portrait-orientation frame. Compression coverage does not substitute for real-drive acceptance.
+
+The truncated fixture is the first 64 bytes of the uncompressed source, ending inside its declared
+TIFF directory before any usable preview. This proves structured truncation rejection, not rejection
+of every shortened RAW: a damaged RAW payload with an intact usable preview may still satisfy the
+capability-based import contract. Known-bad files stay under `corrupt/`, outside the top-level
+known-good decoder inventory. Their provenance records are not decodable-image manifests.
 
 Each ARW's adjacent JSON is its manifest. Generate independent file/RAW-IFD facts with `python3 fixtures/tools/manifest.py <file>`;
 authored provenance and behavioral baselines survive regeneration only for the same SHA-256. A changed or unpinned image
