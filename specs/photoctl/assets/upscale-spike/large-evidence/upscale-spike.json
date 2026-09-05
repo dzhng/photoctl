@@ -1,0 +1,240 @@
+{
+  "schema": 1,
+  "status": "completed",
+  "reason": null,
+  "releaseDecision": "deferred",
+  "qualityAcceptance": "not_recorded",
+  "categoryCoverage": {
+    "present": [],
+    "missing": [
+      "face-hair",
+      "fabric-foliage",
+      "architecture",
+      "text-logo",
+      "mask-texture"
+    ]
+  },
+  "selectedAdapter": "photoctl/fake-upscale-v1",
+  "selectedModel": "photoctl/fake-upscale-v1",
+  "controls": {
+    "scale": 4,
+    "fidelity": 0.7,
+    "creativity": 0.3,
+    "seed": 42
+  },
+  "controlStrength": {
+    "variable": "fidelity",
+    "values": [
+      0.7,
+      0.9
+    ]
+  },
+  "contactSheet": "upscale-spike-contact-sheet.png",
+  "sheets": [
+    {
+      "kind": "prompt",
+      "path": "upscale-spike-contact-sheet.png"
+    },
+    {
+      "kind": "control",
+      "path": "upscale-spike-control-sheet.png"
+    }
+  ],
+  "comparisons": [
+    {
+      "source": "synthetic-source.png",
+      "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
+      "sourceOutput": "1-synthetic-source-source.png",
+      "crop": [
+        0,
+        0,
+        320,
+        240
+      ],
+      "sourceDetail": "1-synthetic-source-source-detail.png",
+      "category": null,
+      "mask": null,
+      "sourceDimensions": {
+        "w": 320,
+        "h": 240
+      },
+      "guarded": {
+        "dimensions": {
+          "w": 1280,
+          "h": 960
+        },
+        "latencyMs": 3,
+        "costUsd": 0,
+        "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
+        "prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
+        "targetDimensions": {
+          "w": 1280,
+          "h": 960
+        },
+        "requestedControls": {
+          "scale": 4,
+          "fidelity": 0.7,
+          "creativity": 0.3,
+          "seed": 42
+        },
+        "resolvedControls": null,
+        "provenance": {
+          "adapter": "photoctl/fake-upscale-v1",
+          "adapterVersion": "1",
+          "service": "fake",
+          "model": "photoctl/fake-upscale-v1",
+          "modelVersion": "1",
+          "requestId": "fake_eab80a4b5c16493d05841e72950ab9eae5fe5268217eafb68223c6c5db05997a",
+          "seed": 42,
+          "durationMs": 0,
+          "costUsd": 0,
+          "nativeTiling": null
+        },
+        "samplingDimensions": {
+          "w": 1280,
+          "h": 960
+        },
+        "densitySatisfied": true,
+        "warnings": [],
+        "detail": "1-synthetic-source-guarded-detail.png",
+        "output": "1-synthetic-source-guarded.png",
+        "providerDurationMs": 0,
+        "requestId": "fake_eab80a4b5c16493d05841e72950ab9eae5fe5268217eafb68223c6c5db05997a"
+      },
+      "minimal": {
+        "dimensions": {
+          "w": 1280,
+          "h": 960
+        },
+        "latencyMs": 3,
+        "costUsd": 0,
+        "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
+        "prompt": "Preserve the source image without adding or changing content.",
+        "targetDimensions": {
+          "w": 1280,
+          "h": 960
+        },
+        "requestedControls": {
+          "scale": 4,
+          "fidelity": 0.7,
+          "creativity": 0.3,
+          "seed": 42
+        },
+        "resolvedControls": null,
+        "provenance": {
+          "adapter": "photoctl/fake-upscale-v1",
+          "adapterVersion": "1",
+          "service": "fake",
+          "model": "photoctl/fake-upscale-v1",
+          "modelVersion": "1",
+          "requestId": "fake_3d909d4eb46bbc9c5bc35bd2dfa7ca36e8759da0fe13796606dbabbbfc779ddc",
+          "seed": 42,
+          "durationMs": 0,
+          "costUsd": 0,
+          "nativeTiling": null
+        },
+        "samplingDimensions": {
+          "w": 1280,
+          "h": 960
+        },
+        "densitySatisfied": true,
+        "warnings": [],
+        "detail": "1-synthetic-source-minimal-detail.png",
+        "output": "1-synthetic-source-minimal.png",
+        "providerDurationMs": 0,
+        "requestId": "fake_3d909d4eb46bbc9c5bc35bd2dfa7ca36e8759da0fe13796606dbabbbfc779ddc"
+      },
+      "strength": [
+        {
+          "dimensions": {
+            "w": 1280,
+            "h": 960
+          },
+          "latencyMs": 3,
+          "costUsd": 0,
+          "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
+          "prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
+          "targetDimensions": {
+            "w": 1280,
+            "h": 960
+          },
+          "requestedControls": {
+            "scale": 4,
+            "fidelity": 0.7,
+            "creativity": 0.3,
+            "seed": 42
+          },
+          "resolvedControls": null,
+          "provenance": {
+            "adapter": "photoctl/fake-upscale-v1",
+            "adapterVersion": "1",
+            "service": "fake",
+            "model": "photoctl/fake-upscale-v1",
+            "modelVersion": "1",
+            "requestId": "fake_eab80a4b5c16493d05841e72950ab9eae5fe5268217eafb68223c6c5db05997a",
+            "seed": 42,
+            "durationMs": 0,
+            "costUsd": 0,
+            "nativeTiling": null
+          },
+          "samplingDimensions": {
+            "w": 1280,
+            "h": 960
+          },
+          "densitySatisfied": true,
+          "warnings": [],
+          "detail": "1-synthetic-source-guarded-detail.png",
+          "output": "1-synthetic-source-guarded.png",
+          "providerDurationMs": 0,
+          "requestId": "fake_eab80a4b5c16493d05841e72950ab9eae5fe5268217eafb68223c6c5db05997a"
+        },
+        {
+          "dimensions": {
+            "w": 1280,
+            "h": 960
+          },
+          "latencyMs": 2,
+          "costUsd": 0,
+          "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
+          "prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
+          "targetDimensions": {
+            "w": 1280,
+            "h": 960
+          },
+          "requestedControls": {
+            "scale": 4,
+            "fidelity": 0.9,
+            "creativity": 0.3,
+            "seed": 42
+          },
+          "resolvedControls": null,
+          "provenance": {
+            "adapter": "photoctl/fake-upscale-v1",
+            "adapterVersion": "1",
+            "service": "fake",
+            "model": "photoctl/fake-upscale-v1",
+            "modelVersion": "1",
+            "requestId": "fake_eab80a4b5c16493d05841e72950ab9eae5fe5268217eafb68223c6c5db05997a",
+            "seed": 42,
+            "durationMs": 0,
+            "costUsd": 0,
+            "nativeTiling": null
+          },
+          "samplingDimensions": {
+            "w": 1280,
+            "h": 960
+          },
+          "densitySatisfied": true,
+          "warnings": [],
+          "detail": "1-synthetic-source-fidelity-0.9-detail.png",
+          "output": "1-synthetic-source-fidelity-0.9.png",
+          "providerDurationMs": 0,
+          "requestId": "fake_eab80a4b5c16493d05841e72950ab9eae5fe5268217eafb68223c6c5db05997a"
+        }
+      ],
+      "drift": {
+        "meanAbsoluteError": 0.564706
+      }
+    }
+  ]
+}

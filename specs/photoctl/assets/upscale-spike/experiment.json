@@ -1,0 +1,9 @@
+{
+  "model": "photoctl/fake-upscale-v1",
+  "controls": { "scale": 2, "fidelity": 0.7, "creativity": 0.3, "seed": 42, "originalOperation": "restore texture" },
+  "controlStrength": { "variable": "fidelity", "values": [0.5, 0.9] },
+  "sources": [
+    { "path": "synthetic-source.png", "category": "mask-texture", "crop": [96, 64, 112, 96], "mask": "synthetic-mask.png" },
+    { "path": "synthetic-source.png", "category": "text-logo", "crop": [8, 176, 208, 40] }
+  ]
+}

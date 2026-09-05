@@ -52,6 +52,12 @@ adapter/model/version and controls, latency/cost, prompts, mask, and crop. Run `
 telemetry and `screenshot-critique` last. Open with `preview-shots`; wait about five minutes, then choose from evidence and record the
 release default/control values if the user is silent. Missing credentials records `not_run:unconfigured` and does not block the slice.
 
+The deterministic runner accepts an explicit experiment manifest, rather than borrowing ambient credentials or changing library
+settings. The [runnable fixture and report evidence](../assets/upscale-spike/) demonstrate separate prompt, single-control, and
+category-validation sheets. Category labels are operator declarations, not image classification or quality acceptance; missing
+categories remain explicit. Provider-reported normalized controls are currently unavailable and must not be inferred from requests.
+Live photographic comparison and release-default selection remain unverified.
+
 ## Checkpoints: one artifact per sub-slice, one variable each; all inherit the root visual gates and non-blocking review rule.
 
 Firewall: `unblur` cut; no generic local generative runners. A future local UpscaleAdapter is allowed only as a separately configured

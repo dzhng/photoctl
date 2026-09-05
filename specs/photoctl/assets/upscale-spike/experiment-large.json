@@ -1,0 +1,6 @@
+{
+  "model": "photoctl/fake-upscale-v1",
+  "controls": { "scale": 4, "fidelity": 0.7, "creativity": 0.3, "seed": 42, "originalOperation": "restore texture" },
+  "controlStrength": { "variable": "fidelity", "values": [0.7, 0.9] },
+  "sources": [{ "path": "synthetic-source.png", "crop": [0, 0, 320, 240] }]
+}

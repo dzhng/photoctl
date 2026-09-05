@@ -1,0 +1,74 @@
+{
+  "kind": "screenshot-parity-diff",
+  "generatedAt": "2026-09-05T17:53:31.726Z",
+  "note": "Lower parityDistance means the candidate is closer to the reference for this fixed pair. This is a distance metric, not an acceptance gate.",
+  "pairCount": 1,
+  "worstPair": "guarded",
+  "results": [
+    {
+      "id": "guarded",
+      "current": "specs/photoctl/assets/upscale-spike/comparison/source/guarded.png",
+      "candidate": "specs/photoctl/assets/upscale-spike/comparison/provider/guarded.png",
+      "dimensions": {
+        "width": 640,
+        "height": 480
+      },
+      "parityDistance": 0.75121,
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 119,
+          "colorEntropyBits": 2.71849,
+          "edgeDensity": 0.43151,
+          "dominantColorShare": 0.52025,
+          "transparentShare": 0,
+          "luminanceMean": 189.38579,
+          "luminanceP5": 57.5004,
+          "luminanceP95": 234.9536,
+          "luminanceContrast": 177.4532
+        },
+        "candidate": {
+          "colorBuckets": 1,
+          "colorEntropyBits": 0,
+          "edgeDensity": 0,
+          "dominantColorShare": 1,
+          "transparentShare": 0,
+          "luminanceMean": 180.7218,
+          "luminanceP5": 180.7218,
+          "luminanceP95": 180.7218,
+          "luminanceContrast": 0
+        }
+      },
+      "grayscale": {
+        "mae": 55.39811,
+        "rmse": 61.33831,
+        "diffRatio16": 0.9934,
+        "diffRatio32": 0.84089,
+        "diffRatio64": 0.21624,
+        "pixelmatchRatio": 0.93679
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.00777,
+        "blackRatioCandidate": 0,
+        "terrainLikeRatioCurrent": 0.78393,
+        "terrainLikeRatioCandidate": 1,
+        "avgLuminanceCurrent": 189.59893,
+        "avgLuminanceCandidate": 180.7218,
+        "avgLuminanceDelta": -8.87713,
+        "edgeEnergyCurrent": 0.19191,
+        "edgeEnergyCandidate": 0,
+        "edgeEnergyRatio": 0,
+        "edgeDiffRatio32": 0.29079
+      },
+      "artifacts": {
+        "sideBySide": "metrics/guarded-side-by-side.png",
+        "currentGray": "metrics/guarded-current-gray.png",
+        "candidateGray": "metrics/guarded-candidate-gray.png",
+        "absDiff": "metrics/guarded-absdiff.png",
+        "pixelmatch": "metrics/guarded-pixelmatch.png",
+        "currentEdges": "metrics/guarded-current-edges.png",
+        "candidateEdges": "metrics/guarded-candidate-edges.png",
+        "edgeDiff": "metrics/guarded-edge-diff.png"
+      }
+    }
+  ]
+}

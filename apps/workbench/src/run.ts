@@ -60,11 +60,7 @@ export async function runWorkbench(
   if (command === "upscale-spike") {
     const outputDirectory = join(cwd, "out", "wb");
     await mkdir(outputDirectory, { recursive: true });
-    return await runUpscaleSpike(
-      rest.map((path) => resolve(cwd, path)),
-      outputDirectory,
-      dependencies,
-    );
+    return await runUpscaleSpike(rest, outputDirectory, dependencies, cwd);
   }
   if (command === "ab") {
     if (rest.length !== 4 || rest[2] !== "--variable") {

@@ -3630,3 +3630,56 @@
   execution.
 - **Verdict:** **Sound.** One catalog-space document remains portable across source tiers without introducing a preview-only owner.
 - **Confidence:** High.
+
+### Upscaler spike — Controlled experiments belong to an explicit runner manifest
+
+- **When:** Upscaler report contract pass, 2026-09-06.
+- **The choice:** An operator supplies a JSON experiment manifest to `wb upscale-spike --config`. For example, comparing fidelity
+  0.5 with 0.9 keeps creativity, scale, seed, source bytes, and prompt fixed. A separate prompt sheet keeps every numeric control
+  fixed. Category-validation sheets reuse the baseline guarded result, so adding a category label does not purchase another run.
+- **The gap:** The plan named separate comparisons but did not define how to supply inputs or isolate the strength variable.
+- **The reach:** Experiments are reproducible without changing library settings or treating ambient credentials as permission.
+  The manifest selects only registered adapters; this pass adds no live provider or quality defaults.
+- **Verdict:** **Sound.** One operator-selected variable per comparison makes the eventual quality decision interpretable.
+- **Confidence:** High.
+
+### Upscaler spike — Inspection context and provider facts are not inferred acceptance
+
+- **When:** Upscaler report contract pass, 2026-09-06.
+- **The choice:** If an operator labels a source as face/hair, the report records that declaration and which categories are missing;
+  it does not claim to recognize a face. A supplied crop selects the exact native detail to inspect; without one, the report shows
+  a small top-left detail rather than guessing the subject. A supplied mask is retained as inspection context, not sent through
+  an upscaler interface that has no mask input. Requested controls are recorded; normalized controls remain unknown because the
+  adapter does not return them. Fake output provenance and absent quality acceptance stay visible.
+- **The gap:** The plan required category, crop, mask, and control evidence without defining whether the runner inferred them.
+- **The reach:** A contact sheet cannot silently become proof of photographic preservation, masked compositing, or provider settings.
+  An operator conducting a real quality study must choose meaningful crops and supply actual category examples.
+- **Verdict:** **Sound.** The report separates observed facts from declarations and missing evidence.
+- **Confidence:** Medium; automatically proposing detail crops could help later, but must remain explicitly reviewable.
+
+### Upscaler spike — Evidence belongs to the current run, including failures
+
+- **When:** Upscaler report contract pass, 2026-09-06.
+- **The choice:** Starting an experiment replaces the previous JSON verdict with `running`; malformed inputs or an adapter failure
+  end with `failed`, while an absent configured adapter ends with `not_run`. All source/crop/mask inputs are checked before the
+  first adapter call, including full decode and the adapter's advertised input/output limits. Merely reading PNG dimensions does
+  not prove its compressed pixels can be decoded. Existing image files are not deleted; only the current report's membership identifies a completed run.
+- **The gap:** Reusing the report directory could otherwise leave yesterday's success beside today's failed command.
+- **The reach:** Reviewers cannot mistake stale completed evidence for a new successful experiment. Provider outputs are retained
+  on disk, and report composition holds resized previews/native crops rather than every full provider image across all sources.
+- **Verdict:** **Sound.** Explicit run state preserves truth without destructive cleanup or automatic retry costs.
+- **Confidence:** High.
+
+### Upscaler spike — Keep full detail files, but bound the overview and reuse identical requests
+
+- **When:** Upscaler report independent review, 2026-09-06.
+- **The choice:** A 4× output may make a selected detail crop thousands of pixels wide. Its PNG is saved at native resolution,
+  while the contact sheet shows a labeled fitted preview when it exceeds the panel area. Small crops remain native-sized and
+  all detail labels disclose pixel dimensions. When the requested strength list includes the baseline value, its sheet entry
+  points to the already-completed guarded arm rather than making an identical provider request again.
+- **The gap:** The plan required native detail and separate comparisons but did not distinguish overview size from saved detail,
+  or explicitly address a strength experiment containing its baseline control value.
+- **The reach:** Large photographic crops cannot inflate each overview row into a huge native canvas, and a redundant comparison
+  does not add latency or cost. The actual image detail and request identity remain available for inspection.
+- **Verdict:** **Sound.** The overview remains bounded without claiming fitted pixels are native or buying duplicate evidence.
+- **Confidence:** High.
