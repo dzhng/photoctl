@@ -70,5 +70,7 @@ manifest={"file":path.name,"size":size,"sha256":hashlib.sha256(data).hexdigest()
 out=path.with_suffix(".json")
 # Preserve authored provenance and behavioral probes, not just measured file facts.
 authored=json.loads(out.read_text()) if out.exists() else {}
+if out.exists() and authored.get("sha256") != manifest["sha256"]:
+    raise ValueError("image SHA-256 changed or was not pinned; review and remove the old manifest before regenerating")
 out.write_text(json.dumps({**authored,**manifest},indent=2)+"\n")
 print(out)

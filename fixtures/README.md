@@ -34,7 +34,9 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 Wanted (see [the photoctl spec](../specs/photoctl/README.md#known-unknowns-open-on-the-map-and-where-they-land)): A7C II Lossless M / S frames, a portrait-orientation frame, and a truncated ARW (known-bad: import must report `unsupported`, never crash). Compression coverage does not substitute for real-drive acceptance.
 
 Each ARW's adjacent JSON is its manifest. Generate independent file/RAW-IFD facts with `python3 fixtures/tools/manifest.py <file>`;
-authored provenance and behavioral baselines survive regeneration. `raw` records bytes from the selected Sony RAW SubIFD,
+authored provenance and behavioral baselines survive regeneration only for the same SHA-256. A changed or unpinned image
+refuses to overwrite its old manifest; review its annotations and remove that manifest explicitly before generating new facts.
+The generator targets these A7C II fixtures and their known preview sizes, not arbitrary RAW dimensions. `raw` records bytes from the selected Sony RAW SubIFD,
 not decoder output. `libraw` separately pins decoded white-balance metadata. Exact decoded-pixel comparisons are scoped to
 their measured host in the [compression evidence](../specs/photoctl/assets/gates/libraw-compression.json), not treated as
 portable hashes or an independent photographic-quality oracle. Decoder suites discover the committed ARWs

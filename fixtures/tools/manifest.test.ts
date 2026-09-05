@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { createHash } from "node:crypto";
-import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { appendFile, copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -22,6 +22,7 @@ describe("fixture manifest", () => {
       const manifest = await readManifest("a7c2-lossless-l.ARW");
       await copyFile(resolve("fixtures", manifest.file), file);
       const authored = {
+        sha256: manifest.sha256,
         provenance: { source: "retained source" },
         libraw: manifest.libraw,
         raw: { compression: -1 },
@@ -33,6 +34,24 @@ describe("fixture manifest", () => {
       expect(regenerated.libraw).toEqual(manifest.libraw);
       expect(regenerated.raw).toEqual(manifest.raw);
       expect(regenerated.sha256).toBe(manifest.sha256);
+    } finally {
+      await rm(directory, { recursive: true });
+    }
+  }, 30_000);
+  test("refuses to carry image-specific annotations onto changed image bytes", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "photoctl-manifest-changed-"));
+    try {
+      const manifest = await readManifest("a7c2-lossless-l.ARW");
+      const file = join(directory, manifest.file);
+      const manifestFile = file.replace(/\.ARW$/, ".json");
+      await copyFile(resolve("fixtures", manifest.file), file);
+      const authored = JSON.stringify({ ...manifest, sam_probes: [{ subject: "old image" }] });
+      await writeFile(manifestFile, authored);
+      await appendFile(file, "changed image bytes");
+      expect(() =>
+        execFileSync("python3", ["fixtures/tools/manifest.py", file], { timeout: 30_000 }),
+      ).toThrow(/image SHA-256 changed/);
+      expect(await readFile(manifestFile, "utf8")).toBe(authored);
     } finally {
       await rm(directory, { recursive: true });
     }
