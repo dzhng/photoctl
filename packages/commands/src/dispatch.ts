@@ -49,7 +49,7 @@ import { embedCommand } from "./handlers/embed.js";
 import { searchCommand } from "./handlers/search.js";
 import { segmentCommand, type SegmentationDependencies } from "./handlers/segment.js";
 import { layerCommand } from "./handlers/layer.js";
-import { fillCommand } from "./handlers/fill.js";
+import { fillCommand, type FillDependencies } from "./handlers/fill.js";
 import {
   flagCommand,
   labelCommand,
@@ -65,6 +65,7 @@ export interface DispatchContext {
   stream?: (row: unknown) => void | Promise<void>;
   previewCoordinator?: PreviewCoordinator;
   segmentation?: SegmentationDependencies;
+  fill?: FillDependencies;
 }
 export async function dispatch(
   request: CommandRequest,
@@ -140,7 +141,13 @@ export async function dispatch(
     if (request.verb === "layer")
       return await layerCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "fill")
-      return await fillCommand(request.args, request.env, request.cwd, context.library);
+      return await fillCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.fill,
+      );
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "list")

@@ -91,3 +91,22 @@ using the same native-detail crop and mask before/after. Run `compare-screenshot
 Open with `preview-shots`; after about five minutes of silence decide from evidence, record the verdict, close shots, and continue.
 Repeat after the live smoke only when configured credentials exist; its absence never blocks.
 ## Must stay green: 01–11. Deps: 10, 11 (or `--box`), 9a. Firewall: no local generative inference.
+
+## 12a keyless checkpoint — 2026-09-05
+
+`fill <id> --layer <layer> --remove|--prompt <text>` now resolves the existing image-model adapter and fake gateway, plans a clipped
+base-space crop from the immutable layer mask, and commits the paid generation execution with canonical generate, resample,
+mask-composite, replacement-layer, and output-root state in one revision. The mutation stays lazy: it publishes the provider result
+needed by the graph but does not create a review preview. The strict compositor remains the protection owner, so every zero-mask
+sample is copied from that node's base input exactly.
+
+The adapter owns provider-frame normalization. A same-ratio size mismatch takes the existing deterministic display-sRGB resampler;
+an unexplained aspect change or the fake whole-frame signal returns `provider_whole_frame` (exit 65), and neither result enters the
+catalog. The default live adapter remains fail-closed while native edit-mask polarity is unverified. Focused public-command tests use
+an injected source plus the real adapter against the HTTP fake; they cover exact protected pixels, crop/pad metadata, wrong-size
+normalization, whole-frame/aspect rejection without a revision, versioned prompt storage, and continued `fill --move` behavior.
+
+This checkpoint does not claim live provider polarity, outpaint canvas behavior, `--ref`, alternate fit/init/full-resolution modes,
+or visual continuity. Slice 12b still owns density planning; 12c owns configured upscaler selection, warnings, and partial-failure
+semantics; 12d owns refresh, transform-driven density reuse, and the person-move/agent-preview journey. Their live, visual, and
+performance gates remain open.

@@ -3,12 +3,18 @@ import {
   canonicalJson,
   canonicalNodeRecipe,
   canonicalParameters,
+  evaluationHash,
   imageNodeRegistry,
   logicalNodeId,
   recipeHash,
   renderHashForNode,
 } from "./recipes.js";
-import type { ImageNodeKind, JsonValue, StoredImageNode } from "./types.js";
+import type {
+  ExternalExecutionProvenance,
+  ImageNodeKind,
+  JsonValue,
+  StoredImageNode,
+} from "./types.js";
 import {
   MASK_ARTIFACT_MEDIA_TYPE,
   registerPublishedArtifact,
@@ -52,6 +58,15 @@ export interface CommitRevisionRequest {
   newLayers?: NewLayerIdentity[];
   layers?: RevisionLayerDraft[];
   artifacts?: PublishedArtifact[];
+  executions?: PreparedNodeExecution[];
+}
+export interface PreparedNodeExecution {
+  node: NodeReference;
+  executionId: string;
+  evaluationHash: string;
+  outputArtifactHash: string;
+  inputArtifactHashes: string[];
+  provider: ExternalExecutionProvenance;
 }
 export interface CommitRevisionResult {
   revisionId: string;
@@ -228,7 +243,6 @@ export async function commitRevision(
     const rootUpdates = new Map<"base" | "output", string>(
       await mapInOrder(request.rootUpdates, async (update) => {
         const node = await resolveReference(update.node);
-        await assertRootActivationAllowed(transaction, node);
         return [update.root, node.id];
       }),
     );
@@ -238,6 +252,19 @@ export async function commitRevision(
     const resultingRoots = { ...inheritedRoots, ...Object.fromEntries(rootUpdates) };
     if (!resultingRoots.output) throw new Error("A revision requires an output root");
     if (!resultingRoots.base) resultingRoots.base = resultingRoots.output;
+
+    const preparedNodeIds = new Set<string>();
+    await mapInOrder(request.executions ?? [], async (execution) => {
+      if ("localKey" in execution.node && !resolved.has(execution.node.localKey)) {
+        throw new Error("A prepared provider execution must be reachable from an updated root");
+      }
+      const node = await resolveReference(execution.node);
+      if (node.kind !== "generate" && node.kind !== "upscale") {
+        throw new Error("Prepared provider execution requires a generate or upscale node");
+      }
+      await storePreparedExecution(transaction, request.photoId, node, execution);
+      preparedNodeIds.add(node.id);
+    });
 
     const newLayerIds = await storeLayerIdentities(
       transaction,
@@ -252,6 +279,7 @@ export async function commitRevision(
           layerDrafts,
           newLayerIds,
           resolveReference,
+          preparedNodeIds,
         )
       : await loadRevisionLayers(transaction, request.photoId, activeRevisionId!);
     if (
@@ -282,6 +310,13 @@ export async function commitRevision(
     ]);
     await mapInOrder([...retainedRoots], async (nodeId) => {
       await assertMaskArtifactsAvailable(transaction, request.photoId, nodeId);
+    });
+    await mapInOrder([...rootUpdates.values()], async (nodeId) => {
+      await assertRootActivationAllowed(
+        transaction,
+        await loadNode(transaction, request.photoId, nodeId),
+        preparedNodeIds,
+      );
     });
     await assertCompositeProjection(
       transaction,
@@ -341,6 +376,72 @@ export async function commitRevision(
       layers,
       renderHash: roots.output ? renderHashForNode(roots.output) : null,
     };
+  });
+}
+
+async function storePreparedExecution(
+  transaction: GraphTransaction,
+  photoId: string,
+  node: StoredImageNode,
+  execution: PreparedNodeExecution,
+): Promise<void> {
+  if (!/^exec_[0-9a-f]{64}$/.test(execution.executionId)) throw new Error("Invalid execution id");
+  if (!/^eval_[0-9a-f]{64}$/.test(execution.evaluationHash))
+    throw new Error("Invalid evaluation hash");
+  const parameters = node.parameters as Record<string, JsonValue>;
+  if (
+    execution.provider.adapter !== parameters.adapter ||
+    execution.provider.adapterVersion !== parameters.adapter_version ||
+    execution.provider.model !== parameters.model ||
+    execution.provider.modelVersion !== parameters.model_version
+  ) {
+    throw new Error("Prepared provider execution does not match its immutable recipe");
+  }
+  const expectedEvaluation = evaluationHash({
+    nodeRecipeHash: node.recipeHash,
+    kind: node.kind,
+    recipeVersion: node.recipeVersion,
+    inputArtifactHashes: execution.inputArtifactHashes,
+  });
+  if (expectedEvaluation !== execution.evaluationHash) {
+    throw new Error("Prepared provider execution does not match its input artifacts");
+  }
+  await transaction.query(
+    `INSERT INTO node_executions (
+       photo_id, execution_id, node_id, evaluation_hash, deterministic,
+       output_artifact_hash, provider_execution
+     ) VALUES ($1, $2, $3, $4, false, $5, $6::jsonb)`,
+    [
+      photoId,
+      execution.executionId,
+      node.id,
+      execution.evaluationHash,
+      execution.outputArtifactHash,
+      JSON.stringify({
+        adapter: execution.provider.adapter,
+        adapter_version: execution.provider.adapterVersion,
+        service: execution.provider.service,
+        model: execution.provider.model,
+        model_version: execution.provider.modelVersion,
+        provider_request_id: execution.provider.providerRequestId,
+        seed: execution.provider.seed,
+        duration_ms: execution.provider.durationMs,
+        cost_usd: execution.provider.costUsd,
+        input_px: execution.provider.inputPx,
+        target_px: execution.provider.targetPx,
+        attempt: execution.provider.attempt,
+        density_verdict: execution.provider.densityVerdict,
+        warnings: execution.provider.warnings,
+      }),
+    ],
+  );
+  await mapInOrder(execution.inputArtifactHashes, async (hash, index) => {
+    await transaction.query(
+      `INSERT INTO node_execution_inputs
+         (photo_id, execution_id, input_index, input_artifact_hash)
+       VALUES ($1, $2, $3, $4)`,
+      [photoId, execution.executionId, index, hash],
+    );
   });
 }
 
@@ -482,6 +583,7 @@ async function loadNode(
 async function assertRootActivationAllowed(
   transaction: GraphTransaction,
   node: StoredImageNode,
+  preparedNodeIds: ReadonlySet<string> = new Set(),
 ): Promise<void> {
   const reachable = await transaction.query<{
     id: string;
@@ -512,7 +614,9 @@ async function assertRootActivationAllowed(
   );
   const unavailable = reachable.rows.find(
     (candidate) =>
-      !imageNodeRegistry[candidate.kind].deterministic && !candidate.has_published_artifact,
+      !imageNodeRegistry[candidate.kind].deterministic &&
+      !candidate.has_published_artifact &&
+      !preparedNodeIds.has(candidate.id),
   );
   if (unavailable) {
     throw new Error(
@@ -573,6 +677,7 @@ async function resolveLayerSnapshot(
   drafts: RevisionLayerDraft[],
   newLayerIds: Record<string, string>,
   resolveNode: (reference: NodeReference) => Promise<StoredImageNode>,
+  preparedNodeIds: ReadonlySet<string> = new Set(),
 ): Promise<RevisionLayer[]> {
   const seen = new Set<string>();
   return await mapInOrder(drafts, async (draft, index) => {
@@ -594,8 +699,8 @@ async function resolveLayerSnapshot(
     if ((await nodePixelKind(transaction, photoId, mask.id)) !== "mask") {
       throw new Error("A layer mask root must produce mask pixels");
     }
-    await assertRootActivationAllowed(transaction, content);
-    await assertRootActivationAllowed(transaction, mask);
+    await assertRootActivationAllowed(transaction, content, preparedNodeIds);
+    await assertRootActivationAllowed(transaction, mask, preparedNodeIds);
     return {
       id,
       role: identity.role,

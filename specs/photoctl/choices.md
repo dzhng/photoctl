@@ -2,6 +2,46 @@
 
 ## Sound
 
+### Slice 12a — The generation execution and active graph revision commit together
+
+- **When:** Slice 12a strict-fill implementation, 2026-09-05.
+- **The choice:** Provider bytes are normalized and published first, but the artifact row, immutable generate execution, canonical
+  descendants, replacement layer snapshot, and output root enter the catalog in one revision transaction. A failed or structurally
+  invalid provider response therefore has no catalog execution and no new undo state. The alternative was a visible intermediate
+  generation revision or an execution row that no active graph could reach.
+- **The gap:** The graph store previously committed deterministic nodes and revisions separately from provider execution recording.
+- **The reach:** Fill, later refresh, and future paid mutations inherit a transaction boundary that cannot expose a paid node without
+  its exact output or activate a replacement layer piecemeal.
+- **Verdict:** **Sound.** Publication remains content-addressed and recoverable, while all catalog-visible state is atomic.
+- **Confidence:** High; failure tracers compare revision and execution counts before and after rejection.
+
+### Slice 12a — A generation recipe pins the execution that supplied its pixels
+
+- **When:** Slice 12a graph-evaluation integration, 2026-09-05.
+- **The choice:** The immutable generate recipe stores its execution ID. Evaluating descendants reuses that exact recorded artifact;
+  it never silently calls the provider again. A future refresh must create a new generate identity and execution instead of changing
+  the meaning of the existing node.
+- **The gap:** The evaluator could select an execution only when a caller supplied one explicitly, but ordinary show/export walks
+  descendants from the output root without such an argument.
+- **The reach:** Lazy preview and export reproduce the committed paid result, including after restart. Missing generated artifacts fail
+  closed rather than manufacturing different pixels under the same graph.
+- **Verdict:** **Sound.** Nondeterministic pixels become stable graph inputs while refresh remains an explicit later operation.
+- **Confidence:** High.
+
+### Slice 12a — Strict composite uses a full-base generated artifact
+
+- **When:** Slice 12a crop-to-graph integration, 2026-09-05.
+- **The choice:** The adapter normalizes the returned crop to the sent crop dimensions, then the fill pipeline places it into a copy
+  of the base-sized image before publishing the generate execution. The canonical resample targets base dimensions and the strict
+  mask compositor consumes three dimension-matched inputs. The alternative required introducing a second crop-placement node and
+  coordinate vocabulary before the plan assigns that owner.
+- **The gap:** The slice requires provider cropping and canonical graph nodes but does not define a graph node that pastes a generated
+  crop back into base coordinates; the existing compositor requires all inputs to share dimensions.
+- **The reach:** Crop coordinates stay immutable in the generation recipe, current composite invariants remain intact, and protected
+  samples come directly from the original base branch. The stored generated artifact includes unchanged base pixels outside the crop.
+- **Verdict:** **Sound.** It reuses the established base-coordinate contract without adding an undocumented node kind.
+- **Confidence:** Medium; 12b density and 12d refresh should retain this placement rule or explicitly replace it with a canonical node.
+
 ### Slice 08c3 — Normalized controls use OpenColorIO's scene-linear curve domain
 
 - **When:** Slice 08c3 curve implementation, 2026-09-05.

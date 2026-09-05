@@ -128,9 +128,28 @@ export const fillMoveDataSchema = z.object({
   matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
 });
 
+export const fillStrictDataSchema = z.object({
+  id: z.uuid(),
+  graph: z.object({
+    revision: z.uuid(),
+    layer: z.uuid(),
+    output_node: nodeId,
+    render_hash: fullHashSchema("r"),
+  }),
+  generation: z.object({
+    node: nodeId,
+    adapter: z.string().min(1),
+    model: z.string().min(1),
+    resampled: z.boolean(),
+    returned: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+  }),
+  composite: z.object({ node: nodeId, unmasked_bit_exact: z.literal(true) }),
+});
+
 export type SegmentData = z.infer<typeof segmentDataSchema>;
 export type SegmentInstancesData = z.infer<typeof segmentInstancesDataSchema>;
 export type LayerListData = z.infer<typeof layerListDataSchema>;
 export type LayerShowData = z.infer<typeof layerShowDataSchema>;
 export type LayerTransformData = z.infer<typeof layerTransformDataSchema>;
 export type FillMoveData = z.infer<typeof fillMoveDataSchema>;
+export type FillStrictData = z.infer<typeof fillStrictDataSchema>;

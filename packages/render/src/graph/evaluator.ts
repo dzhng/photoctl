@@ -35,6 +35,7 @@ import { developDictSchema } from "../develop/dict.js";
 import {
   compositeMaskedPixels,
   featherMask,
+  resamplePixels,
   solidRgbPixels,
   transformMaskPixels,
   transformPixels,
@@ -122,6 +123,29 @@ async function evaluateOne(
 ): Promise<EvaluatedNode> {
   const node = await loadNode(request.database, request.photoId, nodeId);
   const deterministic = imageNodeRegistry[node.kind].deterministic;
+  if (!deterministic && !requestedExecutionId) {
+    const pinnedExecutionId =
+      node.parameters &&
+      typeof node.parameters === "object" &&
+      !Array.isArray(node.parameters) &&
+      typeof node.parameters.request === "object" &&
+      node.parameters.request !== null &&
+      !Array.isArray(node.parameters.request) &&
+      typeof node.parameters.request.execution_id === "string"
+        ? node.parameters.request.execution_id
+        : undefined;
+    if (pinnedExecutionId) {
+      const pinned = await loadByExecutionId(
+        request.database,
+        request.libraryPath,
+        request.photoId,
+        pinnedExecutionId,
+        nodeId,
+      );
+      if (pinned) return { ...pinned, reused: true };
+      throw new Error(`Pinned generation artifact is unavailable: ${pinnedExecutionId}`);
+    }
+  }
   if (!deterministic && requestedExecutionId) {
     if (!/^exec_[0-9a-f]{64}$/.test(requestedExecutionId)) {
       throw new Error("Expected exec_ followed by a full SHA-256 hash");
@@ -344,6 +368,9 @@ async function runOperation(
     if (kind === "solid") {
       return { image: await evaluateSolid(parameters) };
     }
+    if (kind === "resample") {
+      return { image: await evaluateResample(parameters, inputs) };
+    }
     if (kind === "composite" && recipeVersion === 2) {
       return { image: await evaluateCompositeV2(parameters, inputs) };
     }
@@ -375,6 +402,33 @@ async function runOperation(
     );
   }
   return { image: result };
+}
+
+async function evaluateResample(
+  parameters: JsonValue,
+  inputs: EvaluatedNode[],
+): Promise<LinearImage> {
+  if (inputs.length !== 1) throw new Error("Resample evaluation requires one input artifact");
+  const parsed = z
+    .object({
+      w: z.number().int().positive(),
+      h: z.number().int().positive(),
+      kernel: z.enum(["nearest", "bilinear", "bicubic", "lanczos3"]),
+    })
+    .strict()
+    .parse(parameters);
+  const image = await readRgbInput(inputs[0]);
+  if (image.w === parsed.w && image.h === parsed.h)
+    return linearImage(image, new Float32Array(image.data));
+  if (parsed.kernel === "nearest" || parsed.kernel === "bicubic") {
+    throw new Error(`The ${parsed.kernel} graph resample kernel is not implemented`);
+  }
+  return {
+    ...image,
+    w: parsed.w,
+    h: parsed.h,
+    data: await resamplePixels(image.data, image.w, image.h, 3, parsed.w, parsed.h, parsed.kernel),
+  };
 }
 
 async function evaluateSolid(parameters: JsonValue): Promise<LinearImage> {

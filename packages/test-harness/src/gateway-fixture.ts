@@ -73,7 +73,12 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
   const mode = String(
     fields.fixture_mode ?? request.headers["x-photoctl-fixture-mode"] ?? "normal",
   );
-  const output = mode === "wrongdims" ? { w: sent.w + 7, h: sent.h + 5 } : sent;
+  const output =
+    mode === "wrongdims"
+      ? { w: sent.w * 2, h: sent.h * 2 }
+      : mode === "wrongaspect"
+        ? { w: sent.w + 1, h: sent.h }
+        : sent;
   const png = await sharp({
     create: { width: output.w, height: output.h, channels: 4, background: "#336699ff" },
   })

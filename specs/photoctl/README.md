@@ -13,8 +13,8 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–10 are
-implemented.
+*Last updated: 2026-09-05. Status: slices 00–10, the keyless Slice 11 command seam, and the bounded
+Slice 12a strict-fill checkpoint are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
 the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
@@ -51,10 +51,11 @@ point and follow it exactly. Do not re-decide anything in the original decision 
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Active wave:** slice 11 has keyless runtime and injectable command seams. Next, connect the CLI/daemon to the cached SAM
-  runtime and developed-image source once the exported release weights are hosted; then run the real point probes, G6, and
-  `wb masks` checkpoint. Do not treat fake masks as evidence for those gates. Slice 09c's live multimodal request also remains
-  provisional until the purpose-key smoke produces an accepted fixture.
+- **Active wave:** Slice 12a now owns keyless remove/prompt generation through the fake gateway, immutable provider execution,
+  deterministic dimension normalization, and strict base-pixel composite. Continue with 12b density planning and 12c configured
+  upscaler policy before 12d refresh/person-move integration. Slice 11 still needs the hosted SAM weights, real point probes, G6,
+  and `wb masks`; fake masks are not evidence for those gates. Slice 09c's live multimodal request also remains provisional until
+  the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
   the real-drive gold exam (14) waits on the drive path; SAM weight hosting (11a) waits on a release URL.
@@ -78,7 +79,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
-- [ ] 12 fill DAG, optional density-matching upscale, strict composite, person-move flow — `slices/12-fill.md`
+- [ ] 12 fill DAG: [x] 12a strict generation/composite · [ ] 12b density · [ ] 12c upscale policy/failure · [ ] 12d refresh/person move — `slices/12-fill.md`
 - [ ] 13a reimagine/relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`

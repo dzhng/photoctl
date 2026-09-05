@@ -16,6 +16,8 @@ export interface SentImage {
 export interface NormalizedImageResponse {
   png: Buffer;
   resampled: boolean;
+  returnedDimensions: { w: number; h: number };
+  wholeFrame: boolean;
   warnings: Warning[];
 }
 
@@ -110,6 +112,13 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     const metadata = await sharp(bytes, { failOn: "error" }).metadata();
     if (!metadata.width || !metadata.height)
       throw new Error("Provider image dimensions are missing");
+    if (metadata.width * sentDimensions.h !== metadata.height * sentDimensions.w) {
+      throw new PhotoctlError(
+        "provider_whole_frame",
+        "The provider returned an unexplained aspect ratio change",
+        { returned: { w: metadata.width, h: metadata.height }, sent: sentDimensions },
+      );
+    }
     const resampled = metadata.width !== sentDimensions.w || metadata.height !== sentDimensions.h;
     const png = resampled
       ? await resamplePng(bytes, metadata.width, metadata.height, sentDimensions)
@@ -117,6 +126,8 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     return {
       png,
       resampled,
+      returnedDimensions: { w: metadata.width, h: metadata.height },
+      wholeFrame: parsed.photoctl_fixture?.wholeframe === true,
       warnings: parsed.photoctl_fixture?.wholeframe
         ? [
             {
