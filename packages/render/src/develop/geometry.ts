@@ -7,6 +7,7 @@ import {
   matrixForTransform,
   transformPoint,
   type TransformMatrix,
+  type TransformPoint,
 } from "../transforms.js";
 import type { DevelopDict } from "./dict.js";
 
@@ -289,7 +290,75 @@ function bounds(points: { x: number; y: number }[]): [number, number, number, nu
   return [x, y, Math.max(...xs) - x, Math.max(...ys) - y];
 }
 
-function clipPolygonToRectangle(points: { x: number; y: number }[], width: number, height: number) {
+export type ConvexPolygon = readonly TransformPoint[];
+
+/** Signed area; anchoring each triangle avoids cancellation at large base offsets. */
+export function polygonArea(points: ConvexPolygon): number {
+  const origin = points[0];
+  if (!origin) return 0;
+  let twiceArea = 0;
+  for (let index = 1; index + 1 < points.length; index += 1) {
+    const a = points[index]!;
+    const b = points[index + 1]!;
+    twiceArea += (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+  }
+  return twiceArea / 2;
+}
+
+function clipPolygonAtLine(
+  points: ConvexPolygon,
+  a: TransformPoint,
+  b: TransformPoint,
+  side: number,
+) {
+  const distance = (point: TransformPoint) =>
+    side * ((b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x));
+  return clipEdge(
+    points,
+    (point) => distance(point) >= 0,
+    (start, end) => {
+      const startDistance = distance(start);
+      const ratio = startDistance / (startDistance - distance(end));
+      return { x: start.x + (end.x - start.x) * ratio, y: start.y + (end.y - start.y) * ratio };
+    },
+  );
+}
+
+/** Convex clipping accepts either winding. Empty or zero-area clips have no support. */
+export function intersectConvexPolygons(
+  subject: ConvexPolygon,
+  clip: ConvexPolygon,
+): TransformPoint[] {
+  const side = Math.sign(polygonArea(clip));
+  if (!side) return [];
+  let remaining = [...subject];
+  for (let index = 0; index < clip.length && remaining.length; index += 1) {
+    remaining = clipPolygonAtLine(remaining, clip[index]!, clip[(index + 1) % clip.length]!, side);
+  }
+  return remaining;
+}
+
+/** Disjoint convex pieces of subject minus clip, partitioned by the first failed clip edge. */
+export function subtractConvexPolygon(
+  subject: ConvexPolygon,
+  clip: ConvexPolygon,
+): TransformPoint[][] {
+  const side = Math.sign(polygonArea(clip));
+  if (!side) return [[...subject]];
+  const outside: TransformPoint[][] = [];
+  let remaining = [...subject];
+  for (let index = 0; index < clip.length && remaining.length; index += 1) {
+    const a = clip[index]!;
+    const b = clip[(index + 1) % clip.length]!;
+    if (a.x === b.x && a.y === b.y) continue;
+    const piece = clipPolygonAtLine(remaining, a, b, -side);
+    if (polygonArea(piece) !== 0) outside.push(piece);
+    remaining = clipPolygonAtLine(remaining, a, b, side);
+  }
+  return outside;
+}
+
+function clipPolygonToRectangle(points: ConvexPolygon, width: number, height: number) {
   let clipped = points;
   clipped = clipEdge(
     clipped,
@@ -314,7 +383,7 @@ function clipPolygonToRectangle(points: { x: number; y: number }[], width: numbe
 }
 
 function clipEdge(
-  points: { x: number; y: number }[],
+  points: ConvexPolygon,
   inside: (point: { x: number; y: number }) => boolean,
   intersection: (
     a: { x: number; y: number },

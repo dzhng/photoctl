@@ -4176,3 +4176,23 @@
 - **Verdict:** **Sound.** Consume memory already owned exclusively by the task; preserve caller buffers
   and exact output rather than introducing global GC, allocator, or thread-policy changes.
 - **Confidence:** High.
+
+### Canvas coverage — Ignore only roundoff-scale total area after viewport normalization
+
+- **When:** 12f2 convex-support prerequisite, 2026-09-06.
+- **The choice:** A rotated border and its original photograph can share an edge mathematically
+  while floating-point arithmetic leaves a microscopic numerical sliver. Before clipping, the
+  coverage helper maps every frame into viewport-relative coordinates, where the whole view has
+  approximately unit area. It subtracts all supported regions and treats a total remainder no larger
+  than 64 times JavaScript's machine epsilon (about 1.4e-14 of the viewport area) as roundoff. It sums
+  the remainder before applying that threshold: splitting a genuine hole into small pieces must not
+  make it disappear. The alternative of testing for exactly zero would report numerical edge noise;
+  a pixel-sized tolerance would hide real fractional gaps.
+- **The gap:** The plan specified geometric coverage rather than raster sampling, but not a
+  floating-point zero-area policy. Exact symbolic arithmetic is not introduced by this pass.
+- **The reach:** Coverage is independent of preview resolution and ignores no ordinary pixel-sized
+  hole. This remains a numerical tolerance, not a proof for arbitrarily ill-conditioned transforms;
+  future numeric changes must preserve both coincident-edge and small-gap regressions.
+- **Verdict:** **Sound.** One viewport-relative total-area decision avoids resolution-dependent
+  warning changes and fragment-count-dependent suppression without introducing a raster owner.
+- **Confidence:** Medium.
