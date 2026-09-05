@@ -34,6 +34,24 @@ Generate the independent machine-readable facts with `python3 fixtures/tools/man
 The `sam_probes` annotations in `a7c2.json` are authored from visible subjects, not model outputs.
 Remeasurement preserves them only while the image SHA-256 is unchanged. Their area bands test coarse
 selection, not edge quality; [photographic evidence](../specs/photoctl/assets/sam-photographic/README.md)
-records that separate verdict. The real-model host test requires `PHOTOCTL_SAM_MODELS_DIR` and fails
-visibly if that prerequisite is missing.
+records that separate verdict. The shared `test/model-runtime` suite is part of both the default
+Docker functional gate and the default macOS suite, in addition to their existing tests. Missing
+models or an empty test selection fail visibly; the narrow `test:models` script is a diagnostic,
+not a replacement for those defaults.
+
+Docker takes an explicit `PHOTOCTL_MODELS_BASE_URL`, fetches and verifies the manifest's files during
+the functional image build, and exposes that directory to the tests. The gateway fixture uses the
+built application image without fetching models. Public distribution is not configured: a real
+release host or a reachable local HTTP server serving the frozen exports is still required.
+CI and release tests read that URL from the GitHub repository variable of the same name; an unset
+variable remains a prerequisite failure, not a request to skip model coverage.
+
+On a host, set `PHOTOCTL_SAM_MODELS_DIR` to an existing exported directory. To provision from a
+configured base URL, build the TypeScript packages and use the same fetch owner as Docker:
+
+```sh
+node scripts/fetch-models.mjs "$PHOTOCTL_MODELS_BASE_URL" /path/to/models
+PHOTOCTL_SAM_MODELS_DIR=/path/to/models bun run test:macos
+```
+
 Generate the pinned segmentation artifacts with `scripts/export-sam2.py`; it writes real hashes only after both ONNX files pass CPU parity and opset checks. [Reproduction and evidence](../specs/photoctl/assets/sam-export/README.md) document the isolated export environment.

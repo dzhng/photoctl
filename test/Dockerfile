@@ -1,6 +1,7 @@
 FROM oven/bun:1.3.14 AS bun
 
-FROM node:24-bookworm AS built
+# The pinned ORT archive needs CXXABI_1.3.15, absent from Bookworm's libstdc++.
+FROM node:24-trixie AS built
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 RUN apt-get update && apt-get install -y --no-install-recommends clang curl ca-certificates && rm -rf /var/lib/apt/lists/* \
  && curl -fsSL --retry 10 --retry-all-errors https://sh.rustup.rs | RUSTUP_MAX_RETRIES=10 sh -s -- -y --profile minimal
@@ -11,6 +12,7 @@ COPY apps/cli/package.json apps/cli/package.json
 COPY apps/workbench/package.json apps/workbench/package.json
 COPY apps/daemon/package.json apps/daemon/package.json
 COPY packages/protocol/package.json packages/protocol/package.json
+COPY packages/providers/package.json packages/providers/package.json
 COPY packages/commands/package.json packages/commands/package.json
 COPY packages/importer/package.json packages/importer/package.json
 COPY packages/library/package.json packages/library/package.json
@@ -20,6 +22,8 @@ COPY packages/img-darwin-x64/package.json packages/img-darwin-x64/package.json
 COPY packages/img-linux-arm64-gnu/package.json packages/img-linux-arm64-gnu/package.json
 COPY packages/img-linux-x64-gnu/package.json packages/img-linux-x64-gnu/package.json
 COPY packages/mac-helper/package.json packages/mac-helper/package.json
+COPY packages/mac-helper-darwin-arm64/package.json packages/mac-helper-darwin-arm64/package.json
+COPY packages/mac-helper-darwin-x64/package.json packages/mac-helper-darwin-x64/package.json
 COPY packages/render/package.json packages/render/package.json
 COPY packages/test-harness/package.json packages/test-harness/package.json
 RUN bun install --frozen-lockfile
@@ -31,5 +35,6 @@ ARG PHOTOCTL_MODELS_BASE_URL
 RUN test -n "${PHOTOCTL_MODELS_BASE_URL}" \
  && node scripts/fetch-models.mjs "${PHOTOCTL_MODELS_BASE_URL}" /opt/photoctl/models
 
-FROM built AS functional
-CMD ["bun","run","test:ts"]
+FROM models AS functional
+ENV PHOTOCTL_SAM_MODELS_DIR=/opt/photoctl/models
+CMD ["sh","-c","bun run test:ts && bun run test:models"]

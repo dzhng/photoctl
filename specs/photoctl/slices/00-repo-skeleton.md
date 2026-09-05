@@ -30,7 +30,11 @@ produced by a tool independent of the code under test.
   records the command. Tests read the manifest; they never call importer code to derive expectations.
 - Layout per README; `turbo.json` (`test` dependsOn `^build`); `bunfig.toml` (`linker = "hoisted"`); Cargo workspace with
   empty `crates/photoctl-image`; `.oxlintrc.json`/`.oxfmtrc.json` + `packages/typescript-config` copied from `~/dev/duet`.
-- `test/Dockerfile` (node:24-bookworm, bun for install, rustup, clang), `test/compose.yaml` (`functional`, `gateway-fixture`).
+- `test/Dockerfile` (Node 24, bun for install, rustup, clang), `test/compose.yaml` (`functional`, `gateway-fixture`).
+  The Docker test base uses Debian Trixie's C++ runtime: the pinned ORT archive references
+  `CXXABI_1.3.15` and `GLIBCXX_3.4.31`, unavailable in Bookworm's libstdc++ 12. This is a tested-image
+  requirement, not a minimum supported Linux distribution for packaged addons. Release runner and
+  packaged-binary compatibility remain separate from the [real-model gate](11-segment.md).
 - **CI + tag releases, lifted from `~/dev/duet-agent/.github/workflows/`** (already committed at `.github/workflows/{ci,publish}.yml`):
   `ci.yml` runs install → build → lint → test on every push/PR; `publish.yml` runs the same gates on `v*` tags, creates a GitHub
   Release with generated notes, then `bun run publish:npm`. This slice makes both green: root `package.json` gets `version`,

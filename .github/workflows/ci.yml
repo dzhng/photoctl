@@ -32,4 +32,6 @@ jobs:
         run: bun run lint
 
       - name: Test
+        env:
+          PHOTOCTL_MODELS_BASE_URL: ${{ vars.PHOTOCTL_MODELS_BASE_URL }}
         run: bun run test

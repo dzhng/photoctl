@@ -76,10 +76,11 @@ typecheck). Native color snapshots now report their actual capacity to Node; six
 runs preserve exact masks at 2.04–2.27 GB RSS on the fixture host. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
 single/multi-mask references all fail detailed edges. Any extra refinement is a separate decision.
 [Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
-public model hosting remains unfinished. Docker model-stage wiring is in progress; the real Linux
-probe exposed an ONNX Runtime plain-text CPU warning during native-addon static initialization,
-violating strict NDJSON before application logger setup. Fix the upstream load boundary without
-filtering the test harness. The host model test fails visibly without its documented weights.
+Docker's functional gate now consumes hash-verified models and runs the shared real-model test;
+the Mac default gate runs the same test and fails visibly without its documented weights.
+Public model hosting remains unfinished. The local Linux run exposed a plain-text ORT warning during
+native-addon static initialization before application logger setup. It violates the CLI's NDJSON
+stderr contract; fix the upstream load boundary without filtering the test harness. That gate is not yet passing.
 
 **External evidence still outstanding:**
 G3 still requires an SSH-capable Mac session. The real-drive path, additional ARW compression fixtures,
@@ -230,7 +231,7 @@ Root scripts (bare = whole job, `:suffix` = one part):
 ```
 build            build:ts (turbo) && build:rust (napi) && build:swift (no-op off Mac)
 test             test:ts && test:rust && test:functional && test:macos
-test:functional  docker compose -f test/compose.yaml run --rm functional   ← THE gate; fails visibly if Docker/fixtures/weights missing or zero tests ran
+test:functional  docker compose -f test/compose.yaml run --build --rm functional   ← THE gate; fails visibly if Docker/fixtures/weights missing or zero tests ran
 test:macos       host-only vitest project (CIRAW helper, hdiutil volume, Trash, perf bands)
 test:rust        cargo test --workspace
 lint / typecheck / fmt / fmt:check

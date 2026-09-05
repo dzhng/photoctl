@@ -3,6 +3,9 @@ services:
     build:
       context: ..
       dockerfile: test/Dockerfile
+      target: functional
+      args:
+        PHOTOCTL_MODELS_BASE_URL: ${PHOTOCTL_MODELS_BASE_URL:-}
     environment:
       PHOTOCTL_GATEWAY_URL: http://gateway-fixture:8787
       PHOTOCTL_NO_DAEMON: "1"
@@ -11,4 +14,5 @@ services:
     build:
       context: ..
       dockerfile: test/Dockerfile
+      target: built
     command: ["node","packages/test-harness/dist/gateway-server.js"]

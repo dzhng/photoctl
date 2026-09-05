@@ -7,11 +7,11 @@ path without adjacent grass or gravel. The committed fixture's bands were author
 source image before model results were inspected: an independent image-only reviewer estimated
 sky at 28–38% and path at 4–9%. These broad area checks cannot certify fine boundaries.
 
-`test/macos/segment-at.test.ts` runs the built CLI against the actual ARW and hash-pinned models,
+`test/model-runtime/segment-at.test.ts` runs the built CLI against the actual ARW and hash-pinned models,
 then reads the published masks. Both probes passed together in 48.19 seconds on 2026-09-06;
 click inclusion, excluded grass/sky points, and zero gateway calls also passed. Run it with
 `PHOTOCTL_SAM_MODELS_DIR` pointing to the exported model directory. Missing models fail rather
-than skip. This is a host integration test, not the full release gate.
+than skip. Those measurements are host integration evidence, not the full release gate.
 The production-route falsification forced returned coverage to one: the test failed at 100%
 against the unchanged 38% sky maximum. Restoring the built runtime returned both probes to green
 in 50.31 seconds. Manifest preservation separately failed when annotation carry-forward was absent
@@ -50,11 +50,30 @@ The comparison skill's bundled helper could not load its optional `pngjs` depend
 were instead measured from the PNGs using the repository's existing Sharp dependency; their
 method is recorded in the JSON. No new project dependency was introduced.
 
-The code review flagged missing model provisioning in the default macOS suite. Moving this test
-to an optional suite would weaken the spec's explicit missing-weights-must-fail gate, so that
-recommendation was not adopted. The model-directory prerequisite is documented in the fixture hub;
-clean-checkout provisioning/public hosting and Docker model-stage integration remain release work.
-The existing Docker functional stage does not yet consume its separate model-fetch stage.
+The shared probe remains in both default platform gates; it is not an optional replacement for
+existing tests. The [fixture hub](../../../../fixtures/README.md) owns model provisioning requirements.
+Docker consumes the hash-fetch stage; host runs require an explicit model directory. Public hosting
+remains a release prerequisite, separate from local model execution and photographic quality.
+
+### Portable gate checkpoint
+
+The unchanged shared probe passes through the Mac default runner with the frozen manifest weights
+(two subjects, 49.83 s). Docker builds and fetches both correct hashes; missing URLs and corrupt
+served bytes fail the build. The gateway fixture builds without model provisioning.
+
+The real Linux probe remains red: the ARM64 addon emits
+`onnxruntime cpuid_info warning: Unknown CPU vendor. cpuinfo_vendor value: 0` on stderr during
+loading, before a runtime is constructed. Requiring the addon directly reproduces this without
+models or inference. The CLI harness correctly rejects this non-JSON line. This was observed on
+Docker's Linuxkit virtual CPU (implementer `0x61`, part `0x000`), not established on other Linux hosts.
+
+The pinned `ort-sys` archive contains ORT 1.28.0. Its
+[KleidiAI globals](https://github.com/microsoft/onnxruntime/blob/v1.28.0/onnxruntime/core/mlas/lib/kleidiai/mlasi_kleidiai.h)
+initialize CPU discovery before a logger exists; the
+[early warning owner](https://github.com/microsoft/onnxruntime/blob/v1.28.0/onnxruntime/core/common/cpuid_info.cc)
+then writes directly to stderr. A post-load application logger cannot repair this ordering.
+The gate stays mandatory and strict; resolving the runtime initialization is separate from test
+wiring, public hosting, photographic quality, and the resource gate.
 
 ## Photographic reference parity
 

@@ -53,6 +53,11 @@ mask path consumes floating-point low-resolution logits rather than the exporter
 Production construction, point/text routing, geometry, cache reuse/eviction/retry, and dry-run behavior have deterministic
 tests. These are wiring evidence, not model-quality evidence. The checked-in release now pins a real export;
 real `segment-at` probes now pass the independently authored `a7c2` area/click checks.
+The portable real-model probe belongs to both default Docker and macOS gates, alongside their
+existing test coverage. Docker's functional image inherits the hash-verified model stage; its gateway
+fixture stops at the built application stage. [Model provisioning](../../../fixtures/README.md)
+requires an explicit base URL for Docker or an existing host model directory. No public release host
+is invented, and missing prerequisites cannot silently select an empty or skipped model suite.
 Detailed edge acceptance and full-command G6 remain open independently.
 [Export evidence](../assets/sam-export/README.md) records the real Hydra resolution regression, raw-logit ranking normalization,
 unchanged parity tolerances, and fail-closed publication boundary. Export-process RSS is not inference-process RSS.

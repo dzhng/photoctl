@@ -4227,3 +4227,39 @@
 - **Verdict:** **Sound.** Report memory actually owned to the platform that manages collection;
   preserve pixel and caller contracts instead of tuning an allocator around one photograph.
 - **Confidence:** High for ownership/accounting; RSS effectiveness remains measurement-dependent.
+
+### Real-model gate — Rebuild the requested source, with provisioning kept explicit
+
+- **When:** Docker/model gate wiring, 2026-09-06.
+- **The choice:** After changing the CLI, running the functional gate asks Compose to build before
+  executing it. Docker can reuse unchanged layers, but cannot silently run the previous image's
+  tests instead of the current checkout. Only the functional image fetches the pinned models;
+  the fake gateway stops at the built application image. On macOS, the caller supplies an existing
+  model directory or invokes the existing hash-verifying fetch script. There is no second automatic
+  host downloader and no guessed public release address.
+- **The gap:** The plan required real default model coverage but did not settle stale Compose image
+  reuse or whether host test startup should acquire models automatically.
+- **The reach:** A source-changing functional run may rebuild its image and requires a configured
+  model base URL; missing models remain a visible prerequisite failure. The shared model suite adds
+  coverage without replacing existing TypeScript or macOS tests.
+- **Verdict:** **Sound.** The gate tests the requested checkout, while one fetch owner preserves
+  hash verification and avoids hidden distribution or credential policy.
+- **Confidence:** High.
+
+### Docker toolchain — Match the pinned inference archive's C++ runtime
+
+- **When:** Docker/model gate wiring, 2026-09-06.
+- **The choice:** A clean native test build on Node 24 with Debian Bookworm fails at the linker:
+  the existing ONNX Runtime archive calls C++ functions absent from Bookworm's version 12 runtime.
+  The same Node major on Debian Trixie supplies the required versioned symbols, including
+  `__cxa_call_terminate` at `CXXABI_1.3.15`. The Docker test image therefore uses Trixie. The alternative
+  of changing the model/runtime dependency or bundling another C++ library would alter an owner
+  outside this test-wiring pass.
+- **The gap:** The original Docker seam named Bookworm before the current pinned inference archive
+  made a newer C++ runtime a concrete build requirement.
+- **The reach:** Docker tests cover that newer Linux runtime, not arbitrary older installations.
+  The release workflow builds Linux packages on its own Ubuntu runners; this change neither edits
+  those runners nor proves their binary compatibility floor. That remains a separate release check.
+- **Verdict:** **Sound.** Correct the demonstrated test-toolchain mismatch without changing Node,
+  model bytes, inference semantics, or native algorithms, and keep the evidence boundary explicit.
+- **Confidence:** High.
