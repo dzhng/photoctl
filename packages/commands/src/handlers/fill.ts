@@ -15,13 +15,13 @@ import {
 import {
   GatewayClient,
   GatewayImageModelAdapter,
-  DEFAULT_MODELS,
   REMOVE_PROMPT_VERSION,
-  UpscaleRegistry,
   buildGuardedUpscalePrompt,
+  createUpscaleRegistry,
   removePrompt,
   readProviderSettings,
   resolveModel,
+  type UpscaleRegistry,
 } from "@photoctl/providers";
 import { PhotoctlError, type Envelope, type FillStrictData } from "@photoctl/protocol";
 import { parseArguments } from "../arguments.js";
@@ -201,8 +201,7 @@ async function fillGenerationCommand(
         gateway: new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl }),
         model,
       } satisfies FillDependencies);
-    const upscaleRegistry =
-      providedDependencies?.upscaleRegistry ?? new UpscaleRegistry(DEFAULT_MODELS.upscale);
+    const upscaleRegistry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
     const guardedPrompt = buildGuardedUpscalePrompt(remove ? removePrompt() : custom!);
     const resolver = createVolumeResolver(env.volumeMap, lease.handle.path);
     const libraryId = await readLibraryId(lease.handle);

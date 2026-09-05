@@ -153,3 +153,10 @@ Once the current render state has a validated full-frame display master, default
 of evaluating the graph again. The cheap direct overview remains the cold-cache path and never creates a master by itself. Existing
 master reads use the preview coordinator's path lease and cache accounting, so reuse cannot race pruning and a valid file can repair
 a missing index row. The full agent-preview journey remains the owner of visual continuity evidence across fill revisions.
+
+## 12d provider-runtime foundation — 2026-09-05
+
+The provider package now owns the runtime upscaler roster used by fill and the workbench. Adapter availability remains only a
+capability: the existing policy still requires persisted, purpose-scoped consent before sending pixels. The provisional deterministic
+fake therefore supports built command-path verification without becoming an ambient opt-in or a live-model selection. Callers may
+still inject a registry at the same boundary for failure modes and future adapter evidence.

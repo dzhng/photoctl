@@ -2867,3 +2867,20 @@
 - **Verdict:** **Sound.** Repairing accounting from the already validated file restores the cache invariant without rendering or
   inventing a second source of pixel truth.
 - **Confidence:** High.
+
+### Slice 12d provider runtime — Runtime registry instances share one provider-owned roster
+
+- **When:** Slice 12d provider-runtime foundation, 2026-09-05.
+- **The choice:** When a fill command or the workbench needs to discover upscalers, it asks the provider package to create a fresh
+  registry populated with the release roster. A registry is only an in-memory list of available adapters; it does not mean the
+  user allowed any adapter to receive pixels. The command separately reads the library's persisted consent and calls the listed
+  fake adapter only when its exact ID is marked configured. The unbuilt alternative was one mutable process-global registry,
+  which would let test or future runtime registration leak between independent commands.
+- **The gap:** The pass required one shared factory and continued registry injection, but did not specify whether the factory should
+  return a process singleton or a new registry for each consumer.
+- **The reach:** Fill and workbench cannot drift on which built-in adapters exist, while future callers and tests can still inject an
+  isolated registry without mutating production discovery. A later live adapter joins this single provider-owned roster but still
+  cannot bypass purpose-scoped consent.
+- **Verdict:** **Sound.** A fresh lightweight registry keeps discovery deterministic and avoids hidden global mutation without
+  weakening the separately persisted consent gate.
+- **Confidence:** High.

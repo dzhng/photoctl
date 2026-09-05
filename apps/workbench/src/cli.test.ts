@@ -12,7 +12,6 @@ import {
   type NodeDraft,
 } from "@photoctl/render";
 import sharp from "sharp";
-import { FakeUpscaleAdapter, UpscaleRegistry } from "@photoctl/providers";
 
 const temporaryDirectories: string[] = [];
 
@@ -376,15 +375,11 @@ test("upscale spike runs both prompt arms through an explicitly configured adapt
   await sharp({ create: { width: 3, height: 2, channels: 3, background: "#936" } })
     .png()
     .toFile(source);
-  const registry = new UpscaleRegistry("photoctl/fake-upscale-v1");
-  registry.register(new FakeUpscaleAdapter());
-
   const output = await runWorkbench(
     ["upscale-spike", source],
     cwd,
     {},
     {
-      upscaleRegistry: registry,
       upscaleSettings: {
         models: { upscale: "photoctl/fake-upscale-v1" },
         providers: { upscale: { "photoctl/fake-upscale-v1": { configured: true } } },

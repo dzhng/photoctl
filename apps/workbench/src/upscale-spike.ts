@@ -4,6 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 import {
   buildGuardedUpscalePrompt,
+  createUpscaleRegistry,
   type UpscaleArtifact,
   type UpscaleRegistry,
 } from "@photoctl/providers";
@@ -27,18 +28,16 @@ export async function runUpscaleSpike(
   dependencies: UpscaleSpikeDependencies,
 ): Promise<string> {
   const output = join(outputDirectory, "upscale-spike.json");
-  const registry = dependencies.upscaleRegistry;
-  const policy = registry
-    ? resolveUpscalePolicy({
-        releaseDefaultModel: registry.releaseDefault,
-        availableAdapterIds: registry.list().map(({ id }) => id),
-        settings: dependencies.upscaleSettings,
-        flag: "upscale",
-        sourceContext: { tier: "workbench", pixelScale: 1, resolutionLimited: false },
-      })
-    : undefined;
-  const adapter = registry && policy ? registry.get(policy.upscale.model) : undefined;
-  if (!registry || policy?.upscale.action !== "upscale" || !adapter) {
+  const registry = dependencies.upscaleRegistry ?? createUpscaleRegistry();
+  const policy = resolveUpscalePolicy({
+    releaseDefaultModel: registry.releaseDefault,
+    availableAdapterIds: registry.list().map(({ id }) => id),
+    settings: dependencies.upscaleSettings,
+    flag: "upscale",
+    sourceContext: { tier: "workbench", pixelScale: 1, resolutionLimited: false },
+  });
+  const adapter = registry.get(policy.upscale.model);
+  if (policy.upscale.action !== "upscale" || !adapter) {
     await writeEvidence(output, {
       schema: 1,
       status: "not_run",
