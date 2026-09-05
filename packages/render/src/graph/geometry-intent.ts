@@ -17,6 +17,7 @@ export const geometryNodeParametersSchema = z
         type: z.literal("checkpoint"),
         ...activation,
         sequence: z.number().int().positive(),
+        support_input_count: z.number().int().nonnegative(),
         geometry: developDictSchema.pick({
           crop: true,
           aspect_ratio: true,
@@ -66,6 +67,27 @@ export async function loadGeometryAncestry(
   const root = nodes.get(rootId);
   if (!root) throw new Error("Geometry ancestry is missing its root");
   for (const node of nodes.values()) {
+    if (node.parameters.type === "checkpoint") {
+      const head = node.inputs[node.parameters.support_input_count];
+      if (
+        (node.parameters.sequence === 1 && head !== undefined) ||
+        (node.parameters.sequence > 1 &&
+          nodes.get(head ?? "")?.parameters.sequence !== node.parameters.sequence - 1)
+      ) {
+        throw new Error(
+          "An authored checkpoint must retain its preceding chronological checkpoint",
+        );
+      }
+    }
+    if (
+      node.parameters.type === "checkpoint" &&
+      (node.parameters.support_input_count > node.inputs.length ||
+        node.inputs.length - node.parameters.support_input_count > 1)
+    ) {
+      throw new Error(
+        "Checkpoint inputs must contain supporting checkpoints and at most one chronological head",
+      );
+    }
     for (const inputId of node.inputs) {
       const input = nodes.get(inputId);
       if (

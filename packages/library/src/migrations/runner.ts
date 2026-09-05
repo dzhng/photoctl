@@ -19,6 +19,7 @@ import { migration0017 } from "./0017-execution-frames.js";
 import { migration0018 } from "./0018-reference-images.js";
 import { migration0019 } from "./0019-canvas-intent.js";
 import { migration0020 } from "./0020-provider-image-attempts.js";
+import { migration0021 } from "./0021-border-layers.js";
 
 export interface MigrationResult {
   fromVersion: number;
@@ -47,6 +48,7 @@ const migrations = [
   { version: 18, sql: migration0018 },
   { version: 19, sql: migration0019 },
   { version: 20, sql: migration0020 },
+  { version: 21, sql: migration0021 },
 ] as const;
 
 export const LATEST_SCHEMA_VERSION = migrations.at(-1)?.version ?? 0;

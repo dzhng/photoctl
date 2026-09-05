@@ -83,6 +83,117 @@
   alternately grow width and height; exact-ratio integer dimensions make the second request a no-op.
 - **Confidence:** Medium.
 
+### Canvas core — Separate historical order from support that remains active
+
+- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
+- **The choice:** Remove border A, then author B. B remembers that A happened earlier for inspection,
+  but does not inherit A's exclusions merely because A is its chronological predecessor. A required
+  count divides each checkpoint's ordered inputs into supporting checkpoints and an optional final
+  chronological predecessor. A later sequence retains its immediately preceding sequence. These
+  references point to geometry records, never require removed historical RGB to evaluate pixels.
+- **The gap:** The metadata scaffold had not distinguished these two meanings of ancestry.
+- **The reach:** Future removal, duplicate and inspection flows must preserve both relationships.
+  The current unshipped recipe is tightened directly and the real schema-19 fixture regenerated; DDL 19
+  stays unchanged, without a compatibility recipe for development-only data.
+- **Verdict:** **Sound.** Historical retention cannot accidentally reactivate removed support.
+- **Confidence:** High.
+
+### Canvas core — A placed border retains its full intrinsic raster
+
+- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
+- **The choice:** Translating a border four pixels moves its RGB, mask hole and extent together.
+  Placement recipe 2 records the full frame without baking a clipped transformed image; the ordered
+  compositor samples it. Original-content exclusions and later borders stay in their authored
+  coordinates. Existing manual transform 1 retains its baked-raster semantics. A supplied image
+  whose intrinsic dimensions disagree with the prepared frame cannot activate the border.
+- **The gap:** Existing transform 1 clips to its intrinsic canvas, which loses pixels needed for
+  border extent. Reusing that meaning would make moved border pixels disappear.
+- **The reach:** Migration 21 admits a genuinely different durable placement recipe, not a naming
+  alias. Logical dimensions of pinned images come from their artifact metadata, not a latest
+  execution guess. No new artifact store or provider API is added.
+- **Verdict:** **Sound.** Distinct pixel semantics earn a distinct persisted recipe while sharing
+  frame/matrix and compositor owners.
+- **Confidence:** High.
+
+### Canvas core — Clip admissibility after ordered sampling
+
+- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
+- **The choice:** A straightened later border can retain a hole where an earlier border was removed.
+  Lanczos interpolation alone leaked tiny original values into that hole. RGB and coverage still
+  traverse the original ordered samplers, then coverage is clipped against the authored admissible
+  frames. This removes forbidden content without substituting a fused one-pass sampler. A manual
+  layer authored after expansion uses the current photographic image, so its legitimate extension
+  pixels survive; an older hidden layer cannot reveal the excluded original.
+- **The gap:** Geometric exclusion and interpolation coverage have different meanings at edges.
+- **The reach:** Exact-black unsupported pixels coexist with normal interpolation and live base
+  edits. Post-border manual content has a real pixel dependency on its captured photographic input;
+  geometry ancestry itself remains metadata-only.
+- **Verdict:** **Sound.** The explicit admissibility boundary fixes leakage without flattening all
+  content or clipping every layer to the oldest crop.
+- **Confidence:** High.
+
+### Canvas core — Preserve exterior intent and distinguish a new request from support removal
+
+- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
+- **The choice:** On an original photo, a new crop partly outside its edge is accepted if it intersects
+  the current view; a wholly disjoint new crop is rejected before a revision. Once valid, that same
+  crop remains even if removing borders leaves it wholly unsupported. The user sees opaque black
+  where no admissible pixels exist, rather than a silently clipped crop or a failed removal.
+- **The gap:** The old containment check could not represent reversible exterior intent. The
+  selected policy validates intersection for new requests and preserves intent on removal.
+- **The reach:** Mutation owns intersection policy; render geometry accepts signed finite frames
+  with exact source scaling. Reset/shrink/removal must not be reclassified as new enlargement.
+- **Verdict:** **Sound.** This follows the explicit reversible product choice and has public tests
+  for partial exterior acceptance, disjoint refusal and removal fallback.
+- **Confidence:** Medium; black exterior fallback remains a reversible product policy.
+
+### Canvas core — New raster limits preserve source-sized operations
+
+- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
+- **The choice:** A 32 MP source may request a 60 MP exterior view, but a billion-pixel crop is rejected
+  before allocation. The render owner provisionally allows at most 64 million pixels and 16,384 per edge,
+  raising each ceiling to the catalog source size when needed so a 100 MP original can still be
+  cropped/reset/rotated at source size. Provider work must also satisfy its own adapter limits.
+- **The gap:** Canvas growth needed a render safety policy independent of provider capability.
+- **The reach:** These are centralized growth limits, not a memory guarantee, stored checkpoint
+  policy or new user setting. Representative hardware evidence is still needed; changing the
+  centralized limits later does not rewrite authored geometry.
+- **Verdict:** **Needs-user.** Continue with this provisional ceiling; representative
+  hardware evidence or a different product limit can replace it without a schema change.
+- **Confidence:** Medium.
+
+### Canvas core — Snap only roundoff-scale integer boundaries before outward raster rounding
+
+- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
+- **The choice:** Mapping an unchanged rotated frame back into its own axes produced a numerical
+  y=-1.4e-14 and accidentally added one raster row. Before floor/ceiling, the frame owner snaps a
+  coordinate to its nearest integer only within 32 machine epsilons scaled by frame size and coordinate
+  magnitude. A real negative fractional boundary still expands outward; support polygons themselves
+  are not clipped or altered to make the extent smaller.
+- **The gap:** Integer raster bounds need a separate numerical policy from support's area tolerance.
+- **The reach:** Repeated orientation changes restore exact dimensions without hiding ordinary
+  fractional extent. This is floating-point arithmetic, not symbolic precision for ill-conditioned
+  transforms; both near-integer and genuine negative-fraction regressions must remain.
+- **Verdict:** **Sound.** The tolerance matches the measured coordinate-roundoff failure and stays
+  separate from viewport-relative coverage area.
+- **Confidence:** Medium.
+
+### Canvas core — Uncovered warnings describe structural support, not painted color
+
+- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
+- **The choice:** Fading a border to zero opacity does not warn merely because black is visible.
+  Moving or removing support can warn even if an ordinary painted layer covers the hole. The
+  immutable photographic plan stores whether the final viewport lacks original-admissible or
+  enabled-border support; show/export read that snapped plan before cached previews or skipped
+  deliveries can bypass rendering.
+- **The gap:** “Uncovered” could otherwise mean opacity, black RGB, disabled history or geometric
+  support. Structural support is the selected provisional meaning.
+- **The reach:** No mutable status table, preview sidecar warning cache or pixel-color detector is
+  added. Overlapping borders are evaluated as a union of real transformed polygons.
+- **Verdict:** **Needs-user.** Continue with the explicit provisional structural meaning; changing
+  the product meaning would require rederiving warning identity, not inspecting black RGB.
+- **Confidence:** Medium.
+
 ### Slice 12f plan — Authored crop boundaries belong to enabled borders, not permanent source edits
 
 - **When:** Outpaint lifecycle planning, 2026-09-06; not implemented yet.
@@ -4068,21 +4179,23 @@
 - **Verdict:** **Sound.** A bounded experiment input remains explicit without presenting an unverified range as provider behavior.
 - **Confidence:** Medium; the eventual shared control contract may require revisiting this runner restriction.
 
-### Photographic output — Planning stays separate from atomic publication
+### Photographic output — Resolve editing intent inside the existing revision transaction
 
-- **When:** Output-owner prerequisite for outpaint, 2026-09-06.
-- **The choice:** When a user changes layer opacity or develops the base, the editing operation gives its
-  intended base and complete layer snapshot to one pure planner. The planner returns the photographic
-  graph nodes and output-root update; the existing revision transaction still validates the snapshot,
-  applies final vector markup, and publishes the revision together. Planning does not read the catalog,
-  write state, or silently rewrite an arbitrary low-level graph commit.
-- **The gap:** The plan required one output owner without choosing between explicit planning by editing
-  operations and implicit graph reconstruction inside every revision commit.
-- **The reach:** Future canvas geometry can be planned at the same editing boundary without adding a
-  second transaction owner. Low-level graph commits remain explicit and validated; the shared composite
-  projection lives with the planner and also supplies the commit validator's expected layer projection.
-- **Verdict:** **Sound.** One assembly owner removes divergent mutation paths while retaining the existing
-  atomic publication boundary and its rejection of invalid graph requests.
+- **When:** Output-owner prerequisite, corrected by the 12f2 deterministic core checkpoint, 2026-09-06.
+- **The choice:** A layer edit asks for photographic planning instead of supplying a separately
+  assembled output. After checking that the active revision still matches, the existing transaction
+  resolves the requested base, geometry and layer identities and calls the one output planner.
+  A low-level paid or custom graph commit still supplies its own explicit output; requesting both
+  modes is rejected rather than silently discarding that output. Final vector markup wraps the
+  planned photograph in the same transaction.
+- **The gap:** Authored geometry requires graph reads. This concrete requirement supersedes the
+  prerequisite's pure planner outside publication: new drafts and immutable ancestry must be resolved
+  from the exact state being committed, not from separately read active state.
+- **The reach:** Ordinary photographic writers share one resolved-state owner and one conflict
+  check; custom graph roots retain their explicit validated meaning. No second draft interpreter
+  or transaction owner is introduced.
+- **Verdict:** **Sound.** Actual graph-read requirements justify moving planning into the existing
+  transaction without making arbitrary graph commits implicitly photographic.
 - **Confidence:** High.
 
 ### SAM export — Rank logits, preserve reported probabilities, and separate export acceptance

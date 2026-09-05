@@ -24,7 +24,6 @@ import {
 } from "../graph/store.js";
 import type { JsonValue } from "../graph/types.js";
 import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
-import { planPhotographicOutput } from "../graph/output.js";
 import { unfilledVacancyLayerIds } from "../layers/status.js";
 import { planFillCrop } from "./crop.js";
 import type { SourceContextDensity } from "./density.js";
@@ -347,14 +346,14 @@ export async function fillLayer(
     blend: layer.blend,
     enabled: layer.enabled,
   }));
-  const output = planPhotographicOutput({ nodeId: document.roots.base }, layers);
   const committed = await commitRevision(database, {
+    outputPlan: "photographic",
     photoId: request.photoId,
     expectedRevisionId: document.revisionId,
     artifacts,
     executions,
-    nodes: [...nodes, ...output.nodes],
-    rootUpdates: output.rootUpdates,
+    nodes,
+    rootUpdates: [],
     layers,
   });
   if (!committed.renderHash) throw new Error("A fill revision must have a render hash");

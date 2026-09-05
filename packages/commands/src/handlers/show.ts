@@ -11,6 +11,7 @@ import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@phot
 import {
   developHash,
   activeLayerStatus,
+  readCanvasStatus,
   loadBaseProjection,
   loadLogicalFrame,
   developPreviewProjection,
@@ -75,6 +76,13 @@ export async function showCommand(
       orientation: photo.orientation,
     });
     const layerStatus = await activeLayerStatus(handle, document);
+    if ((await readCanvasStatus(handle, id, document.outputNodeId)).uncovered) {
+      warnings.push({
+        code: "canvas_uncovered",
+        id,
+        message: "The viewport includes unsupported canvas coordinates",
+      });
+    }
     if (layerStatus.staleIds.length > 0) {
       warnings.push({
         code: "layers_stale",

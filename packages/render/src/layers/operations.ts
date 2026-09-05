@@ -1,6 +1,5 @@
 import { artifactPath, normalizeMaskArtifact, publishArtifact } from "../artifacts/publication.js";
 import { evaluateGraphNode } from "../graph/evaluator.js";
-import { planPhotographicOutput } from "../graph/output.js";
 import type { MaskImage } from "../mask-tiff.js";
 /* eslint-disable no-await-in-loop -- Graph chains are inherently ordered database walks. */
 import {
@@ -27,6 +26,14 @@ import {
 import type { ImageNodeKind, JsonValue } from "../graph/types.js";
 import { describeFillBranch } from "../fill/branch.js";
 import { rebuildFillBranch } from "../fill/rebuild.js";
+import { markupFreeOutputNode } from "../markup/graph.js";
+import { loadGeometryAncestry } from "../graph/geometry-intent.js";
+import {
+  parseRenderFrame,
+  savedRenderFrame,
+  placedFrame,
+  type RenderFrame,
+} from "../graph/frame.js";
 
 export type ManualMaskShape =
   | { kind: "box"; bbox: [number, number, number, number] }
@@ -109,6 +116,9 @@ export async function commitPreparedMaskLayers(
   });
   const current = await loadActiveDocument(database, request.photoId);
   if (!current) throw new Error("The active photo document is missing");
+  const contentNodeId = current.layers.some((layer) => layer.enabled && layer.role === "border")
+    ? await markupFreeOutputNode(database, request.photoId, current.roots.output)
+    : current.roots.base;
   const prepared = request.layers.map((layer, index) => ({
     ...layer,
     layerKey: `mask-layer-${index}`,
@@ -129,32 +139,29 @@ export async function commitPreparedMaskLayers(
       layer: { localKey: item.layerKey },
       name: item.name ?? `Segment ${current.layers.length + index + 1}`,
       z: current.layers.length + index,
-      contentNode: { nodeId: current.roots.base },
+      contentNode: { nodeId: contentNodeId },
       maskNode: { localKey: item.maskKey },
       opacity: 1,
       blend: "normal" as const,
       enabled: true,
     })),
   ];
-  const output = planPhotographicOutput({ nodeId: current.roots.base }, layers);
   const committed = await commitRevision(database, {
+    outputPlan: "photographic",
     photoId: request.photoId,
     expectedRevisionId: current.revisionId,
     artifacts: prepared.map(({ published }) => published),
-    nodes: [
-      ...prepared.map(
-        (item) =>
-          ({
-            localKey: item.maskKey,
-            kind: "mask",
-            recipeVersion: 1,
-            parameters: { artifact_hash: item.published.artifactHash },
-            inputs: [],
-          }) satisfies NodeDraft,
-      ),
-      ...output.nodes,
-    ],
-    rootUpdates: output.rootUpdates,
+    nodes: prepared.map(
+      (item) =>
+        ({
+          localKey: item.maskKey,
+          kind: "mask",
+          recipeVersion: 1,
+          parameters: { artifact_hash: item.published.artifactHash },
+          inputs: [],
+        }) satisfies NodeDraft,
+    ),
+    rootUpdates: [],
     newLayers: prepared.map(({ layerKey }) => ({ localKey: layerKey, role: "subject" })),
     layers,
   });
@@ -212,7 +219,23 @@ export async function transformLayer(
   if (JSON.stringify(content.matrix) !== JSON.stringify(mask.matrix)) {
     throw new Error("Layer content and mask transforms disagree");
   }
-  const centroid = await maskCentroid(database, libraryPath, request.photoId, mask.baseNodeId);
+  const checkpoint =
+    selected.role === "border" && document.roots.geometry
+      ? (await loadGeometryAncestry(database, request.photoId, document.roots.geometry)).nodes.get(
+          selected.authoredCheckpointNodeId!,
+        )?.parameters
+      : undefined;
+  const authored =
+    checkpoint?.type === "checkpoint" ? parseRenderFrame(checkpoint.outer_frame) : undefined;
+  const intrinsicCentroid = await maskCentroid(
+    database,
+    libraryPath,
+    request.photoId,
+    mask.baseNodeId,
+  );
+  const centroid = authored
+    ? transformPoint(authored.rasterToBase, intrinsicCentroid)
+    : intrinsicCentroid;
   const anchor =
     request.relative && request.transform.anchor === "centroid"
       ? transformPoint(content.matrix, centroid)
@@ -223,7 +246,7 @@ export async function transformLayer(
     request.relative,
     anchor,
   );
-  const transformed = transformBranches("layer", content, mask, matrix);
+  const transformed = transformBranches("layer", content, mask, matrix, authored);
   const layers = document.layers.map((layer) =>
     layer.id === layerId
       ? layerDraft(layer, layer.z, transformed.contentNode, transformed.maskNode)
@@ -524,12 +547,12 @@ async function commitLayerSnapshot(
   layers: RevisionLayerDraft[],
   additions: { nodes?: NodeDraft[]; newLayers?: NewLayerIdentity[] } = {},
 ) {
-  const output = planPhotographicOutput({ nodeId: document.roots.base }, layers);
   const committed = await commitRevision(database, {
+    outputPlan: "photographic",
     photoId: document.photoId,
     expectedRevisionId: document.revisionId,
-    nodes: [...(additions.nodes ?? []), ...output.nodes],
-    rootUpdates: output.rootUpdates,
+    nodes: additions.nodes ?? [],
+    rootUpdates: [],
     newLayers: additions.newLayers,
     layers,
   });
@@ -651,12 +674,13 @@ function transformBranches(
   content: TransformLineage,
   mask: TransformLineage,
   matrix: TransformMatrix,
+  authored?: RenderFrame,
 ) {
   const contentTransform = `${key}-content-transform`;
   const maskTransform = `${key}-mask-transform`;
   const nodes: NodeDraft[] = [
-    transformDraft(contentTransform, content.baseNodeId, matrix),
-    transformDraft(maskTransform, mask.baseNodeId, matrix),
+    transformDraft(contentTransform, content.baseNodeId, matrix, authored),
+    transformDraft(maskTransform, mask.baseNodeId, matrix, authored),
   ];
   let contentNode: { localKey: string } = { localKey: contentTransform };
   for (const [index, node] of content.prefix.toReversed().entries()) {
@@ -677,12 +701,20 @@ function transformBranches(
   };
 }
 
-function transformDraft(localKey: string, inputNodeId: string, matrix: TransformMatrix): NodeDraft {
+function transformDraft(
+  localKey: string,
+  inputNodeId: string,
+  matrix: TransformMatrix,
+  authored?: RenderFrame,
+): NodeDraft {
   return {
     localKey,
     kind: "transform",
-    recipeVersion: 1,
-    parameters: { matrix: [...matrix] },
+    recipeVersion: authored ? 2 : 1,
+    parameters: {
+      matrix: [...matrix],
+      ...(authored ? { frame: savedRenderFrame(placedFrame(authored, matrix)) } : {}),
+    },
     inputs: [{ nodeId: inputNodeId }],
   };
 }

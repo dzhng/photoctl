@@ -16,6 +16,7 @@ import {
 } from "@photoctl/library";
 import {
   activeLayerStatus,
+  readCanvasStatus,
   ensurePhotoDocument,
   evaluateGraphNode,
   exportImage,
@@ -208,6 +209,15 @@ async function snapshotBatch(
           outputNodeId: document.roots.output as `node_${string}`,
           renderHash: document.renderHash,
           warnings: [
+            ...((await readCanvasStatus(database, id, document.roots.output)).uncovered
+              ? [
+                  {
+                    code: "canvas_uncovered" as const,
+                    id,
+                    message: "The viewport includes unsupported canvas coordinates",
+                  },
+                ]
+              : []),
             ...(layerStatus.staleIds.length > 0
               ? [
                   {

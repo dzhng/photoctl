@@ -35,7 +35,6 @@ import {
 } from "../graph/store.js";
 import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
 import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
-import { planPhotographicOutput } from "../graph/output.js";
 import { describeFillBranch, type FillBranchDescriptor } from "./branch.js";
 import { fillProviderInputs, decodeExternalImage, image16Png } from "./external-pixels.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./pipeline.js";
@@ -213,12 +212,12 @@ export async function refreshFillLayer(
     blend: layer.blend,
     enabled: layer.enabled,
   }));
-  const output = planPhotographicOutput({ nodeId: document.roots.base }, layers);
   const committed = await commitRevision(database, {
+    outputPlan: "photographic",
     photoId: request.photoId,
     expectedRevisionId: document.revisionId,
-    nodes: [...nodes, ...output.nodes],
-    rootUpdates: output.rootUpdates,
+    nodes,
+    rootUpdates: [],
     layers,
     artifacts,
     executions,

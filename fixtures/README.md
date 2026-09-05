@@ -23,6 +23,7 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `libraries/schema-v18.pgsql` | known-good | A pinned reference retains working RGB and encoded PNG artifacts before any source execution exists. |
 | `libraries/schema-v19.pgsql` | known-good | Immutable geometry intent and per-layer authoring checkpoints survive a dump/restore; duplicating an earlier layer does not make it newly authored. |
 | `libraries/schema-v20.pgsql` | known-good | Accepted and policy-rejected paid image attempts retain original artifacts, while only the accepted attempt links a render execution and photo. |
+| `libraries/schema-v21.pgsql` | known-good | A translated border retains intrinsic pixel placement, immutable canvas bounds and support status, and authored geometry ancestry. |
 | `models.json` | release contract | Pins the SAM 2.1 source revision, real CPU-parity-verified ONNX hashes, and opsets. Distribution location is configured separately; hashes do not assert model quality or runtime performance. |
 | `xmp/classic.xmp` | known-good | A Classic-style sidecar exercises rating, label, flat and hierarchical keywords, and photoctl's namespaced flag. |
 | `tools/drive.mjs` | generator | `fixtures:drive -- --count N --out DIR` creates deterministic tail-distinct ARW copies and matching Classic-style sidecars. |

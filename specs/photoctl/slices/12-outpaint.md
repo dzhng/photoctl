@@ -127,6 +127,50 @@ Migration 19 and its real dump fixture cover this storage contract. They do **no
 composition, crop consumption, extent, uncovered warnings, SAM geometry, or pixel lifecycle acceptance;
 those remain 12f2 work. Subsequent canvas pixel kinds require their own migration, not edits to 19.
 
+### Deterministic core maintenance checkpoint
+
+The canvas publication boundary now accepts normal graph drafts and pinned artifacts, captures
+immutable input/support history, and atomically activates an exterior-only border. Migration 21
+admits its distinct canvas composite and full-raster placement recipes; migration 19 is unchanged.
+The real dump fixtures exercise the production writers, including a translated border.
+
+The public [canvas lifecycle tests](../../../packages/commands/src/outpaint-canvas.test.ts) cover
+cropped/rotated expansion, nonzero-straighten round trips, repeated borders, removal and re-enabling,
+post-border local edits, translated pixels/extent, exterior fallback, and cached show/export warnings.
+These are deterministic geometric/pixel proofs, not photographic generation quality or full 12f2
+acceptance. No paid outpaint command is wired.
+
+The complete [core visual evidence](../assets/outpaint-canvas-core/README.md) retains public previews,
+lossless diagnostics, edge crops and both independent critique verdicts. Exact restoration and the
+authored-support hole are verified; JPEG boundary halos are explicitly distinguished from canonical
+pixels rather than hidden by substituting lossless captures.
+
+Independent code review found an effective-crop validation gap and ambient test-cache dependency;
+the public regression now rejects a crop whose aspect-constrained rectangle is disjoint, and test
+caches live inside their fixtures. Its compatibility concern about the required support count was
+not adopted: the preceding metadata scaffold had no shipped canvas authoring flow or persisted
+user-authored checkpoints requiring the former shape. The real schema-19 fixture is regenerated
+through its writer; migration 19's DDL remains immutable.
+
+Continue from this reviewed core in these bounded consumer passes:
+
+- Restriction activation: independently replace crop and aspect, copy/reset/presets, and restore
+  geometry intent through auto-enhance undo and ordinary revision undo.
+- Layer lifecycle: public duplicate/reorder/clear, arbitrary rotated support and overlapping copies;
+  later borders must keep authored coordinates when earlier support changes.
+- Shared consumers: SAM sees source-only pixels with the same geometry/support plan, without
+  photographic layers; native exterior detail and offline density must use that plan too. In
+  particular, prove reduced offline inputs do not masquerade as full-resolution output and purchased
+  upscale density survives exterior crop/canvas geometry; authored raster dimensions alone are not
+  evidence of realized pixel density.
+- Finish the complete deterministic visual journey and its fresh critique before accepting 12f2.
+
+The render frame owner bounds new raster growth independently of provider capabilities, while
+preserving source-sized operations. New crops may extend beyond the original but must intersect the
+current visible canvas; removing support never turns a previously valid crop into a rejected new
+request. Unsupported pixels remain opaque black. The immutable support verdict reaches show/export
+before cache hits or export collision skips, independently of border opacity.
+
 **Decision checkpoint before coding:** use an asymmetric cropped, quarter-rotated, straightened
 example to settle the viewport policy. Merely retaining the prior final crop hides the extension;
 clearing it reveals previously excluded content. An authored extent after straightening is an affine
@@ -176,16 +220,18 @@ no contrary answer; keep this planner choice reversible before any canvas is aut
 ### Geometry intent and ordinary layer operations
 
 The [photographic output planner](../../../packages/render/src/graph/output.ts) owns final layer
-projection for every photographic mutation. It returns graph drafts and the output root for the
-existing revision transaction; final vector markup remains that transaction's presentation step.
+projection for every photographic mutation. Editing requests opt into photographic planning; the
+existing revision transaction resolves their intended base, geometry and complete layer snapshot
+after its revision conflict check, then invokes the planner once. Explicit low-level output roots
+remain explicit and cannot be combined with that opt-in. Final vector markup remains the
+transaction's presentation step.
 An empty layer stack points directly at the base, while a nonempty disabled stack retains its
-composite identity. This prerequisite preserves current behavior; geometry intent and canvas
-authoring below remain unimplemented.
+composite identity outside canvas geometry.
 
 The same absolute control value can mean a new restriction after a border consumed it. For example,
 crop C → border A → explicit `develop --set crop=C` must restrict A's expanded picture; only the next
-identical set is a no-op. The current handler compares just the final develop dictionary and would
-incorrectly discard the first set. Move semantic no-op detection into the graph-owned output planner.
+identical set is a no-op. Semantic no-op detection therefore includes immutable restriction
+activation, not just equality of the final develop dictionary.
 
 Keep current absolute geometry values together with the activation provenance of crop/aspect
 restrictions in immutable graph intent. Each border captures an authoring checkpoint. A single global

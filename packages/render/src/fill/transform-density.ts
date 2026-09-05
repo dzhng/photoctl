@@ -19,7 +19,6 @@ import {
 } from "../graph/store.js";
 import type { ExternalExecutionProvenance } from "../graph/types.js";
 import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
-import { planPhotographicOutput } from "../graph/output.js";
 import { maskCentroid } from "../layers/operations.js";
 import {
   resolveTransformMatrix,
@@ -332,14 +331,14 @@ export async function transformFillLayer(
     blend: layer.blend,
     enabled: layer.enabled,
   }));
-  const output = planPhotographicOutput({ nodeId: document.roots.base }, layers);
   const committed = await commitRevision(database, {
+    outputPlan: "photographic",
     photoId: request.photoId,
     expectedRevisionId: document.revisionId,
-    nodes: [...nodes, ...output.nodes],
+    nodes,
     artifacts,
     executions,
-    rootUpdates: output.rootUpdates,
+    rootUpdates: [],
     layers,
   });
   if (!committed.renderHash) throw new Error("A layer transform must commit a render hash");

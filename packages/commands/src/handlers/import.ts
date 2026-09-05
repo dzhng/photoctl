@@ -224,7 +224,7 @@ export async function importGeneratedArtifact(options: {
   path: string;
   handle: LibraryHandle;
   cacheRoot: string;
-  revision: (photoId: string) => Omit<CommitRevisionRequest, "photoId">;
+  revision: (photoId: string) => Omit<CommitRevisionRequest, "photoId" | "outputPlan">;
 }): Promise<{
   photoId: string;
   revision: CommitRevisionResult;
@@ -316,7 +316,7 @@ async function commitCandidate(options: {
   cacheRoot: string;
   libraryPath: string;
   initialTags?: string[];
-  revision?: (photoId: string) => Omit<CommitRevisionRequest, "photoId">;
+  revision?: (photoId: string) => Omit<CommitRevisionRequest, "photoId" | "outputPlan">;
 }): Promise<{
   photoId: string;
   alreadyPresent: boolean;

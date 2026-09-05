@@ -12,7 +12,6 @@ import { image16Png } from "./fill/external-pixels.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./fill/pipeline.js";
 import type { SourceContextDensity } from "./fill/density.js";
 import type { RevisionLayerDraft } from "./layers/model.js";
-import { planPhotographicOutput } from "./graph/output.js";
 
 export type ReimagineDependencies = FillGenerationDependencies;
 
@@ -153,16 +152,16 @@ export async function createReimagineLayer(
       enabled: true,
     },
   ];
-  const output = planPhotographicOutput({ nodeId: state.baseNodeId }, layers);
   const committed = await commitRevision(database, {
+    outputPlan: "photographic",
     photoId: request.photoId,
     expectedRevisionId: state.revisionId,
     artifacts: [...density.artifacts, mask],
     executions: density.executions,
-    nodes: [...nodes, ...output.nodes],
+    nodes,
     newLayers: [{ localKey: "reimagine-layer", role: "reimagine" }],
     layers,
-    rootUpdates: output.rootUpdates,
+    rootUpdates: [],
   });
   if (!committed.renderHash) throw new Error("A reimagine revision must have a render hash");
   return {

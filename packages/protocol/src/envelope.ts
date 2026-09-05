@@ -22,6 +22,7 @@ export const warningCodes = [
   "preview_resolution_limited",
   "layers_stale",
   "vacancy_unfilled",
+  "canvas_uncovered",
   "provider_unconfigured",
   "provider_warning",
   "mask_clipped",

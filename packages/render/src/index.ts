@@ -16,6 +16,8 @@ export * from "./graph/output.js";
 export * from "./graph/evaluator.js";
 export { loadBaseProjection, loadLogicalFrame, projectMaskToRender } from "./graph/projection.js";
 export { developFrame, type RenderFrame } from "./graph/frame.js";
+export { prepareCanvasExpansion, commitCanvasExpansion } from "./graph/canvas.js";
+export { readCanvasStatus } from "./graph/output.js";
 export * from "./graph/inspection.js";
 export * from "./artifacts/publication.js";
 export * from "./artifacts/availability.js";

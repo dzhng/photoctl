@@ -108,8 +108,8 @@ export const developDictSchema = z
       .optional(),
     crop: z
       .object({
-        x: z.number().min(0),
-        y: z.number().min(0),
+        x: z.number().finite(),
+        y: z.number().finite(),
         w: z.number().positive(),
         h: z.number().positive(),
       })

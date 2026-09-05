@@ -120,6 +120,7 @@ test("graph show pages a layer content and mask graph with a revision-and-layer-
           recipeVersion: 1,
           parameters: {
             type: "checkpoint",
+            support_input_count: 0,
             sequence: 1,
             crop_activation: 0,
             aspect_activation: 0,

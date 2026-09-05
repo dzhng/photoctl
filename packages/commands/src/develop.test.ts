@@ -253,13 +253,13 @@ test("a per-photo mutation validation failure becomes a batch result", async () 
   expect(await readDevelop(libraryPath, id)).toEqual({});
 });
 
-test("develop rejects a crop outside the oriented base image before committing it", async () => {
+test("develop rejects a new crop disjoint from the visible canvas before committing it", async () => {
   const { libraryPath, id } = await libraryWithPhoto();
 
   const result = await command(libraryPath, "develop", [
     id,
     "--set",
-    'crop={"x":90,"y":0,"w":20,"h":20}',
+    'crop={"x":100,"y":0,"w":20,"h":20}',
   ]);
 
   expect(result).toMatchObject({

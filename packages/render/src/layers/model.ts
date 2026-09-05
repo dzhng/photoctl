@@ -1,7 +1,7 @@
 import type { NodeReference } from "../graph/store.js";
 import { PhotoctlError } from "@photoctl/protocol";
 
-export const layerRoles = ["subject", "vacancy", "reimagine", "retouch"] as const;
+export const layerRoles = ["subject", "vacancy", "reimagine", "retouch", "border"] as const;
 export type LayerRole = (typeof layerRoles)[number];
 export type LayerReference = { layerId: string } | { localKey: string };
 

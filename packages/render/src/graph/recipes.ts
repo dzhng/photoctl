@@ -10,6 +10,8 @@ import type {
 import { developDictSchema } from "../develop/dict.js";
 import { effectiveMaskParametersSchema } from "../mask-operations.js";
 import { geometryNodeParametersSchema } from "./geometry-intent.js";
+import { canvasCompositeSchema } from "./output.js";
+import { savedFrameSchema } from "./frame.js";
 
 const pinnedArtifactParametersSchema = z
   .object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) })
@@ -20,6 +22,32 @@ const decodedSourceParametersSchema = z
 const pinnedReferenceParametersSchema = pinnedArtifactParametersSchema.extend({
   encoded_artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/),
 });
+const transformParametersSchema = z
+  .object({
+    matrix: z.tuple([
+      z.number().finite(),
+      z.number().finite(),
+      z.number().finite(),
+      z.number().finite(),
+      z.number().finite(),
+      z.number().finite(),
+    ]),
+  })
+  .strict();
+const placementParametersSchema = transformParametersSchema.extend({ frame: savedFrameSchema });
+const compositeParametersSchema = z
+  .object({
+    opacity: z.number().min(0).max(1),
+    blend: z.literal("normal").default("normal"),
+  })
+  .strict();
+const layerCompositeParametersSchema = z
+  .object({
+    layers: z.array(
+      z.object({ opacity: z.number().min(0).max(1), blend: z.literal("normal") }).strict(),
+    ),
+  })
+  .strict();
 
 // Pixel-kernel semantics select derived artifacts/views, never paid execution identities.
 const rendererSemanticRevision = 4;
@@ -173,14 +201,11 @@ export const imageNodeRegistry = {
     [1, 2],
   ),
   transform: definition(
-    z
-      .object({
-        matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
-      })
-      .strict(),
+    z.union([transformParametersSchema, placementParametersSchema]),
     1,
     1,
     true,
+    [1, 2],
   ),
   solid: definition(
     z
@@ -220,22 +245,11 @@ export const imageNodeRegistry = {
   ),
   mask_composite: definition(z.object({ feather: z.number().nonnegative() }).strict(), 3, 3, true),
   composite: definition(
-    z.union([
-      z
-        .object({ opacity: z.number().min(0).max(1), blend: z.enum(["normal"]).default("normal") })
-        .strict(),
-      z
-        .object({
-          layers: z.array(
-            z.object({ opacity: z.number().min(0).max(1), blend: z.enum(["normal"]) }).strict(),
-          ),
-        })
-        .strict(),
-    ]),
+    z.union([compositeParametersSchema, layerCompositeParametersSchema, canvasCompositeSchema]),
     1,
     Number.MAX_SAFE_INTEGER,
     true,
-    [1, 2],
+    [1, 2, 3],
   ),
   crop: definition(
     z
@@ -291,7 +305,7 @@ function assertVersionedRecipeShape(input: LogicalNodeRecipeInput): void {
       throw new Error("composite recipe version 1 requires opacity and blend parameters");
     }
   }
-  if (input.recipeVersion === 2) {
+  if (input.recipeVersion >= 2) {
     const layers = parameters.layers;
     if (!Array.isArray(layers) || input.inputNodeIds.length !== 1 + layers.length * 2) {
       throw new Error(
@@ -379,6 +393,22 @@ export function canonicalParameters(
   value: JsonValue,
 ): JsonValue {
   assertRecipeVersion(kind, recipeVersion);
+  if (kind === "transform") {
+    return sortJson(
+      (recipeVersion === 1 ? transformParametersSchema : placementParametersSchema).parse(
+        value,
+      ) as JsonValue,
+    );
+  }
+  if (kind === "composite") {
+    const schema =
+      recipeVersion === 1
+        ? compositeParametersSchema
+        : recipeVersion === 2
+          ? layerCompositeParametersSchema
+          : canvasCompositeSchema;
+    return sortJson(schema.parse(value) as JsonValue);
+  }
   const schema =
     kind === "source"
       ? recipeVersion === 1
@@ -486,7 +516,7 @@ function assertVersionedInputCount(kind: ImageNodeKind, version: number, count: 
   if (version === 1 && count < 2) {
     throw new Error("composite recipe version 1 requires at least two inputs");
   }
-  if (version === 2 && count % 2 !== 1) {
+  if (version >= 2 && count % 2 !== 1) {
     throw new Error("composite recipe version 2 requires one base and content/mask input pairs");
   }
 }

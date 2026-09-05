@@ -11,7 +11,7 @@ type StoredNode = { id: string; kind: string; recipeVersion: number; parameters:
 
 export async function projectMarkupRequest(
   transaction: GraphTransaction,
-  request: CommitRevisionRequest,
+  request: Pick<CommitRevisionRequest, "photoId" | "nodes" | "rootUpdates" | "markupDocument">,
   activeRevisionId: string | null,
 ): Promise<{
   nodes: NodeDraft[];

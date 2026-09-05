@@ -1,4 +1,4 @@
-import { transformMaskPixels, transformPixels } from "@photoctl/img";
+import { clipMaskToFrame, transformMaskPixels, transformPixels } from "@photoctl/img";
 import {
   artifactPath,
   readArtifactMask,
@@ -24,6 +24,8 @@ export async function loadLogicalFrame(
     parameters: JsonValue;
     w: number;
     h: number;
+    artifact_w: number | null;
+    artifact_h: number | null;
   }>(
     `WITH RECURSIVE lineage(node_id, depth) AS (
        SELECT $2::text, 0
@@ -33,9 +35,11 @@ export async function loadLogicalFrame(
        JOIN image_node_inputs AS edge ON edge.photo_id = $1 AND edge.node_id = lineage.node_id AND edge.input_index = 0
        WHERE node.kind NOT IN ('resample', 'solid', 'source', 'generate')
      )
-     SELECT node.kind, node.parameters, photo.w, photo.h FROM lineage
+     SELECT node.kind, node.parameters, photo.w, photo.h, artifact.w AS artifact_w, artifact.h AS artifact_h FROM lineage
      JOIN image_nodes AS node ON node.photo_id = $1 AND node.id = lineage.node_id
-     JOIN photos AS photo ON photo.id = $1 ORDER BY lineage.depth`,
+     JOIN photos AS photo ON photo.id = $1
+     LEFT JOIN image_artifacts artifact ON artifact.artifact_hash = node.parameters->>'artifact_hash'
+     ORDER BY lineage.depth`,
     [photoId, nodeId],
   );
   const first = result.rows[0];
@@ -46,7 +50,9 @@ export async function loadLogicalFrame(
     const raster =
       row.kind === "resample" || row.kind === "solid"
         ? (imageNodeRegistry[row.kind].parameters.parse(row.parameters) as { w: number; h: number })
-        : (frame?.raster ?? catalog);
+        : row.artifact_w !== null && row.artifact_h !== null
+          ? { w: row.artifact_w, h: row.artifact_h }
+          : (frame?.raster ?? catalog);
     frame = frameForNode(row.kind, row.parameters, catalog, raster, frame);
   }
   return frame!;
@@ -211,6 +217,26 @@ export async function projectRgbToRender(
       "lanczos3",
     ),
   };
+}
+
+/** Sampling footprints cannot admit pixels excluded by an authored visible frame. */
+export function clipCoverageToFrames(
+  mask: MaskImage,
+  frame: RenderFrame,
+  restrictions: readonly RenderFrame[],
+): MaskImage {
+  let data = mask.data;
+  for (const restriction of restrictions) {
+    data = clipMaskToFrame(
+      data,
+      mask.w,
+      mask.h,
+      composeTransformMatrices(restriction.baseToRaster, frame.rasterToBase),
+      restriction.raster.w,
+      restriction.raster.h,
+    );
+  }
+  return { ...mask, data };
 }
 
 /** Recover the precise coverage artifact, never interpolate already-thresholded support. */

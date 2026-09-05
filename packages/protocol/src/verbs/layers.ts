@@ -11,7 +11,7 @@ const revisionFields = {
 
 export const layerSummarySchema = z.object({
   id: z.uuid(),
-  role: z.enum(["subject", "vacancy", "reimagine", "retouch"]),
+  role: z.enum(["subject", "vacancy", "reimagine", "retouch", "border"]),
   of_layer: z.uuid().nullable(),
   name: z.string().min(1).max(256),
   z: z.number().int().nonnegative(),

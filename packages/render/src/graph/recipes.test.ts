@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { developFrame, savedRenderFrame } from "./frame.js";
 import {
   canonicalNodeRecipe,
   deterministicExecutionId,
@@ -8,6 +9,66 @@ import {
   recipeHash,
   renderHashForNode,
 } from "./recipes.js";
+
+test("placement transforms require their frame and cannot masquerade as intrinsic raster transforms", () => {
+  const inputNodeIds = [`node_${"1".repeat(64)}`];
+  const matrix = [1, 0, 0, 1, 4, 0];
+  const frame = savedRenderFrame(developFrame({ w: 16, h: 12 }, { w: 16, h: 12 }));
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "transform",
+      recipeVersion: 2,
+      parameters: { matrix },
+      inputNodeIds,
+    }),
+  ).toThrow();
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "transform",
+      recipeVersion: 1,
+      parameters: { matrix, frame },
+      inputNodeIds,
+    }),
+  ).toThrow();
+  const placement = canonicalNodeRecipe({
+    kind: "transform",
+    recipeVersion: 2,
+    parameters: { matrix, frame },
+    inputNodeIds,
+  });
+  expect(JSON.parse(placement).parameters.frame).toEqual(frame);
+});
+
+test("canvas composites cannot be interpreted as fixed-base layer composites", () => {
+  const inputNodeIds = [`node_${"1".repeat(64)}`];
+  const canvas = {
+    frame: savedRenderFrame(developFrame({ w: 16, h: 12 }, { w: 16, h: 12 })),
+    uncovered: false,
+    base_stages: [],
+    layers: [],
+  };
+  expect(() =>
+    canonicalNodeRecipe({ kind: "composite", recipeVersion: 2, parameters: canvas, inputNodeIds }),
+  ).toThrow();
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "composite",
+      recipeVersion: 3,
+      parameters: { layers: [] },
+      inputNodeIds,
+    }),
+  ).toThrow();
+  expect(
+    JSON.parse(
+      canonicalNodeRecipe({
+        kind: "composite",
+        recipeVersion: 3,
+        parameters: canvas,
+        inputNodeIds,
+      }),
+    ).parameters,
+  ).toEqual(canvas);
+});
 
 test("logical recipes canonicalize parameters but preserve ordered node inputs", () => {
   const inputs = [`node_${"1".repeat(64)}`, `node_${"2".repeat(64)}`];

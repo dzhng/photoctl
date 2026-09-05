@@ -21,6 +21,57 @@ import { inspectGraph } from "./inspection.js";
 const firstPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
 const secondPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
 
+test("photographic revisions derive output from the resolved layer snapshot and refuse competing output intent", async () => {
+  const db = await graphDatabase();
+  try {
+    const original = await ensurePhotoDocument(db, { photoId: firstPhoto, orientation: 1 });
+    const committed = await commitRevision(db, {
+      photoId: firstPhoto,
+      expectedRevisionId: original.revisionId,
+      outputPlan: "photographic",
+      nodes: [mask("selection", "1")],
+      rootUpdates: [],
+      newLayers: [{ localKey: "subject", role: "subject" }],
+      layers: [
+        {
+          ...layerDraft("subject", "unused", "selection", 0),
+          contentNode: { nodeId: original.outputNodeId },
+        },
+      ],
+    });
+    const output = (
+      await db.query<{ kind: string; parameters: unknown }>(
+        "SELECT kind, parameters FROM image_nodes WHERE id = $1",
+        [committed.roots.output],
+      )
+    ).rows[0];
+    expect(output).toEqual({
+      kind: "composite",
+      parameters: { layers: [{ opacity: 1, blend: "normal" }] },
+    });
+    expect(
+      (
+        await db.query<{ input_node_id: string }>(
+          "SELECT input_node_id FROM image_node_inputs WHERE node_id = $1 ORDER BY input_index",
+          [committed.roots.output],
+        )
+      ).rows.map((row) => row.input_node_id),
+    ).toEqual([original.outputNodeId, original.outputNodeId, committed.nodes.selection.id]);
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: committed.revisionId,
+        outputPlan: "photographic",
+        nodes: [],
+        rootUpdates: [{ root: "output", node: { nodeId: original.outputNodeId } }],
+      } as unknown as import("./store.js").CommitRevisionRequest),
+    ).rejects.toThrow("cannot also supply");
+    expect((await loadActiveDocument(db, firstPhoto))?.revisionId).toBe(committed.revisionId);
+  } finally {
+    await db.close();
+  }
+});
+
 test("geometry intent is an immutable inherited revision root, restored by undo without pixel executions", async () => {
   const db = await graphDatabase();
   try {
@@ -35,6 +86,7 @@ test("geometry intent is an immutable inherited revision root, restored by undo 
           recipeVersion: 1,
           parameters: {
             type: "checkpoint",
+            support_input_count: 0,
             sequence: 1,
             crop_activation: 0,
             aspect_activation: 0,
@@ -144,6 +196,36 @@ test("geometry intent is an immutable inherited revision root, restored by undo 
         rootUpdates: [{ root: "geometry", node: { localKey: "invalid-intent" } }],
       }),
     ).rejects.toThrow("Geometry ancestry cannot depend on pixel nodes");
+    expect((await loadActiveDocument(db, firstPhoto))?.revisionId).toBe(inherited.revisionId);
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: inherited.revisionId,
+        nodes: [
+          {
+            localKey: "lost-history",
+            kind: "geometry",
+            recipeVersion: 1,
+            parameters: {
+              ...(authored.nodes.checkpoint.parameters as Record<
+                string,
+                import("./types.js").JsonValue
+              >),
+              sequence: 2,
+            },
+            inputs: [],
+          },
+          {
+            localKey: "intent",
+            kind: "geometry",
+            recipeVersion: 1,
+            parameters: { type: "intent", sequence: 2, crop_activation: 0, aspect_activation: 0 },
+            inputs: [{ localKey: "lost-history" }],
+          },
+        ],
+        rootUpdates: [{ root: "geometry", node: { localKey: "intent" } }],
+      }),
+    ).rejects.toThrow("preceding chronological checkpoint");
     expect((await loadActiveDocument(db, firstPhoto))?.revisionId).toBe(inherited.revisionId);
     await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: inherited.revisionId });
     await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: authored.revisionId });

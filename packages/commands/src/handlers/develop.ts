@@ -87,10 +87,11 @@ export async function developCommand(
         const base = parsed.copyFrom ? copiedDevelop : current.develop;
         if (!base) throw new Error("copy source develop state was not loaded");
         let next: DevelopDict;
-        let revisionMetadata: Record<string, JsonValue> | undefined;
+        let revisionMetadata: Record<string, JsonValue> | null | undefined;
         try {
           if (parsed.undoAuto) {
             next = readAutoEnhanceSnapshot(current.revisionMetadata, item.id);
+            revisionMetadata = null;
           } else if (parsed.autoEnhance) {
             const planned = await planAutoEnhance({
               id: item.id,
@@ -116,13 +117,32 @@ export async function developCommand(
         } catch (error) {
           throw commandInputError(error);
         }
-        const committed =
-          isDeepStrictEqual(next, current.develop) &&
-          revisionMetadata === undefined &&
-          !parsed.undoAuto
-            ? null
-            : await commitDevelopState(handle, current, next, revisionMetadata);
-        const layers = committed?.layers ?? { deltaApplied: [], stale: [] };
+        const touched =
+          parsed.copyFrom || parsed.reset
+            ? ["crop", "aspect_ratio"]
+            : parsed.autoEnhance || parsed.undoAuto
+              ? ["crop", "aspect_ratio"].filter(
+                  (key) =>
+                    !isDeepStrictEqual(
+                      next[key as keyof DevelopDict],
+                      current.develop[key as keyof DevelopDict],
+                    ),
+                )
+              : [
+                  ...Object.keys(preset?.develop ?? {}),
+                  ...parsed.set.map((value) => value.split(/[=.]/)[0]!),
+                  ...parsed.unset.map((value) => value.split(".")[0]!),
+                ];
+        const committed = await commitDevelopState(
+          handle,
+          current,
+          next,
+          revisionMetadata,
+          touched.filter(
+            (key): key is "crop" | "aspect_ratio" => key === "crop" || key === "aspect_ratio",
+          ),
+        );
+        const layers = committed.layers;
         if (layers.stale.length > 0) {
           pushWarning(warnings, {
             code: "layers_stale",
@@ -134,7 +154,7 @@ export async function developCommand(
           id: item.id,
           ok: true,
           develop_hash: developHash(next),
-          render_hash: committed?.renderHash ?? current.renderHash,
+          render_hash: committed.renderHash,
           layers: { delta_applied: layers.deltaApplied, stale: layers.stale },
         });
       } catch (error) {

@@ -35,7 +35,8 @@ import type { Image16 } from "../source-render.js";
 import type { GraphDatabase, GraphTransaction } from "./store.js";
 import { applyDevelopArtifact, applyDevelopDeltaArtifact } from "../develop/pixels.js";
 import { developDictSchema } from "../develop/dict.js";
-import { frameForNode, savedRenderFrame } from "./frame.js";
+import { frameForNode, savedRenderFrame, parseRenderFrame, type RenderFrame } from "./frame.js";
+import { canvasCompositeSchema } from "./output.js";
 import {
   compositeMaskedPixels,
   featherMask,
@@ -54,6 +55,7 @@ import {
   projectRgbToRender,
   projectCoverageBetweenFrames,
   supportCoverage,
+  clipCoverageToFrames,
 } from "./projection.js";
 
 export interface EvaluatedNode {
@@ -232,8 +234,9 @@ async function evaluateOne(
     : (requestedExecutionId ?? newExecutionId());
   let artifact: PublishedArtifact;
   let externalExecution: ExternalExecutionProvenance | undefined;
-  if (node.kind === "output") {
-    if (inputs.length !== 1) throw new Error("Output evaluation requires one input artifact");
+  if (node.kind === "output" || (node.kind === "transform" && node.recipeVersion === 2)) {
+    if (inputs.length !== 1)
+      throw new Error("Raster-preserving evaluation requires one input artifact");
     artifact = inputs[0].artifact;
   } else if (
     (node.kind === "mask" && node.recipeVersion === 1) ||
@@ -462,6 +465,9 @@ async function runOperation(
       const projection = await loadBaseProjection(request.database, request.photoId, inputs[0]!);
       return { image: await evaluateCompositeV2(request, parameters, inputs, projection) };
     }
+    if (kind === "composite" && recipeVersion === 3) {
+      return { image: await evaluateCanvasComposite(request, parameters, inputs) };
+    }
     if (kind === "transform") {
       if (!inputs[0]) throw new Error("Transform evaluation requires one input artifact");
       return {
@@ -659,6 +665,70 @@ async function evaluateCompositeV2(
       mask.data,
       base.w,
       base.h,
+      layer.opacity,
+    );
+  }
+  return linearImage(base, pixels);
+}
+
+async function evaluateCanvasComposite(
+  request: EvaluateGraphNodeRequest,
+  parameters: JsonValue,
+  inputs: EvaluatedNode[],
+): Promise<LinearImage> {
+  const plan = canvasCompositeSchema.parse(parameters);
+  const output = parseRenderFrame(plan.frame);
+  let base = await readRgbInput(inputs[0]!);
+  let baseFrame = await loadBaseProjection(request.database, request.photoId, inputs[0]!);
+  const baseSupportFrames = [baseFrame, ...plan.base_stages.map(parseRenderFrame)];
+  for (const saved of [...plan.base_stages, plan.frame]) {
+    const frame = parseRenderFrame(saved);
+    base = await projectRgbToRender(base, baseFrame, frame, frame.raster);
+    baseFrame = frame;
+  }
+  const baseSupport = clipCoverageToFrames(
+    { ...output.raster, data: new Float32Array(output.raster.w * output.raster.h).fill(1) },
+    output,
+    baseSupportFrames,
+  );
+  let pixels = await compositeMaskedPixels(
+    new Float32Array(base.data.length),
+    base.data,
+    baseSupport.data,
+    base.w,
+    base.h,
+    1,
+  );
+  for (const [index, layer] of plan.layers.entries()) {
+    const contentInput = inputs[1 + index * 2]!;
+    const maskInput = inputs[2 + index * 2]!;
+    let content = await readRgbInput(contentInput);
+    let frame: RenderFrame = layer.frame
+      ? parseRenderFrame(layer.frame)
+      : await loadBaseProjection(request.database, request.photoId, contentInput);
+    const supportFrames = [frame, ...layer.stages.map(parseRenderFrame)];
+    const coverage = await supportCoverage(request, maskInput);
+    let mask = layer.frame
+      ? await readMaskInput(maskInput, content)
+      : await projectMaskToRender(
+          coverage ?? (await readMaskInput(maskInput, frame.catalog)),
+          frame,
+          content,
+        );
+    for (const saved of [...layer.stages, plan.frame]) {
+      const target = parseRenderFrame(saved);
+      content = await projectRgbToRender(content, frame, target, target.raster);
+      mask = await projectCoverageBetweenFrames(mask, frame, target, target.raster);
+      frame = target;
+    }
+    if (coverage) mask = await applyEffectiveMask(mask, { operation: "support" });
+    mask = clipCoverageToFrames(mask, output, supportFrames);
+    pixels = await compositeMaskedPixels(
+      pixels,
+      content.data,
+      mask.data,
+      output.raster.w,
+      output.raster.h,
       layer.opacity,
     );
   }

@@ -123,18 +123,18 @@ export function scaleDevelopGeometry(
     crop: {
       x,
       y,
-      w: Math.min(source.w, (parameters.crop.x + parameters.crop.w) * scaleX) - x,
-      h: Math.min(source.h, (parameters.crop.y + parameters.crop.h) * scaleY) - y,
+      w: parameters.crop.w * scaleX,
+      h: parameters.crop.h * scaleY,
     },
   };
 }
 
-function developGeometryPlan(width: number, height: number, parameters: DevelopDict) {
+export function developGeometryPlan(width: number, height: number, parameters: DevelopDict) {
   const crop = constrainAspect(
     parameters.crop ?? { x: 0, y: 0, w: width, h: height },
     parameters.aspect_ratio,
   );
-  assertCrop(crop, { w: width, h: height });
+  assertCrop(crop);
   const croppedWidth = Math.max(1, Math.round(crop.w));
   const croppedHeight = Math.max(1, Math.round(crop.h));
   const cropMatrix: TransformMatrix = [
@@ -438,17 +438,17 @@ function constrainAspect(rect: Rect, aspect: string | undefined): Rect {
   return { ...rect, y: rect.y + (rect.h - h) / 2, h };
 }
 
-function assertCrop(rect: Rect, image: { w: number; h: number }): void {
+function assertCrop(rect: Rect): void {
   if (
     ![rect.x, rect.y, rect.w, rect.h].every(Number.isFinite) ||
-    rect.x < 0 ||
-    rect.y < 0 ||
     rect.w <= 0 ||
     rect.h <= 0 ||
-    rect.x + rect.w > image.w ||
-    rect.y + rect.h > image.h
+    !Number.isSafeInteger(Math.max(1, Math.round(rect.w))) ||
+    !Number.isSafeInteger(Math.max(1, Math.round(rect.h)))
   ) {
-    throw new Error("Develop crop must be inside the oriented base image");
+    throw new Error(
+      "Develop crop must have finite coordinates and positive safe raster dimensions",
+    );
   }
 }
 

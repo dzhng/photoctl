@@ -531,6 +531,50 @@ test("the v20 fixture keeps paid originals and independent attempt outcomes thro
   }
 });
 
+test("the v21 fixture retains a placed border and its immutable canvas support verdict", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v21.pgsql"));
+    await migrate(db);
+    const output = await db.query<{
+      kind: string;
+      recipe_version: number;
+      raster: unknown;
+      uncovered: boolean;
+    }>(
+      `SELECT node.kind, node.recipe_version, node.parameters->'frame'->'raster' AS raster,
+         (node.parameters->>'uncovered')::boolean AS uncovered
+       FROM photo_documents document JOIN document_revision_roots root
+         ON root.photo_id = document.photo_id AND root.revision_id = document.active_revision_id AND root.root_name = 'output'
+       JOIN image_nodes node ON node.photo_id = root.photo_id AND node.id = root.node_id`,
+    );
+    expect(output.rows).toEqual([
+      { kind: "composite", recipe_version: 3, raster: { w: 22, h: 16 }, uncovered: true },
+    ]);
+    const border = await db.query<{
+      role: string;
+      matrix: unknown;
+      recipe_version: number;
+      support_count: number;
+    }>(
+      `SELECT identity.role, content.parameters->'matrix' AS matrix, content.recipe_version,
+         (checkpoint.parameters->>'support_input_count')::integer AS support_count
+       FROM photo_documents document JOIN document_revision_layers layer
+         ON layer.photo_id = document.photo_id AND layer.revision_id = document.active_revision_id
+       JOIN layers identity ON identity.photo_id = layer.photo_id AND identity.id = layer.layer_id
+       JOIN image_nodes content ON content.photo_id = layer.photo_id AND content.id = layer.content_node_id
+       JOIN image_nodes checkpoint ON checkpoint.photo_id = identity.photo_id AND checkpoint.id = identity.authored_checkpoint_node_id
+       WHERE identity.role = 'border'`,
+    );
+    expect(border.rows).toEqual([
+      { role: "border", matrix: [1, 0, 0, 1, 4, 0], recipe_version: 2, support_count: 0 },
+    ]);
+    expect((await db.query("SELECT w,h FROM photos")).rows).toEqual([{ w: 16, h: 12 }]);
+  } finally {
+    await db.close();
+  }
+});
+
 test("the v19 fixture retains immutable geometry intent and layer authoring relations", async () => {
   const db = await testDatabase();
   try {

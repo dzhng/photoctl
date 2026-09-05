@@ -8,16 +8,18 @@ import {
 } from "../graph/store.js";
 import type { ImageNodeKind, JsonValue } from "../graph/types.js";
 import type { RevisionLayer, RevisionLayerDraft } from "../layers/model.js";
-import { planPhotographicOutput } from "../graph/output.js";
 import { unfilledVacancyLayerIds } from "../layers/status.js";
 import { developDictSchema, type DevelopDict } from "./dict.js";
 import { applyDevelopCompensation, planDevelopChange } from "./tiers.js";
 import { markupFreeOutputNode } from "../markup/graph.js";
 import { readBaseDevelopInput, type BaseDevelopInput } from "../graph/base-input.js";
+import { planDevelopIntent } from "../graph/output.js";
+import { isDeepStrictEqual } from "node:util";
 
 export interface ActiveDevelopState extends BaseDevelopInput {
   photoId: string;
   revisionId: string;
+  geometryNodeId?: string;
   outputNodeId: string;
   /** Current RGB output without the final editable markup presentation node. */
   pixelOutputNodeId: string;
@@ -77,6 +79,7 @@ export async function readActiveDevelopState(
     ...base,
     photoId: request.photoId,
     revisionId: document.revisionId,
+    geometryNodeId: document.roots.geometry,
     outputNodeId: document.roots.output,
     pixelOutputNodeId,
     baseNodeId: document.roots.base,
@@ -91,12 +94,22 @@ export async function commitDevelopState(
   database: GraphDatabase,
   current: ActiveDevelopState,
   develop: DevelopDict,
-  metadata?: Record<string, JsonValue>,
+  metadata?: Record<string, JsonValue> | null,
+  touchedGeometry: readonly ("crop" | "aspect_ratio")[] = (
+    ["crop", "aspect_ratio"] as const
+  ).filter((key) => !isDeepStrictEqual(current.develop[key], develop[key])),
 ): Promise<{
   revisionId: string;
   renderHash: `r_${string}`;
   layers: { deltaApplied: string[]; stale: string[] };
 }> {
+  const intent = await planDevelopIntent(database, current, develop, touchedGeometry);
+  if (!intent.changed && metadata === undefined)
+    return {
+      revisionId: current.revisionId,
+      renderHash: current.renderHash,
+      layers: { deltaApplied: [], stale: [] },
+    };
   const unfilledVacancies = await unfilledVacancyLayerIds(
     database,
     current.photoId,
@@ -150,14 +163,14 @@ export async function commitDevelopState(
       enabled: layer.enabled,
     };
   });
-  const output = planPhotographicOutput({ localKey: "base-output" }, layers);
   const committed = await commitRevision(database, {
+    outputPlan: "photographic",
     photoId: current.photoId,
     expectedRevisionId: current.revisionId,
-    nodes: [...nodes, ...output.nodes],
-    rootUpdates: [{ root: "base", node: { localKey: "base-output" } }, ...output.rootUpdates],
+    nodes: [...nodes, ...intent.nodes],
+    rootUpdates: [{ root: "base", node: { localKey: "base-output" } }, ...intent.rootUpdates],
     layers,
-    ...(metadata === undefined ? {} : { metadata }),
+    ...(metadata == null ? {} : { metadata }),
   });
   if (!committed.renderHash || !/^r_[0-9a-f]{64}$/.test(committed.renderHash)) {
     throw new Error("A develop revision must commit an output render hash");
