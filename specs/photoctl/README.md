@@ -13,16 +13,16 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last reconciled: 2026-09-06. The spec remains in implementation; local committed passes extend
-the last pushed export-heartbeat checkpoint.*
+*Last reconciled: 2026-09-06. The spec remains in implementation; staging was pushed through
+`8e895fb`, including public undo and the full-resolution storage measurement.*
 
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
 **Current pickup: finish outpaint consumers and the corrected default runtime; close the audited command/fixture omissions.**
 
-Run the independent fixture, canvas, and runtime-build passes in parallel. Canvas first fixes
-offline-to-online cache promotion, then source-only SAM geometry, then 12f3 generation wiring.
+Run the independent fixture, canvas, and runtime-build passes in parallel. Canvas sampling and
+offline-to-online cache promotion are integrated; next is source-only SAM geometry, then 12f3 generation wiring.
 Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
 Next independent command work is D24 local horizon detection / `crop --auto`; full-frame generation
 consumers must then use the shared frame contract rather than retain their provisional geometry refusal.
@@ -30,8 +30,8 @@ consumers must then use the shared frame contract rather than retain their provi
 - **Canvas:** [12f1/12f2](slices/12-outpaint.md) share exact execution frames and one output planner.
   Equal pixel bytes do not imply equal coordinates; historical recovery never guesses the latest execution.
   Composition, independent restriction activation, reversible border operations and captured input stages
-  are integrated. Offline/purchased-density review exposed a reconnect bug: sharp border pixels must not
-  make a blurry offline base look fully resolved to the preview cache. Source-only SAM must consume
+  are integrated. Actual visible supply now realizes canvas sampling, and sharp border pixels cannot
+  conceal a reduced original from cache promotion after reconnect. Source-only SAM must consume
   the same authored geometry without photographic layer RGB. Complete these consumers before 12f3.
 - **Undo:** the [public command](slices/08-develop.md#public-revision-undo) is integrated through the
   existing atomic revision owner, including first-source/generated no-ops and exact restoration.
@@ -65,6 +65,7 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | RAW compression boundary | Rebuilt addon, 9 adapter/public-CLI + 2 Rust checks across three modes |
 | Native diagnostics | 21 TypeScript + 5 Rust checks, native/TS build/typecheck; override model gate below |
 | Public undo | 46 merged CLI/command/revision/markup/canvas/develop checks, TS build/typecheck |
+| Canvas sampling / reconnect | 71 merged canvas/preview/export/undo/evaluator/SAM and built-journey checks, TS build/typecheck; independent review |
 | [Untouched overview](assets/gates/show-overview/evidence.json) | 37 preview/daemon/develop cases across integration and focused correction; fresh visual review |
 | Paid retention / atomic removal / upscale-develop consumers | 85 / 18 / 21 checks and typecheck; no extra provider work for exposure replacement |
 

@@ -1,0 +1,362 @@
+{
+  "a": {
+    "preview": {
+      "render_hash": "r_2137803adc16088554280e8c225cd21def7f65d807f4810f433233b78df7213a",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          -4,
+          0,
+          24,
+          12
+        ],
+        "w": 24,
+        "h": 12
+      },
+      "source_tier": "pinned-preview",
+      "source_dimensions": {
+        "w": 24,
+        "h": 12
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 4,
+        "f": 0
+      },
+      "view_to_base": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -4,
+        "f": 0
+      },
+      "visible_base_polygon": [
+        [
+          -4,
+          0
+        ],
+        [
+          20,
+          0
+        ],
+        [
+          20,
+          12
+        ],
+        [
+          -4,
+          12
+        ]
+      ]
+    },
+    "export": {
+      "w": 24,
+      "h": 12
+    },
+    "source": {
+      "w": 8,
+      "h": 6
+    }
+  },
+  "b": {
+    "preview": {
+      "render_hash": "r_b1969352fdfa6d3e97b99424626c49e3893af5e69fd6e25763d7e4727049f12c",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          -3,
+          0,
+          25,
+          12
+        ],
+        "w": 25,
+        "h": 12
+      },
+      "source_tier": "pinned-preview",
+      "source_dimensions": {
+        "w": 25,
+        "h": 12
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 3,
+        "f": 0
+      },
+      "view_to_base": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -3,
+        "f": 0
+      },
+      "visible_base_polygon": [
+        [
+          -3,
+          0
+        ],
+        [
+          22,
+          0
+        ],
+        [
+          22,
+          12
+        ],
+        [
+          -3,
+          12
+        ]
+      ]
+    },
+    "export": {
+      "w": 25,
+      "h": 12
+    },
+    "source": {
+      "w": 8,
+      "h": 6
+    }
+  },
+  "c": {
+    "preview": {
+      "render_hash": "r_18ac9f8567d577a683a8e239cb86a7fbfdb1c7060b40554327343ecbe80afe70",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          -3,
+          0,
+          25,
+          12
+        ],
+        "w": 12,
+        "h": 25
+      },
+      "source_tier": "pinned-preview",
+      "source_dimensions": {
+        "w": 12,
+        "h": 25
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 0,
+        "b": 1,
+        "c": -1,
+        "d": 0,
+        "e": 12,
+        "f": 3
+      },
+      "view_to_base": {
+        "a": 0,
+        "b": -1,
+        "c": 1,
+        "d": 0,
+        "e": -3,
+        "f": 12
+      },
+      "visible_base_polygon": [
+        [
+          -3,
+          12
+        ],
+        [
+          -3,
+          0
+        ],
+        [
+          22,
+          0
+        ],
+        [
+          22,
+          12
+        ]
+      ]
+    },
+    "export": {
+      "w": 12,
+      "h": 25
+    },
+    "source": {
+      "w": 8,
+      "h": 6
+    }
+  },
+  "d": {
+    "preview": {
+      "render_hash": "r_ad45d0ff12b9d32480394639f8e38f9c91b3bfb3e241f27a1747087124bc6dca",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          2,
+          1,
+          10,
+          8
+        ],
+        "w": 10,
+        "h": 8
+      },
+      "source_tier": "pinned-preview",
+      "source_dimensions": {
+        "w": 10,
+        "h": 8
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -1
+      },
+      "view_to_base": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 2,
+        "f": 1
+      },
+      "visible_base_polygon": [
+        [
+          2,
+          1
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          12,
+          9
+        ],
+        [
+          2,
+          9
+        ]
+      ]
+    },
+    "export": {
+      "w": 10,
+      "h": 8
+    },
+    "source": {
+      "w": 8,
+      "h": 6
+    }
+  },
+  "e": {
+    "preview": {
+      "render_hash": "r_0a9d5c305b4ae1796e371f3a2368b6a2d015c43a8e9dac99a723f7e3cc3884c2",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          0,
+          0,
+          16,
+          12
+        ],
+        "w": 16,
+        "h": 12
+      },
+      "source_tier": "online-file",
+      "source_dimensions": {
+        "w": 16,
+        "h": 12
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "view_to_base": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "visible_base_polygon": [
+        [
+          0,
+          0
+        ],
+        [
+          16,
+          0
+        ],
+        [
+          16,
+          12
+        ],
+        [
+          0,
+          12
+        ]
+      ]
+    },
+    "export": {
+      "w": 16,
+      "h": 12
+    },
+    "source": {
+      "w": 16,
+      "h": 12
+    }
+  }
+}

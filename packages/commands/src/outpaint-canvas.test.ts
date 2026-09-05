@@ -6,10 +6,11 @@ import {
   readArtifactLinear,
   artifactPath,
   undoRevision,
+  readValidPreviewArtifact,
 } from "@photoctl/render";
 import { showDataSchema, segmentDataSchema } from "@photoctl/protocol";
 import type { StructuredModelAdapter } from "@photoctl/providers";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rename, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -19,7 +20,8 @@ import { prepareReferenceArtifact } from "../../render/src/fill/reference.js";
 
 async function createCanvasFixture(w = 16, h = 12) {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-canvas-"));
-  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  const initialized = await initializeLibrary(join(parent, "library"));
+  const { handle } = initialized;
   try {
     const source = join(parent, "source.png");
     const pixels = Buffer.alloc(w * h * 3);
@@ -95,6 +97,7 @@ async function createCanvasFixture(w = 16, h = 12) {
     };
     return {
       parent,
+      libraryId: initialized.libraryId,
       handle,
       source,
       id,
@@ -290,6 +293,181 @@ test("an arbitrary border rotation moves its ring and hole while original pixels
       showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
         .actual,
     ).toMatchObject({ w: 10, h: 8 });
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("an exterior crop keeps the available offline density instead of inventing full-resolution pixels", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, response, currentPixels } = fixture;
+  try {
+    const pinnedDirectory = join(fixture.parent, "cache", fixture.libraryId, "emb");
+    await mkdir(pinnedDirectory, { recursive: true });
+    await sharp(fixture.source)
+      .resize(8, 6)
+      .jpeg()
+      .toFile(join(pinnedDirectory, `${id}.jpg`));
+    await rm(fixture.source);
+    await command("develop", [id, "--set", 'crop={"x":-4,"y":0,"w":24,"h":12}']);
+    const result = await response("show", [id, "--preview-size", "native"]);
+    const shown = showDataSchema.parse(result.data);
+    expect(shown.preview_info.source_tier).toBe("pinned-preview");
+    expect(shown.preview_info.source_dimensions).toEqual({ w: 12, h: 6 });
+    expect(shown.preview_info.pixel_scale).toBe(0.5);
+    expect(shown.preview_info.resolution_limited).toBe(true);
+    expect((await readValidPreviewArtifact(shown.preview))?.frame.source).toEqual({ w: 8, h: 6 });
+    expect(shown.preview_info.actual).toMatchObject({ w: 12, h: 6 });
+    expect(shown.preview_info.base_to_view).toEqual({ a: 0.5, b: 0, c: 0, d: 0.5, e: 2, f: 0 });
+    expect(await currentPixels()).toMatchObject({ w: 12, h: 6 });
+    await command("develop", [id, "--set", 'crop={"x":-3,"y":0,"w":25,"h":12}']);
+    const fractional = showDataSchema.parse(
+      await command("show", [id, "--preview-size", "native"]),
+    );
+    expect(fractional.preview_info.actual).toMatchObject({ w: 13, h: 6 });
+    expect(fractional.preview_info.base_to_view).toEqual({
+      a: 13 / 25,
+      b: 0,
+      c: 0,
+      d: 0.5,
+      e: 39 / 25,
+      f: 0,
+    });
+    const detail = showDataSchema.parse(await command("show", [id, "--region", "-3,0,5,12"]));
+    expect(detail.preview_info.actual).toMatchObject({ w: 3, h: 6 });
+    expect(detail.preview_info.base_to_view).toEqual(fractional.preview_info.base_to_view);
+    expect(detail.preview_info.cache_source).toBe("sufficient_full_frame");
+    await command("develop", [id, "--set", "rotate=90"]);
+    const rotated = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(rotated.preview_info.actual).toMatchObject({ w: 6, h: 13 });
+    expect(rotated.preview_info.base_to_view).toEqual({
+      a: 0,
+      b: 13 / 25,
+      c: -0.5,
+      d: 0,
+      e: 6,
+      f: 39 / 25,
+    });
+    const cached = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(cached.preview_info.cache_source).toBe("exact_view");
+    expect(cached.preview_info.actual).toEqual(rotated.preview_info.actual);
+    expect(cached.preview_info.base_to_view).toEqual(rotated.preview_info.base_to_view);
+    const exported = await response("export", [
+      id,
+      "--to",
+      join(fixture.parent, "offline-delivery"),
+      "--format",
+      "png",
+    ]);
+    expect(exported).toMatchObject({ results: [expect.objectContaining({ w: 6, h: 13 })] });
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("a full-density border remains native when only the original source falls back to a smaller preview", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, author, currentPixels } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    await author(2, "red");
+    const pinnedDirectory = join(fixture.parent, "cache", fixture.libraryId, "emb");
+    await mkdir(pinnedDirectory, { recursive: true });
+    await sharp(fixture.source)
+      .resize(8, 6)
+      .jpeg()
+      .toFile(join(pinnedDirectory, `${id}.jpg`));
+    await rename(fixture.source, `${fixture.source}.offline`);
+    const shown = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(shown.preview_info.source_tier).toBe("pinned-preview");
+    expect(shown.preview_info.source_dimensions).toEqual({ w: 10, h: 8 });
+    expect(shown.preview_info.pixel_scale).toBe(1);
+    expect(shown.preview_info.resolution_limited).toBe(false);
+    expect((await readValidPreviewArtifact(shown.preview))?.frame.source).toEqual({ w: 8, h: 6 });
+    expect(shown.preview_info.actual).toMatchObject({ w: 10, h: 8 });
+    expect(shown.preview_info.base_to_view).toEqual({ a: 1, b: 0, c: 0, d: 1, e: -2, f: -1 });
+    const pixels = await currentPixels();
+    expect({ w: pixels.w, h: pixels.h }).toEqual({ w: 10, h: 8 });
+    for (let y = 0; y < 8; y++) {
+      expect(pixels.data[y * 10 * 3]).toBeGreaterThan(0.5);
+      expect(pixels.data[(y * 10 + 1) * 3]).toBeGreaterThan(0.5);
+    }
+    const repeated = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(repeated.preview_info.cache_source).toBe("exact_view");
+    expect((await currentPixels()).data).toEqual(pixels.data);
+    const offlineDetail = showDataSchema.parse(await command("show", [id, "--region", "4,3,6,4"]));
+    expect(offlineDetail.preview_info.source_tier).toBe("pinned-preview");
+    expect(showDataSchema.parse(await command("show", [id])).preview_info.source_tier).toBe(
+      "pinned-preview",
+    );
+    await rename(`${fixture.source}.offline`, fixture.source);
+    expect(showDataSchema.parse(await command("show", [id])).preview_info.source_tier).toBe(
+      "online-file",
+    );
+    const detail = showDataSchema.parse(await command("show", [id, "--region", "4,3,6,4"]));
+    expect(detail.preview_info.source_tier).toBe("online-file");
+    expect(detail.preview_info.actual).toMatchObject({ w: 6, h: 4 });
+    const recovered = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(recovered.preview_info.render_hash).toBe(shown.preview_info.render_hash);
+    expect(recovered.preview_info.actual).toEqual(shown.preview_info.actual);
+    expect(recovered.preview_info.source_tier).toBe("online-file");
+    expect((await readValidPreviewArtifact(recovered.preview))?.frame.source).toEqual({
+      w: 16,
+      h: 12,
+    });
+    expect((await currentPixels()).data).not.toEqual(pixels.data);
+    expect(
+      await command("export", [id, "--to", join(fixture.parent, "reconnected"), "--format", "png"]),
+    ).toMatchObject({ results: [expect.objectContaining({ w: 10, h: 8 })] });
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("an invisible border cannot raise offline sampling inside its transparent hole", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, author } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    await author(2, "red");
+    const pinnedDirectory = join(fixture.parent, "cache", fixture.libraryId, "emb");
+    await mkdir(pinnedDirectory, { recursive: true });
+    await sharp(fixture.source)
+      .resize(8, 6)
+      .jpeg()
+      .toFile(join(pinnedDirectory, `${id}.jpg`));
+    await rm(fixture.source);
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    const shown = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(shown.preview_info.actual).toMatchObject({ w: 3, h: 2 });
+    expect(shown.preview_info.pixel_scale).toBe(0.5);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("shrinking a high-density border inside the original does not enlarge native output sampling", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, author, currentPixels } = fixture;
+  try {
+    const border = await author(2, "red");
+    await command("layer", [
+      "transform",
+      id,
+      border.layerId,
+      "--scale",
+      "0.1",
+      "--dx",
+      "5",
+      "--dy",
+      "5",
+      "--anchor",
+      "0,0",
+    ]);
+    const shown = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(shown.preview_info.actual).toMatchObject({ w: 16, h: 12 });
+    expect(shown.preview_info.base_to_view).toEqual({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+    expect(await currentPixels()).toMatchObject({ w: 16, h: 12 });
   } finally {
     await fixture.close();
   }

@@ -119,6 +119,42 @@ test.each([8, 9])(
           Math.abs(previewStats.channels[channel]!.mean - exportStats.channels[channel]!.mean),
         ).toBeLessThan(2);
       expect(
+        await command("develop", [
+          generated.id,
+          "--set",
+          `crop=${JSON.stringify({ x: -2, y: -2, w: edge + 4, h: edge + 4 })}`,
+        ]),
+      ).toMatchObject({ ok: true });
+      const exterior = showDataSchema.parse(
+        (await command("show", [generated.id, "--preview-size", "native"])).data,
+      );
+      expect(exterior.preview_info.actual).toMatchObject({ w: edge + 4, h: edge + 4 });
+      expect(exterior.preview_info.base_to_view).toEqual({ a: 1, b: 0, c: 0, d: 1, e: 2, f: 2 });
+      const expanded = await pixels();
+      for (let y = 0; y < edge; y++)
+        for (let x = 0; x < edge; x++)
+          for (let channel = 0; channel < 3; channel++)
+            expect(expanded.data[((y + 2) * (edge + 4) + x + 2) * 3 + channel]).toBe(
+              quarter.data[(y * edge + x) * 3 + channel],
+            );
+      expect(expanded.data.slice(0, (edge + 4) * 3)).toEqual(new Float32Array((edge + 4) * 3));
+      const exteriorExport = await command("export", [
+        generated.id,
+        "--to",
+        join(directory, "exterior"),
+        "--format",
+        "png",
+      ]);
+      expect(exteriorExport).toMatchObject({ ok: true });
+      const exteriorDelivery = exportResultSchema.parse(
+        (exteriorExport as { results: unknown[] }).results[0],
+      );
+      expect(exteriorDelivery).toMatchObject({ w: edge + 4, h: edge + 4 });
+      expect(await sharp(exteriorDelivery.file).metadata()).toMatchObject({
+        width: edge + 4,
+        height: edge + 4,
+      });
+      expect(
         (
           await handle.query(
             "SELECT execution_id, provider_image_attempt_id, output_artifact_hash FROM node_executions WHERE NOT deterministic ORDER BY execution_id",

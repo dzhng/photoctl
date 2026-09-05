@@ -60,6 +60,52 @@ export function savedRenderFrame(frame: RenderFrame): z.infer<typeof savedFrameS
   };
 }
 
+/** Change sampling density without changing the physical viewport or its catalog coordinates. */
+export function frameAtRaster(
+  frame: RenderFrame,
+  raster: Dimensions,
+  source: Dimensions = frame.source,
+): RenderFrame {
+  return rasterFrame(
+    frame.catalog,
+    source,
+    raster,
+    composeTransformMatrices(
+      [raster.w / frame.raster.w, 0, 0, raster.h / frame.raster.h, 0, 0],
+      composeTransformMatrices(frame.baseToRaster, [
+        frame.catalog.w / source.w,
+        0,
+        0,
+        frame.catalog.h / source.h,
+        0,
+        0,
+      ]),
+    ),
+  );
+}
+
+/** Largest number of input samples per output sample, across all directions. */
+export function frameSamplingDensity(input: RenderFrame, output: RenderFrame): number {
+  const [a, b, c, d] = composeTransformMatrices(input.baseToRaster, output.rasterToBase);
+  return (Math.hypot(a + d, b - c) + Math.hypot(a - d, b + c)) / 2;
+}
+
+export function realizeCanvasFrame(
+  authored: RenderFrame,
+  base: RenderFrame,
+  layers: readonly RenderFrame[],
+) {
+  // Local detail can satisfy native demand; shrinking a layer cannot increase that demand.
+  const density = Math.max(
+    frameSamplingDensity(base, authored),
+    ...layers.map((layer) => Math.min(1, frameSamplingDensity(layer, authored))),
+  );
+  const edge = (value: number) => Math.max(1, Math.round(value * density));
+  const raster = { w: edge(authored.raster.w), h: edge(authored.raster.h) };
+  assertNewRasterSize(raster, authored.catalog);
+  return frameAtRaster(authored, raster, base.source);
+}
+
 export function frameForNode(
   kind: string,
   parameters: JsonValue,
@@ -82,20 +128,7 @@ export function frameForNode(
     ) {
       throw new Error("Placement frame must preserve its input intrinsic raster dimensions");
     }
-    const source = input?.source ?? authored.source;
-    return rasterFrame(
-      catalog,
-      source,
-      authored.raster,
-      composeTransformMatrices(authored.baseToRaster, [
-        catalog.w / source.w,
-        0,
-        0,
-        catalog.h / source.h,
-        0,
-        0,
-      ]),
-    );
+    return frameAtRaster(authored, kind === "composite" ? raster : authored.raster, input?.source);
   }
   if (!input || ["source", "resample", "solid", "generate", "upscale"].includes(kind))
     return developFrame(catalog, raster);

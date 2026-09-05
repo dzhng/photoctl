@@ -4621,4 +4621,102 @@
   in image history. Callers can inspect the returned revision without fetching an unbounded log.
 - **Verdict:** **Sound.** Expose the existing complete document operation without inventing
   incomplete catalog history or retrying an operation that changes meaning on repetition.
+### Canvas sampling — Local supply satisfies demand; it does not create global demand
+
+- **When:** 12f2 density consumer pass, 2026-09-06.
+- **The choice:** A 16×12 photograph can contain a much smaller, detailed border. The first
+  implementation treated every available pixel as a demand for whole-image resolution: shrinking
+  that border tenfold incorrectly made the native output 160×120. The corrected contract keeps
+  the base image's actual sampling and lets local images fill an offline resolution shortfall only
+  up to native canvas demand. The same shrunken-border request now stays 16×12. A native border
+  can still supply a 10×8 canvas when the original is available only as a half-sized preview.
+- **The gap:** The plan required actual available density and preservation of purchased upscale,
+  but did not distinguish local pixel supply from global output demand. Existing fill planning
+  establishes the distinction: shrinking a layer decreases its target rather than enlarging the
+  whole photograph.
+- **The reach:** Local transforms cannot create runaway full-image sampling requirements. A paid
+  base branch retains its actual resolution. No new memory cap, transform refusal, configuration,
+  or public metadata field is introduced to compensate for excessive demand.
+- **Verdict:** **Unsound initial choice, corrected.** The unrestricted maximum-supply rule was
+  rejected after its public regression produced 160×120; local supply must be bounded by output
+  demand, independently of any allocation safety ceiling.
+- **Confidence:** High.
+
+### Canvas sampling — Preserve physical frames while changing the integer sampling grid
+
+- **When:** 12f2 density consumer pass, 2026-09-06.
+- **The choice:** A 25-unit-wide exterior crop of a half-sized source needs 12.5 samples, which
+  becomes 13 pixels using the existing develop rounding convention. Its catalog coordinates do
+  not move to make the division even. Each saved projection is realized at a uniform density
+  derived from actual input frame mappings; the largest directional sampling rate preserves
+  available detail without separately stretching the two output axes. RGB and mask coverage
+  follow that same grid in the same ordered stages. A quarter-turn produces 6×13 from 13×6.
+- **The gap:** Saved frames establish physical geometry and authored rasters, not the raster
+  available during offline execution. The plan did not specify integer sampling realization.
+- **The reach:** Logical inspection remains stable while actual execution frames and previews
+  describe the real raster. This reuses the frame owner and existing renderer semantic revision
+  for cache invalidation; there is no second persisted geometry or density policy.
+- **Verdict:** **Sound.** Keeping physical intent separate from raster size avoids both fabricated
+  full-resolution fallback pixels and coordinate rebasing. The directional choice is numerical
+  sampling policy, not a promise that every source has equally detailed pixels in both directions.
+- **Confidence:** Medium.
+
+### Canvas provenance — Output sampling does not certify recovered original detail
+
+- **When:** 12f2 density consumer pass, 2026-09-06.
+- **The choice:** A native border plus an offline 8×6 original preview can produce a 10×8 native
+  canvas. Public preview source dimensions describe that rendered master, not the decoder's
+  original input. Output pixel scale can be one and output resolution can be satisfied while
+  original detail remains limited. The retained execution frame still records the 8×6 source,
+  and the public source tier remains pinned-preview.
+- **The gap:** Existing preview field names could be mistaken for a claim about every contributing
+  image. Repurposing them to describe only the decoder would silently change other preview consumers.
+- **The reach:** Existing metadata meanings remain intact; callers must not infer recovered
+  original detail from native output sampling. A separate public original-detail field is not
+  added in this pass.
+- **Verdict:** **Sound.** Preserve the established preview contract and verify the exact original
+  input through the existing retained frame owner.
+- **Confidence:** High.
+
+### Canvas contribution — Reuse final projected mask coverage to admit local supply
+
+- **When:** 12f2 density review correction, 2026-09-06.
+- **The choice:** An offline photograph is cropped wholly inside a border's transparent center.
+  Merely retaining that border initially raised the 3×2 available image to 6×4 even though no border
+  pixels appeared. Local supply now counts only when the existing mask projection has nonzero
+  coverage in the final viewport. Candidates are considered from highest supply downward; the
+  first useful projected mask is kept and reused by compositing. Masks for all layers are never
+  accumulated, and a native base needs no candidate pixel pass.
+- **The gap:** Available image dimensions alone did not establish that the image contributes to
+  the current view. Structural canvas warnings deliberately ignore opacity and are not the answer
+  to this sampling question.
+- **The reach:** The shared mask path preserves ordered transforms, coverage thresholds, and final
+  clipping. In the public fixture the visible border needs one total mask projection and retains
+  320 bytes; the rejected transparent-hole candidate needs two projections, with a 96-byte candidate
+  mask. A native base needs no candidate allocation. In larger scenes the one retained mask costs
+  four bytes per output pixel; this is a bounded extra buffer, not a memory-safety guarantee.
+- **Verdict:** **Unsound initial choice, corrected.** Retained supply is not necessarily visible
+  supply. The correction consumes the compositor's actual projected coverage rather than adding
+  a second mask interpreter or reclassifying invisible content as useful detail.
+- **Confidence:** High.
+
+### Canvas cache — Check original sampling when local pixels satisfy output dimensions
+
+- **When:** 12f2 independent review correction, 2026-09-06.
+- **The choice:** A native border makes an offline master's dimensions look sufficient. When the
+  original returns, the old dimension-only cache check kept serving its reduced interior forever.
+  Sufficiency now also compares retained original sampling with the requested view's demand; if
+  it is insufficient, the existing source-limit check determines whether richer pixels are available.
+  Same-source repeats still reuse the master, and a small overview does not demand unnecessary
+  full-resolution original pixels.
+- **The gap:** Output sampling and original sampling could diverge after local images supplied
+  native detail; the old cache predicate assumed they rose together.
+- **The reach:** Full, exact detail, and overview show requests refresh on reconnect without changing
+  document
+  identity or public metadata meanings. Exact-view returns consume the same sufficiency predicate
+  as master reuse; an independent review caught the old inline dimension-only bypass. The existing
+  retained frame and source-limit owner remain
+  canonical; no second cache status or mutable provenance table is added.
+- **Verdict:** **Sound.** Actual original supply must participate in cache sufficiency when a local
+  layer can otherwise conceal its shortfall. Public reconnect, repeat, and export checks pin it.
 - **Confidence:** High.

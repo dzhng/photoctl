@@ -1,0 +1,362 @@
+{
+  "a": {
+    "preview": {
+      "render_hash": "r_32e2b638494078ab5be0fb417a67a9cd79f2118843224d1949bfd50c5c9872ca",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          -4,
+          0,
+          24,
+          12
+        ],
+        "w": 12,
+        "h": 6
+      },
+      "source_tier": "pinned-preview",
+      "source_dimensions": {
+        "w": 12,
+        "h": 6
+      },
+      "pixel_scale": 0.5,
+      "resolution_limited": true,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 0.5,
+        "b": 0,
+        "c": 0,
+        "d": 0.5,
+        "e": 2,
+        "f": 0
+      },
+      "view_to_base": {
+        "a": 2,
+        "b": 0,
+        "c": 0,
+        "d": 2,
+        "e": -4,
+        "f": 0
+      },
+      "visible_base_polygon": [
+        [
+          -4,
+          0
+        ],
+        [
+          20,
+          0
+        ],
+        [
+          20,
+          12
+        ],
+        [
+          -4,
+          12
+        ]
+      ]
+    },
+    "export": {
+      "w": 12,
+      "h": 6
+    },
+    "source": {
+      "w": 8,
+      "h": 6
+    }
+  },
+  "b": {
+    "preview": {
+      "render_hash": "r_018784bee38e18f08c12e8d6bb15eba8b14e5d5c030b8a67c9beacfae9865e23",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          -3,
+          0,
+          24.999999999999996,
+          12
+        ],
+        "w": 13,
+        "h": 6
+      },
+      "source_tier": "pinned-preview",
+      "source_dimensions": {
+        "w": 13,
+        "h": 6
+      },
+      "pixel_scale": 0.5,
+      "resolution_limited": true,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 0.52,
+        "b": 0,
+        "c": 0,
+        "d": 0.5,
+        "e": 1.56,
+        "f": 0
+      },
+      "view_to_base": {
+        "a": 1.923076923076923,
+        "b": 0,
+        "c": 0,
+        "d": 2,
+        "e": -3,
+        "f": 0
+      },
+      "visible_base_polygon": [
+        [
+          -3,
+          0
+        ],
+        [
+          21.999999999999996,
+          0
+        ],
+        [
+          21.999999999999996,
+          12
+        ],
+        [
+          -3,
+          12
+        ]
+      ]
+    },
+    "export": {
+      "w": 13,
+      "h": 6
+    },
+    "source": {
+      "w": 8,
+      "h": 6
+    }
+  },
+  "c": {
+    "preview": {
+      "render_hash": "r_5e441745213405dce66b0ad528be432183cd1dc3c253b41ad2ee969b5134eb6f",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          -3,
+          0,
+          24.999999999999996,
+          12
+        ],
+        "w": 6,
+        "h": 13
+      },
+      "source_tier": "pinned-preview",
+      "source_dimensions": {
+        "w": 6,
+        "h": 13
+      },
+      "pixel_scale": 0.5,
+      "resolution_limited": true,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 0,
+        "b": 0.52,
+        "c": -0.5,
+        "d": 0,
+        "e": 6,
+        "f": 1.56
+      },
+      "view_to_base": {
+        "a": 0,
+        "b": -2,
+        "c": 1.923076923076923,
+        "d": 0,
+        "e": -3,
+        "f": 12
+      },
+      "visible_base_polygon": [
+        [
+          -3,
+          12
+        ],
+        [
+          -3,
+          0
+        ],
+        [
+          21.999999999999996,
+          0
+        ],
+        [
+          21.999999999999996,
+          12
+        ]
+      ]
+    },
+    "export": {
+      "w": 6,
+      "h": 13
+    },
+    "source": {
+      "w": 8,
+      "h": 6
+    }
+  },
+  "d": {
+    "preview": {
+      "render_hash": "r_f770db8f6585ca2bc09d41ab3fca61d4c8d2a657e8b766595ede717af433f7d3",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          2,
+          1,
+          10,
+          8
+        ],
+        "w": 10,
+        "h": 8
+      },
+      "source_tier": "pinned-preview",
+      "source_dimensions": {
+        "w": 10,
+        "h": 8
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -1
+      },
+      "view_to_base": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 2,
+        "f": 1
+      },
+      "visible_base_polygon": [
+        [
+          2,
+          1
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          12,
+          9
+        ],
+        [
+          2,
+          9
+        ]
+      ]
+    },
+    "export": {
+      "w": 10,
+      "h": 8
+    },
+    "source": {
+      "w": 8,
+      "h": 6
+    }
+  },
+  "e": {
+    "preview": {
+      "render_hash": "r_d3da9cd2dc5705e6c894472655918facc66278532fbeef5f92e0f4d56411e53f",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          0,
+          0,
+          16,
+          12
+        ],
+        "w": 16,
+        "h": 12
+      },
+      "source_tier": "online-file",
+      "source_dimensions": {
+        "w": 16,
+        "h": 12
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "view_to_base": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "visible_base_polygon": [
+        [
+          0,
+          0
+        ],
+        [
+          16,
+          0
+        ],
+        [
+          16,
+          12
+        ],
+        [
+          0,
+          12
+        ]
+      ]
+    },
+    "export": {
+      "w": 16,
+      "h": 12
+    },
+    "source": {
+      "w": 16,
+      "h": 12
+    }
+  }
+}

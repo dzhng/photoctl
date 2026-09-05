@@ -302,8 +302,26 @@ interior preservation and its fresh visual review.
 Reconstructing it from a prior border's original outer frame is insufficient after that border moves:
 the next expansion must retain the whole then-visible input, including its moved extension. Shared
 viewport stages are stored once, but applied to each RGB/coverage input before compositing; factoring
-storage must not reorder samplers or freeze historical RGB. This metadata does not settle how offline
-or purchased-density inputs realize those stages, which remains in the consumer pass.
+storage must not reorder samplers or freeze historical RGB. Realization preserves those physical
+frames while selecting a raster from actual available pixels: a reduced original stays reduced unless
+visible local image supply can satisfy native canvas demand. A candidate must have nonzero final
+projected mask coverage; a border whose transparent hole fills the view is not a contributor.
+The existing ordered mask projection owns that test, independently of structural warning coverage.
+Candidates are checked only above base density, highest supply first, retaining at most one mask
+for reuse in compositing. Shrinking a detailed layer does not increase
+whole-canvas demand; the existing base branch's purchased resolution remains authoritative. RGB and
+coverage use the same realized stage frames, and integer edges use the develop owner's nearest-pixel
+rounding. Inspection retains authored dimensions; executions retain actual dimensions.
+The [sampling evidence](../assets/outpaint-density/README.md) preserves matched exports and provenance.
+
+Preview metadata keeps its existing meanings: `source_dimensions` describes the rendered preview
+source, and `pixel_scale`/`resolution_limited` describe output sampling. A native border around an
+offline-limited photograph can therefore produce native output without recovering the original's
+missing detail. The exact reduced input dimensions remain in the retained execution frame's `source`;
+`source_tier` still reports the fallback. Source-only SAM geometry and final visual lifecycle closeout
+remain required before 12f2 acceptance.
+Cache sufficiency checks the retained original sampling against requested view demand too: local
+native pixels cannot prevent a richer reconnected original from refreshing the current master.
 
 The pure [canvas support owner](../../../packages/render/src/graph/canvas-support.ts) intersects
 source restrictions and clips each enabled border's outer-minus-input ring to its later authored

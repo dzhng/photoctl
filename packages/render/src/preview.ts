@@ -6,7 +6,7 @@ import { orientedDimensions, type ExifOrientation } from "./coordinates.js";
 import { srgb2014ProfilePath } from "./color.js";
 import type { ImageSource } from "./decoder.js";
 import { canonicalJson } from "./graph/recipes.js";
-import { developFrame, viewFrame, type RenderFrame } from "./graph/frame.js";
+import { developFrame, frameSamplingDensity, viewFrame, type RenderFrame } from "./graph/frame.js";
 import { developBaseRegion, projectDevelopView } from "./develop/geometry.js";
 import {
   readValidPreviewArtifact,
@@ -97,7 +97,13 @@ export async function materializePreview(request: {
   };
   const sufficient = async (artifact: ValidPreviewArtifact) => {
     const plan = planView(artifact.frame, request.view);
-    return (plan.w >= target.w && plan.h >= target.h) || (await atSourceLimit(artifact));
+    const originalFrame = developFrame(artifact.frame.catalog, artifact.frame.source);
+    const originalCovers = frameSamplingDensity(target.frame, originalFrame) <= 1;
+    // Native local layers cannot conceal a reduced original when richer source pixels return.
+    return (
+      (plan.w >= target.w && plan.h >= target.h && originalCovers) ||
+      (await atSourceLimit(artifact))
+    );
   };
   const render = async () => {
     if (request.render) return await request.render();
@@ -146,7 +152,7 @@ export async function materializePreview(request: {
     },
     async () => {
       const exact = await readValidPreviewArtifact(exactPath);
-      if (exact && ((exact.w >= target.w && exact.h >= target.h) || (await atSourceLimit(exact)))) {
+      if (exact && (await sufficient(exact))) {
         return result(exactPath, exact, target, "exact_view");
       }
       if (overview) {

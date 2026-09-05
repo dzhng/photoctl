@@ -35,7 +35,14 @@ import type { Image16 } from "../source-render.js";
 import type { GraphDatabase, GraphTransaction } from "./store.js";
 import { applyDevelopArtifact, applyDevelopDeltaArtifact } from "../develop/pixels.js";
 import { developDictSchema } from "../develop/dict.js";
-import { frameForNode, savedRenderFrame, parseRenderFrame, type RenderFrame } from "./frame.js";
+import {
+  frameForNode,
+  savedRenderFrame,
+  parseRenderFrame,
+  realizeCanvasFrame,
+  frameSamplingDensity,
+  type RenderFrame,
+} from "./frame.js";
 import { canvasCompositeSchema } from "./output.js";
 import {
   compositeMaskedPixels,
@@ -677,13 +684,68 @@ async function evaluateCanvasComposite(
   inputs: EvaluatedNode[],
 ): Promise<LinearImage> {
   const plan = canvasCompositeSchema.parse(parameters);
-  const output = parseRenderFrame(plan.frame);
   let base = await readRgbInput(inputs[0]!);
   let baseFrame = await loadBaseProjection(request.database, request.photoId, inputs[0]!);
+  const layerFrames = await Promise.all(
+    plan.layers.map(async (layer, index) =>
+      layer.frame
+        ? parseRenderFrame(layer.frame)
+        : await loadBaseProjection(request.database, request.photoId, inputs[1 + index * 2]!),
+    ),
+  );
+  const sourceFrame = baseFrame;
+  const projectLayerMask = async (
+    index: number,
+    realizeFrame: (saved: typeof plan.frame) => RenderFrame,
+  ) => {
+    const layer = plan.layers[index]!;
+    const maskInput = inputs[2 + index * 2]!;
+    let frame = layerFrames[index]!;
+    const stages = [...layer.stages, ...plan.viewport_stages];
+    const supportFrames = [frame, ...stages.map(parseRenderFrame)];
+    const coverage = await supportCoverage(request, maskInput);
+    let mask = layer.frame
+      ? await readMaskInput(maskInput, frame.raster)
+      : await projectMaskToRender(
+          coverage ?? (await readMaskInput(maskInput, frame.catalog)),
+          frame,
+          frame.raster,
+        );
+    for (const saved of [...stages, plan.frame]) {
+      const target = realizeFrame(saved);
+      mask = await projectCoverageBetweenFrames(mask, frame, target, target.raster);
+      frame = target;
+    }
+    if (coverage) mask = await applyEffectiveMask(mask, { operation: "support" });
+    return clipCoverageToFrames(mask, realizeFrame(plan.frame), supportFrames);
+  };
+  const authoredOutput = parseRenderFrame(plan.frame);
+  const baseDensity = frameSamplingDensity(sourceFrame, authoredOutput);
+  const candidates = layerFrames
+    .map((frame, index) => ({
+      index,
+      density: Math.min(1, frameSamplingDensity(frame, authoredOutput)),
+    }))
+    .filter(({ index, density }) => plan.layers[index]!.opacity > 0 && density > baseDensity)
+    .toSorted((left, right) => right.density - left.density);
+  let selectedSupply: { index: number; mask: MaskImage } | undefined;
+  for (const { index } of candidates) {
+    const mask = await projectLayerMask(index, (saved) =>
+      realizeCanvasFrame(parseRenderFrame(saved), sourceFrame, [layerFrames[index]!]),
+    );
+    if (mask.data.some((value) => value > 0)) {
+      selectedSupply = { index, mask };
+      break;
+    }
+  }
+  const contributingLayers = selectedSupply ? [layerFrames[selectedSupply.index]!] : [];
+  const realize = (saved: typeof plan.frame) =>
+    realizeCanvasFrame(parseRenderFrame(saved), sourceFrame, contributingLayers);
+  const output = realize(plan.frame);
   const baseStages = [...plan.base_stages, ...plan.viewport_stages];
   const baseSupportFrames = [baseFrame, ...baseStages.map(parseRenderFrame)];
   for (const saved of [...baseStages, plan.frame]) {
-    const frame = parseRenderFrame(saved);
+    const frame = realize(saved);
     base = await projectRgbToRender(base, baseFrame, frame, frame.raster);
     baseFrame = frame;
   }
@@ -702,29 +764,19 @@ async function evaluateCanvasComposite(
   );
   for (const [index, layer] of plan.layers.entries()) {
     const contentInput = inputs[1 + index * 2]!;
-    const maskInput = inputs[2 + index * 2]!;
     let content = await readRgbInput(contentInput);
-    let frame: RenderFrame = layer.frame
-      ? parseRenderFrame(layer.frame)
-      : await loadBaseProjection(request.database, request.photoId, contentInput);
+    let frame: RenderFrame = layerFrames[index]!;
     const stages = [...layer.stages, ...plan.viewport_stages];
-    const supportFrames = [frame, ...stages.map(parseRenderFrame)];
-    const coverage = await supportCoverage(request, maskInput);
-    let mask = layer.frame
-      ? await readMaskInput(maskInput, content)
-      : await projectMaskToRender(
-          coverage ?? (await readMaskInput(maskInput, frame.catalog)),
-          frame,
-          content,
-        );
+    const mask =
+      selectedSupply?.index === index
+        ? selectedSupply.mask
+        : await projectLayerMask(index, realize);
+    if (selectedSupply?.index === index) selectedSupply = undefined;
     for (const saved of [...stages, plan.frame]) {
-      const target = parseRenderFrame(saved);
+      const target = realize(saved);
       content = await projectRgbToRender(content, frame, target, target.raster);
-      mask = await projectCoverageBetweenFrames(mask, frame, target, target.raster);
       frame = target;
     }
-    if (coverage) mask = await applyEffectiveMask(mask, { operation: "support" });
-    mask = clipCoverageToFrames(mask, output, supportFrames);
     pixels = await compositeMaskedPixels(
       pixels,
       content.data,

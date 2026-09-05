@@ -48,11 +48,20 @@ export async function loadLogicalFrame(
   let frame: RenderFrame | undefined;
   for (const row of result.rows.toReversed()) {
     const raster =
-      row.kind === "resample" || row.kind === "solid"
-        ? (imageNodeRegistry[row.kind].parameters.parse(row.parameters) as { w: number; h: number })
-        : row.artifact_w !== null && row.artifact_h !== null
-          ? { w: row.artifact_w, h: row.artifact_h }
-          : (frame?.raster ?? catalog);
+      row.kind === "composite" &&
+      row.parameters &&
+      typeof row.parameters === "object" &&
+      !Array.isArray(row.parameters) &&
+      "frame" in row.parameters
+        ? parseRenderFrame(row.parameters.frame).raster
+        : row.kind === "resample" || row.kind === "solid"
+          ? (imageNodeRegistry[row.kind].parameters.parse(row.parameters) as {
+              w: number;
+              h: number;
+            })
+          : row.artifact_w !== null && row.artifact_h !== null
+            ? { w: row.artifact_w, h: row.artifact_h }
+            : (frame?.raster ?? catalog);
     frame = frameForNode(row.kind, row.parameters, catalog, raster, frame);
   }
   return frame!;
