@@ -39,8 +39,15 @@ Only system libraries are accepted for the current standalone macOS binaries.
 `test/macos/packed-install.test.ts` installs real tarballs into a temporary prefix, starts the daemon,
 requires both decoder capabilities, and runs the existing gold script against `fixtures:drive` output.
 The release workflow consumes these same tarballs, rather than repacking workspace manifests during
-publication. This gate does not substitute for the real-drive photographs, compression-mode fixtures,
-or the full-feature fake-generation/hash-inspection release journey still required above.
+publication. The same installed prefix also runs the shared
+[`agent-preview` journey](../../../test/journeys/agent-preview.ts): the behavioral oracle is shared with
+the built CLI, including exact lossless opacity, local edits, lazy previews, current export identity,
+and fake generation/upscale. Public graph pagination must reconstruct the unpaged graph without
+truncating identities or losing execution provenance. Fake-adapter configuration is library-local;
+no live upscaler credential is needed. This journey uses the established no-daemon test mode so its
+canonical-artifact checks can open the library directly; the fixture gold gate independently requires
+the installed persistent daemon. Neither gate substitutes for real-drive photographs or
+compression-mode fixtures.
 
 **2026-09-05 checkpoint:** the macOS ARM64 packed-install gate passed in 133 seconds, including the
 normal daemon path and all ten fixture ARW exports. Release-mode native kernel tests, version drift
@@ -48,3 +55,9 @@ and repair tests, and positive/negative linkage probes passed. The first debug-b
 about four minutes, which exposed the missing release-profile selection without changing pixel code or
 the gold exam's scope. Independent Codex review found no actionable correctness findings. No tag,
 npm publication, real-drive acceptance, or other-platform CI result is claimed by this local checkpoint.
+
+**Full-feature checkpoint:** both packed journeys passed together on macOS ARM64. The shared journey
+also passed against the development build; deliberately dropping the public continuation cursor and
+substituting a different full execution identity each failed the corresponding assertion before being
+restored. Independent review's provenance-binding and setup-budget findings were addressed. The HTML
+report and SHA manifest remain a separate release-evidence seam, not a claim of photographic acceptance.

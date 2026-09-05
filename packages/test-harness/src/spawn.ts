@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import type { Envelope, StderrEvent } from "@photoctl/protocol";
 export interface SpawnOptions {
+  cliPath?: string;
+  cwd?: string;
   libraryDir?: string;
   env?: NodeJS.ProcessEnv;
 }
@@ -15,9 +17,10 @@ export async function spawnPhotoctl(
   args: string[],
   options: SpawnOptions = {},
 ): Promise<SpawnResult> {
-  const cli = resolve(process.cwd(), "apps/cli/dist/bin.js");
+  const cli = options.cliPath ?? resolve(process.cwd(), "apps/cli/dist/bin.js");
   return await new Promise((resolveResult, reject) => {
     const child = spawn(process.execPath, [cli, ...args], {
+      cwd: options.cwd,
       env: {
         ...process.env,
         PHOTOCTL_NO_DAEMON: "1",
