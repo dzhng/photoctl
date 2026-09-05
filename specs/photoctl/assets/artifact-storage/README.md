@@ -28,10 +28,11 @@ to convert to display sRGB and round/clamp to RGB8. Compare both sample values a
 The measurement script was temporary; no second production codec or publication path was introduced.
 
 This supports retaining original response bytes unchanged, alongside—not instead of—the canonical
-working artifact. That retention contract is not implemented by this report. Its implementation must
-reuse artifact publication, availability, execution provenance, and reachability rather than create an
-untracked response directory. Historical responses whose original bytes were discarded cannot be
-reconstructed honestly or silently purchased again.
+working artifact. The [implemented retention contract](../../slices/13-generative-extras-and-markup.md#paid-response-retention--shared-artifact-and-attempt-ownership)
+reuses artifact publication, availability, execution provenance, and reachability rather than an
+untracked response directory. This report is format evidence, not its implementation proof.
+Historical responses whose original bytes were discarded cannot be reconstructed honestly or
+silently purchased again.
 
 These small opaque RGB8 examples do not settle alpha, HDR, wide-gamut, provider metadata, full-resolution
 memory, or representative undo-history storage. Automatic canonical-artifact deletion stays disabled;

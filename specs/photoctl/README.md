@@ -19,37 +19,26 @@ the last pushed export-heartbeat checkpoint.*
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: implement reversible outpaint canvas and resolve Linux model-gate/edge failures in parallel.**
+**Current pickup: finish public undo and outpaint consumers; make the corrected Linux runtime the reproducible default.**
 
-- Initial cropped-frame fill, refresh, and preview/detail planning now share exact realized frames.
-  Migration 17 retains coordinates per execution; cached masters/views retain their own frame and
-  choose density from actual available sources, not tier labels. Equal pixel bytes do not imply equal
-  coordinates, and old ancestry recovery never guesses the latest execution. See [12f1](slices/12-outpaint.md).
-  Photographic mutations now share one output planner. Deterministic canvas composition and reversible
-  border removal and independent restriction activation are integrated; remaining consumers are next in
-  [12f2](slices/12-outpaint.md#geometry-intent-and-ordinary-layer-operations).
-- Fit/strength, capped/full-res inputs, and reference/init controls are integrated. Migration 18
-  retains exact reference PNG plus working TIFF through one artifact owner; supported references
-  use documented image edits and unsupported controls warn explicitly. The speculative standalone
-  reference field is removed. Follow [12f2](slices/12-outpaint.md) for immutable geometry intent,
-  inherited crop exclusions, and removable extent, then wire generation in 12f3. Canvas owns the
-  integrated migration 19 for immutable geometry/layer-authoring metadata; paid retention is integrated as 20.
-  Migration 21 carries authored canvas composition. Crop/aspect, copy/reset/presets and graph undo
-  are verified; exact captured stages after border transforms are integrated. Source-only SAM geometry and
-  offline/purchased-density consumers remain in progress. General CLI undo remains unimplemented;
-  daemon recovery now refuses to replay an already-sent mutation after a lost response
-  (the [Slice 02](slices/02-daemon-and-contention.md) transport boundary).
-  Keep live quality separate from deterministic evidence.
-- Slice 11 runtime, real parity-verified weights, and `wb masks` are integrated. Real-photo
-  coarse subject tests pass; foliage/wire edges remain red. Full-command RSS passes the six-run
-  host/fixture witness after native accounting; that is not an all-platform resource guarantee. The report selects
-  cached current-develop context, not historical SAM input. See [Slice 11](slices/11-segment.md).
-- Slice 14 packaging, shared full-feature journey, and HTML/SHA report artifacts are integrated.
-  The clean-prefix fixture exam passed; real-drive acceptance remains. See [Slice 14](slices/14-gold-exam-and-release.md).
-- Slice 13's experiment runner now separates prompt, single-control, and category evidence and reuses
-  identical requests across inspection cases. Conduct the photographic
-  comparisons in [Slice 13](slices/13-generative-extras-and-markup.md) when explicitly configured.
-  Missing live prerequisites do not block deterministic work.
+Run the independent undo, canvas, and runtime-build passes in parallel. Canvas first fixes
+offline-to-online cache promotion, then source-only SAM geometry, then 12f3 generation wiring.
+The native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
+
+- **Canvas:** [12f1/12f2](slices/12-outpaint.md) share exact execution frames and one output planner.
+  Equal pixel bytes do not imply equal coordinates; historical recovery never guesses the latest execution.
+  Composition, independent restriction activation, reversible border operations and captured input stages
+  are integrated. Offline/purchased-density review exposed a reconnect bug: sharp border pixels must not
+  make a blurry offline base look fully resolved to the preview cache. Source-only SAM must consume
+  the same authored geometry without photographic layer RGB. Complete these consumers before 12f3.
+- **Undo:** the public command is in a red/green pass using the existing atomic revision owner.
+  Existing graph undo is verified. [Daemon recovery](slices/02-daemon-and-contention.md) already refuses
+  to replay a sent mutation after a lost response; explicit `daemon start` repairs a broken endpoint.
+- **Generation and release:** [Slice 12 controls](slices/12-fill.md) and deterministic
+  [Slice 13 commands](slices/13-generative-extras-and-markup.md) are integrated. Conduct live
+  photographic/upscaler comparisons only when explicitly configured; the experiment runner separates
+  prompt/control/category evidence and reuses identical requests. [Slice 14](slices/14-gold-exam-and-release.md)
+  has packaging, a shared journey and report artifacts; the clean-prefix fixture exam is not real-drive acceptance.
 - [Paid-image attempt retention](slices/13-generative-extras-and-markup.md#paid-response-retention--shared-artifact-and-attempt-ownership)
   captures originals before acceptance checks through the existing artifact owner. Attempts remain
   inspectable after rejection or photo removal. The base develop reader preserves purchased upscale
@@ -59,25 +48,20 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
   optional and unspecified, rather than an implied requirement to invent an MCP product.
 
-**Current evidence:** slices 00–10 and the deterministic Slice 12 editing contracts are committed.
-Slice 13's reimagine, relight, generate, auto-enhance, markup, and retouch checkpoints are committed.
-The geometry prerequisite passed 77 merged migration/graph/command tests and typecheck; the exact
-pointwise color-buffer reuse passed its merged native build and focused color/SAM tests. These are
-allocation and storage checkpoints, not canvas completion or a passing whole-command resource gate.
-Convex support passed 78 merged geometry/pixel tests and typecheck; its canvas consumers remain in progress.
-Canvas core passed 156 merged consumer tests and typecheck. Native color/resampler accounting
-passed its merged build, typecheck, and 26 accounting/color/SAM-session/mask tests.
-Restriction activation passed 72 merged consumer tests, TypeScript build and typecheck.
-Daemon no-replay recovery and preview progress passed 22 lifecycle/client checks plus 11
-preview/progress checks; explicit broken-endpoint recovery remains available through `daemon start`.
-Captured canvas/lifecycle, migration and manifest integration passed 44 checks. The rebuilt native
-RAW boundary passed nine adapter/public-CLI checks across three compression modes and two Rust checks.
-Retention passed 85 merged tests, atomic removal 18, and upscale/develop consumers 21, each with
-typecheck. The latter verifies exposure replacement without additional provider work.
-Earlier integrations passed focused tests, Rust tests, builds, typecheck,
-formatting, and lint. It did not run the root full-suite release gate. The preview-loop blend oracle
-now compares lossless graph outputs at Float32 precision; JPEG views independently prove freshness.
-Slice files and their assets hold the detailed acceptance evidence.
+**Integrated evidence ledger:** these are focused pass results, not a root full-suite release gate.
+Slices 00–10 and deterministic editing checkpoints are committed; slice files/assets own acceptance details.
+The preview-loop oracle compares lossless graph outputs at Float32 precision; JPEGs separately prove freshness.
+
+| Pass | Merged evidence |
+| --- | --- |
+| Geometry / convex support / canvas core | 77 / 78 / 156 checks, typecheck |
+| Restriction activation / captured canvas and fixture integration | 72 / 44 checks, build/typecheck |
+| Color/resampler accounting / prepared inference handles | 26 / 19 checks, native build/typecheck; resource witnesses below |
+| Daemon no-replay and preview progress | 22 lifecycle/client + 11 preview/progress checks |
+| RAW compression boundary | Rebuilt addon, 9 adapter/public-CLI + 2 Rust checks across three modes |
+| Native diagnostics | 21 TypeScript + 5 Rust checks, native/TS build/typecheck; override model gate below |
+| [Untouched overview](assets/gates/show-overview/evidence.json) | 37 preview/daemon/develop cases across integration and focused correction; fresh visual review |
+| Paid retention / atomic removal / upscale-develop consumers | 85 / 18 / 21 checks and typecheck; no extra provider work for exposure replacement |
 
 **SAM pickup:** the release manifest now pins real export hashes with composed CPU parity checks.
 [Photographic evidence](assets/sam-photographic/) distinguishes passing coarse subject checks from
@@ -93,9 +77,13 @@ single/multi-mask references all fail detailed edges. Any extra refinement is a 
 [Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
 Docker's functional gate now consumes hash-verified models and runs the shared real-model test;
 the Mac default gate runs the same test and fails visibly without its documented weights.
-Public model hosting remains unfinished. The local Linux run exposed a plain-text ORT warning during
-native-addon static initialization before application logger setup. It violates the CLI's NDJSON
-stderr contract; fix the upstream load boundary without filtering the test harness. That gate is not yet passing.
+Public model hosting remains unfinished. The corrected ORT initialization patch plus integrated
+bounded diagnostic transport passes the unchanged Linux photographic CLI gate with an explicit
+candidate-library override, preserving warnings as NDJSON. The default runtime still selects the old
+archive: the active acquisition pass must make host, Docker and release builds consume one pinned
+source/patch recipe through Cargo. Its clean default Linux build, host/x64 and packaged-target checks
+remain open. [Runtime evidence](assets/ort-lazy-proof/README.md) separates the override proof from
+release-default acceptance; neither stderr filtering nor a model change is acceptable.
 
 **External evidence still outstanding:**
 G3 still requires an SSH-capable Mac session. Public CC0 RAW fixtures now cover lossless-L and lossy
