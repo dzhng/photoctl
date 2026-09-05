@@ -34,13 +34,13 @@ export const DEVELOP_OPERATORS = {
   highlights: {
     range: [-100, 100],
     operator: "grading_tone",
-    formula: "highlight luminance mask",
+    formula: "smooth 0.18-to-1.0 luminance-mask gain, one stop at full scale",
     tier: 2,
   },
   shadows: {
     range: [-100, 100],
     operator: "grading_tone",
-    formula: "shadow luminance mask",
+    formula: "inverse smooth 0.05-to-0.5 luminance-mask gain, one stop at full scale",
     tier: 2,
   },
   brightness: {
@@ -70,7 +70,7 @@ export const DEVELOP_OPERATORS = {
   vibrance: {
     range: [-100, 100],
     operator: "vibrance",
-    formula: "saturation weighted by (1-saturation) and protected skin hue",
+    formula: "Rec.2020 saturation weighted by (1-saturation), with display-hue skin protection",
     tier: 1,
   },
   cast: { range: [-100, 100], operator: "cast", formula: "opponent-axis chroma cast", tier: 2 },

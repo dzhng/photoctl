@@ -3,7 +3,7 @@
 Sub-slices, one seam or judged variable each: **8a1** immutable logical DAG/schema/revisions/full hashes · **8a2** canonical
 artifact publication, evaluator, graph inspection · **8b** develop dict/presets as a node (no pixels) · **8c1a** exact
 scene-linear graph artifacts · **8c1b** global per-pixel ops ·
-**8c2** masked ops (highlights/shadows/vibrance; skin crop) · **8c3** curves/levels · **8d1** local contrast
+**8c2** masked ops (highlights/shadows/vibrance; skin crop) ✓ · **8c3** curves/levels · **8d1** local contrast
 (brilliance/definition/sharpen) · **8d2** NR (texture crop) · **8d3** geometry (exact tests) · **8d4** filters + B&W (data).
 
 ## API seam
@@ -142,6 +142,12 @@ The later 8c1b production-route check used the same 7008×4672 LibRaw source and
 preserved structure and no obvious clipping, banding, blur, or halos. Existing edge fringing was only made easier to see.
 This verifies production pixel consumption, not that the brighter grade is aesthetically preferable.
 
+Slice 08c2's [G6 checkpoint](../assets/gates/G6-masked-operators.md) used vibrance as the sole production-route
+variable on that same landscape and crop. The edited render measurably increased chroma without moving geometry,
+but fresh critique did not prefer it and found the source's existing edge fringing marginally more visible. Because
+the committed fixture contains no person, skin protection remains verified by deterministic equal-saturation pixel
+tests rather than a visual acceptance claim.
+
 ## Must stay green: 01–07. Deps: 7b (functional), 7a (macos). Firewall: no layers, no providers, no learned NR, no CoreML, no VLM.
 
 ## Implementation notes
@@ -193,3 +199,9 @@ This verifies production pixel consumption, not that the brighter grade is aesth
   Planckian-locus delta relative to 6504 K onto the exact D65 anchor; near-zero, warm, and cool tests pin continuity and direction.
   Saturation uses the Rec.2020→XYZ Y row and tests preserve Y for both grayscale and boosted chroma. Needs David: no; these correct
   the declared working-space math without changing control ranges or order.
+
+- **2026-09-05 — 8c2 masked operators.** Highlights and shadows apply smooth Rec.2020-luminance masks and bounded stop gains
+  after the primary grade, followed by saturation and skin-protected vibrance. Vibrance preserves Rec.2020 luminance and weights
+  low-saturation colors more strongly; skin classification converts the working primaries before measuring hue. Needs David: the
+  deterministic seam is complete, but broader fixtures should tune the delegated masks and a committed portrait crop must judge
+  skin protection visually before aesthetic acceptance.

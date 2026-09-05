@@ -71,10 +71,13 @@ export type AtomicRenameOutcome = "installed" | "exists" | "unsupported";
 
 export interface GlobalDevelopParameters {
   exposure?: number;
+  highlights?: number;
+  shadows?: number;
   brightness?: number;
   contrast?: number;
   blackPoint?: number;
   saturation?: number;
+  vibrance?: number;
   temperatureOffsetK?: number;
   tint?: number;
   cast?: number;

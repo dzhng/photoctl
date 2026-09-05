@@ -1942,6 +1942,29 @@
 - **Verdict:** **Sound.** It preserves bounded search and avoids leaking host paths while giving humans a recognizable filename.
 - **Confidence:** High.
 
+### Slice 08c2 — Masked controls extend the one native grade in tonal order
+
+- **When:** Slice 08c2 masked-operator implementation, 2026-09-05.
+- **The choice:** The existing native scene-linear grade remains the sole pixel owner. It now applies shadows, highlights,
+  saturation, then vibrance after the primary controls. Highlights and shadows derive smooth masks from Rec.2020 luminance and
+  apply scalar stop gains, preserving chromaticity and unclamped working samples.
+- **The gap:** The plan named each operator and its masks, but did not pin their relative order beyond the existing fixed pipeline.
+- **The reach:** Every in-memory and artifact-backed caller receives identical deterministic ordering without a second evaluator;
+  later curve and local operators inherit one explicit insertion point.
+- **Verdict:** **Sound.** Tonal selection precedes colorfulness changes, and the shared owner keeps the module seam narrow.
+- **Confidence:** Medium; the delegated mask constants still need broader photographic tuning.
+
+### Slice 08c2 — Skin protection classifies hue after converting working primaries
+
+- **When:** Slice 08c2 vibrance implementation, 2026-09-05.
+- **The choice:** Vibrance converts Rec.2020 samples to linear-sRGB primaries only to classify hue, then attenuates the color boost
+  in a smooth warm-hue band. The operator remains color-only and deterministic; it does not claim face or semantic skin detection.
+- **The gap:** The plan required skin-hue protection but did not define the hue coordinate system or require a learned detector.
+- **The reach:** Working-space math stays Rec.2020 while the familiar hue classification avoids interpreting Rec.2020 channel
+  angles as sRGB hues. The protection can also affect warm non-skin colors, a deliberate limitation of this portable slice.
+- **Verdict:** **Sound.** This is the smallest portable interpretation of hue protection and leaves semantic masking to later owners.
+- **Confidence:** Medium; equal-saturation tests pin behavior, while visual portrait acceptance remains open for lack of a fixture.
+
 ## Needs user
 
 ### Slice 09a — The fake upscaler is the provisional release default

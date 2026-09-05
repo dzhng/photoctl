@@ -101,10 +101,13 @@ pub struct DevelopedImageResult {
 #[napi(object)]
 pub struct GlobalDevelopParameters {
     pub exposure: Option<f64>,
+    pub highlights: Option<f64>,
+    pub shadows: Option<f64>,
     pub brightness: Option<f64>,
     pub contrast: Option<f64>,
     pub black_point: Option<f64>,
     pub saturation: Option<f64>,
+    pub vibrance: Option<f64>,
     pub temperature_offset_k: Option<f64>,
     pub tint: Option<f64>,
     pub cast: Option<f64>,
@@ -192,16 +195,7 @@ pub fn apply_global_develop(
 ) -> AsyncTask<GlobalDevelopTask> {
     AsyncTask::new(GlobalDevelopTask {
         data: data.to_vec(),
-        parameters: GlobalDevelop {
-            exposure: parameters.exposure.unwrap_or_default() as f32,
-            brightness: parameters.brightness.unwrap_or_default() as f32,
-            contrast: parameters.contrast.unwrap_or_default() as f32,
-            black_point: parameters.black_point.unwrap_or_default() as f32,
-            saturation: parameters.saturation.unwrap_or_default() as f32,
-            temperature_offset_k: parameters.temperature_offset_k.unwrap_or_default() as f32,
-            tint: parameters.tint.unwrap_or_default() as f32,
-            cast: parameters.cast.unwrap_or_default() as f32,
-        },
+        parameters: global_develop(parameters),
     })
 }
 
@@ -216,17 +210,24 @@ pub fn apply_global_develop_artifact(
         data: data.to_vec(),
         pixel_offset: pixel_offset as usize,
         pixel_bytes: pixel_bytes as usize,
-        parameters: GlobalDevelop {
-            exposure: parameters.exposure.unwrap_or_default() as f32,
-            brightness: parameters.brightness.unwrap_or_default() as f32,
-            contrast: parameters.contrast.unwrap_or_default() as f32,
-            black_point: parameters.black_point.unwrap_or_default() as f32,
-            saturation: parameters.saturation.unwrap_or_default() as f32,
-            temperature_offset_k: parameters.temperature_offset_k.unwrap_or_default() as f32,
-            tint: parameters.tint.unwrap_or_default() as f32,
-            cast: parameters.cast.unwrap_or_default() as f32,
-        },
+        parameters: global_develop(parameters),
     })
+}
+
+fn global_develop(parameters: GlobalDevelopParameters) -> GlobalDevelop {
+    GlobalDevelop {
+        exposure: parameters.exposure.unwrap_or_default() as f32,
+        highlights: parameters.highlights.unwrap_or_default() as f32,
+        shadows: parameters.shadows.unwrap_or_default() as f32,
+        brightness: parameters.brightness.unwrap_or_default() as f32,
+        contrast: parameters.contrast.unwrap_or_default() as f32,
+        black_point: parameters.black_point.unwrap_or_default() as f32,
+        saturation: parameters.saturation.unwrap_or_default() as f32,
+        vibrance: parameters.vibrance.unwrap_or_default() as f32,
+        temperature_offset_k: parameters.temperature_offset_k.unwrap_or_default() as f32,
+        tint: parameters.tint.unwrap_or_default() as f32,
+        cast: parameters.cast.unwrap_or_default() as f32,
+    }
 }
 
 #[napi]

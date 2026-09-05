@@ -10,10 +10,13 @@ import { developDictSchema, type DevelopDict } from "./dict.js";
 const GLOBAL_KEYS = new Set([
   "preset",
   "exposure",
+  "highlights",
+  "shadows",
   "brightness",
   "contrast",
   "black_point",
   "saturation",
+  "vibrance",
   "white_balance",
   "cast",
 ]);
@@ -70,10 +73,13 @@ export async function applyDevelopArtifact(
 function nativeParameters(parameters: DevelopDict): GlobalDevelopParameters {
   return {
     exposure: parameters.exposure,
+    highlights: parameters.highlights,
+    shadows: parameters.shadows,
     brightness: parameters.brightness,
     contrast: parameters.contrast,
     blackPoint: parameters.black_point,
     saturation: parameters.saturation,
+    vibrance: parameters.vibrance,
     temperatureOffsetK: parameters.white_balance?.temp_offset_k,
     tint: parameters.white_balance?.tint,
     cast: parameters.cast,

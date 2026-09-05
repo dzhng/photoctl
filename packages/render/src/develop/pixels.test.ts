@@ -1,7 +1,14 @@
 import { expect, test } from "vitest";
-import { encodeArtifactLinearTiff } from "../linear-tiff.js";
+import { decodeArtifactLinearTiff, encodeArtifactLinearTiff } from "../linear-tiff.js";
 import { applyDevelop, applyDevelopArtifact } from "./pixels.js";
 import type { LinearImage } from "../decoder.js";
+
+function chroma(values: Float32Array, offset: number): number {
+  return (
+    Math.max(...values.subarray(offset, offset + 3)) -
+    Math.min(...values.subarray(offset, offset + 3))
+  );
+}
 
 test("develop applies exposure directly to scene-linear Rec.2020 pixels", async () => {
   const source = {
@@ -18,6 +25,106 @@ test("develop applies exposure directly to scene-linear Rec.2020 pixels", async 
   const developed = await applyDevelop(source, { exposure: 1 });
 
   expect(developed.data).toEqual(new Float32Array([0.25, 0.5, 1, 1.5, 2.5, -0.25]));
+});
+
+test("develop highlights select bright tones without moving deep shadows", async () => {
+  const source = {
+    w: 3,
+    h: 1,
+    data: new Float32Array([0.02, 0.02, 0.02, 0.18, 0.18, 0.18, 1.2, 1.2, 1.2]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, { highlights: -50 });
+
+  expect(developed.data[0]).toBeCloseTo(source.data[0]!, 6);
+  expect(developed.data[6]).toBeLessThan(source.data[6]! * 0.85);
+  expect(developed.data[6]).toBeGreaterThan(0.5);
+});
+
+test("develop shadows select dark tones without moving highlights", async () => {
+  const source = {
+    w: 3,
+    h: 1,
+    data: new Float32Array([0.02, 0.02, 0.02, 0.18, 0.18, 0.18, 1.2, 1.2, 1.2]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, { shadows: 50 });
+
+  expect(developed.data[0]).toBeGreaterThan(source.data[0]! * 1.3);
+  expect(developed.data[6]).toBeCloseTo(source.data[6]!, 6);
+});
+
+test("develop vibrance boosts muted colors more than saturated colors", async () => {
+  const source = {
+    w: 2,
+    h: 1,
+    data: new Float32Array([0.36, 0.42, 0.38, 0.1, 0.7, 0.25]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, { vibrance: 80 });
+  const mutedGain = chroma(developed.data, 0) / chroma(source.data, 0);
+  const saturatedGain = chroma(developed.data, 3) / chroma(source.data, 3);
+
+  expect(mutedGain).toBeGreaterThan(saturatedGain + 0.2);
+});
+
+test("develop vibrance protects warm skin hues", async () => {
+  // Channel rotations have equal saturation; only hue changes between the two pixels.
+  const source = {
+    w: 2,
+    h: 1,
+    data: new Float32Array([0.5, 0.3, 0.2, 0.2, 0.5, 0.3]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, { vibrance: 80 });
+  const skinGain = chroma(developed.data, 0) / chroma(source.data, 0);
+  const greenGain = chroma(developed.data, 3) / chroma(source.data, 3);
+
+  expect(skinGain).toBeLessThan(greenGain - 0.15);
+});
+
+test("masked develop controls cross the canonical artifact worker seam", async () => {
+  const source = {
+    w: 3,
+    h: 1,
+    data: new Float32Array([0.02, 0.02, 0.02, 0.5, 0.3, 0.2, 1.2, 1.2, 1.2]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const parameters = { highlights: -30, shadows: 25, vibrance: 40 };
+
+  const memory = await applyDevelop(source, parameters);
+  const artifact = await applyDevelopArtifact(
+    await encodeArtifactLinearTiff(source),
+    { w: source.w, h: source.h },
+    parameters,
+  );
+  const decoded = await decodeArtifactLinearTiff(artifact.bytes);
+
+  expect(decoded.data).toEqual(memory.data);
 });
 
 test("develop rejects camera-space pixels at its public boundary", async () => {

@@ -41,9 +41,12 @@ const BRADFORD_INVERSE: [[f64; 3]; 3] = [
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct GlobalDevelop {
     pub exposure: f32,
+    pub highlights: f32,
+    pub shadows: f32,
     pub brightness: f32,
     pub contrast: f32,
     pub saturation: f32,
+    pub vibrance: f32,
     pub black_point: f32,
     pub temperature_offset_k: f32,
     pub tint: f32,
@@ -110,10 +113,13 @@ pub(crate) fn validate_artifact_samples(
 #[derive(Clone, Copy)]
 struct PreparedGlobal {
     exposure: f32,
+    highlights: f32,
+    shadows: f32,
     offset: f32,
     black_pivot: f32,
     contrast: f32,
     saturation: f32,
+    vibrance: f32,
     white_balance: [[f64; 3]; 3],
     cast: f32,
 }
@@ -123,10 +129,13 @@ fn prepare_global(parameters: GlobalDevelop) -> Result<PreparedGlobal, String> {
     // the control normalizations below are photoctl data, not copied implementation code.
     Ok(PreparedGlobal {
         exposure: parameters.exposure.exp2(),
+        highlights: parameters.highlights / 100.0,
+        shadows: parameters.shadows / 100.0,
         offset: parameters.brightness * 0.002,
         black_pivot: parameters.black_point * 0.002,
         contrast: (parameters.contrast / 100.0).exp2(),
         saturation: 1.0 + parameters.saturation / 100.0,
+        vibrance: parameters.vibrance / 100.0,
         white_balance: white_balance_matrix(parameters.temperature_offset_k, parameters.tint)?,
         cast: parameters.cast * 0.001,
     })
@@ -152,16 +161,75 @@ fn grade_pixel(source: [f32; 3], parameters: PreparedGlobal) -> Result<[f32; 3],
             (exposed.abs() / 0.18).powf(parameters.contrast) * exposed.signum() * 0.18
         }
     });
+    if parameters.shadows != 0.0 {
+        let luminance = rec2020_luminance(graded);
+        let mask = 1.0 - smoothstep(0.05, 0.5, luminance);
+        graded = apply_tonal_gain(graded, parameters.shadows, mask);
+    }
+    if parameters.highlights != 0.0 {
+        let mask = smoothstep(0.18, 1.0, rec2020_luminance(graded));
+        graded = apply_tonal_gain(graded, parameters.highlights, mask);
+    }
     if parameters.saturation != 1.0 {
-        let luma = graded[0] * REC2020_TO_XYZ[1][0] as f32
-            + graded[1] * REC2020_TO_XYZ[1][1] as f32
-            + graded[2] * REC2020_TO_XYZ[1][2] as f32;
+        let luma = rec2020_luminance(graded);
         graded = graded.map(|sample| luma + parameters.saturation * (sample - luma));
+    }
+    if parameters.vibrance != 0.0 {
+        let maximum = graded.into_iter().fold(f32::NEG_INFINITY, f32::max);
+        let minimum = graded.into_iter().fold(f32::INFINITY, f32::min);
+        let saturation = ((maximum - minimum) / maximum.abs().max(1e-6)).clamp(0.0, 1.0);
+        let luma = rec2020_luminance(graded);
+        let skin_protection = 1.0 - 0.75 * skin_hue_weight(graded);
+        let factor = 1.0 + parameters.vibrance * (1.0 - saturation) * skin_protection;
+        graded = graded.map(|sample| luma + factor * (sample - luma));
     }
     if !graded.into_iter().all(f32::is_finite) {
         return Err("global develop produced a non-finite sample".to_owned());
     }
     Ok(graded)
+}
+
+fn apply_tonal_gain(pixel: [f32; 3], stops: f32, mask: f32) -> [f32; 3] {
+    let gain = (stops * mask).exp2();
+    pixel.map(|sample| sample * gain)
+}
+
+fn rec2020_luminance(pixel: [f32; 3]) -> f32 {
+    pixel[0] * REC2020_TO_XYZ[1][0] as f32
+        + pixel[1] * REC2020_TO_XYZ[1][1] as f32
+        + pixel[2] * REC2020_TO_XYZ[1][2] as f32
+}
+
+fn skin_hue_weight(pixel: [f32; 3]) -> f32 {
+    let display = REC2020_TO_SRGB
+        .map(|row| row[0] as f32 * pixel[0] + row[1] as f32 * pixel[1] + row[2] as f32 * pixel[2]);
+    let maximum = display.into_iter().fold(f32::NEG_INFINITY, f32::max);
+    let minimum = display.into_iter().fold(f32::INFINITY, f32::min);
+    let chroma = maximum - minimum;
+    if chroma <= 1e-6 || maximum <= 0.0 {
+        return 0.0;
+    }
+    let hue = if maximum == display[0] {
+        60.0 * ((display[1] - display[2]) / chroma).rem_euclid(6.0)
+    } else if maximum == display[1] {
+        60.0 * ((display[2] - display[0]) / chroma + 2.0)
+    } else {
+        60.0 * ((display[0] - display[1]) / chroma + 4.0)
+    };
+    if (8.0..=45.0).contains(&hue) {
+        1.0
+    } else if hue < 8.0 {
+        smoothstep(0.0, 8.0, hue)
+    } else if hue < 60.0 {
+        1.0 - smoothstep(45.0, 60.0, hue)
+    } else {
+        0.0
+    }
+}
+
+fn smoothstep(start: f32, end: f32, value: f32) -> f32 {
+    let position = ((value - start) / (end - start)).clamp(0.0, 1.0);
+    position * position * (3.0 - 2.0 * position)
 }
 
 fn white_balance_matrix(temperature_offset_k: f32, tint: f32) -> Result<[[f64; 3]; 3], String> {
@@ -466,6 +534,76 @@ mod tests {
         };
 
         assert!((luminance(&actual) - luminance(&input)).abs() < 1e-6);
+    }
+
+    #[test]
+    fn highlights_follow_a_smooth_bright_luminance_mask() {
+        let input = [0.02, 0.02, 0.02, 0.18, 0.18, 0.18, 1.2, 1.2, 1.2];
+        let actual = apply_global(
+            &input,
+            GlobalDevelop {
+                highlights: -50.0,
+                ..GlobalDevelop::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(&actual[..3], &input[..3]);
+        assert_eq!(&actual[3..6], &input[3..6]);
+        assert!(actual[6] < input[6] * 0.85 && actual[6] > 0.5);
+    }
+
+    #[test]
+    fn shadows_follow_a_smooth_dark_luminance_mask() {
+        let input = [0.02, 0.02, 0.02, 0.18, 0.18, 0.18, 1.2, 1.2, 1.2];
+        let actual = apply_global(
+            &input,
+            GlobalDevelop {
+                shadows: 50.0,
+                ..GlobalDevelop::default()
+            },
+        )
+        .unwrap();
+
+        assert!(actual[0] > input[0] * 1.3);
+        assert!(actual[3] > input[3]);
+        assert_eq!(&actual[6..], &input[6..]);
+    }
+
+    #[test]
+    fn vibrance_weights_low_saturation_and_protects_skin_hues() {
+        let input = [
+            0.36, 0.42, 0.38, // muted green
+            0.1, 0.7, 0.25, // saturated green
+            0.5, 0.3, 0.2, // warm skin hue
+            0.2, 0.5, 0.3, // equal-saturation green hue
+        ];
+        let actual = apply_global(
+            &input,
+            GlobalDevelop {
+                vibrance: 80.0,
+                ..GlobalDevelop::default()
+            },
+        )
+        .unwrap();
+        let chroma = |pixel: &[f32]| {
+            pixel.iter().copied().fold(f32::NEG_INFINITY, f32::max)
+                - pixel.iter().copied().fold(f32::INFINITY, f32::min)
+        };
+        let gain = |offset: usize| {
+            chroma(&actual[offset..offset + 3]) / chroma(&input[offset..offset + 3])
+        };
+
+        assert!(gain(0) > gain(3) + 0.2);
+        assert!(gain(6) < gain(9) - 0.15);
+        for (before, after) in input.chunks_exact(3).zip(actual.chunks_exact(3)) {
+            assert!(
+                (rec2020_luminance(before.try_into().unwrap())
+                    - rec2020_luminance(after.try_into().unwrap()))
+                .abs()
+                    < 1e-6
+            );
+        }
     }
 
     #[test]
