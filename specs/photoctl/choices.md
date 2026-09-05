@@ -22,6 +22,40 @@
 
 ## Sound
 
+### Slice 12e1 — Selection intent and fill coverage are different graph values
+
+- **When:** Effective-mask integration, 2026-09-05.
+- **The choice:** A subject's original selection remains an immutable mask ancestor. A derived
+  `mask@2` recipe computes expanded or feathered coverage. The explicit fill compositor uses that
+  fractional coverage once; the outer layer uses its binary support, meaning every nonzero sample is
+  one. For a half-covered edge, this yields half-strength paint, not a quarter from applying alpha twice.
+- **The gap:** The previous layer and fill compositors both used the same mask. Hard selections hid
+  that double application. Replacing the original selection with expanded coverage would also change
+  later movement anchors and the hole left behind by a moved subject.
+- **The reach:** Migration 16 adds unary derived masks alongside pinned mask artifacts. Refresh,
+  repetition, and transforms recover original intent instead of repeatedly expanding a prior result.
+  Positioning/vacancy use the original selection; coverage/support follow their separate graph ancestry.
+- **Verdict:** **Sound.** Each mask has one meaning, and transformation must precede support derivation
+  so resampling cannot reintroduce fractional coverage at the outer compositor.
+- **Confidence:** High; the single-alpha and original-selection movement regressions fail under the
+  former behavior. Crop/offline support projection is an explicit integration check, not assumed proven.
+
+### Slice 12e1 — Hard fitting thresholds coverage while free fitting preserves it
+
+- **When:** Effective-mask integration, 2026-09-05.
+- **The choice:** Strict/expand treat at least half coverage as selected, then use the existing square
+  native dilation for expansion. Free fitting preserves fractional selection before its default feather.
+  Expansion is bounded to 4096 base pixels. A declared whole-frame provider edit is refused only for
+  strict mode; other fits still protect every sample outside the deterministic effective mask.
+- **The gap:** The plan named hard/expanded/free fits but did not specify the hard threshold or a radius
+  ceiling. Its whole-frame refusal was specified for strict mode, not a reason to reject every softer fit.
+- **The reach:** Edge coverage is deterministic and independent of provider behavior. The bound limits
+  the command's expansion request; native mask implementation remains the morphology owner.
+- **Verdict:** **Sound.** Hard fitting has an explicit threshold and soft modes retain their intended
+  coverage without delegating exterior protection to the model.
+- **Confidence:** Medium; the mechanics are verified, but square expansion and feather aesthetics still
+  require the named photographic quality review.
+
 ### Slice 14 — One CLI tarball contains the private runtime modules
 
 - **When:** Standalone packaging integration, 2026-09-05.

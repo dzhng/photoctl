@@ -29,7 +29,7 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   fixture gold exam. Finish the full-feature fake-generation packed journey and report artifacts, then
   real-drive acceptance. A fixture exam does not prove an unseen drive. See [Slice 14](slices/14-gold-exam-and-release.md).
 - Complete the still-unimplemented fill controls and outpaint canvas in [Slice 12](slices/12-fill.md),
-  with input-size capping/`--full-res` implemented and reference/init controls still pending,
+  with fit/strength and input-size capping/`--full-res` implemented and reference/init controls still pending,
   then reconcile its photographic/live evidence and the separate
   prompt/control quality comparisons in [Slice 13](slices/13-generative-extras-and-markup.md).
   Keep actual missing prerequisites distinct from implementation still possible without them.
@@ -55,6 +55,9 @@ scene-linear canonical artifacts; lazy preview materialization from immutable gr
 Generation owns migration 14 and markup migration 15. Full-frame reimagine/relight currently require
 an uncropped, unrotated exact-size base; see Slice 13 for that accepted limitation. Markup stays a final,
 removable presentation node, with editable vectors and the revision updated in the same transaction.
+Migration 16 owns derived effective-mask recipes: the original selection controls positioning/vacancy,
+the effective mask controls fractional coverage, and derived binary support prevents double coverage.
+The mask integration pass must preserve that support after crop/offline projection as well.
 
 Update this handoff after each pass and continue to the next unfinished requirement.
 
