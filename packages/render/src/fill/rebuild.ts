@@ -1,7 +1,7 @@
 import type { JsonValue } from "../graph/types.js";
 import type { NodeDraft, NodeReference } from "../graph/store.js";
 import type { TransformMatrix } from "../transforms.js";
-import { composeTransformMatrices } from "../transforms.js";
+import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
 import type { FillBranchDescriptor } from "./branch.js";
 
 export function rebuildFillBranch(input: {
@@ -23,6 +23,7 @@ export function rebuildFillBranch(input: {
   const resampleKey = `${input.key}-resample`;
   const maskKey = `${input.key}-mask-transform`;
   const compositeKey = `${input.key}-mask-composite`;
+  const supportKey = `${input.key}-mask-support`;
   const fromGeneration: TransformMatrix = [
     input.generationDimensions.w / input.placementDimensions.w,
     0,
@@ -52,8 +53,24 @@ export function rebuildFillBranch(input: {
       localKey: maskKey,
       kind: "transform",
       recipeVersion: 1,
-      parameters: { matrix: [...input.matrix] },
+      parameters: {
+        matrix: [
+          ...(input.branch.fit
+            ? composeTransformMatrices(
+                input.matrix,
+                invertTransformMatrix(input.branch.generationInputMatrix),
+              )
+            : input.matrix),
+        ],
+      },
       inputs: [{ nodeId: input.branch.permanentMaskNodeId }],
+    },
+    {
+      localKey: supportKey,
+      kind: "mask",
+      recipeVersion: 2,
+      parameters: { operation: "support" },
+      inputs: [{ localKey: maskKey }],
     },
     {
       localKey: compositeKey,
@@ -77,5 +94,5 @@ export function rebuildFillBranch(input: {
       content = { localKey };
     }
   }
-  return { nodes, content, mask: { localKey: maskKey }, compositeKey };
+  return { nodes, content, mask: { localKey: supportKey }, compositeKey };
 }

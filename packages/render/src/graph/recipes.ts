@@ -8,6 +8,11 @@ import type {
   SourceExecutionProvenance,
 } from "./types.js";
 import { developDictSchema } from "../develop/dict.js";
+import { effectiveMaskParametersSchema } from "../mask-operations.js";
+
+const pinnedMaskParametersSchema = z
+  .object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) })
+  .strict();
 
 const jsonSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
@@ -183,10 +188,11 @@ export const imageNodeRegistry = {
     true,
   ),
   mask: definition(
-    z.object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) }).strict(),
+    z.union([pinnedMaskParametersSchema, effectiveMaskParametersSchema]),
     0,
-    0,
+    1,
     true,
+    [1, 2],
   ),
   delta: definition(developDictSchema, 1, 1, true),
   heal: definition(
@@ -342,11 +348,15 @@ export function canonicalParameters(
 ): JsonValue {
   assertRecipeVersion(kind, recipeVersion);
   const schema =
-    kind === "resample"
+    kind === "mask"
       ? recipeVersion === 1
-        ? resampleV1ParametersSchema
-        : resampleParametersSchema
-      : imageNodeRegistry[kind].parameters;
+        ? pinnedMaskParametersSchema
+        : effectiveMaskParametersSchema
+      : kind === "resample"
+        ? recipeVersion === 1
+          ? resampleV1ParametersSchema
+          : resampleParametersSchema
+        : imageNodeRegistry[kind].parameters;
   return sortJson(schema.parse(value) as JsonValue);
 }
 
@@ -423,6 +433,8 @@ function assertInputCount(
 }
 
 function assertVersionedInputCount(kind: ImageNodeKind, version: number, count: number): void {
+  if (kind === "mask" && count !== version - 1)
+    throw new Error(`mask recipe version ${version} requires ${version - 1} inputs`);
   if (kind === "generate") {
     if (version === 1 && count !== 1) {
       throw new Error("generate recipe version 1 requires one input");

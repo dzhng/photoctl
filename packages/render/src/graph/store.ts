@@ -812,7 +812,7 @@ async function assertMaskArtifactsAvailable(
      JOIN image_nodes AS node ON node.photo_id = $1 AND node.id = ancestors.node_id
      LEFT JOIN image_artifacts AS artifact
        ON artifact.artifact_hash = node.parameters->>'artifact_hash'
-     WHERE node.kind = 'mask'
+     WHERE node.kind = 'mask' AND node.recipe_version = 1
        AND (COALESCE(artifact.artifact_available, false) = false OR artifact.media_type <> $3)
      LIMIT 1`,
     [photoId, nodeId, MASK_ARTIFACT_MEDIA_TYPE],
@@ -882,7 +882,7 @@ async function nodePixelKind(
   if (!row) throw new Error(`Graph input does not exist for photo: ${nodeId}`);
   if (row.kind === "source") return "rgb";
   if (row.kind === "solid") return "rgb";
-  if (row.kind === "mask") return "mask";
+  if (row.kind === "mask" && row.recipe_version === 1) return "mask";
   if (row.kind === "generate" && row.recipe_version === 2) return "rgb";
   const inputIds = await loadPixelInputs(transaction, photoId, nodeId, row.kind);
   const inputKinds = await mapInOrder(inputIds, async (input) => {
@@ -893,6 +893,10 @@ async function nodePixelKind(
     const actual = inputKinds[0];
     if (declared !== actual) throw new Error("Output pixel format disagrees with its input");
     return actual;
+  }
+  if (row.kind === "mask") {
+    assertPixelInputKinds(row.kind, inputKinds, ["mask"]);
+    return "mask";
   }
   if (row.kind === "resample" && row.recipe_version === 2) {
     assertPixelInputKinds(row.kind, inputKinds, ["rgb"]);

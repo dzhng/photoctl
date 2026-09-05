@@ -1,5 +1,5 @@
 import { PhotoctlError, type Warning } from "@photoctl/protocol";
-import { publishArtifact, readArtifactImage, readArtifactMask } from "../artifacts/publication.js";
+import { publishArtifact, readArtifactImage } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
 import {
   canonicalNodeRecipe,
@@ -21,7 +21,9 @@ import { unfilledVacancyLayerIds } from "../layers/status.js";
 import type { Image16 } from "../source-render.js";
 import { planFillCrop } from "./crop.js";
 import type { SourceContextDensity } from "./density.js";
-import { strictEffectiveMask } from "./fit.js";
+import { resolveFillFit } from "./fit.js";
+import type { FillFit } from "../mask-operations.js";
+import { prepareFillMask } from "./mask.js";
 import { findReusableFillLineage } from "./reuse.js";
 import type { ResolvedUpscalePolicy } from "./upscale-policy.js";
 import { fillProviderInputs, image16Png } from "./external-pixels.js";
@@ -122,7 +124,7 @@ export interface FillUpscaleDependencies {
   };
 }
 
-export async function fillLayerStrict(
+export async function fillLayer(
   database: GraphDatabase,
   libraryPath: string,
   request: {
@@ -131,6 +133,7 @@ export async function fillLayerStrict(
     prompt: string;
     promptVersion: number;
     operation: "remove" | "prompt";
+    fit?: FillFit;
     pad?: number;
     fullResolution?: boolean;
     seed?: number;
@@ -159,28 +162,28 @@ export async function fillLayerStrict(
     nodeId: fillBaseNodeId,
     source: request.source,
   });
-  const maskEvaluation = await evaluateGraphNode({
-    database,
-    libraryPath,
-    photoId: request.photoId,
-    nodeId: selected.maskNodeId,
-    source: request.source,
-  });
   const base = await readArtifactImage(
     baseEvaluation.artifact.path,
     baseEvaluation.artifact.artifactHash,
   );
-  const mask = strictEffectiveMask(
-    await readArtifactMask(maskEvaluation.artifact.path, maskEvaluation.artifact.artifactHash),
-  );
+  const fit = request.fit ?? resolveFillFit(request.operation);
+  const effective = await prepareFillMask(database, libraryPath, request, selected, fit);
+  const mask = effective.mask;
   if (base.w !== mask.w || base.h !== mask.h) throw new Error("Fill content and mask disagree");
   const crop = planFillCrop(mask, request.pad);
   const reusable = fillingVacancy
     ? undefined
-    : await findReusableFillLineage(database, libraryPath, request, selected, crop, {
-        w: base.w,
-        h: base.h,
-      });
+    : await findReusableFillLineage(
+        database,
+        libraryPath,
+        { ...request, effectiveMaskNodeId: effective.effectiveNodeId },
+        selected,
+        crop,
+        {
+          w: base.w,
+          h: base.h,
+        },
+      );
   const strictBaseNodeId = reusable?.baseNodeId ?? fillBaseNodeId;
   const sourceContext = reusable?.sourceContext ?? request.sourceContext;
   let generationNodeId: `node_${string}`;
@@ -274,7 +277,7 @@ export async function fillLayerStrict(
           request.seed,
         ),
       validate: ({ wholeFrame }) => {
-        if (wholeFrame)
+        if (wholeFrame && fit.mode === "strict")
           throw new PhotoctlError(
             "provider_whole_frame",
             "Strict fill refused a provider result that edited the whole frame",
@@ -284,6 +287,7 @@ export async function fillLayerStrict(
       request: (executionId, returned) => ({
         execution_id: executionId,
         operation: request.operation,
+        fit,
         crop: [crop.x, crop.y, crop.w, crop.h],
         sent: [sent.image.w, sent.image.h],
         full_res: request.fullResolution ?? false,
@@ -349,6 +353,7 @@ export async function fillLayerStrict(
   const { nodes, artifacts, executions, warnings } = density;
   const placementInput = density.output;
   nodes.push(
+    ...effective.nodes,
     {
       localKey: "resample",
       kind: "resample",
@@ -369,7 +374,7 @@ export async function fillLayerStrict(
       inputs: [
         { nodeId: strictBaseNodeId },
         { localKey: "resample" },
-        { nodeId: selected.maskNodeId },
+        { localKey: "effective-mask" },
       ],
     },
   );
@@ -379,7 +384,8 @@ export async function fillLayerStrict(
     z: layer.z,
     contentNode:
       layer.id === selected.id ? { localKey: "strict-composite" } : { nodeId: layer.contentNodeId },
-    maskNode: { nodeId: layer.maskNodeId },
+    maskNode:
+      layer.id === selected.id ? { localKey: "fill-support" } : { nodeId: layer.maskNodeId },
     opacity: layer.opacity,
     blend: layer.blend,
     enabled: layer.enabled,

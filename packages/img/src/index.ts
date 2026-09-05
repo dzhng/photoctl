@@ -29,6 +29,13 @@ export interface DevelopedImage {
 }
 
 interface NativeBinding {
+  thresholdMask(
+    data: Float32Array,
+    width: number,
+    height: number,
+    threshold: number,
+    inclusive: boolean,
+  ): Promise<Float32Array>;
   Sam2OnnxRuntime: new (encoder: Uint8Array, decoder: Uint8Array) => NativeSam2OnnxRuntime;
   sam2MaskFromLogits(
     logits: Float32Array,
@@ -528,6 +535,18 @@ export async function featherMask(
   radius: number,
 ): Promise<Float32Array> {
   return asFloat32Array(await requiredBinding().featherMask(data, width, height, radius));
+}
+
+export async function thresholdMask(
+  data: Float32Array,
+  width: number,
+  height: number,
+  threshold: number,
+  inclusive: boolean,
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().thresholdMask(data, width, height, threshold, inclusive),
+  );
 }
 
 export async function transformMaskPixels(

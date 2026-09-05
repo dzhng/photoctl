@@ -19,7 +19,12 @@ import {
 import type { ExternalExecutionProvenance } from "../graph/types.js";
 import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { maskCentroid } from "../layers/operations.js";
-import { resolveTransformMatrix, transformPoint, type Transform } from "../transforms.js";
+import {
+  resolveTransformMatrix,
+  transformPoint,
+  invertTransformMatrix,
+  type Transform,
+} from "../transforms.js";
 import { describeFillBranch, directUpscaleChildren } from "./branch.js";
 import { planOutputDensity } from "./density.js";
 import { cropMappedExternalImage, decodeExternalImage, image16Png } from "./external-pixels.js";
@@ -49,12 +54,15 @@ export async function transformFillLayer(
   const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
   if (!branch) return undefined;
 
-  const centroid = await maskCentroid(
+  const maskCenter = await maskCentroid(
     database,
     libraryPath,
     request.photoId,
-    branch.permanentMaskNodeId,
+    branch.selectionNodeId ?? branch.permanentMaskNodeId,
   );
+  const centroid = branch.fit
+    ? transformPoint(invertTransformMatrix(branch.generationInputMatrix), maskCenter)
+    : maskCenter;
   const anchor =
     request.relative && request.transform.anchor === "centroid"
       ? transformPoint(branch.currentMatrix, centroid)

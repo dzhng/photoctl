@@ -176,7 +176,7 @@ test("the current graph fixture preserves its active lazy source revision", asyn
     expect(result).toEqual({
       fromVersion: 5,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      applied: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     });
     expect(document.rows).toEqual([
       {
@@ -213,7 +213,7 @@ test("the current delivery fixture preserves export history", async () => {
     expect(result).toEqual({
       fromVersion: 6,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [7, 8, 9, 10, 11, 12, 13, 14, 15],
+      applied: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     });
     expect(history.rows).toEqual([
       {
@@ -242,7 +242,7 @@ test("the current provider fixture has the bounded external-execution seam", asy
     expect(result).toEqual({
       fromVersion: 7,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [8, 9, 10, 11, 12, 13, 14, 15],
+      applied: [8, 9, 10, 11, 12, 13, 14, 15, 16],
     });
     expect(column.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
     const revisionMetadata = await db.query<{ is_nullable: string; data_type: string }>(
@@ -292,7 +292,7 @@ test("the v8 search fixture gains typed base and output roots without changing i
     expect(result).toEqual({
       fromVersion: 8,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [9, 10, 11, 12, 13, 14, 15],
+      applied: [9, 10, 11, 12, 13, 14, 15, 16],
     });
     expect(document.rows).toEqual([
       { root_name: "base", node_id: `node_${"1".repeat(64)}`, matched: true },
@@ -347,7 +347,7 @@ test("the v9 layer fixture gains the explicit deterministic solid RGB node kind"
     expect(result).toEqual({
       fromVersion: 9,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [10, 11, 12, 13, 14, 15],
+      applied: [10, 11, 12, 13, 14, 15, 16],
     });
     expect(kinds.rows).toEqual([{ kind: "solid" }]);
   } finally {
@@ -370,7 +370,7 @@ test("the v13 revision-metadata fixture preserves its auto-enhance undo contract
     expect(result).toEqual({
       fromVersion: 13,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [14, 15],
+      applied: [14, 15, 16],
     });
     expect(revision.rows).toEqual([
       {
@@ -415,7 +415,11 @@ test("the v14 fixture preserves a source-less generated photo and its provider p
        WHERE node.kind = 'generate'`,
     );
 
-    expect(result).toEqual({ fromVersion: 14, toVersion: 15, applied: [15] });
+    expect(result).toEqual({
+      fromVersion: 14,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [15, 16],
+    });
     expect(generated.rows).toEqual([
       { tag: "generated", recipe_version: 2, inputs: "0", output_kind: "output", seed: 7 },
     ]);
@@ -432,7 +436,7 @@ test("the v15 markup fixture preserves its stable vector document", async () => 
     const result = await migrate(db);
     const markup = await db.query<{ items: unknown }>("SELECT items FROM markup");
 
-    expect(result).toEqual({ fromVersion: 15, toVersion: 15, applied: [] });
+    expect(result).toEqual({ fromVersion: 15, toVersion: LATEST_SCHEMA_VERSION, applied: [16] });
     expect(markup.rows).toEqual([
       {
         items: [
@@ -444,6 +448,32 @@ test("the v15 markup fixture preserves its stable vector document", async () => 
             color: "#ff0000",
           },
         ],
+      },
+    ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the v16 fixture preserves derived effective-mask intent and its original selection", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v16.pgsql"));
+    expect(await migrate(db)).toEqual({
+      fromVersion: 16,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [],
+    });
+    const masks = await db.query<{ parameters: unknown; source_parameters: unknown }>(
+      `SELECT node.parameters, source.parameters AS source_parameters
+       FROM image_nodes node JOIN image_node_inputs edge ON (edge.photo_id, edge.node_id) = (node.photo_id, node.id)
+       JOIN image_nodes source ON (source.photo_id, source.id) = (edge.photo_id, edge.input_node_id)
+       WHERE node.kind = 'mask' AND node.recipe_version = 2`,
+    );
+    expect(masks.rows).toEqual([
+      {
+        parameters: { operation: "fit", mode: "expand", expand_px: 24, feather_px: 2 },
+        source_parameters: { artifact_hash: `a_${"a".repeat(64)}` },
       },
     ]);
   } finally {

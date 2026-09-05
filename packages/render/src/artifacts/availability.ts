@@ -110,7 +110,7 @@ export async function retainedArtifacts(
        FROM retained_nodes AS retained
        JOIN image_nodes AS node
          ON (node.photo_id, node.id) = (retained.photo_id, retained.node_id)
-       WHERE node.kind = 'mask'
+       WHERE node.kind = 'mask' AND node.recipe_version = 1
      )
      SELECT DISTINCT artifact.artifact_hash, artifact.artifact_available
      FROM retained_artifacts AS retained

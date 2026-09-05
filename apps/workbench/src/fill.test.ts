@@ -5,7 +5,7 @@ import { initializeLibrary, openLibrary } from "@photoctl/library";
 import {
   createManualLayer,
   evaluateGraphNode,
-  fillLayerStrict,
+  fillLayer,
   moveLayer,
   resolveUpscalePolicy,
 } from "@photoctl/render";
@@ -57,7 +57,7 @@ test("fill renders one self-contained native crop from the immutable before, gen
     .toBuffer();
   let providerCalls = 0;
   let upscaleCalls = 0;
-  await fillLayerStrict(library, libraryPath, {
+  await fillLayer(library, libraryPath, {
     photoId,
     layer: layer.layerId,
     prompt: "remove <script>alert('boundary')</script>",

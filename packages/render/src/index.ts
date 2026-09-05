@@ -45,6 +45,7 @@ export * from "./fill/branch.js";
 export * from "./fill/density.js";
 export * from "./fill/generation.js";
 export * from "./fill/fit.js";
+export * from "./mask-operations.js";
 export * from "./fill/pipeline.js";
 export * from "./fill/refresh.js";
 export * from "./fill/rebuild.js";

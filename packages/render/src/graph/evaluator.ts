@@ -1,4 +1,5 @@
 /* eslint-disable no-await-in-loop -- Ordered execution inputs are registered sequentially in one transaction. */
+import { applyEffectiveMask, effectiveMaskParametersSchema } from "../mask-operations.js";
 import {
   artifactPath,
   MASK_ARTIFACT_MEDIA_TYPE,
@@ -224,7 +225,7 @@ async function evaluateOne(
   if (node.kind === "output") {
     if (inputs.length !== 1) throw new Error("Output evaluation requires one input artifact");
     artifact = inputs[0].artifact;
-  } else if (node.kind === "mask") {
+  } else if (node.kind === "mask" && node.recipeVersion === 1) {
     artifact = await loadPinnedMaskArtifact(request.database, request.libraryPath, node.parameters);
   } else {
     const operation =
@@ -324,7 +325,7 @@ function assertOperationArtifactType(
   inputs: EvaluatedNode[],
 ): void {
   const expected =
-    kind === "transform" || kind === "resample" || kind === "crop"
+    kind === "transform" || kind === "resample" || kind === "crop" || kind === "mask"
       ? inputs[0]?.artifact.mediaType
       : "image/tiff";
   if (artifact.mediaType !== expected) {
@@ -345,6 +346,15 @@ async function runOperation(
 > {
   const operation = request.operations?.[kind];
   if (!operation) {
+    if (kind === "mask" && recipeVersion === 2) {
+      const input = inputs[0]!.artifact;
+      return {
+        image: await applyEffectiveMask(
+          await readArtifactMask(input.path, input.artifactHash),
+          effectiveMaskParametersSchema.parse(parameters),
+        ),
+      };
+    }
     if (kind === "develop" || kind === "delta") {
       if (inputs.length !== 1) throw new Error("Develop evaluation requires one input artifact");
       const input = inputs[0].artifact;

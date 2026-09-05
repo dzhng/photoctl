@@ -8,6 +8,7 @@ import {
 } from "../graph/recipes.js";
 import type { GraphDatabase } from "../graph/store.js";
 import type { ExternalExecutionProvenance } from "../graph/types.js";
+import { effectiveMaskParametersSchema, type FillFit } from "../mask-operations.js";
 import {
   composeTransformMatrices,
   invertTransformMatrix,
@@ -51,6 +52,8 @@ export interface FillBranchDescriptor {
   /** Maps original generation pixels into the untransformed layer coordinate space. */
   generationPlacementMatrix: TransformMatrix;
   permanentMaskNodeId: string;
+  fit?: FillFit;
+  selectionNodeId?: string;
   upscaleIdentity?: FillUpscaleIdentity;
   sourceContext: { tier: string; pixelScale: number; resolutionLimited: boolean };
   upscaleExecution?: GraphNodeRecord["executions"][number];
@@ -148,17 +151,29 @@ export async function describeFillBranch(
   if (!generationInput) return undefined;
   const mask = await inspectModifierPrefix(database, photoId, composite.inputNodeIds[2]!);
   if (!mask) return undefined;
+  const maskFit =
+    mask.terminal.kind === "mask" && mask.terminal.recipeVersion === 2
+      ? effectiveMaskParametersSchema.safeParse(mask.terminal.parameters)
+      : undefined;
+  const fit = maskFit?.success && maskFit.data.operation === "fit" ? maskFit.data : undefined;
   const outerMatrix = combinedTransform(descendants);
   const baseMatrix = combinedTransform(base.nodes);
   const maskMatrix = combinedTransform(mask.nodes);
-  const currentMatrix = composeTransformMatrices(outerMatrix, maskMatrix);
+  const generationInputMatrix = storedInputMatrix ?? combinedTransform(generationInput.nodes);
+  const currentMatrix = composeTransformMatrices(
+    outerMatrix,
+    composeTransformMatrices(maskMatrix, fit ? generationInputMatrix : [1, 0, 0, 1, 0, 0]),
+  );
   const resampleMatrix = await placementMatrix(
     database,
     resample,
     crop,
     generationRequestCandidate.returned,
   );
-  if (!resampleMatrix || (resample.recipeVersion === 1 && !sameMatrix(baseMatrix, maskMatrix)))
+  if (
+    !resampleMatrix ||
+    (resample.recipeVersion === 1 && !fit && !sameMatrix(baseMatrix, maskMatrix))
+  )
     return undefined;
   const currentPlacement = composeTransformMatrices(outerMatrix, resampleMatrix);
   const generationPlacementMatrix = composeTransformMatrices(
@@ -188,10 +203,11 @@ export async function describeFillBranch(
     crop,
     frame,
     currentMatrix,
-    generationInputMatrix: storedInputMatrix ?? combinedTransform(generationInput.nodes),
+    generationInputMatrix,
     generationDimensions: generationRequestCandidate.returned,
     generationPlacementMatrix,
     permanentMaskNodeId: mask.terminal.id,
+    ...(fit ? { fit, selectionNodeId: mask.terminal.inputNodeIds[0]! } : {}),
     ...(upscaleIdentity ? { upscaleIdentity } : {}),
     sourceContext,
     ...(upscaleExecution ? { upscaleExecution } : {}),

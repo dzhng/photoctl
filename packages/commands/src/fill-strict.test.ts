@@ -6,6 +6,8 @@ import {
   planOutputDensity,
   readArtifactLinear,
   readArtifactMask,
+  loadActiveDocument,
+  describeFillBranch,
 } from "@photoctl/render";
 import { exitCodeFor, fillStrictDataSchema } from "@photoctl/protocol";
 import { startGatewayFixture } from "@photoctl/test-harness/gateway-fixture";
@@ -313,6 +315,312 @@ test("an unexplained provider aspect change is discarded before graph activation
   }
 });
 
+test("expanded fill changes the final document outside the selection and preserves its effective exterior", async () => {
+  const fixture = await fillFixture();
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "8,6,8,8"]),
+    ) as { layer_id: string };
+    const filled = fillStrictDataSchema.parse(
+      success(
+        await command(fixture, "fill", [
+          fixture.id,
+          "--layer",
+          segmented.layer_id,
+          "--prompt",
+          "A blue vase",
+          "--fit",
+          "expand=2",
+          "--pad",
+          "0",
+        ]),
+      ),
+    );
+    const evaluated = await evaluateGraphNode({
+      database: fixture.handle,
+      libraryPath: fixture.handle.path,
+      photoId: fixture.id,
+      nodeId: filled.graph.output_node,
+      source: fixture.sourceProducer,
+    });
+    const image = await readArtifactLinear(evaluated.artifact.path);
+    expect(image.data[(8 * 40 + 7) * 3]).not.toBe(0.25);
+    expect(image.data.slice((8 * 40 + 5) * 3, (8 * 40 + 5) * 3 + 3)).toEqual(
+      new Float32Array([0.25, 0.25, 0.25]),
+    );
+    const repeated = fillStrictDataSchema.parse(
+      success(
+        await command(fixture, "fill", [
+          fixture.id,
+          "--layer",
+          segmented.layer_id,
+          "--prompt",
+          "A blue vase",
+          "--fit",
+          "expand=2",
+          "--pad",
+          "0",
+        ]),
+      ),
+    );
+    expect(repeated.graph.render_hash).toBe(filled.graph.render_hash);
+    expect(await generatedExecutionCount(fixture)).toBe(1);
+    const currentMask = async () => {
+      const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
+      const layer = document.layers.find(({ id }) => id === segmented.layer_id)!;
+      const branch = (await describeFillBranch(fixture.handle, fixture.id, layer.contentNodeId))!;
+      const evaluated = await evaluateGraphNode({
+        database: fixture.handle,
+        libraryPath: fixture.handle.path,
+        photoId: fixture.id,
+        nodeId: branch.maskNodeId,
+        source: fixture.sourceProducer,
+      });
+      return (await readArtifactMask(evaluated.artifact.path)).data;
+    };
+    success(
+      await command(fixture, "layer", ["transform", fixture.id, segmented.layer_id, "--dx", "3"]),
+    );
+    const movedMask = await currentMask();
+    success(
+      await command(fixture, "fill", [
+        fixture.id,
+        "--layer",
+        segmented.layer_id,
+        "--prompt",
+        "A blue vase",
+        "--fit",
+        "expand=2",
+        "--pad",
+        "0",
+      ]),
+    );
+    expect(await currentMask()).toEqual(movedMask);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("moving an expanded edge selection anchors the subject and vacancy to original selection intent", async () => {
+  const fixture = await fillFixture();
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "0,6,8,8"]),
+    ) as { layer_id: string };
+    success(
+      await command(fixture, "fill", [
+        fixture.id,
+        "--layer",
+        segmented.layer_id,
+        "--prompt",
+        "Blue vase",
+        "--fit",
+        "expand=2",
+      ]),
+    );
+    const moved = success(
+      await command(fixture, "fill", [fixture.id, "--move", segmented.layer_id, "--to", "20,16"]),
+    ) as { matrix: number[]; vacancy_layer_id: string };
+    expect(moved.matrix).toEqual([1, 0, 0, 1, 16, 6]);
+    const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
+    const vacancy = document.layers.find(({ id }) => id === moved.vacancy_layer_id)!;
+    const evaluated = await evaluateGraphNode({
+      database: fixture.handle,
+      libraryPath: fixture.handle.path,
+      photoId: fixture.id,
+      nodeId: vacancy.maskNodeId,
+      source: fixture.sourceProducer,
+    });
+    const mask = await readArtifactMask(evaluated.artifact.path);
+    expect([...mask.data].filter((value) => value > 0)).toHaveLength(64);
+    expect(mask.data[6 * 40 + 8]).toBe(0);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("feather coverage is applied once through fill, fractional transforms, and refresh", async () => {
+  const fixture = await fillFixture();
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "16,10,8,8"]),
+    ) as { layer_id: string };
+    success(
+      await command(fixture, "fill", [
+        fixture.id,
+        "--layer",
+        segmented.layer_id,
+        "--remove",
+        "--strength",
+        "0.03125",
+        "--pad",
+        "0",
+      ]),
+    );
+    const assertCoverage = async () => {
+      const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
+      const layer = document.layers.find(({ id }) => id === segmented.layer_id)!;
+      const branch = (await describeFillBranch(fixture.handle, fixture.id, layer.contentNodeId))!;
+      expect(branch.fit).toEqual({ operation: "fit", mode: "strict", expand_px: 0, feather_px: 2 });
+      const evaluate = async (nodeId: string) =>
+        (
+          await evaluateGraphNode({
+            database: fixture.handle,
+            libraryPath: fixture.handle.path,
+            photoId: fixture.id,
+            nodeId,
+            source: fixture.sourceProducer,
+          })
+        ).artifact;
+      const output = await readArtifactLinear((await evaluate(document.roots.output!)).path);
+      const content = await readArtifactLinear((await evaluate(layer.contentNodeId)).path);
+      const mask = await readArtifactMask((await evaluate(branch.maskNodeId)).path);
+      const generated = await readArtifactLinear((await evaluate(branch.resample.id)).path);
+      expect(mask.data.some((value) => value > 0 && value < 1)).toBe(true);
+      expect(output.data).toEqual(content.data);
+      for (let pixel = 0; pixel < mask.data.length; pixel++) {
+        for (let channel = 0; channel < 3; channel++) {
+          const index = pixel * 3 + channel;
+          expect(output.data[index]).toBeCloseTo(
+            0.25 + (generated.data[index]! - 0.25) * mask.data[pixel]!,
+            6,
+          );
+        }
+      }
+      return mask.data;
+    };
+    const originalMask = await assertCoverage();
+    success(
+      await command(fixture, "layer", [
+        "transform",
+        fixture.id,
+        segmented.layer_id,
+        "--dx",
+        "0.5",
+        "--dy",
+        "0.5",
+      ]),
+    );
+    const movedMask = await assertCoverage();
+    expect(movedMask).not.toEqual(originalMask);
+    success(await command(fixture, "layer", ["refresh", fixture.id, segmented.layer_id]));
+    expect(await assertCoverage()).toEqual(movedMask);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("free fit softens selection and explicit zero strength removes feather without growing the next selection", async () => {
+  const fixture = await fillFixture();
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "16,10,8,8"]),
+    ) as { layer_id: string };
+    const args = [
+      fixture.id,
+      "--layer",
+      segmented.layer_id,
+      "--prompt",
+      "Blue vase",
+      "--fit",
+      "free",
+    ];
+    success(await command(fixture, "fill", args));
+    const coverage = async () => {
+      const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
+      const layer = document.layers.find(({ id }) => id === segmented.layer_id)!;
+      const branch = (await describeFillBranch(fixture.handle, fixture.id, layer.contentNodeId))!;
+      const artifact = await evaluateGraphNode({
+        database: fixture.handle,
+        libraryPath: fixture.handle.path,
+        photoId: fixture.id,
+        nodeId: branch.maskNodeId,
+        source: fixture.sourceProducer,
+      });
+      return { mask: await readArtifactMask(artifact.artifact.path), fit: branch.fit };
+    };
+    const soft = await coverage();
+    expect(soft.fit).toMatchObject({ mode: "free", feather_px: 24 });
+    expect(soft.mask.data[10 * 40 + 15]).toBeGreaterThan(0);
+    expect(soft.mask.data[10 * 40 + 15]).toBeLessThan(1);
+    success(await command(fixture, "fill", [...args, "--strength", "0"]));
+    const hard = await coverage();
+    expect(hard.fit).toMatchObject({ mode: "free", feather_px: 0 });
+    expect(hard.mask.data[10 * 40 + 15]).toBe(0);
+    expect(hard.mask.data[10 * 40 + 16]).toBe(1);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("free fit accepts declared whole-frame edits while the effective mask still owns coverage", async () => {
+  const fixture = await fillFixture("wholeframe");
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "16,10,8,8"]),
+    ) as { layer_id: string };
+    const filled = fillStrictDataSchema.parse(
+      success(
+        await command(fixture, "fill", [
+          fixture.id,
+          "--layer",
+          segmented.layer_id,
+          "--prompt",
+          "Blue vase",
+          "--fit",
+          "free",
+          "--strength",
+          "0",
+        ]),
+      ),
+    );
+    const evaluated = await evaluateGraphNode({
+      database: fixture.handle,
+      libraryPath: fixture.handle.path,
+      photoId: fixture.id,
+      nodeId: filled.graph.output_node,
+      source: fixture.sourceProducer,
+    });
+    const output = await readArtifactLinear(evaluated.artifact.path);
+    expect(output.data.slice(0, 3)).toEqual(new Float32Array([0.25, 0.25, 0.25]));
+    expect(output.data[(12 * 40 + 18) * 3]).not.toBe(0.25);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("invalid fit and strength fail before generation or revision changes", async () => {
+  const fixture = await fillFixture();
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "8,6,8,8"]),
+    ) as { layer_id: string };
+    const before = await revisionCount(fixture);
+    for (const flags of [
+      ["--fit", "expand=-1"],
+      ["--fit", "expand=4097"],
+      ["--fit", "stretch"],
+      ["--strength", "-0.1"],
+      ["--strength", "1.1"],
+      ["--strength", "NaN"],
+    ]) {
+      expect(
+        await command(fixture, "fill", [
+          fixture.id,
+          "--layer",
+          segmented.layer_id,
+          "--remove",
+          ...flags,
+        ]),
+      ).toMatchObject({ ok: false, code: "usage" });
+    }
+    expect(await revisionCount(fixture)).toBe(before);
+    expect(await generatedExecutionCount(fixture)).toBe(0);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
 test("prompt fill stores the exact instruction in its immutable generation recipe", async () => {
   const fixture = await fillFixture();
   try {
@@ -335,6 +643,16 @@ test("prompt fill stores the exact instruction in its immutable generation recip
       await command(fixture, "graph", ["node", fixture.id, filled.generation.node]),
     ) as { parameters: { prompt: string; prompt_version: number } };
     expect(generation.parameters).toMatchObject({ prompt, prompt_version: 1 });
+    const evaluated = await evaluateGraphNode({
+      database: fixture.handle,
+      libraryPath: fixture.handle.path,
+      photoId: fixture.id,
+      nodeId: filled.graph.output_node,
+      source: fixture.sourceProducer,
+    });
+    const output = await readArtifactLinear(evaluated.artifact.path);
+    // Prompt's default expansion covers this point 20px beyond the selection.
+    expect(output.data[(10 * 40 + 35) * 3]).not.toBe(0.25);
   } finally {
     await fixture.handle.close();
   }

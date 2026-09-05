@@ -8,6 +8,29 @@ use std::collections::VecDeque;
 use crate::resample::{Filter, transform};
 
 #[napi]
+pub fn threshold_mask(
+    data: Float32Array,
+    width: u32,
+    height: u32,
+    threshold: f64,
+    inclusive: bool,
+) -> napi::Result<AsyncTask<MaskTask>> {
+    validate_mask(&data, width, height)?;
+    if !threshold.is_finite() || !(0.0..=1.0).contains(&threshold) {
+        return Err(invalid("mask threshold must be between zero and one"));
+    }
+    Ok(AsyncTask::new(MaskTask {
+        data: data.to_vec(),
+        width,
+        height,
+        operation: MaskOperation::Threshold {
+            threshold,
+            inclusive,
+        },
+    }))
+}
+
+#[napi]
 pub fn morphology_mask(
     data: Float32Array,
     width: u32,
@@ -156,6 +179,10 @@ pub struct MaskTask {
 }
 
 enum MaskOperation {
+    Threshold {
+        threshold: f64,
+        inclusive: bool,
+    },
     Morphology {
         radius: u32,
         dilate: bool,
@@ -176,6 +203,10 @@ impl Task for MaskTask {
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
         match self.operation {
+            MaskOperation::Threshold {
+                threshold,
+                inclusive,
+            } => Ok(threshold_coverage(&self.data, threshold, inclusive)),
             MaskOperation::Morphology { radius, dilate } => Ok(morphology(
                 &self.data,
                 self.width,
@@ -213,6 +244,18 @@ impl Task for MaskTask {
     fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
         Ok(data.into())
     }
+}
+
+fn threshold_coverage(data: &[f32], threshold: f64, inclusive: bool) -> Vec<f32> {
+    data.iter()
+        .map(|&sample| {
+            if f64::from(sample) > threshold || (inclusive && f64::from(sample) == threshold) {
+                1.0
+            } else {
+                0.0
+            }
+        })
+        .collect()
 }
 
 pub struct CompositeTask {
@@ -407,6 +450,19 @@ fn composite(base: &[f32], content: &[f32], mask: &[f32], opacity: f64) -> Vec<f
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hard_coverage_keeps_half_coverage_and_support_keeps_every_positive_sample() {
+        let input = [0.0, 0.25, 0.5, 1.0];
+        assert_eq!(
+            threshold_coverage(&input, 0.5, true),
+            vec![0.0, 0.0, 1.0, 1.0]
+        );
+        assert_eq!(
+            threshold_coverage(&input, 0.0, false),
+            vec![0.0, 1.0, 1.0, 1.0]
+        );
+    }
 
     #[test]
     fn asymmetric_morphology_uses_a_square_zero_outside_footprint() {

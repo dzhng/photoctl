@@ -35,6 +35,7 @@ export async function findReusableFillLineage(
     prompt: string;
     promptVersion: number;
     operation: "remove" | "prompt";
+    effectiveMaskNodeId?: string;
     seed?: number;
     fullResolution?: boolean;
     source: EvaluateGraphNodeRequest["source"];
@@ -48,7 +49,7 @@ export async function findReusableFillLineage(
   const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
   if (!branch || branch.descendants.length > 0) return undefined;
   const { resample } = branch;
-  if (branch.maskNodeId !== selected.maskNodeId) return undefined;
+  if (branch.maskNodeId !== (request.effectiveMaskNodeId ?? selected.maskNodeId)) return undefined;
   const parameters = resample.parameters as {
     w?: unknown;
     h?: unknown;

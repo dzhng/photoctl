@@ -1,6 +1,7 @@
 import { resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import {
-  fillLayerStrict,
+  fillLayer,
+  resolveFillFit,
   refreshFillLayer,
   resolveFillRefreshTarget,
   describeFillBranch,
@@ -50,6 +51,8 @@ export async function fillCommand(
       "--layer",
       "--prompt",
       "--pad",
+      "--fit",
+      "--strength",
       "--seed",
       "--model",
       "--upscale-model",
@@ -75,6 +78,8 @@ export async function fillCommand(
     parsed.flags.has("--full-res") ||
     parsed.options.has("--prompt") ||
     parsed.options.has("--pad") ||
+    parsed.options.has("--fit") ||
+    parsed.options.has("--strength") ||
     parsed.options.has("--seed") ||
     parsed.options.has("--model") ||
     parsed.options.has("--upscale-model") ||
@@ -305,6 +310,11 @@ async function fillGenerationCommand(
     throw new PhotoctlError("usage", "fill accepts only one of --upscale or --no-upscale");
   }
   const pad = parseOptionalInteger(parsed.options.get("--pad"), "--pad", 0);
+  const fit = resolveFillFit(
+    remove ? "remove" : "prompt",
+    parsed.options.get("--fit"),
+    parsed.options.get("--strength"),
+  );
   const seed = parseOptionalInteger(
     parsed.options.get("--seed"),
     "--seed",
@@ -349,12 +359,13 @@ async function fillGenerationCommand(
           sourceContext,
         });
         const upscaleAdapter = upscaleRegistry.get(upscalePolicy.upscale.model);
-        return await fillLayerStrict(lease.handle, lease.handle.path, {
+        return await fillLayer(lease.handle, lease.handle.path, {
           photoId,
           layer,
           operation: remove ? "remove" : "prompt",
           prompt: remove ? removePrompt() : custom!,
           promptVersion: remove ? REMOVE_PROMPT_VERSION : 1,
+          fit,
           ...(pad === undefined ? {} : { pad }),
           fullResolution: parsed.flags.has("--full-res"),
           ...(seed === undefined ? {} : { seed }),
@@ -436,7 +447,7 @@ async function fillGenerationCommand(
       });
     }
     const message = error instanceof Error ? error.message : String(error);
-    throw new PhotoctlError("catalog_unreadable", "Could not commit strict fill", {
+    throw new PhotoctlError("catalog_unreadable", "Could not commit fill", {
       id: idInput,
       layer,
       reason: message,

@@ -4,6 +4,8 @@ import {
   compositeV2Projection,
   describeFillBranch,
   loadActiveDocument,
+  evaluateGraphNode,
+  readArtifactMask,
 } from "@photoctl/render";
 import sharp from "sharp";
 import { describe, expect, test } from "vitest";
@@ -307,13 +309,20 @@ describe.sequential("fill branch refresh", () => {
       expect(refreshedMask).toEqual(originalMask);
       const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
       expect(document.revisionId).not.toBe(filled.graph.revision);
-      const shown = success(
-        await fixtureCommand(fixture, "layer", ["show", fixture.id, segmented.layer_id]),
-      ) as { chain: { mask: Array<{ kind: string; parameters: unknown }> } };
-      expect(shown.chain.mask[0]).toMatchObject({
-        kind: "transform",
-        parameters: { matrix: [1, 0, 0, 1, 3, 0] },
+      const maskArtifact = await evaluateGraphNode({
+        database: fixture.handle,
+        libraryPath: fixture.handle.path,
+        photoId: fixture.id,
+        nodeId: document.layers.find(({ id }) => id === segmented.layer_id)!.maskNodeId,
+        source: async () => {
+          throw new Error("Mask inspection must not render source");
+        },
       });
+      const movedMask = await readArtifactMask(maskArtifact.artifact.path);
+      const covered = [...movedMask.data.entries()]
+        .filter(([, value]) => value > 0)
+        .map(([index]) => index % movedMask.w);
+      expect([Math.min(...covered), Math.max(...covered)]).toEqual([21, 25]);
       const refreshed = layerRefreshDataSchema.parse(success(response));
       const refreshedGeneration = success(
         await fixtureCommand(fixture, "graph", ["node", fixture.id, refreshed.generation.node]),

@@ -1,4 +1,5 @@
 import { artifactPath, normalizeMaskArtifact, publishArtifact } from "../artifacts/publication.js";
+import { evaluateGraphNode } from "../graph/evaluator.js";
 import type { MaskImage } from "../mask-tiff.js";
 /* eslint-disable no-await-in-loop -- Graph chains are inherently ordered database walks. */
 import {
@@ -11,6 +12,7 @@ import {
 import { readArtifactMask } from "../artifacts/publication.js";
 import {
   resolveTransformMatrix,
+  invertTransformMatrix,
   transformPoint,
   type Transform,
   type TransformMatrix,
@@ -260,8 +262,18 @@ export async function moveLayer(
     throw new Error("Layer content and mask transforms disagree");
   }
   const currentMatrix = fillBranch ? fillBranch.currentMatrix : content!.matrix;
-  const permanentMaskNodeId = fillBranch ? fillBranch.permanentMaskNodeId : mask!.baseNodeId;
-  const centroid = await maskCentroid(database, libraryPath, request.photoId, permanentMaskNodeId);
+  const selectionMaskNodeId = fillBranch
+    ? (fillBranch.selectionNodeId ?? fillBranch.permanentMaskNodeId)
+    : mask!.baseNodeId;
+  const maskCenter = await maskCentroid(
+    database,
+    libraryPath,
+    request.photoId,
+    selectionMaskNodeId,
+  );
+  const centroid = fillBranch?.fit
+    ? transformPoint(invertTransformMatrix(fillBranch.generationInputMatrix), maskCenter)
+    : maskCenter;
   const currentCentroid = transformPoint(currentMatrix, centroid);
   const dx =
     request.destination.mode === "to"
@@ -326,7 +338,7 @@ export async function moveLayer(
         name: `${selected.name.slice(0, 248)} vacancy`,
         z: layers.length,
         contentNode: { localKey: "vacancy-solid" },
-        maskNode: { nodeId: permanentMaskNodeId },
+        maskNode: { nodeId: selectionMaskNodeId },
         opacity: 1,
         blend: "normal",
         enabled: true,
@@ -702,26 +714,39 @@ export async function maskCentroid(
   maskRoot: string,
 ) {
   const chain = await firstInputChain(database, photoId, maskRoot);
-  const permanent = chain.find(({ kind }) => kind === "mask");
-  const artifactHash = (permanent?.parameters as { artifact_hash?: string } | undefined)
-    ?.artifact_hash;
-  if (!artifactHash) throw new Error("Layer mask lineage has no permanent mask artifact");
-  const artifact = await database.query<{ w: number; h: number }>(
-    "SELECT w, h FROM image_artifacts WHERE artifact_hash = $1 AND artifact_available = true",
-    [artifactHash],
-  );
-  const dimensions = artifact.rows[0];
-  if (!dimensions) throw new Error(`Mask artifact is unavailable: ${artifactHash}`);
-  const path = artifactPath(libraryPath, artifactHash, "tif");
-  const mask = await readArtifactMask(path, artifactHash);
+  const permanent = chain[0];
+  if (!permanent || !chain.some(({ kind }) => kind === "mask"))
+    throw new Error("Layer mask lineage has no permanent mask");
+  const artifact =
+    permanent.kind === "mask" && permanent.recipeVersion === 1
+      ? {
+          path: artifactPath(
+            libraryPath,
+            (permanent.parameters as { artifact_hash: string }).artifact_hash,
+            "tif",
+          ),
+          artifactHash: (permanent.parameters as { artifact_hash: string }).artifact_hash,
+        }
+      : (
+          await evaluateGraphNode({
+            database,
+            libraryPath,
+            photoId,
+            nodeId: permanent.id,
+            source: async () => {
+              throw new Error("Mask centroid cannot evaluate RGB source pixels");
+            },
+          })
+        ).artifact;
+  const mask = await readArtifactMask(artifact.path, artifact.artifactHash);
   let weight = 0;
   let x = 0;
   let y = 0;
   for (let index = 0; index < mask.data.length; index += 1) {
     const coverage = mask.data[index];
     weight += coverage;
-    x += ((index % dimensions.w) + 0.5) * coverage;
-    y += (Math.floor(index / dimensions.w) + 0.5) * coverage;
+    x += ((index % mask.w) + 0.5) * coverage;
+    y += (Math.floor(index / mask.w) + 0.5) * coverage;
   }
   if (weight === 0) throw new Error("Layer mask has no covered pixels");
   return { x: x / weight, y: y / weight };

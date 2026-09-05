@@ -32,7 +32,6 @@ import {
   decodeExternalImage,
   image16Png,
 } from "./external-pixels.js";
-import { strictEffectiveMask } from "./fit.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./pipeline.js";
 import { rebuildFillBranch } from "./rebuild.js";
 
@@ -343,7 +342,16 @@ async function executeGenerationRefresh(
         branch.generationInputMatrix,
         "lanczos3",
       ),
-      transformMaskPixels(mask.data, mask.w, mask.h, mask.w, mask.h, branch.generationInputMatrix),
+      branch.fit
+        ? Promise.resolve(mask.data)
+        : transformMaskPixels(
+            mask.data,
+            mask.w,
+            mask.h,
+            mask.w,
+            mask.h,
+            branch.generationInputMatrix,
+          ),
     ]);
     base = {
       ...base,
@@ -353,7 +361,6 @@ async function executeGenerationRefresh(
     };
     mask = { ...mask, data: transformedMask };
   }
-  mask = strictEffectiveMask(mask);
   const sent = await fillProviderInputs(base, mask, cropRect, storedRequest.full_res !== false);
   const form = request.dependencies.adapter.buildEdit(
     operation,
@@ -365,7 +372,7 @@ async function executeGenerationRefresh(
   const started = (request.dependencies.now ?? Date.now)();
   const response = await request.dependencies.gateway.imageEdits(form);
   const normalized = await request.dependencies.adapter.normalize(response.data, sent.image);
-  if (normalized.wholeFrame) {
+  if (normalized.wholeFrame && (!branch.fit || branch.fit.mode === "strict")) {
     throw new PhotoctlError(
       "provider_whole_frame",
       "Refresh refused a provider result that edited the whole frame",

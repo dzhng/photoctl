@@ -6,14 +6,9 @@ and the agent preview journey. Each rung is useful and testable before the next 
 
 ## Remaining implementation after 12d
 
-The public parser still accepts only layer remove/prompt, pad, seed, model, upscale controls, and move.
-The completed strict-fill checkpoints do not implement the full flag contract below. These are build
-requirements, independent of missing live credentials:
+The public parser accepts layer remove/prompt, fit/strength, pad, seed, model, upscale controls, and move.
+The following remaining requirements are independent of missing live credentials:
 
-- **12e1 effective masks:** implement `--fit strict|expand=N|free` and `--strength` using the existing
-  native mask owner; remove defaults to strict, prompt to expand=24. Persist the effective mask and
-  its recipe so refresh, transform, and exact exterior protection agree. Verify defaults, feather
-  coverage, expanded support, and unchanged pixels outside effective coverage through public commands.
 - **12e2 provider inputs:** input-size capping and `--full-res` are implemented; `--ref` and `--init`
   remain. Unsupported adapter capabilities produce the specified warnings. Verify actual HTTP bodies,
   immutable reference provenance, and refresh reuse with the fake gateway.
@@ -35,6 +30,24 @@ the user's sampling choice. Changing that choice cannot reuse an execution made 
 The public-command regression in `fill-input-size.test.ts` inspects the actual uploaded PNGs, refreshes
 both modes, and checks canonical output dimensions and protected samples. This is deterministic
 geometry/provenance evidence, not a live-provider or photographic quality verdict.
+
+## 12e1 effective-mask ownership
+
+Migration 16 adds deterministic `mask@2` recipes without changing pinned `mask@1` artifacts.
+The original selection remains an ancestor of the fit recipe: retries recover selection intent instead
+of dilating an earlier result. Native mask kernels define hard coverage (at least half coverage), square
+expansion, and feathering. `--strength` changes feather width, never model denoise.
+
+The explicit `mask_composite` owns fractional coverage and exact exterior protection. The layer mask
+is derived binary support of that effective mask, preventing the document compositor from applying
+coverage twice. Transforms move the effective mask before deriving support; they never interpolate
+the support itself. The original selection separately owns subject positioning and the vacancy left
+by `fill --move`, so clipped expansion cannot move the subject's anchor or enlarge its vacancy.
+
+Public-command tests cover final-output expansion, repeat stability, single fractional coverage after
+movement and refresh, fit defaults, strength override, original-selection movement, and strict-only
+whole-frame refusal. Controlled solid-patch renders distinguish hard selection edges, expanded support,
+and soft coverage; the synthetic boundary check is not photographic acceptance.
 
 ## Pre-gate (with key, first): `smoke:mask-polarity` → each adapter's `maskPolarity` + a fake-gateway fixture. Until recorded,
 live native-mask fills refuse `provider_unverified_mask` 69; fake-gateway runs are unaffected.
