@@ -41,6 +41,7 @@ interface NativeBinding {
     offsetY: number,
     baseWidth: number,
     baseHeight: number,
+    baseToModel?: number[],
   ): Float32Array;
   atomicRenameNoReplace(source: string, destination: string): AtomicRenameOutcome;
   librawVersion(): string;
@@ -224,8 +225,8 @@ interface NativeBinding {
 interface NativeSam2OnnxRuntime {
   encoderInputNames(): string[];
   decoderInputNames(): string[];
-  runEncoder(inputs: Sam2TensorInput[], output: string): Promise<Sam2TensorOutput>;
-  runDecoder(inputs: Sam2TensorInput[], output: string): Promise<Sam2TensorOutput>;
+  runEncoder(inputs: Sam2TensorInput[], outputs: string[]): Promise<Sam2TensorOutput[]>;
+  runDecoder(inputs: Sam2TensorInput[], outputs: string[]): Promise<Sam2TensorOutput[]>;
 }
 
 export type Sam2TensorInput = {
@@ -308,6 +309,7 @@ export function sam2MaskFromLogits(
     offsetY: number;
     baseWidth: number;
     baseHeight: number;
+    baseToModel?: readonly [number, number, number, number, number, number];
   },
 ): Float32Array {
   return asFloat32Array(
@@ -322,6 +324,7 @@ export function sam2MaskFromLogits(
       mapping.offsetY,
       mapping.baseWidth,
       mapping.baseHeight,
+      mapping.baseToModel ? [...mapping.baseToModel] : undefined,
     ),
   );
 }

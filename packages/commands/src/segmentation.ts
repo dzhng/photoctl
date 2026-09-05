@@ -1,0 +1,138 @@
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { completeModelManifest, PINNED_MODEL_RELEASE, type LibraryHandle } from "@photoctl/library";
+import {
+  createSam2OnnxRuntime,
+  Sam2Segmenter,
+  loadActiveDocument,
+  readActiveDevelopState,
+  prepareSam2Frame,
+  type SceneLinearImage,
+} from "@photoctl/render";
+import {
+  GatewayClient,
+  GatewayStructuredModelAdapter,
+  readProviderSettings,
+  resolveModels,
+} from "@photoctl/providers";
+import { PhotoctlError } from "@photoctl/protocol";
+import sharp from "sharp";
+import type { RequestEnv } from "./context.js";
+import type { StoredPhoto } from "./photo.js";
+import type { SegmentationDependencies } from "./handlers/segment.js";
+import { withGenerationSource } from "./handlers/generation-source.js";
+import { graphSourceWarning } from "./graph-source.js";
+
+export function createLibrarySegmenter(libraryPath: string): Sam2Segmenter {
+  return new Sam2Segmenter(async () => {
+    const manifest = completeModelManifest(PINNED_MODEL_RELEASE);
+    if (!manifest)
+      throw new PhotoctlError("provider_unconfigured", "Model export manifest is incomplete", {
+        reason: "model_manifest_incomplete",
+      });
+    const bytes = await Promise.all(
+      ["encoder.onnx", "decoder.onnx"].map(async (file) => {
+        const artifact = manifest.artifacts.find((entry) => entry.file === file);
+        let data: Buffer;
+        try {
+          data = await readFile(join(libraryPath, "models", file));
+        } catch {
+          throw new PhotoctlError(
+            "provider_unconfigured",
+            "Pinned SAM model is missing; run doctor --fetch-models",
+            { reason: "model_missing", file },
+          );
+        }
+        if (!artifact || createHash("sha256").update(data).digest("hex") !== artifact.sha256)
+          throw new PhotoctlError(
+            "provider_unconfigured",
+            "Pinned SAM model hash does not match; run doctor --fetch-models",
+            { reason: "model_hash_mismatch", file },
+          );
+        return data;
+      }),
+    );
+    return createSam2OnnxRuntime(bytes[0]!, bytes[1]!);
+  });
+}
+
+export async function configuredSegmentation(
+  handle: LibraryHandle,
+  env: RequestEnv,
+  cwd: string,
+  photo: StoredPhoto,
+  text: boolean,
+  segmenter = createLibrarySegmenter(handle.path),
+): Promise<SegmentationDependencies> {
+  await segmenter.ready();
+  if (text && !env.gatewayApiKey)
+    throw new PhotoctlError("provider_unconfigured", "AI_GATEWAY_API_KEY is not configured");
+  const document = await loadActiveDocument(handle, photo.id);
+  const develop = document
+    ? (await readActiveDevelopState(handle, { photoId: photo.id, orientation: photo.orientation }))
+        .develop
+    : {};
+  const { frame, sourceContext, fallback } = await withGenerationSource(
+    handle,
+    env,
+    cwd,
+    photo,
+    {},
+    async ({ source, sourceContext: selectedContext, fallback: selectedFallback }) => {
+      if (typeof source !== "function") throw new Error("SAM source must materialize pixels");
+      const { image } = await source();
+      if (image.space !== "scene-linear-rec2020")
+        throw new Error("SAM source is not scene-linear Rec.2020");
+      return {
+        frame: await prepareSam2Frame(image as SceneLinearImage, develop, photo),
+        sourceContext: selectedContext,
+        fallback: selectedFallback,
+      };
+    },
+  );
+  const sourceWarning = graphSourceWarning(photo.id, fallback);
+  const dependencies: SegmentationDependencies = {
+    groundingSpace: "render",
+    warnings: sourceWarning ? [sourceWarning] : [],
+    local: {
+      segment: async ({ points, box, boxSpace }) => {
+        const mappedPoints = points.map(frame.point);
+        if (
+          mappedPoints.some(([x, y]) => x < 0 || y < 0 || x >= frame.image.w || y >= frame.image.h)
+        )
+          throw new PhotoctlError("usage", "Segment point is outside the current develop crop", {
+            id: photo.id,
+          });
+        return await segmenter.segment({
+          photoId: photo.id,
+          tier: sourceContext.tier === "pinned-preview" ? "offline" : "develop",
+          image: frame.image,
+          projection: { dimensions: photo, baseToImage: frame.matrix },
+          points: mappedPoints,
+          ...(box ? { box: boxSpace === "render" ? box : frame.box(box) } : {}),
+        });
+      },
+    },
+  };
+  if (text) {
+    const pixels = Uint8Array.from(frame.image.data, (value) =>
+      Math.round(Math.max(0, Math.min(1, value)) * 255),
+    );
+    dependencies.image = {
+      bytes: await sharp(pixels, {
+        raw: { width: frame.image.w, height: frame.image.h, channels: 3 },
+      })
+        .resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true })
+        .jpeg()
+        .toBuffer(),
+      mediaType: "image/jpeg",
+      dimensions: { w: frame.image.w, h: frame.image.h },
+    };
+    dependencies.structured = new GatewayStructuredModelAdapter({
+      gateway: new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl }),
+      model: resolveModels((await readProviderSettings(handle)).models).structured,
+    });
+  }
+  return dependencies;
+}

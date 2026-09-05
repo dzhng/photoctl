@@ -48,17 +48,17 @@ impl Sam2CpuRuntime {
     pub fn run_encoder_f32(
         &mut self,
         inputs: Vec<Sam2Input>,
-        output: &str,
-    ) -> Result<Sam2F32Output, String> {
-        run_f32(&mut self.encoder, inputs, output)
+        outputs: &[String],
+    ) -> Result<Vec<Sam2F32Output>, String> {
+        run_f32(&mut self.encoder, inputs, outputs)
     }
 
     pub fn run_decoder_f32(
         &mut self,
         inputs: Vec<Sam2Input>,
-        output: &str,
-    ) -> Result<Sam2F32Output, String> {
-        run_f32(&mut self.decoder, inputs, output)
+        outputs: &[String],
+    ) -> Result<Vec<Sam2F32Output>, String> {
+        run_f32(&mut self.decoder, inputs, outputs)
     }
 }
 
@@ -81,8 +81,8 @@ pub struct Sam2F32Output {
 fn run_f32(
     session: &mut Session,
     inputs: Vec<Sam2Input>,
-    output: &str,
-) -> Result<Sam2F32Output, String> {
+    requested: &[String],
+) -> Result<Vec<Sam2F32Output>, String> {
     let mut tensors = HashMap::<String, DynTensor>::new();
     for input in inputs {
         let dimensions: Vec<i64> = input.dimensions.into_iter().map(i64::from).collect();
@@ -98,17 +98,27 @@ fn run_f32(
             return Err("duplicate SAM tensor input".to_owned());
         }
     }
-    let outputs = session.run(tensors).map_err(|error| error.to_string())?;
-    if !outputs.contains_key(output) {
-        return Err(format!("SAM model did not return {output}"));
-    }
-    let (dimensions, data) = outputs[output]
-        .try_extract_tensor::<f32>()
-        .map_err(|error| error.to_string())?;
-    Ok(Sam2F32Output {
-        dimensions: dimensions.iter().map(|value| *value as u32).collect(),
-        data: data.to_vec(),
-    })
+    // Outputs may alias inputs (Identity is one example); retain owned input buffers until copied.
+    let inputs: Vec<_> = tensors
+        .iter()
+        .map(|(name, tensor)| (name.as_str(), tensor))
+        .collect();
+    let outputs = session.run(inputs).map_err(|error| error.to_string())?;
+    requested
+        .iter()
+        .map(|output| {
+            if !outputs.contains_key(output) {
+                return Err(format!("SAM model did not return {output}"));
+            }
+            let (dimensions, data) = outputs[output.as_str()]
+                .try_extract_tensor::<f32>()
+                .map_err(|error| error.to_string())?;
+            Ok(Sam2F32Output {
+                dimensions: dimensions.iter().map(|value| *value as u32).collect(),
+                data: data.to_vec(),
+            })
+        })
+        .collect()
 }
 
 fn cpu_session(bytes: &[u8]) -> ort::Result<Session> {
@@ -128,6 +138,7 @@ pub struct Sam2LogitMapping {
     pub offset_y: u32,
     pub base_width: u32,
     pub base_height: u32,
+    pub base_to_model: Option<[f64; 6]>,
 }
 
 /// Bilinearly samples decoder logits through the inverse letterbox and applies
@@ -145,6 +156,9 @@ pub fn mask_from_sam2_logits(
         || mapping.resized_height == 0
         || mapping.base_width == 0
         || mapping.base_height == 0
+        || mapping
+            .base_to_model
+            .is_some_and(|matrix| matrix.iter().any(|v| !v.is_finite()))
         || logits.len() != (logit_width as usize) * (logit_height as usize)
     {
         return Err("invalid SAM logit dimensions".to_owned());
@@ -152,10 +166,23 @@ pub fn mask_from_sam2_logits(
     let mut mask = vec![0.0; mapping.base_width as usize * mapping.base_height as usize];
     for y in 0..mapping.base_height {
         for x in 0..mapping.base_width {
-            let model_x = mapping.offset_x as f32
+            let mut model_x = mapping.offset_x as f32
                 + (x as f32 + 0.5) * mapping.resized_width as f32 / mapping.base_width as f32;
-            let model_y = mapping.offset_y as f32
+            let mut model_y = mapping.offset_y as f32
                 + (y as f32 + 0.5) * mapping.resized_height as f32 / mapping.base_height as f32;
+            if let Some(m) = mapping.base_to_model {
+                let px = x as f64 + 0.5;
+                let py = y as f64 + 0.5;
+                model_x = (m[0] * px + m[2] * py + m[4]) as f32;
+                model_y = (m[1] * px + m[3] * py + m[5]) as f32;
+            }
+            if model_x < mapping.offset_x as f32
+                || model_y < mapping.offset_y as f32
+                || model_x >= (mapping.offset_x + mapping.resized_width) as f32
+                || model_y >= (mapping.offset_y + mapping.resized_height) as f32
+            {
+                continue;
+            }
             let logit_x = model_x * logit_width as f32 / mapping.model_size as f32 - 0.5;
             let logit_y = model_y * logit_height as f32 / mapping.model_size as f32 - 0.5;
             let value = bilinear(logits, logit_width, logit_height, logit_x, logit_y);
@@ -236,12 +263,12 @@ impl Sam2OnnxRuntime {
     pub fn run_encoder(
         &self,
         inputs: Vec<Sam2TensorInput>,
-        output: String,
+        outputs: Vec<String>,
     ) -> napi::Result<AsyncTask<Sam2RunTask>> {
         Ok(AsyncTask::new(Sam2RunTask {
             runtime: Arc::clone(&self.inner),
             inputs: to_native_inputs(inputs)?,
-            output,
+            outputs,
             decoder: false,
         }))
     }
@@ -250,12 +277,12 @@ impl Sam2OnnxRuntime {
     pub fn run_decoder(
         &self,
         inputs: Vec<Sam2TensorInput>,
-        output: String,
+        outputs: Vec<String>,
     ) -> napi::Result<AsyncTask<Sam2RunTask>> {
         Ok(AsyncTask::new(Sam2RunTask {
             runtime: Arc::clone(&self.inner),
             inputs: to_native_inputs(inputs)?,
-            output,
+            outputs,
             decoder: true,
         }))
     }
@@ -264,13 +291,13 @@ impl Sam2OnnxRuntime {
 pub struct Sam2RunTask {
     runtime: Arc<Mutex<Sam2CpuRuntime>>,
     inputs: Vec<Sam2Input>,
-    output: String,
+    outputs: Vec<String>,
     decoder: bool,
 }
 
 impl Task for Sam2RunTask {
-    type Output = Sam2F32Output;
-    type JsValue = Sam2TensorOutput;
+    type Output = Vec<Sam2F32Output>;
+    type JsValue = Vec<Sam2TensorOutput>;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
         let mut runtime = self
@@ -279,18 +306,21 @@ impl Task for Sam2RunTask {
             .map_err(|_| napi::Error::from_reason("SAM runtime lock poisoned"))?;
         let inputs = std::mem::take(&mut self.inputs);
         if self.decoder {
-            runtime.run_decoder_f32(inputs, &self.output)
+            runtime.run_decoder_f32(inputs, &self.outputs)
         } else {
-            runtime.run_encoder_f32(inputs, &self.output)
+            runtime.run_encoder_f32(inputs, &self.outputs)
         }
         .map_err(napi::Error::from_reason)
     }
 
     fn resolve(&mut self, _env: napi::Env, output: Self::Output) -> napi::Result<Self::JsValue> {
-        Ok(Sam2TensorOutput {
-            dimensions: output.dimensions,
-            data: output.data.into(),
-        })
+        Ok(output
+            .into_iter()
+            .map(|output| Sam2TensorOutput {
+                dimensions: output.dimensions,
+                data: output.data.into(),
+            })
+            .collect())
     }
 }
 
@@ -328,7 +358,15 @@ pub fn sam2_mask_from_logits(
     offset_y: u32,
     base_width: u32,
     base_height: u32,
+    base_to_model: Option<Vec<f64>>,
 ) -> napi::Result<Float32Array> {
+    let base_to_model = base_to_model
+        .map(|matrix| {
+            matrix.try_into().map_err(|_| {
+                napi::Error::from_reason("SAM projection requires six affine coefficients")
+            })
+        })
+        .transpose()?;
     mask_from_sam2_logits(
         &logits,
         logit_width,
@@ -341,6 +379,7 @@ pub fn sam2_mask_from_logits(
             offset_y,
             base_width,
             base_height,
+            base_to_model,
         },
     )
     .map(Into::into)
@@ -363,6 +402,32 @@ mod tests {
     ];
 
     #[test]
+    fn returns_multiple_requested_outputs_from_one_session_run() {
+        // Add the graph input as a second named output beside the Identity node's output.
+        let graph_tag = IDENTITY_ONNX.iter().position(|byte| *byte == 0x3a).unwrap();
+        let graph_end = graph_tag + 2 + IDENTITY_ONNX[graph_tag + 1] as usize;
+        let mut second_output = IDENTITY_ONNX[graph_end - 29..graph_end].to_vec();
+        second_output[4] = b'x';
+        let mut model = IDENTITY_ONNX.to_vec();
+        model.splice(graph_end..graph_end, second_output);
+        model[graph_tag + 1] += 29;
+        let mut runtime = Sam2CpuRuntime::from_bytes(&model, IDENTITY_ONNX).unwrap();
+        let outputs = runtime
+            .run_encoder_f32(
+                vec![Sam2Input {
+                    name: "x".into(),
+                    dimensions: vec![1, 1, 2, 2],
+                    data: Sam2TensorData::F32(vec![2.0, 4.0, 6.0, 8.0]),
+                }],
+                &["y".into(), "x".into()],
+            )
+            .unwrap();
+        assert_eq!(outputs.len(), 2);
+        assert_eq!(outputs[0].data, vec![2.0, 4.0, 6.0, 8.0]);
+        assert_eq!(outputs[1].data, outputs[0].data);
+    }
+
+    #[test]
     fn constructs_cpu_sessions_from_caller_supplied_onnx_bytes() {
         let model = IDENTITY_ONNX;
         let mut runtime = Sam2CpuRuntime::from_bytes(model, model).expect("valid test ONNX");
@@ -375,11 +440,11 @@ mod tests {
                     dimensions: vec![1, 1, 2, 2],
                     data: Sam2TensorData::F32(vec![1.0, 2.0, 3.0, 4.0]),
                 }],
-                "y",
+                &["y".into()],
             )
             .expect("decoder executes");
-        assert_eq!(output.dimensions, [1, 1, 2, 2]);
-        assert_eq!(output.data, [1.0, 2.0, 3.0, 4.0]);
+        assert_eq!(output[0].dimensions, [1, 1, 2, 2]);
+        assert_eq!(output[0].data, [1.0, 2.0, 3.0, 4.0]);
         assert!(Sam2CpuRuntime::from_bytes(b"not ONNX", model).is_err());
     }
 
@@ -393,6 +458,7 @@ mod tests {
             offset_y: 0,
             base_width: 2,
             base_height: 2,
+            base_to_model: None,
         };
         assert_eq!(
             mask_from_sam2_logits(&[-1.0, 1.0, -0.25, 0.25], 2, 2, mapping).unwrap(),

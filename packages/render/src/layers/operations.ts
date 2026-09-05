@@ -74,24 +74,44 @@ export async function createMaskLayers(
   },
 ): Promise<{ revisionId: string; renderHash: `r_${string}`; layers: ManualLayerResult[] }> {
   if (request.layers.length === 0) throw new Error("At least one mask is required");
+  const layers = [];
+  for (const layer of request.layers) layers.push(await prepareMaskLayer(libraryPath, layer));
+  return await commitPreparedMaskLayers(database, {
+    photoId: request.photoId,
+    orientation: request.orientation,
+    layers,
+  });
+}
+
+/** Publishes one mask so multi-instance prediction need not retain earlier pixel arrays. */
+export async function prepareMaskLayer(libraryPath: string, { mask, name }: MaskLayerInput) {
+  return {
+    ...summarizeMask(mask),
+    name,
+    published: await publishArtifact(libraryPath, await normalizeMaskArtifact(mask)),
+  };
+}
+
+export async function commitPreparedMaskLayers(
+  database: GraphDatabase,
+  request: {
+    photoId: string;
+    orientation: number;
+    layers: Awaited<ReturnType<typeof prepareMaskLayer>>[];
+  },
+): Promise<{ revisionId: string; renderHash: `r_${string}`; layers: ManualLayerResult[] }> {
+  if (request.layers.length === 0) throw new Error("At least one mask is required");
   await ensurePhotoDocument(database, {
     photoId: request.photoId,
     orientation: request.orientation,
   });
   const current = await loadActiveDocument(database, request.photoId);
   if (!current) throw new Error("The active photo document is missing");
-  const prepared = await Promise.all(
-    request.layers.map(async ({ mask, name }, index) => {
-      const raster = summarizeMask(mask);
-      return {
-        ...raster,
-        name,
-        published: await publishArtifact(libraryPath, await normalizeMaskArtifact(mask)),
-        layerKey: `mask-layer-${index}`,
-        maskKey: `mask-node-${index}`,
-      };
-    }),
-  );
+  const prepared = request.layers.map((layer, index) => ({
+    ...layer,
+    layerKey: `mask-layer-${index}`,
+    maskKey: `mask-node-${index}`,
+  }));
   const layers: RevisionLayerDraft[] = [
     ...current.layers.map((layer) => ({
       layer: { layerId: layer.id },

@@ -9,7 +9,7 @@ import {
 import type { UpscaleRegistry } from "@photoctl/providers";
 import { PhotoctlError } from "@photoctl/protocol";
 import { cacheBase, readLibraryId, type RequestEnv } from "../context.js";
-import { resolveGraphSources } from "../graph-source.js";
+import { resolveGraphSources, type GraphSourceFallback } from "../graph-source.js";
 import { loadPhoto } from "../photo.js";
 
 export type GenerationCommandDependencies = FillGenerationDependencies & {
@@ -24,10 +24,11 @@ export async function withGenerationSource<T>(
   env: RequestEnv,
   cwd: string,
   photo: Awaited<ReturnType<typeof loadPhoto>>,
-  dependencies: GenerationCommandDependencies,
+  dependencies: Pick<GenerationCommandDependencies, "source" | "sourceContext">,
   run: (input: {
     source: import("@photoctl/render").EvaluateGraphNodeRequest["source"];
     sourceContext: import("@photoctl/render").SourceContextDensity;
+    fallback: GraphSourceFallback;
   }) => Promise<T>,
 ): Promise<T> {
   const photoId = photo.id;
@@ -80,7 +81,11 @@ export async function withGenerationSource<T>(
           resolutionLimited: pixelScale + 1 / Math.max(dimensions.w, dimensions.h) < 1,
         };
       }
-      return await run({ source, sourceContext });
+      return await run({
+        source,
+        sourceContext,
+        fallback: "fallback" in entry ? entry.fallback : null,
+      });
     } catch (error) {
       if (!(error instanceof SourceEvaluationError)) throw error;
       lastSourceError = error;

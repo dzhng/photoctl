@@ -31,7 +31,7 @@ export interface StructuredModelAdapter {
 }
 
 export interface GroundedInstance {
-  /** Base-image [x,y,w,h], converted from the provider's normalized box by this adapter. */
+  /** Image-frame [x,y,w,h], converted using StructuredImage.dimensions by this adapter. */
   box_2d: [number, number, number, number];
   label: string;
 }

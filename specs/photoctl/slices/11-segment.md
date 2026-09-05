@@ -28,5 +28,28 @@ The pinned export, manifest, hash-fetch/cache, CPU ONNX session, 1024 letterbox,
 The command boundary accepts repeated base-coordinate point prompts, an optional box, text grounding, and non-mutating dry runs.
 Text grounding uses the strict structured-provider schema, whose adapter is the only owner of normalized-box conversion; all
 returned masks enter one atomic document revision, one subject layer per instance. Injectable local and structured adapters keep
-the command contract keyless and make an empty text match a successful no-op. Production CLI/daemon construction of those adapters,
-real `segment-at` probes, `a7c2` thresholds, the `wb masks` visual checkpoint, and G6 remain open with the release weights.
+the command contract keyless and make an empty text match a successful no-op.
+
+## Production integration checkpoint
+
+The command now constructs its local and text adapters, with lazy hash-verified CPU sessions retained by the daemon.
+The encoder cache belongs to the SAM runtime and evicts least-recently-used feature sets; it also checks rendered pixels so a
+develop or source change cannot reuse stale features. Model loading and failed encodes remain retryable.
+
+SAM consumes the current develop render, including crop and rotation. Shared develop geometry maps base-coordinate prompts
+into that render; text boxes belong to the render shown to the grounding provider. Native projection samples decoder logits
+directly back into uncropped base coordinates before thresholding, leaving pixels outside the crop unselected. Catalog
+dimensions are already oriented and must not receive EXIF orientation a second time. Mask publication is sequential so text
+instances do not retain many full-resolution pixel buffers; their catalog state still enters one atomic revision. Dry runs
+do not create graph rows or publish masks.
+The compositor shares the exact-execution base projection with markup, so a base-size mask remains renderable when the RGB
+source is reduced or the develop frame is cropped. Its geometry follows the artifact being consumed, not a newer evaluation
+at the same logical node.
+
+The tensor contract is grounded in the [pinned ONNX Runtime exporter](https://github.com/microsoft/onnxruntime/tree/3af6be475c8ce64d3fb0851706ec7e432ad2223c/onnxruntime/python/tools/transformers/models/sam2):
+one encoder execution returns all feature levels, the decoder's own prompt encoder adds its padding token, and the local
+mask path consumes floating-point low-resolution logits rather than the exporter's thresholded output.
+
+Production construction, point/text routing, geometry, cache reuse/eviction/retry, and dry-run behavior have deterministic
+tests. These are wiring evidence, not model-quality evidence. The checked-in release remains `awaiting_export`;
+real `segment-at` probes, `a7c2` thresholds, `wb masks` visual acceptance, and G6 remain open with real release weights.

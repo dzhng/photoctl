@@ -47,6 +47,7 @@ import type { MaskImage } from "../mask-tiff.js";
 import { drawMarkup, scaleMarkupDocument } from "../markup/flatten.js";
 import { markupDocumentSchema } from "@photoctl/protocol";
 import { developGeometryMatrix, scaleDevelopGeometry } from "../develop/geometry.js";
+import { composeTransformMatrices } from "../transforms.js";
 
 export interface EvaluatedNode {
   artifact: PublishedArtifact;
@@ -395,7 +396,7 @@ async function runOperation(
       if (inputs.length !== 1) throw new Error("Markup evaluation requires one RGB input");
       const image = await readRgbInput(inputs[0]!);
       const parsed = imageNodeRegistry.markup.parameters.parse(parameters);
-      const projection = await loadMarkupProjection(
+      const projection = await loadBaseProjection(
         request.database,
         request.photoId,
         nodeId,
@@ -419,7 +420,13 @@ async function runOperation(
       return { image: await evaluateResample(parameters, inputs, recipeVersion) };
     }
     if (kind === "composite" && recipeVersion === 2) {
-      return { image: await evaluateCompositeV2(parameters, inputs) };
+      const projection = await loadBaseProjection(
+        request.database,
+        request.photoId,
+        nodeId,
+        inputs[0]!,
+      );
+      return { image: await evaluateCompositeV2(parameters, inputs, projection) };
     }
     if (kind === "transform") {
       if (!inputs[0]) throw new Error("Transform evaluation requires one input artifact");
@@ -451,10 +458,10 @@ async function runOperation(
   return { image: result };
 }
 
-async function loadMarkupProjection(
+async function loadBaseProjection(
   database: GraphTransaction,
   photoId: string,
-  markupNodeId: string,
+  nodeId: string,
   input: EvaluatedNode,
 ) {
   const result = await database.query<{
@@ -496,14 +503,14 @@ async function loadMarkupProjection(
      JOIN image_artifacts AS artifact ON artifact.artifact_hash = lineage.artifact_hash
      JOIN photos AS photo ON photo.id = $1
      ORDER BY lineage.depth`,
-    [photoId, markupNodeId, input.artifact.artifactHash],
+    [photoId, nodeId, input.artifact.artifactHash],
   );
   const rows = result.rows;
   const first = rows[0];
-  if (!first) throw new Error(`Markup input execution is unavailable: ${input.executionId}`);
+  if (!first) throw new Error(`Base input execution is unavailable: ${input.executionId}`);
   const developIndex = rows.findIndex(({ kind }) => kind === "develop");
   const sourceBase = developIndex >= 0 ? rows[developIndex + 1] : rows.at(-1);
-  if (!sourceBase) throw new Error("Markup develop input execution is unavailable");
+  if (!sourceBase) throw new Error("Base develop input execution is unavailable");
   const catalogBase = { w: first.catalog_w, h: first.catalog_h };
   const actualBase = { w: sourceBase.w, h: sourceBase.h };
   const develop = developIndex >= 0 ? rows[developIndex]!.parameters : {};
@@ -513,7 +520,7 @@ async function loadMarkupProjection(
     scaleDevelopGeometry(developDictSchema.parse(develop), catalogBase, actualBase),
   );
   if (geometry.w !== input.artifact.w || geometry.h !== input.artifact.h) {
-    throw new Error("Markup geometry does not match its evaluated RGB input");
+    throw new Error("Base geometry does not match its evaluated RGB input");
   }
   return {
     baseW: actualBase.w,
@@ -626,6 +633,7 @@ async function evaluateMaskComposite(
 async function evaluateCompositeV2(
   parameters: JsonValue,
   inputs: EvaluatedNode[],
+  projection: Awaited<ReturnType<typeof loadBaseProjection>>,
 ): Promise<LinearImage> {
   const parsed = z
     .object({
@@ -642,7 +650,29 @@ async function evaluateCompositeV2(
   let pixels = base.data;
   for (const [index, layer] of parsed.layers.entries()) {
     const content = await readRgbInput(inputs[1 + index * 2], base);
-    const mask = await readMaskInput(inputs[2 + index * 2], base);
+    const storedMask = await readMaskInput(inputs[2 + index * 2], projection.catalogBase);
+    const matrix = composeTransformMatrices(projection.matrix, [
+      projection.baseW / projection.catalogBase.w,
+      0,
+      0,
+      projection.baseH / projection.catalogBase.h,
+      0,
+      0,
+    ]);
+    const mask = matrix.every((value, coefficient) => value === [1, 0, 0, 1, 0, 0][coefficient])
+      ? storedMask
+      : {
+          w: base.w,
+          h: base.h,
+          data: await transformMaskPixels(
+            storedMask.data,
+            storedMask.w,
+            storedMask.h,
+            base.w,
+            base.h,
+            matrix,
+          ),
+        };
     pixels = await compositeMaskedPixels(
       pixels,
       content.data,

@@ -70,6 +70,7 @@ export interface DispatchContext {
   stream?: (row: unknown) => void | Promise<void>;
   previewCoordinator?: PreviewCoordinator;
   segmentation?: SegmentationDependencies;
+  segmenter?: import("@photoctl/render").Sam2Segmenter;
   fill?: FillDependencies;
   develop?: DevelopDependencies;
   generate?: GenerateDependencies;
@@ -157,6 +158,7 @@ export async function dispatch(
         request.cwd,
         context.library,
         context.segmentation,
+        context.segmenter,
       );
     if (request.verb === "layer")
       return await layerCommand(

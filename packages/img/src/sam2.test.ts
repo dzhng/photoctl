@@ -19,9 +19,9 @@ test("the TypeScript seam supplies ONNX bytes to CPU sessions and maps logits", 
   expect(
     await runtime.runDecoder(
       [{ name: "x", dimensions: [1, 1, 2, 2], f32Data: new Float32Array([1, 2, 3, 4]) }],
-      "y",
+      ["y"],
     ),
-  ).toEqual({ dimensions: [1, 1, 2, 2], data: new Float32Array([1, 2, 3, 4]) });
+  ).toEqual([{ dimensions: [1, 1, 2, 2], data: new Float32Array([1, 2, 3, 4]) }]);
   expect(
     sam2MaskFromLogits(new Float32Array([-1, 1, -0.25, 0.25]), 2, 2, {
       modelSize: 2,

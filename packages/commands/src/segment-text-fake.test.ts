@@ -1,14 +1,232 @@
 import { initializeLibrary } from "@photoctl/library";
 import { segmentInstancesDataSchema } from "@photoctl/protocol";
-import { rasterizeManualMask, type MaskImage } from "@photoctl/render";
+import { rasterizeManualMask, Sam2Segmenter, type MaskImage } from "@photoctl/render";
+import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
+import sharp from "sharp";
 import type { StructuredModelAdapter } from "@photoctl/providers";
 import { afterEach, expect, test } from "vitest";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { createServer } from "node:http";
 import { dispatch, type SegmentationAdapter } from "./dispatch.js";
 
 const directories: string[] = [];
+
+test("production text grounding uses the cropped render box and commits masks in base coordinates", async () => {
+  const fixture = await fixtureLibrary("grounded-production");
+  const server = createServer((_request, response) => {
+    response.setHeader("content-type", "application/json");
+    response.end(
+      JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                instances: [{ label: "person", box_2d: [0, 0, 1000, 1000] }],
+              }),
+            },
+          },
+        ],
+      }),
+    );
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const cacheRoot = await pinFixture(fixture);
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("No fixture port");
+    const env = {
+      noDaemon: true,
+      cacheRoot,
+      gatewayApiKey: "fixture-key",
+      gatewayUrl: `http://127.0.0.1:${address.port}`,
+    };
+    const context = {
+      version: "test",
+      library: fixture.handle,
+      segmenter: new Sam2Segmenter(async () => ({
+        encoderInputNames: () => [],
+        decoderInputNames: () => [],
+        runEncoder: async () =>
+          [
+            [1, 32, 256, 256],
+            [1, 64, 128, 128],
+            [1, 256, 64, 64],
+          ].map((dimensions) => ({
+            dimensions,
+            data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
+          })),
+        runDecoder: async (inputs) => {
+          expect([...inputs.find((input) => input.name === "point_labels")!.i32Data!]).toEqual([
+            2, 3,
+          ]);
+          expect([...inputs.find((input) => input.name === "point_coords")!.f32Data!]).toEqual([
+            128, 0, 896, 1024,
+          ]);
+          return [{ dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) }];
+        },
+      })),
+    };
+    expect(
+      await dispatch(
+        {
+          verb: "develop",
+          args: [fixture.id, "--set", 'crop={"x":2,"y":1,"w":4,"h":3}', "--set", "rotate=90"],
+          cwd: fixture.parent,
+          env,
+        },
+        context,
+      ),
+    ).toMatchObject({ ok: true });
+    const result = await dispatch(
+      { verb: "segment", args: [fixture.id, "--text", "person"], cwd: fixture.parent, env },
+      context,
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        gateway_calls: 1,
+        instances: [{ label: "person", bbox: [2, 1, 4, 3], mask: { pixels: 12 } }],
+      },
+    });
+    expect(
+      await dispatch({ verb: "show", args: [fixture.id], cwd: fixture.parent, env }, context),
+    ).toMatchObject({ ok: true });
+  } finally {
+    await fixture.handle.close();
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+  }
+});
+
+async function pinFixture(fixture: Awaited<ReturnType<typeof fixtureLibrary>>) {
+  const libraryId = (
+    await fixture.handle.query<{ value: string }>(
+      "SELECT value #>> '{}' AS value FROM settings WHERE key = 'library_id'",
+    )
+  ).rows[0]!.value;
+  const cacheRoot = join(fixture.parent, "cache");
+  const path = pinnedEmbeddedJpegPath(cacheRootForLibrary(libraryId, cacheRoot), fixture.id);
+  await mkdir(dirname(path), { recursive: true });
+  await sharp({ create: { width: 8, height: 6, channels: 3, background: "#aa2233" } })
+    .jpeg()
+    .toFile(path);
+  return cacheRoot;
+}
+
+test("default command adapter segments pinned develop pixels and dry-run leaves graph rows untouched", async () => {
+  const fixture = await fixtureLibrary("production");
+  try {
+    const cacheRoot = await pinFixture(fixture);
+    await fixture.handle.query("UPDATE photos SET w=16,h=12 WHERE id=$1", [fixture.id]);
+    let encodes = 0;
+    const segmenter = new Sam2Segmenter(async () => ({
+      encoderInputNames: () => [],
+      decoderInputNames: () => [],
+      runEncoder: async () => {
+        encodes++;
+        return [
+          [1, 32, 256, 256],
+          [1, 64, 128, 128],
+          [1, 256, 64, 64],
+        ].map((dimensions) => ({
+          dimensions,
+          data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
+        }));
+      },
+      runDecoder: async () => [
+        { dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) },
+      ],
+    }));
+    const request = {
+      verb: "segment",
+      args: [fixture.id, "--at", "3,2", "--dry-run"],
+      cwd: fixture.parent,
+      env: { noDaemon: true, cacheRoot },
+    };
+    const context = { version: "test", library: fixture.handle, segmenter };
+    expect(await dispatch(request, context)).toMatchObject({
+      ok: true,
+      data: { instances: [{ bbox: [0, 0, 16, 12], mask: { pixels: 192 } }] },
+    });
+    expect(await dispatch(request, context)).toMatchObject({ ok: true });
+    expect(encodes).toBe(1);
+    await Promise.all(
+      ["document_revisions", "image_nodes", "node_executions", "layers"].map(async (table) =>
+        expect((await fixture.handle.query(`SELECT * FROM ${table}`)).rows).toEqual([]),
+      ),
+    );
+    expect(
+      await dispatch({ ...request, args: [fixture.id, "--at", "3,2"] }, context),
+    ).toMatchObject({
+      ok: true,
+      data: { instances: [{ layer_id: expect.any(String), mask: { pixels: 192 } }] },
+    });
+    expect((await fixture.handle.query("SELECT name FROM document_revision_layers")).rows).toEqual([
+      { name: "Segment" },
+    ]);
+    expect(await dispatch({ ...request, verb: "show", args: [fixture.id] }, context)).toMatchObject(
+      { ok: true },
+    );
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("production SAM reports the incomplete release before touching the document", async () => {
+  const fixture = await fixtureLibrary("release");
+  try {
+    const response = await dispatch(
+      {
+        verb: "segment",
+        args: [fixture.id, "--at", "1,1", "--dry-run"],
+        cwd: fixture.parent,
+        env: { noDaemon: true },
+      },
+      { version: "test", library: fixture.handle },
+    );
+    expect(response).toMatchObject({
+      ok: false,
+      code: "provider_unconfigured",
+      data: { reason: "model_manifest_incomplete" },
+    });
+    expect((await fixture.handle.query("SELECT id FROM document_revisions")).rows).toEqual([]);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("SAM uses the catalog's already-oriented portrait dimensions", async () => {
+  const fixture = await fixtureLibrary("portrait");
+  try {
+    await fixture.handle.query("UPDATE photos SET orientation = 6 WHERE id = $1", [fixture.id]);
+    const response = await dispatch(
+      {
+        verb: "segment",
+        args: [fixture.id, "--at", "7,5", "--dry-run"],
+        cwd: fixture.parent,
+        env: { noDaemon: true },
+      },
+      {
+        version: "test",
+        library: fixture.handle,
+        segmentation: {
+          local: {
+            segment: async ({ dimensions }) => ({
+              ...dimensions,
+              data: new Float32Array(dimensions.w * dimensions.h).fill(1),
+            }),
+          },
+        },
+      },
+    );
+    expect(response).toMatchObject({ ok: true, data: { instances: [{ bbox: [0, 0, 8, 6] }] } });
+  } finally {
+    await fixture.handle.close();
+  }
+});
 
 afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));

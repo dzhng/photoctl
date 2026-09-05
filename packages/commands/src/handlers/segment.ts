@@ -1,8 +1,8 @@
 import { resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import {
   createManualLayer,
-  createMaskLayers,
-  orientedDimensions,
+  prepareMaskLayer,
+  commitPreparedMaskLayers,
   RevisionConflictError,
   summarizeMask,
   type ManualMaskShape,
@@ -17,6 +17,8 @@ import { PhotoctlError, type Envelope } from "@photoctl/protocol";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
+import { configuredSegmentation } from "../segmentation.js";
+import type { Sam2Segmenter } from "@photoctl/render";
 
 /* eslint-disable no-await-in-loop -- SAM decoder prompts stay ordered and bound peak mask memory. */
 
@@ -26,6 +28,7 @@ export interface SegmentationAdapter {
     dimensions: { w: number; h: number };
     points: Array<[number, number]>;
     box?: [number, number, number, number];
+    boxSpace?: "base" | "render";
   }): Promise<MaskImage>;
 }
 
@@ -33,6 +36,8 @@ export interface SegmentationDependencies {
   local: SegmentationAdapter;
   structured?: StructuredModelAdapter;
   image?: StructuredImage;
+  groundingSpace?: "render";
+  warnings?: import("@photoctl/protocol").Warning[];
 }
 
 export async function segmentCommand(
@@ -41,13 +46,14 @@ export async function segmentCommand(
   cwd: string,
   provided?: LibraryHandle,
   dependencies?: SegmentationDependencies,
+  segmenter?: Sam2Segmenter,
 ): Promise<Envelope> {
   const parsed = parseSegmentArguments(args);
   const lease = await openRequestLibrary(env, cwd, provided);
   try {
     const photoId = await resolvePhotoId(lease.handle, parsed.id);
     const photo = await loadPhoto(lease.handle, photoId);
-    const dimensions = orientedDimensions({ w: photo.w, h: photo.h }, photo.orientation);
+    const dimensions = { w: photo.w, h: photo.h };
     try {
       if (parsed.mode === "manual") {
         const shape = parseManualShape(parsed, dimensions);
@@ -63,17 +69,18 @@ export async function segmentCommand(
         return manualEnvelope(photoId, result);
       }
 
-      if (!dependencies?.local) {
-        throw new PhotoctlError(
-          "provider_unconfigured",
-          "SAM segmentation runtime is not configured for this command process",
-          { id: photoId },
-        );
-      }
       const points = parsed.at.map((value) => parsePoint(value, parsed.normalized, dimensions));
       const explicitBox = parsed.box
         ? parseBox(parsed.box, parsed.normalized, dimensions)
         : undefined;
+      dependencies ??= await configuredSegmentation(
+        lease.handle,
+        env,
+        cwd,
+        photo,
+        parsed.text !== undefined,
+        segmenter,
+      );
       let gatewayCalls = 0;
       let candidates: Array<{ label: string; box?: [number, number, number, number] }>;
       if (parsed.text !== undefined) {
@@ -97,36 +104,63 @@ export async function segmentCommand(
       } else {
         candidates = [{ label: "Segment", ...(explicitBox ? { box: explicitBox } : {}) }];
       }
-      const masks: Array<{ label: string; mask: MaskImage }> = [];
+      const masks: Array<{ label: string }> = [];
+      const summaries: ReturnType<typeof summarizeMask>[] = [];
+      const prepared: Awaited<ReturnType<typeof prepareMaskLayer>>[] = [];
       for (const candidate of candidates) {
-        masks.push({
-          label: candidate.label,
-          mask: await dependencies.local.segment({
-            photoId,
-            dimensions,
-            points,
-            box: candidate.box ?? explicitBox,
-          }),
+        const mask = await dependencies.local.segment({
+          photoId,
+          dimensions,
+          points,
+          box: candidate.box ?? explicitBox,
+          ...(parsed.text !== undefined && dependencies.groundingSpace
+            ? { boxSpace: dependencies.groundingSpace }
+            : {}),
         });
-      }
-      const summaries = masks.map(({ mask }) => {
         if (mask.w !== dimensions.w || mask.h !== dimensions.h) {
           throw new Error("Mask must use oriented base-image dimensions");
         }
-        return summarizeMask(mask);
-      });
+        masks.push({ label: candidate.label });
+        if (parsed.dryRun) summaries.push(summarizeMask(mask));
+        else {
+          const layer = await prepareMaskLayer(lease.handle.path, { name: candidate.label, mask });
+          prepared.push(layer);
+          summaries.push(layer);
+        }
+      }
       if (masks.length === 0) {
-        return instanceEnvelope(photoId, gatewayCalls, masks, summaries, null);
+        return instanceEnvelope(
+          photoId,
+          gatewayCalls,
+          masks,
+          summaries,
+          null,
+          dependencies.warnings,
+        );
       }
       if (parsed.dryRun) {
-        return instanceEnvelope(photoId, gatewayCalls, masks, summaries, null);
+        return instanceEnvelope(
+          photoId,
+          gatewayCalls,
+          masks,
+          summaries,
+          null,
+          dependencies.warnings,
+        );
       }
-      const committed = await createMaskLayers(lease.handle, lease.handle.path, {
+      const committed = await commitPreparedMaskLayers(lease.handle, {
         photoId,
         orientation: photo.orientation,
-        layers: masks.map(({ label, mask }) => ({ name: label, mask })),
+        layers: prepared,
       });
-      return instanceEnvelope(photoId, gatewayCalls, masks, summaries, committed);
+      return instanceEnvelope(
+        photoId,
+        gatewayCalls,
+        masks,
+        summaries,
+        committed,
+        dependencies.warnings,
+      );
     } catch (error) {
       if (error instanceof PhotoctlError) throw error;
       if (error instanceof RevisionConflictError) {
@@ -295,9 +329,10 @@ function manualEnvelope(
 function instanceEnvelope(
   photoId: string,
   gatewayCalls: number,
-  masks: Array<{ label: string; mask: MaskImage }>,
+  masks: Array<{ label: string }>,
   summaries: Array<{ bbox: [number, number, number, number]; pixels: number }>,
-  committed: Awaited<ReturnType<typeof createMaskLayers>> | null,
+  committed: Awaited<ReturnType<typeof commitPreparedMaskLayers>> | null,
+  warnings: import("@photoctl/protocol").Warning[] = [],
 ): Envelope {
   return {
     schema: 1,
@@ -319,6 +354,6 @@ function instanceEnvelope(
         },
       })),
     },
-    warnings: [],
+    warnings,
   };
 }

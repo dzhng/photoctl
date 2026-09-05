@@ -1,4 +1,4 @@
-import { dispatch } from "@photoctl/commands";
+import { dispatch, createLibrarySegmenter } from "@photoctl/commands";
 import {
   adoptLibraryLock,
   createBackup,
@@ -48,6 +48,7 @@ export class DaemonServer {
   private server: Server | undefined;
   private library: LibraryHandle | undefined;
   private previewCoordinator: PreviewCoordinator | undefined;
+  private segmenter: ReturnType<typeof createLibrarySegmenter> | undefined;
   private watcher: FSWatcher | undefined;
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
   private drainTimer: ReturnType<typeof setTimeout> | undefined;
@@ -78,6 +79,7 @@ export class DaemonServer {
     });
     this.library = await openLibraryHoldingLock(this.libraryPath, this.lock);
     this.previewCoordinator = new PreviewCoordinator();
+    this.segmenter = createLibrarySegmenter(this.libraryPath);
     this.embedWorker = new EmbedWorker({
       handle: this.library,
       cwd: process.cwd(),
@@ -195,6 +197,7 @@ export class DaemonServer {
             version: this.version,
             library: this.library,
             previewCoordinator: this.previewCoordinator,
+            segmenter: this.segmenter,
             emit: async (event) =>
               await writeFrame(item.socket, { type: "event", event } satisfies DaemonServerFrame),
             stream: async (row) =>
@@ -269,6 +272,8 @@ export class DaemonServer {
   }
 
   private async finishStop(): Promise<void> {
+    this.segmenter?.clear();
+    this.segmenter = undefined;
     const library = this.library;
     this.library = undefined;
     await library?.close();
