@@ -1374,9 +1374,9 @@
 - **The choice:** Non-local means (NLM) compares each pixel's small neighborhood with nearby
   neighborhoods and averages the most similar ones. A straightforward implementation writes every
   result into a second full-size image. This implementation instead caches a fixed block plus the few
-  source rows whose neighborhoods remain reachable, computes the block across available cores, and
-  then replaces those input rows. The existing asynchronous native call still owns the one input buffer
-  required to keep JavaScript memory safe.
+  source rows whose neighborhoods remain reachable, computes each block through one capped persistent
+  worker set, and then replaces those input rows. The existing asynchronous native call still owns the
+  one input buffer required to keep JavaScript memory safe.
 - **The gap:** The plan required deterministic bounded-memory NLM but did not choose the streaming
   strategy or exact scratch-space bound.
 - **The reach:** A full-resolution RAW uses scratch space proportional to image width and the fixed

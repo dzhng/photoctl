@@ -23,10 +23,10 @@ photographic result; its mild microtexture attenuation remains the visible trade
 reduction is accepted**, while the separate local-contrast checkpoint remains rejected on its own
 evidence.
 
-The optimized native build processed this crop in 12 ms (luminance), 12 ms (color), and 21 ms
-(combined). It caches component data for at most 22 source rows and computes at most 16 output rows
-at a time across the available cores, so scratch storage remains proportional to image width rather
-than image height.
+The optimized native build processed this crop in 35 ms (luminance), 37 ms (color), and 70 ms
+(combined). It caches component data for at most 22 source rows and uses one persistent set of at
+most eight workers to compute 16 output rows at a time, so scratch storage remains proportional to
+image width rather than image height.
 
 Evidence hashes:
 

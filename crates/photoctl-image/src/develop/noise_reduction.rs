@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::sync::{Arc, mpsc};
 use std::thread;
 
 use super::{REC2020_TO_XYZ, SampleStorage, rec2020_luminance};
@@ -6,6 +7,7 @@ use super::{REC2020_TO_XYZ, SampleStorage, rec2020_luminance};
 const PATCH_RADIUS: usize = 1;
 const SEARCH_RADIUS: usize = 2;
 const ROW_BLOCK: usize = 16;
+const MAX_WORKERS: usize = 8;
 const LUMINANCE_H_AT_FULL_SCALE: f32 = 0.012;
 const COLOR_H_AT_FULL_SCALE: f32 = 0.01;
 
@@ -29,36 +31,116 @@ pub(super) fn apply<S: SampleStorage + ?Sized>(
         };
     let h_squared = (h * h).max(f32::MIN_POSITIVE);
     let delay = SEARCH_RADIUS + PATCH_RADIUS;
-    let mut source_rows = SourceRows::new(data, width, height, ROW_BLOCK + delay - 1);
-    let worker_count = thread::available_parallelism().map_or(1, usize::from);
-
-    for block_start in (0..height).step_by(ROW_BLOCK) {
-        let block_end = block_start.saturating_add(ROW_BLOCK).min(height);
-        source_rows.extend(data, block_end.saturating_add(delay - 1).min(height - 1));
-        let rows_per_worker = (block_end - block_start).div_ceil(worker_count);
-        let output_rows = thread::scope(|scope| {
-            let mut workers = Vec::new();
-            for start in (block_start..block_end).step_by(rows_per_worker) {
-                let end = start.saturating_add(rows_per_worker).min(block_end);
-                let source_rows = &source_rows;
-                workers.push(scope.spawn(move || {
-                    (start..end)
-                        .map(|y| {
-                            compute_row(source_rows, width, height, y, component, amount, h_squared)
-                        })
-                        .collect::<Vec<_>>()
-                }));
+    let source_rows = SourceRows::new(data, width, height, ROW_BLOCK + delay - 1);
+    let settings = Settings {
+        width,
+        height,
+        component,
+        amount,
+        h_squared,
+        delay,
+    };
+    let worker_count = thread::available_parallelism()
+        .map_or(1, usize::from)
+        .min(MAX_WORKERS)
+        .min(height);
+    let (result_sender, result_receiver) = mpsc::channel();
+    let mut job_senders = Vec::with_capacity(worker_count);
+    let mut workers = Vec::with_capacity(worker_count);
+    for _ in 0..worker_count {
+        let (job_sender, job_receiver) = mpsc::channel::<Option<RowJob>>();
+        let result_sender = result_sender.clone();
+        job_senders.push(job_sender);
+        workers.push(thread::spawn(move || {
+            while let Some(job) = job_receiver.recv().unwrap() {
+                let rows = (job.start..job.end)
+                    .map(|y| {
+                        compute_row(
+                            &job.source_rows,
+                            job.settings.width,
+                            job.settings.height,
+                            y,
+                            job.settings.component,
+                            job.settings.amount,
+                            job.settings.h_squared,
+                        )
+                    })
+                    .collect();
+                result_sender.send((job.start, rows)).unwrap();
             }
-            workers
-                .into_iter()
-                .flat_map(|worker| worker.join().unwrap())
-                .collect::<Vec<_>>()
-        });
-        for (row_offset, row) in output_rows.into_iter().enumerate() {
-            write_row(data, width, block_start + row_offset, row);
+        }));
+    }
+    drop(result_sender);
+    apply_blocks(data, source_rows, settings, &job_senders, &result_receiver);
+    for sender in job_senders {
+        sender.send(None).unwrap();
+    }
+    for worker in workers {
+        worker.join().unwrap();
+    }
+}
+
+#[derive(Clone)]
+struct RowJob {
+    source_rows: SourceRows,
+    settings: Settings,
+    start: usize,
+    end: usize,
+}
+
+#[derive(Clone, Copy)]
+struct Settings {
+    width: usize,
+    height: usize,
+    component: Component,
+    amount: f32,
+    h_squared: f32,
+    delay: usize,
+}
+
+fn apply_blocks<S: SampleStorage + ?Sized>(
+    data: &mut S,
+    mut source_rows: SourceRows,
+    settings: Settings,
+    job_senders: &[mpsc::Sender<Option<RowJob>>],
+    result_receiver: &mpsc::Receiver<(usize, Vec<Vec<f32>>)>,
+) {
+    for block_start in (0..settings.height).step_by(ROW_BLOCK) {
+        let block_end = block_start.saturating_add(ROW_BLOCK).min(settings.height);
+        source_rows.extend(
+            data,
+            block_end
+                .saturating_add(settings.delay - 1)
+                .min(settings.height - 1),
+        );
+        let rows_per_worker = (block_end - block_start).div_ceil(job_senders.len());
+        let mut job_count = 0;
+        for (worker, start) in (block_start..block_end)
+            .step_by(rows_per_worker)
+            .enumerate()
+        {
+            let end = start.saturating_add(rows_per_worker).min(block_end);
+            job_senders[worker]
+                .send(Some(RowJob {
+                    source_rows: source_rows.clone(),
+                    settings,
+                    start,
+                    end,
+                }))
+                .unwrap();
+            job_count += 1;
+        }
+        let mut output_chunks = (0..job_count)
+            .map(|_| result_receiver.recv().unwrap())
+            .collect::<Vec<_>>();
+        output_chunks.sort_unstable_by_key(|(start, _)| *start);
+        for (start, rows) in output_chunks {
+            for (row_offset, row) in rows.into_iter().enumerate() {
+                write_row(data, settings.width, start + row_offset, row);
+            }
         }
         // Keep the original rows whose patches remain reachable from the next block.
-        source_rows.discard_before(block_end.saturating_sub(delay));
+        source_rows.discard_before(block_end.saturating_sub(settings.delay));
     }
 }
 
@@ -130,9 +212,10 @@ struct SourcePixel {
     components: [f32; 3],
 }
 
+#[derive(Clone)]
 struct SourceRows {
     first_y: usize,
-    rows: VecDeque<Vec<SourcePixel>>,
+    rows: VecDeque<Arc<Vec<SourcePixel>>>,
     width: usize,
 }
 
@@ -145,7 +228,7 @@ impl SourceRows {
     ) -> Self {
         let mut rows = VecDeque::new();
         for y in 0..=through_y.min(height - 1) {
-            rows.push_back(component_row(data, width, y));
+            rows.push_back(Arc::new(component_row(data, width, y)));
         }
         Self {
             first_y: 0,
@@ -157,7 +240,8 @@ impl SourceRows {
     fn extend<S: SampleStorage + ?Sized>(&mut self, data: &S, through_y: usize) {
         let mut y = self.first_y + self.rows.len();
         while y <= through_y {
-            self.rows.push_back(component_row(data, self.width, y));
+            self.rows
+                .push_back(Arc::new(component_row(data, self.width, y)));
             y += 1;
         }
     }
@@ -327,11 +411,19 @@ fn direct_patch_distance(
 }
 
 fn component_distance(source: [f32; 3], candidate: [f32; 3], component: Component) -> f64 {
-    match component {
-        Component::Luminance => f64::from((source[0] - candidate[0]).powi(2)),
-        Component::Color => {
-            f64::from((source[1] - candidate[1]).powi(2) + (source[2] - candidate[2]).powi(2))
+    let squared_difference = |index: usize| {
+        let difference = source[index] - candidate[index];
+        let squared = difference * difference;
+        if squared.is_finite() {
+            f64::from(squared)
+        } else {
+            let difference = f64::from(source[index]) - f64::from(candidate[index]);
+            difference * difference
         }
+    };
+    match component {
+        Component::Luminance => squared_difference(0),
+        Component::Color => squared_difference(1) + squared_difference(2),
     }
 }
 
@@ -340,7 +432,7 @@ fn normalized_distance(distance: f64, component: Component) -> f32 {
         Component::Luminance => 9.0,
         Component::Color => 18.0,
     };
-    (distance / samples) as f32
+    (distance.max(0.0) / samples) as f32
 }
 
 fn components(pixel: [f32; 3]) -> [f32; 3] {
@@ -375,4 +467,25 @@ fn write_row<S: SampleStorage + ?Sized>(data: &mut S, width: usize, y: usize, ro
 
 fn offset_clamped(coordinate: usize, offset: isize, length: usize) -> usize {
     coordinate.saturating_add_signed(offset).min(length - 1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Component, component_distance, normalized_distance};
+
+    #[test]
+    fn rolling_distance_roundoff_stays_finite_and_nonnegative() {
+        assert_eq!(
+            normalized_distance(-f64::EPSILON, Component::Luminance),
+            0.0
+        );
+        assert!(
+            component_distance(
+                [f32::MAX, 0.0, f32::MAX],
+                [-f32::MAX, 0.0, -f32::MAX],
+                Component::Color,
+            )
+            .is_finite()
+        );
+    }
 }
