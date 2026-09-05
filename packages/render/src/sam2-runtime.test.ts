@@ -31,13 +31,8 @@ test("a live prepared handle releases source pixels before lazy inference", asyn
     return await segmenter.prepare({ photoId: "ownership", tier: "develop", image });
   })();
   // GC belongs only to this ownership test, never the production memory path.
-  const bun = Reflect.get(globalThis, "Bun") as { gc(force: boolean): void } | undefined;
-  let collect: () => void;
-  if (bun) collect = () => bun.gc(true);
-  else {
-    setFlagsFromString("--expose-gc");
-    collect = runInNewContext("gc");
-  }
+  setFlagsFromString("--expose-gc");
+  const collect: () => void = runInNewContext("gc");
   await setImmediate();
   collect();
   expect(source!.deref()).toBeUndefined();
