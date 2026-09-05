@@ -14,7 +14,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 ## Next Agent Prompt
 
 *Last updated: 2026-09-05. Status: slices 00–10, the keyless Slice 11 command seam, and the bounded
-Slice 12a strict-fill and 12b density-planning checkpoints are implemented.
+Slice 12a strict-fill, 12b density-planning, and 12c1 upscale-policy checkpoints are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
 the shared Rust front produces profiled linear Rec.2020 TIFFs within the G4 oracle tolerance, and
@@ -52,8 +52,8 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
 - **Active wave:** Slice 12a owns keyless remove/prompt generation through the fake gateway, immutable provider execution,
-  deterministic dimension normalization, and strict base-pixel composite; 12b owns the pure density plan. Continue with 12c
-  configured upscaler policy before 12d refresh/person-move integration. Slice 11 still needs the hosted SAM weights, real point probes, G6,
+  deterministic dimension normalization, and strict base-pixel composite; 12b owns the pure density plan; 12c1 owns policy and the
+  guarded prompt. Continue with 12c2 adapter execution/failure retention before 12d refresh/person-move integration. Slice 11 still needs the hosted SAM weights, real point probes, G6,
   and `wb masks`; fake masks are not evidence for those gates. Slice 09c's live multimodal request also remains provisional until
   the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
@@ -79,7 +79,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
-- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [ ] 12c upscale policy/failure · [ ] 12d refresh/person move — `slices/12-fill.md`
+- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [ ] 12c2 execution/failure · [ ] 12d refresh/person move — `slices/12-fill.md`
 - [ ] 13a reimagine/relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
@@ -135,8 +135,9 @@ See Slice 10's local dependency graph for its serialization details.
 | 10c2 vacancy moves/warnings | `bf93625` |
 | 11a keyless SAM runtime | `a2305bd`, corrected through `e0803af` |
 | 11b keyless segment commands | `4d0512d` |
-| 12a strict fill generation DAG | `f47a14c` |
+| 12a strict fill generation DAG | `f47a14c`, corrected by `60f6f60` |
 | 12b fill density planner | `26ef5d7` |
+| 12c1 upscale policy/guarded prompt | `ff78f5d` |
 
 ## Precedent repos — where to look before designing anything
 
