@@ -2,6 +2,7 @@ import { afterEach, expect, test } from "vitest";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { compositeV2Projection } from "../layers/model.js";
+import { MASK_ARTIFACT_MEDIA_TYPE } from "../artifacts/publication.js";
 import { commitRevision, ensurePhotoDocument, loadActiveDocument } from "../graph/store.js";
 import { commitDevelopState, readActiveDevelopState } from "./state.js";
 import type { PGlite } from "@electric-sql/pglite";
@@ -99,8 +100,8 @@ async function layeredDocument(): Promise<PGlite> {
   await database.query(
     `INSERT INTO image_artifacts
        (artifact_hash, media_type, bytes, w, h, artifact_available)
-     VALUES ($1, 'application/x-photoctl-mask-test', 1, 1, 1, true)`,
-    [artifactHash],
+     VALUES ($1, $2, 4, 1, 1, true)`,
+    [artifactHash, MASK_ARTIFACT_MEDIA_TYPE],
   );
   const layers = [
     {

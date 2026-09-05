@@ -8,6 +8,7 @@ import {
   compositeV2Projection,
   developHash,
   ensurePhotoDocument,
+  MASK_ARTIFACT_MEDIA_TYPE,
   readActiveDevelopState,
 } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
@@ -309,8 +310,8 @@ async function addLayer(libraryPath: string, id: string): Promise<string> {
     await opened.query(
       `INSERT INTO image_artifacts
          (artifact_hash, media_type, bytes, w, h, artifact_available)
-       VALUES ($1, 'application/x-photoctl-mask-test', 1, 1, 1, true)`,
-      [artifactHash],
+       VALUES ($1, $2, 4, 1, 1, true)`,
+      [artifactHash, MASK_ARTIFACT_MEDIA_TYPE],
     );
     const layers = [
       {
