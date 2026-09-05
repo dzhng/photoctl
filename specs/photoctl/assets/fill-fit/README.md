@@ -84,9 +84,10 @@ Adversarial self-review, recorded before acceptance:
 
 The creation sub-agent could not obtain another fresh reviewer; the integrating task then obtained an
 independent critique of all seven images. It found no definite defects: high-confidence crisp straight
-boundaries, clean corners, and no halos, blur, or stray pixels. It noted that a flush-right crop is
-intent-dependent and that flat regions cannot establish readability or photographic quality. The
-integrating agent independently inspected all seven images and agreed with the mechanical geometry.
+boundaries, clean corners, and no halos, blur, or stray pixels. It noted that the edge-flush crop is
+intent-dependent and that flat regions cannot establish readability or photographic quality. Its
+left/right description was mistaken: the blue patch meets the left crop boundary, as the coordinates
+above require. The integrating agent inspected all seven images and accepted that mechanical geometry.
 Verdict: accept this deterministic creation/visibility correction, with those visual limitations.
 Deterministic command tests also
 check uploaded quadrant colors, zero context padding, active canonical mask coverage, final protected

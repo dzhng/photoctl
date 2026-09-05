@@ -19,17 +19,20 @@ the last pushed export-heartbeat checkpoint.*
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: make initial fill generation frame-aware, then finish controls and outpaint.**
+**Current pickup: carry exact render frames through preview caches, then finish controls and outpaint.**
 
-- Initial fill on an already cropped develop frame still fails because RGB and catalog-mask sizes
-  differ. Preserve base-space placement while sampling the exact evaluated frame, and clip authored
-  effective coverage to its visible footprint so later uncrop cannot expose unintended edits.
-  Later-frame re-evaluation and cache invalidation are already corrected. See [Slice 12](slices/12-fill.md).
+- Initial cropped-frame fill and refresh now sample the evaluated frame while retaining base-space
+  placement and authored visible coverage. The next reproduced defect is preview metadata/detail planning:
+  a reduced, fractionally cropped and straightened source renders correctly sized pixels but reports a
+  scaled logical-frame mapping. Persist the realized frame through master/view caches and make existing
+  consumers share its geometry owner. See [12f1](slices/12-outpaint.md).
 - Then finish reference/init controls and the outpaint canvas. Outpaint's independent drafts agree
   that graph-derived frame ownership must replace per-consumer size reconstruction; follow the
   [outpaint checkpoints](slices/12-outpaint.md), settling crop and removable-extent semantics before
   canvas implementation. Fit/strength and capped/full-res inputs
-  are implemented. Keep photographic/live evidence separate from these deterministic controls.
+  are implemented. Reference inputs must use the documented edit transport and reachable pinned pixels;
+  the earlier standalone `reference_image` field remains a named correction. Keep photographic/live
+  evidence separate from these deterministic controls.
 - Slice 11 runtime and `wb masks` are integrated. The report explicitly selects highest-resolution
   cached current-develop context, not historical SAM input or last-shown source. Real weights and G6
   remain open. See [Slice 11](slices/11-segment.md).

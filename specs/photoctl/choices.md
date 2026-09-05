@@ -45,6 +45,54 @@
 
 ## Sound
 
+### Slice 12 — Regeneration revisits original selection intent under current visibility
+
+- **When:** Initial cropped-frame fill correction, 2026-09-06.
+- **The choice:** If half a selection is hidden by a crop, fill edits only the visible half and
+  stores that restriction in its effective mask. Clearing the crop alone does not invent edits in
+  the other half. Explicit generation refresh, however, goes back to the original selection and
+  can now fill both halves. It replans the provider crop from the newly visible coverage and stored
+  padding. The alternative was permanently losing the hidden selection intent, or silently revealing
+  generated edits just because the user uncropped.
+- **The gap:** Existing refresh requirements did not define partially invisible selections.
+- **The reach:** Refresh is an explicit regeneration action, unlike inspection or ordinary develop
+  changes. Old requests without a stored padding amount retain their recorded padded rectangle,
+  enlarged only enough to contain refreshed support; they do not guess a new padding preference.
+- **Verdict:** **Sound.** Original selection remains editable intent, while authored effective coverage
+  is the durable protection boundary until a new generation is explicitly requested.
+- **Confidence:** Medium; regeneration may deliberately enlarge the edited area after uncrop.
+
+### Slice 12 — Visibility clips sample centers and reports what was excluded
+
+- **When:** Initial cropped-frame fill correction, 2026-09-06.
+- **The choice:** A selection pixel is visible when its center maps inside the evaluated frame.
+  Effective-mask recipes persist that frame mapping when clipping changes coverage. A partial
+  intersection succeeds with `mask_clipped`; a wholly invisible selection returns usage before a
+  provider call or new revision. After upload downsampling, the wire mask is clipped again at its
+  own sample centers so interpolation cannot mark black-padded context as editable.
+- **The gap:** The plan did not define a subpixel visibility rule or a warning for partial coverage.
+- **The reach:** The original selection is unchanged. The rule is raster sample visibility, not
+  analytical fractional area at crop boundaries, and applies consistently to upload and stored intent.
+- **Verdict:** **Sound.** It matches the actual native sampler's inside/outside decision; an
+  area-coverage rule would describe pixels the RGB sampler does not actually provide.
+- **Confidence:** Medium; fractional photographic boundaries still need separate quality evidence.
+
+### Slice 12 — Provider context uses bounded native affine sampling with protected black padding
+
+- **When:** Initial cropped-frame fill correction, 2026-09-06.
+- **The choice:** A provider still receives a crop in original coordinates even when the available
+  photo is rotated, cropped, or a reduced offline preview. The native sampler borrows the existing
+  RGB buffer, maps each requested output sample into it, and interpolates four neighboring samples.
+  Unseen context is black with zero edit coverage. It never reconstructs a full original-sized float
+  image merely to make a bounded upload. Generation records the sampling map and actual input dimensions.
+- **The gap:** Earlier crop preparation assumed RGB and selection arrays shared dimensions.
+- **The reach:** Refresh uses the same sampler, including any existing generation-input transform.
+  This extends the bounded bilinear upload path; it does not introduce provider tiling or a second
+  canonical resampler. The black-padding policy and limited source density remain inspectable provenance.
+- **Verdict:** **Sound.** Original-coordinate placement stays stable without pretending hidden or
+  unavailable source pixels were present. Photographic interpolation quality is not inferred from fixtures.
+- **Confidence:** High for coordinate and memory ownership; medium for photographic sampling quality.
+
 ### Slice 12f plan — Frame ownership precedes canvas growth
 
 - **When:** Outpaint planning checkpoint, 2026-09-06; implementation remains pending.

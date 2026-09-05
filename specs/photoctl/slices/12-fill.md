@@ -19,7 +19,7 @@ The following remaining requirements are independent of missing live credentials
 
 The [outpaint subplan](12-outpaint.md) synthesizes the independent drafts and specifies the first
 shared-frame checkpoint. Its crop/layer-extent authoring checkpoint must be settled before canvas code;
-the initial-fill crop/offline defect remains the immediate dependency.
+initial-fill crop/offline sampling is corrected, while exact preview-frame provenance remains next.
 
 Each pass follows red/green public behavior tests and the existing visual gates. Live polarity and
 photographic quality remain distinct evidence requirements after these controls work deterministically.

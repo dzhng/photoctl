@@ -63,9 +63,11 @@ reconstructs geometry from the catalog and develop dictionary. `preview.ts` owns
 views and width-ratio density planning. `develop/geometry.ts` owns the actual crop, quarter-turn,
 straighten, and tier-rounding math. Move ownership without duplicating those operators.
 
-**Dependencies:** land the reproduced initial-fill crop/offline sampling correction first; its exact
-mapping and authored visible-mask intersection are consumers of this same boundary. Do not develop
-two conflicting geometry abstractions concurrently.
+**Dependencies:** the initial-fill crop/offline sampling correction is integrated. Its exact mapping
+and authored visible-mask intersection are consumers of this same boundary. A public show regression
+now reproduces the next defect: reduced-source crop/straighten produces a 16×15 raster but its reported
+mapping scales the logical full-resolution frame. Master sidecars currently lose that exact geometry;
+persist the realized frame through cached master and detail views, not only the uncached result.
 
 **Verification:** use `write-tests` before behavior changes. Existing source/develop, crop/rotation,
 fractional straighten, manual masks, SAM projection, markup, fill creation/refresh, cached-mask report,
