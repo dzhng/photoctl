@@ -121,6 +121,7 @@ See Slice 10's local dependency graph for its serialization details.
 | 08d3 develop geometry (G9) | `cd1f142` |
 | 08d4 filters/B&W (G10) | `b33fb75` |
 | 08 vignette/keyless gold path | `d6bac6d` |
+| 08 selective color closeout (G10) | `e7e1bbd` |
 | 09a provider contracts | `90b03c4` |
 | 09b evidence | `cf34507` |
 | 09c embed/search | `ea2c715` |
