@@ -71,10 +71,11 @@ This rules out substantial ONNX numerical drift for these inputs, not inappropri
 preprocessing or insufficient model quality. The pinned upstream SAM2 transforms resize directly
 to a square, whereas this spec prescribes centered letterboxing. The controlled
 [square-geometry comparison](square-geometry/README.md) improves wires/path but worsens foliage;
-both fail detailed edges. Production letterboxing is unchanged. Next: the full pinned upstream
-predictor as a reference, including its display-range conversion and antialiased resize. That
-multi-variable reference can assess achievable quality but cannot alone establish the cause of a
-difference. Do not weaken the edge target or claim the coarse test proves it.
+both fail detailed edges. The full pinned [upstream predictor reference](upstream-reference/README.md)
+also fails, using both single-mask output and automatic highest-score multi-mask selection.
+That multi-variable reference does not isolate a preprocessing cause. Production letterboxing is
+unchanged; refinement beyond the specified projection remains a separate, unimplemented decision.
+Do not weaken the edge target or claim the coarse test proves it.
 
 ## Identity and resource boundaries
 

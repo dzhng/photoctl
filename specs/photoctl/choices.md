@@ -4196,3 +4196,34 @@
 - **Verdict:** **Sound.** One viewport-relative total-area decision avoids resolution-dependent
   warning changes and fragment-count-dependent suppression without introducing a raster owner.
 - **Confidence:** Medium.
+
+### Native color tasks — Report private snapshots to Node without changing collection policy
+
+- **When:** Native task accounting checkpoint, 2026-09-06, integrated as `a9ced3a`.
+- **The choice:** When a caller starts converting a large photograph, Rust copies the caller's
+  pixels so asynchronous work cannot observe later caller mutations. That private allocation is
+  outside JavaScript's ordinary typed-array storage. The task now tells Node how much pixel
+  capacity it actually owns, letting Node's existing garbage collector see that pressure. It does
+  not force collection, change the worker pool, or estimate storage that has not been allocated.
+  Charging after allocation cannot prevent the copy's instantaneous peak. Tiny task metadata and
+  matrix arrays are not included in this pixel-capacity charge.
+  On success, the manual charge ends immediately before the same storage becomes a Node-owned
+  typed array, which Node already accounts. There is no asynchronous gap in that transfer.
+  On a worker error, storage may be freed before the originating Node thread runs completion;
+  the charge lasts until that completion destroys the task. Only that originating thread may
+  call Node's accounting API. Explicit transfer errors propagate; destructor cleanup never panics
+  across the native boundary. A scheduler failure that leaks the whole task retains both its real
+  storage and its charge; this does not introduce a second scheduler or promise teardown recovery.
+- **The gap:** The spec required a memory band without prescribing native snapshot accounting.
+  Caller ownership must remain intact, and ordinary Node backing-store statistics do not expose
+  this manual accounting counter in the pinned runtime.
+- **The reach:** Future asynchronous pixel tasks can share the same lifetime guard, but must
+  distinguish transferring the input allocation from producing a separate output. Consumer tests
+  read the pinned Node runtime's actual GC diagnostic at controlled phases, using test-only
+  collection and failing if the diagnostic is missing. No product diagnostic API, schema, model,
+  color arithmetic, or production GC flag is added. Rare scheduler and teardown paths are
+  source-audited rather than dynamically fault-injected; RSS acceptance requires separate real
+  commands and cannot be inferred from a balanced counter.
+- **Verdict:** **Sound.** Report memory actually owned to the platform that manages collection;
+  preserve pixel and caller contracts instead of tuning an allocator around one photograph.
+- **Confidence:** High for ownership/accounting; RSS effectiveness remains measurement-dependent.

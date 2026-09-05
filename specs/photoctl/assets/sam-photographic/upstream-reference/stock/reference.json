@@ -1,0 +1,15 @@
+{
+  "method": "Pinned official SAM2ImagePredictor, CPU float32, original-size RGB8 display PNG, stock ToTensor/antialiased square Resize/Normalize, single-mask False, zero holes/sprinkles postprocessing.",
+  "sky": {
+    "score": 0.9915314316749573,
+    "selected": 10168582,
+    "areaPercent": 31.05728328227997,
+    "includesClick": true
+  },
+  "road": {
+    "score": 0.9750995635986328,
+    "selected": 1590768,
+    "areaPercent": 4.8585861921310425,
+    "includesClick": true
+  }
+}

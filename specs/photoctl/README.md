@@ -19,7 +19,7 @@ the last pushed export-heartbeat checkpoint.*
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: implement reversible outpaint canvas and close SAM memory/edge failures in parallel.**
+**Current pickup: implement reversible outpaint canvas and resolve Linux model-gate/edge failures in parallel.**
 
 - Initial cropped-frame fill, refresh, and preview/detail planning now share exact realized frames.
   Migration 17 retains coordinates per execution; cached masters/views retain their own frame and
@@ -36,7 +36,8 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   Canvas pixel lifecycle remains in progress on its own worktree. Keep live quality
   separate from deterministic evidence.
 - Slice 11 runtime, real parity-verified weights, and `wb masks` are integrated. Real-photo
-  coarse subject tests pass; foliage/wire edges and full-command G6 remain red. The report selects
+  coarse subject tests pass; foliage/wire edges remain red. Full-command RSS passes the six-run
+  host/fixture witness after native accounting; that is not an all-platform resource guarantee. The report selects
   cached current-develop context, not historical SAM input. See [Slice 11](slices/11-segment.md).
 - Slice 14 packaging, shared full-feature journey, and HTML/SHA report artifacts are integrated.
   The clean-prefix fixture exam passed; real-drive acceptance remains. See [Slice 14](slices/14-gold-exam-and-release.md).
@@ -58,6 +59,8 @@ Slice 13's reimagine, relight, generate, auto-enhance, markup, and retouch check
 The geometry prerequisite passed 77 merged migration/graph/command tests and typecheck; the exact
 pointwise color-buffer reuse passed its merged native build and focused color/SAM tests. These are
 allocation and storage checkpoints, not canvas completion or a passing whole-command resource gate.
+Convex support passed 78 merged geometry/pixel tests and typecheck; its canvas consumers remain in progress.
+Native accounting passed its merged build, typecheck, and 12 color/accounting consumer tests.
 Retention passed 85 merged tests, atomic removal 18, and upscale/develop consumers 21, each with
 typecheck. The latter verifies exposure replacement without additional provider work.
 Earlier integrations passed focused tests, Rust tests, builds, typecheck,
@@ -67,14 +70,16 @@ Slice files and their assets hold the detailed acceptance evidence.
 
 **SAM pickup:** the release manifest now pins real export hashes with composed CPU parity checks.
 [Photographic evidence](assets/sam-photographic/) distinguishes passing coarse subject checks from
-failed detailed edges and a reproduced full-command memory breach. Pointwise buffer reuse and
+failed detailed edges and historical full-command memory breaches. Pointwise buffer reuse and
 pixel-free cached dimensions and prepared inference handles are integrated (19 merged tests and
-typecheck). Full-command RSS remains red at an earlier native snapshot boundary; investigate real
-allocation ownership/accounting next. Photographic ONNX/PyTorch parity passes; square geometry alone
-does not resolve edges. Compare the full upstream predictor before changing segmentation.
+typecheck). Native color snapshots now report their actual capacity to Node; six no-forced-GC CLI
+runs preserve exact masks at 2.04–2.27 GB RSS on the fixture host. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
+single/multi-mask references all fail detailed edges. Any extra refinement is a separate decision.
 [Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
-public model hosting and wiring Docker's model-fetch stage into the
-functional gate remain unfinished. The host model test fails visibly without its documented weights.
+public model hosting remains unfinished. Docker model-stage wiring is in progress; the real Linux
+probe exposed an ONNX Runtime plain-text CPU warning during native-addon static initialization,
+violating strict NDJSON before application logger setup. Fix the upstream load boundary without
+filtering the test harness. The host model test fails visibly without its documented weights.
 
 **External evidence still outstanding:**
 G3 still requires an SSH-capable Mac session. The real-drive path, additional ARW compression fixtures,
@@ -437,7 +442,7 @@ migrate daemon(start|stop|status) embed decode render presets(show) search graph
 | ARW drive path | 14 (04 uses it if present) | `fixtures:drive` + `fixtures:volume` |
 | Gateway key + per-verb model IDs | 09a (`doctor`, `settings`); 12 | fake gateway; `provider_unconfigured` |
 | First live upscaler adapter/model + balanced creativity/resemblance values | 09b/13a | deterministic fake adapter; `upscale_unconfigured`; live spike runs only when explicitly configured credentials exist |
-| Paid provider/upscaler return retention encoding | 12/13a | [bounded format evidence](assets/artifact-storage/) supports retaining original bytes beside the working TIFF; execution-linked retention is still unbuilt |
+| Paid provider/upscaler return retention encoding | 12/13a | Original encoded bytes and execution-linked attempts are integrated; [bounded format evidence](assets/artifact-storage/) does not settle the remaining history count/age/storage policy |
 | Undo artifact count/age/storage limit | 08a measurement, then 10 | roots/reachability land; automatic canonical-artifact GC remains off until measured |
 | Smoke 1 mask polarity | 12 pre-gate | adapters `maskPolarity:"unverified"` → live native-mask fill refused (`provider_unverified_mask` 69) |
 | Live multimodal embedding dialect | post-09c purpose-key smoke | named one-photo candidate may run only after explicit command or saved auto consent; remains provisional until accepted |

@@ -1,0 +1,27 @@
+{
+  "method": "Pinned official SAM2ImagePredictor, CPU float32, original-size RGB8 display PNG, stock ToTensor/antialiased square Resize/Normalize, zero holes/sprinkles postprocessing.",
+  "multimask": true,
+  "selection": "Highest model IoU score, chosen without inspecting masks.",
+  "sky": {
+    "scores": [
+      0.9360288381576538,
+      0.99114990234375,
+      0.9603675603866577
+    ],
+    "selectedIndex": 1,
+    "selected": 10237189,
+    "areaPercent": 31.266826391220093,
+    "includesClick": true
+  },
+  "road": {
+    "scores": [
+      0.9618161916732788,
+      0.9803798198699951,
+      0.8814017176628113
+    ],
+    "selectedIndex": 1,
+    "selected": 1621689,
+    "areaPercent": 4.95302639901638,
+    "includesClick": true
+  }
+}

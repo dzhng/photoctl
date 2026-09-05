@@ -78,9 +78,12 @@ tests verify pixel alignment and identity only; the real-weight hair/foliage che
 failed foliage/wire and distant-path edges, and a full-command RSS breach before inference.
 The default scan-order workbench crop is not sufficient to reveal these defects; targeted detail
 crops remain necessary. Exact pointwise buffer reuse and pixel-free cached dimensions are integrated,
-and prepared handles release full-frame captures before inference. Whole-command RSS remains red;
-the next memory pass investigates native snapshot allocation ownership/accounting before conversion.
+and prepared handles release full-frame captures before inference. Native color snapshots now
+report their capacity to Node; six no-forced-GC CLI runs preserve exact masks and pass the unchanged
+3 GB RSS band on the fixture host. Other platforms and photographic edge quality are not implied.
 The actual photographic tensor now agrees with pinned PyTorch at the unchanged tolerance, including
 all but two full-resolution mask pixels. Controlled square geometry improves wires/path but worsens
-foliage; both fail the target. Next: the full upstream predictor as an achievable-quality reference,
-not a one-variable causal test. Neither numerical parity nor coarse area bands closes edge quality.
+foliage; both fail the target. The full upstream predictor also fails with single-mask and automatic
+highest-score multi-mask output. Refinement beyond the specified projection remains a separate
+decision, not an accepted implicit change. Neither numerical parity nor coarse area bands closes
+edge quality.

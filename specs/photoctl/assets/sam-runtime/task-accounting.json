@@ -11,7 +11,7 @@
     "testOnlyGc": true,
     "rssAcceptance": false
   },
-  "reproduction": "bunx vitest run packages/img/src/color-memory.test.ts packages/render/src/color.test.ts after building and packaging the native addon",
+  "reproduction": "node node_modules/vitest/vitest.mjs run packages/img/src/color-memory.test.ts packages/render/src/color.test.ts after building and packaging the native addon",
   "pending": {
     "snapshotBytes": 3145728,
     "expectedIncreaseKiB": 3072,
