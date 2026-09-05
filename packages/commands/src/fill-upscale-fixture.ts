@@ -78,7 +78,7 @@ export async function fillUpscaleFixture(
         const value = await fake.upscale(input);
         return {
           ...value,
-          provenance: { ...value.provenance, adapterVersion: version },
+          provenance: { ...value.provenance, adapterVersion: version, modelVersion: version },
         };
       },
     });
@@ -168,6 +168,9 @@ export async function fillUpscaleFixture(
     upscaleCalls: () => upscaleCalls,
     replaceUpscaleAdapterVersion: (version: string) => {
       fill.upscaleRegistry = createRegistry(version);
+    },
+    replaceGenerationAdapterVersion: (version: string) => {
+      (fill.adapter as { version: string }).version = version;
     },
     close: async () => {
       await new Promise<void>((resolve) => server.close(() => resolve()));

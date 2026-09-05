@@ -129,56 +129,69 @@ export const fillMoveDataSchema = z.object({
   matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
 });
 
-export const fillStrictDataSchema = z.object({
-  id: z.uuid(),
-  graph: z.object({
-    revision: z.uuid(),
-    layer: z.uuid(),
-    output_node: nodeId,
-    render_hash: fullHashSchema("r"),
-  }),
-  generation: z.object({
-    node: nodeId,
-    adapter: z.string().min(1),
-    model: z.string().min(1),
-    returned: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
-  }),
-  source_context: z.object({
-    tier: z.string().min(1),
-    pixel_scale: z.number().positive(),
-    resolution_limited: z.boolean(),
-  }),
-  upscale: z.object({
-    enabled: z.boolean(),
-    executed: z.boolean(),
-    node: nodeId.nullable(),
-    adapter: z.string().min(1).nullable(),
-    model: z.string().min(1),
-    input: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
-    target: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
-    generated: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
-    final: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
-    density_satisfied: z.boolean(),
-    warnings: z.array(
-      z.object({
-        code: z.enum(warningCodes),
-        message: z.string().min(1),
-        id: z.string().optional(),
-      }),
-    ),
-  }),
-  composite: z.object({ node: nodeId, unmasked_bit_exact: z.literal(true) }),
-  executions: z.array(
+const fillGraphSchema = z.object({
+  revision: z.uuid(),
+  layer: z.uuid(),
+  output_node: nodeId,
+  render_hash: fullHashSchema("r"),
+});
+const fillGenerationSchema = z.object({
+  node: nodeId,
+  adapter: z.string().min(1),
+  model: z.string().min(1),
+  returned: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+});
+const fillSourceContextSchema = z.object({
+  tier: z.string().min(1),
+  pixel_scale: z.number().positive(),
+  resolution_limited: z.boolean(),
+});
+const fillUpscaleSchema = z.object({
+  enabled: z.boolean(),
+  executed: z.boolean(),
+  node: nodeId.nullable(),
+  adapter: z.string().min(1).nullable(),
+  model: z.string().min(1),
+  input: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+  target: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+  generated: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+  final: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+  density_satisfied: z.boolean(),
+  warnings: z.array(
     z.object({
-      kind: z.enum(["generate", "upscale"]),
-      node: nodeId,
-      adapter: z.string().min(1),
-      model: z.string().min(1),
-      duration_ms: z.number().nonnegative(),
-      cost_usd: z.number().nonnegative(),
-      reused: z.boolean(),
+      code: z.enum(warningCodes),
+      message: z.string().min(1),
+      id: z.string().optional(),
     }),
   ),
+});
+const fillCompositeSchema = z.object({ node: nodeId, unmasked_bit_exact: z.literal(true) });
+const fillExecutionSchema = z.object({
+  kind: z.enum(["generate", "upscale"]),
+  node: nodeId,
+  adapter: z.string().min(1),
+  model: z.string().min(1),
+  duration_ms: z.number().nonnegative(),
+  cost_usd: z.number().nonnegative(),
+  reused: z.boolean(),
+});
+
+export const fillStrictDataSchema = z.object({
+  id: z.uuid(),
+  graph: fillGraphSchema,
+  generation: fillGenerationSchema,
+  source_context: fillSourceContextSchema,
+  upscale: fillUpscaleSchema,
+  composite: fillCompositeSchema,
+  executions: z.array(fillExecutionSchema),
+});
+
+export const layerRefreshDataSchema = fillStrictDataSchema.extend({
+  refreshed: z.object({
+    kind: z.enum(["generate", "upscale"]),
+    from_node: nodeId,
+    node: nodeId,
+  }),
 });
 
 export type SegmentData = z.infer<typeof segmentDataSchema>;
@@ -186,5 +199,6 @@ export type SegmentInstancesData = z.infer<typeof segmentInstancesDataSchema>;
 export type LayerListData = z.infer<typeof layerListDataSchema>;
 export type LayerShowData = z.infer<typeof layerShowDataSchema>;
 export type LayerTransformData = z.infer<typeof layerTransformDataSchema>;
+export type LayerRefreshData = z.infer<typeof layerRefreshDataSchema>;
 export type FillMoveData = z.infer<typeof fillMoveDataSchema>;
 export type FillStrictData = z.infer<typeof fillStrictDataSchema>;

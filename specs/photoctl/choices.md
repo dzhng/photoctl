@@ -2884,3 +2884,37 @@
 - **Verdict:** **Sound.** A fresh lightweight registry keeps discovery deterministic and avoids hidden global mutation without
   weakening the separately persisted consent gate.
 - **Confidence:** High.
+
+### Slice 12d1 — A failed explicit upscale refresh preserves the active upscale
+
+- **When:** Slice 12d1 refresh implementation, 2026-09-05.
+- **The choice:** An upscale refresh starts from a branch that already has usable generated and upscaled pixels. If the new provider
+  attempt fails or returns invalid pixels, the command keeps the previously pinned upscale as the active placement input and reports
+  `upscale_failed`; it does not replace a sharper active result with the lower-density generation merely because a refresh attempt
+  failed. The alternative was to make the older generation active, matching a first-time fill failure but degrading an image that was
+  already complete before this request.
+- **The gap:** The plan defined first-time upscale failure and later transform-rescale failure, but not failure while explicitly
+  refreshing an already successful upscale.
+- **The reach:** Refresh, retry, and later density maintenance share the rule that a failed attempt cannot discard a better usable paid
+  artifact. Ordered execution records mark the retained provider result as reused, so the response does not imply that the failed call
+  created those pixels.
+- **Verdict:** **Sound.** Preserving the best valid pinned output follows the later transform-failure rule and avoids destructive
+  quality regression while exposing the failure as a warning.
+- **Confidence:** Medium; a future product decision could instead make explicit refresh failure hard, but that would change the
+  established soft-success contract for usable generated pixels.
+
+### Slice 12d1 review — Generation refresh refuses pre-fill transform geometry until affine rebasing exists
+
+- **When:** Slice 12d1 independent review, 2026-09-05.
+- **The choice:** A layer can be transformed before fill, making that transform part of the base pixels and mask coordinates sent to
+  generation. Refreshing such a branch directly from the current untransformed document base would apply the stored crop and mask to
+  the wrong location. This checkpoint detects that ancestry and refuses before calling the model or changing the revision. Transforms
+  added after fill remain outside the paid branch and are rebuilt normally. The alternative was to silently produce misplaced pixels,
+  or to implement affine crop/mask rebasing inside this bounded refresh pass.
+- **The gap:** The refresh plan required generation to bind directly to the current develop root, while transform-driven branch
+  reconstruction was assigned to the remaining 12d work; it did not define the safe interim behavior for transform-before-fill.
+- **The reach:** The public command is conservative for one valid branch shape rather than corrupting coordinates. Slice 12d2 must
+  replace this refusal by rebasing the stored transform, crop, and mask together before it can claim complete transformed ancestry.
+- **Verdict:** **Sound as a bounded checkpoint.** Refusal is truthful and reversible, and it keeps affine geometry under one later
+  owner instead of introducing a point implementation here.
+- **Confidence:** High; the public regression proves no paid call and no revision, while the remaining limitation is named in 12d2.

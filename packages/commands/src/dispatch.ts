@@ -139,7 +139,13 @@ export async function dispatch(
         context.segmentation,
       );
     if (request.verb === "layer")
-      return await layerCommand(request.args, request.env, request.cwd, context.library);
+      return await layerCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.fill,
+      );
     if (request.verb === "fill")
       return await fillCommand(
         request.args,

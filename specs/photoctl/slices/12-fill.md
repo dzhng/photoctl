@@ -160,3 +160,22 @@ The provider package now owns the runtime upscaler roster used by fill and the w
 capability: the existing policy still requires persisted, purpose-scoped consent before sending pixels. The provisional deterministic
 fake therefore supports built command-path verification without becoming an ambient opt-in or a live-model selection. Callers may
 still inject a registry at the same boundary for failure modes and future adapter evidence.
+
+## 12d1 branch-refresh checkpoint — 2026-09-05
+
+Explicit refresh treats the active canonical fill ancestry as a stored program rather than as a flattened image. Generation refresh
+reruns the original operation against the current develop root, gives the paid result a new immutable execution and node identity,
+and rebuilds the deterministic placement/composite/transform descendants from their stored recipes. Develop compensation belongs to
+the old base relationship, so generation refresh discards it. Upscale-only refresh instead reads the pinned original generation,
+preserves compensation and transforms, and gives only the new upscale execution/output a fresh identity; it therefore remains usable
+when the original photo source is offline.
+
+One canonical branch descriptor now owns the topology, exact placement/composite recipes, persisted source context, and pinned paid
+provenance used by retry and refresh. Public results extend the established fill result with the selected old node and refreshed node,
+while graph, source, density, exact-composite, and ordered execution/reuse facts keep their existing meanings. Provider configuration
+remains consent even when an adapter is injected: an explicit upscale refresh with no configured stored model changes no revision.
+Generation refresh rejects a fill whose input was already transformed, before paid work or revision mutation, because rebinding that
+mask/crop geometry directly to the document base would address the wrong pixels.
+
+Transform-driven density reevaluation, historical upscale-cache selection, person movement, the agent preview journey, live adapters,
+and visual gates remain 12d2 work. Its affine branch rebasing replaces the transformed-input refusal.

@@ -1,10 +1,9 @@
-import type { Warning } from "@photoctl/protocol";
 import { readArtifactImage, type PublishedArtifact } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
-import { inspectGraphNode } from "../graph/inspection.js";
 import type { GraphDatabase } from "../graph/store.js";
 import type { ExternalExecutionProvenance } from "../graph/types.js";
 import type { Image16 } from "../source-render.js";
+import { describeFillBranch } from "./branch.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./pipeline.js";
 
 interface ReusableExternalNode {
@@ -38,22 +37,10 @@ export async function findReusableFillLineage(
   crop: { x: number; y: number; w: number; h: number },
   frame: { w: number; h: number },
 ): Promise<ReusableFillLineage | undefined> {
-  const composite = await inspectGraphNode(database, {
-    photoId: request.photoId,
-    nodeId: selected.contentNodeId,
-  });
-  if (
-    composite.kind !== "mask_composite" ||
-    composite.inputNodeIds.length !== 3 ||
-    composite.inputNodeIds[2] !== selected.maskNodeId ||
-    (composite.parameters as { feather?: unknown }).feather !== 0
-  )
-    return undefined;
-  const resample = await inspectGraphNode(database, {
-    photoId: request.photoId,
-    nodeId: composite.inputNodeIds[1]!,
-  });
-  if (resample.kind !== "resample" || resample.inputNodeIds.length !== 1) return undefined;
+  const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  if (!branch || branch.descendants.length > 0) return undefined;
+  const { resample } = branch;
+  if (branch.maskNodeId !== selected.maskNodeId) return undefined;
   const parameters = resample.parameters as {
     w?: unknown;
     h?: unknown;
@@ -70,14 +57,10 @@ export async function findReusableFillLineage(
     parameters.target.h !== crop.h
   )
     return undefined;
-  const placement = await inspectGraphNode(database, {
-    photoId: request.photoId,
-    nodeId: resample.inputNodeIds[0]!,
-  });
   let cachedUpscale: ReusableExternalNode | undefined;
-  let generation = placement;
-  if (placement.kind === "upscale") {
-    if (placement.inputNodeIds.length !== 1) return undefined;
+  const generation = branch.generation;
+  if (branch.upscale) {
+    const placement = branch.upscale;
     const upscaleParameters = placement.parameters as {
       adapter?: unknown;
       adapter_version?: unknown;
@@ -104,10 +87,7 @@ export async function findReusableFillLineage(
       const upscaleExecution = placement.executions.find(
         ({ executionId }) => executionId === upscaleParameters.request!.execution_id,
       );
-      const upscaleProvider = upscaleExecution?.providerProvenance as
-        | Record<string, unknown>
-        | null
-        | undefined;
+      const upscaleProvider = branch.upscaleProvider;
       if (upscaleExecution?.artifactAvailable && upscaleProvider) {
         cachedUpscale = await loadExternalNode(
           database,
@@ -119,12 +99,7 @@ export async function findReusableFillLineage(
         );
       }
     }
-    generation = await inspectGraphNode(database, {
-      photoId: request.photoId,
-      nodeId: placement.inputNodeIds[0]!,
-    });
   }
-  if (generation.kind !== "generate" || generation.inputNodeIds.length !== 1) return undefined;
   const generationParameters = generation.parameters as {
     adapter?: unknown;
     adapter_version?: unknown;
@@ -155,10 +130,8 @@ export async function findReusableFillLineage(
   const execution = generation.executions.find(
     ({ executionId }) => executionId === generationParameters.request!.execution_id,
   );
-  const rawProvider = execution?.providerProvenance as Record<string, unknown> | null | undefined;
+  const rawProvider = branch.generationProvider;
   if (!execution?.artifactAvailable || !rawProvider) return undefined;
-  const sourceContext = parseSourceContext(generationParameters.request.source_context);
-  if (!sourceContext) return undefined;
   return {
     ...(await loadExternalNode(
       database,
@@ -168,27 +141,9 @@ export async function findReusableFillLineage(
       request.source,
       rawProvider,
     )),
-    baseNodeId: composite.inputNodeIds[0]!,
-    sourceContext,
+    baseNodeId: branch.baseNodeId,
+    sourceContext: branch.sourceContext,
     ...(cachedUpscale ? { cachedUpscale } : {}),
-  };
-}
-
-function parseSourceContext(
-  value: unknown,
-): { tier: string; pixelScale: number; resolutionLimited: boolean } | undefined {
-  if (!value || typeof value !== "object") return undefined;
-  const context = value as Record<string, unknown>;
-  if (
-    typeof context.tier !== "string" ||
-    typeof context.pixel_scale !== "number" ||
-    typeof context.resolution_limited !== "boolean"
-  )
-    return undefined;
-  return {
-    tier: context.tier,
-    pixelScale: context.pixel_scale,
-    resolutionLimited: context.resolution_limited,
   };
 }
 
@@ -198,36 +153,13 @@ async function loadExternalNode(
   photoId: string,
   nodeId: string,
   source: EvaluateGraphNodeRequest["source"],
-  provider: Record<string, unknown>,
+  provider: ExternalExecutionProvenance,
 ): Promise<ReusableExternalNode> {
   const evaluated = await evaluateGraphNode({ database, libraryPath, photoId, nodeId, source });
   return {
     nodeId: nodeId as `node_${string}`,
     image: await readArtifactImage(evaluated.artifact.path, evaluated.artifact.artifactHash),
     artifact: evaluated.artifact,
-    provider: providerFromInspection(provider),
-  };
-}
-
-function providerFromInspection(value: Record<string, unknown>): ExternalExecutionProvenance {
-  return {
-    adapter: String(value.adapter),
-    adapterVersion: typeof value.adapter_version === "string" ? value.adapter_version : null,
-    service: String(value.service),
-    model: String(value.model),
-    modelVersion: typeof value.model_version === "string" ? value.model_version : null,
-    providerRequestId:
-      typeof value.provider_request_id === "string" ? value.provider_request_id : null,
-    seed: typeof value.seed === "number" ? value.seed : null,
-    durationMs: Number(value.duration_ms),
-    costUsd: Number(value.cost_usd),
-    inputPx: Number(value.input_px),
-    targetPx: Number(value.target_px),
-    attempt: Number(value.attempt),
-    densityVerdict:
-      value.density_verdict === "satisfied" || value.density_verdict === "limited"
-        ? value.density_verdict
-        : "not-applicable",
-    warnings: Array.isArray(value.warnings) ? (value.warnings as Warning[]) : [],
+    provider,
   };
 }

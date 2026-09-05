@@ -4,6 +4,11 @@ import { createVolumeResolver } from "@photoctl/library";
 import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import {
   fillLayerStrict,
+  refreshFillLayer,
+  resolveFillRefreshTarget,
+  describeFillBranch,
+  loadActiveDocument,
+  resolveLayerId,
   moveLayer,
   orientedDimensions,
   resolveUpscalePolicy,
@@ -159,6 +164,161 @@ export type FillDependencies = FillGenerationDependencies & {
   sourceContext?: import("@photoctl/render").SourceContextDensity;
 };
 
+async function withFillSource<T>(
+  handle: LibraryHandle,
+  env: RequestEnv,
+  cwd: string,
+  photo: Awaited<ReturnType<typeof loadPhoto>>,
+  dependencies: FillDependencies,
+  run: (input: {
+    source: import("@photoctl/render").EvaluateGraphNodeRequest["source"];
+    sourceContext: import("@photoctl/render").SourceContextDensity;
+  }) => Promise<T>,
+): Promise<T> {
+  const photoId = photo.id;
+  const resolver = createVolumeResolver(env.volumeMap, handle.path);
+  const libraryId = await readLibraryId(handle);
+  const pinned: ImageSource = {
+    kind: "pinned-preview",
+    path: pinnedEmbeddedJpegPath(cacheRootForLibrary(libraryId, cacheBase(env, cwd)), photoId),
+    mediaType: "image/jpeg",
+    orientation: 1,
+  };
+  const candidates = await resolveGraphSources({
+    photo,
+    resolver,
+    pinned,
+    pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${photoId}.jpg` },
+    env,
+  });
+  if (candidates.length === 0 && !dependencies.source) {
+    throw new PhotoctlError("file_offline", "No usable image source is available", { id: photoId });
+  }
+  const dimensions = orientedDimensions({ w: photo.w, h: photo.h }, photo.orientation);
+  let lastSourceError: SourceEvaluationError | undefined;
+  for (const entry of dependencies.source ? [{ produce: dependencies.source }] : candidates) {
+    try {
+      let source: import("@photoctl/render").EvaluateGraphNodeRequest["source"] = entry.produce;
+      let sourceContext = dependencies.sourceContext;
+      if (!sourceContext) {
+        if (typeof entry.produce !== "function") {
+          throw new Error("Structured fill source dependencies require explicit sourceContext");
+        }
+        let produced: Awaited<ReturnType<typeof entry.produce>>;
+        try {
+          produced = await entry.produce();
+        } catch (error) {
+          throw new SourceEvaluationError(error);
+        }
+        source = async () => produced;
+        const pixelScale = Math.min(
+          1,
+          produced.provenance.w / dimensions.w,
+          produced.provenance.h / dimensions.h,
+        );
+        sourceContext = {
+          tier: produced.provenance.tier,
+          pixelScale,
+          resolutionLimited: pixelScale + 1 / Math.max(dimensions.w, dimensions.h) < 1,
+        };
+      }
+      return await run({ source, sourceContext });
+    } catch (error) {
+      if (!(error instanceof SourceEvaluationError)) throw error;
+      lastSourceError = error;
+    }
+  }
+  throw new PhotoctlError("file_offline", "No usable image source is available", {
+    id: photoId,
+    reason: lastSourceError?.message,
+  });
+}
+
+export async function executeFillRefresh(
+  handle: LibraryHandle,
+  env: RequestEnv,
+  cwd: string,
+  photoId: string,
+  layer: string,
+  from: string | undefined,
+  providedDependencies?: FillDependencies,
+) {
+  const photo = await loadPhoto(handle, photoId);
+  const document = await loadActiveDocument(handle, photoId);
+  if (!document) throw new Error("The active photo document is missing");
+  const layerId = await resolveLayerId(handle, photoId, layer);
+  const selected = document.layers.find(({ id }) => id === layerId);
+  if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
+  const branch = await describeFillBranch(handle, photoId, selected.contentNodeId);
+  if (!branch) throw new Error("Layer does not contain a refreshable fill branch");
+  const generationParameters = branch.generation.parameters as { model?: unknown } | null;
+  if (typeof generationParameters?.model !== "string") {
+    throw new Error("Fill generation recipe has no concrete model");
+  }
+  const settings = await readProviderSettings(handle);
+  const dependencies =
+    providedDependencies ??
+    ({
+      adapter: new GatewayImageModelAdapter({
+        model: generationParameters.model,
+        mask: "native",
+        maskPolarity: "unverified",
+      }),
+      gateway: new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl }),
+      model: generationParameters.model,
+    } satisfies FillDependencies);
+  const upscaleRegistry =
+    providedDependencies?.upscaleRegistry ?? new UpscaleRegistry(DEFAULT_MODELS.upscale);
+  const upscaleParameters = branch.upscale?.parameters as { model?: unknown } | null | undefined;
+  const upscaleModel =
+    typeof upscaleParameters?.model === "string" ? upscaleParameters.model : undefined;
+  const upscaleSettings = providedDependencies?.upscaleSettings ?? settings;
+  const upscaleConfigured =
+    upscaleModel !== undefined &&
+    upscaleSettings.providers?.upscale?.[upscaleModel]?.configured === true;
+  const upscaleAdapter =
+    upscaleModel && upscaleConfigured ? upscaleRegistry.get(upscaleModel) : undefined;
+  const target = resolveFillRefreshTarget(branch, from);
+  if (target.kind === "upscale" && !upscaleAdapter) {
+    throw new PhotoctlError("provider_unconfigured", "The fill upscaler is not configured", {
+      id: photoId,
+      layer,
+    });
+  }
+  const run = async (sourceInput: {
+    source: import("@photoctl/render").EvaluateGraphNodeRequest["source"];
+    sourceContext: import("@photoctl/render").SourceContextDensity;
+  }) =>
+    await refreshFillLayer(handle, handle.path, {
+      photoId,
+      layer,
+      from: target.id,
+      ...sourceInput,
+      dependencies,
+      upscaleModel: upscaleModel ?? upscaleRegistry.releaseDefault,
+      ...(upscaleAdapter
+        ? {
+            upscaleAdapter: {
+              id: upscaleAdapter.id,
+              version: upscaleAdapter.version,
+              supportedScales: upscaleAdapter.supportedScales,
+              limits: upscaleAdapter.limits,
+              execute: async (input) => await upscaleRegistry.execute(upscaleAdapter, input),
+            },
+          }
+        : {}),
+    });
+  if (target.kind === "upscale") {
+    const pinnedSource =
+      dependencies.source ??
+      (async () => {
+        throw new Error("Pinned upscale refresh unexpectedly evaluated the current source");
+      });
+    return await run({ source: pinnedSource, sourceContext: branch.sourceContext });
+  }
+  return await withFillSource(handle, env, cwd, photo, dependencies, run);
+}
+
 async function fillGenerationCommand(
   parsed: ReturnType<typeof parseArguments>,
   env: RequestEnv,
@@ -203,54 +363,13 @@ async function fillGenerationCommand(
       } satisfies FillDependencies);
     const upscaleRegistry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
     const guardedPrompt = buildGuardedUpscalePrompt(remove ? removePrompt() : custom!);
-    const resolver = createVolumeResolver(env.volumeMap, lease.handle.path);
-    const libraryId = await readLibraryId(lease.handle);
-    const pinned: ImageSource = {
-      kind: "pinned-preview",
-      path: pinnedEmbeddedJpegPath(cacheRootForLibrary(libraryId, cacheBase(env, cwd)), photoId),
-      mediaType: "image/jpeg",
-      orientation: 1,
-    };
-    const candidates = await resolveGraphSources({
-      photo,
-      resolver,
-      pinned,
-      pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${photoId}.jpg` },
+    const result = await withFillSource(
+      lease.handle,
       env,
-    });
-    if (candidates.length === 0 && !dependencies.source)
-      throw new PhotoctlError("file_offline", "No usable image source is available", {
-        id: photoId,
-      });
-    let result: Awaited<ReturnType<typeof fillLayerStrict>> | undefined;
-    let lastSourceError: SourceEvaluationError | undefined;
-    const dimensions = orientedDimensions({ w: photo.w, h: photo.h }, photo.orientation);
-    for (const entry of dependencies.source ? [{ produce: dependencies.source }] : candidates) {
-      try {
-        let source: import("@photoctl/render").EvaluateGraphNodeRequest["source"] = entry.produce;
-        let sourceContext = providedDependencies?.sourceContext;
-        if (!sourceContext) {
-          if (typeof entry.produce !== "function") {
-            throw new Error("Structured fill source dependencies require explicit sourceContext");
-          }
-          let produced: Awaited<ReturnType<typeof entry.produce>>;
-          try {
-            produced = await entry.produce();
-          } catch (error) {
-            throw new SourceEvaluationError(error);
-          }
-          source = async () => produced;
-          const pixelScale = Math.min(
-            1,
-            produced.provenance.w / dimensions.w,
-            produced.provenance.h / dimensions.h,
-          );
-          sourceContext = {
-            tier: produced.provenance.tier,
-            pixelScale,
-            resolutionLimited: pixelScale + 1 / Math.max(dimensions.w, dimensions.h) < 1,
-          };
-        }
+      cwd,
+      photo,
+      dependencies,
+      async ({ source, sourceContext }) => {
         const upscalePolicy = resolveUpscalePolicy({
           releaseDefaultModel: upscaleRegistry.releaseDefault,
           availableAdapterIds: upscaleRegistry.list().map(({ id }) => id),
@@ -266,7 +385,7 @@ async function fillGenerationCommand(
           sourceContext,
         });
         const upscaleAdapter = upscaleRegistry.get(upscalePolicy.upscale.model);
-        result = await fillLayerStrict(lease.handle, lease.handle.path, {
+        return await fillLayerStrict(lease.handle, lease.handle.path, {
           photoId,
           layer,
           operation: remove ? "remove" : "prompt",
@@ -293,18 +412,8 @@ async function fillGenerationCommand(
               : {}),
           },
         });
-        break;
-      } catch (error) {
-        if (!(error instanceof SourceEvaluationError)) throw error;
-        lastSourceError = error;
-      }
-    }
-    if (!result) {
-      throw new PhotoctlError("file_offline", "No usable image source is available", {
-        id: photoId,
-        reason: lastSourceError?.message,
-      });
-    }
+      },
+    );
     return {
       schema: 1,
       ok: true,

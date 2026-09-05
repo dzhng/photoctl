@@ -17,23 +17,33 @@ import { PhotoctlError, type Envelope } from "@photoctl/protocol";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
+import { executeFillRefresh, type FillDependencies } from "./fill.js";
 
 export async function layerCommand(
   args: string[],
   env: RequestEnv,
   cwd: string,
   provided?: LibraryHandle,
+  providedFill?: FillDependencies,
 ): Promise<Envelope> {
   const action = args[0];
   if (
     !action ||
-    !["list", "show", "transform", "reorder", "set", "duplicate", "remove", "clear"].includes(
-      action,
-    )
+    ![
+      "list",
+      "show",
+      "transform",
+      "reorder",
+      "set",
+      "duplicate",
+      "remove",
+      "clear",
+      "refresh",
+    ].includes(action)
   ) {
     throw new PhotoctlError(
       "usage",
-      "layer requires list, show, transform, reorder, set, duplicate, remove, or clear",
+      "layer requires list, show, transform, reorder, set, duplicate, remove, clear, or refresh",
     );
   }
   const lease = await openRequestLibrary(env, cwd, provided);
@@ -97,6 +107,72 @@ export async function layerCommand(
           matrix: transformed.matrix,
           layer: layerData(transformed.layer),
         });
+      }
+      if (action === "refresh") {
+        const parsed = parseArguments(target.rest, { options: ["--from"] });
+        if (parsed.positionals.length > 0) unexpected(parsed.positionals[0]);
+        const refreshed = await executeFillRefresh(
+          lease.handle,
+          env,
+          cwd,
+          photoId,
+          target.layer!,
+          parsed.options.get("--from"),
+          providedFill,
+        );
+        return {
+          schema: 1,
+          ok: true,
+          data: {
+            id: photoId,
+            graph: {
+              revision: refreshed.graph.revision,
+              layer: refreshed.graph.layer,
+              output_node: refreshed.graph.outputNode,
+              render_hash: refreshed.graph.renderHash,
+            },
+            refreshed: {
+              kind: refreshed.refreshed.kind,
+              from_node: refreshed.refreshed.fromNode,
+              node: refreshed.refreshed.node,
+            },
+            generation: {
+              node: refreshed.generation.node,
+              adapter: refreshed.generation.provider.adapter,
+              model: refreshed.generation.provider.model,
+              returned: refreshed.generation.returned,
+            },
+            source_context: {
+              tier: refreshed.sourceContext.tier,
+              pixel_scale: refreshed.sourceContext.pixelScale,
+              resolution_limited: refreshed.sourceContext.resolutionLimited,
+            },
+            upscale: {
+              enabled: refreshed.upscale.enabled,
+              executed: refreshed.upscale.executed,
+              node: refreshed.upscale.node,
+              adapter: refreshed.upscale.provider?.adapter ?? null,
+              model: refreshed.upscale.model,
+              input: refreshed.upscale.input,
+              target: refreshed.upscale.target,
+              generated: refreshed.upscale.generated,
+              final: refreshed.upscale.final,
+              density_satisfied: refreshed.upscale.densitySatisfied,
+              warnings: refreshed.upscale.warnings,
+            },
+            composite: { node: refreshed.compositeNode, unmasked_bit_exact: true as const },
+            executions: refreshed.executions.map(({ kind, node, provider, reused }) => ({
+              kind,
+              node,
+              adapter: provider.adapter,
+              model: provider.model,
+              duration_ms: provider.durationMs,
+              cost_usd: provider.costUsd,
+              reused,
+            })),
+          },
+          warnings: refreshed.warnings,
+        };
       }
       if (action === "reorder") {
         const parsed = parseArguments(target.rest, {
@@ -205,7 +281,11 @@ export async function layerCommand(
         message.startsWith("Layer opacity") ||
         message.startsWith("A vacancy layer") ||
         message.startsWith("Transform scale") ||
-        message.startsWith("Transform values")
+        message.startsWith("Transform values") ||
+        message.startsWith("--from must name") ||
+        message.startsWith("Ambiguous refresh node prefix") ||
+        message.startsWith("Generation refresh cannot rebase a transformed fill input") ||
+        message === "Layer does not contain a refreshable fill branch"
       ) {
         throw new PhotoctlError("usage", message, { id: photoId, layer: target.layer });
       }
