@@ -14,6 +14,7 @@ import { buildAbReport } from "./ab.js";
 import { runUpscaleSpike, type UpscaleSpikeDependencies } from "./upscale-spike.js";
 import { buildLayersReport } from "./layers.js";
 import { buildFillReport } from "./fill.js";
+import { buildMasksReport } from "./masks.js";
 
 export async function runWorkbench(
   args: string[],
@@ -37,10 +38,11 @@ export async function runWorkbench(
       "upscale-spike",
       "layers",
       "fill",
+      "masks",
     ].includes(command)
   )
     throw new Error(
-      "usage: wb envelope|race|library|oracle|sheet|graph|layers|fill|export|presets|ab|upscale-spike",
+      "usage: wb envelope|race|library|oracle|sheet|graph|layers|fill|masks|export|presets|ab|upscale-spike",
     );
   if (command === "fill") {
     if (rest.length !== 3 || rest[1] !== "--layer") {
@@ -89,15 +91,19 @@ export async function runWorkbench(
     await writeFile(output, await buildGraphReport(library, rest[0]), "utf8");
     return output;
   }
-  if (command === "layers") {
-    if (rest.length !== 1) throw new Error("usage: wb layers <photo-id>");
+  if (command === "layers" || command === "masks") {
+    if (rest.length !== 1) throw new Error(`usage: wb ${command} <photo-id>`);
     const library = env.PHOTOCTL_LIBRARY
       ? resolve(cwd, env.PHOTOCTL_LIBRARY)
       : join(homedir(), "Pictures", "photoctl");
     const outputDirectory = join(cwd, "out", "wb");
     await mkdir(outputDirectory, { recursive: true });
-    const output = join(outputDirectory, "layers.html");
-    await writeFile(output, await buildLayersReport(library, rest[0]), "utf8");
+    const output = join(outputDirectory, `${command}.html`);
+    await writeFile(
+      output,
+      await (command === "masks" ? buildMasksReport : buildLayersReport)(library, rest[0]),
+      "utf8",
+    );
     return output;
   }
   if (command === "export") {

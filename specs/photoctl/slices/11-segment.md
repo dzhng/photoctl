@@ -53,3 +53,18 @@ mask path consumes floating-point low-resolution logits rather than the exporter
 Production construction, point/text routing, geometry, cache reuse/eviction/retry, and dry-run behavior have deterministic
 tests. These are wiring evidence, not model-quality evidence. The checked-in release remains `awaiting_export`;
 real `segment-at` probes, `a7c2` thresholds, `wb masks` visual acceptance, and G6 remain open with real release weights.
+
+## Mask inspection contract
+
+`wb masks` reads committed active masks beside the highest-resolution available cached execution of the current develop root,
+with newest-created execution breaking equal-area ties. This is not necessarily the source tier last reused by `show`.
+It names the RGB
+artifact and execution separately from the immutable mask identity: current context is not a replay of the original SAM input.
+Missing cached context asks for `photoctl show`; inspection never invokes a model or fetches a source. Layer staleness remains
+visible. The compositor and report share exact-execution geometry, preserving crop, rotation, reduced source density, and
+fractional mask coverage.
+
+Each layer exposes one bounded native-detail crop at its first covered edge, with context, coverage, and an edge overlay.
+The fixed crop is an inspection starting point, not an automatic hair/foliage selection or quality verdict. Synthetic report
+tests verify pixel alignment and identity only; the real-weight hair/foliage checkpoint remains open.
+[Synthetic capture evidence](../assets/segment-masks/README.md) records the report-only visual review.
