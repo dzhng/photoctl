@@ -43,6 +43,23 @@ Every 13a/13c/13d pixel mutation creates typed nodes whose full input artifact h
 root/render hash, returns a new document revision without eager preview work, and extends `agent-preview-loop.test.ts` with at
 least one representative mutation. The next `show` remains the only required preview-materialization step.
 
+## Original command controls still open
+
+The original input names `generate --neg` and reference `--strength`; neither was explicitly cut.
+Current generation accepts a pinned reference but rejects both controls. Define their intent and
+adapter behavior before implementation: retain requested versus applied controls and immutable
+request identity, inspect actual transmitted HTTP bodies, and report unsupported behavior honestly.
+Do not pretend prompt guidance is latent denoise, infer dynamic capabilities, or introduce local
+blending without a recorded product choice. The abbreviated reference-only `generate --ref` form
+also needs an explicit interpretation; today's mandatory prompt is not evidence it was removed.
+
+The same input audit found two adjacent syntax gaps: `fill --move … --scale` must reconcile with
+the shared transform/vacancy owner (separate `layer transform` is not the combined command), and
+`show <path>` must resolve an existing catalogued photo or receive an explicit scope ruling. It must
+not silently import a file during inspection. These are open acceptance contracts, not new pixel
+algorithms. Slice 12 owns combined movement, Slice 01 owns lookup, and Slice 08 owns the separate
+filter and neutral-point white-balance omissions.
+
 ## 13a upscaler quality spike (non-blocking)
 
 The fake adapter is the contract gate. When an upscaler is explicitly configured, `wb upscale-spike` uses identical inputs to make

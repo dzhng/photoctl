@@ -94,6 +94,21 @@ scene-linear graph artifacts · **8c1b** global per-pixel ops ·
   `color_space:"srgb",icc:"sRGB2014"`; viewers do not infer color from untagged JPEG bytes.
 - `scripts/gold-exam.sh` gains the develop step. `wb presets`, `wb ab`.
 
+## 8f/8g — Original develop command surfaces still open
+
+The original spec explicitly names `filter <id> --name <filter> --strength 0..1`. D21's two-key
+representation does not remove that verb. 8f adds a strict single-ID public argument boundary that
+feeds the existing develop command's filter assignments and returns its one-item mutation envelope.
+Both options are required, as in the original signature; the develop schema owns valid names/ranges.
+No second filter kernel, stored shape or revision writer is needed. Prove equality with ordinary
+develop assignments, repeat no-op, public undo, and preview/export identity through the built CLI.
+
+8g supplies the original white-balance eyedropper capability; temperature/tint controls and the
+whole-image gray-world estimate are not a sampled neutral patch. Before implementation, define the
+point/patch CLI, source sampling stage and coordinate rules. Reuse the white-balance math owner and
+store ordinary resolved develop adjustments. Known-neutral correction, geometry/offline mapping,
+repeat and undo need consumer proofs. Neither surface has an explicit removal decision.
+
 ## 8e — Local horizon detection and the crop command
 
 **Question:** can the public command level a visible horizon and apply the existing minimum trim,
