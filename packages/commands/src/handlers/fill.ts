@@ -259,11 +259,7 @@ export async function executeFillRefresh(
   const dependencies =
     providedDependencies ??
     ({
-      adapter: new GatewayImageModelAdapter({
-        model: generationParameters.model,
-        mask: "native",
-        maskPolarity: "unverified",
-      }),
+      adapter: createGatewayImageModelAdapter({ model: generationParameters.model }),
       gateway: new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl }),
       model: generationParameters.model,
     } satisfies FillDependencies);
