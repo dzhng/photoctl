@@ -13,29 +13,29 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last reconciled: 2026-09-05. Relight, standalone generation, vector markup, the lossless preview
-oracle, and export heartbeats are pushed. The spec remains in implementation.*
+*Last reconciled: 2026-09-06. The spec remains in implementation; local committed passes extend
+the last pushed export-heartbeat checkpoint.*
 
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: finish fill controls and the remaining workbench/release journeys.**
+**Current pickup: make initial fill generation frame-aware, then finish controls and outpaint.**
 
-- Slice 11 production runtime is integrated: verified lazy model loading, multi-output native inference,
-  bounded pixel-keyed encoder caching, base-coordinate prompts/masks, and crop/offline render projection.
-  Finish the `wb masks` current-context report and run real-weight probes/G6 when verified export artifacts
-  are available. A keyless runtime test does not prove model quality. See [Slice 11](slices/11-segment.md).
-- Slice 14 standalone packaging and its shared full-feature fake-generation journey are integrated.
-  Its optimized, clean-prefix install passed the ten-ARW fixture gold exam. Finish report artifacts, then
-  real-drive acceptance. A fixture exam does not prove an unseen drive. See [Slice 14](slices/14-gold-exam-and-release.md).
-- Complete the still-unimplemented fill controls and outpaint canvas in [Slice 12](slices/12-fill.md),
-  with fit/strength and input-size capping/`--full-res` implemented and reference/init controls still pending,
-  then reconcile its photographic/live evidence and the separate
-  prompt/control quality comparisons in [Slice 13](slices/13-generative-extras-and-markup.md).
-  Keep actual missing prerequisites distinct from implementation still possible without them.
-- First resolve the active fill geometry regression: generated RGB and effective coverage must follow
-  later develop geometry and offline source tiers together. Derive binary support after projection.
-  The shared exact-execution projection is integrated; the correction remains in progress.
+- Initial fill on an already cropped develop frame still fails because RGB and catalog-mask sizes
+  differ. Preserve base-space placement while sampling the exact evaluated frame, and clip authored
+  effective coverage to its visible footprint so later uncrop cannot expose unintended edits.
+  Later-frame re-evaluation and cache invalidation are already corrected. See [Slice 12](slices/12-fill.md).
+- Then finish reference/init controls and the outpaint canvas. Outpaint's independent drafts agree
+  that graph-derived frame ownership must replace per-consumer size reconstruction; settle crop and
+  removable-extent semantics in its plan before implementation. Fit/strength and capped/full-res inputs
+  are implemented. Keep photographic/live evidence separate from these deterministic controls.
+- Slice 11 runtime and `wb masks` are integrated. The report explicitly selects highest-resolution
+  cached current-develop context, not historical SAM input or last-shown source. Real weights and G6
+  remain open. See [Slice 11](slices/11-segment.md).
+- Slice 14 packaging, shared full-feature journey, and HTML/SHA report artifacts are integrated.
+  The clean-prefix fixture exam passed; real-drive acceptance remains. See [Slice 14](slices/14-gold-exam-and-release.md).
+- Complete the separate prompt/control quality comparisons in [Slice 13](slices/13-generative-extras-and-markup.md)
+  when explicitly configured. Missing live prerequisites do not block deterministic work.
 - Before release, run the full integrated closeout gate once, audit the full requirements and choices
   ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
   optional and unspecified, rather than an implied requirement to invent an MCP product.
@@ -60,7 +60,9 @@ an uncropped, unrotated exact-size base; see Slice 13 for that accepted limitati
 removable presentation node, with editable vectors and the revision updated in the same transaction.
 Migration 16 owns derived effective-mask recipes: the original selection controls positioning/vacancy,
 the effective mask controls fractional coverage, and derived binary support prevents double coverage.
-The mask integration pass must preserve that support after crop/offline projection as well.
+RGB and effective coverage follow the same projection stages before support is derived. Renderer
+semantic revision participates in deterministic execution and render identities, so corrected math
+bypasses old derived caches without deleting history or replaying paid generation.
 
 Update this handoff after each pass and continue to the next unfinished requirement.
 
@@ -279,8 +281,8 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
   pipelines. Nodes and ordered edges are relational; typed parameters are canonical JSON. A mutation inserts nodes
   and a document revision rather than editing a node in place.
 - **Identity and publication:** canonical recipe, execution, artifact, render, and view hashes retain the full
-  SHA-256 value; only `--human` abbreviates them. Deterministic nodes reuse by recipe and input-artifact hashes;
-  nondeterministic nodes also have an execution id and output-artifact hash. Canonical content-addressed artifacts
+  SHA-256 value; only `--human` abbreviates them. Deterministic nodes reuse by recipe, input-artifact hashes,
+  and renderer semantics; nondeterministic nodes also have an execution id and output-artifact hash. Canonical content-addressed artifacts
   publish and fsync before the graph transaction redirects a root; a crash may leave an orphan, never an active
   node with missing pixels.
 - **Graph retention:** active layer/output roots, bounded undo revisions, and explicitly pinned snapshots keep

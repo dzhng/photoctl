@@ -22,6 +22,55 @@
 
 ## Sound
 
+### Renderer corrections select new derived caches without deleting old work
+
+- **When:** Fill projection integration, 2026-09-06.
+- **The choice:** The renderer's semantic revision is part of deterministic evaluation and current
+  render hashes. After a pixel-math correction, an existing photo gets a fresh derived preview and
+  reevaluates deterministic nodes; pinned paid generation and its original bytes remain reusable.
+  The alternative was deleting cached artifacts globally or silently displaying an old wrong image.
+- **The gap:** Logical recipes identify editing intent, but an implementation correction can change
+  its output without changing the recipe. Existing cache keys did not distinguish those semantics.
+- **The reach:** Future pixel-semantic changes must advance this single revision. Old artifacts and
+  paid provenance remain historical evidence; no database migration, provider replay, or cleanup job
+  is required to obtain corrected current pixels.
+- **Verdict:** **Sound.** Pixel semantics belong in derived-cache identity, not in user edits or
+  destructive library cleanup.
+- **Confidence:** High; the warmed-cache regression preserves old files and the paid execution while
+  proving the current output bypasses both the old canonical result and display master.
+
+### Mask inspection names its cached context instead of inventing last-shown history
+
+- **When:** `wb masks` integration, 2026-09-06.
+- **The choice:** The report compares committed masks against the highest-area available execution
+  of the current develop root, breaking ties by creation time. It shows exact identities and density,
+  explicitly disclaiming historical SAM input and last-shown source. Each native-detail crop starts
+  at the first covered sample, not an inferred hair or foliage feature. A separate high-contrast
+  overlay aids visibility without changing the coverage panel; narrow layouts stack native-size panels.
+- **The gap:** The spec requested edge inspection but did not define a crop selector or cache policy.
+  Execution creation time cannot reveal which cached tier a later `show` reused.
+- **The reach:** Inspection performs no provider call or source fetch and can materialize only
+  deterministic masks. Real SAM quality must still be judged on appropriate photographic samples.
+- **Verdict:** **Sound.** The report's explicit policy is reproducible and avoids claiming unavailable
+  historical provenance. First-covered crops are starting points, not semantic quality acceptance.
+- **Confidence:** Medium; choosing the most useful hair/foliage detail remains a human review task.
+
+### Gold reports preserve delivered bytes and require explicit source classification
+
+- **When:** Release report integration, 2026-09-06.
+- **The choice:** The existing exam writes HTML, command JSON, and a checksum manifest beside its
+  actual exports. Only those returned files belong to the report; unrelated files in a reused output
+  directory are excluded. Relative links preserve a movable evidence bundle without reencoding JPEGs.
+  Source classification defaults to unverified; even an operator-declared real source never implies
+  photographic acceptance. Skipped existing exports are labeled as unverified against the requested render.
+- **The gap:** The plan required HTML and hashes but left report membership, relocation, source
+  classification, and the meaning of collision-skipped files unspecified.
+- **The reach:** Layout puts provenance and non-acceptance warnings before images, including on mobile.
+  Checksums detect later byte changes but cannot certify photographic quality or source authenticity.
+- **Verdict:** **Sound.** One exam owns both delivery and its evidence; the report avoids false quality
+  claims without duplicating the image pipeline.
+- **Confidence:** High.
+
 ### Slice 12 — Mask-polarity probes capture evidence without enabling a provider
 
 - **When:** Mask smoke and adapter encoding pass, 2026-09-06.

@@ -22,3 +22,8 @@ The initial contour correction changed 29.65% of desktop pixels (RGB MAE 13.45);
 distance establishes a real rendered change, not a quality score. Exact CLI pixel tests independently prove cyan/halo placement,
 unchanged coverage, and crop/quarter-turn/reduced-source alignment. Dark page chrome deliberately dominates the frame; visible
 detail and full black-to-white contrast, rather than global color entropy, establish useful framing.
+
+The fresh integration critique confirmed contrast, panel alignment, and contained desktop/mobile
+layouts. Labels and outer panels are clipped in the enlarged detail crop only; consult the full
+captures for that context. The crop is for pixel edges, not a standalone layout capture. Small mask
+stair steps remain visible at enlargement, without a displaced or duplicated contour.

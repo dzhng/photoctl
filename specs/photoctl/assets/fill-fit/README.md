@@ -35,8 +35,10 @@ fixture boundary; graph execution, native kernels, and canonical artifact reads 
 An unprimed critique of the fit full images found clean hard boundaries and symmetric soft falloff, with
 no confirmed halo, double edge, or clipping. It noted possible faint 8-bit stepping at low confidence.
 An initial expanded crop had no visible edge; the wider immutable crop above corrects the capture.
-The repeated-path image cache prevented that reviewer from seeing the replacement, and a further fresh
-agent was unavailable. That limits the independent crop-level evidence.
+A fresh integration critique inspected every full image and current edge crop. It confirmed the hard
+strict/expanded boundaries, broad free transition, and visibly narrower footprint under double coverage,
+without a detached halo or ghost contour. These differences match the intended fit mechanics; they do
+not by themselves prove photographic suitability.
 
 The final adversarial inspection therefore asked:
 
