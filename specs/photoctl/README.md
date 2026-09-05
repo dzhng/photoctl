@@ -44,8 +44,8 @@ point and follow it exactly. Do not re-decide anything in the original decision 
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Active wave:** slice 08d4 closes deterministic filters and B&W, while completed 10b2 and 10b3 unblock 10c1's manual
-  mask/layer integration. Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
+- **Active wave:** slice 08d4's deterministic filters and B&W seam is complete, while completed 10b2 and 10b3 unblock
+  10c1's manual mask/layer integration. Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
   its live multimodal request remains provisional until the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
@@ -66,7 +66,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 geometry · [ ] 8d4 filters/B&W → **gold exam green** — `slices/08-develop.md`
+- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 geometry · [x] 8d4 filters/B&W · gold exam remains open — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [ ] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [ ] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`

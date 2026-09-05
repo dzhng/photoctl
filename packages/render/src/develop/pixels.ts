@@ -32,6 +32,8 @@ const IMPLEMENTED_KEYS = new Set([
   "definition",
   "sharpen",
   "noise_reduction",
+  "bw",
+  "filter",
   "crop",
   "rotate",
   "straighten_deg",
@@ -179,5 +181,12 @@ function nativeParameters(parameters: DevelopDict): NativeDevelopParameters {
     sharpen: parameters.sharpen,
     noiseReductionLuminance: parameters.noise_reduction?.luminance,
     noiseReductionColor: parameters.noise_reduction?.color,
+    bwEnabled: parameters.bw !== undefined,
+    bwIntensity: parameters.bw?.intensity,
+    bwNeutrals: parameters.bw?.neutrals,
+    bwTone: parameters.bw?.tone,
+    bwGrain: parameters.bw?.grain,
+    filterName: parameters.filter?.name,
+    filterStrength: parameters.filter?.strength,
   };
 }

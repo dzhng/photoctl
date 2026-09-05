@@ -4,7 +4,10 @@ const BRILLIANCE_STOPS_AT_FULL_SCALE: f32 = 0.2;
 const DEFINITION_RADIUS_FRACTION: f32 = 0.03;
 const DEFINITION_GAIN_AT_FULL_SCALE: f32 = 0.25;
 const SHARPEN_GAIN_AT_FULL_SCALE: f32 = 0.5;
+mod finishing;
 mod noise_reduction;
+
+pub(crate) use finishing::{BlackAndWhiteParameters, FilterParameters};
 
 use crate::tone_curve::{ToneCurve, from_log, prepare as prepare_tone_curve, to_log};
 use std::collections::VecDeque;
@@ -67,6 +70,8 @@ pub(crate) struct Develop {
     pub sharpen: f32,
     pub noise_reduction_luminance: f32,
     pub noise_reduction_color: f32,
+    pub black_and_white: Option<BlackAndWhiteParameters>,
+    pub filter: Option<FilterParameters>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -117,10 +122,13 @@ pub(crate) fn apply_develop_artifact_in_place(
         return Err("develop artifact has an invalid pixel span".to_owned());
     }
     let local = LocalDevelop::from(&parameters);
+    let black_and_white = parameters.black_and_white;
+    let filter = parameters.filter.clone();
     apply_global_artifact_in_place(data, pixel_offset, pixel_bytes, width, height, parameters)?;
     if !local.is_identity() {
         apply_local_bytes_in_place(&mut data[pixel_offset..], width, height, local)?;
     }
+    finishing::apply_bytes(&mut data[pixel_offset..], width, black_and_white, filter)?;
     Ok(())
 }
 
@@ -184,8 +192,11 @@ pub(crate) fn apply_develop_in_place(
         return Err("develop dimensions do not match interleaved RGB samples".to_owned());
     }
     let local = LocalDevelop::from(&parameters);
+    let black_and_white = parameters.black_and_white;
+    let filter = parameters.filter.clone();
     apply_global_in_place(data, parameters)?;
-    apply_local_in_place(data, width, height, local)
+    apply_local_in_place(data, width, height, local)?;
+    finishing::apply_in_place(data, width, black_and_white, filter)
 }
 
 #[derive(Clone, Copy)]
@@ -302,11 +313,16 @@ fn apply_local_operators<S: SampleStorage + ?Sized>(
 }
 
 trait SampleStorage {
+    fn sample_count(&self) -> usize;
     fn read_sample(&self, index: usize) -> f32;
     fn write_sample(&mut self, index: usize, sample: f32);
 }
 
 impl SampleStorage for [f32] {
+    fn sample_count(&self) -> usize {
+        self.len()
+    }
+
     fn read_sample(&self, index: usize) -> f32 {
         self[index]
     }
@@ -317,6 +333,10 @@ impl SampleStorage for [f32] {
 }
 
 impl SampleStorage for [u8] {
+    fn sample_count(&self) -> usize {
+        self.len() / 4
+    }
+
     fn read_sample(&self, index: usize) -> f32 {
         let offset = index * 4;
         f32::from_le_bytes(self[offset..offset + 4].try_into().unwrap())
@@ -1299,6 +1319,83 @@ mod tests {
         .unwrap();
 
         assert_eq!(combined, ordered);
+    }
+
+    #[test]
+    fn filter_strength_is_an_exact_linear_blend_of_recipe_data() {
+        let input = [0.08, 0.24, 0.62, 0.9, 0.36, 0.12];
+        let full = apply_develop(
+            &input,
+            2,
+            1,
+            Develop {
+                filter: Some(FilterParameters {
+                    name: "vivid_warm".to_owned(),
+                    strength: 1.0,
+                }),
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+        let half = apply_develop(
+            &input,
+            2,
+            1,
+            Develop {
+                filter: Some(FilterParameters {
+                    name: "vivid_warm".to_owned(),
+                    strength: 0.5,
+                }),
+                ..Develop::default()
+            },
+        )
+        .unwrap();
+
+        for ((half, input), full) in half.iter().zip(input).zip(full) {
+            assert!((half - (input + full) * 0.5).abs() < 1e-6);
+        }
+    }
+
+    #[test]
+    fn black_and_white_controls_share_monochrome_deterministic_grain() {
+        let input = [0.05, 0.2, 0.7, 0.8, 0.35, 0.12, 0.3, 0.65, 0.18];
+        let parameters = Develop {
+            black_and_white: Some(BlackAndWhiteParameters {
+                intensity: 60.0,
+                neutrals: -20.0,
+                tone: 35.0,
+                grain: 50.0,
+            }),
+            ..Develop::default()
+        };
+        let first = apply_develop(&input, 3, 1, parameters.clone()).unwrap();
+        let second = apply_develop(&input, 3, 1, parameters).unwrap();
+
+        assert_eq!(first, second);
+        for pixel in first.chunks_exact(3) {
+            assert_eq!(pixel[0], pixel[1]);
+            assert_eq!(pixel[1], pixel[2]);
+        }
+        assert_ne!(first[0], first[3]);
+    }
+
+    #[test]
+    fn native_filter_boundary_rejects_unknown_recipe_names() {
+        let error = apply_develop(
+            &[0.2, 0.3, 0.4],
+            1,
+            1,
+            Develop {
+                filter: Some(FilterParameters {
+                    name: "unknown".to_owned(),
+                    strength: 1.0,
+                }),
+                ..Develop::default()
+            },
+        )
+        .unwrap_err();
+
+        assert_eq!(error, "unknown develop filter: unknown");
     }
 
     #[test]

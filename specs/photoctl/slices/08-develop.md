@@ -4,7 +4,7 @@ Sub-slices, one seam or judged variable each: **8a1** immutable logical DAG/sche
 artifact publication, evaluator, graph inspection · **8b** develop dict/presets as a node (no pixels) · **8c1a** exact
 scene-linear graph artifacts · **8c1b** global per-pixel ops ·
 **8c2** masked ops (highlights/shadows/vibrance; skin crop) ✓ · **8c3** curves/levels ✓ · **8d1** local contrast
-(brilliance/definition/sharpen) ✓ · **8d2** NR (texture crop) ✓ · **8d3** geometry (exact tests) ✓ · **8d4** filters + B&W (data).
+(brilliance/definition/sharpen) ✓ · **8d2** NR (texture crop) ✓ · **8d3** geometry (exact tests) ✓ · **8d4** filters + B&W (data) ✓.
 
 ## API seam
 - **8a1** replaces the current linear `renderPhoto` state model with `packages/render/src/graph/{types,recipes,store}.ts`.
@@ -258,3 +258,14 @@ artifact dimensions; command tests pin base/view round trips and honest partial/
   before a document revision commits. The existing command surface has no `crop`/auto-straighten verb,
   so the prompt's conditional Hough path remains with the later manual-command slice rather than
   creating a second command seam here. Needs David: no.
+
+- **2026-09-05 — 8d4 filters and B&W.** The native scene-linear owner now finishes the developed
+  frame with B&W and named filter recipes after global, local-contrast, sharpen, and noise-reduction
+  operators but before geometry. Filter strength is an exact linear blend with that unfiltered frame.
+  B&W converts Rec.2020 luminance once, applies density, midtone-neutral, signed-tone, and coordinate-hashed
+  monochrome grain controls, then named filter data can grade the result. The in-memory and canonical-TIFF
+  routes share the same owner. The [G10 checkpoint](../assets/gates/G10-filters-bw.md) accepted both a
+  warm color treatment and a grain-bearing monochrome treatment after fresh review. Needs David: the
+  recipe constants and B&W tuning remain reversible product data; the full gold exam still cannot use
+  the people preset because its pre-existing vignette operator is outside this bounded pass and remains
+  unimplemented.

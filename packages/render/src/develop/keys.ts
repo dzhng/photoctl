@@ -121,15 +121,25 @@ export const DEVELOP_OPERATORS = {
   "bw.intensity": {
     range: [-100, 100],
     operator: "bw",
-    formula: "luminance mix intensity",
+    formula: "Rec.2020 luminance density gain, 0.5 stops at full scale",
     tier: 2,
   },
-  "bw.neutrals": { range: [-100, 100], operator: "bw", formula: "neutral luminance bias", tier: 2 },
-  "bw.tone": { range: [-100, 100], operator: "bw", formula: "monochrome split tone", tier: 2 },
+  "bw.neutrals": {
+    range: [-100, 100],
+    operator: "bw",
+    formula: "midtone-weighted neutral luminance bias",
+    tier: 2,
+  },
+  "bw.tone": {
+    range: [-100, 100],
+    operator: "bw",
+    formula: "signed monochrome contrast around 0.18",
+    tier: 2,
+  },
   "bw.grain": {
     range: [0, 100],
     operator: "bw",
-    formula: "deterministic monochrome grain",
+    formula: "coordinate-hashed deterministic monochrome grain",
     tier: 2,
   },
   selective_color: {
@@ -160,7 +170,7 @@ export const DEVELOP_OPERATORS = {
   "filter.name": {
     range: null,
     operator: "filter",
-    formula: "named package filter dictionary",
+    formula: "named native exposure/contrast/saturation/channel-gain recipe",
     tier: 2,
   },
   "filter.strength": {

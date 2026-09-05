@@ -139,6 +139,13 @@ pub struct DevelopParameters {
     pub sharpen: Option<f64>,
     pub noise_reduction_luminance: Option<f64>,
     pub noise_reduction_color: Option<f64>,
+    pub bw_enabled: Option<bool>,
+    pub bw_intensity: Option<f64>,
+    pub bw_neutrals: Option<f64>,
+    pub bw_tone: Option<f64>,
+    pub bw_grain: Option<f64>,
+    pub filter_name: Option<String>,
+    pub filter_strength: Option<f64>,
 }
 
 #[napi(object)]
@@ -322,6 +329,20 @@ fn develop_parameters(parameters: DevelopParameters) -> Develop {
         sharpen: parameters.sharpen.unwrap_or_default() as f32,
         noise_reduction_luminance: parameters.noise_reduction_luminance.unwrap_or_default() as f32,
         noise_reduction_color: parameters.noise_reduction_color.unwrap_or_default() as f32,
+        black_and_white: parameters.bw_enabled.unwrap_or_default().then_some(
+            develop::BlackAndWhiteParameters {
+                intensity: parameters.bw_intensity.unwrap_or_default() as f32,
+                neutrals: parameters.bw_neutrals.unwrap_or_default() as f32,
+                tone: parameters.bw_tone.unwrap_or_default() as f32,
+                grain: parameters.bw_grain.unwrap_or_default() as f32,
+            },
+        ),
+        filter: parameters
+            .filter_name
+            .map(|name| develop::FilterParameters {
+                name,
+                strength: parameters.filter_strength.unwrap_or_default() as f32,
+            }),
     }
 }
 

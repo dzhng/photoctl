@@ -461,6 +461,161 @@ test("noise reduction crosses the canonical artifact seam in fixed order", async
   expect(memory.data).not.toEqual(source.data);
 });
 
+test.each([
+  "vivid",
+  "vivid_warm",
+  "vivid_cool",
+  "dramatic",
+  "dramatic_warm",
+  "dramatic_cool",
+  "mono",
+  "silvertone",
+  "noir",
+] as const)("filter %s is deterministic native recipe data", async (name) => {
+  const source = {
+    w: 2,
+    h: 1,
+    data: new Float32Array([0.08, 0.24, 0.62, 0.9, 0.36, 0.12]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const parameters = { filter: { name, strength: 1 } };
+
+  const first = await applyDevelop(source, parameters);
+  const second = await applyDevelop(source, parameters);
+
+  expect(first.data).toEqual(second.data);
+  expect(first.data).not.toEqual(source.data);
+  expect(Array.from(first.data).every(Number.isFinite)).toBe(true);
+});
+
+test("filter strength linearly blends with the unfiltered develop result", async () => {
+  const source = {
+    w: 1,
+    h: 1,
+    data: new Float32Array([0.12, 0.35, 0.7]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const unfiltered = await applyDevelop(source, { exposure: 0.5, definition: 20 });
+  const full = await applyDevelop(source, {
+    exposure: 0.5,
+    definition: 20,
+    filter: { name: "vivid_warm", strength: 1 },
+  });
+  const half = await applyDevelop(source, {
+    exposure: 0.5,
+    definition: 20,
+    filter: { name: "vivid_warm", strength: 0.5 },
+  });
+  const zero = await applyDevelop(source, {
+    exposure: 0.5,
+    definition: 20,
+    filter: { name: "vivid_warm", strength: 0 },
+  });
+
+  expect(zero.data).toEqual(unfiltered.data);
+  half.data.forEach((sample, index) => {
+    expect(sample).toBeCloseTo((unfiltered.data[index]! + full.data[index]!) / 2, 6);
+  });
+});
+
+test("B&W controls produce deterministic monochrome tone and grain", async () => {
+  const source = {
+    w: 3,
+    h: 2,
+    data: new Float32Array([
+      0.05, 0.2, 0.7, 0.8, 0.35, 0.12, 0.3, 0.65, 0.18, 0.9, 0.75, 0.2, 0.04, 0.08, 0.15, 0.5, 0.22,
+      0.6,
+    ]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const neutral = await applyDevelop(source, { bw: { intensity: 0 } });
+  const tuned = await applyDevelop(source, {
+    bw: { intensity: 65, neutrals: -25, tone: 40, grain: 55 },
+  });
+  const repeated = await applyDevelop(source, {
+    bw: { intensity: 65, neutrals: -25, tone: 40, grain: 55 },
+  });
+
+  neutral.data.forEach((sample, index) => {
+    expect(sample).toBeCloseTo(neutral.data[index - (index % 3)]!, 6);
+  });
+  expect(tuned.data).toEqual(repeated.data);
+  expect(tuned.data).not.toEqual(neutral.data);
+  expect(new Set(Array.from(tuned.data).map((sample) => sample.toFixed(6))).size).toBeGreaterThan(
+    3,
+  );
+});
+
+test.each([
+  ["intensity", { intensity: 50 }],
+  ["neutrals", { neutrals: 50 }],
+  ["tone", { tone: 50 }],
+  ["grain", { grain: 50 }],
+] as const)("B&W %s independently changes the neutral monochrome grade", async (_name, bw) => {
+  const source = {
+    w: 2,
+    h: 2,
+    data: new Float32Array([0.05, 0.2, 0.7, 0.8, 0.35, 0.12, 0.3, 0.65, 0.18, 0.9, 0.75, 0.2]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const neutral = await applyDevelop(source, { bw: { intensity: 0 } });
+  const adjusted = await applyDevelop(source, { bw });
+
+  expect(adjusted.data).not.toEqual(neutral.data);
+  adjusted.data.forEach((sample, index) => {
+    expect(sample).toBeCloseTo(adjusted.data[index - (index % 3)]!, 6);
+  });
+});
+
+test("filters and B&W cross the canonical seam before geometry", async () => {
+  const source = {
+    w: 3,
+    h: 2,
+    data: new Float32Array([
+      0.1, 0.2, 0.7, 0.8, 0.3, 0.1, 0.2, 0.6, 0.35, 0.7, 0.5, 0.15, 0.05, 0.15, 0.4, 0.4, 0.25, 0.8,
+    ]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const pixelParameters = {
+    bw: { intensity: 20, neutrals: 10, tone: -15, grain: 0 },
+    filter: { name: "silvertone" as const, strength: 0.7 },
+  };
+  const combined = await applyDevelop(source, { ...pixelParameters, rotate: 90 });
+  const sequential = await applyDevelop(await applyDevelop(source, pixelParameters), {
+    rotate: 90,
+  });
+  const artifact = await applyDevelopArtifact(
+    await encodeArtifactLinearTiff(source),
+    { w: source.w, h: source.h },
+    { ...pixelParameters, rotate: 90 },
+  );
+  const decoded = await decodeArtifactLinearTiff(artifact.bytes);
+
+  expect({ w: combined.w, h: combined.h }).toEqual({ w: 2, h: 3 });
+  expect(combined.data).toEqual(sequential.data);
+  expect(decoded.data).toEqual(combined.data);
+});
+
 test("zero noise reduction is an exact canonical no-op", async () => {
   const source = {
     w: 3,

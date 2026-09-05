@@ -197,6 +197,22 @@ export interface NativeDevelopParameters {
   sharpen?: number;
   noiseReductionLuminance?: number;
   noiseReductionColor?: number;
+  bwIntensity?: number;
+  bwNeutrals?: number;
+  bwTone?: number;
+  bwGrain?: number;
+  bwEnabled?: boolean;
+  filterName?:
+    | "vivid"
+    | "vivid_warm"
+    | "vivid_cool"
+    | "dramatic"
+    | "dramatic_warm"
+    | "dramatic_cool"
+    | "mono"
+    | "silvertone"
+    | "noir";
+  filterStrength?: number;
 }
 
 export class NativeImageUnavailableError extends Error {}

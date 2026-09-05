@@ -2300,6 +2300,23 @@
   immutable state never becomes active.
 - **Confidence:** High.
 
+### Slice 08d4 — A present B&W dictionary activates monochrome mode
+
+- **When:** Slice 08d4 filter and B&W implementation, 2026-09-05.
+- **The choice:** A photo enters monochrome mode whenever its develop state contains a `bw` object,
+  even if the only stored control is zero. For example, `{bw:{intensity:0}}` still converts the color
+  frame to neutral Rec.2020 luminance; intensity zero means neutral B&W density, not “blend zero percent
+  toward B&W.” Removing the whole `bw` object restores color. The alternative is a separate enable flag
+  or treating intensity as a color-to-monochrome blend, neither of which exists in the public dictionary.
+- **The gap:** The plan named four B&W controls and their ranges but did not define which value activates
+  monochrome mode.
+- **The reach:** Presets, `--set`/`--unset`, copy-edits, hashes, and future interfaces all inherit one
+  unambiguous activation rule without adding a fifth hidden control.
+- **Verdict:** **Sound.** Object presence is already durable state and makes zero a useful neutral setting;
+  users can reverse the mode by unsetting `bw`.
+- **Confidence:** Medium; the API stays minimal, but a later UI may prefer an explicit B&W toggle and can
+  map that toggle to adding or removing the same object.
+
 ## Needs user
 
 ### Slice 10b2 — Morphology uses a square footprint and feather uses three bounded box passes
