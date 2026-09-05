@@ -22,7 +22,10 @@ if (!target) throw new Error(`Unsupported native package target: ${platform}`);
 const [library, packageDirectory, addon] = target;
 const destination = join("packages", packageDirectory, addon);
 mkdirSync(join("packages", packageDirectory), { recursive: true });
-copyFileSync(join("target", "debug", library), destination);
+copyFileSync(
+  join("target", process.argv.includes("--release") ? "release" : "debug", library),
+  destination,
+);
 if (process.platform === "darwin") {
   execFileSync("codesign", ["--force", "--sign", "-", destination], { stdio: "inherit" });
 }

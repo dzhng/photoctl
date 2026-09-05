@@ -31,10 +31,7 @@ export function createProgressHeartbeat(options: {
           while (true) {
             if (stopped) return;
             await new Promise<void>((resolveSleep) => {
-              const timer = setTimeout(
-                resolveSleep,
-                options.intervalMs ?? PROGRESS_INTERVAL_MS,
-              );
+              const timer = setTimeout(resolveSleep, options.intervalMs ?? PROGRESS_INTERVAL_MS);
               wake = () => {
                 clearTimeout(timer);
                 resolveSleep();

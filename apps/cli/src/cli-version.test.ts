@@ -1,11 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { spawnPhotoctl } from "@photoctl/test-harness";
+import { readFile } from "node:fs/promises";
 
 describe("photoctl CLI", () => {
   test("reports its version through the stable envelope", async () => {
     const result = await spawnPhotoctl(["--version"]);
+    const { version } = JSON.parse(await readFile("package.json", "utf8"));
     expect(result.code).toBe(0);
-    expect(result.json).toEqual({ schema: 1, ok: true, data: { version: "0.1.0" }, warnings: [] });
+    expect(result.json).toEqual({ schema: 1, ok: true, data: { version }, warnings: [] });
   });
 
   test("maps an unknown verb to usage", async () => {

@@ -16,7 +16,7 @@ import { stat, unlink } from "node:fs/promises";
 import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 export interface DaemonEndpoint {
   pid: number;
@@ -96,7 +96,7 @@ export async function ensureDaemon(
       const startedAt = Date.now();
       const daemonEntry =
         process.env.PHOTOCTL_DAEMON_ENTRY ??
-        fileURLToPath(new URL("../../../apps/daemon/dist/bin.js", import.meta.url));
+        createRequire(import.meta.url).resolve("@photoctl/daemon");
       const logPath = join(tmpdir(), `${socket.slice(socket.lastIndexOf("/") + 1, -5)}.log`);
       const logFd = openSync(logPath, "w", 0o600);
       fchmodSync(logFd, 0o600);

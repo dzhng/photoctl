@@ -29,6 +29,7 @@ out/
 crates/*/target
 helpers/*/.build
 *.node
+packages/mac-helper-*/photoctl-mac
 ts-traces
 *.tsbuildinfo
 

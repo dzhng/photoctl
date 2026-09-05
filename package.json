@@ -9,7 +9,10 @@
     "build": "bun run build:ts && bun run build:rust && bun run build:swift",
     "build:ts": "turbo run build",
     "build:rust": "cargo test --workspace --no-run && cargo build -p photoctl-image && node scripts/package-native.mjs",
-    "build:swift": "if [ \"$(uname -s)\" = Darwin ] && [ -f helpers/mac/Package.swift ]; then swift build --package-path helpers/mac; else echo 'Swift build skipped (non-macOS)'; fi",
+    "build:swift": "if [ \"$(uname -s)\" = Darwin ]; then swift build --package-path helpers/mac && node scripts/package-helper.mjs; else echo 'Swift build skipped (non-macOS)'; fi",
+    "build:rust:release": "cargo build --release -p photoctl-image && node scripts/package-native.mjs --release",
+    "build:swift:release": "if [ \"$(uname -s)\" = Darwin ]; then swift build -c release --package-path helpers/mac && node scripts/package-helper.mjs --release; else echo 'Swift build skipped (non-macOS)'; fi",
+    "pack": "bun run build:ts && bun run build:rust:release && bun run build:swift:release && node scripts/pack.mjs",
     "test": "bun run test:ts && bun run test:rust && bun run test:functional && bun run test:macos",
     "test:ts": "bun run build:rust && vitest run --config vitest.config.ts",
     "test:rust": "cargo test --workspace",
@@ -28,7 +31,7 @@
     "smoke:embed-shape": "node scripts/smoke-embed-shape.mjs",
     "verify": "bun run fmt:check && bun run lint && bun run typecheck && bun run build && bun run test",
     "publish:npm": "node scripts/publish-npm.mjs",
-    "version": "node scripts/sync-versions.mjs && git add apps/*/package.json packages/*/package.json"
+    "version": "node scripts/sync-versions.mjs && bun install --lockfile-only && git add apps/*/package.json packages/*/package.json helpers/mac/Sources/photoctl-mac/ReleaseVersion.swift bun.lock"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

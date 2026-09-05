@@ -21,6 +21,7 @@
       },
       "dependencies": {
         "@photoctl/commands": "workspace:*",
+        "@photoctl/daemon": "workspace:*",
         "@photoctl/protocol": "workspace:*",
       },
     },
@@ -118,6 +119,18 @@
     },
     "packages/mac-helper": {
       "name": "@photoctl/mac-helper",
+      "version": "0.1.0",
+      "optionalDependencies": {
+        "@photoctl/mac-helper-darwin-arm64": "0.1.0",
+        "@photoctl/mac-helper-darwin-x64": "0.1.0",
+      },
+    },
+    "packages/mac-helper-darwin-arm64": {
+      "name": "@photoctl/mac-helper-darwin-arm64",
+      "version": "0.1.0",
+    },
+    "packages/mac-helper-darwin-x64": {
+      "name": "@photoctl/mac-helper-darwin-x64",
       "version": "0.1.0",
     },
     "packages/protocol": {
@@ -360,6 +373,10 @@
     "@photoctl/library": ["@photoctl/library@workspace:packages/library"],
 
     "@photoctl/mac-helper": ["@photoctl/mac-helper@workspace:packages/mac-helper"],
+
+    "@photoctl/mac-helper-darwin-arm64": ["@photoctl/mac-helper-darwin-arm64@workspace:packages/mac-helper-darwin-arm64"],
+
+    "@photoctl/mac-helper-darwin-x64": ["@photoctl/mac-helper-darwin-x64@workspace:packages/mac-helper-darwin-x64"],
 
     "@photoctl/protocol": ["@photoctl/protocol@workspace:packages/protocol"],
 

@@ -1,7 +1,8 @@
 import type { PGlite } from "@electric-sql/pglite";
 import { pgDump } from "@electric-sql/pglite-tools/pg_dump";
 import { mkdir, readFile, rm } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { createRequire } from "node:module";
 import { PhotoctlError } from "@photoctl/protocol";
 import { newLibraryEntityId } from "./identity.js";
 import { installLibraryExtensions, startDatabase } from "./database.js";
@@ -16,10 +17,15 @@ import { assertNoRestoreJournal } from "./restore-journal.js";
 
 export const DEFAULT_CACHE_MAX_BYTES = 20 * 1024 ** 3;
 
-const { dependencies } = JSON.parse(
-  await readFile(new URL("../package.json", import.meta.url), "utf8"),
-) as { dependencies: Record<string, string> };
-const pgliteVersion = dependencies["@electric-sql/pglite"];
+const { version: pgliteVersion } = JSON.parse(
+  await readFile(
+    join(
+      dirname(createRequire(import.meta.url).resolve("@electric-sql/pglite")),
+      "../package.json",
+    ),
+    "utf8",
+  ),
+) as { version: string };
 
 export interface LibraryHandle {
   path: string;

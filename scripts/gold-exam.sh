@@ -24,6 +24,7 @@ command -v photoctl >/dev/null 2>&1 || {
 mkdir -p "$output_dir"
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/photoctl-gold.XXXXXX")
 trap 'rm -rf "$scratch"' EXIT
+trap 'for result in "$scratch"/*.json; do if [[ -f "$result" ]]; then cat "$result" >&2; fi; done' ERR
 
 photoctl import "$source_dir" --link --recursive >"$scratch/import.json"
 photoctl list --limit 10 >"$scratch/list.json"

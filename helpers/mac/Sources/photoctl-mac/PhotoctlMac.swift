@@ -47,7 +47,7 @@ private enum PhotoctlMac {
       case "decode":
         try decode(arguments)
       case "--version", "version":
-        print("photoctl-mac 0.1.0")
+        print("photoctl-mac \(releaseVersion)")
       default:
         throw HelperError.usage(usage)
       }

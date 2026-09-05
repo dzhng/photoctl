@@ -19,3 +19,32 @@ block release. A configured live adapter remains smoke evidence, never a release
 `compare-screenshots` against their accepted pre-generation render when applicable and run an unprimed `screenshot-critique` last;
 review is non-blocking per the root rule.
 ## Must stay green: everything. Deps: 08 (min), 13 (full). Firewall: taste edits touch preset/prompt data only.
+
+## Packed runtime ownership
+
+The CLI tarball embeds the private workspace dependency closure, including the daemon. Module-relative
+profiles and preset data retain their package layout; runtime discovery uses Node package resolution,
+so an installed command has no checkout-relative executable paths. The CLI manifest alone owns the
+installed external dependencies: npm also treats dependencies of a bundled package as bundled, so
+retaining those edges on embedded manifests would mark absent external files as already shipped.
+Platform image addons and Swift helpers remain separate optional packages.
+`bun run pack` builds optimized native artifacts; development's debug build must not determine the
+shipping binary. The release matrix likewise builds optimized binaries before its packed-install gate.
+
+The root release version owns manifest versions, optional package pins, and a generated Swift constant.
+Packing checks drift before producing artifacts; the installed CLI and helper are also compared against
+that release version. The linkage audit checks loaded libraries, not a dylib's own build-time identity.
+Only system libraries are accepted for the current standalone macOS binaries.
+
+`test/macos/packed-install.test.ts` installs real tarballs into a temporary prefix, starts the daemon,
+requires both decoder capabilities, and runs the existing gold script against `fixtures:drive` output.
+The release workflow consumes these same tarballs, rather than repacking workspace manifests during
+publication. This gate does not substitute for the real-drive photographs, compression-mode fixtures,
+or the full-feature fake-generation/hash-inspection release journey still required above.
+
+**2026-09-05 checkpoint:** the macOS ARM64 packed-install gate passed in 133 seconds, including the
+normal daemon path and all ten fixture ARW exports. Release-mode native kernel tests, version drift
+and repair tests, and positive/negative linkage probes passed. The first debug-build delivery had taken
+about four minutes, which exposed the missing release-profile selection without changing pixel code or
+the gold exam's scope. Independent Codex review found no actionable correctness findings. No tag,
+npm publication, real-drive acceptance, or other-platform CI result is claimed by this local checkpoint.
