@@ -79,9 +79,12 @@ def verify_pair(model, encoder_path, decoder_path):
             inputs = (*expected_features, points, labels, torch.zeros(1, 1, 256, 256),
                       torch.zeros(1), torch.tensor([1500, 1500], dtype=torch.int32))
             expected_outputs = reference(*inputs)
-            actual_outputs = decoder.run(None, {entry.name: inputs[i].numpy() for i, entry in enumerate(decoder.get_inputs())})
-            for output, expected, actual in zip(decoder.get_outputs(), expected_outputs, actual_outputs, strict=True):
-                compare(f"{case}/{output.name}", expected, actual)
+            isolated_inputs = tuple(value.numpy() for value in inputs)
+            composed_inputs = (*actual_features, *isolated_inputs[len(expected_features):])
+            for name, decoder_inputs in [(case, isolated_inputs), (f"end-to-end/{case}", composed_inputs)]:
+                actual_outputs = decoder.run(None, {entry.name: decoder_inputs[i] for i, entry in enumerate(decoder.get_inputs())})
+                for output, expected, actual in zip(decoder.get_outputs(), expected_outputs, actual_outputs, strict=True):
+                    compare(f"{name}/{output.name}", expected, actual)
     return records
 
 

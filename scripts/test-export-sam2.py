@@ -16,6 +16,7 @@ parser.add_argument("--sam2-dir", type=Path, required=True)
 parser.add_argument("--onnxruntime-dir", type=Path, required=True)
 parser.add_argument("--checkpoint", type=Path, required=True)
 parser.add_argument("--config", type=Path, required=True)
+parser.add_argument("--onnx-dir", type=Path, required=True)
 args = parser.parse_args()
 spec = importlib.util.spec_from_file_location("export_sam2", Path(__file__).with_name("export-sam2.py"))
 exporter = importlib.util.module_from_spec(spec)
@@ -27,8 +28,38 @@ with tempfile.TemporaryDirectory(prefix="photoctl-sam-config-test-") as director
     environment = exporter.prepare_source_tree(args.sam2_dir, shadow, args.checkpoint, args.config)
     converter = args.onnxruntime_dir / "onnxruntime/python/tools/transformers/models/sam2"
     # The pinned external loader imports SAM before examining --sam2_dir. Exercise that actual order.
-    probe = "from sam2_utils import load_sam2_model; import sys; load_sam2_model(sys.argv[1], 'sam2_hiera_small', device='cpu')"
-    subprocess.run([sys.executable, "-c", probe, str(shadow)], cwd=converter, env=environment, check=True)
+    probe = '''import importlib.util, sys, onnx, numpy as np, torch
+from pathlib import Path
+from sam2_utils import load_sam2_model
+torch.set_num_threads(1)
+model = load_sam2_model(sys.argv[1], 'sam2_hiera_small', device='cpu')
+spec = importlib.util.spec_from_file_location('runtime', sys.argv[2])
+runtime = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(runtime)
+encoder, decoder = Path(sys.argv[3]) / 'encoder.onnx', Path(sys.argv[3]) / 'decoder.onnx'
+runtime.verify_pair(model, encoder, decoder)
+perturbed = onnx.load(encoder)
+output = perturbed.graph.output[2]
+original = output.name
+output.name = 'perturbed_embeddings'
+# Each feature error is below the encoder's absolute tolerance; the decoder may amplify it.
+bias = ((np.arange(256) % 2) * .008 - .004).astype(np.float32).reshape(1, 256, 1, 1)
+perturbed.graph.initializer.append(onnx.numpy_helper.from_array(bias, 'test_bias'))
+perturbed.graph.node.append(onnx.helper.make_node('Add', [original, 'test_bias'], [output.name]))
+onnx.checker.check_model(perturbed)
+path = Path(sys.argv[1]).parent / 'perturbed-encoder.onnx'
+onnx.save(perturbed, path)
+try:
+    runtime.verify_pair(model, path, decoder)
+except ValueError as error:
+    assert 'end-to-end/' in str(error), error
+else:
+    raise AssertionError('Encoder error within component tolerance must still be checked through the decoder')
+print('Composed parity rejects amplified encoder error while the isolated component checks pass')
+'''
+    subprocess.run([sys.executable, "-c", probe, str(shadow),
+                    str(Path(__file__).with_name("sam2-export-runtime.py").resolve()), str(args.onnx_dir.resolve())],
+                   cwd=converter, env=environment, check=True)
 print("Pinned SAM 2.1 checkpoint loads through the export subprocess environment")
 
 spec = importlib.util.spec_from_file_location("sam2_runtime", Path(__file__).with_name("sam2-export-runtime.py"))

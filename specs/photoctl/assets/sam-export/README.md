@@ -22,7 +22,8 @@ From the repository root, using the environment's Python:
 HF_HUB_DISABLE_IMPLICIT_TOKEN=1 MPLBACKEND=Agg PYTHONDONTWRITEBYTECODE=1 python scripts/export-sam2.py \
   --sam2-dir /path/to/sam2 --onnxruntime-dir /path/to/onnxruntime --output-dir /path/to/new-candidate
 python scripts/test-export-sam2.py --sam2-dir /path/to/sam2 --onnxruntime-dir /path/to/onnxruntime \
-  --checkpoint /path/to/sam2.1_hiera_small.pt --config /path/to/sam2.1_hiera_s.yaml
+  --checkpoint /path/to/sam2.1_hiera_small.pt --config /path/to/sam2.1_hiera_s.yaml \
+  --onnx-dir /path/to/new-candidate
 ```
 
 The output directory must be new or empty; the exporter refuses to overwrite a nonempty candidate. It stages the complete
@@ -56,6 +57,13 @@ outputs and all decoder logits have zero elements outside the original tolerance
 `0.0000123978`, `0.0000254810`, and `0.0000214577`, respectively. Positive and box thresholded outputs each differ by one
 pixel out of 1500² (0.00004444%); negative output is exact. These random-input probes establish export parity, not whether
 a photographed subject is correctly segmented.
+
+The verifier also feeds actual ONNX encoder outputs into the decoder, while retaining the isolated decoder checks above.
+Composed low-resolution errors are `0.0000185370`, `0.0000339746`, and `0.0000295639` for the same negative, positive,
+and box cases, with zero logits outside the unchanged tolerance. Thresholded outputs differ by zero, two, and three pixels
+out of 1500², respectively. A temporary encoder copy with alternating `±0.004` feature bias passes isolated encoder and
+decoder checks but produces 17.67% out-of-tolerance composed negative-prompt logits. The regression first failed because
+that error was accepted, then passed when composed verification rejected it. Frozen candidate graphs are never modified.
 
 ## Resource and acceptance boundary
 
