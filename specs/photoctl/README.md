@@ -112,6 +112,7 @@ See Slice 10's local dependency graph for its serialization details.
 | 08d1 local operators (G8 partial) | `fa0af32` |
 | 08d2 luminance/chroma NLM (G8 partial) | `ca0be55`, corrected through `34c4d39` |
 | 08d3 develop geometry (G9) | `cd1f142` |
+| 08d4 filters/B&W (G10) | `b33fb75` |
 | 09a provider contracts | `90b03c4` |
 | 09b evidence | `cf34507` |
 | 09c embed/search | `ea2c715` |
