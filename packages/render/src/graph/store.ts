@@ -59,6 +59,7 @@ export interface CommitRevisionRequest {
   layers?: RevisionLayerDraft[];
   artifacts?: PublishedArtifact[];
   executions?: PreparedNodeExecution[];
+  metadata?: Record<string, JsonValue>;
 }
 export interface PreparedNodeExecution {
   node: NodeReference;
@@ -81,6 +82,7 @@ export interface ActiveDocument {
   roots: { base: string; output: string };
   layers: RevisionLayer[];
   renderHash: `r_${string}`;
+  metadata: Record<string, JsonValue> | null;
 }
 
 export class RevisionConflictError extends Error {
@@ -173,8 +175,15 @@ export async function loadActiveDocument(
   database: GraphTransaction,
   photoId: string,
 ): Promise<ActiveDocument | null> {
-  const document = await database.query<{ active_revision_id: string | null }>(
-    "SELECT active_revision_id::text FROM photo_documents WHERE photo_id = $1",
+  const document = await database.query<{
+    active_revision_id: string | null;
+    metadata: Record<string, JsonValue> | null;
+  }>(
+    `SELECT document.active_revision_id::text, revision.metadata
+     FROM photo_documents AS document
+     LEFT JOIN document_revisions AS revision
+       ON revision.photo_id = document.photo_id AND revision.id = document.active_revision_id
+     WHERE document.photo_id = $1`,
     [photoId],
   );
   const revisionId = document.rows[0]?.active_revision_id;
@@ -186,6 +195,7 @@ export async function loadActiveDocument(
     roots: { base: roots.base, output: roots.output },
     layers: await loadRevisionLayers(database, photoId, revisionId),
     renderHash: renderHashForNode(roots.output),
+    metadata: document.rows[0]?.metadata ?? null,
   };
 }
 
@@ -339,9 +349,14 @@ export async function commitRevision(
 
     const revisionId = randomUUID();
     await transaction.query(
-      `INSERT INTO document_revisions (id, photo_id, parent_revision_id)
-       VALUES ($1, $2, $3)`,
-      [revisionId, request.photoId, activeRevisionId],
+      `INSERT INTO document_revisions (id, photo_id, parent_revision_id, metadata)
+       VALUES ($1, $2, $3, $4::jsonb)`,
+      [
+        revisionId,
+        request.photoId,
+        activeRevisionId,
+        request.metadata === undefined ? null : canonicalJson(request.metadata),
+      ],
     );
     if (activeRevisionId) {
       await transaction.query(

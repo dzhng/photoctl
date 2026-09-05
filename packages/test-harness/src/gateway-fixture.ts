@@ -11,7 +11,8 @@ const ROUTES = new Set([
 
 export interface GatewayFixtureOptions {
   imageMode?: "normal" | "wrongdims" | "smallerdims" | "wrongaspect" | "wholeframe";
-  onRequest?: (request: { path: string }) => void;
+  structuredResponse?: unknown;
+  onRequest?: (request: { path: string; body?: Record<string, unknown> }) => void;
   onImageRequest?: (request: {
     path: string;
     fields: Readonly<Record<string, unknown>>;
@@ -47,10 +48,11 @@ async function handleRequest(
     sendJson(response, 404, { error: "route not found" });
     return;
   }
-  options.onRequest?.({ path });
   const bytes = await readBody(request);
+  const jsonBody = path === "/v1/images/edits" ? undefined : parseJson(bytes);
+  options.onRequest?.({ path, ...(jsonBody ? { body: jsonBody } : {}) });
   if (path === "/v1/embeddings") {
-    const body = parseJson(bytes);
+    const body = jsonBody!;
     const inputs = Array.isArray(body.input) ? body.input : [body.input];
     sendJson(response, 200, {
       object: "list",
@@ -64,7 +66,7 @@ async function handleRequest(
     return;
   }
   if (path === "/v1/chat/completions") {
-    const body = parseJson(bytes);
+    const body = jsonBody!;
     const responseFormat = body.response_format as { type?: unknown } | undefined;
     if (responseFormat?.type !== "json_schema") {
       sendJson(response, 400, { error: "json_schema response_format required" });
@@ -76,7 +78,7 @@ async function handleRequest(
         {
           message: {
             role: "assistant",
-            content: JSON.stringify({ box_2d: [100, 200, 300, 400] }),
+            content: JSON.stringify(options.structuredResponse ?? { box_2d: [100, 200, 300, 400] }),
           },
         },
       ],

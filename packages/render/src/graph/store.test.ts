@@ -579,6 +579,7 @@ test("layer mutations create immutable complete snapshots and exact composite-v2
       roots: { base: initial.roots.base, output: opacity.roots.output },
       layers: opacity.layers,
       renderHash: opacity.renderHash,
+      metadata: null,
     });
     expect(
       (

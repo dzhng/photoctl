@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–10, the keyless Slice 11 command seam, and the bounded
+*Last updated: 2026-09-05. Status: slices 00–10, the keyless Slice 11 command seam, the bounded
 Slice 12a strict-fill, 12b density-planning, the bounded 12c upscale checkpoints, and the Slice 12 fill workbench report are implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -33,7 +33,9 @@ silently losing an observed edit. Develop dictionaries and package/library prese
 hashes. Exact scene-linear Rec.2020 f32 artifacts now remain canonical through the DAG, and the first deterministic pixel pass
 applies global exposure, brightness, contrast, black point, saturation, masked highlights/shadows, skin-protected vibrance,
 white balance, cast, levels, OpenColorIO-style scene-linear curves, deterministic local contrast, noise reduction, selective
-color, vignette, B&W, and named filters in the native Rust owner.
+color, vignette, B&W, and named filters in the native Rust owner. Public auto-enhance now measures
+the current 1024-pixel sRGB preview, applies one schema-constrained and clamped C4 develop batch,
+and stores its undo snapshot plus structured-provider provenance on the resulting atomic revision.
 Schema v9 stores stable layer identities and complete immutable revision snapshots; schema v10 adds a deterministic solid-RGB
 recipe and enforces one vacancy identity per subject. Typed base/output roots and composite-v2
 projection keep layer metadata, graph reachability, and pixel recipe identity in one atomic document contract. The native image owner
@@ -59,7 +61,8 @@ point and follow it exactly. Do not re-decide anything in the original decision 
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Active wave:** Slice 12a owns keyless remove/prompt generation through the fake gateway, immutable provider execution,
+- **Active wave:** Slice 13b auto-enhance is complete through the fake structured-provider path; Slice 13a and 13c remain independent
+  pickup points. Slice 12a owns keyless remove/prompt generation through the fake gateway, immutable provider execution,
   intrinsic provider dimensions, and strict base-pixel composite; 12b owns the pure density plan; 12c owns policy, the guarded prompt,
   configured execution, and generation-preserving failure/retry; 12d1 owns explicit branch refresh; and 12d2 owns transform-driven
   density maintenance, the fill workbench, and the keyless agent-preview journey; 12d3 completes deterministic person-move and
@@ -91,7 +94,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [ ] photographic/live evidence — `slices/12-fill.md`
-- [ ] 13a [x] reimagine · [ ] relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [ ] 13a [x] reimagine · [ ] relight/generate + upscaler quality spike · [x] 13b auto_enhance · [ ] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 

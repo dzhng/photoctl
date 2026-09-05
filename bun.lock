@@ -61,6 +61,7 @@
         "@photoctl/protocol": "workspace:*",
         "@photoctl/providers": "workspace:*",
         "@photoctl/render": "workspace:*",
+        "sharp": "0.35.4",
       },
     },
     "packages/img": {

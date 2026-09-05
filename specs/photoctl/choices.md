@@ -3126,3 +3126,59 @@
   the native reconstruction algorithm. Normalized retouch geometry also stays independent of portrait/landscape orientation.
 - **Verdict:** **Sound.** One value belongs to the user-visible edit; the other belongs to a reproducible pixel recipe.
 - **Confidence:** High.
+
+### Slice 13b — Preview statistics have one explicit transfer-space and quantile convention
+
+- **When:** Slice 13b auto-enhance implementation, 2026-09-05.
+- **The choice:** Preview bytes are treated as encoded sRGB. Rec.709 luminance and the gray-world RGB mean are computed after the
+  sRGB transfer function is decoded to linear light; the mean is converted through the standard sRGB-to-XYZ matrix and McCamy's
+  correlated-color-temperature estimator. Saturation remains encoded-sRGB HSV saturation. Percentiles use type-7 linear
+  interpolation, and clipping counts exact black and white luminance endpoints. The alternative was to leave transfer space and
+  boundary quantiles implicit, making the same pixels produce implementation-dependent prompt data.
+- **The gap:** C4 named the statistics but did not define their transfer space, quantile convention, saturation model, or the
+  temperature estimator.
+- **The reach:** The seven-field C4 input is deterministic across future implementations. Neutral gray estimates the D65 neighborhood
+  at 6504 K through the named estimator, while a chroma-free black frame uses D65 as the defined fallback.
+- **Verdict:** **Sound.** The conventions are standard, deterministic, and pinned by a deliberately non-boundary percentile fixture.
+- **Confidence:** High.
+
+### Slice 13b — The C4 proposal contract owns narrower ranges before ordinary develop mutation
+
+- **When:** Slice 13b auto-enhance implementation, 2026-09-05.
+- **The choice:** A versioned strict structured schema accepts a non-empty subset of the eight C4 adjustment paths. Provider numbers
+  are clamped by the C4 range table—most notably exposure to `[-2,2]`—and serialized as one ordinary develop `--set` batch. The
+  alternative was to inherit the wider manual develop ranges or duplicate develop parsing and graph mutation inside auto-enhance.
+- **The gap:** The slice required clamping but did not name the owner or say whether a provider must return every adjustment.
+- **The reach:** Prompt wording, JSON schema, and clamping share one provider-owned contract while all final type/range validation,
+  graph changes, layer compensation, and staleness remain under the existing develop owner.
+- **Verdict:** **Sound.** Partial conservative proposals are useful, and the narrower automated policy cannot widen manual editing.
+- **Confidence:** High.
+
+### Slice 13b — Undo is a versioned active-revision transition, including no-op proposals
+
+- **When:** Slice 13b auto-enhance implementation and independent review, 2026-09-05.
+- **The choice:** Auto-enhance writes a versioned operation discriminator, `develop_before_auto`, and structured execution provenance
+  in generic revision metadata in the same transaction as its immutable revision. `--undo-auto` accepts only that active
+  discriminated revision and always creates a new revision without the marker, even when the restored dictionary is byte-for-byte
+  identical. A later manual edit therefore makes the older marker ineligible. The alternative was a mutable photo-level snapshot,
+  which could erase newer edits, or a no-op shortcut that left undo repeatable forever.
+- **The gap:** The slice required storing and restoring `develop_before_auto` but did not define marker identity, lifetime, or no-op
+  consumption.
+- **The reach:** Provider/schema failures leave the active pointer unchanged; successful no-op proposals remain auditable; one undo
+  consumes exactly one active automatic edit without affecting historical provenance.
+- **Verdict:** **Sound.** The behavior follows the existing immutable revision and compare-and-swap ownership model.
+- **Confidence:** High.
+
+### Slice 13b — Model input reuses the current preview owner and records available execution identity
+
+- **When:** Slice 13b auto-enhance implementation and independent review, 2026-09-05.
+- **The choice:** Auto-enhance obtains its 1024-pixel-long-edge JPEG through the existing `show` preview path and threads the shared
+  preview coordinator so concurrent requests join the same materialization. The revision records adapter id/version, fixed model,
+  provider request id, attempt count, prompt version, dimensions, and exact stats. It does not invent cost or duration fields the
+  structured adapter does not return. The alternative was a second render path or misleading placeholder provenance.
+- **The gap:** The slice named current/lazy rendering and provider provenance but did not define the internal preview seam or fields
+  unavailable from the structured adapter.
+- **The reach:** Existing current-source fallback, graph evaluation, cache identity, and daemon single-flight semantics apply unchanged;
+  later adapter telemetry can extend the versioned metadata contract without changing develop mutation.
+- **Verdict:** **Sound.** One preview owner avoids semantic drift, and recorded provenance stays truthful to the available boundary.
+- **Confidence:** Medium; the structured adapter may later grow shared duration and cost telemetry.

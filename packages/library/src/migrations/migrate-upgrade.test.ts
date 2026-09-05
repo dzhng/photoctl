@@ -176,7 +176,7 @@ test("the current graph fixture preserves its active lazy source revision", asyn
     expect(result).toEqual({
       fromVersion: 5,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [6, 7, 8, 9, 10, 11, 12],
+      applied: [6, 7, 8, 9, 10, 11, 12, 13],
     });
     expect(document.rows).toEqual([
       {
@@ -213,7 +213,7 @@ test("the current delivery fixture preserves export history", async () => {
     expect(result).toEqual({
       fromVersion: 6,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [7, 8, 9, 10, 11, 12],
+      applied: [7, 8, 9, 10, 11, 12, 13],
     });
     expect(history.rows).toEqual([
       {
@@ -242,9 +242,15 @@ test("the current provider fixture has the bounded external-execution seam", asy
     expect(result).toEqual({
       fromVersion: 7,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [8, 9, 10, 11, 12],
+      applied: [8, 9, 10, 11, 12, 13],
     });
     expect(column.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
+    const revisionMetadata = await db.query<{ is_nullable: string; data_type: string }>(
+      `SELECT is_nullable, data_type FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'document_revisions'
+         AND column_name = 'metadata'`,
+    );
+    expect(revisionMetadata.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
     const search = await db.query<{ vector_type: string; searchable: string }>(
       `SELECT pg_typeof(e.vec)::text AS vector_type,
               p.searchable::text AS searchable
@@ -286,7 +292,7 @@ test("the v8 search fixture gains typed base and output roots without changing i
     expect(result).toEqual({
       fromVersion: 8,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [9, 10, 11, 12],
+      applied: [9, 10, 11, 12, 13],
     });
     expect(document.rows).toEqual([
       { root_name: "base", node_id: `node_${"1".repeat(64)}`, matched: true },
@@ -341,9 +347,36 @@ test("the v9 layer fixture gains the explicit deterministic solid RGB node kind"
     expect(result).toEqual({
       fromVersion: 9,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [10, 11, 12],
+      applied: [10, 11, 12, 13],
     });
     expect(kinds.rows).toEqual([{ kind: "solid" }]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the v13 revision-metadata fixture preserves its auto-enhance undo contract", async () => {
+  const db = await testDatabase();
+  try {
+    await db.exec(await fixture("schema-v13.pgsql"));
+
+    const result = await migrate(db);
+    const revision = await db.query<{ metadata: Record<string, unknown> }>(
+      `SELECT metadata
+       FROM document_revisions
+       WHERE id = '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003'`,
+    );
+
+    expect(result).toEqual({ fromVersion: 13, toVersion: 13, applied: [] });
+    expect(revision.rows).toEqual([
+      {
+        metadata: {
+          auto_enhance_version: 1,
+          develop_before_auto: { contrast: 9 },
+          provider_execution: { operation: "auto-enhance" },
+        },
+      },
+    ]);
   } finally {
     await db.close();
   }

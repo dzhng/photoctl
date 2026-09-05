@@ -48,3 +48,19 @@ release default/control values if the user is silent. Missing credentials record
 
 Firewall: `unblur` cut; no generic local generative runners. A future local UpscaleAdapter is allowed only as a separately configured
 external-boundary implementation; this slice does not add one.
+
+## 13b public auto-enhance checkpoint — 2026-09-05
+
+The public develop command sends the current graph render as a 1024-pixel-long-edge sRGB JPEG to the fixed structured-model purpose.
+Its stats contract uses transfer-decoded linear light for Rec.709 luminance and gray-world McCamy temperature, type-7 interpolated
+percentiles, encoded-sRGB mean saturation, and the literal C4 clipping fields `clipped_lo_pct` and `clipped_hi_pct`. The versioned C4
+prompt owns its narrower proposal ranges; accepted values are clamped there and then enter the ordinary develop mutation owner as
+one batch.
+
+The resulting revision atomically stores a versioned auto-enhance discriminator, `develop_before_auto`, and the structured execution
+identity in generic revision metadata.
+Only an active auto-enhance revision can be undone, so a later manual edit cannot silently discard newer intent. Provider or schema
+failure leaves the active revision unchanged. Preview materialization remains current and lazy: auto-enhance renders because pixels
+are its required model input, while the newly committed develop result is not rendered until the next consuming command.
+
+The deterministic visual checkpoint and its no-op/geometry telemetry live in [`../assets/auto-enhance/`](../assets/auto-enhance/).

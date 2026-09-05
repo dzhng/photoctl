@@ -27,6 +27,7 @@ export * from "./develop/presets.js";
 export * from "./develop/pixels.js";
 export * from "./develop/geometry.js";
 export * from "./develop/state.js";
+export * from "./develop/stats.js";
 export * from "./develop/tiers.js";
 export * from "./layers/model.js";
 export * from "./layers/operations.js";

@@ -1,0 +1,65 @@
+{
+  "kind": "screenshot-parity-diff",
+  "generatedAt": "2026-09-05T13:18:43.675Z",
+  "note": "Lower parityDistance means the candidate is closer to the reference for this fixed pair. This is a distance metric, not an acceptance gate.",
+  "pairCount": 1,
+  "worstPair": "auto",
+  "results": [
+    {
+      "id": "auto",
+      "current": "before.png",
+      "candidate": "after.png",
+      "dimensions": {
+        "width": 1024,
+        "height": 576
+      },
+      "parityDistance": 0.21197,
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 112,
+          "colorEntropyBits": 3.92424,
+          "edgeDensity": 0.04609,
+          "dominantColorShare": 0.22016,
+          "transparentShare": 0,
+          "luminanceMean": 115.55933,
+          "luminanceP5": 54.3132,
+          "luminanceP95": 182.0808,
+          "luminanceContrast": 127.7676
+        },
+        "candidate": {
+          "colorBuckets": 152,
+          "colorEntropyBits": 4.23675,
+          "edgeDensity": 0.04908,
+          "dominantColorShare": 0.2076,
+          "transparentShare": 0,
+          "luminanceMean": 136.6685,
+          "luminanceP5": 58.4704,
+          "luminanceP95": 213.9232,
+          "luminanceContrast": 155.4528
+        }
+      },
+      "grayscale": {
+        "mae": 20.9003,
+        "rmse": 23.89275,
+        "diffRatio16": 0.57739,
+        "diffRatio32": 0.17418,
+        "diffRatio64": 0,
+        "pixelmatchRatio": 0.51586
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0,
+        "blackRatioCandidate": 0,
+        "terrainLikeRatioCurrent": 0.31648,
+        "terrainLikeRatioCandidate": 0.32514,
+        "avgLuminanceCurrent": 115.00085,
+        "avgLuminanceCandidate": 135.89708,
+        "avgLuminanceDelta": 20.89623,
+        "edgeEnergyCurrent": 0.01864,
+        "edgeEnergyCandidate": 0.02051,
+        "edgeEnergyRatio": 1.10054,
+        "edgeDiffRatio32": 0.00524
+      },
+      "artifacts": { "sideBySide": "comparison.png" }
+    }
+  ]
+}

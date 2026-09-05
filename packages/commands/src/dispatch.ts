@@ -42,7 +42,7 @@ import { tagCommand } from "./handlers/tag.js";
 import { backupCommand, migrateCommand, restoreCommand } from "./handlers/library-lifecycle.js";
 import { graphCommand } from "./handlers/graph.js";
 import { xmpCommand } from "./handlers/xmp.js";
-import { developCommand } from "./handlers/develop.js";
+import { developCommand, type DevelopDependencies } from "./handlers/develop.js";
 import { presetsCommand } from "./handlers/presets.js";
 import { renderCommand } from "./handlers/render.js";
 import { embedCommand } from "./handlers/embed.js";
@@ -68,6 +68,7 @@ export interface DispatchContext {
   previewCoordinator?: PreviewCoordinator;
   segmentation?: SegmentationDependencies;
   fill?: FillDependencies;
+  develop?: DevelopDependencies;
 }
 export async function dispatch(
   request: CommandRequest,
@@ -110,7 +111,14 @@ export async function dispatch(
     if (request.verb === "xmp")
       return await xmpCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "develop")
-      return await developCommand(request.args, request.env, request.cwd, context.library);
+      return await developCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.develop,
+        context.previewCoordinator,
+      );
     if (request.verb === "presets")
       return await presetsCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "render")

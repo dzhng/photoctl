@@ -9,11 +9,18 @@ import {
   readActiveDevelopState,
   RevisionConflictError,
   type DevelopDict,
+  type JsonValue,
+  type PreviewCoordinator,
 } from "@photoctl/render";
 import { PhotoctlError, type DevelopResult, type Envelope, type Warning } from "@photoctl/protocol";
 import { batchEnvelope, batchFailure, resolveBatchInputs, type BatchFailure } from "../batch.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
+import {
+  planAutoEnhance,
+  readAutoEnhanceSnapshot,
+  type DevelopDependencies,
+} from "./develop-auto.js";
 
 interface ParsedDevelop {
   ids: string[];
@@ -22,13 +29,19 @@ interface ParsedDevelop {
   set: string[];
   unset: string[];
   reset: boolean;
+  autoEnhance: boolean;
+  undoAuto: boolean;
 }
+
+export type { DevelopDependencies } from "./develop-auto.js";
 
 export async function developCommand(
   args: string[],
   env: RequestEnv,
   cwd: string,
   provided?: LibraryHandle,
+  dependencies?: DevelopDependencies,
+  previewCoordinator?: PreviewCoordinator,
 ): Promise<Envelope> {
   const parsed = parseDevelopArguments(args);
   const lease = await openRequestLibrary(env, cwd, provided);
@@ -74,23 +87,44 @@ export async function developCommand(
         const base = parsed.copyFrom ? copiedDevelop : current.develop;
         if (!base) throw new Error("copy source develop state was not loaded");
         let next: DevelopDict;
+        let revisionMetadata: Record<string, JsonValue> | undefined;
         try {
-          next = applyDevelopMutation(base, {
-            preset,
-            set: parsed.set,
-            unset: parsed.unset,
-            reset: parsed.reset,
-          });
+          if (parsed.undoAuto) {
+            next = readAutoEnhanceSnapshot(current.revisionMetadata, item.id);
+          } else if (parsed.autoEnhance) {
+            const planned = await planAutoEnhance({
+              id: item.id,
+              current: base,
+              handle,
+              env,
+              cwd,
+              previewCoordinator,
+              ...(dependencies ? { dependencies } : {}),
+            });
+            next = planned.develop;
+            revisionMetadata = planned.metadata;
+            for (const warning of planned.warnings) pushWarning(warnings, warning);
+          } else {
+            next = applyDevelopMutation(base, {
+              preset,
+              set: parsed.set,
+              unset: parsed.unset,
+              reset: parsed.reset,
+            });
+          }
           developGeometryMatrix(photo.w, photo.h, next);
         } catch (error) {
           throw commandInputError(error);
         }
-        const committed = isDeepStrictEqual(next, current.develop)
-          ? null
-          : await commitDevelopState(handle, current, next);
+        const committed =
+          isDeepStrictEqual(next, current.develop) &&
+          revisionMetadata === undefined &&
+          !parsed.undoAuto
+            ? null
+            : await commitDevelopState(handle, current, next, revisionMetadata);
         const layers = committed?.layers ?? { deltaApplied: [], stale: [] };
         if (layers.stale.length > 0) {
-          warnings.push({
+          pushWarning(warnings, {
             code: "layers_stale",
             id: item.id,
             message: `${layers.stale.length} ${layers.stale.length === 1 ? "layer is" : "layers are"} stale after the develop change`,
@@ -113,15 +147,30 @@ export async function developCommand(
   }
 }
 
+function pushWarning(warnings: Warning[], warning: Warning): void {
+  if (!warnings.some(({ code, id }) => code === warning.code && id === warning.id)) {
+    warnings.push(warning);
+  }
+}
+
 function parseDevelopArguments(args: string[]): ParsedDevelop {
-  const parsed: ParsedDevelop = { ids: [], set: [], unset: [], reset: false };
+  const parsed: ParsedDevelop = {
+    ids: [],
+    set: [],
+    unset: [],
+    reset: false,
+    autoEnhance: false,
+    undoAuto: false,
+  };
   let index = 0;
   while (index < args.length && !args[index].startsWith("--")) parsed.ids.push(args[index++]);
   while (index < args.length) {
     const option = args[index++];
-    if (option === "--reset") {
-      if (parsed.reset) throw new PhotoctlError("usage", "Duplicate option: --reset");
-      parsed.reset = true;
+    if (option === "--reset" || option === "--auto-enhance" || option === "--undo-auto") {
+      const field =
+        option === "--reset" ? "reset" : option === "--auto-enhance" ? "autoEnhance" : "undoAuto";
+      if (parsed[field]) throw new PhotoctlError("usage", `Duplicate option: ${option}`);
+      parsed[field] = true;
       continue;
     }
     if (option === "--preset" || option === "--copy-from") {
@@ -149,9 +198,24 @@ function parseDevelopArguments(args: string[]): ParsedDevelop {
     !parsed.preset &&
     !parsed.reset &&
     parsed.set.length === 0 &&
-    parsed.unset.length === 0
+    parsed.unset.length === 0 &&
+    !parsed.autoEnhance &&
+    !parsed.undoAuto
   )
     throw new PhotoctlError("usage", "develop requires a mutation");
+  const automaticModes = Number(parsed.autoEnhance) + Number(parsed.undoAuto);
+  const manualMutation =
+    Boolean(parsed.copyFrom) ||
+    Boolean(parsed.preset) ||
+    parsed.reset ||
+    parsed.set.length > 0 ||
+    parsed.unset.length > 0;
+  if (automaticModes > 1 || (automaticModes === 1 && manualMutation)) {
+    throw new PhotoctlError(
+      "usage",
+      "--auto-enhance and --undo-auto must be used as standalone develop mutations",
+    );
+  }
   return parsed;
 }
 

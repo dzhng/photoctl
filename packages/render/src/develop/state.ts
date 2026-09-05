@@ -28,6 +28,7 @@ export interface ActiveDevelopState {
   layers: RevisionLayer[];
   layerDevelop: Record<string, DevelopDict>;
   renderHash: `r_${string}`;
+  revisionMetadata: Record<string, JsonValue> | null;
 }
 
 export async function activeLayerStatus(
@@ -87,6 +88,7 @@ export async function readActiveDevelopState(
       layers: document.layers,
       layerDevelop,
       renderHash: document.renderHash,
+      revisionMetadata: document.metadata,
     };
   }
   if (input.kind !== "develop") {
@@ -109,6 +111,7 @@ export async function readActiveDevelopState(
     layers: document.layers,
     layerDevelop,
     renderHash: document.renderHash,
+    revisionMetadata: document.metadata,
   };
 }
 
@@ -116,6 +119,7 @@ export async function commitDevelopState(
   database: GraphDatabase,
   current: ActiveDevelopState,
   develop: DevelopDict,
+  metadata?: Record<string, JsonValue>,
 ): Promise<{
   revisionId: string;
   renderHash: `r_${string}`;
@@ -196,6 +200,7 @@ export async function commitDevelopState(
     nodes,
     rootUpdates,
     layers,
+    ...(metadata === undefined ? {} : { metadata }),
   });
   if (!committed.renderHash || !/^r_[0-9a-f]{64}$/.test(committed.renderHash)) {
     throw new Error("A develop revision must commit an output render hash");
