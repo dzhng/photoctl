@@ -133,6 +133,10 @@ with one 1.297-second encoder execution reused across six decoder calls. The obs
 timings and cumulative OS high-water counter, not client-process RSS. No forced GC or allocator tuning is used; the daemon
 stops cleanly afterward. An idle ORT build VM remained resident, so this is not a pristine-host causal comparison.
 
-That same-photo public witness and the sixteen-photo runtime-cache witness cover different costs. Their combined public
-multi-photo/eviction path still needs measurement; neither passing result proves that combined peak. Photographic edge
-quality and other-platform resources remain separate.
+The [combined public multi-photo witness](daemon-multiphoto-accounting.json) passes at 2.625 GB peak daemon RSS.
+Nine tail-distinct fixture copies have separate catalog identities and cold encoder entries; revisiting the first after
+eviction re-encodes, while revisiting the most recent reuses its entry. All eleven masks remain exact, and the slowest of ten
+encoder executions is 2.160 seconds. Source preparation, command dispatch and library commits run through the public CLI;
+the daemon stops cleanly afterward. The existing fixture generator supplies identity diversity, not different photographic
+scenes or real-drive acceptance. The idle-VM and no-forced-GC controls remain explicit. These recorded host witnesses pass
+the resource band; photographic edge quality, arbitrary-image worst cases and other-platform resources remain separate.

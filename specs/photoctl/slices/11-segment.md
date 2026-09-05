@@ -127,9 +127,11 @@ report their capacity to Node; six no-forced-GC CLI runs preserve exact masks an
 full-resolution cache probe also passes at 2.842 GB peak RSS, preserving exact masks. The
 [resource evidence](../assets/sam-runtime/) records host conditions and separates that runtime
 probe from public commands in one persistent daemon. Six repeated same-photo public requests pass
-at 2.221 GB peak RSS with one 1.297-second encoder run and exact masks. Combining public preparation
-and command/library overhead with multi-photo cache eviction remains unmeasured. Other platforms
-and photographic edge quality are not implied.
+at 2.221 GB peak RSS with one 1.297-second encoder run and exact masks. The combined public
+nine-identity eviction/reuse witness also passes all eleven requests at 2.625 GB peak RSS and
+2.160 seconds maximum encoder time. Tail-distinct copies preserve the same photographic pixels;
+this records host/fixture resource acceptance, not arbitrary-image bounds, other platforms or
+photographic edge quality.
 The actual photographic tensor now agrees with pinned PyTorch at the unchanged tolerance, including
 all but two full-resolution mask pixels. Controlled square geometry improves wires/path but worsens
 foliage; both fail the target. The full upstream predictor also fails with single-mask and automatic

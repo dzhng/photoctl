@@ -1,0 +1,216 @@
+{
+  "date": "2026-09-06",
+  "codeCommit": "9f62625",
+  "runtime": "Node 24.14.0, macOS arm64, Apple M5 Pro",
+  "scope": "Nine distinct full-resolution photo identities through one persistent daemon, followed by evicted-first and cached-recent revisits",
+  "source": "Existing fixtures/tools/drive.mjs generated nine tail-distinct copies of fixtures/a7c2.ARW. Same photographic pixels, not nine different scenes or the real-drive exam.",
+  "dimensions": {
+    "w": 7008,
+    "h": 4672
+  },
+  "models": {
+    "encoder.onnx": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+    "decoder.onnx": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d"
+  },
+  "forcedGc": false,
+  "terminalExitCode": 0,
+  "daemonPid": 13795,
+  "daemonStopped": true,
+  "peakRssBytes": 2625044480,
+  "limits": {
+    "rssBytes": 3000000000,
+    "encodeMs": 4000
+  },
+  "encoderRuns": [
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 22237.280958,
+      "rss": 2003959808,
+      "maxRss": 2003959808,
+      "durationMs": 1321.059541999999
+    },
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 46822.384208,
+      "rss": 1857585152,
+      "maxRss": 2108178432,
+      "durationMs": 1505.573292000001
+    },
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 72482.889125,
+      "rss": 1552678912,
+      "maxRss": 2108178432,
+      "durationMs": 2062.080833
+    },
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 96141.421208,
+      "rss": 2207088640,
+      "maxRss": 2207088640,
+      "durationMs": 1371.4079999999958
+    },
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 119369.399375,
+      "rss": 1902706688,
+      "maxRss": 2337390592,
+      "durationMs": 1473.069875000001
+    },
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 143161.679375,
+      "rss": 1577680896,
+      "maxRss": 2337390592,
+      "durationMs": 2159.6804999999877
+    },
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 165801.1725,
+      "rss": 2208727040,
+      "maxRss": 2337390592,
+      "durationMs": 1268.926084000006
+    },
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 188246.293083,
+      "rss": 1799045120,
+      "maxRss": 2376646656,
+      "durationMs": 1485.4913330000127
+    },
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 211875.639167,
+      "rss": 1917796352,
+      "maxRss": 2625044480,
+      "durationMs": 1533.5972499999916
+    },
+    {
+      "event": "runEncoder:done",
+      "pid": 13795,
+      "ms": 235535.965292,
+      "rss": 2108227584,
+      "maxRss": 2625044480,
+      "durationMs": 1440.299417000002
+    }
+  ],
+  "decoderCount": 11,
+  "samples": [
+    {
+      "index": 0,
+      "id": "01a073a7-13f2-76b4-ac41-eef20dd0bcc6",
+      "daemonPid": 13795,
+      "ms": 23905.807417,
+      "maxRss": 2064629760,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 1
+    },
+    {
+      "index": 1,
+      "id": "01a073a7-143b-73b8-96ea-4898cef348c2",
+      "daemonPid": 13795,
+      "ms": 24974.267417,
+      "maxRss": 2108178432,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 2
+    },
+    {
+      "index": 2,
+      "id": "01a073a7-1444-7745-a771-05d5aec0e691",
+      "daemonPid": 13795,
+      "ms": 25735.716667,
+      "maxRss": 2108178432,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 3
+    },
+    {
+      "index": 3,
+      "id": "01a073a7-144d-765c-870f-37f5fb0f8b98",
+      "daemonPid": 13795,
+      "ms": 23324.71299999999,
+      "maxRss": 2289680384,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 4
+    },
+    {
+      "index": 4,
+      "id": "01a073a7-1456-75a7-8d9c-2716b08b0899",
+      "daemonPid": 13795,
+      "ms": 23192.832874999993,
+      "maxRss": 2337390592,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 5
+    },
+    {
+      "index": 5,
+      "id": "01a073a7-1462-7644-ace3-45e0f65f6dea",
+      "daemonPid": 13795,
+      "ms": 23791.455,
+      "maxRss": 2337390592,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 6
+    },
+    {
+      "index": 6,
+      "id": "01a073a7-1475-71e8-bf21-0644412695fd",
+      "daemonPid": 13795,
+      "ms": 22509.156457999983,
+      "maxRss": 2376646656,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 7
+    },
+    {
+      "index": 7,
+      "id": "01a073a7-1487-7745-a925-985404f37da6",
+      "daemonPid": 13795,
+      "ms": 22688.48004200001,
+      "maxRss": 2376646656,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 8
+    },
+    {
+      "index": 8,
+      "id": "01a073a7-149b-7424-9855-593017fa8ebc",
+      "daemonPid": 13795,
+      "ms": 23531.275290999998,
+      "maxRss": 2625044480,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 9
+    },
+    {
+      "index": 9,
+      "id": "01a073a7-13f2-76b4-ac41-eef20dd0bcc6",
+      "daemonPid": 13795,
+      "ms": 24177.508124999993,
+      "maxRss": 2625044480,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 10
+    },
+    {
+      "index": 10,
+      "id": "01a073a7-149b-7424-9855-593017fa8ebc",
+      "daemonPid": 13795,
+      "ms": 27136.207250000007,
+      "maxRss": 2625044480,
+      "hash": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+      "encoderRuns": 10
+    }
+  ],
+  "controls": [
+    "Fresh isolated library and cache, linked originals, public built init/import/status/segment/stop; measured dispatch uses PHOTOCTL_NO_DAEMON=0.",
+    "Nine unique catalog IDs encode independently. Revisiting first after nine cold inputs requires the tenth encode; revisiting the most recent leaves encoder count ten. Every result preserves the historical photographic sky mask.",
+    "The same observational native-boundary preload as daemon-accounting.json records daemon cumulative OS maxRSS, model durations, and 100ms samples. No forced collection, worker-pool or allocator tuning.",
+    "No concurrent native build or model run. Idle ORT VM remains resident; not pristine-host or interleaved A/B causal evidence."
+  ],
+  "reproduction": "Generate nine tail-distinct fixture copies with fixtures/tools/drive.mjs; initialize isolated library/cache and hash-verify frozen models. Import --link through daemon, segment sky 4000,600 on each returned ID, then first ID again and last ID again. Assert same daemon PID, exact masks, encoder counts 1..9,10,10 and unchanged resource limits. Stop daemon and retain final cumulative maxRSS.",
+  "verdict": "Recorded public multi-photo daemon resource witness passes, including cold preparation, library commits, eviction and reuse. Synthetic identity diversity does not establish arbitrary photographic memory worst cases, other-platform behavior, or edge quality."
+}
