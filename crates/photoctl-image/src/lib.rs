@@ -565,7 +565,7 @@ impl Task for CameraFrontTask {
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
         camera_front(
-            &self.data,
+            std::mem::take(&mut self.data),
             self.white_level,
             self.black_level,
             &self.cam_xyz,
@@ -840,7 +840,7 @@ impl Task for DisplayBackTask {
     type JsValue = Float32Array;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        linear_rec2020_to_display_srgb(&self.data)
+        linear_rec2020_to_display_srgb(std::mem::take(&mut self.data))
             .map_err(|message| Error::new(Status::InvalidArg, message))
     }
 

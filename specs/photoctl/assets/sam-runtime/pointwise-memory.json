@@ -1,0 +1,26 @@
+{
+  "host": "Apple M5 Pro, macOS arm64, Node 24.14.0, dev native build",
+  "fixture": "a7c2.ARW, 7008x4672, LibRaw, develop {}",
+  "modelHashes": {
+    "encoder": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+    "decoder": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d"
+  },
+  "rgbBufferBytes": 392896512,
+  "rssLimitBytes": 3000000000,
+  "beforeRoad": { "seconds": 23.69, "rssBytes": 3119792128, "footprintBytes": 3972282432 },
+  "after": [
+    { "case": "sky", "seconds": 21.92, "rssBytes": 3625287680, "footprintBytes": 3973839272 },
+    { "case": "road", "seconds": 21.41, "rssBytes": 3004596224, "footprintBytes": 4118215152 },
+    { "case": "sky", "seconds": 22.07, "rssBytes": 2507227136, "footprintBytes": 4103256368 },
+    { "case": "road", "seconds": 21.6, "rssBytes": 3016163328, "footprintBytes": 4117920096 },
+    { "case": "sky", "seconds": 21.82, "rssBytes": 2919579648, "footprintBytes": 4123474368 },
+    { "case": "road", "seconds": 23.01, "rssBytes": 2206498816, "footprintBytes": 3850369352 }
+  ],
+  "maskHashes": {
+    "sky": "a_cc54532b813dc8ac19ca6f7f978219c45f1d3d724a835fb5d85db76b5cf0ca45",
+    "road": "a_8999e4476ec21a1308f4a122e6dc4578d451e9fb3a2d7d119e296ec0e139b162"
+  },
+  "allMaskHashesUnchanged": true,
+  "fullCommandResourcePassed": false,
+  "qualityVerified": false
+}

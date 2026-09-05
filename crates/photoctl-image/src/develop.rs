@@ -820,7 +820,7 @@ fn planckian_xy(temperature: f64) -> (f64, f64) {
 }
 
 pub(crate) fn camera_front(
-    data: &[f32],
+    mut data: Vec<f32>,
     white_level: f32,
     black_level: f32,
     cam_xyz: &[f64],
@@ -859,16 +859,15 @@ pub(crate) fn camera_front(
     let camera_to_xyz = invert_3x3(xyz_to_camera)?;
     let camera_to_rec2020 = multiply_3x3(SRGB_TO_REC2020, multiply_3x3(XYZ_TO_SRGB, camera_to_xyz));
 
-    let mut output = Vec::with_capacity(data.len());
-    for pixel in data.chunks_exact(3) {
+    for pixel in data.chunks_exact_mut(3) {
         let balanced = [
             level(pixel[0], black_level, range) * if wb_pre_applied { 1.0 } else { as_shot_wb[0] },
             level(pixel[1], black_level, range) * if wb_pre_applied { 1.0 } else { as_shot_wb[1] },
             level(pixel[2], black_level, range) * if wb_pre_applied { 1.0 } else { as_shot_wb[2] },
         ];
-        output.extend(mat_vec(camera_to_rec2020, balanced).map(|sample| sample as f32));
+        pixel.copy_from_slice(&mat_vec(camera_to_rec2020, balanced).map(|sample| sample as f32));
     }
-    Ok(output)
+    Ok(data)
 }
 
 pub(crate) fn display_srgb_to_linear_rec2020(samples: &[u16]) -> Result<Vec<f32>, String> {
@@ -886,14 +885,13 @@ pub(crate) fn display_srgb_to_linear_rec2020(samples: &[u16]) -> Result<Vec<f32>
     Ok(output)
 }
 
-pub(crate) fn linear_rec2020_to_display_srgb(samples: &[f32]) -> Result<Vec<f32>, String> {
+pub(crate) fn linear_rec2020_to_display_srgb(mut samples: Vec<f32>) -> Result<Vec<f32>, String> {
     if samples.len() % 3 != 0 {
         return Err("display conversion expects interleaved RGB samples".to_owned());
     }
-    let mut output = Vec::with_capacity(samples.len());
-    for pixel in samples.chunks_exact(3) {
-        output.extend(
-            mat_vec(
+    for pixel in samples.chunks_exact_mut(3) {
+        pixel.copy_from_slice(
+            &mat_vec(
                 REC2020_TO_SRGB,
                 [
                     f64::from(pixel[0]),
@@ -904,7 +902,7 @@ pub(crate) fn linear_rec2020_to_display_srgb(samples: &[f32]) -> Result<Vec<f32>
             .map(|sample| srgb_transfer(sample) as f32),
         );
     }
-    Ok(output)
+    Ok(samples)
 }
 
 fn level(value: f32, black_level: f32, range: f32) -> f64 {
@@ -1597,7 +1595,8 @@ mod tests {
             0.7460, -0.2365, -0.0588, -0.5687, 1.3442, 0.2474, -0.0624, 0.1156, 0.6584,
         ];
         let balanced_camera = [0.059_114_76, 0.666_771_2, 0.693_244_16];
-        let actual = camera_front(&balanced_camera, 1.0, 0.0, &matrix, &[1.0; 3], true).unwrap();
+        let actual =
+            camera_front(balanced_camera.to_vec(), 1.0, 0.0, &matrix, &[1.0; 3], true).unwrap();
 
         let expected_xyz = [0.25, 0.5, 0.75];
         let expected = mat_vec(SRGB_TO_REC2020, mat_vec(XYZ_TO_SRGB, expected_xyz));
@@ -1610,6 +1609,19 @@ mod tests {
     }
 
     #[test]
+    fn pointwise_color_transforms_reuse_the_owned_pixel_allocation() {
+        let camera = vec![0.059_114_76, 0.666_771_2, 0.693_244_16];
+        let allocation = camera.as_ptr();
+        let matrix = [
+            0.7460, -0.2365, -0.0588, -0.5687, 1.3442, 0.2474, -0.0624, 0.1156, 0.6584,
+        ];
+        let scene = camera_front(camera, 1.0, 0.0, &matrix, &[1.0; 3], true).unwrap();
+        assert_eq!(scene.as_ptr(), allocation);
+        let display = linear_rec2020_to_display_srgb(scene).unwrap();
+        assert_eq!(display.as_ptr(), allocation);
+    }
+
+    #[test]
     fn display_conversion_maps_srgb_primaries_into_rec2020() {
         let actual = display_srgb_to_linear_rec2020(&[65_535, 0, 0]).unwrap();
         for (actual, expected) in actual.iter().zip(SRGB_TO_REC2020.map(|row| row[0])) {
@@ -1619,7 +1631,7 @@ mod tests {
 
     #[test]
     fn display_transfer_reflects_negative_linear_values() {
-        let actual = linear_rec2020_to_display_srgb(&[-0.01, -0.01, -0.01]).unwrap();
+        let actual = linear_rec2020_to_display_srgb(vec![-0.01, -0.01, -0.01]).unwrap();
         assert!(actual.iter().all(|sample| *sample < 0.0));
     }
 }
