@@ -28,6 +28,7 @@
     "probe:headless-ciraw": "scripts/probe-headless-ciraw.sh",
     "probe:race": "bun run build:ts && node scripts/probe-race.mjs",
     "probe:toast": "node scripts/probe-toast.mjs",
+    "probe:sam2": "node scripts/probe-sam2.mjs",
     "smoke:embed-shape": "node scripts/smoke-embed-shape.mjs",
     "smoke:mask-polarity": "bun run build:ts && node scripts/smoke-mask-polarity.mjs",
     "verify": "bun run fmt:check && bun run lint && bun run typecheck && bun run build && bun run test",

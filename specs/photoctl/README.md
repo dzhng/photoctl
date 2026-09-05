@@ -58,8 +58,10 @@ formatting, and lint. It did not run the root full-suite release gate. The previ
 now compares lossless graph outputs at Float32 precision; JPEG views independently prove freshness.
 Slice files and their assets hold the detailed acceptance evidence.
 
-**External evidence still outstanding:** the SAM manifest remains `awaiting_export`, with no verified
-weights in the inspected local caches; real SAM quality/G6 cannot be inferred from fake tensors.
+**External evidence still outstanding:** a real SAM export candidate is now available locally;
+export parity/publication fixes are being reviewed separately. The root manifest remains
+`awaiting_export`. [Native resource evidence](assets/sam-runtime/) covers actual model execution,
+but real photographic SAM quality and full-command resource acceptance remain open.
 G3 still requires an SSH-capable Mac session. The real-drive path, additional ARW compression fixtures,
 and actual Classic sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
 require their explicitly configured credentials and consent; an ambient key is not acceptance evidence.

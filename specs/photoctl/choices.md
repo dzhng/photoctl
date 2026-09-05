@@ -140,6 +140,26 @@
 
 ## Sound
 
+### Slice 11 — Serial SAM inference keeps one allocation thread
+
+- **When:** Native real-model resource pass, 2026-09-06.
+- **The choice:** Segment several photos in one daemon. Each library's existing SAM runtime now
+  loads and runs its encoder and decoder on one dedicated native thread. A bounded handoff passes
+  work to it; failed requests return errors without ending the worker. Dropping the final runtime
+  reference closes the handoff and lets the thread release its sessions. The alternative kept a
+  mutex around model execution but let successive calls run on different general-purpose workers,
+  whose retained allocation working sets multiplied memory usage despite serial execution.
+- **The gap:** The spec required CPU-only, cached inference within a memory band, but did not
+  assign native allocation ownership across Node's worker threads.
+- **The reach:** One additional thread belongs to each loaded SAM runtime; no new process,
+  database field, public command option, global worker-pool setting, or model-math change is needed.
+  The handoff waits for capacity rather than discarding accepted inference requests. Existing
+  asynchronous call lifetime and feature-cache ownership remain unchanged.
+- **Verdict:** **Sound.** Stable ownership addresses worker-dependent memory amplification while
+  preserving model outputs and leaving unrelated native operations' concurrency intact.
+- **Confidence:** High for the ownership decision; full-command photographic memory remains a
+  separate gate beyond the isolated native resource measurement.
+
 ### Paid response retention — Record attempts before deciding whether their images can be used
 
 - **When:** Retention producer audit, 2026-09-06; implementation remains pending.

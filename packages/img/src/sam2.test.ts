@@ -12,6 +12,24 @@ const identityOnnx = Uint8Array.from([
   0x00, 0x10, 0x15,
 ]);
 
+test("a failed inference leaves the session usable for queued requests", async () => {
+  const runtime = createSam2OnnxRuntime(identityOnnx, identityOnnx);
+  const input = (value: number) => [
+    {
+      name: "x",
+      dimensions: [1, 1, 2, 2],
+      f32Data: new Float32Array([value, 2, 3, 4]),
+    },
+  ];
+  await expect(runtime.runEncoder(input(0), ["missing"])).rejects.toThrow("did not return missing");
+  const outputs = await Promise.all(
+    Array.from({ length: 8 }, (_, index) => runtime.runEncoder(input(index), ["y"])),
+  );
+  expect(outputs.map(([output]) => Array.from(output!.data))).toEqual(
+    Array.from({ length: 8 }, (_, index) => [index, 2, 3, 4]),
+  );
+});
+
 test("the TypeScript seam supplies ONNX bytes to CPU sessions and maps logits", async () => {
   const runtime = createSam2OnnxRuntime(identityOnnx, identityOnnx);
   expect(runtime.encoderInputNames()).toEqual(["x"]);

@@ -1,0 +1,115 @@
+{
+  "cpu": "Apple M5 Pro",
+  "platform": "darwin",
+  "arch": "arm64",
+  "modelHashes": {
+    "encoder": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+    "decoder": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d"
+  },
+  "qualityVerified": false,
+  "samples": [
+    {
+      "run": 0,
+      "encodeMs": 1117.6315409999997,
+      "decodeMs": 39.5816249999998,
+      "rssBytes": 2160951296
+    },
+    {
+      "run": 1,
+      "encodeMs": 977.1588749999996,
+      "decodeMs": 29.044374999999945,
+      "rssBytes": 2721529856
+    },
+    {
+      "run": 2,
+      "encodeMs": 872.7077919999992,
+      "decodeMs": 28.617291999999907,
+      "rssBytes": 2734833664
+    },
+    {
+      "run": 3,
+      "encodeMs": 859.8571249999995,
+      "decodeMs": 28.488542000000052,
+      "rssBytes": 2745155584
+    },
+    {
+      "run": 4,
+      "encodeMs": 866.7543749999995,
+      "decodeMs": 30.86712499999976,
+      "rssBytes": 2757836800
+    },
+    {
+      "run": 5,
+      "encodeMs": 872.0449160000007,
+      "decodeMs": 27.718041000000085,
+      "rssBytes": 2762047488
+    },
+    {
+      "run": 6,
+      "encodeMs": 856.93325,
+      "decodeMs": 31.195208000001003,
+      "rssBytes": 2785214464
+    },
+    {
+      "run": 7,
+      "encodeMs": 867.2013330000009,
+      "decodeMs": 29.153333000000202,
+      "rssBytes": 2797846528
+    },
+    {
+      "run": 8,
+      "encodeMs": 865.8419580000009,
+      "decodeMs": 29.00616699999955,
+      "rssBytes": 2818932736
+    },
+    {
+      "run": 9,
+      "encodeMs": 894.5553749999999,
+      "decodeMs": 31.038792000001195,
+      "rssBytes": 2818965504
+    },
+    {
+      "run": 10,
+      "encodeMs": 1218.8951669999988,
+      "decodeMs": 42.072667000000365,
+      "rssBytes": 2566930432
+    },
+    {
+      "run": 11,
+      "encodeMs": 876.7358330000006,
+      "decodeMs": 28.38812499999949,
+      "rssBytes": 2589966336
+    },
+    {
+      "run": 12,
+      "encodeMs": 912.1758329999993,
+      "decodeMs": 30.653833000000304,
+      "rssBytes": 2382888960
+    },
+    {
+      "run": 13,
+      "encodeMs": 886.5931669999991,
+      "decodeMs": 33.00941700000112,
+      "rssBytes": 2116141056
+    },
+    {
+      "run": 14,
+      "encodeMs": 914.5667920000014,
+      "decodeMs": 36.59912500000064,
+      "rssBytes": 1648476160
+    },
+    {
+      "run": 15,
+      "encodeMs": 908.3559159999968,
+      "decodeMs": 35.034999999999854,
+      "rssBytes": 1661255680
+    }
+  ],
+  "maxRssBytes": 2818965504,
+  "maskHash": "a1818dad1033def0eeb307824c8f1820bd36ec6c5dbb07888df3d6e4455bfd02",
+  "limits": {
+    "encodeMs": 4000,
+    "maxRssBytes": 3000000000
+  },
+  "passed": true
+}

@@ -9,7 +9,7 @@ use ort::{
 };
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex},
+    sync::{Arc, mpsc},
 };
 
 /// CPU-only ONNX sessions compiled from hash-verified bytes owned by the
@@ -209,7 +209,73 @@ fn bilinear(data: &[f32], width: u32, height: u32, x: f32, y: f32) -> f32 {
 
 #[napi]
 pub struct Sam2OnnxRuntime {
-    inner: Arc<Mutex<Sam2CpuRuntime>>,
+    inner: Arc<Sam2Worker>,
+}
+
+struct Sam2Job {
+    inputs: Vec<Sam2Input>,
+    outputs: Vec<String>,
+    decoder: bool,
+    reply: mpsc::SyncSender<Result<Vec<Sam2F32Output>, String>>,
+}
+
+struct Sam2Worker {
+    jobs: mpsc::SyncSender<Sam2Job>,
+    encoder_inputs: Vec<String>,
+    decoder_inputs: Vec<String>,
+}
+
+impl Sam2Worker {
+    fn new(encoder: Vec<u8>, decoder: Vec<u8>) -> Result<Self, String> {
+        let (jobs, incoming) = mpsc::sync_channel::<Sam2Job>(1);
+        let (ready, initialized) = mpsc::sync_channel(1);
+        // Keep inference allocations on one thread: libuv worker rotation retains
+        // separate large allocator working sets even when a mutex serializes runs.
+        std::thread::Builder::new()
+            .name("photoctl-sam".into())
+            .spawn(move || {
+                let mut runtime = match Sam2CpuRuntime::from_bytes(&encoder, &decoder) {
+                    Ok(runtime) => runtime,
+                    Err(error) => {
+                        let _ = ready.send(Err(error));
+                        return;
+                    }
+                };
+                drop(encoder);
+                drop(decoder);
+                let names = (
+                    runtime
+                        .encoder_input_names()
+                        .into_iter()
+                        .map(str::to_owned)
+                        .collect(),
+                    runtime
+                        .decoder_input_names()
+                        .into_iter()
+                        .map(str::to_owned)
+                        .collect(),
+                );
+                if ready.send(Ok(names)).is_err() {
+                    return;
+                }
+                for job in incoming {
+                    let result = if job.decoder {
+                        runtime.run_decoder_f32(job.inputs, &job.outputs)
+                    } else {
+                        runtime.run_encoder_f32(job.inputs, &job.outputs)
+                    };
+                    let _ = job.reply.send(result);
+                }
+            })
+            .map_err(|error| error.to_string())?;
+        let (encoder_inputs, decoder_inputs) =
+            initialized.recv().map_err(|error| error.to_string())??;
+        Ok(Self {
+            jobs,
+            encoder_inputs,
+            decoder_inputs,
+        })
+    }
 }
 
 #[napi(object)]
@@ -231,32 +297,21 @@ impl Sam2OnnxRuntime {
     #[napi(constructor)]
     pub fn new(encoder: Uint8Array, decoder: Uint8Array) -> napi::Result<Self> {
         Ok(Self {
-            inner: Arc::new(Mutex::new(
-                Sam2CpuRuntime::from_bytes(&encoder, &decoder).map_err(napi::Error::from_reason)?,
-            )),
+            inner: Arc::new(
+                Sam2Worker::new(encoder.to_vec(), decoder.to_vec())
+                    .map_err(napi::Error::from_reason)?,
+            ),
         })
     }
 
     #[napi]
     pub fn encoder_input_names(&self) -> Vec<String> {
-        self.inner
-            .lock()
-            .expect("SAM runtime lock poisoned")
-            .encoder_input_names()
-            .into_iter()
-            .map(str::to_owned)
-            .collect()
+        self.inner.encoder_inputs.clone()
     }
 
     #[napi]
     pub fn decoder_input_names(&self) -> Vec<String> {
-        self.inner
-            .lock()
-            .expect("SAM runtime lock poisoned")
-            .decoder_input_names()
-            .into_iter()
-            .map(str::to_owned)
-            .collect()
+        self.inner.decoder_inputs.clone()
     }
 
     #[napi]
@@ -289,7 +344,7 @@ impl Sam2OnnxRuntime {
 }
 
 pub struct Sam2RunTask {
-    runtime: Arc<Mutex<Sam2CpuRuntime>>,
+    runtime: Arc<Sam2Worker>,
     inputs: Vec<Sam2Input>,
     outputs: Vec<String>,
     decoder: bool,
@@ -300,17 +355,20 @@ impl Task for Sam2RunTask {
     type JsValue = Vec<Sam2TensorOutput>;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        let mut runtime = self
-            .runtime
-            .lock()
-            .map_err(|_| napi::Error::from_reason("SAM runtime lock poisoned"))?;
-        let inputs = std::mem::take(&mut self.inputs);
-        if self.decoder {
-            runtime.run_decoder_f32(inputs, &self.outputs)
-        } else {
-            runtime.run_encoder_f32(inputs, &self.outputs)
-        }
-        .map_err(napi::Error::from_reason)
+        let (reply, result) = mpsc::sync_channel(1);
+        self.runtime
+            .jobs
+            .send(Sam2Job {
+                inputs: std::mem::take(&mut self.inputs),
+                outputs: std::mem::take(&mut self.outputs),
+                decoder: self.decoder,
+                reply,
+            })
+            .map_err(|error| napi::Error::from_reason(error.to_string()))?;
+        result
+            .recv()
+            .map_err(|error| napi::Error::from_reason(error.to_string()))?
+            .map_err(napi::Error::from_reason)
     }
 
     fn resolve(&mut self, _env: napi::Env, output: Self::Output) -> napi::Result<Self::JsValue> {
