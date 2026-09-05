@@ -14,6 +14,60 @@ import { dispatch, type SegmentationAdapter } from "./dispatch.js";
 
 const directories: string[] = [];
 
+test("failed local initialization emits runtime diagnostics through command stderr events", async () => {
+  const fixture = await fixtureLibrary("runtime-diagnostic");
+  const events: unknown[] = [];
+  try {
+    const segmenter = new Sam2Segmenter(async (diagnostics) => {
+      diagnostics?.({
+        diagnostics: [
+          {
+            scope: "runtime",
+            severity: "warning",
+            codeLocation: "cpu.cc:1",
+            message: "Unknown CPU vendor",
+            truncated: false,
+          },
+        ],
+        droppedDiagnostics: 2,
+      });
+      throw new Error("invalid SAM decoder");
+    });
+    const response = await dispatch(
+      {
+        verb: "segment",
+        args: [fixture.id, "--at", "1,1"],
+        cwd: fixture.parent,
+        env: { noDaemon: true },
+      },
+      {
+        version: "test",
+        library: fixture.handle,
+        segmenter,
+        emit: (event) => {
+          events.push(event);
+        },
+      },
+    );
+    expect(response.ok).toBe(false);
+    expect(events).toEqual([
+      {
+        event: "warn",
+        code: "runtime_warning",
+        message: "[runtime warning] Unknown CPU vendor (cpu.cc:1)",
+      },
+      {
+        event: "warn",
+        code: "runtime_warning",
+        message:
+          "Native runtime diagnostics exceeded their retention limit; 2 messages were dropped",
+      },
+    ]);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
 test("empty production grounding preserves JPEG bytes without encoding or evicting features", async () => {
   const fixture = await fixtureLibrary("empty-production");
   let jpegHash: string | undefined;

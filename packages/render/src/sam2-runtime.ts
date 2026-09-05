@@ -5,6 +5,7 @@ import {
   sam2MaskFromLogits,
   type Sam2OnnxRuntime,
   type Sam2TensorOutput,
+  type RuntimeDiagnosticSink,
 } from "@photoctl/img";
 import { prepareSam2EncoderInput, type Sam2Letterbox } from "./sam2.js";
 import type { MaskImage } from "./mask-tiff.js";
@@ -12,6 +13,7 @@ import { composeTransformMatrices, type TransformMatrix } from "./transforms.js"
 
 export { createSam2OnnxRuntime };
 export type { Sam2OnnxRuntime };
+export type { RuntimeDiagnosticSink, RuntimeDiagnostics } from "@photoctl/img";
 const featureShapes = [
   [1, 32, 256, 256],
   [1, 64, 128, 128],
@@ -28,7 +30,7 @@ type Prompt = {
 };
 export interface PreparedSam2Image {
   readonly dimensions: { w: number; h: number };
-  segment(request: Prompt): Promise<MaskImage>;
+  segment(request: Prompt, diagnostics?: RuntimeDiagnosticSink): Promise<MaskImage>;
 }
 
 /** One library's lazy CPU sessions and bounded LRU of 16 MiB encoder feature sets. */
@@ -36,15 +38,15 @@ export class Sam2Segmenter {
   #runtime?: Promise<Sam2OnnxRuntime>;
   readonly #entries = new Map<string, CacheEntry>();
   constructor(
-    private readonly load: () => Promise<Sam2OnnxRuntime>,
+    private readonly load: (diagnostics?: RuntimeDiagnosticSink) => Promise<Sam2OnnxRuntime>,
     private readonly capacity = 8,
   ) {
     if (!Number.isSafeInteger(capacity) || capacity < 1)
       throw new Error("SAM cache capacity must be positive");
   }
 
-  async ready(): Promise<void> {
-    await this.runtime();
+  async ready(diagnostics?: RuntimeDiagnosticSink): Promise<void> {
+    await this.runtime(diagnostics);
   }
 
   clear(): void {
@@ -86,13 +88,13 @@ export class Sam2Segmenter {
   ): PreparedSam2Image {
     return {
       dimensions,
-      segment: async (request) => {
+      segment: async (request, diagnostics) => {
         if (!pinned) {
           const cached = this.#entries.get(key);
           if (cached?.hash === hash) pinned = cached;
           else {
             if (!input) throw new Error("SAM prepared input is unavailable");
-            pinned = { hash, result: this.encode(input) };
+            pinned = { hash, result: this.encode(input, diagnostics) };
             this.#entries.set(key, pinned);
           }
         }
@@ -112,24 +114,32 @@ export class Sam2Segmenter {
           if (input) pinned = undefined;
           throw error;
         }
-        return this.decode(encoded, request);
+        return this.decode(encoded, request, diagnostics);
       },
     };
   }
 
-  private async encode({ data, mapping }: EncoderInput): Promise<Encoded> {
-    const runtime = await this.runtime();
+  private async encode(
+    { data, mapping }: EncoderInput,
+    diagnostics?: RuntimeDiagnosticSink,
+  ): Promise<Encoded> {
+    const runtime = await this.runtime(diagnostics);
     const features = await runtime.runEncoder(
       [{ name: "image", dimensions: [1, 3, 1024, 1024], f32Data: data }],
       featureNames,
+      diagnostics,
     );
     if (features.length !== 3) throw new Error("SAM encoder returned incomplete features");
     features.forEach((feature, index) => assertTensor(feature, featureShapes[index]!));
     return { features, mapping };
   }
 
-  private async decode(encoded: Encoded, request: Prompt): Promise<MaskImage> {
-    const runtime = await this.runtime();
+  private async decode(
+    encoded: Encoded,
+    request: Prompt,
+    diagnostics?: RuntimeDiagnosticSink,
+  ): Promise<MaskImage> {
+    const runtime = await this.runtime(diagnostics);
     const image = encoded.mapping.source;
     const points = request.points.map((point) => encoded.mapping.toModel(point));
     const labels = points.map(() => 1);
@@ -157,6 +167,7 @@ export class Sam2Segmenter {
         { name: "original_image_size", dimensions: [2], i32Data: new Int32Array([1024, 1024]) },
       ],
       ["low_res_masks"],
+      diagnostics,
     );
     if (!logits) throw new Error("SAM decoder returned no mask");
     assertTensor(logits, [1, 1, 256, 256]);
@@ -191,8 +202,8 @@ export class Sam2Segmenter {
     };
   }
 
-  private async runtime(): Promise<Sam2OnnxRuntime> {
-    const pending = (this.#runtime ??= this.load());
+  private async runtime(diagnostics?: RuntimeDiagnosticSink): Promise<Sam2OnnxRuntime> {
+    const pending = (this.#runtime ??= this.load(diagnostics));
     try {
       return await pending;
     } catch (error) {

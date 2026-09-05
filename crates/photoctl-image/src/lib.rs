@@ -7,6 +7,7 @@ mod mask;
 mod publication;
 mod resample;
 pub mod sam2;
+mod sam2_diagnostics;
 mod task_memory;
 mod tone_curve;
 

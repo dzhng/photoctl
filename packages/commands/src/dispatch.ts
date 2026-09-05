@@ -160,6 +160,7 @@ export async function dispatch(
         context.library,
         context.segmentation,
         context.segmenter,
+        context.emit,
       );
     if (request.verb === "layer")
       return await layerCommand(

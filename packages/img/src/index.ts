@@ -44,7 +44,14 @@ interface NativeBinding {
     threshold: number,
     inclusive: boolean,
   ): Promise<Float32Array>;
-  Sam2OnnxRuntime: new (encoder: Uint8Array, decoder: Uint8Array) => NativeSam2OnnxRuntime;
+  createSam2OnnxRuntime(
+    encoder: Uint8Array,
+    decoder: Uint8Array,
+  ): {
+    runtime?: NativeSam2OnnxRuntime;
+    error?: string;
+    diagnostics: RuntimeDiagnostics;
+  };
   sam2MaskFromLogits(
     logits: Float32Array,
     logitWidth: number,
@@ -241,9 +248,28 @@ interface NativeBinding {
 interface NativeSam2OnnxRuntime {
   encoderInputNames(): string[];
   decoderInputNames(): string[];
-  runEncoder(inputs: Sam2TensorInput[], outputs: string[]): Promise<Sam2TensorOutput[]>;
-  runDecoder(inputs: Sam2TensorInput[], outputs: string[]): Promise<Sam2TensorOutput[]>;
+  runEncoder(inputs: Sam2TensorInput[], outputs: string[]): Promise<NativeTensorOutcome>;
+  runDecoder(inputs: Sam2TensorInput[], outputs: string[]): Promise<NativeTensorOutcome>;
 }
+
+interface NativeTensorOutcome {
+  tensors?: Sam2TensorOutput[];
+  error?: string;
+  diagnostics: RuntimeDiagnostics;
+}
+
+export interface RuntimeDiagnostic {
+  scope: "runtime" | "session";
+  severity: "warning" | "error" | "fatal";
+  codeLocation: string;
+  message: string;
+  truncated: boolean;
+}
+export interface RuntimeDiagnostics {
+  diagnostics: RuntimeDiagnostic[];
+  droppedDiagnostics: number;
+}
+export type RuntimeDiagnosticSink = (batch: RuntimeDiagnostics) => void;
 
 export type Sam2TensorInput = {
   name: string;
@@ -253,7 +279,20 @@ export interface Sam2TensorOutput {
   dimensions: number[];
   data: Float32Array;
 }
-export type Sam2OnnxRuntime = NativeSam2OnnxRuntime;
+export interface Sam2OnnxRuntime {
+  encoderInputNames(): string[];
+  decoderInputNames(): string[];
+  runEncoder(
+    inputs: Sam2TensorInput[],
+    outputs: string[],
+    diagnostics?: RuntimeDiagnosticSink,
+  ): Promise<Sam2TensorOutput[]>;
+  runDecoder(
+    inputs: Sam2TensorInput[],
+    outputs: string[],
+    diagnostics?: RuntimeDiagnosticSink,
+  ): Promise<Sam2TensorOutput[]>;
+}
 
 export type AtomicRenameOutcome = "installed" | "exists" | "unsupported";
 export type ResampleFilter = "bilinear" | "lanczos3";
@@ -309,8 +348,40 @@ export interface NativeDevelopParameters {
 
 export class NativeImageUnavailableError extends Error {}
 
-export function createSam2OnnxRuntime(encoder: Uint8Array, decoder: Uint8Array): Sam2OnnxRuntime {
-  return new (requiredBinding().Sam2OnnxRuntime)(encoder, decoder);
+export function createSam2OnnxRuntime(
+  encoder: Uint8Array,
+  decoder: Uint8Array,
+  diagnostics?: RuntimeDiagnosticSink,
+): Sam2OnnxRuntime {
+  const created = requiredBinding().createSam2OnnxRuntime(encoder, decoder);
+  diagnostics?.(created.diagnostics);
+  if (created.error) throw new Error(created.error);
+  const runtime = created.runtime;
+  if (!runtime) throw new Error("SAM runtime creation returned no runtime");
+  return wrapSam2Runtime(runtime);
+}
+
+function wrapSam2Runtime(runtime: NativeSam2OnnxRuntime): Sam2OnnxRuntime {
+  async function run(
+    decoder: boolean,
+    inputs: Sam2TensorInput[],
+    outputs: string[],
+    sink?: RuntimeDiagnosticSink,
+  ) {
+    const result = await (decoder
+      ? runtime.runDecoder(inputs, outputs)
+      : runtime.runEncoder(inputs, outputs));
+    sink?.(result.diagnostics);
+    if (result.error) throw new Error(result.error);
+    if (!result.tensors) throw new Error("SAM inference returned no tensors");
+    return result.tensors;
+  }
+  return {
+    encoderInputNames: () => runtime.encoderInputNames(),
+    decoderInputNames: () => runtime.decoderInputNames(),
+    runEncoder: (inputs, outputs, sink) => run(false, inputs, outputs, sink),
+    runDecoder: (inputs, outputs, sink) => run(true, inputs, outputs, sink),
+  };
 }
 
 export function sam2MaskFromLogits(

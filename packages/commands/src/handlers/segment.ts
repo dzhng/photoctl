@@ -47,6 +47,7 @@ export async function segmentCommand(
   provided?: LibraryHandle,
   dependencies?: SegmentationDependencies,
   segmenter?: Sam2Segmenter,
+  emit?: (event: import("@photoctl/protocol").StderrEvent) => void | Promise<void>,
 ): Promise<Envelope> {
   const parsed = parseSegmentArguments(args);
   const lease = await openRequestLibrary(env, cwd, provided);
@@ -80,6 +81,7 @@ export async function segmentCommand(
         photo,
         parsed.text !== undefined,
         segmenter,
+        emit,
       );
       let gatewayCalls = 0;
       let candidates: Array<{ label: string; box?: [number, number, number, number] }>;

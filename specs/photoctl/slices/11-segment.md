@@ -86,11 +86,24 @@ identity output and invalid-model rejection. Fixed non-CPU-reading selections ar
 This tiny witness does not establish failed-worker diagnostic delivery, model parity or CLI
 acceptance; those are the next integration proof, using the existing runtime-library override.
 
-Only after that proof, resolve production diagnostic delivery and runtime acquisition together.
-The existing native worker's ready/job result boundaries and the command's stderr-event transport
-are the candidate owners; initialization and job errors must retain typed diagnostics. A cached
-runtime must never retain a request's event callback. Avoid a second Rust stderr emitter, global
-request routing, or deferred-warning queue unless the proof demonstrates an actual need.
+The native worker now returns typed diagnostics alongside creation and job outcomes, including
+failed model construction and failed inference. Call-scoped TypeScript sinks deliver them through
+the existing `warn` stderr event with code `runtime_warning`; cached runtimes and prepared handles
+retain no request callback. Environment messages are explicitly runtime-scoped, not attributed to
+the next photo or request that happens to transport them. Session messages remain worker-owned.
+Each scope keeps FIFO order; merging the independent scopes does not promise global chronology.
+
+Each native recorder retains at most 64 warning-or-higher records, with message and code location
+each bounded to 4096 UTF-8 bytes. Truncation and dropped-record counts are observable. Process
+messages wait until a subsequent creation/job transport opportunity; no independent polling,
+shutdown flush, or durable log is promised, so process teardown can discard pending diagnostics.
+The pinned Rust wrapper misdecodes category from the code-location pointer; the bridge deliberately
+omits category rather than publishing false metadata. Scope, severity, message and location remain.
+
+The actual Linux addon, built with the candidate archive selected explicitly through `ORT_LIB_PATH`,
+passes the unchanged shared photographic CLI model test with strict NDJSON parsing. A separate real
+CLI capture retains both the CPU-vendor warning and the encoder's shape-merge warning. This proves
+the native/command transport with the override, not the repository's default artifact acquisition.
 
 A production patch must have one pinned, reproducible source/patch/build identity selected by host,
 Docker, and release builds; none may silently fall back to the old archive. The supported

@@ -66,7 +66,21 @@ SHA256 witnesses:
 | Probe | `40f1e1c8f21630bc3700e092a8dc7a4afa5aba748bc808857e81a41cfb657a1f` | `3f477a8e9da905d4fd50508dbfaaafaf013033a23d0191014d61a6fb6055f686` |
 | Combined static archive | `5fbdd2f7ea2c32351c01b2d07dbefea107879ab2b1c790f8e8229b452eb6adea` | `bc9ccd0763a221627de7db6f8e0cac5fb0903189a085d2d75c2fa3aec3fa641a` |
 
-Next integration uses the existing runtime-library override, explicit native logger ownership,
-and typed worker outcomes feeding the existing command stderr-event transport. Runtime
-distribution across host, Docker and release builds remains unresolved; no default selection,
-public hosting, model bytes, CPU flags, database schema or provider behavior changed here.
+## Actual addon and CLI integration
+
+An isolated container from the functional image selects the candidate archive through the
+existing `ort-sys` override: copy the combined archive to `/ort-candidate/libonnxruntime.a`, set
+`ORT_LIB_PATH=/ort-candidate`, and rebuild `photoctl-image`, package it with the existing native
+packaging script, then rebuild TypeScript. No repository runtime-default selection changes.
+
+The unchanged `bun run test:models` passes both photographic subjects under the strict NDJSON
+harness. The [single-command capture](cli-warning-proof.mjs) uses that same harness and fixture,
+requiring the CPU-vendor warning to survive as a structured event on this known-warning host.
+Its [result](cli-result.json) also retains the encoder shape-merge warning and resulting mask
+identity. This host-specific evidence script is not a portable requirement that all CPUs warn.
+
+The native logger bridge uses typed creation/job outcomes and the existing command event
+transport, including failure paths. Runtime distribution across host, Docker and release builds
+remains unresolved; no default selection, public hosting, model bytes, CPU flags, database
+schema or provider behavior changed here. The default Linux gate remains unresolved until
+artifact acquisition selects the corrected runtime reproducibly; the override proves integration.

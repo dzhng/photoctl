@@ -1,3 +1,4 @@
+use crate::sam2_diagnostics::{Recorder, RuntimeDiagnostics, runtime_recorder, take_diagnostics};
 use napi::{
     Task,
     bindgen_prelude::{AsyncTask, Float32Array, Int32Array, Uint8Array},
@@ -21,11 +22,16 @@ pub struct Sam2CpuRuntime {
 }
 
 impl Sam2CpuRuntime {
-    pub fn from_bytes(encoder: &[u8], decoder: &[u8]) -> Result<Self, String> {
-        let encoder =
-            cpu_session(encoder).map_err(|error| format!("invalid SAM encoder: {error}"))?;
-        let decoder =
-            cpu_session(decoder).map_err(|error| format!("invalid SAM decoder: {error}"))?;
+    fn from_bytes(
+        encoder: &[u8],
+        decoder: &[u8],
+        recorder: &Arc<Recorder>,
+    ) -> Result<Self, String> {
+        runtime_recorder();
+        let encoder = cpu_session(encoder, recorder)
+            .map_err(|error| format!("invalid SAM encoder: {error}"))?;
+        let decoder = cpu_session(decoder, recorder)
+            .map_err(|error| format!("invalid SAM decoder: {error}"))?;
         Ok(Self { encoder, decoder })
     }
 
@@ -121,8 +127,10 @@ fn run_f32(
         .collect()
 }
 
-fn cpu_session(bytes: &[u8]) -> ort::Result<Session> {
+fn cpu_session(bytes: &[u8], recorder: &Arc<Recorder>) -> ort::Result<Session> {
     Session::builder()?
+        .with_logger(recorder.logger())?
+        .with_log_level(ort::logging::LogLevel::Warning)?
         .with_intra_threads(1)?
         .with_inter_threads(1)?
         .with_no_environment_execution_providers()?
@@ -216,7 +224,12 @@ struct Sam2Job {
     inputs: Vec<Sam2Input>,
     outputs: Vec<String>,
     decoder: bool,
-    reply: mpsc::SyncSender<Result<Vec<Sam2F32Output>, String>>,
+    reply: mpsc::SyncSender<Sam2RunOutcome>,
+}
+
+pub struct Sam2RunOutcome {
+    result: Result<Vec<Sam2F32Output>, String>,
+    diagnostics: RuntimeDiagnostics,
 }
 
 struct Sam2Worker {
@@ -226,7 +239,7 @@ struct Sam2Worker {
 }
 
 impl Sam2Worker {
-    fn new(encoder: Vec<u8>, decoder: Vec<u8>) -> Result<Self, String> {
+    fn new(encoder: Vec<u8>, decoder: Vec<u8>, recorder: Arc<Recorder>) -> Result<Self, String> {
         let (jobs, incoming) = mpsc::sync_channel::<Sam2Job>(1);
         let (ready, initialized) = mpsc::sync_channel(1);
         // Keep inference allocations on one thread: libuv worker rotation retains
@@ -234,7 +247,7 @@ impl Sam2Worker {
         std::thread::Builder::new()
             .name("photoctl-sam".into())
             .spawn(move || {
-                let mut runtime = match Sam2CpuRuntime::from_bytes(&encoder, &decoder) {
+                let mut runtime = match Sam2CpuRuntime::from_bytes(&encoder, &decoder, &recorder) {
                     Ok(runtime) => runtime,
                     Err(error) => {
                         let _ = ready.send(Err(error));
@@ -264,7 +277,10 @@ impl Sam2Worker {
                     } else {
                         runtime.run_encoder_f32(job.inputs, &job.outputs)
                     };
-                    let _ = job.reply.send(result);
+                    let _ = job.reply.send(Sam2RunOutcome {
+                        result,
+                        diagnostics: take_diagnostics(&recorder),
+                    });
                 }
             })
             .map_err(|error| error.to_string())?;
@@ -292,18 +308,43 @@ pub struct Sam2TensorOutput {
     pub data: Float32Array,
 }
 
+#[napi(object, object_from_js = false)]
+pub struct Sam2RuntimeCreation {
+    pub runtime: Option<Sam2OnnxRuntime>,
+    pub error: Option<String>,
+    pub diagnostics: RuntimeDiagnostics,
+}
+
+#[napi(object)]
+pub struct Sam2TensorOutcome {
+    pub tensors: Option<Vec<Sam2TensorOutput>>,
+    pub error: Option<String>,
+    pub diagnostics: RuntimeDiagnostics,
+}
+
+#[napi]
+pub fn create_sam2_onnx_runtime(encoder: Uint8Array, decoder: Uint8Array) -> Sam2RuntimeCreation {
+    let recorder = Recorder::new("session");
+    let result = Sam2Worker::new(encoder.to_vec(), decoder.to_vec(), Arc::clone(&recorder));
+    let diagnostics = take_diagnostics(&recorder);
+    match result {
+        Ok(inner) => Sam2RuntimeCreation {
+            runtime: Some(Sam2OnnxRuntime {
+                inner: Arc::new(inner),
+            }),
+            error: None,
+            diagnostics,
+        },
+        Err(error) => Sam2RuntimeCreation {
+            runtime: None,
+            error: Some(error),
+            diagnostics,
+        },
+    }
+}
+
 #[napi]
 impl Sam2OnnxRuntime {
-    #[napi(constructor)]
-    pub fn new(encoder: Uint8Array, decoder: Uint8Array) -> napi::Result<Self> {
-        Ok(Self {
-            inner: Arc::new(
-                Sam2Worker::new(encoder.to_vec(), decoder.to_vec())
-                    .map_err(napi::Error::from_reason)?,
-            ),
-        })
-    }
-
     #[napi]
     pub fn encoder_input_names(&self) -> Vec<String> {
         self.inner.encoder_inputs.clone()
@@ -351,8 +392,8 @@ pub struct Sam2RunTask {
 }
 
 impl Task for Sam2RunTask {
-    type Output = Vec<Sam2F32Output>;
-    type JsValue = Vec<Sam2TensorOutput>;
+    type Output = Sam2RunOutcome;
+    type JsValue = Sam2TensorOutcome;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
         let (reply, result) = mpsc::sync_channel(1);
@@ -367,18 +408,34 @@ impl Task for Sam2RunTask {
             .map_err(|error| napi::Error::from_reason(error.to_string()))?;
         result
             .recv()
-            .map_err(|error| napi::Error::from_reason(error.to_string()))?
-            .map_err(napi::Error::from_reason)
+            .map_err(|error| napi::Error::from_reason(error.to_string()))
     }
 
     fn resolve(&mut self, _env: napi::Env, output: Self::Output) -> napi::Result<Self::JsValue> {
-        Ok(output
-            .into_iter()
-            .map(|output| Sam2TensorOutput {
-                dimensions: output.dimensions,
-                data: output.data.into(),
-            })
-            .collect())
+        let diagnostics = output.diagnostics;
+        let tensors = match output.result {
+            Err(error) => {
+                return Ok(Sam2TensorOutcome {
+                    tensors: None,
+                    error: Some(error),
+                    diagnostics,
+                });
+            }
+            Ok(tensors) => tensors,
+        };
+        Ok(Sam2TensorOutcome {
+            tensors: Some(
+                tensors
+                    .into_iter()
+                    .map(|output| Sam2TensorOutput {
+                        dimensions: output.dimensions,
+                        data: output.data.into(),
+                    })
+                    .collect(),
+            ),
+            error: None,
+            diagnostics,
+        })
     }
 }
 
@@ -469,7 +526,8 @@ mod tests {
         let mut model = IDENTITY_ONNX.to_vec();
         model.splice(graph_end..graph_end, second_output);
         model[graph_tag + 1] += 29;
-        let mut runtime = Sam2CpuRuntime::from_bytes(&model, IDENTITY_ONNX).unwrap();
+        let mut runtime =
+            Sam2CpuRuntime::from_bytes(&model, IDENTITY_ONNX, &Recorder::new("session")).unwrap();
         let outputs = runtime
             .run_encoder_f32(
                 vec![Sam2Input {
@@ -488,7 +546,8 @@ mod tests {
     #[test]
     fn constructs_cpu_sessions_from_caller_supplied_onnx_bytes() {
         let model = IDENTITY_ONNX;
-        let mut runtime = Sam2CpuRuntime::from_bytes(model, model).expect("valid test ONNX");
+        let mut runtime = Sam2CpuRuntime::from_bytes(model, model, &Recorder::new("session"))
+            .expect("valid test ONNX");
         assert_eq!(runtime.encoder_input_names(), ["x"]);
         assert_eq!(runtime.decoder_input_names(), ["x"]);
         let output = runtime
@@ -503,7 +562,7 @@ mod tests {
             .expect("decoder executes");
         assert_eq!(output[0].dimensions, [1, 1, 2, 2]);
         assert_eq!(output[0].data, [1.0, 2.0, 3.0, 4.0]);
-        assert!(Sam2CpuRuntime::from_bytes(b"not ONNX", model).is_err());
+        assert!(Sam2CpuRuntime::from_bytes(b"not ONNX", model, &Recorder::new("session")).is_err());
     }
 
     #[test]

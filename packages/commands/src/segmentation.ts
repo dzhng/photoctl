@@ -10,6 +10,8 @@ import {
   prepareSam2Frame,
   sam2GroundingPixels,
   type SceneLinearImage,
+  type RuntimeDiagnosticSink,
+  type RuntimeDiagnostics,
 } from "@photoctl/render";
 import {
   GatewayClient,
@@ -17,7 +19,7 @@ import {
   readProviderSettings,
   resolveModels,
 } from "@photoctl/providers";
-import { PhotoctlError } from "@photoctl/protocol";
+import { PhotoctlError, type StderrEvent } from "@photoctl/protocol";
 import sharp from "sharp";
 import type { RequestEnv } from "./context.js";
 import type { StoredPhoto } from "./photo.js";
@@ -26,7 +28,7 @@ import { withGenerationSource } from "./handlers/generation-source.js";
 import { graphSourceWarning } from "./graph-source.js";
 
 export function createLibrarySegmenter(libraryPath: string): Sam2Segmenter {
-  return new Sam2Segmenter(async () => {
+  return new Sam2Segmenter(async (diagnostics) => {
     const manifest = completeModelManifest(PINNED_MODEL_RELEASE);
     if (!manifest)
       throw new PhotoctlError("provider_unconfigured", "Model export manifest is incomplete", {
@@ -54,7 +56,7 @@ export function createLibrarySegmenter(libraryPath: string): Sam2Segmenter {
         return data;
       }),
     );
-    return createSam2OnnxRuntime(bytes[0]!, bytes[1]!);
+    return createSam2OnnxRuntime(bytes[0]!, bytes[1]!, diagnostics);
   });
 }
 
@@ -65,8 +67,9 @@ export async function configuredSegmentation(
   photo: StoredPhoto,
   text: boolean,
   segmenter = createLibrarySegmenter(handle.path),
+  emit?: (event: StderrEvent) => void | Promise<void>,
 ): Promise<SegmentationDependencies> {
-  await segmenter.ready();
+  await withRuntimeDiagnostics((diagnostics) => segmenter.ready(diagnostics), emit);
   if (text && !env.gatewayApiKey)
     throw new PhotoctlError("provider_unconfigured", "AI_GATEWAY_API_KEY is not configured");
   const document = await loadActiveDocument(handle, photo.id);
@@ -135,11 +138,18 @@ export async function configuredSegmentation(
           throw new PhotoctlError("usage", "Segment point is outside the current develop crop", {
             id: photo.id,
           });
-        return await prepared.segment({
-          projection: { dimensions: { w: photo.w, h: photo.h }, baseToImage: matrix },
-          points: mappedPoints,
-          ...(box ? { box: boxSpace === "render" ? box : mapBox(box) } : {}),
-        });
+        return await withRuntimeDiagnostics(
+          (diagnostics) =>
+            prepared.segment(
+              {
+                projection: { dimensions: { w: photo.w, h: photo.h }, baseToImage: matrix },
+                points: mappedPoints,
+                ...(box ? { box: boxSpace === "render" ? box : mapBox(box) } : {}),
+              },
+              diagnostics,
+            ),
+          emit,
+        );
       },
     },
   };
@@ -151,4 +161,33 @@ export async function configuredSegmentation(
     });
   }
   return dependencies;
+}
+
+async function withRuntimeDiagnostics<T>(
+  operation: (diagnostics: RuntimeDiagnosticSink) => Promise<T>,
+  emit?: (event: StderrEvent) => void | Promise<void>,
+): Promise<T> {
+  const batches: RuntimeDiagnostics[] = [];
+  try {
+    return await operation((batch) => batches.push(batch));
+  } finally {
+    // Preserve per-scope order and await backpressure from the stderr owner.
+    /* eslint-disable no-await-in-loop */
+    for (const batch of batches) {
+      for (const diagnostic of batch.diagnostics) {
+        await emit?.({
+          event: "warn",
+          code: "runtime_warning",
+          message: `[${diagnostic.scope} ${diagnostic.severity}] ${diagnostic.message}${diagnostic.codeLocation ? ` (${diagnostic.codeLocation})` : ""}${diagnostic.truncated ? " [truncated]" : ""}`,
+        });
+      }
+      if (batch.droppedDiagnostics)
+        await emit?.({
+          event: "warn",
+          code: "runtime_warning",
+          message: `Native runtime diagnostics exceeded their retention limit; ${batch.droppedDiagnostics} messages were dropped`,
+        });
+    }
+    /* eslint-enable no-await-in-loop */
+  }
 }

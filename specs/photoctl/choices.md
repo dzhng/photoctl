@@ -4512,3 +4512,38 @@
   not establish cross-platform pixel equivalence or replace photographic-quality acceptance.
 - **Verdict:** **Sound.** Identity is the image hash, not its filename; measured evidence keeps its scope.
 - **Confidence:** High.
+
+### Native diagnostics — Bounded process capture, transported by existing operations
+
+- **When:** Slice 11 actual-addon diagnostic integration, 2026-09-06.
+- **The choice:** The explicit ORT environment logger records process-scoped messages; each
+  worker's session logger records session messages. Creation and job outcomes carry the records
+  even when the operation fails. Command code drains them through its existing stderr-event
+  owner, with no native-to-JavaScript callback lifecycle, direct Rust stderr output, global
+  request map or cached request callback. For example, a CPU warning emitted between commands
+  waits for the next operation; that command transports it without claiming the warning belongs
+  to its photo. An immediate push would instead need a callback owner that survives command changes.
+- **The gap:** Process warnings can occur outside a session operation. No live callback owner
+  exists in the native interface, and installing one solely for diagnostics would add request
+  and teardown lifecycle obligations. The first CPU warning is no longer emitted before logging;
+  this recorder transports post-logger messages, not a workaround for early raw stderr.
+- **The reach:** Each recorder retains 64 messages; each message/location field is capped at
+  4096 UTF-8 bytes, with truncation and dropped counts surfaced. Process messages may be delayed
+  until the next native creation/job boundary and lost at process teardown. They carry runtime
+  scope and no photo/request identity, so delayed delivery does not imply causal attribution.
+  Each scope is FIFO, but there is no cross-scope chronology guarantee or global sequence owner.
+- **Verdict:** **Sound with limits.** Reuse the operation/result and stderr owners while making
+  bounded loss and delayed timing explicit. These diagnostics are not a durable logging service.
+- **Confidence:** Medium for the timing/retention policy; high for measured failure delivery.
+
+### Native diagnostics — Omit the pinned wrapper's unreliable category
+
+- **When:** Actual Linux CLI capture, 2026-09-06.
+- **The choice:** Retain truthful scope, severity, message and code location; omit category.
+  `ort` 2.0.0-rc.13's custom logger decodes category from the code-location pointer, confirmed
+  by the real CLI output and installed source. No Rust dependency fork is added solely for this.
+- **The gap:** The documented upstream callback contract does not match its pinned implementation.
+- **The reach:** Clients receive less metadata, but no mislabeled location posing as category.
+  Warning messages remain intact and strict NDJSON remains the transport contract.
+- **Verdict:** **Sound.** Omission is preferable to inventing or mislabeling diagnostic facts.
+- **Confidence:** High.
