@@ -154,8 +154,9 @@ through its writer; migration 19's DDL remains immutable.
 
 Continue from this reviewed core in these bounded consumer passes:
 
-- Layer lifecycle: public duplicate/reorder/clear, arbitrary rotated support and overlapping copies;
-  later borders must keep authored coordinates when earlier support changes.
+- Layer lifecycle now has public pixel checks for duplicate/remove/clear, overlapping paint order,
+  arbitrary border rotation, and later-border coordinates when earlier support moves. Include those
+  states in the final visual journey; runnable pixel checks are not its visual closeout.
 - Shared consumers: SAM sees source-only pixels with the same geometry/support plan, without
   photographic layers; native exterior detail and offline density must use that plan too. In
   particular, prove reduced offline inputs do not masquerade as full-resolution output and purchased

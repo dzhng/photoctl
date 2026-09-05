@@ -188,6 +188,108 @@ test("a later expansion preserves the complete visible input after an earlier bo
         input.data.slice(y * 12 * 3, (y + 1) * 12 * 3),
       );
     }
+    await command("layer", ["transform", id, a.layerId, "--dx", "0", "--anchor", "0,0"]);
+    const movedAgain = showDataSchema.parse(
+      await command("show", [id, "--preview-size", "native"]),
+    );
+    expect(movedAgain.preview_info.actual).toEqual(shown.preview_info.actual);
+    expect(movedAgain.preview_info.base_to_view).toEqual(shown.preview_info.base_to_view);
+    const missing = await currentPixels();
+    expect(missing.data.slice((4 * 14 + 12) * 3, (4 * 14 + 12) * 3 + 3)).toEqual(
+      new Float32Array(3),
+    );
+    expect(missing.data.slice(0, 3)).toEqual(expanded.data.slice(0, 3));
+    await command("layer", ["transform", id, a.layerId, "--dx", "4", "--anchor", "0,0"]);
+    await command("show", [id, "--preview-size", "native"]);
+    expect((await currentPixels()).data).toEqual(expanded.data);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("coincident border copies preserve authored support until the final copy is cleared", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, author, currentPixels } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    const a = await author(2, "red");
+    await command("show", [id, "--preview-size", "native"]);
+    const original = await currentPixels();
+    await command("layer", ["duplicate", id, a.layerId]);
+    await command("layer", ["remove", id, a.layerId]);
+    const copied = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(copied.preview_info.actual).toMatchObject({ w: 10, h: 8 });
+    expect((await currentPixels()).data).toEqual(original.data);
+    await command("layer", ["clear", id]);
+    const cleared = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(cleared.preview_info.actual).toMatchObject({ w: 6, h: 4 });
+    const interior = await currentPixels();
+    for (let y = 0; y < 4; y++)
+      expect(interior.data.slice(y * 6 * 3, (y + 1) * 6 * 3)).toEqual(
+        original.data.slice(((y + 2) * 10 + 2) * 3, ((y + 2) * 10 + 8) * 3),
+      );
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("border reorder changes overlapping paint without changing the authored canvas or original interior", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, author, currentPixels } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    const a = await author(2, "red");
+    const b = await author(1, "blue");
+    await command("layer", ["transform", id, b.layerId, "--dx", "1", "--anchor", "0,0"]);
+    const back = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(back.preview_info.actual).toMatchObject({ w: 12, h: 10 });
+    expect(back.preview_info.base_to_view).toEqual({ a: 1, b: 0, c: 0, d: 1, e: -2, f: 0 });
+    const blue = await currentPixels();
+    // Base point (2,2) belongs to both rings; (4,3) remains original interior.
+    const overlap = 2 * 12 * 3;
+    const original = (3 * 12 + 2) * 3;
+    expect(blue.data[overlap + 2]).toBeGreaterThan(0.5);
+    await command("layer", ["reorder", id, a.layerId, "--front"]);
+    const front = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(front.preview_info.actual).toEqual(back.preview_info.actual);
+    expect(front.preview_info.base_to_view).toEqual(back.preview_info.base_to_view);
+    const red = await currentPixels();
+    expect(red.data[overlap]).toBeGreaterThan(0.5);
+    expect(red.data[overlap + 2]).toBeLessThan(0.1);
+    expect(red.data.slice(original, original + 3)).toEqual(blue.data.slice(original, original + 3));
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("an arbitrary border rotation moves its ring and hole while original pixels stay fixed", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, response, author, currentPixels } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    await command("show", [id, "--preview-size", "native"]);
+    const original = await currentPixels();
+    const a = await author(2, "red");
+    await command("layer", ["transform", id, a.layerId, "--rotate", "30", "--anchor", "0,0"]);
+    const result = await response("show", [id, "--preview-size", "native"]);
+    const shown = showDataSchema.parse(result.data);
+    // Rotated outer corners span [-2.77,9.90] × [1.87,13.80]; original support ends at x=10.
+    expect(shown.preview_info.actual).toMatchObject({ w: 13, h: 13 });
+    expect(shown.preview_info.base_to_view).toEqual({ a: 1, b: 0, c: 0, d: 1, e: 3, f: -1 });
+    expect(result.warnings).toContainEqual(
+      expect.objectContaining({ code: "canvas_uncovered", id }),
+    );
+    const rotated = await currentPixels();
+    expect(rotated.data[(4 * 13 + 3) * 3]).toBeGreaterThan(0.5);
+    expect(rotated.data.slice((7 * 13 + 6) * 3, (7 * 13 + 6) * 3 + 3)).toEqual(new Float32Array(3));
+    expect(rotated.data.slice((2 * 13 + 7) * 3, (2 * 13 + 7) * 3 + 3)).toEqual(
+      original.data.slice(0, 3),
+    );
+    await command("layer", ["transform", id, a.layerId, "--rotate", "0", "--anchor", "0,0"]);
+    expect(
+      showDataSchema.parse(await command("show", [id, "--preview-size", "native"])).preview_info
+        .actual,
+    ).toMatchObject({ w: 10, h: 8 });
   } finally {
     await fixture.close();
   }
