@@ -102,9 +102,12 @@ See Slice 10's local dependency graph for its serialization details.
 | 08b develop state | `60d0e5b` |
 | 08c1a linear artifacts | `8548f1d`, corrected by `2963cca` |
 | 08c1b global operators | `cf0dd93` |
+| 08c2 masked operators | `5d866e0` |
+| 08c3 curves/levels | `bb857e1`, corrected by `481bb9c` |
 | 09a provider contracts | `90b03c4` |
 | 09b evidence | `cf34507` |
 | 09c embed/search | `ea2c715` |
+| 10a layer identity/revisions | `2c03b4e` |
 
 ## Precedent repos — where to look before designing anything
 
