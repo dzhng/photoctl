@@ -29,6 +29,19 @@ export interface DevelopedImage {
 }
 
 interface NativeBinding {
+  Sam2OnnxRuntime: new (encoder: Uint8Array, decoder: Uint8Array) => NativeSam2OnnxRuntime;
+  sam2MaskFromLogits(
+    logits: Float32Array,
+    logitWidth: number,
+    logitHeight: number,
+    modelSize: number,
+    resizedWidth: number,
+    resizedHeight: number,
+    offsetX: number,
+    offsetY: number,
+    baseWidth: number,
+    baseHeight: number,
+  ): Float32Array;
   atomicRenameNoReplace(source: string, destination: string): AtomicRenameOutcome;
   librawVersion(): string;
   probeLibraw(path: string): NativeProbe;
@@ -177,6 +190,23 @@ interface NativeBinding {
   ): Promise<void>;
 }
 
+interface NativeSam2OnnxRuntime {
+  encoderInputNames(): string[];
+  decoderInputNames(): string[];
+  runEncoder(inputs: Sam2TensorInput[], output: string): Promise<Sam2TensorOutput>;
+  runDecoder(inputs: Sam2TensorInput[], output: string): Promise<Sam2TensorOutput>;
+}
+
+export type Sam2TensorInput = {
+  name: string;
+  dimensions: number[];
+} & ({ f32Data: Float32Array; i32Data?: never } | { i32Data: Int32Array; f32Data?: never });
+export interface Sam2TensorOutput {
+  dimensions: number[];
+  data: Float32Array;
+}
+export type Sam2OnnxRuntime = NativeSam2OnnxRuntime;
+
 export type AtomicRenameOutcome = "installed" | "exists" | "unsupported";
 export type ResampleFilter = "bilinear" | "lanczos3";
 
@@ -230,6 +260,40 @@ export interface NativeDevelopParameters {
 }
 
 export class NativeImageUnavailableError extends Error {}
+
+export function createSam2OnnxRuntime(encoder: Uint8Array, decoder: Uint8Array): Sam2OnnxRuntime {
+  return new (requiredBinding().Sam2OnnxRuntime)(encoder, decoder);
+}
+
+export function sam2MaskFromLogits(
+  logits: Float32Array,
+  logitWidth: number,
+  logitHeight: number,
+  mapping: {
+    modelSize: number;
+    resizedWidth: number;
+    resizedHeight: number;
+    offsetX: number;
+    offsetY: number;
+    baseWidth: number;
+    baseHeight: number;
+  },
+): Float32Array {
+  return asFloat32Array(
+    requiredBinding().sam2MaskFromLogits(
+      logits,
+      logitWidth,
+      logitHeight,
+      mapping.modelSize,
+      mapping.resizedWidth,
+      mapping.resizedHeight,
+      mapping.offsetX,
+      mapping.offsetY,
+      mapping.baseWidth,
+      mapping.baseHeight,
+    ),
+  );
+}
 
 /** Atomically moves a sibling file into an unoccupied destination. */
 export function atomicRenameNoReplace(source: string, destination: string): AtomicRenameOutcome {

@@ -19,3 +19,6 @@
 ## Delegated: embedding-cache eviction.
 ## Checkpoint: `wb masks` — edge quality on a hair/foliage crop.
 ## Must stay green: 01–10. Deps: 09a, 10. Firewall: no SAM 3; no macOS 27 API; CPU EP only.
+
+## 11a keyless checkpoint (2026-09-05)
+The pinned export, manifest, hash-fetch/cache, CPU ONNX session, 1024 letterbox, base-mask logit, and daemon encoder-cache contracts are implemented without inventing release bytes. The checked-in manifest remains `awaiting_export`, so `doctor --fetch-models` and the Docker `models` target fail loudly until David supplies the hosted base URL and a real export populates both hashes. G6 and the `wb masks` visual checkpoint remain open for that release-weight run; 11b verbs are not part of this checkpoint.

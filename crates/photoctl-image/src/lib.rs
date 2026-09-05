@@ -4,6 +4,7 @@ mod develop;
 mod mask;
 mod publication;
 mod resample;
+pub mod sam2;
 mod tone_curve;
 
 use std::path::Path;

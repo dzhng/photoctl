@@ -13,6 +13,11 @@ import {
   openLibrary,
   readLibraryDiagnostics,
   countStaleXmp,
+  completeModelManifest,
+  fetchPinnedModels,
+  inspectModelRelease,
+  parseModelReleaseManifest,
+  PINNED_MODEL_RELEASE,
   type LibraryHandle,
 } from "@photoctl/library";
 import { cacheRootForLibrary } from "@photoctl/importer";
@@ -24,7 +29,7 @@ import {
 } from "@photoctl/render";
 import type { PreviewCoordinator } from "@photoctl/render";
 import { providerDiagnostics, readProviderSettings } from "@photoctl/providers";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { parseArguments } from "./arguments.js";
 import { cacheBase, libraryPath, parseLockBudget } from "./context.js";
 import { parseByteSize } from "./byte-size.js";
@@ -194,7 +199,7 @@ export async function dispatch(
       }
     }
     if (request.verb === "doctor") {
-      const parsed = parseArguments(request.args, {});
+      const parsed = parseArguments(request.args, { flags: ["--fetch-models"] });
       if (parsed.positionals.length > 0) {
         throw new PhotoctlError("usage", `Unexpected argument: ${parsed.positionals[0]}`);
       }
@@ -213,6 +218,56 @@ export async function dispatch(
         const nativeImage = inspectNativeImageRuntime();
         const providers = providerDiagnostics(await readProviderSettings(handle), request.env);
         const xmpStale = await countStaleXmp(handle);
+        const modelManifest = parseModelReleaseManifest(PINNED_MODEL_RELEASE);
+        const modelSettings = await handle.query<{ value: unknown }>(
+          "SELECT value FROM settings WHERE key = 'models_base_url'",
+        );
+        const storedModelBaseUrl = modelSettings.rows[0]?.value ?? null;
+        const parsedModelBaseUrl =
+          typeof storedModelBaseUrl === "string" && URL.canParse(storedModelBaseUrl)
+            ? new URL(storedModelBaseUrl)
+            : null;
+        if (
+          storedModelBaseUrl !== null &&
+          (parsedModelBaseUrl === null ||
+            (parsedModelBaseUrl.protocol !== "http:" && parsedModelBaseUrl.protocol !== "https:"))
+        ) {
+          throw new PhotoctlError("provider_unconfigured", "Invalid models_base_url setting", {
+            reason: "models_base_url_invalid",
+          });
+        }
+        const configuredModelBaseUrl = storedModelBaseUrl as string | null;
+        const modelDirectory = join(handle.path, "models");
+        const completeManifest = completeModelManifest(modelManifest);
+        if (parsed.flags.has("--fetch-models")) {
+          if (configuredModelBaseUrl === null) {
+            throw new PhotoctlError("provider_unconfigured", "models_base_url is not configured", {
+              reason: "models_base_url_missing",
+            });
+          }
+          if (completeManifest === null) {
+            throw new PhotoctlError(
+              "provider_unconfigured",
+              "Model export manifest is incomplete",
+              {
+                reason: "model_manifest_incomplete",
+              },
+            );
+          }
+          try {
+            await fetchPinnedModels({
+              manifest: completeManifest,
+              baseUrl: configuredModelBaseUrl,
+              directory: modelDirectory,
+            });
+          } catch (error) {
+            throw new PhotoctlError("provider_unconfigured", "Pinned model fetch failed", {
+              reason: "model_fetch_failed",
+              message: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+        const modelArtifacts = await inspectModelRelease(modelManifest, modelDirectory);
         return {
           schema: 1,
           ok: true,
@@ -244,6 +299,12 @@ export async function dispatch(
               },
             ],
             providers,
+            models: {
+              base_url: configuredModelBaseUrl,
+              manifest_ready: completeManifest !== null,
+              directory: modelDirectory,
+              artifacts: modelArtifacts,
+            },
             lock_holder: null,
           } satisfies DoctorData,
           warnings:

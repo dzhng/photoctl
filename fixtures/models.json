@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "status": "awaiting_export",
+  "source": {
+    "repository": "facebook/sam2.1-hiera-small",
+    "revision": "ee5bba1d82bb8749febdf90f45e84b687142ba03"
+  },
+  "artifacts": [
+    { "file": "encoder.onnx", "sha256": null, "opset": 17 },
+    { "file": "decoder.onnx", "sha256": null, "opset": 16 }
+  ]
+}

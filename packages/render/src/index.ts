@@ -1,4 +1,5 @@
 export * from "./coordinates.js";
+export * from "./sam2.js";
 export * from "./color.js";
 export * from "./decoder.js";
 export * from "./source-render.js";

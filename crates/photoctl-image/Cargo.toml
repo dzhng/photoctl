@@ -12,6 +12,7 @@ libc = "0.2"
 libraw-sys = { path = "../libraw-sys" }
 napi = { version = "3.3", default-features = false, features = ["napi8"] }
 napi-derive = "3.2"
+ort = "=2.0.0-rc.13"
 
 [build-dependencies]
 napi-build = "2.4"

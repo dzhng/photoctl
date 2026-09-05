@@ -2637,3 +2637,32 @@
   and gamut policy.
 - **Verdict:** **Sound.** The choice retains the existing owner, exact luminance invariant, and continuous photographic output.
 - **Confidence:** Medium; the first production probe exposed and corrected the naive clipping/desaturation alternatives.
+
+### Slice 11a — An incomplete model release is represented, not counterfeited
+
+- **When:** Slice 11a keyless runtime checkpoint, 2026-09-05.
+- **The choice:** `fixtures/models.json` pins the real Hugging Face revision and the exporter-owned opsets, but carries
+  `status:"awaiting_export"` and null artifact hashes until the pinned exporter actually produces the files. Fetch, Docker's
+  opt-in `models` target, and `doctor --fetch-models` refuse that state. New libraries store `models_base_url:null`; old libraries
+  with no row read identically. The alternative was to invent digests or a release URL merely to make setup appear complete.
+- **The gap:** The slice names a David-hosted release that does not exist yet and supplies no exported bytes or hashes.
+- **The reach:** Keyless development and deterministic runtime tests remain possible, while no machine can mistake test models or
+  upstream PyTorch weights for the production ONNX release.
+- **Verdict:** **Needs-user.** David must host the two exported files, populate the manifest by running the exporter, and set the
+  library base URL before the live gate.
+- **Confidence:** High.
+
+### Slice 11a — SAM uses a centered rounded letterbox and strict-positive mask threshold
+
+- **When:** Slice 11a coordinate/runtime implementation, 2026-09-05.
+- **The choice:** Scale the longer edge to 1024, round the shorter edge to the nearest pixel, and split odd padding with the extra
+  pixel on the bottom or right. Decoder samples map through that exact transform; bilinear logit values strictly greater than zero
+  become mask value 1, while zero and negative values become 0. The CPU sessions use one intra-op and one inter-op thread so
+  concurrent daemon work remains bounded; the encoder cache deduplicates promises by `(photo id, render tier)` and delegates actual
+  eviction to the existing render/cache owner.
+- **The gap:** The spec fixes the input size, interpolation, threshold, and cache identity but not padding alignment, rounding,
+  equality at the threshold, or ONNX Runtime thread counts.
+- **The reach:** Prompt coordinates, edge pixels, repeatability, and daemon CPU contention inherit these conventions.
+- **Verdict:** **Needs-user.** These are isolated reversible policies; validate edge quality and timing with the real weights before
+  treating them as release-tuned defaults.
+- **Confidence:** Medium until the live G6 and visual gate run.

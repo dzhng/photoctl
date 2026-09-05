@@ -38,6 +38,22 @@ export const doctorDataSchema = z.object({
       configured: z.boolean(),
     }),
   }),
+  models: z.object({
+    base_url: z.url().nullable(),
+    manifest_ready: z.boolean(),
+    directory: z.string(),
+    artifacts: z.array(
+      z.object({
+        file: z.string(),
+        sha256: z
+          .string()
+          .regex(/^[0-9a-f]{64}$/u)
+          .nullable(),
+        opset: z.number().int().positive(),
+        cached: z.boolean(),
+      }),
+    ),
+  }),
   lock_holder: z.null(),
 });
 

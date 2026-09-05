@@ -81,7 +81,7 @@ export async function initializeLibrary(
     const libraryId = newLibraryEntityId();
     await handle.query(
       `INSERT INTO settings (key, value) VALUES
-         ($1, $2::jsonb), ($3, $4::jsonb), ($5, $6::jsonb)`,
+         ($1, $2::jsonb), ($3, $4::jsonb), ($5, $6::jsonb), ($7, $8::jsonb)`,
       [
         "library_id",
         JSON.stringify(libraryId),
@@ -89,6 +89,8 @@ export async function initializeLibrary(
         JSON.stringify(cacheMaxBytes),
         "daemon_idle_ms",
         JSON.stringify(900_000),
+        "models_base_url",
+        "null",
       ],
     );
     await handle.query("UPDATE settings SET value = $2::jsonb WHERE key = $1", [
