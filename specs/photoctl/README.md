@@ -133,6 +133,7 @@ See Slice 10's local dependency graph for its serialization details.
 | 10c1 manual segment/layer commands | `6b0aa16` |
 | 10c2 vacancy moves/warnings | `bf93625` |
 | 11a keyless SAM runtime | `a2305bd`, corrected through `e0803af` |
+| 11b keyless segment commands | `4d0512d` |
 
 ## Precedent repos — where to look before designing anything
 
