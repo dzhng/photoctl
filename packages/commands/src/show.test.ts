@@ -294,6 +294,139 @@ test("show materializes pixels from the active global develop node", async () =>
   }
 });
 
+test("show reports and renders the active base-space crop and quarter-turn", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-show-geometry-"));
+  const libraryPath = join(directory, "library");
+  const cacheRoot = join(directory, "cache");
+  const source = join(directory, "photo.png");
+  const initialized = await initializeLibrary(libraryPath);
+  try {
+    await sharp({ create: { width: 40, height: 30, channels: 3, background: "#45566a" } })
+      .png()
+      .toFile(source);
+    const env = {
+      noDaemon: true,
+      libraryPath,
+      cacheRoot,
+      volumeMap: `${directory}=fixture-volume:online`,
+    };
+    const imported = await dispatch(
+      { verb: "import", args: [source, "--link"], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    if (!imported.ok || !("data" in imported)) throw new Error("import failed");
+    const id = (imported.data as { ids: string[] }).ids[0]!;
+    await dispatch(
+      {
+        verb: "develop",
+        args: [id, "--set", 'crop={"x":10,"y":0,"w":20,"h":30}', "rotate=90"],
+        cwd: directory,
+        env,
+      },
+      { version: "test", library: initialized.handle },
+    );
+
+    const shown = await dispatch(
+      { verb: "show", args: [id, "--preview-size", "native"], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+
+    expect(shown).toMatchObject({
+      ok: true,
+      data: {
+        dims: { w: 40, h: 30 },
+        crop: {
+          rect: { x: 10, y: 0, w: 20, h: 30 },
+          rotate: 90,
+          straighten_deg: 0,
+          aspect_ratio: null,
+        },
+        preview_info: { actual: { w: 30, h: 20 } },
+      },
+    });
+    expect((shown as { data: { preview_info: unknown } }).data.preview_info).toMatchObject({
+      base_to_view: { a: 0, b: 1, c: -1, d: 0, e: 30, f: -10 },
+      view_to_base: { a: 0, b: -1, c: 1, d: 0, e: 10, f: 30 },
+      visible_base_polygon: [
+        [10, 30],
+        [10, 0],
+        [30, 0],
+        [30, 30],
+      ],
+    });
+
+    const region = await dispatch(
+      {
+        verb: "show",
+        args: [id, "--region", "10,0,10,15", "--preview-size", "native"],
+        cwd: directory,
+        env,
+      },
+      { version: "test", library: initialized.handle },
+    );
+    expect(region).toMatchObject({
+      ok: true,
+      data: {
+        preview_info: {
+          requested: { region: [10, 0, 10, 15] },
+          actual: { region: [10, 0, 10, 15], w: 15, h: 10 },
+          base_to_view: { a: 0, b: 1, c: -1, d: 0, e: 15, f: -10 },
+          view_to_base: { a: 0, b: -1, c: 1, d: 0, e: 10, f: 15 },
+        },
+      },
+    });
+    const partial = await dispatch(
+      {
+        verb: "show",
+        args: [id, "--region", "5,0,10,10", "--preview-size", "native"],
+        cwd: directory,
+        env,
+      },
+      { version: "test", library: initialized.handle },
+    );
+    expect(partial).toMatchObject({
+      ok: true,
+      data: { preview_info: { actual: { region: [10, 0, 5, 10], w: 10, h: 5 } } },
+    });
+    const fractional = await dispatch(
+      {
+        verb: "show",
+        args: [id, "--region", "10.2,0.2,1,1", "--preview-size", "native"],
+        cwd: directory,
+        env,
+      },
+      { version: "test", library: initialized.handle },
+    );
+    expect(fractional).toMatchObject({
+      ok: true,
+      data: { preview_info: { actual: { region: [10, 0, 2, 2], w: 2, h: 2 } } },
+    });
+    const outside = await dispatch(
+      {
+        verb: "show",
+        args: [id, "--region", "0,0,5,5", "--preview-size", "native"],
+        cwd: directory,
+        env,
+      },
+      { version: "test", library: initialized.handle },
+    );
+    expect(outside).toMatchObject({ ok: false, code: "usage" });
+    const touching = await dispatch(
+      {
+        verb: "show",
+        args: [id, "--region", "0,0,10,5", "--preview-size", "native"],
+        cwd: directory,
+        env,
+      },
+      { version: "test", library: initialized.handle },
+    );
+    expect(touching).toMatchObject({ ok: false, code: "usage" });
+  } finally {
+    await initialized.handle.close();
+    await rm(directory, { recursive: true });
+  }
+});
+
 async function writePinnedPreview(cacheBase: string, libraryId: string, id: string): Promise<void> {
   const path = join(cacheBase, libraryId, "emb", `${id}.jpg`);
   await mkdir(join(cacheBase, libraryId, "emb"), { recursive: true });

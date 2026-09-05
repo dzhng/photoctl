@@ -20,7 +20,21 @@ export const showDataSchema = z.object({
     orientation: z.number().int().min(1).max(8),
     note: z.string(),
   }),
-  crop: z.null(),
+  crop: z
+    .object({
+      rect: z
+        .object({
+          x: z.number(),
+          y: z.number(),
+          w: z.number().positive(),
+          h: z.number().positive(),
+        })
+        .nullable(),
+      rotate: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
+      straighten_deg: z.number(),
+      aspect_ratio: z.string().nullable(),
+    })
+    .nullable(),
   camera: z.object({
     make: z.string().nullable(),
     model: z.string().nullable(),

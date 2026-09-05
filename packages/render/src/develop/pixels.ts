@@ -8,6 +8,11 @@ import type { SceneLinearImage } from "../decoder.js";
 import { inspectArtifactLinearTiff } from "../linear-tiff.js";
 import { developDictSchema, type DevelopDict } from "./dict.js";
 import { classifyDevelopChange } from "./tiers.js";
+import {
+  applyDevelopArtifactGeometry,
+  applyDevelopGeometry,
+  hasDevelopGeometry,
+} from "./geometry.js";
 
 const IMPLEMENTED_KEYS = new Set([
   "preset",
@@ -27,6 +32,10 @@ const IMPLEMENTED_KEYS = new Set([
   "definition",
   "sharpen",
   "noise_reduction",
+  "crop",
+  "rotate",
+  "straighten_deg",
+  "aspect_ratio",
 ]);
 
 /** Runs deterministic develop in Rust; TypeScript owns only color-space transport. */
@@ -41,14 +50,13 @@ export async function applyDevelop(
   const unsupported = Object.keys(parameters).find((key) => !IMPLEMENTED_KEYS.has(key));
   if (unsupported) throw new Error(`Develop operation is not implemented: ${unsupported}`);
 
-  if (Object.keys(parameters).every((key) => key === "preset")) {
-    return image;
-  }
-  const data = await applyDevelopPixels(image.data, image.w, image.h, nativeParameters(parameters));
-  return {
-    ...image,
-    data,
-  };
+  const developed = hasPixelDevelop(parameters)
+    ? {
+        ...image,
+        data: await applyDevelopPixels(image.data, image.w, image.h, nativeParameters(parameters)),
+      }
+    : image;
+  return await applyDevelopGeometry(developed, parameters);
 }
 
 /** Validates and grades canonical TIFF samples in one asynchronous native worker allocation. */
@@ -56,22 +64,36 @@ export async function applyDevelopArtifact(
   bytes: Buffer,
   dimensions: { w: number; h: number },
   unparsed: DevelopDict,
+  geometryBaseDimensions: { w: number; h: number } = dimensions,
 ): Promise<{ bytes: Buffer; w: number; h: number; pixelOffset: number }> {
-  const parameters = developDictSchema.parse(unparsed);
+  const parameters = scaleDevelopGeometry(
+    developDictSchema.parse(unparsed),
+    geometryBaseDimensions,
+    dimensions,
+  );
   const unsupported = Object.keys(parameters).find((key) => !IMPLEMENTED_KEYS.has(key));
   if (unsupported) throw new Error(`Develop operation is not implemented: ${unsupported}`);
   const layout = await inspectArtifactLinearTiff(bytes);
   if (layout.width !== dimensions.w || layout.height !== dimensions.h) {
     throw new Error("Develop artifact dimensions do not match graph metadata");
   }
-  const developed = await applyDevelopArtifactNative(
-    bytes,
-    layout.pixelOffset,
-    layout.pixelBytes,
-    layout.width,
-    layout.height,
-    nativeParameters(parameters),
-  );
+  const developed = hasPixelDevelop(parameters)
+    ? await applyDevelopArtifactNative(
+        bytes,
+        layout.pixelOffset,
+        layout.pixelBytes,
+        layout.width,
+        layout.height,
+        nativeParameters(parameters),
+      )
+    : bytes;
+  if (hasDevelopGeometry(parameters)) {
+    return await applyDevelopArtifactGeometry(
+      Buffer.from(developed.buffer, developed.byteOffset, developed.byteLength),
+      dimensions,
+      parameters,
+    );
+  }
   return {
     bytes: Buffer.from(developed.buffer, developed.byteOffset, developed.byteLength),
     w: layout.width,
@@ -107,6 +129,33 @@ export async function applyDevelopDeltaArtifact(
     w: layout.width,
     h: layout.height,
     pixelOffset: layout.pixelOffset,
+  };
+}
+
+function hasPixelDevelop(parameters: DevelopDict): boolean {
+  return Object.keys(parameters).some(
+    (key) => !["preset", "crop", "rotate", "straighten_deg", "aspect_ratio"].includes(key),
+  );
+}
+
+function scaleDevelopGeometry(
+  parameters: DevelopDict,
+  base: { w: number; h: number },
+  source: { w: number; h: number },
+): DevelopDict {
+  if (!parameters.crop || (base.w === source.w && base.h === source.h)) return parameters;
+  const scaleX = source.w / base.w;
+  const scaleY = source.h / base.h;
+  const x = parameters.crop.x * scaleX;
+  const y = parameters.crop.y * scaleY;
+  return {
+    ...parameters,
+    crop: {
+      x,
+      y,
+      w: Math.min(source.w, (parameters.crop.x + parameters.crop.w) * scaleX) - x,
+      h: Math.min(source.h, (parameters.crop.y + parameters.crop.h) * scaleY) - y,
+    },
   };
 }
 

@@ -256,6 +256,43 @@ pub fn apply_delta_artifact(
     })
 }
 
+#[napi]
+#[allow(clippy::too_many_arguments)]
+pub fn transform_artifact_pixels(
+    data: Uint8Array,
+    pixel_offset: u32,
+    pixel_bytes: u32,
+    source_width: u32,
+    source_height: u32,
+    output_width: u32,
+    output_height: u32,
+    matrix: Vec<f64>,
+    filter: String,
+) -> napi::Result<AsyncTask<TransformArtifactTask>> {
+    let matrix = matrix.try_into().map_err(|_| {
+        Error::new(
+            Status::InvalidArg,
+            "transform matrix must contain six values",
+        )
+    })?;
+    let filter = match filter.as_str() {
+        "bilinear" => ResampleFilter::Bilinear,
+        "lanczos3" => ResampleFilter::Lanczos3,
+        _ => return Err(Error::new(Status::InvalidArg, "unknown resample filter")),
+    };
+    Ok(AsyncTask::new(TransformArtifactTask {
+        data: data.to_vec(),
+        pixel_offset: pixel_offset as usize,
+        pixel_bytes: pixel_bytes as usize,
+        source_width,
+        source_height,
+        output_width,
+        output_height,
+        matrix,
+        filter,
+    }))
+}
+
 fn develop_parameters(parameters: DevelopParameters) -> Develop {
     Develop {
         brilliance: parameters.brilliance.unwrap_or_default() as f32,
@@ -369,6 +406,18 @@ pub struct DevelopArtifactTask {
     delta: bool,
 }
 
+pub struct TransformArtifactTask {
+    data: Vec<u8>,
+    pixel_offset: usize,
+    pixel_bytes: usize,
+    source_width: u32,
+    source_height: u32,
+    output_width: u32,
+    output_height: u32,
+    matrix: [f64; 6],
+    filter: ResampleFilter,
+}
+
 pub struct ValidateLinearArtifactTask {
     data: Vec<u8>,
     pixel_offset: usize,
@@ -423,6 +472,81 @@ impl Task for DevelopArtifactTask {
     fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
         Ok(data.into())
     }
+}
+
+impl Task for TransformArtifactTask {
+    type Output = Vec<u8>;
+    type JsValue = Uint8Array;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        validate_artifact_samples(&self.data, self.pixel_offset, self.pixel_bytes)
+            .map_err(|message| Error::new(Status::InvalidArg, message))?;
+        let mut header = self.data[..self.pixel_offset].to_vec();
+        let input = self.data[self.pixel_offset..self.pixel_offset + self.pixel_bytes]
+            .chunks_exact(4)
+            .map(|bytes| f32::from_le_bytes(bytes.try_into().expect("four-byte float sample")))
+            .collect::<Vec<_>>();
+        self.data = Vec::new();
+        let output = resample::transform(
+            &input,
+            self.source_width,
+            self.source_height,
+            3,
+            self.output_width,
+            self.output_height,
+            self.matrix,
+            self.filter,
+        )
+        .map_err(|message| Error::new(Status::InvalidArg, message))?;
+        drop(input);
+        patch_tiff_scalar(&mut header, 256, self.output_width)?;
+        patch_tiff_scalar(&mut header, 257, self.output_height)?;
+        patch_tiff_scalar(&mut header, 278, self.output_height)?;
+        patch_tiff_scalar(&mut header, 279, (output.len() * 4) as u32)?;
+        header.reserve(output.len() * 4);
+        for sample in output {
+            header.extend_from_slice(&sample.to_le_bytes());
+        }
+        Ok(header)
+    }
+
+    fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(data.into())
+    }
+}
+
+fn patch_tiff_scalar(data: &mut [u8], tag: u16, value: u32) -> napi::Result<()> {
+    if data.len() < 10 || &data[..2] != b"II" {
+        return Err(Error::new(
+            Status::InvalidArg,
+            "invalid artifact TIFF header",
+        ));
+    }
+    let ifd_offset = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
+    if ifd_offset + 2 > data.len() {
+        return Err(Error::new(
+            Status::InvalidArg,
+            "invalid artifact TIFF directory",
+        ));
+    }
+    let count = u16::from_le_bytes(data[ifd_offset..ifd_offset + 2].try_into().unwrap()) as usize;
+    for index in 0..count {
+        let entry = ifd_offset + 2 + index * 12;
+        if entry + 12 > data.len() {
+            return Err(Error::new(
+                Status::InvalidArg,
+                "invalid artifact TIFF directory",
+            ));
+        }
+        if u16::from_le_bytes(data[entry..entry + 2].try_into().unwrap()) == tag {
+            data[entry + 8..entry + 12].copy_from_slice(&value.to_le_bytes());
+            return Ok(());
+        }
+    }
+    Err(Error::new(
+        Status::InvalidArg,
+        "artifact TIFF tag is missing",
+    ))
 }
 
 impl Task for ValidateLinearArtifactTask {

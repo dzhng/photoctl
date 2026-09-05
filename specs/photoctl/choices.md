@@ -2262,6 +2262,44 @@
 - **Verdict:** **Sound.** Discovery of invalid canonical bytes must update the catalog fact owned by the artifact boundary.
 - **Confidence:** High; a first-read corruption regression proves both the error and availability transition.
 
+### Slice 08d3 — Geometry projects base-space requests through one affine owner
+
+- **When:** Slice 08d3 geometry implementation, 2026-09-05.
+- **The choice:** A crop is first resolved in the photo's oriented, uncropped base coordinate system.
+  An optional aspect ratio keeps the largest centered rectangle inside that crop. Photoctl then maps
+  that continuous rectangle onto the nearest whole-pixel output, applies an exact clockwise quarter-turn,
+  and finally straightens around the new center. Straighten returns the largest centered rectangle that
+  fits inside the rotated pixels, avoiding empty black corners. The same composed matrix maps a base-space
+  `show --region` request into the developed raster and maps clicks back; the caller's original base-space
+  request, not the internal projected rectangle, remains the view-hash identity. When only a smaller embedded
+  or pinned source is available, catalog-space crop coordinates scale to that source before the same plan runs.
+  Canonical TIFF geometry stays in the native transform worker, which patches canonical dimensions and releases
+  its input frame before encoding output bytes; the persistent JavaScript daemon never walks full-frame samples.
+- **The gap:** The plan fixed the coordinate space, operator order, and exact rotations, but did not choose
+  fractional crop rasterization, aspect anchoring, straighten canvas bounds, or whether projected cache
+  identity should expose internal output coordinates.
+- **The reach:** Develop, canonical artifact dimensions, online and offline previews, view-cache reuse, and
+  future mask/layer consumers inherit one geometry plan. A request wholly outside developed pixels is a
+  usage error; a partial request reports the actual base-space intersection.
+- **Verdict:** **Sound.** Centered maximal crops are deterministic and reversible in the dictionary, trimming
+  prevents synthetic borders, and keeping base-space view identity preserves the public coordinate contract.
+- **Confidence:** Medium; exact grids and the production RAW crop are green, while later manual crop UX can
+  revisit aspect anchoring without changing the geometry owner.
+
+### Slice 08d3 — Invalid crops fail before immutable state commits
+
+- **When:** Slice 08d3 command integration, 2026-09-05.
+- **The choice:** If a batch asks to crop past a photo edge, that photo returns a `usage` failure before a new
+  document revision is written, while independent photos in the same batch can continue. Deferring the check
+  until `show` or export would leave a valid-looking active revision that cannot render.
+- **The gap:** The plan constrained coordinates but did not name whether crop bounds are checked at mutation
+  time or evaluation time.
+- **The reach:** Offline metadata edits remain possible because dimensions live in the catalog, and every later
+  renderer can assume the active crop intersects and stays inside the oriented base raster.
+- **Verdict:** **Sound.** The catalog already owns the dimensions needed for deterministic validation, so invalid
+  immutable state never becomes active.
+- **Confidence:** High.
+
 ## Needs user
 
 ### Slice 10b2 — Morphology uses a square footprint and feather uses three bounded box passes

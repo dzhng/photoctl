@@ -4,7 +4,7 @@ Sub-slices, one seam or judged variable each: **8a1** immutable logical DAG/sche
 artifact publication, evaluator, graph inspection · **8b** develop dict/presets as a node (no pixels) · **8c1a** exact
 scene-linear graph artifacts · **8c1b** global per-pixel ops ·
 **8c2** masked ops (highlights/shadows/vibrance; skin crop) ✓ · **8c3** curves/levels ✓ · **8d1** local contrast
-(brilliance/definition/sharpen) ✓ · **8d2** NR (texture crop) · **8d3** geometry (exact tests) · **8d4** filters + B&W (data).
+(brilliance/definition/sharpen) ✓ · **8d2** NR (texture crop) ✓ · **8d3** geometry (exact tests) ✓ · **8d4** filters + B&W (data).
 
 ## API seam
 - **8a1** replaces the current linear `renderPhoto` state model with `packages/render/src/graph/{types,recipes,store}.ts`.
@@ -165,6 +165,11 @@ for watercolor texture loss. The retuned luminance, chroma, and combined control
 fresh review; combined was preferred narrowly, with mild microtexture attenuation recorded as its
 tradeoff rather than hidden.
 
+Slice 08d3's [G9 geometry checkpoint](../assets/gates/G9-geometry.md) exercised the production RAW
+route with crop as the sole variable. Exact asymmetric grids separately pin every quarter-turn,
+crop-before-rotate ordering, straighten-last ordering, inscribed straighten dimensions, and canonical
+artifact dimensions; command tests pin base/view round trips and honest partial/outside clipping.
+
 ## Must stay green: 01–07. Deps: 7b (functional), 7a (macos). Firewall: no layers, no providers, no learned NR, no CoreML, no VLM.
 
 ## Implementation notes
@@ -243,3 +248,13 @@ tradeoff rather than hidden.
   image width and a constant block size rather than another full frame. Zero controls preserve canonical bytes exactly;
   nonzero controls remain deterministic across the in-memory and canonical-TIFF paths. Needs David:
   no for the seam; the accepted G8 tuning remains reversible operator data.
+
+- **2026-09-05 — 8d3 geometry.** Develop crops and applies an optional centered aspect constraint in
+  oriented, uncropped base coordinates, then performs an exact quarter-turn and finally straightens.
+  Straighten returns the largest centered inscribed raster so display output has no empty corners.
+  The implementation calls 10b1's native transform owner; it adds no resampler. `show.crop` reports
+  the resolved geometry, while preview extraction, view hashes, affine round trips, visible polygons,
+  and partial/outside region behavior retain the caller's base-space contract. Crop bounds are checked
+  before a document revision commits. The existing command surface has no `crop`/auto-straighten verb,
+  so the prompt's conditional Hough path remains with the later manual-command slice rather than
+  creating a second command seam here. Needs David: no.

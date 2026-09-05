@@ -59,6 +59,7 @@ export interface EvaluateGraphNodeRequest {
   photoId: string;
   nodeId: string;
   executionId?: string;
+  developBaseDimensions?: { w: number; h: number };
   source?:
     | (() => Promise<{ image: LinearImage; provenance: SourceExecutionProvenance }>)
     | {
@@ -313,9 +314,16 @@ async function runOperation(
         w: input.w,
         h: input.h,
       });
-      const developed = await (
-        kind === "develop" ? applyDevelopArtifact : applyDevelopDeltaArtifact
-      )(bytes, { w: input.w, h: input.h }, developDictSchema.parse(parameters));
+      const parsed = developDictSchema.parse(parameters);
+      const developed =
+        kind === "develop"
+          ? await applyDevelopArtifact(
+              bytes,
+              { w: input.w, h: input.h },
+              parsed,
+              request.developBaseDimensions,
+            )
+          : await applyDevelopDeltaArtifact(bytes, { w: input.w, h: input.h }, parsed);
       return {
         artifact: await normalizeValidatedArtifactBytes(developed.bytes, {
           w: developed.w,

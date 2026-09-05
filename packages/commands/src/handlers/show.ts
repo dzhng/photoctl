@@ -10,6 +10,11 @@ import {
 import { PhotoctlError, type Envelope, type ShowData, type Warning } from "@photoctl/protocol";
 import {
   developHash,
+  developBaseRegion,
+  developGeometryMatrix,
+  developPreviewProjection,
+  DevelopRegionOutsideError,
+  projectDevelopView,
   materializePreview,
   evaluateGraphNode,
   PreviewDestinationError,
@@ -70,6 +75,16 @@ export async function showCommand(
     });
     const renderHash = document.renderHash;
     const view = parseViewSpec(parsed.options, parsed.flags.has("--norm"), photo.w, photo.h);
+    const geometry = developGeometryMatrix(photo.w, photo.h, document.develop);
+    let projected: ReturnType<typeof projectDevelopView>;
+    try {
+      projected = projectDevelopView(view, geometry);
+    } catch (error) {
+      if (error instanceof DevelopRegionOutsideError) {
+        throw new PhotoctlError("usage", "--region does not intersect the visible image");
+      }
+      throw error;
+    }
     const pinned: ImageSource = {
       kind: "pinned-preview",
       path: pinnedEmbeddedJpegPath(cacheRoot, id),
@@ -88,8 +103,10 @@ export async function showCommand(
         id,
         cacheRoot,
         renderHash,
-        photo,
-        view,
+        photo: { ...photo, w: geometry.w, h: geometry.h },
+        developBaseDimensions: { w: photo.w, h: photo.h },
+        view: projected.view,
+        cacheView: view,
         coordinator,
         index,
         handle,
@@ -127,10 +144,11 @@ export async function showCommand(
         message: "The requested preview resolution exceeds the available source tier",
       });
     }
-    const projection = previewProjection(
+    const projection = developPreviewProjection(
       materialized.preview.actualRegion,
       materialized.preview.w,
       materialized.preview.h,
+      geometry.matrix,
     );
     const data: ShowData = {
       id,
@@ -140,7 +158,7 @@ export async function showCommand(
         orientation: photo.orientation,
         note: "oriented, uncropped — the coordinate space",
       },
-      crop: null,
+      crop: developGeometrySummary(document.develop),
       camera: photo.camera,
       exposure: photo.exposure,
       shot:
@@ -157,7 +175,7 @@ export async function showCommand(
         view_hash: viewHash(view),
         requested: { region: view.region, long_edge: view.longEdge },
         actual: {
-          region: materialized.preview.actualRegion,
+          region: developBaseRegion(materialized.preview.actualRegion, geometry.matrix),
           w: materialized.preview.w,
           h: materialized.preview.h,
         },
@@ -189,6 +207,24 @@ export async function showCommand(
   } finally {
     await lease.release();
   }
+}
+
+function developGeometrySummary(develop: ShowData["develop"]): ShowData["crop"] {
+  const geometry = develop as {
+    crop?: { x: number; y: number; w: number; h: number };
+    rotate?: 0 | 90 | 180 | 270;
+    straighten_deg?: number;
+    aspect_ratio?: string;
+  };
+  if (!geometry.crop && !geometry.rotate && !geometry.straighten_deg && !geometry.aspect_ratio) {
+    return null;
+  }
+  return {
+    rect: geometry.crop ?? null,
+    rotate: geometry.rotate ?? 0,
+    straighten_deg: geometry.straighten_deg ?? 0,
+    aspect_ratio: geometry.aspect_ratio ?? null,
+  };
 }
 
 function parseViewSpec(
@@ -246,33 +282,15 @@ function parseRegion(
   return [region[0], region[1], region[2], region[3]];
 }
 
-function previewProjection(
-  region: [number, number, number, number],
-  width: number,
-  height: number,
-) {
-  const [x, y, w, h] = region;
-  const scaleX = width / w;
-  const scaleY = height / h;
-  return {
-    base_to_view: { a: scaleX, b: 0, c: 0, d: scaleY, e: -x * scaleX, f: -y * scaleY },
-    view_to_base: { a: 1 / scaleX, b: 0, c: 0, d: 1 / scaleY, e: x, f: y },
-    visible_base_polygon: [
-      [x, y],
-      [x + w, y],
-      [x + w, y + h],
-      [x, y + h],
-    ] as [[number, number], [number, number], [number, number], [number, number]],
-  };
-}
-
 async function materializeWithFallback(
   context: {
     id: string;
     cacheRoot: string;
     renderHash: string;
     photo: StoredPhoto;
+    developBaseDimensions: { w: number; h: number };
     view: ViewSpec;
+    cacheView: ViewSpec;
     coordinator: PreviewCoordinator;
     index: CacheIndex;
     handle: LibraryHandle;
@@ -294,6 +312,7 @@ async function materializeWithFallback(
           sourceTier: candidate.source.kind,
           render: async () => await evaluatePreviewGraph(context, candidate),
           view: context.view,
+          cacheView: context.cacheView,
         }),
         candidate,
       };
@@ -319,6 +338,7 @@ async function evaluatePreviewGraph(
   context: {
     id: string;
     photo: StoredPhoto;
+    developBaseDimensions: { w: number; h: number };
     handle: LibraryHandle;
     outputNodeId: string;
   },
@@ -330,6 +350,7 @@ async function evaluatePreviewGraph(
     photoId: context.id,
     nodeId: context.outputNodeId,
     source: candidate.produce,
+    developBaseDimensions: context.developBaseDimensions,
   });
   return await readArtifactImage(evaluated.artifact.path);
 }

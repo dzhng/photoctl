@@ -27,6 +27,134 @@ test("develop applies exposure directly to scene-linear Rec.2020 pixels", async 
   expect(developed.data).toEqual(new Float32Array([0.25, 0.5, 1, 1.5, 2.5, -0.25]));
 });
 
+test("develop crops base pixels before an exact clockwise quarter-turn", async () => {
+  const source = {
+    w: 4,
+    h: 3,
+    data: new Float32Array(
+      [0, 1, 2, 3, 10, 11, 12, 13, 20, 21, 22, 23].flatMap((sample) => [sample, sample, sample]),
+    ),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, {
+    crop: { x: 1, y: 0, w: 2, h: 3 },
+    rotate: 90,
+  });
+
+  expect({ w: developed.w, h: developed.h }).toEqual({ w: 3, h: 2 });
+  expect(Array.from(developed.data).filter((_, index) => index % 3 === 0)).toEqual([
+    21, 11, 1, 22, 12, 2,
+  ]);
+});
+
+test.each([
+  [0, { w: 3, h: 2 }, [0, 1, 2, 10, 11, 12]],
+  [90, { w: 2, h: 3 }, [10, 0, 11, 1, 12, 2]],
+  [180, { w: 3, h: 2 }, [12, 11, 10, 2, 1, 0]],
+  [270, { w: 2, h: 3 }, [2, 12, 1, 11, 0, 10]],
+] as const)(
+  "develop rotate=%i preserves exact asymmetric pixels",
+  async (rotate, dims, expected) => {
+    const source = {
+      w: 3,
+      h: 2,
+      data: new Float32Array([0, 1, 2, 10, 11, 12].flatMap((sample) => [sample, sample, sample])),
+      space: "scene-linear-rec2020" as const,
+      orientationApplied: true as const,
+      whiteLevel: 1,
+      blackLevel: 0,
+      wbPreApplied: true,
+    };
+
+    const developed = await applyDevelop(source, { rotate });
+
+    expect({ w: developed.w, h: developed.h }).toEqual(dims);
+    expect(Array.from(developed.data).filter((_, index) => index % 3 === 0)).toEqual(expected);
+  },
+);
+
+test("develop straightens the already-cropped and quarter-turned frame", async () => {
+  const source = {
+    w: 4,
+    h: 3,
+    data: new Float32Array(
+      [0, 1, 2, 3, 10, 11, 12, 13, 20, 21, 22, 23].flatMap((sample) => [sample, sample, sample]),
+    ),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const croppedAndRotated = await applyDevelop(source, {
+    crop: { x: 1, y: 0, w: 2, h: 3 },
+    rotate: 90,
+  });
+
+  const combined = await applyDevelop(source, {
+    crop: { x: 1, y: 0, w: 2, h: 3 },
+    rotate: 90,
+    straighten_deg: 7,
+  });
+  const sequential = await applyDevelop(croppedAndRotated, { straighten_deg: 7 });
+
+  expect({ w: combined.w, h: combined.h }).toEqual({ w: sequential.w, h: sequential.h });
+  combined.data.forEach((sample, index) => {
+    expect(sample).toBeCloseTo(sequential.data[index]!, 6);
+  });
+});
+
+test("develop trims the empty corners from a straightened frame", async () => {
+  const source = {
+    w: 100,
+    h: 80,
+    data: new Float32Array(100 * 80 * 3).fill(0.5),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, { straighten_deg: 10 });
+
+  expect(developed.w).toBeLessThan(source.w);
+  expect(developed.h).toBeLessThan(source.h);
+  expect(Math.min(...developed.data)).toBeGreaterThan(0.45);
+});
+
+test("develop applies an aspect constraint inside the base-space crop", async () => {
+  const source = {
+    w: 6,
+    h: 4,
+    data: new Float32Array(
+      [
+        0, 1, 2, 3, 4, 5, 10, 11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 25, 30, 31, 32, 33, 34, 35,
+      ].flatMap((sample) => [sample, sample, sample]),
+    ),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+
+  const developed = await applyDevelop(source, {
+    crop: { x: 1, y: 0, w: 4, h: 4 },
+    aspect_ratio: "2:1",
+  });
+
+  expect({ w: developed.w, h: developed.h }).toEqual({ w: 4, h: 2 });
+  expect(Array.from(developed.data).filter((_, index) => index % 3 === 0)).toEqual([
+    11, 12, 13, 14, 21, 22, 23, 24,
+  ]);
+});
+
 test("develop highlights select bright tones without moving deep shadows", async () => {
   const source = {
     w: 3,
@@ -432,6 +560,88 @@ test("develop grades canonical artifact bytes asynchronously without a JS pixel 
   await expect(applyDevelopArtifact(invalid, { w: 2, h: 1 }, { exposure: 1 })).rejects.toThrow(
     "non-finite",
   );
+});
+
+test("canonical develop artifacts apply geometry after pixel grading", async () => {
+  const source = {
+    w: 4,
+    h: 2,
+    data: new Float32Array(
+      [0, 1, 2, 3, 10, 11, 12, 13].flatMap((sample) => [sample, sample, sample]),
+    ),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const bytes = await encodeArtifactLinearTiff(source);
+
+  const developed = await applyDevelopArtifact(
+    bytes,
+    { w: 4, h: 2 },
+    {
+      exposure: 1,
+      crop: { x: 1, y: 0, w: 3, h: 2 },
+      rotate: 90,
+    },
+  );
+
+  expect({ w: developed.w, h: developed.h }).toEqual({ w: 2, h: 3 });
+  const decoded = await decodeArtifactLinearTiff(developed.bytes);
+  expect(Array.from(decoded.data).filter((_, index) => index % 3 === 0)).toEqual([
+    22, 2, 24, 4, 26, 6,
+  ]);
+});
+
+test("canonical geometry scales base-space crops for lower-resolution source artifacts", async () => {
+  const bytes = await encodeArtifactLinearTiff({
+    w: 4,
+    h: 2,
+    data: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8].flatMap((sample) => [sample, sample, sample])),
+    space: "scene-linear-rec2020",
+    orientationApplied: true,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  });
+
+  const developed = await applyDevelopArtifact(
+    bytes,
+    { w: 4, h: 2 },
+    { crop: { x: 2, y: 0, w: 4, h: 4 } },
+    { w: 8, h: 4 },
+  );
+  const decoded = await decodeArtifactLinearTiff(developed.bytes);
+
+  expect({ w: decoded.w, h: decoded.h }).toEqual({ w: 2, h: 2 });
+  expect(Array.from(decoded.data).filter((_, index) => index % 3 === 0)).toEqual([2, 3, 6, 7]);
+});
+
+test("canonical geometry leaves the JavaScript event loop responsive", async () => {
+  const width = 768;
+  const height = 512;
+  const bytes = await encodeArtifactLinearTiff({
+    w: width,
+    h: height,
+    data: new Float32Array(width * height * 3).fill(0.25),
+    space: "scene-linear-rec2020",
+    orientationApplied: true,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  });
+  let heartbeats = 0;
+  const timer = setInterval(() => {
+    heartbeats += 1;
+  }, 1);
+  try {
+    await applyDevelopArtifact(bytes, { w: width, h: height }, { straighten_deg: 10 });
+  } finally {
+    clearInterval(timer);
+  }
+
+  expect(heartbeats).toBeGreaterThan(2);
 });
 
 test("full-frame local grading leaves the JavaScript event loop responsive", async () => {

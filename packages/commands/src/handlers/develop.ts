@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import {
   applyDevelopMutation,
   commitDevelopState,
+  developGeometryMatrix,
   developHash,
   loadPreset,
   readActiveDevelopState,
@@ -80,6 +81,7 @@ export async function developCommand(
             unset: parsed.unset,
             reset: parsed.reset,
           });
+          developGeometryMatrix(photo.w, photo.h, next);
         } catch (error) {
           throw commandInputError(error);
         }

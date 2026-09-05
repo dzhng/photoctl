@@ -130,6 +130,17 @@ interface NativeBinding {
     height: number,
     opacity: number,
   ): Promise<Float32Array>;
+  transformArtifactPixels(
+    data: Uint8Array,
+    pixelOffset: number,
+    pixelBytes: number,
+    sourceWidth: number,
+    sourceHeight: number,
+    outputWidth: number,
+    outputHeight: number,
+    matrix: readonly number[],
+    filter: ResampleFilter,
+  ): Promise<Uint8Array>;
   applyDevelopPixels(
     data: Float32Array,
     width: number,
@@ -417,6 +428,30 @@ export async function compositeMaskedPixels(
 ): Promise<Float32Array> {
   return asFloat32Array(
     await requiredBinding().compositeMaskedPixels(base, content, mask, width, height, opacity),
+  );
+}
+
+export async function transformArtifactPixels(
+  data: Uint8Array,
+  pixelOffset: number,
+  pixelBytes: number,
+  sourceWidth: number,
+  sourceHeight: number,
+  outputWidth: number,
+  outputHeight: number,
+  matrix: readonly [number, number, number, number, number, number],
+  filter: ResampleFilter,
+): Promise<Uint8Array> {
+  return await requiredBinding().transformArtifactPixels(
+    data,
+    pixelOffset,
+    pixelBytes,
+    sourceWidth,
+    sourceHeight,
+    outputWidth,
+    outputHeight,
+    matrix,
+    filter,
   );
 }
 

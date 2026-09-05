@@ -253,6 +253,25 @@ test("a per-photo mutation validation failure becomes a batch result", async () 
   expect(await readDevelop(libraryPath, id)).toEqual({});
 });
 
+test("develop rejects a crop outside the oriented base image before committing it", async () => {
+  const { libraryPath, id } = await libraryWithPhoto();
+
+  const result = await command(libraryPath, "develop", [
+    id,
+    "--set",
+    'crop={"x":90,"y":0,"w":20,"h":20}',
+  ]);
+
+  expect(result).toMatchObject({
+    schema: 1,
+    ok: false,
+    code: "usage",
+    summary: { ok: 0, failed: 1 },
+    results: [{ id, ok: false, code: "usage" }],
+  });
+  expect(await readDevelop(libraryPath, id)).toEqual({});
+});
+
 test("replaying an absolute mutation returns the same develop and render identities", async () => {
   const { libraryPath, id } = await libraryWithPhoto();
   const args = [id, "--set", "exposure=0.5", "contrast=-3"];

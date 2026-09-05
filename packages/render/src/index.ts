@@ -24,6 +24,7 @@ export * from "./develop/hash.js";
 export * from "./develop/keys.js";
 export * from "./develop/presets.js";
 export * from "./develop/pixels.js";
+export * from "./develop/geometry.js";
 export * from "./develop/state.js";
 export * from "./develop/tiers.js";
 export * from "./layers/model.js";

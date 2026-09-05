@@ -59,6 +59,7 @@ export async function materializePreview(request: {
   render?: () => Promise<Image16>;
   sourceTier?: PreviewSourceTier;
   view: ViewSpec;
+  cacheView?: ViewSpec;
 }): Promise<MaterializedPreview> {
   const region = clampRegion(
     request.view.region ?? [0, 0, request.photo.w, request.photo.h],
@@ -69,7 +70,7 @@ export async function materializePreview(request: {
   const requestedWidth = Math.max(1, Math.round(region[2] * requestedScale));
   const requestedHeight = Math.max(1, Math.round(region[3] * requestedScale));
   const directory = join(request.cacheRoot, "view", request.photoId, request.renderHash);
-  const exactPath = join(directory, `${viewHash(request.view)}.jpg`);
+  const exactPath = join(directory, `${viewHash(request.cacheView ?? request.view)}.jpg`);
   const masterPath = join(directory, "master.jpg");
   const nativeFullFrame = request.view.region === null && request.view.longEdge === "native";
   const cheapOverview = request.view.region === null && request.view.longEdge === 1616;
@@ -93,7 +94,7 @@ export async function materializePreview(request: {
     {
       photoId: request.photoId,
       renderHash: request.renderHash,
-      artifact: `view:${viewHash(request.view)}`,
+      artifact: `view:${viewHash(request.cacheView ?? request.view)}`,
       path: exactPath,
     },
     async () => {

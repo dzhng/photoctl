@@ -334,6 +334,7 @@ async function evaluateExportImage(
       photoId: snapshot.id,
       nodeId: snapshot.outputNodeId,
       source: candidate.produce,
+      developBaseDimensions: { w: snapshot.photo.w, h: snapshot.photo.h },
     });
     return await readArtifactImage(evaluated.artifact.path, evaluated.artifact.artifactHash);
   };

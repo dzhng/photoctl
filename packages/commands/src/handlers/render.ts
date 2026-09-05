@@ -74,6 +74,7 @@ export async function renderCommand(
             photoId: id,
             nodeId: document.outputNodeId,
             source: candidate.produce,
+            developBaseDimensions: { w: photo.w, h: photo.h },
           }),
           fallback: candidate.fallback,
         };
