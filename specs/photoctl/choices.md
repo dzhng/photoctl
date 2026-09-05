@@ -4585,3 +4585,40 @@
 - **Verdict:** **Sound.** Reuse the existing owners and accept bounded preview work rather
   than weakening inspection safety or reporting stale source availability.
 - **Confidence:** High.
+
+### Public undo — Keep the first image inside the atomic revision owner
+
+- **When:** Public undo integration, 2026-09-06.
+- **The choice:** A user generates an image, then immediately asks to undo. With no older
+  revision to restore, undo succeeds with `undone:false` and retains the purchased image.
+  The same rule protects an imported original. The existing locked revision transaction
+  decides this; a separate command-side parent lookup could race another edit. For an import
+  whose lazy document has never been initialized, the existing document initializer establishes
+  its ordinary source revision before returning the same no-op result. Undo itself does not
+  add another history entry or render pixels.
+- **The gap:** The internal undo primitive allowed the first revision to become no active
+  document. No production caller relied on clearing the first image, and that behavior would
+  discard a generated photo's active purchased root at the new public boundary.
+- **The reach:** The public result always names a valid revision and render hash. All undo
+  consumers share the same terminal-history rule rather than maintaining separate policies.
+- **Verdict:** **Sound.** Restoring an older edit cannot mean erasing the only existing image.
+- **Confidence:** High.
+
+### Public undo — Document edits, with the existing conflict boundary
+
+- **When:** Public undo integration, 2026-09-06.
+- **The choice:** Undoing a layer removal restores that revision's image graph, geometry,
+  ordered layers and editable markup together. It does not reverse ratings, tags or XMP writes,
+  whose state is not part of document revisions. The command takes one photo ID or prefix and
+  returns `{id,undone,revision_id,render_hash}`; no redo, batch history or second log is introduced.
+  If two commands both read revision C, the first can restore B; the second must report the
+  existing revision-conflict error, not silently continue from B to A. A lost response likewise
+  cannot trigger automatic command replay through the daemon.
+- **The gap:** The spec requires public editing undo but does not define its response or a
+  catalog-wide history model. Existing document snapshots already own reversible image state.
+- **The reach:** `undo` uses the same atomic state and conflict semantics as other image edits.
+  Future catalog undo would require an explicit separate contract, not implied participation
+  in image history. Callers can inspect the returned revision without fetching an unbounded log.
+- **Verdict:** **Sound.** Expose the existing complete document operation without inventing
+  incomplete catalog history or retrying an operation that changes meaning on repetition.
+- **Confidence:** High.

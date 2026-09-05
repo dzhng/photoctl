@@ -120,6 +120,8 @@ pixels, checks repeated first-revision no-ops and strict arguments. The public c
 restores markup and layer snapshots on a generated photo without another provider request. The revision
 owner's compare-and-swap check rejects a stale expected revision using the shared conflict error.
 
+### Develop and preview verification
+
 `gold-exam.test.ts` (runs the script on a 10-file set; 3 people-preset JPEGs; people's `highlights=-20` lowers p98 vs neutral);
 `develop-format-matrix.test.ts` applies the same develop dict to representative whole-file, embedded-container, and
 unknown-extension inputs and proves identical envelope/result structure plus a render at the best available tier;
@@ -301,5 +303,6 @@ artifact dimensions; command tests pin base/view round trips and honest partial/
   before vignette, B&W, filters, and geometry, using the same in-memory/canonical seam. The production
   A7C II comparison and the rejected first probe that drove the gamut correction are recorded in the
   [selective-color checkpoint](../assets/gates/G10-selective-color.md). The keyless people-preset gold
-  exam remains green, so every declared develop key is implemented and Slice 08 is closed. Needs
+  exam remains green and the declared color/develop operators are implemented. D24's local
+  horizon detection and `crop --auto` remain open as 8e; manual geometry does not satisfy them. Needs
   David: no; control scaling remains reversible delegated operator data.

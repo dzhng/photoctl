@@ -19,11 +19,13 @@ the last pushed export-heartbeat checkpoint.*
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: finish public undo and outpaint consumers; make the corrected Linux runtime the reproducible default.**
+**Current pickup: finish outpaint consumers and the corrected default runtime; close the audited command/fixture omissions.**
 
-Run the independent undo, canvas, and runtime-build passes in parallel. Canvas first fixes
+Run the independent fixture, canvas, and runtime-build passes in parallel. Canvas first fixes
 offline-to-online cache promotion, then source-only SAM geometry, then 12f3 generation wiring.
-The native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
+Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
+Next independent command work is D24 local horizon detection / `crop --auto`; full-frame generation
+consumers must then use the shared frame contract rather than retain their provisional geometry refusal.
 
 - **Canvas:** [12f1/12f2](slices/12-outpaint.md) share exact execution frames and one output planner.
   Equal pixel bytes do not imply equal coordinates; historical recovery never guesses the latest execution.
@@ -31,8 +33,9 @@ The native diagnostic bridge and cheap untouched overview are integrated; do not
   are integrated. Offline/purchased-density review exposed a reconnect bug: sharp border pixels must not
   make a blurry offline base look fully resolved to the preview cache. Source-only SAM must consume
   the same authored geometry without photographic layer RGB. Complete these consumers before 12f3.
-- **Undo:** the public command is in a red/green pass using the existing atomic revision owner.
-  Existing graph undo is verified. [Daemon recovery](slices/02-daemon-and-contention.md) already refuses
+- **Undo:** the [public command](slices/08-develop.md#public-revision-undo) is integrated through the
+  existing atomic revision owner, including first-source/generated no-ops and exact restoration.
+  [Daemon recovery](slices/02-daemon-and-contention.md) already refuses
   to replay a sent mutation after a lost response; explicit `daemon start` repairs a broken endpoint.
 - **Generation and release:** [Slice 12 controls](slices/12-fill.md) and deterministic
   [Slice 13 commands](slices/13-generative-extras-and-markup.md) are integrated. Conduct live
@@ -42,8 +45,9 @@ The native diagnostic bridge and cheap untouched overview are integrated; do not
 - [Paid-image attempt retention](slices/13-generative-extras-and-markup.md#paid-response-retention--shared-artifact-and-attempt-ownership)
   captures originals before acceptance checks through the existing artifact owner. Attempts remain
   inspectable after rejection or photo removal. The base develop reader preserves purchased upscale
-  and exact resample branches through later edits and delivery. Representative undo-history storage
-  policy remains unfinished; automatic canonical-artifact deletion stays disabled.
+  and exact resample branches through later edits and delivery. A [full-resolution local history](assets/artifact-storage/README.md#full-resolution-local-history)
+  now measures real canonical growth and reuse. Representative paid-history/storage policy remains
+  unfinished; automatic canonical-artifact deletion stays disabled.
 - Before release, run the full integrated closeout gate once, audit the full requirements and choices
   ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
   optional and unspecified, rather than an implied requirement to invent an MCP product.
@@ -60,6 +64,7 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | Daemon no-replay and preview progress | 22 lifecycle/client + 11 preview/progress checks |
 | RAW compression boundary | Rebuilt addon, 9 adapter/public-CLI + 2 Rust checks across three modes |
 | Native diagnostics | 21 TypeScript + 5 Rust checks, native/TS build/typecheck; override model gate below |
+| Public undo | 46 merged CLI/command/revision/markup/canvas/develop checks, TS build/typecheck |
 | [Untouched overview](assets/gates/show-overview/evidence.json) | 37 preview/daemon/develop cases across integration and focused correction; fresh visual review |
 | Paid retention / atomic removal / upscale-develop consumers | 85 / 18 / 21 checks and typecheck; no extra provider work for exposure replacement |
 
@@ -93,8 +98,9 @@ require their explicitly configured credentials and consent; an ambient key is n
 
 **Carry-forward invariants:** one daemon library handle; one atomic document/revision owner; exact
 scene-linear canonical artifacts; lazy preview materialization from immutable graph roots.
-Generation owns migration 14 and markup migration 15. Full-frame reimagine/relight currently require
-an uncropped, unrotated exact-size base; see Slice 13 for that accepted limitation. Markup stays a final,
+Generation owns migration 14 and markup migration 15. Full-frame reimagine/relight still require
+an uncropped, unrotated exact-size base; this provisional refusal needs its shared-frame consumer pass
+before full completion. Keep the guard until placement/removal/refresh and offline pixels are proved. Markup stays a final,
 removable presentation node, with editable vectors and the revision updated in the same transaction.
 Migration 16 owns derived effective-mask recipes: the original selection controls positioning/vacancy,
 the effective mask controls fractional coverage, and derived binary support prevents double coverage.
@@ -115,12 +121,13 @@ Update this handoff after each pass and continue to the next unfinished requirem
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [x] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 geometry · [x] 8d4 filters/B&W/selective color · [x] keyless fixture gold exam — `slices/08-develop.md`
+- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 manual geometry · [x] 8d4 filters/B&W/selective color · [x] keyless fixture gold exam · [ ] 8e local auto-straighten / `crop --auto` (D24) — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
-- [ ] 13a [x] reimagine/relight/generate · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [ ] 13a [x] initial reimagine/relight/generate · [ ] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [ ] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 
