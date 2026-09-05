@@ -2186,6 +2186,43 @@
 - **Confidence:** High; the production preview regression observes zero Sharp resize calls and exact equality with the native
   output on pixels where Sharp's default differs.
 
+### Slice 10b3 — Layer compatibility is reconstructed from immutable graph lineage
+
+- **When:** Slice 10b3 develop compensation implementation, 2026-09-05.
+- **The choice:** Before planning a develop change, photoctl walks each layer content branch from its retained develop ancestor
+  through every persisted delta node and reconstructs the develop state those pixels actually represent. It plans and reports each
+  stable layer identity independently, including disabled layers. A Tier-2 edit adds no node, so a later edit still compares against
+  the branch's last represented state rather than the newer base state. The alternative remembered only the preceding global edit,
+  which could append a Tier-1 delta to an already-stale branch and falsely report it synchronized.
+- **The gap:** The plan required stale branches to remain bound to their exact ancestor but introduced no mutable stale flag and did
+  not specify how later develop commands recover that status.
+- **The reach:** Staleness survives process restarts and arbitrary numbers of revisions without duplicating identity in a column;
+  a branch becomes current only when its lineage can be compensated to the requested base state or a later provider refresh rebinds
+  it. Future layer transforms must retain the content ancestry so this reconstruction remains valid.
+- **Verdict:** **Sound.** The immutable DAG is already the authority for what pixels mean, and deriving status prevents a second
+  state owner from drifting away from it.
+- **Confidence:** High for the linear content chains produced through this slice; 10c1 must retain the same first-input ancestry
+  convention when it adds layer transforms.
+
+### Slice 10b3 — Delta planning refuses transitions that cannot compose exactly
+
+- **When:** Slice 10b3 independent review, 2026-09-05.
+- **The choice:** A layer at identity may receive the complete Tier-1 dictionary once. Later single-operator compensation uses the
+  operator's composition law: additive controls use a difference, saturation uses a gain ratio, and black point composes its affine
+  pivot. Large representable changes split into schema-valid nodes without changing that composition. Saturation from zero chroma,
+  repeated vibrance, mixed active controls, and other order-dependent transitions are reported stale instead of receiving an
+  approximate delta. The 300 K white-balance boundary and all Tier-2 membership still come from the single develop-operator owner.
+- **The gap:** The plan named Tier-1 controls but did not define inverse/composition behavior after a layer had already accumulated
+  adjustments. Raw parameter subtraction is not valid for multiplicative or lossy operators and could claim a match while producing
+  visibly different pixels.
+- **The reach:** `delta_applied` means the persisted operation has a defensible scene-linear composition, while conservative cases
+  remain available unchanged and emit `layers_stale`. Supporting more combinations later requires adding a proven composition rule,
+  not weakening the result meaning.
+- **Verdict:** **Sound.** A conservative stale result preserves pixels and truthfully exposes the need for refresh; a false success
+  would silently corrupt the user's edit semantics.
+- **Confidence:** High for exposure and the composition identities pinned by tests; medium for expanding safe combinations after
+  real provider-generated layer workflows exist.
+
 ## Needs user
 
 ### Slice 10b1 — Lanczos transforms reject kernels above 4,096 source taps per output sample

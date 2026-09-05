@@ -9,7 +9,7 @@ import {
   RevisionConflictError,
   type DevelopDict,
 } from "@photoctl/render";
-import { PhotoctlError, type DevelopResult, type Envelope } from "@photoctl/protocol";
+import { PhotoctlError, type DevelopResult, type Envelope, type Warning } from "@photoctl/protocol";
 import { batchEnvelope, batchFailure, resolveBatchInputs, type BatchFailure } from "../batch.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
@@ -58,6 +58,7 @@ export async function developCommand(
 
     const resolved = await resolveBatchInputs(handle, parsed.ids);
     const results: Array<DevelopResult | BatchFailure> = [];
+    const warnings: Warning[] = [];
     for (const item of resolved) {
       if (!item.ok) {
         results.push(item);
@@ -82,21 +83,29 @@ export async function developCommand(
         } catch (error) {
           throw commandInputError(error);
         }
-        const renderHash = isDeepStrictEqual(next, current.develop)
-          ? current.renderHash
-          : (await commitDevelopState(handle, current, next)).renderHash;
+        const committed = isDeepStrictEqual(next, current.develop)
+          ? null
+          : await commitDevelopState(handle, current, next);
+        const layers = committed?.layers ?? { deltaApplied: [], stale: [] };
+        if (layers.stale.length > 0) {
+          warnings.push({
+            code: "layers_stale",
+            id: item.id,
+            message: `${layers.stale.length} ${layers.stale.length === 1 ? "layer is" : "layers are"} stale after the develop change`,
+          });
+        }
         results.push({
           id: item.id,
           ok: true,
           develop_hash: developHash(next),
-          render_hash: renderHash,
-          layers: { delta_applied: [], stale: [] },
+          render_hash: committed?.renderHash ?? current.renderHash,
+          layers: { delta_applied: layers.deltaApplied, stale: layers.stale },
         });
       } catch (error) {
         results.push(batchFailure(item.id, normalizeDevelopItemError(error, item.id)));
       }
     }
-    return batchEnvelope(results);
+    return batchEnvelope(results, warnings);
   } finally {
     await lease.release();
   }

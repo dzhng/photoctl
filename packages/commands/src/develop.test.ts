@@ -3,7 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
-import { developHash, ensurePhotoDocument, readActiveDevelopState } from "@photoctl/render";
+import {
+  commitRevision,
+  compositeV2Projection,
+  developHash,
+  ensurePhotoDocument,
+  readActiveDevelopState,
+} from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
 
 const temporaryDirectories: string[] = [];
@@ -259,6 +265,25 @@ test("replaying an absolute mutation returns the same develop and render identit
   expect(await readDevelop(libraryPath, id)).toEqual({ exposure: 0.5, contrast: -3 });
 });
 
+test("develop reports compensated and stale layer identities with a non-blocking stale warning", async () => {
+  const { libraryPath, id } = await libraryWithPhoto();
+  const layerId = await addLayer(libraryPath, id);
+
+  const compensated = await command(libraryPath, "develop", [id, "--set", "exposure=0.5"]);
+  expect(compensated).toMatchObject({
+    ok: true,
+    results: [{ id, layers: { delta_applied: [layerId], stale: [] } }],
+    warnings: [],
+  });
+
+  const stale = await command(libraryPath, "develop", [id, "--set", "shadows=40"]);
+  expect(stale).toMatchObject({
+    ok: true,
+    results: [{ id, layers: { delta_applied: [], stale: [layerId] } }],
+    warnings: [{ code: "layers_stale", id, message: "1 layer is stale after the develop change" }],
+  });
+});
+
 async function libraryWithPhoto(): Promise<{ libraryPath: string; id: string }> {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-develop-"));
   temporaryDirectories.push(directory);
@@ -272,6 +297,55 @@ async function libraryWithPhoto(): Promise<{ libraryPath: string; id: string }> 
   );
   await initialized.handle.close();
   return { libraryPath, id };
+}
+
+async function addLayer(libraryPath: string, id: string): Promise<string> {
+  const opened = await import("@photoctl/library").then(
+    async ({ openLibrary }) => await openLibrary(libraryPath, { noDaemon: true }),
+  );
+  try {
+    const initial = await ensurePhotoDocument(opened, { photoId: id, orientation: 1 });
+    const artifactHash = `a_${"5".repeat(64)}`;
+    await opened.query(
+      `INSERT INTO image_artifacts
+         (artifact_hash, media_type, bytes, w, h, artifact_available)
+       VALUES ($1, 'application/x-photoctl-mask-test', 1, 1, 1, true)`,
+      [artifactHash],
+    );
+    const layers = [
+      {
+        layer: { localKey: "subject" },
+        name: "subject",
+        z: 0,
+        contentNode: { nodeId: initial.outputNodeId },
+        maskNode: { localKey: "mask" },
+        opacity: 1,
+        blend: "normal" as const,
+        enabled: true,
+      },
+    ];
+    const projection = compositeV2Projection({ nodeId: initial.outputNodeId }, layers);
+    const committed = await commitRevision(opened, {
+      photoId: id,
+      expectedRevisionId: initial.revisionId,
+      nodes: [
+        {
+          localKey: "mask",
+          kind: "mask",
+          recipeVersion: 1,
+          parameters: { artifact_hash: artifactHash },
+          inputs: [],
+        },
+        { localKey: "composite", kind: "composite", recipeVersion: 2, ...projection },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "composite" } }],
+      newLayers: [{ localKey: "subject", role: "subject" }],
+      layers,
+    });
+    return committed.newLayers.subject;
+  } finally {
+    await opened.close();
+  }
 }
 
 async function command(libraryPath: string, verb: string, args: string[]) {

@@ -1,4 +1,5 @@
 import {
+  applyDeltaArtifact as applyDeltaArtifactNative,
   applyDevelopPixels,
   applyDevelopArtifact as applyDevelopArtifactNative,
   type NativeDevelopParameters,
@@ -6,6 +7,7 @@ import {
 import type { SceneLinearImage } from "../decoder.js";
 import { inspectArtifactLinearTiff } from "../linear-tiff.js";
 import { developDictSchema, type DevelopDict } from "./dict.js";
+import { classifyDevelopChange } from "./tiers.js";
 
 const IMPLEMENTED_KEYS = new Set([
   "preset",
@@ -63,6 +65,36 @@ export async function applyDevelopArtifact(
     throw new Error("Develop artifact dimensions do not match graph metadata");
   }
   const developed = await applyDevelopArtifactNative(
+    bytes,
+    layout.pixelOffset,
+    layout.pixelBytes,
+    layout.width,
+    layout.height,
+    nativeParameters(parameters),
+  );
+  return {
+    bytes: Buffer.from(developed.buffer, developed.byteOffset, developed.byteLength),
+    w: layout.width,
+    h: layout.height,
+    pixelOffset: layout.pixelOffset,
+  };
+}
+
+/** Applies a compatible develop compensation to an existing scene-linear artifact. */
+export async function applyDevelopDeltaArtifact(
+  bytes: Buffer,
+  dimensions: { w: number; h: number },
+  unparsed: DevelopDict,
+): Promise<{ bytes: Buffer; w: number; h: number; pixelOffset: number }> {
+  const parameters = developDictSchema.parse(unparsed);
+  if (classifyDevelopChange({}, parameters) !== 1) {
+    throw new Error("Delta requires a non-empty Tier-1 develop dictionary");
+  }
+  const layout = await inspectArtifactLinearTiff(bytes);
+  if (layout.width !== dimensions.w || layout.height !== dimensions.h) {
+    throw new Error("Delta artifact dimensions do not match graph metadata");
+  }
+  const developed = await applyDeltaArtifactNative(
     bytes,
     layout.pixelOffset,
     layout.pixelBytes,

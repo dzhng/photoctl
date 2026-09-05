@@ -1,5 +1,5 @@
 import { resolvePhotoId, type LibraryHandle } from "@photoctl/library";
-import { PhotoctlError, type Envelope, type ErrorCode } from "@photoctl/protocol";
+import { PhotoctlError, type Envelope, type ErrorCode, type Warning } from "@photoctl/protocol";
 
 export interface BatchFailure {
   id: string;
@@ -24,7 +24,10 @@ export async function resolveBatchInputs(
   );
 }
 
-export function batchEnvelope<T extends { id: string; ok: boolean }>(results: T[]): Envelope {
+export function batchEnvelope<T extends { id: string; ok: boolean }>(
+  results: T[],
+  warnings: Warning[] = [],
+): Envelope {
   const failures = results.filter((item) => !item.ok) as Array<T & BatchFailure>;
   if (failures.length === 0) {
     return {
@@ -32,7 +35,7 @@ export function batchEnvelope<T extends { id: string; ok: boolean }>(results: T[
       ok: true,
       summary: { ok: results.length, failed: 0 },
       results,
-      warnings: [],
+      warnings,
     };
   }
   const codes = new Set(failures.map((failure) => failure.code));
@@ -47,7 +50,7 @@ export function batchEnvelope<T extends { id: string; ok: boolean }>(results: T[
           : "partial",
     summary: { ok: results.length - failures.length, failed: failures.length },
     results,
-    warnings: [],
+    warnings,
   };
 }
 

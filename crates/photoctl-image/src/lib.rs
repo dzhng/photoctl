@@ -14,8 +14,9 @@ use napi::{
 use napi_derive::napi;
 
 use develop::{
-    Develop, apply_develop_artifact_in_place, apply_develop_in_place, camera_front,
-    display_srgb_to_linear_rec2020, linear_rec2020_to_display_srgb, validate_artifact_samples,
+    Develop, apply_delta_artifact_in_place, apply_develop_artifact_in_place,
+    apply_develop_in_place, camera_front, display_srgb_to_linear_rec2020,
+    linear_rec2020_to_display_srgb, validate_artifact_samples,
 };
 use publication::{AtomicRenameOutcome, atomic_rename_no_replace as rename_no_replace};
 use resample::{Filter as ResampleFilter, resize};
@@ -226,6 +227,27 @@ pub fn apply_develop_artifact(
         width: width as usize,
         height: height as usize,
         parameters: develop_parameters(parameters),
+        delta: false,
+    })
+}
+
+#[napi]
+pub fn apply_delta_artifact(
+    data: Uint8Array,
+    pixel_offset: u32,
+    pixel_bytes: u32,
+    width: u32,
+    height: u32,
+    parameters: DevelopParameters,
+) -> AsyncTask<DevelopArtifactTask> {
+    AsyncTask::new(DevelopArtifactTask {
+        data: data.to_vec(),
+        pixel_offset: pixel_offset as usize,
+        pixel_bytes: pixel_bytes as usize,
+        width: width as usize,
+        height: height as usize,
+        parameters: develop_parameters(parameters),
+        delta: true,
     })
 }
 
@@ -339,6 +361,7 @@ pub struct DevelopArtifactTask {
     width: usize,
     height: usize,
     parameters: Develop,
+    delta: bool,
 }
 
 pub struct ValidateLinearArtifactTask {
@@ -375,7 +398,12 @@ impl Task for DevelopArtifactTask {
     type JsValue = Uint8Array;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        apply_develop_artifact_in_place(
+        let apply = if self.delta {
+            apply_delta_artifact_in_place
+        } else {
+            apply_develop_artifact_in_place
+        };
+        apply(
             &mut self.data,
             self.pixel_offset,
             self.pixel_bytes,

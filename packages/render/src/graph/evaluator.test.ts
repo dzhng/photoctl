@@ -1,4 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
+import { linearRec2020ToDisplaySrgb } from "@photoctl/img";
 import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -377,6 +378,149 @@ test("develop exposure acts on preserved scene-linear values above the display c
   }
 });
 
+test("delta nodes compensate an existing scene-linear branch through the native evaluator", async () => {
+  const { db, library, nodeId: sourceId } = await sourceGraph();
+  try {
+    const document = await db.query<{ active_revision_id: string }>(
+      "SELECT active_revision_id FROM photo_documents WHERE photo_id = $1",
+      [photoId],
+    );
+    const oldRevision = await commitRevision(db, {
+      photoId,
+      expectedRevisionId: document.rows[0].active_revision_id,
+      nodes: [
+        {
+          localKey: "old-develop",
+          kind: "develop",
+          recipeVersion: 1,
+          parameters: { exposure: 0.25 },
+          inputs: [{ nodeId: sourceId }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "old-develop" } }],
+    });
+    const compensatedRevision = await commitRevision(db, {
+      photoId,
+      expectedRevisionId: oldRevision.revisionId,
+      nodes: [
+        {
+          localKey: "delta",
+          kind: "delta",
+          recipeVersion: 1,
+          parameters: { exposure: 0.5 },
+          inputs: [{ nodeId: oldRevision.nodes["old-develop"].id }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "delta" } }],
+    });
+    const source = async () => ({
+      ...sourceEvaluation(),
+      image: {
+        ...sourceEvaluation().image,
+        data: new Float32Array([0.08, 0.2, 0.65]),
+      },
+    });
+    const compensated = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId: compensatedRevision.nodes.delta.id,
+      source,
+    });
+    const rerenderRevision = await commitRevision(db, {
+      photoId,
+      expectedRevisionId: compensatedRevision.revisionId,
+      nodes: [
+        {
+          localKey: "rerender",
+          kind: "develop",
+          recipeVersion: 1,
+          parameters: { exposure: 0.75 },
+          inputs: [{ nodeId: sourceId }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "rerender" } }],
+    });
+    const rerendered = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId: rerenderRevision.nodes.rerender.id,
+      source,
+    });
+
+    const compensatedPixels = (await readArtifactLinear(compensated.artifact.path)).data;
+    const rerenderedPixels = (await readArtifactLinear(rerendered.artifact.path)).data;
+    await expectDisplayLsbMatch(compensatedPixels, rerenderedPixels);
+  } finally {
+    await db.close();
+  }
+});
+
+test("delta nodes apply bounded white-balance compensation in scene-linear space", async () => {
+  const { db, library, nodeId: sourceId } = await sourceGraph();
+  try {
+    const document = await db.query<{ active_revision_id: string }>(
+      "SELECT active_revision_id FROM photo_documents WHERE photo_id = $1",
+      [photoId],
+    );
+    const deltaRevision = await commitRevision(db, {
+      photoId,
+      expectedRevisionId: document.rows[0].active_revision_id,
+      nodes: [
+        {
+          localKey: "delta",
+          kind: "delta",
+          recipeVersion: 1,
+          parameters: { white_balance: { temp_offset_k: 200 } },
+          inputs: [{ nodeId: sourceId }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "delta" } }],
+    });
+    const source = async () => ({
+      ...sourceEvaluation(),
+      image: {
+        ...sourceEvaluation().image,
+        data: new Float32Array([0.08, 0.2, 0.65]),
+      },
+    });
+    const compensated = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId: deltaRevision.nodes.delta.id,
+      source,
+    });
+    const rerenderRevision = await commitRevision(db, {
+      photoId,
+      expectedRevisionId: deltaRevision.revisionId,
+      nodes: [
+        {
+          localKey: "rerender",
+          kind: "develop",
+          recipeVersion: 1,
+          parameters: { white_balance: { temp_offset_k: 200 } },
+          inputs: [{ nodeId: sourceId }],
+        },
+      ],
+      rootUpdates: [{ root: "output", node: { localKey: "rerender" } }],
+    });
+    const rerendered = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId: rerenderRevision.nodes.rerender.id,
+      source,
+    });
+    const compensatedPixels = (await readArtifactLinear(compensated.artifact.path)).data;
+    const rerenderedPixels = (await readArtifactLinear(rerendered.artifact.path)).data;
+    await expectDisplayLsbMatch(compensatedPixels, rerenderedPixels);
+  } finally {
+    await db.close();
+  }
+});
+
 test("a requested execution id belongs only to the top nondeterministic node", async () => {
   const { db, library, nodeId: sourceId } = await sourceGraph();
   try {
@@ -583,5 +727,19 @@ async function artifactFiles(library: string): Promise<string[]> {
     ).flat();
   } catch {
     return [];
+  }
+}
+
+async function expectDisplayLsbMatch(
+  actualLinear: Float32Array,
+  expectedLinear: Float32Array,
+): Promise<void> {
+  const actual = await linearRec2020ToDisplaySrgb(actualLinear);
+  const expected = await linearRec2020ToDisplaySrgb(expectedLinear);
+  expect(actual.length).toBe(expected.length);
+  for (const [index, sample] of actual.entries()) {
+    expect(
+      Math.abs(Math.round(sample * 65_535) - Math.round(expected[index] * 65_535)),
+    ).toBeLessThanOrEqual(1);
   }
 }

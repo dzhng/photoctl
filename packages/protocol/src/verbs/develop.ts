@@ -2,8 +2,8 @@ import { z } from "zod";
 import { fullHashSchema } from "../hash.js";
 
 export const developLayersSchema = z.object({
-  delta_applied: z.array(z.string()),
-  stale: z.array(z.string()),
+  delta_applied: z.array(z.string().uuid()),
+  stale: z.array(z.string().uuid()),
 });
 
 export const developResultSchema = z.object({

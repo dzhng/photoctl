@@ -1,6 +1,7 @@
 import { expect, test, vi } from "vitest";
 import {
   applyDevelopMutation,
+  applyDevelopCompensation,
   canonicalDevelopJson,
   classifyDevelopChange,
   DEVELOP_OPERATORS,
@@ -8,6 +9,7 @@ import {
   developDictSchema,
   developHash,
   loadPreset,
+  planDevelopChange,
 } from "../index.js";
 
 test("a preset is resolved before absolute set values and provenance does not affect the hash", async () => {
@@ -78,6 +80,35 @@ test("the operator table classifies only small white-balance and cheap global ch
   expect(classifyDevelopChange({}, { white_balance: { temp_offset_k: 301 } })).toBe(2);
   expect(classifyDevelopChange({}, { highlights: -1 })).toBe(2);
   expect(classifyDevelopChange({}, {})).toBeNull();
+  expect(
+    planDevelopChange(
+      { exposure: -0.25, white_balance: { temp_offset_k: -100 } },
+      { exposure: 0.5, white_balance: { temp_offset_k: 100 } },
+    ),
+  ).toEqual({ tier: 2, compensations: null });
+  expect(planDevelopChange({ exposure: -5 }, { exposure: 5 })).toEqual({
+    tier: 1,
+    compensations: [{ exposure: 5 }, { exposure: 5 }],
+  });
+  const saturation = planDevelopChange({ saturation: 50 }, { saturation: 100 });
+  expect(saturation?.tier).toBe(1);
+  expect(saturation?.compensations?.[0]?.saturation).toBeCloseTo(100 / 3);
+  const wideSaturation = planDevelopChange({ saturation: -50 }, { saturation: 100 });
+  expect(wideSaturation?.tier).toBe(1);
+  if (wideSaturation?.tier === 1) {
+    const advanced = wideSaturation.compensations.reduce(applyDevelopCompensation, {
+      saturation: -50,
+    });
+    expect(advanced.saturation).toBeCloseTo(100);
+  }
+  expect(planDevelopChange({ saturation: -100 }, { saturation: 0 })).toEqual({
+    tier: 2,
+    compensations: null,
+  });
+  expect(planDevelopChange({ exposure: 1, contrast: 5 }, { exposure: 2, contrast: 5 })).toEqual({
+    tier: 2,
+    compensations: null,
+  });
 });
 
 test("unknown keys and out-of-range values are rejected instead of entering canonical state", () => {

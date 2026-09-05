@@ -24,7 +24,7 @@ import type { ExifOrientation } from "../coordinates.js";
 import type { ImageSource, LinearImage } from "../decoder.js";
 import type { Image16 } from "../source-render.js";
 import type { GraphDatabase, GraphTransaction } from "./store.js";
-import { applyDevelopArtifact } from "../develop/pixels.js";
+import { applyDevelopArtifact, applyDevelopDeltaArtifact } from "../develop/pixels.js";
 import { developDictSchema } from "../develop/dict.js";
 
 export interface EvaluatedNode {
@@ -272,18 +272,16 @@ async function runOperation(
 > {
   const operation = request.operations?.[kind];
   if (!operation) {
-    if (kind === "develop") {
+    if (kind === "develop" || kind === "delta") {
       if (inputs.length !== 1) throw new Error("Develop evaluation requires one input artifact");
       const input = inputs[0].artifact;
       const bytes = await readArtifactBytesForNativeDevelop(input.path, input.artifactHash, {
         w: input.w,
         h: input.h,
       });
-      const developed = await applyDevelopArtifact(
-        bytes,
-        { w: input.w, h: input.h },
-        developDictSchema.parse(parameters),
-      );
+      const developed = await (
+        kind === "develop" ? applyDevelopArtifact : applyDevelopDeltaArtifact
+      )(bytes, { w: input.w, h: input.h }, developDictSchema.parse(parameters));
       return {
         artifact: await normalizeValidatedArtifactBytes(developed.bytes, {
           w: developed.w,

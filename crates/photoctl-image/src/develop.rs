@@ -117,6 +117,42 @@ pub(crate) fn apply_develop_artifact_in_place(
         return Err("develop artifact has an invalid pixel span".to_owned());
     }
     let local = LocalDevelop::from(&parameters);
+    apply_global_artifact_in_place(data, pixel_offset, pixel_bytes, width, height, parameters)?;
+    if !local.is_identity() {
+        apply_local_bytes_in_place(&mut data[pixel_offset..], width, height, local)?;
+    }
+    Ok(())
+}
+
+pub(crate) fn apply_delta_artifact_in_place(
+    data: &mut [u8],
+    pixel_offset: usize,
+    pixel_bytes: usize,
+    width: usize,
+    height: usize,
+    parameters: Develop,
+) -> Result<(), String> {
+    apply_global_artifact_in_place(data, pixel_offset, pixel_bytes, width, height, parameters)
+}
+
+fn apply_global_artifact_in_place(
+    data: &mut [u8],
+    pixel_offset: usize,
+    pixel_bytes: usize,
+    width: usize,
+    height: usize,
+    parameters: Develop,
+) -> Result<(), String> {
+    if width == 0
+        || height == 0
+        || width
+            .checked_mul(height)
+            .and_then(|pixels| pixels.checked_mul(12))
+            != Some(pixel_bytes)
+        || pixel_offset.checked_add(pixel_bytes) != Some(data.len())
+    {
+        return Err("global develop artifact has an invalid pixel span".to_owned());
+    }
     let prepared = prepare_global(parameters)?;
     for pixel in data[pixel_offset..].chunks_exact_mut(12) {
         let source = [
@@ -128,9 +164,6 @@ pub(crate) fn apply_develop_artifact_in_place(
         for (channel, sample) in graded.into_iter().enumerate() {
             pixel[channel * 4..channel * 4 + 4].copy_from_slice(&sample.to_le_bytes());
         }
-    }
-    if !local.is_identity() {
-        apply_local_bytes_in_place(&mut data[pixel_offset..], width, height, local)?;
     }
     Ok(())
 }

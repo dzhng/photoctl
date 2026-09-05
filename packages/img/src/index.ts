@@ -101,6 +101,14 @@ interface NativeBinding {
     height: number,
     parameters: NativeDevelopParameters,
   ): Promise<Uint8Array>;
+  applyDeltaArtifact(
+    data: Uint8Array,
+    pixelOffset: number,
+    pixelBytes: number,
+    width: number,
+    height: number,
+    parameters: NativeDevelopParameters,
+  ): Promise<Uint8Array>;
   validateLinearArtifactSamples(
     data: Uint8Array,
     pixelOffset: number,
@@ -313,6 +321,24 @@ export async function applyDevelopArtifact(
   parameters: NativeDevelopParameters,
 ): Promise<Uint8Array> {
   return await requiredBinding().applyDevelopArtifact(
+    data,
+    pixelOffset,
+    pixelBytes,
+    width,
+    height,
+    parameters,
+  );
+}
+
+export async function applyDeltaArtifact(
+  data: Uint8Array,
+  pixelOffset: number,
+  pixelBytes: number,
+  width: number,
+  height: number,
+  parameters: NativeDevelopParameters,
+): Promise<Uint8Array> {
+  return await requiredBinding().applyDeltaArtifact(
     data,
     pixelOffset,
     pixelBytes,
