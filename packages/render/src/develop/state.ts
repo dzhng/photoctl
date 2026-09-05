@@ -52,7 +52,7 @@ export async function readActiveDevelopState(
     return {
       photoId: request.photoId,
       revisionId: document.revisionId,
-      outputNodeId: output.id,
+      outputNodeId: document.roots.output,
       sourceNodeId: input.id,
       outputParameters: output.parameters,
       develop: {},
@@ -73,7 +73,7 @@ export async function readActiveDevelopState(
   return {
     photoId: request.photoId,
     revisionId: document.revisionId,
-    outputNodeId: output.id,
+    outputNodeId: document.roots.output,
     sourceNodeId: source.id,
     outputParameters: output.parameters,
     develop: developDictSchema.parse(input.parameters),

@@ -42,6 +42,8 @@ import { presetsCommand } from "./handlers/presets.js";
 import { renderCommand } from "./handlers/render.js";
 import { embedCommand } from "./handlers/embed.js";
 import { searchCommand } from "./handlers/search.js";
+import { segmentCommand } from "./handlers/segment.js";
+import { layerCommand } from "./handlers/layer.js";
 import {
   flagCommand,
   labelCommand,
@@ -120,6 +122,10 @@ export async function dispatch(
         context.stream,
         context.emit,
       );
+    if (request.verb === "segment")
+      return await segmentCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "layer")
+      return await layerCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "tag")
       return await tagCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "list")

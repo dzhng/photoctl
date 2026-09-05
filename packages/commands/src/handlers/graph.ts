@@ -1,6 +1,11 @@
 import { resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import { PhotoctlError, type Envelope } from "@photoctl/protocol";
-import { ensurePhotoDocument, inspectGraph, inspectGraphNode } from "@photoctl/render";
+import {
+  ensurePhotoDocument,
+  inspectGraph,
+  inspectGraphNode,
+  resolveLayerId,
+} from "@photoctl/render";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 
@@ -28,9 +33,6 @@ export async function graphCommand(
     );
   }
   const layer = parsed.options.get("--layer");
-  if (layer && layer !== "output") {
-    throw new PhotoctlError("usage", "Only the output graph root exists before layers land");
-  }
   const lease = await openRequestLibrary(env, cwd, provided);
   try {
     const photoId = await resolvePhotoId(lease.handle, parsed.positionals[0]);
@@ -43,6 +45,10 @@ export async function graphCommand(
         photoId,
         orientation: orientation.rows[0]!.orientation,
       });
+      const layerId =
+        layer && layer !== "output"
+          ? await resolveLayerId(lease.handle, photoId, layer)
+          : undefined;
       let page;
       try {
         page = await inspectGraph(lease.handle, {
@@ -50,6 +56,7 @@ export async function graphCommand(
           history: parsed.flags.has("--history"),
           limit: parseLimit(parsed.options.get("--limit")),
           cursor: parsed.options.get("--cursor"),
+          layerId,
         });
       } catch (error) {
         const message = errorMessage(error);
@@ -61,7 +68,7 @@ export async function graphCommand(
         }
         throw error;
       }
-      if (!page.roots.output || !page.renderHash) {
+      if (!page.renderHash || (!page.roots.output && (!page.roots.content || !page.roots.mask))) {
         throw new PhotoctlError("not_found", `Photo has no output graph: ${photoId}`, {
           id: photoId,
         });
@@ -74,8 +81,12 @@ export async function graphCommand(
           revision_id: page.revisionId,
           parent_revision_id: page.parentRevisionId,
           pinned: page.pinned,
-          scope: { root: "output", history: parsed.flags.has("--history") },
-          roots: { output: page.roots.output },
+          scope: page.layerId
+            ? { root: "layer", layer_id: page.layerId, history: parsed.flags.has("--history") }
+            : { root: "output", history: parsed.flags.has("--history") },
+          roots: page.layerId
+            ? { content: page.roots.content, mask: page.roots.mask }
+            : { output: page.roots.output },
           render_hash: page.renderHash,
           nodes: page.nodes.map((node) => ({
             id: node.id,

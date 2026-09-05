@@ -23,3 +23,4 @@ export * from "./verbs/presets.js";
 export * from "./verbs/render.js";
 export * from "./verbs/search.js";
 export * from "./verbs/embed.js";
+export * from "./verbs/layers.js";

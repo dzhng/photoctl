@@ -28,4 +28,5 @@ export * from "./develop/geometry.js";
 export * from "./develop/state.js";
 export * from "./develop/tiers.js";
 export * from "./layers/model.js";
+export * from "./layers/operations.js";
 export * from "./transforms.js";

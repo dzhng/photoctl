@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08d3, provider slices 09a–09c, and layer slices 10a–10b3 are
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08d3, provider slices 09a–09c, and layer slices 10a–10c1 are
 implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -38,14 +38,17 @@ Develop now applies scene-linear delta nodes to compatible layer branches, deriv
 the stable layer identities affected by either outcome.
 Typed single-channel mask artifacts now publish, validate, repair, and transform independently of RGB artifacts; native bounded
 mask kernels and the relational composite-v2 fold preserve every fully unmasked base sample bit-for-bit.*
+Manual geometry now creates permanent layer masks in the oriented base coordinate space. Layer commands replace immutable
+revision snapshots, preserve compatible develop compensation while transforming, and expose both concise layer summaries and
+revision-bound paginated graph inspection. Pixel evaluation remains lazy until a rendering command consumes the active composite.
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Active wave:** slice 08d4's deterministic filters and B&W seam is complete, while completed 10b2 and 10b3 unblock
-  10c1's manual mask/layer integration. Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
+- **Active wave:** slice 08's vignette/gold-exam correction runs beside 10c2's now-unblocked stale-state, vacancy, and move
+  integration. Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
   its live multimodal request remains provisional until the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
@@ -68,7 +71,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
 - [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 geometry · [x] 8d4 filters/B&W · gold exam remains open — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
-- [ ] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [ ] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
+- [ ] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG, optional density-matching upscale, strict composite, person-move flow — `slices/12-fill.md`
 - [ ] 13a reimagine/relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · 13d retouch — `slices/13-generative-extras-and-markup.md`

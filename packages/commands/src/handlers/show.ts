@@ -193,7 +193,7 @@ export async function showCommand(
       develop: document.develop,
       develop_hash: document.hasDevelopNode ? developHash(document.develop) : null,
       render_hash: renderHash,
-      layers: { count: 0, stale: 0 },
+      layers: { count: document.layers.length, stale: 0 },
       xmp: xmpRow
         ? {
             sidecar_path: xmpRow.sidecar_path,

@@ -2317,6 +2317,85 @@
 - **Confidence:** Medium; the API stays minimal, but a later UI may prefer an explicit B&W toggle and can
   map that toggle to adding or removing the same object.
 
+### Slice 10c1 — Manual masks use pixel-center coverage and clip at the oriented base frame
+
+- **When:** Slice 10c1 manual segmentation integration, 2026-09-05.
+- **The choice:** A box is half-open: its left and top edges are included and its right and bottom edges are excluded. A pixel is
+  selected when its center falls inside that box. A brush is treated as a closed polygon and uses the even-odd fill rule at the
+  same pixel centers. Coordinates outside the image are harmlessly clipped by rasterization, while `--norm` requires every supplied
+  number to stay between zero and one before scaling to the oriented, uncropped photo dimensions. The alternative was to round
+  coordinates into inclusive integer endpoints or reject any shape that crosses the image edge, both of which make fractional and
+  normalized selections depend on ad-hoc boundary cases.
+- **The gap:** The plan required exact brush round-trips, box masks, normalized coordinates, and the global oriented coordinate
+  space, but did not define edge inclusion, polygon fill, or partial out-of-frame behavior.
+- **The reach:** Manual selections, later model-returned polygons, mask bounding boxes, and transform anchors inherit one raster
+  convention. A box `x=1,w=2` covers the two pixel centers at 1.5 and 2.5, never a third endpoint pixel.
+- **Verdict:** **Sound.** It reuses the graph's existing pixel-center geometry and makes clipping deterministic without changing the
+  requested shape's stored bounds.
+- **Confidence:** Medium; the math is stable, while a future interactive brush may choose a stroked-path vocabulary rather than a
+  filled polygon.
+
+### Slice 10c1 — A manual subject stays lazy by referencing the immutable base branch
+
+- **When:** Slice 10c1 segment and composite integration, 2026-09-05.
+- **The choice:** Segmenting does not render and save a second RGB image. The new subject layer points its content at the current
+  immutable base-output node and pairs that branch with the newly published permanent mask. When `show` or export eventually asks
+  for pixels, the evaluator renders the base branch and the mask clips it during composition. The unbuilt alternative was to add a
+  new kind of RGB pin or constant node and eagerly lift selected pixels into it, which would invent graph vocabulary that no current
+  artifact contract honestly represents.
+- **The gap:** The plan required permanent mask publication and lazy mutation, but did not name the initial subject content recipe.
+- **The reach:** Manual segmentation creates no node execution or preview and remains compatible with later transforms. Slice 10c2
+  may build vacancy behavior from this content branch, but must not overload the mask pin as an RGB artifact.
+- **Verdict:** **Sound.** Existing base, mask, transform, and composite owners express the selection without a second pixel owner or
+  eager work.
+- **Confidence:** High.
+
+### Slice 10c1 — Layer transforms replace geometry beneath retained develop deltas
+
+- **When:** Slice 10c1 transform integration, 2026-09-05.
+- **The choice:** A develop delta is an immutable color compensation already attached to a layer branch. When an absolute transform
+  replaces that layer's geometry, photoctl walks through the delta nodes, replaces or inserts the one transform beneath them, then
+  rebuilds those same delta recipes above the new transform. In shorthand, `delta → old transform → content` becomes
+  `delta → new transform → content`. If a relative transform uses the default centroid anchor, the original mask centroid is first
+  mapped through the current matrix, so rotating a moved subject keeps its visible center fixed. An explicit `x,y` anchor remains a
+  coordinate in the global oriented base frame.
+- **The gap:** The plan required preserving 10b3 lineage and relative transform composition, but did not specify transform placement
+  among retained delta nodes or whether the word “centroid” meant the original or currently visible center.
+- **The reach:** Staleness reconstruction can continue walking the same first-input ancestry after arbitrary layer moves, and a
+  photographer can move then rotate a subject without it orbiting its old location.
+- **Verdict:** **Sound.** It keeps the immutable compensation meaning intact and makes the default anchor follow the layer users can
+  currently see.
+- **Confidence:** High for lineage; medium for explicit-anchor ergonomics until an interactive client exercises them.
+
+### Slice 10c1 — Numeric reorder positions are one-based and z increases toward the front
+
+- **When:** Slice 10c1 layer command integration, 2026-09-05.
+- **The choice:** `layer reorder --to 1` moves a layer to the back. The highest valid position moves it to the front, matching
+  `--back` and `--front`; persisted `z` remains zero-based internally and increases toward the front. The alternative exposed the
+  database's zero-based index directly, making the first user-visible layer “position zero” while the command vocabulary and
+  existing examples speak in numbered layers.
+- **The gap:** The plan named `--to N` and the directional forms but did not define whether N starts at zero or one.
+- **The reach:** Scripts and future UI clients inherit the position convention; the response still exposes canonical zero-based `z`
+  for exact stack inspection.
+- **Verdict:** **Sound.** Human-facing ordinals start at one while storage retains the established z contract.
+- **Confidence:** Medium.
+
+### Slice 10c1 — Normalized transform displacements are signed image fractions
+
+- **When:** Slice 10c1 transform command integration, 2026-09-05.
+- **The choice:** With `--norm`, an anchor remains an ordinary point whose x and y each run from zero to one. A displacement is a
+  vector rather than a point, so `dx=-0.25` means one quarter of the oriented image width to the left and `dy=0.5` means half its
+  height downward; each component is bounded to minus one through plus one. Without `--norm`, both anchors and displacements remain
+  base-image pixel values. The alternative applied the point-only zero-to-one rule to displacement vectors, which made normalized
+  left and upward movement impossible.
+- **The gap:** The global contract says normalized coordinates use zero to one, but does not distinguish positions from signed
+  translation amounts.
+- **The reach:** CLI scripts and later move controls can express direction symmetrically while sharing the same oriented base
+  dimensions. Scale and rotation are dimensionless and therefore never change under `--norm`.
+- **Verdict:** **Sound.** Signed fractions are the direct normalized form of a displacement and retain the documented point range
+  for actual coordinates.
+- **Confidence:** Medium.
+
 ## Needs user
 
 ### Slice 10b2 — Morphology uses a square footprint and feather uses three bounded box passes
@@ -2461,3 +2540,19 @@
   The reversible provisional call is fifteen minutes, matching the planning map; change the stored
   default before release if a different editing cadence is preferred.
 - **Confidence:** Low.
+
+### Slice 10c1 — Automatic layer names use stack-local English labels
+
+- **When:** Slice 10c1 command integration, 2026-09-05.
+- **The choice:** A new manual selection is named `Segment N`, where N is one more than the current stack size. Duplicating a layer
+  appends ` copy`; if the source already occupies the 256-character name limit, its tail is shortened so the suffix remains visible.
+  Names are presentation, not identity, so removing layers and adding another can produce duplicate display names while their UUIDs
+  remain distinct. The alternatives were to expose UUID fragments as names, maintain a separate never-reused sequence, or require a
+  name on every segment command.
+- **The gap:** The plan required names to survive snapshots and allowed rename/duplicate, but did not specify automatic user-facing
+  names or collision policy.
+- **The reach:** CLI output and future layer panels display these labels by default; automation must address layers by stable ID,
+  not assume a generated name is unique.
+- **Verdict:** **Needs-user.** Keep the reversible labels because they are readable and require no new persistence. If the product
+  wants localized or unique defaults, change the single naming policy before UI clients treat these strings as durable copy.
+- **Confidence:** Low; this is product language rather than a technical invariant.

@@ -47,6 +47,33 @@ export interface PublishedArtifact extends Omit<NormalizedArtifact, "bytes"> {
   storageBytes: number;
 }
 
+export async function registerPublishedArtifact(
+  database: { query<Row>(sql: string, parameters?: unknown[]): Promise<{ rows: Row[] }> },
+  artifact: PublishedArtifact,
+): Promise<void> {
+  await database.query(
+    `INSERT INTO image_artifacts
+       (artifact_hash, media_type, bytes, w, h, artifact_available)
+     VALUES ($1, $2, $3, $4, $5, true)
+     ON CONFLICT (artifact_hash) DO UPDATE SET artifact_available = true`,
+    [artifact.artifactHash, artifact.mediaType, artifact.storageBytes, artifact.w, artifact.h],
+  );
+  const stored = await database.query<{ media_type: string; bytes: string; w: number; h: number }>(
+    `SELECT media_type, bytes::text, w, h FROM image_artifacts WHERE artifact_hash = $1`,
+    [artifact.artifactHash],
+  );
+  const row = stored.rows[0];
+  if (
+    !row ||
+    row.media_type !== artifact.mediaType ||
+    Number(row.bytes) !== artifact.storageBytes ||
+    row.w !== artifact.w ||
+    row.h !== artifact.h
+  ) {
+    throw new Error(`Artifact metadata collision: ${artifact.artifactHash}`);
+  }
+}
+
 /** Converts an external display result once, then encodes the canonical scene-linear working artifact. */
 export async function normalizeArtifact(image: LinearImage | Image16): Promise<NormalizedArtifact> {
   let linear: LinearImage;

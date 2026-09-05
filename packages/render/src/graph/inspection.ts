@@ -24,7 +24,8 @@ export interface GraphPage {
   revisionId: string;
   parentRevisionId: string | null;
   pinned: boolean;
-  roots: { output?: string };
+  roots: { output?: string; content?: string; mask?: string };
+  layerId: string | null;
   renderHash: string | null;
   nodes: GraphNodeSummary[];
   nextCursor: string | null;
@@ -54,6 +55,7 @@ export async function inspectGraph(
   request: {
     photoId: string;
     history?: boolean;
+    layerId?: string;
     limit?: number;
     cursor?: string;
   },
@@ -64,7 +66,11 @@ export async function inspectGraph(
     throw new Error(`Graph page limit must be between 1 and ${MAX_PAGE}`);
   }
   const cursor = request.cursor ? parseCursor(request.cursor) : undefined;
-  if (cursor && (cursor.photoId !== request.photoId || cursor.history !== history)) {
+  const layerId = request.layerId ?? null;
+  if (
+    cursor &&
+    (cursor.photoId !== request.photoId || cursor.history !== history || cursor.layerId !== layerId)
+  ) {
     throw new Error("Graph cursor does not match this inspection request");
   }
   const revisionId = cursor?.revisionId ?? (await activeRevision(database, request.photoId));
@@ -94,11 +100,23 @@ export async function inspectGraph(
        FROM document_revisions AS revision
        JOIN revisions ON revision.photo_id = $1 AND revision.id = revisions.id
        WHERE $3::boolean AND revision.parent_revision_id IS NOT NULL
+     ), layer_roots(id) AS (
+       SELECT snapshot.content_node_id
+       FROM document_revision_layers AS snapshot
+       JOIN revisions ON revisions.id = snapshot.revision_id
+       WHERE snapshot.photo_id = $1 AND snapshot.layer_id = $6::uuid
+       UNION
+       SELECT snapshot.mask_node_id
+       FROM document_revision_layers AS snapshot
+       JOIN revisions ON revisions.id = snapshot.revision_id
+       WHERE snapshot.photo_id = $1 AND snapshot.layer_id = $6::uuid
      ), reachable(id) AS (
        SELECT root.node_id
        FROM document_revision_roots AS root
        JOIN revisions ON revisions.id = root.revision_id
-       WHERE root.photo_id = $1
+       WHERE root.photo_id = $1 AND $6::uuid IS NULL
+       UNION
+       SELECT id FROM layer_roots WHERE $6::uuid IS NOT NULL
        UNION
        SELECT edge.input_node_id
        FROM image_node_inputs AS edge
@@ -122,7 +140,7 @@ export async function inspectGraph(
      WHERE node.id > $4
      ORDER BY node.id
      LIMIT $5`,
-    [request.photoId, revisionId, history, cursor?.afterNodeId ?? "", limit + 1],
+    [request.photoId, revisionId, history, cursor?.afterNodeId ?? "", limit + 1, layerId],
   );
   const hasNext = result.rows.length > limit;
   const rows = result.rows.slice(0, limit);
@@ -145,21 +163,37 @@ export async function inspectGraph(
       artifactAvailable: row.artifact_available,
     });
   }
-  const roots = await database.query<{ root_name: "output"; node_id: string }>(
-    `SELECT root_name, node_id FROM document_revision_roots
-     WHERE photo_id = $1 AND revision_id = $2`,
+  let rootMap: GraphPage["roots"];
+  if (layerId) {
+    const roots = await database.query<{ content_node_id: string; mask_node_id: string }>(
+      `SELECT content_node_id, mask_node_id FROM document_revision_layers
+       WHERE photo_id = $1 AND revision_id = $2 AND layer_id = $3`,
+      [request.photoId, revisionId, layerId],
+    );
+    const layer = roots.rows[0];
+    if (!layer) throw new Error(`Layer is not present in graph revision: ${layerId}`);
+    rootMap = { content: layer.content_node_id, mask: layer.mask_node_id };
+  } else {
+    const roots = await database.query<{ root_name: "output"; node_id: string }>(
+      `SELECT root_name, node_id FROM document_revision_roots
+       WHERE photo_id = $1 AND revision_id = $2`,
+      [request.photoId, revisionId],
+    );
+    rootMap = Object.fromEntries(roots.rows.map((root) => [root.root_name, root.node_id]));
+  }
+  const outputRoot = await database.query<{ node_id: string }>(
+    `SELECT node_id FROM document_revision_roots
+     WHERE photo_id = $1 AND revision_id = $2 AND root_name = 'output'`,
     [request.photoId, revisionId],
   );
-  const rootMap = Object.fromEntries(roots.rows.map((root) => [root.root_name, root.node_id])) as {
-    output?: string;
-  };
   return {
     photoId: request.photoId,
     revisionId,
     parentRevisionId: revision.rows[0].parent_revision_id,
     pinned: revision.rows[0].pinned,
     roots: rootMap,
-    renderHash: rootMap.output ? renderHashForNode(rootMap.output) : null,
+    layerId,
+    renderHash: outputRoot.rows[0]?.node_id ? renderHashForNode(outputRoot.rows[0].node_id) : null,
     nodes,
     nextCursor:
       hasNext && nodes.length > 0
@@ -167,6 +201,7 @@ export async function inspectGraph(
             photoId: request.photoId,
             revisionId,
             history,
+            layerId,
             afterNodeId: nodes.at(-1)!.id,
           })
         : null,
@@ -329,6 +364,7 @@ interface GraphCursor {
   photoId: string;
   revisionId: string;
   history: boolean;
+  layerId: string | null;
   afterNodeId: string;
 }
 
@@ -365,6 +401,9 @@ function parseCursor(cursor: string): GraphCursor {
     !UUID_PATTERN.test(value.revisionId) ||
     !("history" in value) ||
     typeof value.history !== "boolean" ||
+    !("layerId" in value) ||
+    (value.layerId !== null &&
+      (typeof value.layerId !== "string" || !UUID_PATTERN.test(value.layerId))) ||
     !("afterNodeId" in value) ||
     typeof value.afterNodeId !== "string" ||
     !/^node_[0-9a-f]{64}$/.test(value.afterNodeId)

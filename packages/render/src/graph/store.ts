@@ -9,7 +9,11 @@ import {
   renderHashForNode,
 } from "./recipes.js";
 import type { ImageNodeKind, JsonValue, StoredImageNode } from "./types.js";
-import { MASK_ARTIFACT_MEDIA_TYPE } from "../artifacts/publication.js";
+import {
+  MASK_ARTIFACT_MEDIA_TYPE,
+  registerPublishedArtifact,
+  type PublishedArtifact,
+} from "../artifacts/publication.js";
 import {
   compositeV2Projection,
   layerRoles,
@@ -47,6 +51,7 @@ export interface CommitRevisionRequest {
   rootUpdates: Array<{ root: "base" | "output"; node: NodeReference }>;
   newLayers?: NewLayerIdentity[];
   layers?: RevisionLayerDraft[];
+  artifacts?: PublishedArtifact[];
 }
 export interface CommitRevisionResult {
   revisionId: string;
@@ -179,6 +184,9 @@ export async function commitRevision(
     if (activeRevisionId !== request.expectedRevisionId) {
       throw new RevisionConflictError();
     }
+    await mapInOrder(request.artifacts ?? [], async (artifact) => {
+      await registerPublishedArtifact(transaction, artifact);
+    });
 
     const drafts = new Map(request.nodes.map((node) => [node.localKey, node]));
     const resolved = new Map<string, StoredImageNode>();

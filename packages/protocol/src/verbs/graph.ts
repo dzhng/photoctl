@@ -48,6 +48,8 @@ const graphNodeSummarySchema = z.object({
     "upscale",
     "resample",
     "transform",
+    "mask",
+    "delta",
     "mask_composite",
     "composite",
     "crop",
@@ -62,17 +64,28 @@ const graphNodeSummarySchema = z.object({
   artifact_available: z.boolean(),
 });
 
-export const graphShowDataSchema = z.object({
+const graphShowFields = {
   id: z.uuid(),
   revision_id: z.uuid(),
   parent_revision_id: z.uuid().nullable(),
   pinned: z.boolean(),
-  scope: z.object({ root: z.literal("output"), history: z.boolean() }),
-  roots: z.object({ output: nodeId }),
   render_hash: fullHashSchema("r"),
   nodes: z.array(graphNodeSummarySchema).max(100),
   next_cursor: z.string().nullable(),
-});
+};
+
+export const graphShowDataSchema = z.union([
+  z.object({
+    ...graphShowFields,
+    scope: z.object({ root: z.literal("output"), history: z.boolean() }),
+    roots: z.object({ output: nodeId }),
+  }),
+  z.object({
+    ...graphShowFields,
+    scope: z.object({ root: z.literal("layer"), layer_id: z.uuid(), history: z.boolean() }),
+    roots: z.object({ content: nodeId, mask: nodeId }),
+  }),
+]);
 
 export const graphNodeDataSchema = graphNodeSummarySchema.extend({
   photo_id: z.uuid(),

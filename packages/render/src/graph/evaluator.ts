@@ -6,6 +6,7 @@ import {
   normalizeMaskArtifact,
   normalizeValidatedArtifactBytes,
   publishArtifact,
+  registerPublishedArtifact,
   readArtifactBytes,
   readArtifactBytesForNativeDevelop,
   readArtifactLinear,
@@ -31,7 +32,12 @@ import type { Image16 } from "../source-render.js";
 import type { GraphDatabase, GraphTransaction } from "./store.js";
 import { applyDevelopArtifact, applyDevelopDeltaArtifact } from "../develop/pixels.js";
 import { developDictSchema } from "../develop/dict.js";
-import { compositeMaskedPixels, featherMask, transformMaskPixels } from "@photoctl/img";
+import {
+  compositeMaskedPixels,
+  featherMask,
+  transformMaskPixels,
+  transformPixels,
+} from "@photoctl/img";
 import type { MaskImage } from "../mask-tiff.js";
 
 export interface EvaluatedNode {
@@ -229,7 +235,7 @@ async function evaluateOne(
   }
   await request.hooks?.beforeCommit?.();
   const stored = await request.database.transaction(async (transaction) => {
-    await registerArtifact(transaction, artifact);
+    await registerPublishedArtifact(transaction, artifact);
     await transaction.query(
       `INSERT INTO node_executions (
          photo_id, execution_id, node_id, evaluation_hash, deterministic,
@@ -337,8 +343,14 @@ async function runOperation(
     if (kind === "composite" && recipeVersion === 2) {
       return { image: await evaluateCompositeV2(parameters, inputs) };
     }
-    if (kind === "transform" && inputs[0]?.artifact.mediaType === MASK_ARTIFACT_MEDIA_TYPE) {
-      return { image: await evaluateMaskTransform(parameters, inputs[0]) };
+    if (kind === "transform") {
+      if (!inputs[0]) throw new Error("Transform evaluation requires one input artifact");
+      return {
+        image:
+          inputs[0].artifact.mediaType === MASK_ARTIFACT_MEDIA_TYPE
+            ? await evaluateMaskTransform(parameters, inputs[0])
+            : await evaluateRgbTransform(parameters, inputs[0]),
+      };
     }
     throw new Error(`No pixel evaluator is registered for ${kind}`);
   }
@@ -417,18 +429,34 @@ async function evaluateMaskTransform(
   parameters: JsonValue,
   input: EvaluatedNode,
 ): Promise<MaskImage> {
-  const parsed = z
-    .object({
-      matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
-    })
-    .strict()
-    .parse(parameters);
+  const matrix = transformMatrix(parameters);
   const mask = await readArtifactMask(input.artifact.path, input.artifact.artifactHash);
   return {
     w: mask.w,
     h: mask.h,
-    data: await transformMaskPixels(mask.data, mask.w, mask.h, mask.w, mask.h, parsed.matrix),
+    data: await transformMaskPixels(mask.data, mask.w, mask.h, mask.w, mask.h, matrix),
   };
+}
+
+async function evaluateRgbTransform(
+  parameters: JsonValue,
+  input: EvaluatedNode,
+): Promise<LinearImage> {
+  const matrix = transformMatrix(parameters);
+  const image = await readRgbInput(input);
+  return linearImage(
+    image,
+    await transformPixels(image.data, image.w, image.h, 3, image.w, image.h, matrix, "lanczos3"),
+  );
+}
+
+function transformMatrix(parameters: JsonValue): [number, number, number, number, number, number] {
+  return z
+    .object({
+      matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
+    })
+    .strict()
+    .parse(parameters).matrix;
 }
 
 async function readRgbInput(
@@ -561,37 +589,6 @@ function storeExternalExecution(execution: ExternalExecutionProvenance): JsonVal
     target_px: execution.targetPx,
     warnings: execution.warnings,
   };
-}
-
-async function registerArtifact(
-  transaction: GraphTransaction,
-  artifact: PublishedArtifact,
-): Promise<void> {
-  await transaction.query(
-    `INSERT INTO image_artifacts
-       (artifact_hash, media_type, bytes, w, h, artifact_available)
-     VALUES ($1, $2, $3, $4, $5, true)
-     ON CONFLICT (artifact_hash) DO UPDATE SET artifact_available = true`,
-    [artifact.artifactHash, artifact.mediaType, artifact.storageBytes, artifact.w, artifact.h],
-  );
-  const stored = await transaction.query<{
-    media_type: string;
-    bytes: string;
-    w: number;
-    h: number;
-  }>(`SELECT media_type, bytes::text, w, h FROM image_artifacts WHERE artifact_hash = $1`, [
-    artifact.artifactHash,
-  ]);
-  const row = stored.rows[0];
-  if (
-    !row ||
-    row.media_type !== artifact.mediaType ||
-    Number(row.bytes) !== artifact.storageBytes ||
-    row.w !== artifact.w ||
-    row.h !== artifact.h
-  ) {
-    throw new Error(`Artifact metadata collision: ${artifact.artifactHash}`);
-  }
 }
 
 async function loadNode(database: GraphTransaction, photoId: string, nodeId: string) {
