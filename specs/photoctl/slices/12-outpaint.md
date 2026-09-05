@@ -22,10 +22,12 @@ checkpoint before its implementation begins. This is not a claim that the whole 
 - Coordinates keep their oriented, uncropped original-base meaning. `--norm` continues using original
   source dimensions; it must not silently move existing edits when the canvas changes. Exterior regions
   use signed absolute coordinates and must intersect the visible frame.
-- Expansion is provisionally centered. `--px N` adds N on every visible edge. `--aspect R` grows the
-  smallest necessary axis without cropping; use integer offsets, giving an odd extra pixel to the
-  right or bottom rather than shifting source pixels by half a pixel. Matching aspect is a no-op with
-  no provider request or new revision. Actual dimensions are reported.
+- Expansion is provisionally centered. `--px N` adds N on every visible edge. For a reduced positive
+  integer ratio `p:q`, `--aspect p:q` uses the smallest containing exact-ratio raster:
+  `k = ceil(max(width/p, height/q))`, output `k*p` by `k*q`. This can add a few pixels on both axes.
+  Use integer offsets, giving an odd extra pixel to the right or bottom rather than shifting source
+  pixels by half a pixel. Matching aspect is a no-op with no provider request or new revision.
+  Validate safe integer dimensions and pixel limits before multiplication/allocation; report actual dimensions.
 - The recommended subject of expansion is the current visible crop, including its orientation and
   straightening, not the hidden uncropped source. The user has been asked; this remains provisional.
 - Generation consumes the current photographic composite before final vector markup. Existing layers
@@ -87,18 +89,46 @@ example to settle the viewport policy. Merely retaining the prior final crop hid
 clearing it reveals previously excluded content. An authored extent after straightening is an affine
 rectangle in original coordinates, not necessarily an axis-aligned base bounding box.
 
-The plan must resolve these outcomes before this checkpoint is implementation-ready:
+The lifecycle checkpoint adopts the following reversible product calls. They constrain the graph
+design; they do not claim the canvas implementation or its visual acceptance is complete.
 
-1. How a crop that preceded outpaint differs from an explicit crop applied afterward, and how later
-   rotate/straighten changes act on the authored extent. One graph owner must encode that temporal
-   geometry; do not maintain a second unsynchronized crop or canvas width beside develop state.
-2. Which enabled layers contribute extent and what opacity zero means. Recommended: extent belongs
-   to enabled outpaint layers independently of opacity, so fading does not resize the canvas.
-3. Removing an inner border while a later outer border survives. Retained authored pixels must not
-   shift or trigger a provider call. Any resulting uncovered area requires an explicit opaque-output
-   background and warning policy; accidental zero-filled buffers are not a product decision.
-4. Absolute authored footprints versus relative repeat requests. A successful second `--px` expands
-   again; retrying a failed generation must not accidentally apply its expansion twice.
+1. Each enabled border retains the visible input frame it was authored around. Earlier cropped-out
+   source or layer content does not reappear merely because outpaint expands that frame. A crop
+   applied afterward is a replaceable view restriction: clearing it reveals the authored canvas,
+   not content excluded before that border. The restriction tied to authoring is conditional on the
+   border, not a permanent destructive crop. Removing that border removes its restriction unless a
+   later enabled border independently retains the same boundary in its authored input.
+2. Current absolute crop/rotate/straighten controls remain the current editing intent. Removing
+   borders must not reset later develop choices. With no enabled outpaint borders, ordinary develop
+   geometry again operates on the original source. Relative orientation after a border is measured
+   against its authored orientation: a border authored at rotate=90 followed by rotate=180 rotates
+   the whole authored canvas by another 90 degrees, not another 180. Repeated slider changes replace
+   the geometry tail; they do not accumulate resampling operations.
+3. Extent belongs to enabled outpaint layers independently of opacity. Opacity zero fades pixels
+   without resizing the canvas; disabling/removing the layer withdraws its extent. A later surviving
+   border keeps its absolute authored placement when an inner border disappears. It neither shifts
+   nor regenerates. Uncovered canvas is provisionally opaque scene-linear black, reported with
+   `canvas_uncovered` on show/export. Hidden original content must not silently fill a generated-area
+   hole while a surviving authored boundary excludes it.
+4. A successful second `--px N` expands the then-current visible frame again. A failed external
+   operation commits neither extent nor revision. Explicit retry uses that operation's pinned
+   authored input/output intent; inspection, layer changes, and retry cannot append the same extent
+   twice. A separate newly requested expansion is a new operation.
+
+**Worked lifecycle target:** start with a 1000×800 source, crop `[100,200,400,200]`, rotate 90:
+the visible raster is 200×400. Border A adds 20 pixels per edge, giving 240×440. Then set rotate 180
+and crop `[100,200,420,200]`: the 420×200 view includes A's strip beyond original x=500.
+Border B adds 10 per edge, giving 440×220. Disabling B returns to 420×200 with A's strip intact.
+Disabling A while B survives keeps B's 440×220 placement but leaves the missing strip black and warned.
+Once both are disabled, the current 420×200 crop/180-degree controls operate normally on the original,
+so original content at x=500..520 is visible. The final state is independent of disable order.
+
+Before implementation, validate the same rules with nonzero straighten and with a second border
+authored after a narrower crop. Specify layer transform/reorder/duplicate behavior through the same
+extent owner; compositing order must not silently rewrite authoring chronology. One-axis aspect
+ceiling was rejected because an identical request can grow repeatedly (10×7 → 11×7 → 11×8 for 3:2).
+The exact-ratio contract above gives 12×8 once and then a no-op. The non-blocking question received
+no contrary answer; keep this planner choice reversible before any canvas is authored.
 
 After those decisions are materialized, implement the immutable canvas/extent recipe and the
 canonical layer/output builder together. Current enabled layer state derives the extent; do not add

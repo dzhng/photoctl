@@ -93,3 +93,5 @@ Deterministic command tests also
 check uploaded quadrant colors, zero context padding, active canonical mask coverage, final protected
 pixels, nonvisible refusal, and refresh crop expansion. No photographic or live-provider approval follows
 from this synthetic evidence.
+The creation sequence was opened together in Preview for approximately five minutes during integration.
+No feedback changed the deterministic verdict; the window was closed before continuing.

@@ -40,13 +40,31 @@
 
 ## Needs-user
 
+### Slice 12f plan — Missing inner borders leave warned black canvas
+
+- **When:** Outpaint lifecycle planning, 2026-09-06; not implemented yet.
+- **The choice:** Add an outer border B around a picture that already contains border A, then remove A.
+  B stays where it was authored. Areas formerly supplied by A become opaque black and show/export
+  report `canvas_uncovered`; the renderer neither moves B nor buys replacement pixels. Setting A's
+  opacity to zero likewise fades its pixels without changing the canvas size. Disabling A withdraws
+  its own extent, but cannot withdraw the area independently retained by B.
+- **The gap:** Opaque image output needs a deliberate policy for holes; zero-initialized memory is
+  not itself a product decision.
+- **The reach:** Extent is distinct from visible color. Hidden original content cannot silently replace
+  a removed generated border while a surviving authored boundary excludes that content.
+- **Verdict:** **Needs-user.** Provisionally use opaque scene-linear black plus a warning, preserving
+  authored placement and avoiding automatic provider costs. A later background preference can replace
+  the policy without rewriting original images or paid border artifacts.
+- **Confidence:** Low; black is predictable but may be aesthetically undesirable.
+
 ### Slice 12f plan — Expand the visible picture symmetrically
 
 - **When:** Outpaint planning checkpoint, 2026-09-06; not implemented yet.
 - **The choice:** After cropping and straightening a photo, `fill --outpaint --px 100` would add
   100 pixels around the picture currently visible, without restoring the source content the crop
-  excluded. An aspect request would grow only the necessary axis, splitting the added pixels between
-  opposite edges. An odd pixel goes right or bottom so existing pixels never move by half a pixel.
+  excluded. An aspect request uses the smallest containing integer raster with the exact requested
+  ratio: 10×7 expanded to 3:2 becomes 12×8. Growth is split between opposite edges; an odd pixel goes
+  right or bottom so existing pixels never move by half a pixel.
   Requesting the current aspect does nothing and makes no paid request. The alternatives are expanding
   the uncropped original, anchoring growth at the top-left, or resampling to obtain perfect symmetry.
 - **The gap:** The original outpaint requirement did not select the expansion frame, anchor, or rounding.
@@ -55,7 +73,25 @@
   extent rather than make callers reinterpret stored positions.
 - **Verdict:** **Needs-user.** Provisionally expand the current visible picture and use integer centered
   placement. The user has been asked; a different answer changes the planner before canvas authoring,
-  not existing photo records. Crop-after-outpaint and removal behavior remain separate design checkpoints.
+  not existing photo records. One-axis ceiling was rejected because repeated identical requests can
+  alternately grow width and height; exact-ratio integer dimensions make the second request a no-op.
+- **Confidence:** Medium.
+
+### Slice 12f plan — Authored crop boundaries belong to enabled borders, not permanent source edits
+
+- **When:** Outpaint lifecycle planning, 2026-09-06; not implemented yet.
+- **The choice:** Crop a picture, add border A, crop it more, then add border B. Each enabled border
+  retains the visible frame it was made around. Clearing a later viewing crop reveals that authored
+  canvas, not content excluded before its creation. Removing B withdraws B's boundary; removing all
+  borders lets normal develop controls operate on the original again. Later rotation and crop choices
+  remain current intent throughout, rather than reverting to the values used before outpaint.
+- **The gap:** The plan did not distinguish pre-border cropping from post-border viewing changes.
+- **The reach:** Immutable graph intent must encode those authored frames without a second mutable
+  geometry table or permanently discarding source pixels. Reorder and transform behavior still need
+  explicit validation before the canvas checkpoint can be implemented.
+- **Verdict:** **Needs-user.** Provisionally retain visible-input boundaries only while the owning
+  borders are enabled. This makes generated borders reproducible and removable. A different product
+  preference changes the plan before implementation; original source data remains untouched.
 - **Confidence:** Medium.
 
 ## Sound
