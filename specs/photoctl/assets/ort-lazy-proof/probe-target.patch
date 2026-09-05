@@ -1,0 +1,19 @@
+diff --git a/src/static-build/CMakeLists.txt b/src/static-build/CMakeLists.txt
+index e29ab1a..a81ff59 100644
+--- a/src/static-build/CMakeLists.txt
++++ b/src/static-build/CMakeLists.txt
+@@ -193,3 +193,14 @@ install(
+     RENAME ${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime${CMAKE_STATIC_LIBRARY_SUFFIX}
+     TYPE LIB
+ )
++
++add_executable(photoctl_probe /proof/probe.cpp)
++find_package(Threads REQUIRED)
++target_compile_features(photoctl_probe PRIVATE cxx_std_20)
++target_include_directories(photoctl_probe PRIVATE
++    ${ONNXRUNTIME_SOURCE_DIR}/onnxruntime
++    ${ONNXRUNTIME_SOURCE_DIR}/include/onnxruntime
++    ${ONNXRUNTIME_SOURCE_DIR}/include/onnxruntime/core/session
++    ${CMAKE_CURRENT_BINARY_DIR}/_deps/abseil_cpp-src
++    ${CMAKE_CURRENT_BINARY_DIR}/_deps/gsl-src/include)
++target_link_libraries(photoctl_probe PRIVATE onnxruntime_static_lib nlohmann_json::nlohmann_json ${CMAKE_DL_LIBS} Threads::Threads)

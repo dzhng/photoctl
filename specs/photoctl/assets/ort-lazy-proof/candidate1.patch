@@ -1,0 +1,88 @@
+diff --git a/onnxruntime/core/mlas/lib/kai_ukernel_interface.cpp b/onnxruntime/core/mlas/lib/kai_ukernel_interface.cpp
+index 6ee8059..5012471 100644
+--- a/onnxruntime/core/mlas/lib/kai_ukernel_interface.cpp
++++ b/onnxruntime/core/mlas/lib/kai_ukernel_interface.cpp
+@@ -311,7 +311,7 @@ const KaiF32SgemmKernel& GetKleidiAISGemmUKernel() {
+         return sgemm_gemm_sme2;
+     } else {
+ #if defined(ENABLE_QMX_KERNELS)
+-        if (ArmKleidiAI::vendor_name.compare("Qualcomm") == 0)
++        if (ArmKleidiAI::VendorName().compare("Qualcomm") == 0)
+         {
+             KLEIDIAI_KERNEL_LOG("SGEMM: Using QMX Kernel");
+             return sgemm_gemm_qmx;
+@@ -337,7 +337,7 @@ const KaiF32IMatmulKernel& GetKleidiAIF32IMatmulUKernel() {
+         return imatmul_conv_sme2;
+     } else {
+ #if defined(ENABLE_QMX_KERNELS)
+-        if (ArmKleidiAI::vendor_name.compare("Qualcomm") == 0)
++        if (ArmKleidiAI::VendorName().compare("Qualcomm") == 0)
+         {
+             KLEIDIAI_KERNEL_LOG("IMATMUL: Using QMX Kernel");
+             return imatmul_conv_qmx;
+@@ -355,7 +355,7 @@ const KaiDynamicQGemmKernel& GetKleidiAIQGemmUKernel() {
+         return qgemm_gemm_sme2;
+     } else {
+ #if defined(ENABLE_QMX_KERNELS)
+-        if (ArmKleidiAI::vendor_name.compare("Qualcomm") == 0)
++        if (ArmKleidiAI::VendorName().compare("Qualcomm") == 0)
+         {
+             KLEIDIAI_KERNEL_LOG("QGEMM: Using QMX Kernel");
+             return qgemm_gemm_qmx;
+diff --git a/onnxruntime/core/mlas/lib/kleidiai/mlasi_kleidiai.h b/onnxruntime/core/mlas/lib/kleidiai/mlasi_kleidiai.h
+index ae00016..2f378eb 100644
+--- a/onnxruntime/core/mlas/lib/kleidiai/mlasi_kleidiai.h
++++ b/onnxruntime/core/mlas/lib/kleidiai/mlasi_kleidiai.h
+@@ -52,9 +52,18 @@
+ namespace ArmKleidiAI {
+ 
+ // By default we should try for SME2 first before falling back to SME.
+-inline const bool UseSME2 = MLAS_CPUIDINFO::GetCPUIDInfo().HasArm_SME2();
+-inline const bool UseSME = MLAS_CPUIDINFO::GetCPUIDInfo().HasArm_SME();
+-inline const std::string_view vendor_name = MLAS_CPUIDINFO::GetCPUIDInfo().GetCPUVendor();
++inline bool UseSME2() {
++    static const bool value = MLAS_CPUIDINFO::GetCPUIDInfo().HasArm_SME2();
++    return value;
++}
++inline bool UseSME() {
++    static const bool value = MLAS_CPUIDINFO::GetCPUIDInfo().HasArm_SME();
++    return value;
++}
++inline std::string_view VendorName() {
++    static const std::string_view value = MLAS_CPUIDINFO::GetCPUIDInfo().GetCPUVendor();
++    return value;
++}
+ 
+ // Selects the convolution route for Arm® KleidiAI™
+ enum class ConvRoute {
+@@ -375,4 +384,3 @@ MlasConvSGemmRoute(const MLAS_CONV_PARAMETERS* Parameters) {
+         : MlasConvSGemmRouteDirect;
+ }
+ }
+-
+diff --git a/onnxruntime/core/mlas/lib/platform.cpp b/onnxruntime/core/mlas/lib/platform.cpp
+index 54d4744..0501ced 100644
+--- a/onnxruntime/core/mlas/lib/platform.cpp
++++ b/onnxruntime/core/mlas/lib/platform.cpp
+@@ -716,7 +716,7 @@ Return Value:
+         this->MlasConvSGemmRouteOverride = ArmKleidiAI::MlasConvSGemmRoute;
+ #if defined(__aarch64__) && defined(__linux__)
+         // Currently only an SME2 variant of SBGEMM exists
+-        if (ArmKleidiAI::UseSME2){
++        if (ArmKleidiAI::UseSME2()){
+             this->MlasSBGemmBatchOverride = ArmKleidiAI::MlasSBGemmBatch;
+             this->MlasSBGemmPackBSizeOverride = ArmKleidiAI::MlasSBGemmPackBSize;
+             this->MlasSBGemmPackBOverride = ArmKleidiAI::MlasSBGemmPackB;
+diff --git a/onnxruntime/core/mlas/lib/qgemm.cpp b/onnxruntime/core/mlas/lib/qgemm.cpp
+index c3f35c1..9f47a43 100644
+--- a/onnxruntime/core/mlas/lib/qgemm.cpp
++++ b/onnxruntime/core/mlas/lib/qgemm.cpp
+@@ -206,7 +206,7 @@ MLASCALL
+ MlasIsDynamicQGemmAvailable(const MLAS_BACKEND_KERNEL_SELECTOR_CONFIG* BackendKernelSelectorConfig)
+ {
+ #if defined(USE_KLEIDIAI)
+-  return (ArmKleidiAI::UseSME2 || ArmKleidiAI::UseSME) &&
++  return (ArmKleidiAI::UseSME2() || ArmKleidiAI::UseSME()) &&
+          (!BackendKernelSelectorConfig || BackendKernelSelectorConfig->use_kleidiai);
+ #else
+   MLAS_UNREFERENCED_PARAMETER(BackendKernelSelectorConfig);

@@ -1,0 +1,17 @@
+{
+  "baseline": {
+    "status": 0,
+    "stdout": "{\"phase\":\"main_entered\"}\n{\"diagnostics\":[],\"features\":{\"dot\":true,\"i8mm\":true,\"sme\":false,\"sme2\":false,\"vendor\":\"unknown\",\"vendor_id\":0},\"invalid_model_rejected\":true,\"output\":[1.0,2.0,3.0,4.0]}\n",
+    "stderr": "onnxruntime cpuid_info warning: Unknown CPU vendor. cpuinfo_vendor value: 0\n"
+  },
+  "candidate1": {
+    "status": 0,
+    "stdout": "{\"phase\":\"main_entered\"}\n{\"diagnostics\":[],\"features\":{\"dot\":true,\"i8mm\":true,\"sme\":false,\"sme2\":false,\"vendor\":\"unknown\",\"vendor_id\":0},\"invalid_model_rejected\":true,\"output\":[1.0,2.0,3.0,4.0]}\n",
+    "stderr": "onnxruntime cpuid_info warning: Unknown CPU vendor. cpuinfo_vendor value: 0\n"
+  },
+  "candidate2": {
+    "status": 0,
+    "stdout": "{\"phase\":\"main_entered\"}\n{\"diagnostics\":[{\"category\":\"onnxruntime\",\"id\":\"photoctl-proof\",\"location\":\"cpuid_info.cc:105 LogEarlyWarning\",\"message\":\"Unknown CPU vendor. cpuinfo_vendor value: 0\",\"severity\":2}],\"features\":{\"dot\":true,\"i8mm\":true,\"sme\":false,\"sme2\":false,\"vendor\":\"unknown\",\"vendor_id\":0},\"invalid_model_rejected\":true,\"output\":[1.0,2.0,3.0,4.0]}\n",
+    "stderr": ""
+  }
+}

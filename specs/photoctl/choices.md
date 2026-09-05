@@ -4418,3 +4418,20 @@
 - **Verdict:** **Sound.** Correct the demonstrated test-toolchain mismatch without changing Node,
   model bytes, inference semantics, or native algorithms, and keep the evidence boundary explicit.
 - **Confidence:** High.
+
+### Runtime initialization — Prove timing separately from artifact equivalence
+
+- **When:** Slice 11 Linux strict-stderr causal proof, 2026-09-06.
+- **The choice:** Compare baseline and candidate built from the same pinned ORT source and
+  artifact-builder recipe. Defer CPU-reading static initialization without changing feature
+  values or kernel selection, then install the explicit upstream logger before discovery.
+  Preserve both the insufficient first patch and the passing complete patch as evidence.
+- **The gap:** The served archive identifies its ORT source but not its exact builder revision.
+  Waiting for that provenance would prevent the bounded causal test; pretending to reproduce
+  the served binary would overstate what the experiment proves.
+- **The reach:** Empty stderr, retained warning, matching feature values and identity output
+  establish the timing correction on the scratch ARM64 build only. Actual addon/CLI behavior,
+  failed-worker diagnostics, model parity and cross-platform distribution remain separate gates.
+- **Verdict:** **Sound.** The experiment isolates the failure without weakening the default
+  gate or silently replacing a release artifact.
+- **Confidence:** High for the measured timing result; no release-equivalence claim.

@@ -62,6 +62,44 @@ Detailed edge acceptance and full-command G6 remain open independently.
 [Export evidence](../assets/sam-export/README.md) records the real Hydra resolution regression, raw-logit ranking normalization,
 unchanged parity tolerances, and fail-closed publication boundary. Export-process RSS is not inference-process RSS.
 
+## Linux runtime initialization — causal proof, integration next
+
+The mandatory Linux model gate is red before inference: loading the ARM64 addon emits an ORT
+CPU-vendor warning outside the NDJSON stderr contract. The
+[portable gate evidence](../assets/sam-photographic/README.md#portable-gate-checkpoint) identifies
+the native static initializer. Do not filter stderr, make this test optional, disable CPU features,
+change model hashes, or downgrade ORT to hide it.
+
+The [bounded source-build proof](../assets/ort-lazy-proof/README.md) changes initialization timing:
+replace eagerly initialized CPU facts and CPU-reading dispatch selections with function-local
+cached accessors, updating every consumer. It uses ORT source
+`da9b5e364c465de65c49d91e696cd6485270757f` (1.28.0, reported by the shipped archive), the same
+explicitly pinned artifact-builder recipe and its existing patches for baseline and candidate,
+and unchanged CPU build flags. The served archive's exact builder provenance has not been
+established: this is a same-recipe causal comparison, not binary equivalence or release acceptance.
+
+The real compiled baseline reproduces raw stderr. Deferring only three KleidiAI CPU facts also
+fails; compiled inspection exposes three NEON dispatch objects and four CPU-reading kernel
+selections that initialize early independently. Deferring those too produces empty raw stderr,
+preserves the warning through the explicit logger, and retains identical feature values,
+identity output and invalid-model rejection. Fixed non-CPU-reading selections are unchanged.
+This tiny witness does not establish failed-worker diagnostic delivery, model parity or CLI
+acceptance; those are the next integration proof, using the existing runtime-library override.
+
+Only after that proof, resolve production diagnostic delivery and runtime acquisition together.
+The existing native worker's ready/job result boundaries and the command's stderr-event transport
+are the candidate owners; initialization and job errors must retain typed diagnostics. A cached
+runtime must never retain a request's event callback. Avoid a second Rust stderr emitter, global
+request routing, or deferred-warning queue unless the proof demonstrates an actual need.
+
+A production patch must have one pinned, reproducible source/patch/build identity selected by host,
+Docker, and release builds; none may silently fall back to the old archive. The supported
+`ORT_LIB_PATH` static-link seam is available, but distribution details remain to be decided from
+the proof. Public artifact hosting stays unconfigured until explicitly supplied. Acceptance requires
+load/identity/error tests, unchanged model parity, actual strict CLI model gates, and packaged-target
+load checks; coarse Mac success alone cannot close Linux or release compatibility. No database
+migration or backward-compatibility shim is required by this proof.
+
 ## Mask inspection contract
 
 `wb masks` reads committed active masks beside the highest-resolution available cached execution of the current develop root,

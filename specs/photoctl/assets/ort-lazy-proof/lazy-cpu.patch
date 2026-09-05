@@ -1,0 +1,447 @@
+diff --git a/onnxruntime/core/mlas/lib/eltwise_kernel_neon.cpp b/onnxruntime/core/mlas/lib/eltwise_kernel_neon.cpp
+index 415c128..b4f2bc2 100644
+--- a/onnxruntime/core/mlas/lib/eltwise_kernel_neon.cpp
++++ b/onnxruntime/core/mlas/lib/eltwise_kernel_neon.cpp
+@@ -20,7 +20,8 @@ Abstract:
+ //
+ // Kernel dispatch structure definition.
+ //
+-const MLAS_ELTWISE_DISPATCH MlasEltwiseDispatchNeon = []() {
++const MLAS_ELTWISE_DISPATCH& GetMlasEltwiseDispatchNeon() {
++    static const MLAS_ELTWISE_DISPATCH dispatch = []() {
+     MLAS_ELTWISE_DISPATCH d;
+ 
+ #if defined(MLAS_F16VEC_INTRINSICS_SUPPORTED) && defined(MLAS_TARGET_ARM64)
+@@ -29,4 +30,6 @@ const MLAS_ELTWISE_DISPATCH MlasEltwiseDispatchNeon = []() {
+     }
+ #endif
+     return d;
+-}();
++    }();
++    return dispatch;
++}
+diff --git a/onnxruntime/core/mlas/lib/kai_ukernel_interface.cpp b/onnxruntime/core/mlas/lib/kai_ukernel_interface.cpp
+index 6ee8059..5012471 100644
+--- a/onnxruntime/core/mlas/lib/kai_ukernel_interface.cpp
++++ b/onnxruntime/core/mlas/lib/kai_ukernel_interface.cpp
+@@ -311,7 +311,7 @@ const KaiF32SgemmKernel& GetKleidiAISGemmUKernel() {
+         return sgemm_gemm_sme2;
+     } else {
+ #if defined(ENABLE_QMX_KERNELS)
+-        if (ArmKleidiAI::vendor_name.compare("Qualcomm") == 0)
++        if (ArmKleidiAI::VendorName().compare("Qualcomm") == 0)
+         {
+             KLEIDIAI_KERNEL_LOG("SGEMM: Using QMX Kernel");
+             return sgemm_gemm_qmx;
+@@ -337,7 +337,7 @@ const KaiF32IMatmulKernel& GetKleidiAIF32IMatmulUKernel() {
+         return imatmul_conv_sme2;
+     } else {
+ #if defined(ENABLE_QMX_KERNELS)
+-        if (ArmKleidiAI::vendor_name.compare("Qualcomm") == 0)
++        if (ArmKleidiAI::VendorName().compare("Qualcomm") == 0)
+         {
+             KLEIDIAI_KERNEL_LOG("IMATMUL: Using QMX Kernel");
+             return imatmul_conv_qmx;
+@@ -355,7 +355,7 @@ const KaiDynamicQGemmKernel& GetKleidiAIQGemmUKernel() {
+         return qgemm_gemm_sme2;
+     } else {
+ #if defined(ENABLE_QMX_KERNELS)
+-        if (ArmKleidiAI::vendor_name.compare("Qualcomm") == 0)
++        if (ArmKleidiAI::VendorName().compare("Qualcomm") == 0)
+         {
+             KLEIDIAI_KERNEL_LOG("QGEMM: Using QMX Kernel");
+             return qgemm_gemm_qmx;
+diff --git a/onnxruntime/core/mlas/lib/kleidiai/convolve_kleidiai.cpp b/onnxruntime/core/mlas/lib/kleidiai/convolve_kleidiai.cpp
+index 4f62ab2..af60232 100644
+--- a/onnxruntime/core/mlas/lib/kleidiai/convolve_kleidiai.cpp
++++ b/onnxruntime/core/mlas/lib/kleidiai/convolve_kleidiai.cpp
+@@ -22,7 +22,10 @@
+ #include "kai/ukernels/matmul/pack/kai_rhs_imatmul_pack_kxn_x32p2vlx1b_x32_x32_sme.h"
+ 
+ 
+-const KaiF32IMatmulKernel& imatmul_conv = GetKleidiAIF32IMatmulUKernel();
++const KaiF32IMatmulKernel& imatmul_conv() {
++    static const KaiF32IMatmulKernel& kernel = GetKleidiAIF32IMatmulUKernel();
++    return kernel;
++}
+ 
+ // Bound for the per-thread packed LHS scratch buffer used by the chunked IGEMM path.
+ // This is a heuristic budget (chosen because 2 MiB is a common L2 cache size) which limits
+@@ -152,7 +155,7 @@ static bool CheckCapabilitiesSme(const MLAS_CONV_PARAMETERS* Parameters) {
+         // ensure LHS packed buffer size is non-zero
+         const size_t d_kh = route_selection.effective_kernel_h;
+         const size_t d_kw = route_selection.effective_kernel_w;
+-        const size_t m_step = imatmul_conv.ukernel.get_m_step();
++        const size_t m_step = imatmul_conv().ukernel.get_m_step();
+ 
+         const size_t bytes_per_m_step = kai_get_lhs_packed_size_lhs_imatmul_pack_x32p2vlx1_x32p_sme(
+             m_step, d_kh * d_kw, Parameters->InputChannels);
+@@ -366,7 +369,7 @@ static std::shared_ptr<const void*[]> LhsPtrFill(const size_t ci, const size_t i
+ 
+     const auto m = ComputeConvOutSize(ih, kh, padding, sh) * ComputeConvOutSize(iw, kw, padding, sw);
+ 
+-    const auto m_step = imatmul_conv.ukernel.get_m_step();
++    const auto m_step = imatmul_conv().ukernel.get_m_step();
+ 
+     const auto lhs_ptrs_k = kh * kw;
+     const auto lhs_ptrs_m = m_step * MlasDivRoundup(m, m_step);
+@@ -514,8 +517,8 @@ static void ConvolveSme(const size_t co, //channels out
+     const auto m = ComputeConvOutSize(ih, d_kh, padding, sh) *
+                    ComputeConvOutSize(iw, d_kw, padding, sw);
+ 
+-    size_t n_step = imatmul_conv.ukernel.get_n_step();
+-    size_t m_step = imatmul_conv.ukernel.get_m_step();
++    size_t n_step = imatmul_conv().ukernel.get_n_step();
++    size_t m_step = imatmul_conv().ukernel.get_m_step();
+ 
+     // Query the packed LHS buffer size for exactly one m_step block.
+     const size_t bytes_per_m_step = kai_get_lhs_packed_size_lhs_imatmul_pack_x32p2vlx1_x32p_sme(
+@@ -604,7 +607,7 @@ static void ConvolveSme(const size_t co, //channels out
+ 
+             // Get rhs tile, B
+             const size_t rhs_packed_offset =
+-                imatmul_conv.ukernel.get_rhs_packed_offset(n_idx * n_tile_step, d_kh * d_kw, ci);
++                imatmul_conv().ukernel.get_rhs_packed_offset(n_idx * n_tile_step, d_kh * d_kw, ci);
+ 
+             auto b_tile = reinterpret_cast<const void*>(
+                 rhs_data + rhs_packed_offset
+@@ -660,11 +663,11 @@ static void ConvolveSme(const size_t co, //channels out
+                     (tile_m_start + m_base) * co * sizeof(float) +
+                     n_idx * n_tile_step * sizeof(float)];
+ 
+-                KLEIDIAI_KERNEL_LOG(imatmul_conv.name
++                KLEIDIAI_KERNEL_LOG(imatmul_conv().name
+                     << " M=" << tile_size_m << " N=" << tile_size_n
+                     << " k_chunk_count=" << (d_kh * d_kw) << " k_chunk_length=" << ci);
+ 
+-                imatmul_conv.ukernel.run_imatmul(tile_size_m, tile_size_n, d_kh * d_kw, ci, a_tile, b_tile,
++                imatmul_conv().ukernel.run_imatmul(tile_size_m, tile_size_n, d_kh * d_kw, ci, a_tile, b_tile,
+                                                  c_tile, co * sizeof(float), -std::numeric_limits<float>::max(),
+                                                  std::numeric_limits<float>::max());
+             }
+diff --git a/onnxruntime/core/mlas/lib/kleidiai/mlasi_kleidiai.h b/onnxruntime/core/mlas/lib/kleidiai/mlasi_kleidiai.h
+index ae00016..2f378eb 100644
+--- a/onnxruntime/core/mlas/lib/kleidiai/mlasi_kleidiai.h
++++ b/onnxruntime/core/mlas/lib/kleidiai/mlasi_kleidiai.h
+@@ -52,9 +52,18 @@
+ namespace ArmKleidiAI {
+ 
+ // By default we should try for SME2 first before falling back to SME.
+-inline const bool UseSME2 = MLAS_CPUIDINFO::GetCPUIDInfo().HasArm_SME2();
+-inline const bool UseSME = MLAS_CPUIDINFO::GetCPUIDInfo().HasArm_SME();
+-inline const std::string_view vendor_name = MLAS_CPUIDINFO::GetCPUIDInfo().GetCPUVendor();
++inline bool UseSME2() {
++    static const bool value = MLAS_CPUIDINFO::GetCPUIDInfo().HasArm_SME2();
++    return value;
++}
++inline bool UseSME() {
++    static const bool value = MLAS_CPUIDINFO::GetCPUIDInfo().HasArm_SME();
++    return value;
++}
++inline std::string_view VendorName() {
++    static const std::string_view value = MLAS_CPUIDINFO::GetCPUIDInfo().GetCPUVendor();
++    return value;
++}
+ 
+ // Selects the convolution route for Arm® KleidiAI™
+ enum class ConvRoute {
+@@ -375,4 +384,3 @@ MlasConvSGemmRoute(const MLAS_CONV_PARAMETERS* Parameters) {
+         : MlasConvSGemmRouteDirect;
+ }
+ }
+-
+diff --git a/onnxruntime/core/mlas/lib/kleidiai/qgemm_kleidiai.cpp b/onnxruntime/core/mlas/lib/kleidiai/qgemm_kleidiai.cpp
+index 2e5306d..367cdad 100644
+--- a/onnxruntime/core/mlas/lib/kleidiai/qgemm_kleidiai.cpp
++++ b/onnxruntime/core/mlas/lib/kleidiai/qgemm_kleidiai.cpp
+@@ -24,7 +24,10 @@ struct KaiTlsBuffersQgemm {
+ };
+ static thread_local KaiTlsBuffersQgemm g_kai_tls_qgemm;
+ 
+-const KaiDynamicQGemmKernel qgemm_gemm = GetKleidiAIQGemmUKernel();
++const KaiDynamicQGemmKernel& qgemm_gemm() {
++    static const KaiDynamicQGemmKernel kernel = GetKleidiAIQGemmUKernel();
++    return kernel;
++}
+ 
+ // Matmul with float output of dynamic-quantized A and symmetric-quantized B.
+ 
+@@ -39,9 +42,9 @@ ArmKleidiAI::MlasDynamicQGemmPackBSize(
+         return 0;
+     }
+ 
+-    auto nr = qgemm_gemm.ukernel.get_nr();
+-    auto kr = qgemm_gemm.ukernel.get_kr();
+-    auto sr = qgemm_gemm.ukernel.get_sr();
++    auto nr = qgemm_gemm().ukernel.get_nr();
++    auto kr = qgemm_gemm().ukernel.get_kr();
++    auto sr = qgemm_gemm().ukernel.get_sr();
+ 
+     // Regardless of kernel variant, use the NEON packing variant.
+     KLEIDIAI_KERNEL_LOG("kai_run_rhs_pack_kxn_qsi8cxp_qsi8cx_neon Groups=1"
+@@ -64,9 +67,9 @@ ArmKleidiAI::MlasDynamicQGemmPackB(
+         return;
+     }
+ 
+-    auto nr = qgemm_gemm.ukernel.get_nr();
+-    auto kr = qgemm_gemm.ukernel.get_kr();
+-    auto sr = qgemm_gemm.ukernel.get_sr();
++    auto nr = qgemm_gemm().ukernel.get_nr();
++    auto kr = qgemm_gemm().ukernel.get_kr();
++    auto sr = qgemm_gemm().ukernel.get_sr();
+ 
+     // y - float output
+     // scale_factor_lhs - lhs scaling factor
+@@ -105,12 +108,12 @@ ArmKleidiAI::MlasDynamicQGemmBatch(
+     MLAS_THREADPOOL* ThreadPool
+ ) {
+ 
+-    const size_t mr = qgemm_gemm.ukernel.get_mr();
+-    const size_t kr = qgemm_gemm.ukernel.get_kr();
+-    const size_t sr = qgemm_gemm.ukernel.get_sr();
++    const size_t mr = qgemm_gemm().ukernel.get_mr();
++    const size_t kr = qgemm_gemm().ukernel.get_kr();
++    const size_t sr = qgemm_gemm().ukernel.get_sr();
+ 
+-    size_t m_step = qgemm_gemm.ukernel.get_m_step();
+-    size_t n_step = qgemm_gemm.ukernel.get_n_step();
++    size_t m_step = qgemm_gemm().ukernel.get_m_step();
++    size_t n_step = qgemm_gemm().ukernel.get_n_step();
+ 
+     if (BatchN == 0 || Shape.M == 0 || Shape.N == 0 || Shape.K == 0) {
+         return;
+@@ -211,13 +214,13 @@ ArmKleidiAI::MlasDynamicQGemmBatch(
+         ptrdiff_t NIdx = (tid % (dim[1] * dim[2])) % dim[2];
+ 
+         // Get rhs tile, B
+-        const size_t rhs_packed_offset = qgemm_gemm.ukernel.get_rhs_packed_offset(NIdx * n_step, Shape.K);
++        const size_t rhs_packed_offset = qgemm_gemm().ukernel.get_rhs_packed_offset(NIdx * n_step, Shape.K);
+ 
+         const std::byte* B_base = reinterpret_cast<const std::byte*>(DataParams[BIdx].PackedB);
+         auto BTile = reinterpret_cast<const void*>(B_base + rhs_packed_offset);
+ 
+         // Get lhs tile, A
+-        const size_t lhs_packed_offset =qgemm_gemm.ukernel.get_lhs_packed_offset(MIdx * m_step, Shape.K);
++        const size_t lhs_packed_offset =qgemm_gemm().ukernel.get_lhs_packed_offset(MIdx * m_step, Shape.K);
+ 
+         const std::byte* A_base = tls_lhs_base[BIdx]; // LhsPackedData + LhsPackedStride * BIdx; OR DataParams[batch_idx].Workspace;
+         auto ATile = reinterpret_cast<const std::byte*>(A_base + lhs_packed_offset);
+@@ -231,9 +234,9 @@ ArmKleidiAI::MlasDynamicQGemmBatch(
+         NIdx * n_step * sizeof(float)
+         );
+ 
+-        KLEIDIAI_KERNEL_LOG(qgemm_gemm.name
++        KLEIDIAI_KERNEL_LOG(qgemm_gemm().name
+                             << " M=" << TileSizeM << " N=" << TileSizeN << " K=" << Shape.K);
+-        qgemm_gemm.ukernel.run_matmul(
++        qgemm_gemm().ukernel.run_matmul(
+                 TileSizeM, TileSizeN, Shape.K, ATile, BTile,
+                 dst_tile,
+                 DataParams[BIdx].ldc * sizeof(float),
+diff --git a/onnxruntime/core/mlas/lib/kleidiai/sgemm_kleidiai.cpp b/onnxruntime/core/mlas/lib/kleidiai/sgemm_kleidiai.cpp
+index ef599cf..2a7061d 100644
+--- a/onnxruntime/core/mlas/lib/kleidiai/sgemm_kleidiai.cpp
++++ b/onnxruntime/core/mlas/lib/kleidiai/sgemm_kleidiai.cpp
+@@ -30,8 +30,14 @@ struct KaiTlsBuffers {
+ };
+ static thread_local KaiTlsBuffers g_kai_tls;
+ 
+-const KaiF32SgemmKernel& sgemm_gemm = GetKleidiAISGemmUKernel();
+-const KaiF32SgemvKernel& sgemm_gemv = GetKleidiAISGemvUKernel();
++const KaiF32SgemmKernel& sgemm_gemm() {
++    static const KaiF32SgemmKernel& kernel = GetKleidiAISGemmUKernel();
++    return kernel;
++}
++const KaiF32SgemvKernel& sgemm_gemv() {
++    static const KaiF32SgemvKernel& kernel = GetKleidiAISGemvUKernel();
++    return kernel;
++}
+ 
+ // Avoid vector setup overhead on tiny outputs.
+ constexpr size_t kAlphaBetaNeonMinElements = 32;
+@@ -287,7 +293,7 @@ ArmKleidiAI::MlasGemvBatch(
+             g_kai_tls.output_tile.resize(rhs_shape);
+ 
+             // Run specialized 1xN-by-K kernel
+-            sgemm_gemv.ukernel.run_matmul(
++            sgemm_gemv().ukernel.run_matmul(
+                 1,                                          // Value of 1 for M == 1 and this value represents N when N == 1 case
+                 rhs_shape,                                  // Value of N for M == 1 and this value is M when N == 1
+                 K,                                          // K
+@@ -410,9 +416,9 @@ Return Value:
+ 
+     if (TransA == CblasNoTrans) {
+ 
+-        const size_t nr = sgemm_gemm.ukernel.get_nr();
+-        const size_t kr = sgemm_gemm.ukernel.get_kr();
+-        const size_t sr = sgemm_gemm.ukernel.get_sr();
++        const size_t nr = sgemm_gemm().ukernel.get_nr();
++        const size_t kr = sgemm_gemm().ukernel.get_kr();
++        const size_t sr = sgemm_gemm().ukernel.get_sr();
+ 
+         // Ensure size and zero the used span.
+         g_kai_tls.bias_zero.resize(N, 0.0f);
+@@ -524,17 +530,17 @@ Return Value:
+         }
+     }
+ 
+-    size_t m_step = sgemm_gemm.ukernel.get_m_step();
+-    size_t n_step = sgemm_gemm.ukernel.get_n_step();
++    size_t m_step = sgemm_gemm().ukernel.get_m_step();
++    size_t n_step = sgemm_gemm().ukernel.get_n_step();
+ 
+     if ((M < m_step || N < n_step) && !Data->BIsPacked) {
+         // Fallback to MLAS
+         return false;
+     }
+ 
+-    const size_t mr = sgemm_gemm.ukernel.get_mr();
+-    const size_t kr = sgemm_gemm.ukernel.get_kr();
+-    const size_t sr = sgemm_gemm.ukernel.get_sr();
++    const size_t mr = sgemm_gemm().ukernel.get_mr();
++    const size_t kr = sgemm_gemm().ukernel.get_kr();
++    const size_t sr = sgemm_gemm().ukernel.get_sr();
+ 
+     size_t LhsPackedStride = 0;
+     std::byte* LhsPackedData = nullptr;
+@@ -628,7 +634,7 @@ Return Value:
+         ptrdiff_t NIdx = (tid % (dim[1] * dim[2])) % dim[2];
+ 
+         // Get rhs tile, B
+-        const size_t rhs_packed_offset = sgemm_gemm.ukernel.get_rhs_packed_offset(NIdx * n_step, K);
++        const size_t rhs_packed_offset = sgemm_gemm().ukernel.get_rhs_packed_offset(NIdx * n_step, K);
+ 
+         const std::byte* B_base = Data[0].BIsPacked
+             ? reinterpret_cast<const std::byte*>(Data[BIdx].B)
+@@ -636,7 +642,7 @@ Return Value:
+         auto BTile = reinterpret_cast<const void*>(B_base + rhs_packed_offset);
+ 
+         // Get lhs tile, A
+-        const size_t lhs_packed_offset = sgemm_gemm.ukernel.get_lhs_packed_offset(MIdx * m_step, K);
++        const size_t lhs_packed_offset = sgemm_gemm().ukernel.get_lhs_packed_offset(MIdx * m_step, K);
+ 
+         const std::byte* A_base = LhsPackedData + LhsPackedStride * BIdx;
+         auto ATile = reinterpret_cast<const float*>(A_base + lhs_packed_offset);
+@@ -677,9 +683,9 @@ Return Value:
+             out_row_stride_bytes = TileSizeN * sizeof(float);
+         }
+ 
+-        KLEIDIAI_KERNEL_LOG(sgemm_gemm.name
++        KLEIDIAI_KERNEL_LOG(sgemm_gemm().name
+                             << " M=" << TileSizeM << " N=" << TileSizeN << " K=" << K);
+-        sgemm_gemm.ukernel.run_matmul(
++        sgemm_gemm().ukernel.run_matmul(
+             TileSizeM,
+             TileSizeN,
+             K,
+diff --git a/onnxruntime/core/mlas/lib/mlasi.h b/onnxruntime/core/mlas/lib/mlasi.h
+index 7e8c5e9..bb3896e 100644
+--- a/onnxruntime/core/mlas/lib/mlasi.h
++++ b/onnxruntime/core/mlas/lib/mlasi.h
+@@ -1452,7 +1452,7 @@ extern const MLAS_QNBIT_LUT_GEMM_DISPATCH MlasLutGenKernelAvx2;
+ // Rotary embedding dispatch structure.
+ //
+ struct MLAS_ROPE_DISPATCH;
+-extern const MLAS_ROPE_DISPATCH MlasRopeDispatchNeon;
++const MLAS_ROPE_DISPATCH& GetMlasRopeDispatchNeon();
+ extern const MLAS_ROPE_DISPATCH MlasRopeDispatchAvx2;
+ 
+ #if defined(MLAS_TARGET_RISCV64) && defined(MLAS_USE_RVV)
+@@ -1467,11 +1467,11 @@ extern const MLAS_HGEMM_DISPATCH MlasHGemmDispatchNeon;
+ 
+ // softmax dispatch structure
+ struct MLAS_SOFTMAX_DISPATCH;
+-extern const MLAS_SOFTMAX_DISPATCH MlasSoftmaxDispatchNeon;
++const MLAS_SOFTMAX_DISPATCH& GetMlasSoftmaxDispatchNeon();
+ 
+ // eltwise dispatch structure
+ struct MLAS_ELTWISE_DISPATCH;
+-extern const MLAS_ELTWISE_DISPATCH MlasEltwiseDispatchNeon;
++const MLAS_ELTWISE_DISPATCH& GetMlasEltwiseDispatchNeon();
+ 
+ //
+ // Quantized KV-cache GEMM dispatch structure (QKGemm / SVGemm).
+diff --git a/onnxruntime/core/mlas/lib/platform.cpp b/onnxruntime/core/mlas/lib/platform.cpp
+index 54d4744..0501ced 100644
+--- a/onnxruntime/core/mlas/lib/platform.cpp
++++ b/onnxruntime/core/mlas/lib/platform.cpp
+@@ -649,10 +649,10 @@ Return Value:
+     this->SymmQgemmDispatch = &MlasSymmQgemmS8DispatchNeon;
+     this->ConvSymU8S8Dispatch = &MlasConvSymU8DispatchNeon;
+     this->ConvSymS8S8Dispatch = &MlasConvSymS8DispatchNeon;
+-    this->RopeDispatch = &MlasRopeDispatchNeon;
++    this->RopeDispatch = &GetMlasRopeDispatchNeon();
+     this->HGemmDispatch = &MlasHGemmDispatchNeon;
+-    this->SoftmaxDispatch = &MlasSoftmaxDispatchNeon;
+-    this->EltwiseDispatch = &MlasEltwiseDispatchNeon;
++    this->SoftmaxDispatch = &GetMlasSoftmaxDispatchNeon();
++    this->EltwiseDispatch = &GetMlasEltwiseDispatchNeon();
+     this->KVQuantGemmDispatch = &MlasKVQuantGemmDispatchNeon;
+ 
+ #if defined(MLAS_USE_ARM_NEON_NCHWC)
+@@ -716,7 +716,7 @@ Return Value:
+         this->MlasConvSGemmRouteOverride = ArmKleidiAI::MlasConvSGemmRoute;
+ #if defined(__aarch64__) && defined(__linux__)
+         // Currently only an SME2 variant of SBGEMM exists
+-        if (ArmKleidiAI::UseSME2){
++        if (ArmKleidiAI::UseSME2()){
+             this->MlasSBGemmBatchOverride = ArmKleidiAI::MlasSBGemmBatch;
+             this->MlasSBGemmPackBSizeOverride = ArmKleidiAI::MlasSBGemmPackBSize;
+             this->MlasSBGemmPackBOverride = ArmKleidiAI::MlasSBGemmPackB;
+diff --git a/onnxruntime/core/mlas/lib/qgemm.cpp b/onnxruntime/core/mlas/lib/qgemm.cpp
+index c3f35c1..9f47a43 100644
+--- a/onnxruntime/core/mlas/lib/qgemm.cpp
++++ b/onnxruntime/core/mlas/lib/qgemm.cpp
+@@ -206,7 +206,7 @@ MLASCALL
+ MlasIsDynamicQGemmAvailable(const MLAS_BACKEND_KERNEL_SELECTOR_CONFIG* BackendKernelSelectorConfig)
+ {
+ #if defined(USE_KLEIDIAI)
+-  return (ArmKleidiAI::UseSME2 || ArmKleidiAI::UseSME) &&
++  return (ArmKleidiAI::UseSME2() || ArmKleidiAI::UseSME()) &&
+          (!BackendKernelSelectorConfig || BackendKernelSelectorConfig->use_kleidiai);
+ #else
+   MLAS_UNREFERENCED_PARAMETER(BackendKernelSelectorConfig);
+diff --git a/onnxruntime/core/mlas/lib/rotary_embedding_kernel_neon.cpp b/onnxruntime/core/mlas/lib/rotary_embedding_kernel_neon.cpp
+index e59a95c..b24eb27 100644
+--- a/onnxruntime/core/mlas/lib/rotary_embedding_kernel_neon.cpp
++++ b/onnxruntime/core/mlas/lib/rotary_embedding_kernel_neon.cpp
+@@ -20,7 +20,8 @@ Abstract:
+ //
+ // Kernel dispatch structure definition.
+ //
+-const MLAS_ROPE_DISPATCH MlasRopeDispatchNeon = []() {
++const MLAS_ROPE_DISPATCH& GetMlasRopeDispatchNeon() {
++    static const MLAS_ROPE_DISPATCH dispatch = []() {
+     MLAS_ROPE_DISPATCH d;
+ 
+ #if defined(MLAS_F16VEC_INTRINSICS_SUPPORTED) && defined(MLAS_TARGET_ARM64)
+@@ -29,4 +30,6 @@ const MLAS_ROPE_DISPATCH MlasRopeDispatchNeon = []() {
+     }
+ #endif
+     return d;
+-}();
++    }();
++    return dispatch;
++}
+diff --git a/onnxruntime/core/mlas/lib/softmax_kernel_neon.cpp b/onnxruntime/core/mlas/lib/softmax_kernel_neon.cpp
+index 77ad4b9..4f95f04 100644
+--- a/onnxruntime/core/mlas/lib/softmax_kernel_neon.cpp
++++ b/onnxruntime/core/mlas/lib/softmax_kernel_neon.cpp
+@@ -20,7 +20,8 @@ Abstract:
+ //
+ // Kernel dispatch structure definition.
+ //
+-const MLAS_SOFTMAX_DISPATCH MlasSoftmaxDispatchNeon = []() {
++const MLAS_SOFTMAX_DISPATCH& GetMlasSoftmaxDispatchNeon() {
++    static const MLAS_SOFTMAX_DISPATCH dispatch = []() {
+     MLAS_SOFTMAX_DISPATCH d;
+ 
+ #if defined(MLAS_F16VEC_INTRINSICS_SUPPORTED) && defined(MLAS_TARGET_ARM64)
+@@ -35,4 +36,6 @@ const MLAS_SOFTMAX_DISPATCH MlasSoftmaxDispatchNeon = []() {
+     }
+ #endif
+     return d;
+-}();
++    }();
++    return dispatch;
++}
