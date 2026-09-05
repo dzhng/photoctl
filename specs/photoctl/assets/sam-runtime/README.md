@@ -45,3 +45,20 @@ Reproduce with `/usr/bin/time -l node apps/cli/dist/bin.js segment <id> --at <po
 linked fixture and pinned models, alternating sky `4000,600` and road `4400,3500` three times. Use an isolated cache and the
 fixture-volume mapping. The recorded runs observed native-boundary timings without changing operation results. This is an
 exact-allocation checkpoint, not full-command resource acceptance or photographic mask-quality acceptance.
+
+## Cache mapping ownership
+
+A cached coordinate mapping owns dimensions, never the source image. TypeScript's dimensions annotation does not remove
+runtime image properties: spreading the source copied its pixel-array reference into every cached encoder result. The
+dimension-only snapshot prevents that retention without changing normalization, projection, image hashing, or LRU policy.
+The regression passes a real image through native encoder preprocessing and verifies the mapping cannot carry its pixels.
+
+[Cache measurements](cache-memory.json) use distinct pixel buffers, not only distinct photo IDs. Full-resolution before/after
+probes both stopped after two requests at the unchanged 3 GB safety band: peaks were 3.872 GB and 3.369 GB, with the same exact
+mask hash. A separate 4000×2667 run completed ten requests through the eight-entry cache at 2.783 GB. That smaller-frame
+eviction check does **not** replace the failed full-resolution resource check. Reproduce with the runtime probe's dimensions,
+run count, and `--stop-on-memory-limit` options; defaults retain the original sixteen-request 1024-square benchmark.
+
+The report also preserves the rejected delayed-session experiment: constructing sessions only after encoder preprocessing
+increased RSS in both cold CLI comparisons. No such lifecycle change is implemented. Removing cached pixel references does
+not remove the command's live image closure, the resampler snapshot, or allocator residency; full-command G6 remains open.

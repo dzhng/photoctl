@@ -35,7 +35,7 @@ export function sam2Letterbox(source: Dimensions): Sam2Letterbox {
   const scaleX = resized.w / source.w;
   const scaleY = resized.h / source.h;
   return {
-    source: { ...source },
+    source: { w: source.w, h: source.h },
     model: { w: SAM2_INPUT_SIZE, h: SAM2_INPUT_SIZE },
     resized,
     scale,

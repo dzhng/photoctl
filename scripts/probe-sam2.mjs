@@ -7,19 +7,29 @@ import { parseArgs } from "node:util";
 import { createSam2OnnxRuntime } from "../packages/img/dist/index.js";
 import { Sam2Segmenter } from "../packages/render/dist/sam2-runtime.js";
 
+/* eslint-disable no-await-in-loop -- sequential requests measure bounded inference and cache memory. */
+
 // Explicit model paths permit checking a candidate before publishing its release manifest.
 // Synthetic input measures the segmenter, not image quality or whole-command memory.
-const { values } = parseArgs({ options: { models: { type: "string" } } });
+const { values } = parseArgs({
+  options: {
+    models: { type: "string" },
+    width: { type: "string", default: "1024" },
+    height: { type: "string", default: "1024" },
+    runs: { type: "string", default: "16" },
+    "stop-on-memory-limit": { type: "boolean", default: false },
+  },
+});
 assert(values.models, "Usage: node scripts/probe-sam2.mjs --models <ONNX directory>");
+const width = Number(values.width);
+const height = Number(values.height);
+const runs = Number(values.runs);
+assert([width, height, runs].every((value) => Number.isSafeInteger(value) && value > 0));
 const encoder = await readFile(join(values.models, "encoder.onnx"));
 const decoder = await readFile(join(values.models, "decoder.onnx"));
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const runtime = createSam2OnnxRuntime(encoder, decoder);
-const image = {
-  w: 1024,
-  h: 1024,
-  data: Float32Array.from({ length: 3 * 1024 * 1024 }, (_, i) => (Math.sin(i * 0.001) + 1) / 2),
-};
+const limits = { encodeMs: 4000, maxRssBytes: 3_000_000_000 };
 const samples = [];
 let maskHash;
 let encodeMs;
@@ -38,14 +48,23 @@ const segmenter = new Sam2Segmenter(async () => ({
     return result;
   },
 }));
-for (let run = 0; run < 16; run += 1) {
+for (let run = 0; run < runs; run += 1) {
+  // Distinct photo buffers expose accidental full-image retention in cached mappings.
+  const image = {
+    w: width,
+    h: height,
+    data: Float32Array.from(
+      { length: 3 * width * height },
+      (_, i) => (Math.sin(i * 0.001) + 1) / 2,
+    ),
+  };
   encodeMs = undefined;
   decodeMs = undefined;
   const mask = await segmenter.segment({
     photoId: `probe-${run}`,
     tier: "develop",
     image,
-    points: [[512, 512]],
+    points: [[width / 2, height / 2]],
   });
   assert.equal(mask.w, image.w);
   assert.equal(mask.h, image.h);
@@ -63,9 +82,10 @@ for (let run = 0; run < 16; run += 1) {
   maskHash ??= currentHash;
   assert.equal(currentHash, maskHash, "repeated inference must preserve exact masks");
   samples.push({ run, encodeMs, decodeMs, rssBytes: process.memoryUsage().rss });
+  if (values["stop-on-memory-limit"] && process.resourceUsage().maxRSS * 1024 > limits.maxRssBytes)
+    break;
 }
 const maxRssBytes = process.resourceUsage().maxRSS * 1024;
-const limits = { encodeMs: 4000, maxRssBytes: 3_000_000_000 };
 const passed =
   samples.every((sample) => sample.encodeMs <= limits.encodeMs) &&
   maxRssBytes <= limits.maxRssBytes;
@@ -76,6 +96,7 @@ console.log(
       platform: process.platform,
       arch: process.arch,
       modelHashes: { encoder: hash(encoder), decoder: hash(decoder) },
+      dimensions: { w: width, h: height },
       qualityVerified: false,
       samples,
       maxRssBytes,

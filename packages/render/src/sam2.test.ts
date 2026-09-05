@@ -1,5 +1,20 @@
 import { expect, test, vi } from "vitest";
+import { resamplePixels } from "@photoctl/img";
 import { sam2Letterbox, prepareSam2EncoderInput } from "./sam2.js";
+
+test("cached encoder mapping does not retain the source image's pixel buffer", async () => {
+  // Production passes the image itself at the Dimensions boundary; its runtime
+  // properties are not stripped by that narrower TypeScript annotation.
+  const image = { w: 4, h: 2, data: new Float32Array(4 * 2 * 3).fill(0.5) };
+  const prepared = await prepareSam2EncoderInput(image.data, image, resamplePixels);
+  expect(prepared.mapping.source).toEqual({ w: 4, h: 2 });
+  image.w = 8;
+  image.data.fill(1);
+  expect(prepared.mapping.source).toEqual({ w: 4, h: 2 });
+  expect(prepared.mapping.toModel([2, 1])).toEqual([512, 512]);
+  expect(prepared.mapping.toBase([512, 512])).toEqual([2, 1]);
+  expect(prepared.data[256 * 1024]).toBeCloseTo((0.5 - 0.485) / 0.229, 5);
+});
 
 test("SAM coordinates share the centered 1024 letterbox used for encoder pixels", async () => {
   const mapping = sam2Letterbox({ w: 4, h: 2 });
