@@ -23,8 +23,10 @@ photographic result; its mild microtexture attenuation remains the visible trade
 reduction is accepted**, while the separate local-contrast checkpoint remains rejected on its own
 evidence.
 
-The optimized native build processed this crop in 172 ms (luminance), 193 ms (color), and 364 ms
-(combined). Scratch storage is only four delayed RGB rows plus the existing owned input buffer.
+The optimized native build processed this crop in 12 ms (luminance), 12 ms (color), and 21 ms
+(combined). It caches component data for at most 22 source rows and computes at most 16 output rows
+at a time across the available cores, so scratch storage remains proportional to image width rather
+than image height.
 
 Evidence hashes:
 

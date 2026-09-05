@@ -239,7 +239,7 @@ tradeoff rather than hidden.
 
 - **2026-09-05 — 8d2 noise reduction.** Luminance and chroma NLM run in Rust after sharpen, using
   separate Rec.2020 luminance and zero-luminance chroma representations. A 3×3 comparison patch and
-  5×5 search window stream through delayed rows, so scratch memory is bounded by image width and
-  neighborhood radius rather than another full frame. Zero controls preserve canonical bytes exactly;
+  5×5 search window use rolling patch sums over fixed row blocks, so scratch memory is bounded by
+  image width and a constant block size rather than another full frame. Zero controls preserve canonical bytes exactly;
   nonzero controls remain deterministic across the in-memory and canonical-TIFF paths. Needs David:
   no for the seam; the accepted G8 tuning remains reversible operator data.

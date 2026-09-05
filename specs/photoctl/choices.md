@@ -1368,22 +1368,23 @@
 
 ## Sound
 
-### Slice 08d2 — NLM streams delayed rows instead of allocating a denoised frame
+### Slice 08d2 — NLM uses bounded row blocks instead of allocating a denoised frame
 
 - **When:** Slice 08d2 noise-reduction implementation, 2026-09-05.
 - **The choice:** Non-local means (NLM) compares each pixel's small neighborhood with nearby
   neighborhoods and averages the most similar ones. A straightforward implementation writes every
-  result into a second full-size image. This implementation instead holds only the few completed rows
-  whose source neighborhoods are still needed; once a row can no longer affect a future comparison,
-  its result replaces that input row. The existing asynchronous native call still owns the one input
-  buffer required to keep JavaScript memory safe.
+  result into a second full-size image. This implementation instead caches a fixed block plus the few
+  source rows whose neighborhoods remain reachable, computes the block across available cores, and
+  then replaces those input rows. The existing asynchronous native call still owns the one input buffer
+  required to keep JavaScript memory safe.
 - **The gap:** The plan required deterministic bounded-memory NLM but did not choose the streaming
   strategy or exact scratch-space bound.
 - **The reach:** A full-resolution RAW uses scratch space proportional to image width and the fixed
   neighborhood radius, not image height. Future spatial operators can use the same safe-overwrite
   rule only when they prove how long each source row remains live.
-- **Verdict:** **Sound.** The overwrite delay follows the search radius plus patch radius, and public
-  artifact/in-memory parity proves that storage form does not change pixels.
+- **Verdict:** **Sound.** The cached margin follows the search radius plus patch radius, the fixed
+  block allows parallel work without memory growth by image height, and public artifact/in-memory
+  parity proves that storage form does not change pixels.
 - **Confidence:** High.
 
 ### Slice 08d2 — Luminance NLM precedes chroma NLM in one fixed native order
