@@ -213,6 +213,7 @@ export interface NativeDevelopParameters {
     | "silvertone"
     | "noir";
   filterStrength?: number;
+  vignette?: number;
 }
 
 export class NativeImageUnavailableError extends Error {}

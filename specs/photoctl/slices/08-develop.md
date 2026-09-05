@@ -266,6 +266,15 @@ artifact dimensions; command tests pin base/view round trips and honest partial/
   monochrome grain controls, then named filter data can grade the result. The in-memory and canonical-TIFF
   routes share the same owner. The [G10 checkpoint](../assets/gates/G10-filters-bw.md) accepted both a
   warm color treatment and a grain-bearing monochrome treatment after fresh review. Needs David: the
-  recipe constants and B&W tuning remain reversible product data; the full gold exam still cannot use
-  the people preset because its pre-existing vignette operator is outside this bounded pass and remains
-  unimplemented.
+  recipe constants and B&W tuning remain reversible product data.
+
+- **2026-09-05 — Slice 08 gold-exam closeout.** Vignette is now a deterministic radial scene-linear
+  gain in the existing native finishing owner, after local operators and before B&W, filters, and
+  geometry. Zero is an exact canonical no-op; negative values darken the perimeter while preserving
+  the center, and positive values reverse that gain. The keyless fixture gold exam now develops its
+  first three imports with the shipped people preset before exporting all ten, and verifies those
+  three highlight p98 values fall below their neutral sources. The production A7C II comparison is
+  recorded in the [vignette closeout checkpoint](../assets/gates/G10-vignette-gold.md). Needs David:
+  no; the radial falloff and full-scale gain are delegated operator constants. This bounded
+  correction does not implement the separately declared `selective_color` operator, so Slice 08
+  remains open even though its keyless fixture gold exam is green.

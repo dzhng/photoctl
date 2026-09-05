@@ -70,6 +70,7 @@ pub(crate) struct Develop {
     pub sharpen: f32,
     pub noise_reduction_luminance: f32,
     pub noise_reduction_color: f32,
+    pub vignette: f32,
     pub black_and_white: Option<BlackAndWhiteParameters>,
     pub filter: Option<FilterParameters>,
 }
@@ -124,11 +125,19 @@ pub(crate) fn apply_develop_artifact_in_place(
     let local = LocalDevelop::from(&parameters);
     let black_and_white = parameters.black_and_white;
     let filter = parameters.filter.clone();
+    let vignette = parameters.vignette;
     apply_global_artifact_in_place(data, pixel_offset, pixel_bytes, width, height, parameters)?;
     if !local.is_identity() {
         apply_local_bytes_in_place(&mut data[pixel_offset..], width, height, local)?;
     }
-    finishing::apply_bytes(&mut data[pixel_offset..], width, black_and_white, filter)?;
+    finishing::apply_bytes(
+        &mut data[pixel_offset..],
+        width,
+        height,
+        vignette,
+        black_and_white,
+        filter,
+    )?;
     Ok(())
 }
 
@@ -194,9 +203,10 @@ pub(crate) fn apply_develop_in_place(
     let local = LocalDevelop::from(&parameters);
     let black_and_white = parameters.black_and_white;
     let filter = parameters.filter.clone();
+    let vignette = parameters.vignette;
     apply_global_in_place(data, parameters)?;
     apply_local_in_place(data, width, height, local)?;
-    finishing::apply_in_place(data, width, black_and_white, filter)
+    finishing::apply_in_place(data, width, height, vignette, black_and_white, filter)
 }
 
 #[derive(Clone, Copy)]

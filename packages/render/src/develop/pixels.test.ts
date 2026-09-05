@@ -616,6 +616,57 @@ test("filters and B&W cross the canonical seam before geometry", async () => {
   expect(decoded.data).toEqual(combined.data);
 });
 
+test("vignette applies a deterministic radial scene-linear gain before geometry", async () => {
+  const source = {
+    w: 5,
+    h: 5,
+    data: new Float32Array(5 * 5 * 3).fill(0.5),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const darkened = await applyDevelop(source, { vignette: -100 });
+  const lightened = await applyDevelop(source, { vignette: 100 });
+  const repeated = await applyDevelop(source, { vignette: -100 });
+  const combined = await applyDevelop(source, { vignette: -100, rotate: 90 });
+  const sequential = await applyDevelop(darkened, { rotate: 90 });
+  const artifact = await applyDevelopArtifact(
+    await encodeArtifactLinearTiff(source),
+    { w: source.w, h: source.h },
+    { vignette: -100 },
+  );
+  const decoded = await decodeArtifactLinearTiff(artifact.bytes);
+  const center = (2 * source.w + 2) * 3;
+
+  expect(darkened.data).toEqual(repeated.data);
+  expect(darkened.data[center]).toBeCloseTo(source.data[center]!, 6);
+  expect(darkened.data[0]).toBeLessThan(source.data[0]!);
+  expect(lightened.data[0]).toBeGreaterThan(source.data[0]!);
+  expect(darkened.data[3]).toBeGreaterThan(darkened.data[0]!);
+  expect(decoded.data).toEqual(darkened.data);
+  expect(combined.data).toEqual(sequential.data);
+});
+
+test("zero vignette is an exact canonical no-op", async () => {
+  const source = {
+    w: 2,
+    h: 2,
+    data: new Float32Array([-0.1, 0.2, 1.4, 0.1, 0.11, 0.12, 0.8, 0.4, 0.2, 1.2, 1.1, 1]),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  };
+  const input = await encodeArtifactLinearTiff(source);
+
+  const output = await applyDevelopArtifact(input, { w: source.w, h: source.h }, { vignette: 0 });
+
+  expect(output.bytes).toEqual(input);
+});
+
 test("zero noise reduction is an exact canonical no-op", async () => {
   const source = {
     w: 3,

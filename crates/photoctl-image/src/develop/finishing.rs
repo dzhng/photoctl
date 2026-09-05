@@ -26,13 +26,15 @@ struct FilterRecipe {
 pub(super) fn apply_bytes(
     data: &mut [u8],
     width: usize,
+    height: usize,
+    vignette: f32,
     black_and_white: Option<BlackAndWhiteParameters>,
     filter: Option<FilterParameters>,
 ) -> Result<(), String> {
-    if black_and_white.is_none() && filter.is_none() {
+    if vignette == 0.0 && black_and_white.is_none() && filter.is_none() {
         return Ok(());
     }
-    apply(data, width, black_and_white, filter)?;
+    apply(data, width, height, vignette, black_and_white, filter)?;
     if data
         .chunks_exact(4)
         .any(|sample| !f32::from_le_bytes(sample.try_into().unwrap()).is_finite())
@@ -45,13 +47,15 @@ pub(super) fn apply_bytes(
 pub(super) fn apply_in_place(
     data: &mut [f32],
     width: usize,
+    height: usize,
+    vignette: f32,
     black_and_white: Option<BlackAndWhiteParameters>,
     filter: Option<FilterParameters>,
 ) -> Result<(), String> {
-    if black_and_white.is_none() && filter.is_none() {
+    if vignette == 0.0 && black_and_white.is_none() && filter.is_none() {
         return Ok(());
     }
-    apply(data, width, black_and_white, filter)?;
+    apply(data, width, height, vignette, black_and_white, filter)?;
     if data.iter().any(|sample| !sample.is_finite()) {
         return Err("finishing develop produced a non-finite sample".to_owned());
     }
@@ -61,6 +65,8 @@ pub(super) fn apply_in_place(
 fn apply<S: SampleStorage + ?Sized>(
     data: &mut S,
     width: usize,
+    height: usize,
+    vignette: f32,
     black_and_white: Option<BlackAndWhiteParameters>,
     filter: Option<FilterParameters>,
 ) -> Result<(), String> {
@@ -78,6 +84,10 @@ fn apply<S: SampleStorage + ?Sized>(
             data.read_sample(index * 3 + 1),
             data.read_sample(index * 3 + 2),
         ];
+        if vignette != 0.0 {
+            let gain = vignette_gain(index % width, index / width, width, height, vignette);
+            pixel = pixel.map(|sample| sample * gain);
+        }
         if let Some(parameters) = black_and_white {
             pixel = apply_black_and_white(pixel, index % width, index / width, parameters);
         }
@@ -94,6 +104,21 @@ fn apply<S: SampleStorage + ?Sized>(
         }
     }
     Ok(())
+}
+
+fn vignette_gain(x: usize, y: usize, width: usize, height: usize, amount: f32) -> f32 {
+    let axis = |position: usize, extent: usize| {
+        if extent <= 1 {
+            0.0
+        } else {
+            position as f32 * 2.0 / (extent - 1) as f32 - 1.0
+        }
+    };
+    let x = axis(x, width);
+    let y = axis(y, height);
+    let radius = ((x * x + y * y) * 0.5).sqrt().min(1.0);
+    let edge_weight = smoothstep(0.25, 1.0, radius);
+    (amount / 100.0 * edge_weight).exp2()
 }
 
 fn recipe(name: &str) -> Result<FilterRecipe, String> {

@@ -41,6 +41,7 @@ node -e '
 ids=()
 while IFS= read -r id; do ids+=("$id"); done <"$scratch/ids"
 photoctl rate "${ids[@]}" --stars 5 >"$scratch/rate.json"
+photoctl develop "${ids[@]:0:3}" --preset people >"$scratch/develop.json"
 photoctl export "${ids[@]}" --to "$output_dir" --preset delivery >"$scratch/export.json"
 
 node -e '
@@ -55,6 +56,7 @@ node -e '
     import: read("import"),
     list: read("list"),
     rate: read("rate"),
+    develop: read("develop"),
     export: read("export"),
   };
   fs.writeFileSync(path.join(output, "gold-exam-report.json"), `${JSON.stringify(report, null, 2)}\n`);

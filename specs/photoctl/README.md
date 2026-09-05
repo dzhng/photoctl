@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08d3, provider slices 09a–09c, and layer slices 10a–10c1 are
+*Last updated: 2026-09-05. Status: slices 00–07, render-DAG slices 08a1–08d4, provider slices 09a–09c, and layer slices 10a–10c1 are
 implemented.
 Commands share one persistent daemon library handle with an exact-row contention verdict; the CIRAW seam produces
 deterministic linear Rec.2020 pixels on macOS, the portable LibRaw seam produces AHD camera-space pixels,
@@ -47,8 +47,9 @@ point and follow it exactly. Do not re-decide anything in the original decision 
 Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rules"; if the code forces a deviation, append it to
 "Implementation notes" (plan said / code revealed / call made / needs David?) and keep going.
 
-- **Active wave:** slice 08's vignette/gold-exam correction runs beside 10c2's now-unblocked stale-state, vacancy, and move
-  integration. Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
+- **Active wave:** slice 08's keyless fixture gold exam is green; its declared selective-color
+  operator remains open while 10c2 implements stale-state, vacancy, and move integration.
+  Slice 09c supplies schema v8, explicit-consent backfill, and hybrid search;
   its live multimodal request remains provisional until the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
   does not block deterministic work. With-key work (09b smoke, 12 pre-gate) waits on David's Gateway key;
@@ -69,7 +70,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 geometry · [x] 8d4 filters/B&W · gold exam remains open — `slices/08-develop.md`
+- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 geometry · [x] 8d4 filters/B&W · [x] keyless fixture gold exam · selective color remains open — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [ ] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [ ] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`

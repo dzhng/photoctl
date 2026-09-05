@@ -34,6 +34,7 @@ const IMPLEMENTED_KEYS = new Set([
   "noise_reduction",
   "bw",
   "filter",
+  "vignette",
   "crop",
   "rotate",
   "straighten_deg",
@@ -188,5 +189,6 @@ function nativeParameters(parameters: DevelopDict): NativeDevelopParameters {
     bwGrain: parameters.bw?.grain,
     filterName: parameters.filter?.name,
     filterStrength: parameters.filter?.strength,
+    vignette: parameters.vignette,
   };
 }

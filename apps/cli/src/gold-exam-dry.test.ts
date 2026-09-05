@@ -9,7 +9,7 @@ import { openLibrary } from "@photoctl/library";
 
 const execute = promisify(execFile);
 
-test("the keyless gold exam imports, lists, rates, exports, and reports ten photos", async () => {
+test("the keyless gold exam develops three people presets before exporting ten photos", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-gold-dry-"));
   const source = join(directory, "source");
   const existing = join(directory, "existing");
@@ -19,20 +19,23 @@ test("the keyless gold exam imports, lists, rates, exports, and reports ten phot
   await Promise.all([mkdir(source), mkdir(existing)]);
   try {
     await Promise.all(
-      Array.from(
-        { length: 10 },
-        async (_, index) =>
-          await sharp({
-            create: {
-              width: 120 + index,
-              height: 80,
-              channels: 3,
-              background: { r: 20 * index, g: 100, b: 180 },
-            },
-          })
-            .jpeg()
-            .toFile(join(source, `frame-${String(index + 1).padStart(2, "0")}.jpg`)),
-      ),
+      Array.from({ length: 10 }, async (_, index) => {
+        const width = 120 + index;
+        const height = 80;
+        const pixels = Buffer.alloc(width * height * 3);
+        for (let y = 0; y < height; y += 1) {
+          for (let x = 0; x < width; x += 1) {
+            const offset = (y * width + x) * 3;
+            const value = Math.round(40 + (215 * x) / (width - 1));
+            pixels[offset] = value;
+            pixels[offset + 1] = Math.max(0, value - 12);
+            pixels[offset + 2] = Math.max(0, value - 24);
+          }
+        }
+        await sharp(pixels, { raw: { width, height, channels: 3 } })
+          .jpeg({ quality: 95 })
+          .toFile(join(source, `frame-${String(index + 1).padStart(2, "0")}.jpg`));
+      }),
     );
 
     const env = {
@@ -74,6 +77,7 @@ test("the keyless gold exam imports, lists, rates, exports, and reports ten phot
       import: { data: { imported: number; ids: string[] } };
       list: { data: { rows: unknown[] } };
       rate: { summary: { ok: number } };
+      develop: { summary: { ok: number }; results: Array<{ id: string }> };
       export: {
         summary: { ok: number };
         results: Array<{ id: string; render_hash: string }>;
@@ -82,6 +86,10 @@ test("the keyless gold exam imports, lists, rates, exports, and reports ten phot
     expect(report.import.data.imported).toBe(10);
     expect(report.list.data.rows).toHaveLength(10);
     expect(report.rate.summary.ok).toBe(10);
+    expect(report.develop.summary.ok).toBe(3);
+    expect(report.develop.results.map((item) => item.id).toSorted()).toEqual(
+      report.import.data.ids.slice(0, 3).toSorted(),
+    );
     expect(report.export.summary.ok).toBe(10);
     expect(report.export.results.map((item) => item.id).toSorted()).toEqual(
       report.import.data.ids.toSorted(),
@@ -90,6 +98,16 @@ test("the keyless gold exam imports, lists, rates, exports, and reports ten phot
       true,
     );
     expect((await readdir(output)).filter((name) => name.endsWith(".jpg"))).toHaveLength(10);
+    const highlights = await Promise.all(
+      [1, 2, 3].map(async (index) => {
+        const name = `frame-${String(index).padStart(2, "0")}.jpg`;
+        return {
+          developed: await luminanceP98(join(output, name)),
+          neutral: await luminanceP98(join(source, name)),
+        };
+      }),
+    );
+    expect(highlights.every(({ developed, neutral }) => developed < neutral)).toBe(true);
     await expect(readFile(join(directory, "out", "wb", "export.html"), "utf8")).resolves.toContain(
       "10 delivery files",
     );
@@ -97,3 +115,13 @@ test("the keyless gold exam imports, lists, rates, exports, and reports ten phot
     await rm(directory, { recursive: true });
   }
 }, 60_000);
+
+async function luminanceP98(path: string): Promise<number> {
+  const { data } = await sharp(path).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const values: number[] = [];
+  for (let offset = 0; offset < data.length; offset += 3) {
+    values.push(0.2126 * data[offset]! + 0.7152 * data[offset + 1]! + 0.0722 * data[offset + 2]!);
+  }
+  values.sort((left, right) => left - right);
+  return values[Math.floor((values.length - 1) * 0.98)]!;
+}

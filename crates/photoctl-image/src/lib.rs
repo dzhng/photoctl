@@ -146,6 +146,7 @@ pub struct DevelopParameters {
     pub bw_grain: Option<f64>,
     pub filter_name: Option<String>,
     pub filter_strength: Option<f64>,
+    pub vignette: Option<f64>,
 }
 
 #[napi(object)]
@@ -329,6 +330,7 @@ fn develop_parameters(parameters: DevelopParameters) -> Develop {
         sharpen: parameters.sharpen.unwrap_or_default() as f32,
         noise_reduction_luminance: parameters.noise_reduction_luminance.unwrap_or_default() as f32,
         noise_reduction_color: parameters.noise_reduction_color.unwrap_or_default() as f32,
+        vignette: parameters.vignette.unwrap_or_default() as f32,
         black_and_white: parameters.bw_enabled.unwrap_or_default().then_some(
             develop::BlackAndWhiteParameters {
                 intensity: parameters.bw_intensity.unwrap_or_default() as f32,
