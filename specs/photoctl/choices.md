@@ -22,6 +22,22 @@
 
 ## Sound
 
+### Slice 14 — Source and installed CLI use the same editing journey
+
+- **When:** Packed full-feature journey integration, 2026-09-05.
+- **The choice:** A release install runs the same editing-and-preview scenario as a source build,
+  selecting only a different executable and working directory. The scenario keeps its direct catalog
+  inspection between CLI calls, so it runs without a persistent daemon. A separate unchanged ten-ARW
+  exam runs through the installed daemon. Copying the scenario into the release test would let the
+  two versions gradually test different behavior.
+- **The gap:** The plan required both installed-runtime coverage and the full editing journey but
+  did not prescribe how to share the existing lossless pixel and catalog checks.
+- **The reach:** New editing assertions automatically cover both runtimes. Installed daemon lifecycle
+  remains independently tested; the full-feature journey does not claim daemon coverage it lacks.
+- **Verdict:** **Sound.** One scenario owns the editing contract without weakening its lossless
+  oracle or dropping the existing daemon exam.
+- **Confidence:** High.
+
 ### Slice 12e1 — Selection intent and fill coverage are different graph values
 
 - **When:** Effective-mask integration, 2026-09-05.

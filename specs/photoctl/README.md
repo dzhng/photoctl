@@ -25,14 +25,17 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   bounded pixel-keyed encoder caching, base-coordinate prompts/masks, and crop/offline render projection.
   Finish the `wb masks` current-context report and run real-weight probes/G6 when verified export artifacts
   are available. A keyless runtime test does not prove model quality. See [Slice 11](slices/11-segment.md).
-- Slice 14 standalone packaging is integrated. Its optimized, clean-prefix install passed the ten-ARW
-  fixture gold exam. Finish the full-feature fake-generation packed journey and report artifacts, then
+- Slice 14 standalone packaging and its shared full-feature fake-generation journey are integrated.
+  Its optimized, clean-prefix install passed the ten-ARW fixture gold exam. Finish report artifacts, then
   real-drive acceptance. A fixture exam does not prove an unseen drive. See [Slice 14](slices/14-gold-exam-and-release.md).
 - Complete the still-unimplemented fill controls and outpaint canvas in [Slice 12](slices/12-fill.md),
   with fit/strength and input-size capping/`--full-res` implemented and reference/init controls still pending,
   then reconcile its photographic/live evidence and the separate
   prompt/control quality comparisons in [Slice 13](slices/13-generative-extras-and-markup.md).
   Keep actual missing prerequisites distinct from implementation still possible without them.
+- First resolve the active fill geometry regression: generated RGB and effective coverage must follow
+  later develop geometry and offline source tiers together. Derive binary support after projection.
+  The shared exact-execution projection is integrated; the correction remains in progress.
 - Before release, run the full integrated closeout gate once, audit the full requirements and choices
   ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
   optional and unspecified, rather than an implied requirement to invent an MCP product.
