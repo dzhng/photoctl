@@ -17,6 +17,10 @@ The following remaining requirements are independent of missing live credentials
   export, and undo operations coherent. Settle this geometry in a reviewable plan before coding;
   a larger returned provider image alone is not an outpaint implementation.
 
+The [outpaint subplan](12-outpaint.md) synthesizes the independent drafts and specifies the first
+shared-frame checkpoint. Its crop/layer-extent authoring checkpoint must be settled before canvas code;
+the initial-fill crop/offline defect remains the immediate dependency.
+
 Each pass follows red/green public behavior tests and the existing visual gates. Live polarity and
 photographic quality remain distinct evidence requirements after these controls work deterministically.
 

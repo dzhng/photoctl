@@ -51,3 +51,4 @@ The final adversarial inspection therefore asked:
 
 Verdict: accept the deterministic coverage and projection correction. Photographic edge continuity,
 irregular-subject quality, and live provider polarity remain separate open evidence gates.
+The non-blocking Preview review window ended without a changed verdict; the opened shots were closed.

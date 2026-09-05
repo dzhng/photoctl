@@ -20,7 +20,43 @@
   command or graph contracts.
 - **Confidence:** Low; product intent is clear, but the raw transport spelling is not evidenced yet.
 
+### Slice 12f plan — Expand the visible picture symmetrically
+
+- **When:** Outpaint planning checkpoint, 2026-09-06; not implemented yet.
+- **The choice:** After cropping and straightening a photo, `fill --outpaint --px 100` would add
+  100 pixels around the picture currently visible, without restoring the source content the crop
+  excluded. An aspect request would grow only the necessary axis, splitting the added pixels between
+  opposite edges. An odd pixel goes right or bottom so existing pixels never move by half a pixel.
+  Requesting the current aspect does nothing and makes no paid request. The alternatives are expanding
+  the uncropped original, anchoring growth at the top-left, or resampling to obtain perfect symmetry.
+- **The gap:** The original outpaint requirement did not select the expansion frame, anchor, or rounding.
+- **The reach:** These choices determine output dimensions and the meaning of repeated expansion.
+  Original-base coordinates and source dimensions stay unchanged; the graph must represent the visible
+  extent rather than make callers reinterpret stored positions.
+- **Verdict:** **Needs-user.** Provisionally expand the current visible picture and use integer centered
+  placement. The user has been asked; a different answer changes the planner before canvas authoring,
+  not existing photo records. Crop-after-outpaint and removal behavior remain separate design checkpoints.
+- **Confidence:** Medium.
+
 ## Sound
+
+### Slice 12f plan — Frame ownership precedes canvas growth
+
+- **When:** Outpaint planning checkpoint, 2026-09-06; implementation remains pending.
+- **The choice:** A rotated photo can have the same width and height as its original while its pixels
+  occupy different coordinates. The plan first makes render, preview, masks, and markup consume the
+  same graph-derived frame: dimensions plus the mapping from original coordinates to evaluated pixels.
+  Canvas growth then lands together with ordinary layer removal and undo; generation follows that
+  deterministic contract. The alternative is a special larger fill path whose preview and layer
+  lifecycle are repaired afterward.
+- **The gap:** The initial slice named outpaint but did not identify ownership across those consumers.
+- **The reach:** Exact execution history determines reduced-resolution sampling. Combined coordinate
+  matrices must not fuse the ordered pixel resampling stages that RGB and fractional mask coverage
+  share. Extent comes from immutable graph intent and active layers, never changed source dimensions
+  or a second mutable canvas-size table.
+- **Verdict:** **Sound.** This addresses the reproduced frame mismatch generally and makes each
+  checkpoint useful through existing user commands, without introducing a disposable outpaint path.
+- **Confidence:** High.
 
 ### Renderer corrections select new derived caches without deleting old work
 

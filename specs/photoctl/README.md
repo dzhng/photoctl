@@ -26,8 +26,9 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   effective coverage to its visible footprint so later uncrop cannot expose unintended edits.
   Later-frame re-evaluation and cache invalidation are already corrected. See [Slice 12](slices/12-fill.md).
 - Then finish reference/init controls and the outpaint canvas. Outpaint's independent drafts agree
-  that graph-derived frame ownership must replace per-consumer size reconstruction; settle crop and
-  removable-extent semantics in its plan before implementation. Fit/strength and capped/full-res inputs
+  that graph-derived frame ownership must replace per-consumer size reconstruction; follow the
+  [outpaint checkpoints](slices/12-outpaint.md), settling crop and removable-extent semantics before
+  canvas implementation. Fit/strength and capped/full-res inputs
   are implemented. Keep photographic/live evidence separate from these deterministic controls.
 - Slice 11 runtime and `wb masks` are integrated. The report explicitly selects highest-resolution
   cached current-develop context, not historical SAM input or last-shown source. Real weights and G6
