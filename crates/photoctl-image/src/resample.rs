@@ -1,5 +1,6 @@
+use crate::task_memory::TaskMemory;
 use napi::{
-    Error, Status, Task,
+    Env, Error, Status, Task,
     bindgen_prelude::{AsyncTask, Float32Array, Uint8Array, Uint16Array},
 };
 use napi_derive::napi;
@@ -164,6 +165,7 @@ pub fn resample_mask_region(
 
 #[napi]
 pub fn resample_pixels(
+    env: Env,
     data: Float32Array,
     source_width: u32,
     source_height: u32,
@@ -172,8 +174,11 @@ pub fn resample_pixels(
     output_height: u32,
     filter: String,
 ) -> napi::Result<AsyncTask<ResampleF32Task>> {
+    let data = data.to_vec();
+    let memory = TaskMemory::for_vec(env, &data)?;
     Ok(AsyncTask::new(ResampleF32Task {
-        data: data.to_vec(),
+        data,
+        memory,
         source_width,
         source_height,
         channels,
@@ -186,6 +191,7 @@ pub fn resample_pixels(
 #[napi]
 #[allow(clippy::too_many_arguments)]
 pub fn transform_pixels(
+    env: Env,
     data: Float32Array,
     source_width: u32,
     source_height: u32,
@@ -201,8 +207,11 @@ pub fn transform_pixels(
             "transform matrix must contain six values",
         )
     })?;
+    let data = data.to_vec();
+    let memory = TaskMemory::for_vec(env, &data)?;
     Ok(AsyncTask::new(TransformF32Task {
-        data: data.to_vec(),
+        data,
+        memory,
         source_width,
         source_height,
         channels,
@@ -229,6 +238,7 @@ fn invalid_argument(message: String) -> Error {
 
 pub struct ResampleF32Task {
     data: Vec<f32>,
+    memory: TaskMemory,
     source_width: u32,
     source_height: u32,
     channels: u32,
@@ -257,10 +267,19 @@ impl Task for ResampleF32Task {
     fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
         Ok(data.into())
     }
+
+    fn finally(self, _env: Env) -> napi::Result<()> {
+        // Output owns a distinct allocation. Keep input charged through output
+        // registration, then free it before discharging its task-owned guard.
+        drop(self.data);
+        drop(self.memory);
+        Ok(())
+    }
 }
 
 pub struct TransformF32Task {
     data: Vec<f32>,
+    memory: TaskMemory,
     source_width: u32,
     source_height: u32,
     channels: u32,
@@ -290,6 +309,12 @@ impl Task for TransformF32Task {
 
     fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
         Ok(data.into())
+    }
+
+    fn finally(self, _env: Env) -> napi::Result<()> {
+        drop(self.data);
+        drop(self.memory);
+        Ok(())
     }
 }
 

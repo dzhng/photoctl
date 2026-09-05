@@ -89,12 +89,18 @@ photographic quality acceptance.
 
 ## Native task allocation accounting
 
-Rust snapshots owned by asynchronous color tasks are separate from JavaScript backing stores. The task reports its actual
+Rust snapshots owned by asynchronous pixel tasks are separate from JavaScript backing stores. The task reports its actual
 vector capacity to Node's external-memory accounting until disposal or output transfer. Node already accounts returned
 typed-array backing stores, so the manual charge ends before that transfer. The shared guard stays on the task while its
 vector moves through worker computation; only the originating Node thread may adjust the counter. Task destruction covers
 completion errors that bypass `finally`. A pre-existing scheduler failure that leaks the entire task also retains its real
 allocation and charge; accounting does not claim to repair that platform leak or guarantee cleanup after process teardown.
+
+Resampling and affine transformation borrow their task-owned inputs to produce separate output allocations. Their input
+charge therefore survives output registration until task destruction frees the input; it is not transferred to the output.
+Only allocated input capacity is reported, not predicted worker buffers. [Resampler accounting evidence](resample-accounting.json)
+pins queued capacity, settled output-only accounting, rejection cleanup, and exact caller-snapshot pixels. Full-resolution
+RSS must be measured separately without forced GC; counter correctness does not close the repeated-cache red witness below.
 
 [Accounting evidence](task-accounting.json) separates two V8 metrics: Node 24's public `external` memory statistic reads
 backing-store bytes, while `--trace-gc-verbose` prints the manual external-memory counter separately. The consumer regression

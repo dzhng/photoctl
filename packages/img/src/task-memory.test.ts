@@ -1,7 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { expect, test } from "vitest";
+import { resamplePixels, transformPixels } from "./index.js";
 
-function measureColorMemory(mode: string, reject = false) {
+function measureTaskMemory(mode: string, reject = false) {
   // Node 24's process.memoryUsage().external reports backing stores only. Its
   // trace-gc-verbose "External memory reported" reads the actual manual counter.
   // Test-only GC prints that counter at controlled phases, never an RSS verdict.
@@ -14,15 +15,20 @@ function measureColorMemory(mode: string, reject = false) {
       "-e",
       `
           import { writeSync } from "node:fs";
-          import { developCameraFront, linearRec2020ToDisplaySrgb } from ${JSON.stringify(new URL("../dist/index.js", import.meta.url).href)};
-          const convert = ${JSON.stringify(mode)} === "display"
+          import { developCameraFront, linearRec2020ToDisplaySrgb, resamplePixels, transformPixels } from ${JSON.stringify(new URL("../dist/index.js", import.meta.url).href)};
+          const mode = ${JSON.stringify(mode)};
+          const convert = mode === "resample"
+            ? data => resamplePixels(data, 512, 512, 3, 256, 256, "bilinear")
+            : mode === "transform"
+            ? data => transformPixels(data, 512, 512, 3, 256, 256, [0.5,0,0,0.5,0,0], "bilinear")
+            : mode === "display"
             ? linearRec2020ToDisplaySrgb
             : async data => (await developCameraFront({
                 width: data.length / 3, height: 1, space: "camera", data,
                 whiteLevel: 1, blackLevel: 0,
                 camXyz: [1,0,0,0,1,0,0,0,1], asShotWb: [1,1,1], wbPreApplied: true,
               })).data;
-          const warm = await convert(new Float32Array([0.1, 0.2, 0.3]));
+          const warm = await convert(new Float32Array(mode === "resample" || mode === "transform" ? 3 * 262144 : 3).fill(0.25));
           const input = new Float32Array(3 * 262144 + (${reject} ? 256 : 0)).fill(0.25);
           const checkpoint = name => {
             writeSync(1, "PHASE " + name + "\\n");
@@ -42,7 +48,7 @@ function measureColorMemory(mode: string, reject = false) {
             output = await pending;
           }
           checkpoint("settled");
-          writeSync(1, "RESULT " + JSON.stringify({ bytes: input.byteLength, sample: output?.[0], warm: warm[0], errors }) + "\\n");
+          writeSync(1, "RESULT " + JSON.stringify({ bytes: input.byteLength, outputBytes: output?.byteLength, sample: output?.[0], warm: warm[0], errors }) + "\\n");
         `,
     ],
     { encoding: "utf8", timeout: 10_000 },
@@ -58,19 +64,19 @@ function measureColorMemory(mode: string, reject = false) {
     if (!(phase in measurements)) throw new Error(`Missing accounting phase ${phase}`);
   }
   const result = trace.match(/RESULT (.+)/);
-  if (!result) throw new Error("Missing color conversion result");
+  if (!result) throw new Error("Missing native task result");
   return { ...measurements, ...JSON.parse(result[1]) };
 }
 
 test.each(["camera", "display"])("%s pending color work reports its native snapshot", (mode) => {
-  const result = measureColorMemory(mode);
+  const result = measureTaskMemory(mode);
   expect(result.queued - result.before).toBe(result.bytes / 1024);
 });
 
 test.each(["camera", "display"])(
   "%s output replaces its task charge with Node backing-store accounting",
   (mode) => {
-    const result = measureColorMemory(mode);
+    const result = measureTaskMemory(mode);
     expect(result.settled - result.before).toBe(result.bytes / 1024);
   },
 );
@@ -78,7 +84,7 @@ test.each(["camera", "display"])(
 test.each(["camera", "display"])(
   "%s rejected work does not accumulate allocation charges",
   (mode) => {
-    const result = measureColorMemory(mode, true);
+    const result = measureTaskMemory(mode, true);
     expect(result.errors).toEqual(
       Array(4).fill(
         mode === "camera"
@@ -87,5 +93,44 @@ test.each(["camera", "display"])(
       ),
     );
     expect(result.settled).toBe(result.before);
+  },
+);
+
+test("resample pending work reports its native input snapshot", () => {
+  const result = measureTaskMemory("resample");
+  expect(result.queued - result.before).toBe(result.bytes / 1024);
+});
+
+test("transform pending work reports its native input snapshot", () => {
+  const result = measureTaskMemory("transform");
+  expect(result.queued - result.before).toBe(result.bytes / 1024);
+});
+
+test.each(["resample", "transform"])("%s settles with only its distinct output charged", (mode) => {
+  const result = measureTaskMemory(mode);
+  expect(result.outputBytes).toBe(256 * 256 * 3 * Float32Array.BYTES_PER_ELEMENT);
+  expect(result.sample).toBe(0.25);
+  expect(result.settled - result.before).toBe(result.outputBytes / 1024);
+});
+
+test.each(["resample", "transform"])("%s rejection releases every input charge", (mode) => {
+  const result = measureTaskMemory(mode, true);
+  expect(result.errors).toEqual(Array(4).fill("pixel buffer length does not match its dimensions"));
+  expect(result.settled).toBe(result.before);
+});
+
+test.each(["resample", "transform"])(
+  "%s uses an immutable invocation snapshot with exact pixels",
+  async (mode) => {
+    const input = Float32Array.from({ length: 16 }, (_, index) => index);
+    const original = input.slice();
+    const pending =
+      mode === "resample"
+        ? resamplePixels(input, 4, 4, 1, 2, 2, "bilinear")
+        : transformPixels(input, 4, 4, 1, 2, 2, [0.5, 0, 0, 0.5, 0, 0], "bilinear");
+    expect(input).toEqual(original);
+    input.fill(99);
+    expect(await pending).toEqual(new Float32Array([2.5, 4.5, 10.5, 12.5]));
+    expect(input).toEqual(new Float32Array(16).fill(99));
   },
 );

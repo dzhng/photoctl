@@ -1,0 +1,17 @@
+{
+  "scope": "ResampleF32Task and TransformF32Task input capacity, using the existing TaskMemory guard",
+  "runtime": "Node 24, native addon, trace-gc-verbose manual external-memory counter",
+  "test_only_gc": true,
+  "production_forced_gc": false,
+  "input_bytes": 3145728,
+  "output_bytes": 786432,
+  "red_before_fix": { "resample_pending_delta_kib": 0, "transform_pending_delta_kib": 0, "expected_kib": 3072 },
+  "green": { "pending_delta_kib": 3072, "settled_delta_kib": 768, "four_rejections_delta_kib": 0 },
+  "falsification": {
+    "disabled_discharge": { "settled_delta_kib": 3840, "four_rejections_delta_kib": 12292 },
+    "zeroed_output": "Both exact-pixel tests fail: [0,0,0,0] instead of [2.5,4.5,10.5,12.5]"
+  },
+  "ownership": "Input Vec remains charged through separate output registration, then is freed before guard discharge. Main-thread task destruction also covers error exits that skip finally. No new scheduler, output estimate, or JS API.",
+  "reproduction": "cargo build -p photoctl-image -j1; node scripts/package-native.mjs; bunx vitest run packages/img/src/task-memory.test.ts packages/render/src/color.test.ts packages/render/src/sam2.test.ts packages/render/src/mask-kernels.test.ts",
+  "resource_verdict": "Not an RSS measurement. Full-resolution repeated-cache gate remains red pending a separate no-forced-GC rerun."
+}
