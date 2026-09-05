@@ -19,7 +19,7 @@ the last pushed export-heartbeat checkpoint.*
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: finish reference/init controls, then author the outpaint canvas.**
+**Current pickup: implement reversible outpaint canvas and paid-image attempt retention in parallel.**
 
 - Initial cropped-frame fill, refresh, and preview/detail planning now share exact realized frames.
   Migration 17 retains coordinates per execution; cached masters/views retain their own frame and
@@ -27,13 +27,12 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   coordinates, and old ancestry recovery never guesses the latest execution. See [12f1](slices/12-outpaint.md).
   Photographic mutations now share one output planner; the canvas and geometry-intent state remain
   the next implementation work in [12f2](slices/12-outpaint.md#geometry-intent-and-ordinary-layer-operations).
-- Finish reference/init controls and the outpaint canvas. Outpaint's independent drafts agree
-  that graph-derived frame ownership must replace per-consumer size reconstruction; follow the
-  [outpaint checkpoints](slices/12-outpaint.md), settling crop and removable-extent semantics before
-  canvas implementation. Fit/strength and capped/full-res inputs
-  are implemented. Reference inputs must use the documented edit transport and reachable pinned pixels;
-  the earlier standalone `reference_image` field remains a named correction. Keep photographic/live
-  evidence separate from these deterministic controls.
+- Fit/strength, capped/full-res inputs, and reference/init controls are integrated. Migration 18
+  retains exact reference PNG plus working TIFF through one artifact owner; supported references
+  use documented image edits and unsupported controls warn explicitly. The speculative standalone
+  reference field is removed. Follow [12f2](slices/12-outpaint.md) for immutable geometry intent,
+  inherited crop exclusions, and removable extent, then wire generation in 12f3. Canvas owns the
+  next migration 19; paid retention follows with 20. Keep live quality separate from deterministic evidence.
 - Slice 11 runtime and `wb masks` are integrated. The report explicitly selects highest-resolution
   cached current-develop context, not historical SAM input or last-shown source. Real weights and G6
   remain open. See [Slice 11](slices/11-segment.md).
@@ -43,9 +42,11 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   identical requests across inspection cases. Conduct the photographic
   comparisons in [Slice 13](slices/13-generative-extras-and-markup.md) when explicitly configured.
   Missing live prerequisites do not block deterministic work.
-- Finish execution-linked original paid-response retention through the existing artifact owner after
-  frame/reference migrations. [Bounded format evidence](assets/artifact-storage/) now exists; actual
-  retention and representative undo-history storage policy remain unfinished.
+- Implement [paid-image attempt retention](slices/13-generative-extras-and-markup.md#paid-response-retention--remaining-artifact-contract)
+  through the existing artifact owner, capturing valid images before acceptance checks. An execution
+  links the attempt; rejected paid images remain discoverable without a dummy photo or node.
+  [Bounded format evidence](assets/artifact-storage/) exists; retention and representative undo-history
+  storage policy remain unfinished.
 - Before release, run the full integrated closeout gate once, audit the full requirements and choices
   ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
   optional and unspecified, rather than an implied requirement to invent an MCP product.
@@ -91,7 +92,7 @@ Update this handoff after each pass and continue to the next unfinished requirem
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
-- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [ ] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
+- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
 - [ ] 13a [x] reimagine/relight/generate · [ ] upscaler quality spike · [ ] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`

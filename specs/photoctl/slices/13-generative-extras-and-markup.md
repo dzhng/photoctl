@@ -18,7 +18,8 @@
   [`../assets/relight-journey/`](../assets/relight-journey/).
   ✓ `generate --prompt [--ref] [--size 1024x1024] [--seed] [--model]` → canonical generated artifact → imported photo tagged
   `generated`; it has no base-density target, so library `auto` does not invent one. Explicit `--upscale` uses the requested
-  `--size` only when the provider returned fewer pixels. Its standalone `generate@2` graph root has no invented source input; an
+  `--size` only when the provider returned fewer pixels. Text-only `generate@2` has no source input;
+  reference-bearing `generate@3` has a pinned reference, not an invented editable base. An
   output wrapper lets the imported photo enter ordinary show/develop/export flows while the pinned execution retains provider
   provenance and never reruns during lazy display. The deterministic visual checkpoint lives in [`../assets/generate/`](../assets/generate/).
   Tests: `reimagine-layer.test.ts` (full target dimensions; remove restores),

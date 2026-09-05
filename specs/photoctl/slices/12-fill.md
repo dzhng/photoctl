@@ -13,12 +13,18 @@ The following remaining requirements are independent of missing live credentials
   export, and undo operations coherent. Settle this geometry in a reviewable plan before coding;
   a larger returned provider image alone is not an outpaint implementation.
 
-The [outpaint subplan](12-outpaint.md) synthesizes the independent drafts and specifies the first
-shared-frame checkpoint. Its crop/layer-extent authoring checkpoint must be settled before canvas code;
-initial-fill crop/offline sampling is corrected, while exact preview-frame provenance remains next.
+The [outpaint subplan](12-outpaint.md) owns the remaining canvas implementation. Shared exact frames,
+preview provenance, and final photographic output planning are integrated. Its reversible crop,
+inherited support, and layer-extent decisions constrain the next deterministic canvas checkpoint.
 
 Each pass follows red/green public behavior tests and the existing visual gates. Live polarity and
 photographic quality remain distinct evidence requirements after these controls work deterministically.
+
+Root reference integration `cfddde8`, on the shared frame/output owners, passed 63 focused command,
+provider, schema, graph, availability, and refresh tests, including the built CLI editing journey,
+plus typecheck. The production/config diff is +590/-256 lines including comments; its structural
+surfaces are the provider-owned binary request contract, render's type dependency, and migration 18's
+pinned reference recipe versions. This is deterministic checkpoint evidence, not live acceptance.
 
 ### Provider sampling contract
 
