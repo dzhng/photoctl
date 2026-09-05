@@ -7,7 +7,12 @@ import { migrate } from "../../../library/src/migrations/runner.js";
 import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { encodeDisplayTiff } from "../linear-tiff.js";
 import { reconcileArtifactAvailability, retainedArtifacts } from "./availability.js";
-import { artifactPath } from "./publication.js";
+import {
+  artifactPath,
+  MASK_ARTIFACT_MEDIA_TYPE,
+  normalizeMaskArtifact,
+  publishArtifact,
+} from "./publication.js";
 
 const directories: string[] = [];
 
@@ -51,6 +56,36 @@ test("reconciliation invalidates legacy display artifacts", async () => {
         )
       ).rows,
     ).toEqual([{ artifact_available: false }]);
+  } finally {
+    await database.close();
+  }
+});
+
+test("reconciliation recognizes canonical masks and rejects corrupt mask bytes", async () => {
+  const library = await mkdtemp(join(tmpdir(), "photoctl-mask-reconcile-"));
+  directories.push(library);
+  const database = await testDatabase();
+  await migrate(database);
+  try {
+    const mask = await publishArtifact(
+      library,
+      await normalizeMaskArtifact({ w: 2, h: 1, data: new Float32Array([0, 1]) }),
+    );
+    await database.query(
+      `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available)
+       VALUES ($1, $2, $3, $4, $5, false)`,
+      [mask.artifactHash, mask.mediaType, mask.storageBytes, mask.w, mask.h],
+    );
+    expect(await reconcileArtifactAvailability(database, library)).toEqual({
+      available: 1,
+      unavailable: 0,
+    });
+
+    await writeFile(mask.path, "corrupt mask");
+    expect(await reconcileArtifactAvailability(database, library)).toEqual({
+      available: 0,
+      unavailable: 1,
+    });
   } finally {
     await database.close();
   }
@@ -117,8 +152,8 @@ test("retention follows disabled layer content and masks as immutable revision r
       `INSERT INTO image_artifacts (artifact_hash, media_type, bytes, w, h, artifact_available)
        VALUES ($1, 'image/tiff', 1, 1, 1, true),
               ($2, 'image/tiff', 1, 1, 1, true),
-              ($3, 'image/tiff', 1, 1, 1, true)`,
-      artifacts,
+              ($3, $4, 1, 1, 1, true)`,
+      [...artifacts, MASK_ARTIFACT_MEDIA_TYPE],
     );
     await database.query(
       `INSERT INTO node_executions

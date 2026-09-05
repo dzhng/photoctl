@@ -11,6 +11,7 @@ import {
   undoRevision,
 } from "./store.js";
 import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { MASK_ARTIFACT_MEDIA_TYPE } from "../artifacts/publication.js";
 
 const firstPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
 const secondPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
@@ -867,10 +868,10 @@ async function graphDatabase(): Promise<PGlite> {
   await db.query(
     `INSERT INTO image_artifacts
        (artifact_hash, media_type, bytes, w, h, artifact_available)
-     VALUES ($1, 'application/x-photoctl-mask-test', 1, 1, 1, true),
-            ($2, 'application/x-photoctl-mask-test', 1, 1, 1, true),
-            ($3, 'application/x-photoctl-mask-test', 1, 1, 1, true)`,
-    ["1", "2", "3"].map((digit) => `a_${digit.repeat(64)}`),
+     VALUES ($1, $4, 1, 1, 1, true),
+            ($2, $4, 1, 1, 1, true),
+            ($3, $4, 1, 1, 1, true)`,
+    [...["1", "2", "3"].map((digit) => `a_${digit.repeat(64)}`), MASK_ARTIFACT_MEDIA_TYPE],
   );
   return db;
 }

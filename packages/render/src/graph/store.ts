@@ -9,6 +9,7 @@ import {
   renderHashForNode,
 } from "./recipes.js";
 import type { ImageNodeKind, JsonValue, StoredImageNode } from "./types.js";
+import { MASK_ARTIFACT_MEDIA_TYPE } from "../artifacts/publication.js";
 import {
   compositeV2Projection,
   layerRoles,
@@ -621,12 +622,15 @@ async function assertMaskArtifactsAvailable(
      JOIN image_nodes AS node ON node.photo_id = $1 AND node.id = ancestors.node_id
      LEFT JOIN image_artifacts AS artifact
        ON artifact.artifact_hash = node.parameters->>'artifact_hash'
-     WHERE node.kind = 'mask' AND COALESCE(artifact.artifact_available, false) = false
+     WHERE node.kind = 'mask'
+       AND (COALESCE(artifact.artifact_available, false) = false OR artifact.media_type <> $3)
      LIMIT 1`,
-    [photoId, nodeId],
+    [photoId, nodeId, MASK_ARTIFACT_MEDIA_TYPE],
   );
   if (unavailable.rows.length > 0) {
-    throw new Error(`Mask artifact is unavailable: ${unavailable.rows[0].artifact_hash}`);
+    throw new Error(
+      `Mask artifact is unavailable or has the wrong media type: ${unavailable.rows[0].artifact_hash}`,
+    );
   }
 }
 

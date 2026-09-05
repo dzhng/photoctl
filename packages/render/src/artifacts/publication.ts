@@ -11,14 +11,35 @@ import {
   validateArtifactLinearTiff,
 } from "../linear-tiff.js";
 import type { Image16 } from "../source-render.js";
+import {
+  decodeMaskTiff,
+  encodeMaskTiff,
+  inspectMaskTiff,
+  validateMaskTiff,
+  type MaskImage,
+} from "../mask-tiff.js";
+
+export const MASK_ARTIFACT_MEDIA_TYPE = "image/vnd.photoctl.mask+tiff" as const;
 
 export interface NormalizedArtifact {
   artifactHash: `a_${string}`;
   bytes: Buffer;
   extension: "tif";
-  mediaType: "image/tiff";
+  mediaType: "image/tiff" | typeof MASK_ARTIFACT_MEDIA_TYPE;
   w: number;
   h: number;
+}
+
+export async function normalizeMaskArtifact(mask: MaskImage): Promise<NormalizedArtifact> {
+  const bytes = encodeMaskTiff(mask);
+  return {
+    artifactHash: `a_${createHash("sha256").update(bytes).digest("hex")}`,
+    bytes,
+    extension: "tif",
+    mediaType: MASK_ARTIFACT_MEDIA_TYPE,
+    w: mask.w,
+    h: mask.h,
+  };
 }
 
 export interface PublishedArtifact extends Omit<NormalizedArtifact, "bytes"> {
@@ -159,6 +180,26 @@ export async function readArtifactLinear(
     throw new Error(`Canonical artifact content hash mismatch: ${path}`);
   }
   return await decodeArtifactLinearTiff(bytes);
+}
+
+export async function readArtifactMask(path: string, expectedHash?: string): Promise<MaskImage> {
+  const bytes = await readFile(path);
+  if (expectedHash && `a_${createHash("sha256").update(bytes).digest("hex")}` !== expectedHash) {
+    throw new Error(`Canonical mask artifact content hash mismatch: ${path}`);
+  }
+  return decodeMaskTiff(bytes);
+}
+
+export async function readMaskArtifactBytes(
+  path: string,
+  expectedHash: string,
+  expectedDimensions: { w: number; h: number },
+): Promise<Buffer> {
+  const bytes = await readVerifiedArtifactBytes(path, expectedHash);
+  const layout = inspectMaskTiff(bytes);
+  assertDimensions(path, layout, expectedDimensions);
+  validateMaskTiff(bytes);
+  return bytes;
 }
 
 /** Reads verified canonical bytes without decoding a duplicate f32 pixel array. */

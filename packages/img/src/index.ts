@@ -87,6 +87,49 @@ interface NativeBinding {
     matrix: readonly number[],
     filter: ResampleFilter,
   ): Promise<Float32Array>;
+  morphologyMask(
+    data: Float32Array,
+    width: number,
+    height: number,
+    radius: number,
+    operation: "dilate" | "erode",
+  ): Promise<Float32Array>;
+  featherMask(
+    data: Float32Array,
+    width: number,
+    height: number,
+    radius: number,
+  ): Promise<Float32Array>;
+  transformMaskPixels(
+    data: Float32Array,
+    width: number,
+    height: number,
+    outputWidth: number,
+    outputHeight: number,
+    matrix: readonly number[],
+  ): Promise<Float32Array>;
+  liftMaskedPixels(
+    content: Float32Array,
+    mask: Float32Array,
+    width: number,
+    height: number,
+  ): Promise<Float32Array>;
+  overlayMaskedPixels(
+    base: Float32Array,
+    content: Float32Array,
+    mask: Float32Array,
+    width: number,
+    height: number,
+    opacity: number,
+  ): Promise<Float32Array>;
+  compositeMaskedPixels(
+    base: Float32Array,
+    content: Float32Array,
+    mask: Float32Array,
+    width: number,
+    height: number,
+    opacity: number,
+  ): Promise<Float32Array>;
   applyDevelopPixels(
     data: Float32Array,
     width: number,
@@ -298,6 +341,82 @@ export async function transformPixels(
       matrix,
       filter,
     ),
+  );
+}
+
+export async function morphologyMask(
+  data: Float32Array,
+  width: number,
+  height: number,
+  radius: number,
+  operation: "dilate" | "erode",
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().morphologyMask(data, width, height, radius, operation),
+  );
+}
+
+export async function featherMask(
+  data: Float32Array,
+  width: number,
+  height: number,
+  radius: number,
+): Promise<Float32Array> {
+  return asFloat32Array(await requiredBinding().featherMask(data, width, height, radius));
+}
+
+export async function transformMaskPixels(
+  data: Float32Array,
+  width: number,
+  height: number,
+  outputWidth: number,
+  outputHeight: number,
+  matrix: readonly [number, number, number, number, number, number],
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().transformMaskPixels(
+      data,
+      width,
+      height,
+      outputWidth,
+      outputHeight,
+      matrix,
+    ),
+  );
+}
+
+export async function liftMaskedPixels(
+  content: Float32Array,
+  mask: Float32Array,
+  width: number,
+  height: number,
+): Promise<Float32Array> {
+  return asFloat32Array(await requiredBinding().liftMaskedPixels(content, mask, width, height));
+}
+
+export async function overlayMaskedPixels(
+  base: Float32Array,
+  content: Float32Array,
+  mask: Float32Array,
+  width: number,
+  height: number,
+  opacity: number,
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().overlayMaskedPixels(base, content, mask, width, height, opacity),
+  );
+}
+
+export async function compositeMaskedPixels(
+  base: Float32Array,
+  content: Float32Array,
+  mask: Float32Array,
+  width: number,
+  height: number,
+  opacity: number,
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().compositeMaskedPixels(base, content, mask, width, height, opacity),
   );
 }
 

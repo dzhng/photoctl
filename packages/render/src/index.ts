@@ -3,6 +3,7 @@ export * from "./color.js";
 export * from "./decoder.js";
 export * from "./source-render.js";
 export * from "./linear-tiff.js";
+export * from "./mask-tiff.js";
 export * from "./graph/types.js";
 export * from "./graph/recipes.js";
 export * from "./graph/store.js";

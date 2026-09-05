@@ -1,11 +1,16 @@
 /* eslint-disable no-await-in-loop -- Ordered execution inputs are registered sequentially in one transaction. */
 import {
   artifactPath,
+  MASK_ARTIFACT_MEDIA_TYPE,
   normalizeArtifact,
+  normalizeMaskArtifact,
   normalizeValidatedArtifactBytes,
   publishArtifact,
   readArtifactBytes,
   readArtifactBytesForNativeDevelop,
+  readArtifactLinear,
+  readArtifactMask,
+  readMaskArtifactBytes,
   type NormalizedArtifact,
   type PublishedArtifact,
 } from "../artifacts/publication.js";
@@ -26,6 +31,8 @@ import type { Image16 } from "../source-render.js";
 import type { GraphDatabase, GraphTransaction } from "./store.js";
 import { applyDevelopArtifact, applyDevelopDeltaArtifact } from "../develop/pixels.js";
 import { developDictSchema } from "../develop/dict.js";
+import { compositeMaskedPixels, featherMask, transformMaskPixels } from "@photoctl/img";
+import type { MaskImage } from "../mask-tiff.js";
 
 export interface EvaluatedNode {
   artifact: PublishedArtifact;
@@ -69,6 +76,7 @@ export interface EvaluateGraphNodeRequest {
       }) => Promise<
         | LinearImage
         | Image16
+        | MaskImage
         | { image: LinearImage | Image16; externalExecution: ExternalExecutionProvenance }
       >
     >
@@ -177,11 +185,20 @@ async function evaluateOne(
   if (node.kind === "output") {
     if (inputs.length !== 1) throw new Error("Output evaluation requires one input artifact");
     artifact = inputs[0].artifact;
+  } else if (node.kind === "mask") {
+    artifact = await loadPinnedMaskArtifact(request.database, request.libraryPath, node.parameters);
   } else {
     const operation =
       node.kind === "source"
         ? undefined
-        : await runOperation(request, node.kind, nodeId, node.parameters, inputs);
+        : await runOperation(
+            request,
+            node.kind,
+            node.recipeVersion,
+            nodeId,
+            node.parameters,
+            inputs,
+          );
     externalExecution = operation?.externalExecution;
     if (externalExecution) {
       if (node.kind !== "generate" && node.kind !== "upscale") {
@@ -203,7 +220,9 @@ async function evaluateOne(
     if (node.kind === "source") normalized = normalizedSource!;
     else if (!operation) throw new Error(`Pixel operation did not produce output for ${node.kind}`);
     else if ("artifact" in operation) normalized = operation.artifact;
-    else normalized = await normalizeArtifact(operation.image);
+    else if ("space" in operation.image) normalized = await normalizeArtifact(operation.image);
+    else normalized = await normalizeMaskArtifact(operation.image);
+    assertOperationArtifactType(node.kind, normalized, inputs);
     await request.hooks?.beforePublish?.();
     artifact = await publishArtifact(request.libraryPath, normalized);
   }
@@ -260,14 +279,29 @@ async function evaluateOne(
   return { ...stored, reused: false };
 }
 
+function assertOperationArtifactType(
+  kind: ImageNodeKind,
+  artifact: NormalizedArtifact,
+  inputs: EvaluatedNode[],
+): void {
+  const expected =
+    kind === "transform" || kind === "resample" || kind === "crop"
+      ? inputs[0]?.artifact.mediaType
+      : "image/tiff";
+  if (artifact.mediaType !== expected) {
+    throw new Error(`${kind} produced an artifact with the wrong pixel media type`);
+  }
+}
+
 async function runOperation(
   request: EvaluateGraphNodeRequest,
   kind: Exclude<ImageNodeKind, "source" | "output">,
+  recipeVersion: number,
   nodeId: string,
   parameters: JsonValue,
   inputs: EvaluatedNode[],
 ): Promise<
-  | { image: LinearImage | Image16; externalExecution?: ExternalExecutionProvenance }
+  | { image: LinearImage | Image16 | MaskImage; externalExecution?: ExternalExecutionProvenance }
   | { artifact: NormalizedArtifact; externalExecution?: undefined }
 > {
   const operation = request.operations?.[kind];
@@ -289,6 +323,15 @@ async function runOperation(
         }),
       };
     }
+    if (kind === "mask_composite") {
+      return { image: await evaluateMaskComposite(parameters, inputs) };
+    }
+    if (kind === "composite" && recipeVersion === 2) {
+      return { image: await evaluateCompositeV2(parameters, inputs) };
+    }
+    if (kind === "transform" && inputs[0]?.artifact.mediaType === MASK_ARTIFACT_MEDIA_TYPE) {
+      return { image: await evaluateMaskTransform(parameters, inputs[0]) };
+    }
     throw new Error(`No pixel evaluator is registered for ${kind}`);
   }
   const result = await operation({ nodeId, parameters, inputs });
@@ -308,6 +351,150 @@ async function runOperation(
     );
   }
   return { image: result };
+}
+
+async function evaluateMaskComposite(
+  parameters: JsonValue,
+  inputs: EvaluatedNode[],
+): Promise<LinearImage> {
+  if (inputs.length !== 3)
+    throw new Error("Mask composite evaluation requires base, content, and mask artifacts");
+  const base = await readRgbInput(inputs[0]);
+  const content = await readRgbInput(inputs[1], base);
+  let mask = await readMaskInput(inputs[2], base);
+  const feather = z
+    .object({ feather: z.number().finite().nonnegative() })
+    .strict()
+    .parse(parameters).feather;
+  if (feather > 0) mask = { ...mask, data: await featherMask(mask.data, mask.w, mask.h, feather) };
+  return linearImage(
+    base,
+    await compositeMaskedPixels(base.data, content.data, mask.data, base.w, base.h, 1),
+  );
+}
+
+async function evaluateCompositeV2(
+  parameters: JsonValue,
+  inputs: EvaluatedNode[],
+): Promise<LinearImage> {
+  const parsed = z
+    .object({
+      layers: z.array(
+        z.object({ opacity: z.number().min(0).max(1), blend: z.literal("normal") }).strict(),
+      ),
+    })
+    .strict()
+    .parse(parameters);
+  if (inputs.length !== 1 + parsed.layers.length * 2) {
+    throw new Error("Composite v2 inputs do not match its ordered layer parameters");
+  }
+  const base = await readRgbInput(inputs[0]);
+  let pixels = base.data;
+  for (const [index, layer] of parsed.layers.entries()) {
+    const content = await readRgbInput(inputs[1 + index * 2], base);
+    const mask = await readMaskInput(inputs[2 + index * 2], base);
+    pixels = await compositeMaskedPixels(
+      pixels,
+      content.data,
+      mask.data,
+      base.w,
+      base.h,
+      layer.opacity,
+    );
+  }
+  return linearImage(base, pixels);
+}
+
+async function evaluateMaskTransform(
+  parameters: JsonValue,
+  input: EvaluatedNode,
+): Promise<MaskImage> {
+  const parsed = z
+    .object({
+      matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
+    })
+    .strict()
+    .parse(parameters);
+  const mask = await readArtifactMask(input.artifact.path, input.artifact.artifactHash);
+  return {
+    w: mask.w,
+    h: mask.h,
+    data: await transformMaskPixels(mask.data, mask.w, mask.h, mask.w, mask.h, parsed.matrix),
+  };
+}
+
+async function readRgbInput(
+  input: EvaluatedNode,
+  dimensions?: { w: number; h: number },
+): Promise<LinearImage> {
+  if (input.artifact.mediaType !== "image/tiff") throw new Error("Expected an RGB artifact");
+  const image = await readArtifactLinear(input.artifact.path, input.artifact.artifactHash);
+  if (dimensions && (image.w !== dimensions.w || image.h !== dimensions.h)) {
+    throw new Error("Composite RGB artifact dimensions do not match");
+  }
+  return image;
+}
+
+async function readMaskInput(
+  input: EvaluatedNode,
+  dimensions: { w: number; h: number },
+): Promise<MaskImage> {
+  if (input.artifact.mediaType !== MASK_ARTIFACT_MEDIA_TYPE)
+    throw new Error("Expected a mask artifact");
+  const mask = await readArtifactMask(input.artifact.path, input.artifact.artifactHash);
+  if (mask.w !== dimensions.w || mask.h !== dimensions.h) {
+    throw new Error("Composite mask artifact dimensions do not match");
+  }
+  return mask;
+}
+
+function linearImage(base: LinearImage, data: Float32Array): LinearImage {
+  return { ...base, data };
+}
+
+async function loadPinnedMaskArtifact(
+  database: GraphTransaction,
+  libraryPath: string,
+  parameters: JsonValue,
+): Promise<PublishedArtifact> {
+  const artifactHash = z
+    .object({ artifact_hash: z.string().regex(/^a_[0-9a-f]{64}$/) })
+    .strict()
+    .parse(parameters).artifact_hash;
+  const result = await database.query<{
+    media_type: string;
+    bytes: string;
+    w: number;
+    h: number;
+    artifact_available: boolean;
+  }>(
+    `SELECT media_type, bytes::text, w, h, artifact_available
+     FROM image_artifacts WHERE artifact_hash = $1`,
+    [artifactHash],
+  );
+  const row = result.rows[0];
+  if (!row?.artifact_available || row.media_type !== MASK_ARTIFACT_MEDIA_TYPE) {
+    throw new Error(`Mask artifact is unavailable: ${artifactHash}`);
+  }
+  const path = artifactPath(libraryPath, artifactHash, "tif");
+  try {
+    await readMaskArtifactBytes(path, artifactHash, row);
+  } catch (error) {
+    await database.query(
+      "UPDATE image_artifacts SET artifact_available = false WHERE artifact_hash = $1",
+      [artifactHash],
+    );
+    throw error;
+  }
+  return {
+    artifactHash: artifactHash as `a_${string}`,
+    extension: "tif",
+    mediaType: MASK_ARTIFACT_MEDIA_TYPE,
+    path,
+    storageBytes: Number(row.bytes),
+    w: row.w,
+    h: row.h,
+  };
 }
 
 function assertExternalExecutionMatchesRecipe(
@@ -476,11 +663,15 @@ async function loadByExecutionId(
     throw new Error(`Execution identity collision: ${executionId}`);
   }
   if (!row || !row.artifact_available) return undefined;
-  if (row.media_type !== "image/tiff")
+  if (row.media_type !== "image/tiff" && row.media_type !== MASK_ARTIFACT_MEDIA_TYPE)
     throw new Error(`Unsupported artifact media type: ${row.media_type}`);
   const path = artifactPath(libraryPath, row.output_artifact_hash, "tif");
   try {
-    await readArtifactBytes(path, row.output_artifact_hash, { w: row.w, h: row.h });
+    if (row.media_type === MASK_ARTIFACT_MEDIA_TYPE) {
+      await readMaskArtifactBytes(path, row.output_artifact_hash, { w: row.w, h: row.h });
+    } else {
+      await readArtifactBytes(path, row.output_artifact_hash, { w: row.w, h: row.h });
+    }
   } catch {
     await database.query(
       "UPDATE image_artifacts SET artifact_available = false WHERE artifact_hash = $1",
@@ -492,7 +683,7 @@ async function loadByExecutionId(
     artifact: {
       artifactHash: row.output_artifact_hash as `a_${string}`,
       extension: "tif",
-      mediaType: "image/tiff",
+      mediaType: row.media_type as PublishedArtifact["mediaType"],
       path,
       storageBytes: Number(row.bytes),
       w: row.w,

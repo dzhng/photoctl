@@ -1,7 +1,7 @@
 # 10 — DAG-backed layers, transforms, composite, vacancy, A′ delta/stale (no SAM, no gateway)
 
 Sub-slices, one ownership seam at a time: **10a ✓** layer identity + immutable revision model · **10b1 ✓** generic Rust
-resample/transform · **10b2** mask artifacts + mask/lift/composite · **10b3 ✓** develop compensation/delta · **10c1** manual
+resample/transform · **10b2 ✓** mask artifacts + mask/lift/composite · **10b3 ✓** develop compensation/delta · **10c1** manual
 mask and layer command integration · **10c2** stale/delta, vacancy, move, and warnings. Slice 10's migration is schema v9 and
 must land after 09c owns v8. 10a may run beside 08c2/08c3 only while it stays out of Rust, the evaluator, preview, command
 dispatch, and protocol exports. No 10b pass may overlap 08c2/08c3 in those shared owners.

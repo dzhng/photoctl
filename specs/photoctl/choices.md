@@ -2223,7 +2223,60 @@
 - **Confidence:** High for exposure and the composition identities pinned by tests; medium for expanding safe combinations after
   real provider-generated layer workflows exist.
 
+### Slice 10b2 — Canonical masks use a profile-free Float32 TIFF contract distinct from RGB
+
+- **When:** Slice 10b2 mask artifact implementation, 2026-09-05.
+- **The choice:** A mask is an uncompressed little-endian single-channel IEEE Float32 TIFF with black-is-zero photometry, no
+  color profile, finite coverage samples constrained to `[0,1]`, and the dedicated media type
+  `image/vnd.photoctl.mask+tiff`. Publication and restore reconciliation validate that contract rather than accepting any TIFF
+  whose dimensions happen to match.
+- **The gap:** The plan fixed the semantic sample type and required a distinct deterministic artifact contract, but did not choose
+  its exact byte layout or media-type spelling.
+- **The reach:** Artifact hashes, node pins, evaluator dispatch, restore repair, and later manual/SAM producers all share one
+  unambiguous mask identity without allowing RGB artifacts to pose as coverage.
+- **Verdict:** **Sound.** The layout is minimal and deterministic, and the distinct media type keeps the storage boundary typed.
+- **Confidence:** High; exact-byte round trips and wrong-type/corruption regressions cover publication and restore.
+
+### Slice 10b2 — Mask transforms clamp filtered coverage and composition skips zero alpha
+
+- **When:** Slice 10b2 native transform/composite implementation, 2026-09-05.
+- **The choice:** Mask transforms reuse the canonical Lanczos3 coordinate owner used by RGB, then clamp filter ringing to legal
+  coverage `[0,1]`. Normal composition calculates effective alpha from coverage and opacity, but skips the write entirely when
+  alpha is zero so the accumulated base sample retains its exact Float32 bits.
+- **The gap:** The plan required one transform matrix, legal mask coverage, and exact pixels outside the effective mask, but did
+  not state how a signed resampling kernel's overshoot is reconciled with coverage or how exactness survives arithmetic.
+- **The reach:** Lifted RGB and active masks stay geometrically aligned; transparent areas of later layers cannot perturb or erase
+  earlier results in the ordered composite-v2 fold.
+- **Verdict:** **Sound.** Clamping belongs at the mask boundary, and the zero-alpha branch makes the exactness invariant structural.
+- **Confidence:** High; asymmetric transform and bit-level composite regressions pin both behaviors.
+
+### Slice 10b2 — A corrupt permanent mask pin is made unavailable on its first evaluator read
+
+- **When:** Slice 10b2 independent review, 2026-09-05.
+- **The choice:** If evaluator validation rejects a permanent mask's pinned bytes, it clears that artifact's availability before
+  returning the corruption error, matching restore reconciliation instead of repeatedly trusting the stale catalog claim.
+- **The gap:** The artifact owner defined repair and restore behavior, but the zero-input mask evaluator path could be the first
+  process to discover corruption after startup.
+- **The reach:** Subsequent evaluation and retention see truthful availability, and a later deterministic republication can repair
+  the same hash without a separate restore cycle.
+- **Verdict:** **Sound.** Discovery of invalid canonical bytes must update the catalog fact owned by the artifact boundary.
+- **Confidence:** High; a first-read corruption regression proves both the error and availability transition.
+
 ## Needs user
+
+### Slice 10b2 — Morphology uses a square footprint and feather uses three bounded box passes
+
+- **When:** Slice 10b2 mask-kernel implementation, 2026-09-05.
+- **The choice:** Dilation and erosion use a zero-padded square footprint implemented as separable monotonic-window passes.
+  Feather approximates a Gaussian with three zero-padded separable box passes. Both reject radii above 4,096 pixels so hostile
+  parameters remain bounded while ordinary kernel work stays linear in image size.
+- **The gap:** The plan named morphology and feather operations but did not choose circular versus square morphology, an exact
+  Gaussian definition, edge treatment, or a maximum useful radius.
+- **The reach:** Corners enter a one-pixel dilation, image-edge coverage fades against transparent space, and extremely large
+  selections fail validation instead of monopolizing a native worker. Later manual and SAM masks inherit this silhouette feel.
+- **Verdict:** **Needs-user.** The implementation is deterministic, fast, and isolated, but footprint and feather character are
+  visible product choices that should be revisited with real photographic masks.
+- **Confidence:** Medium for the bounded algorithm; low for the preferred visual character before the 10c2 visual gate.
 
 ### Slice 10b1 — Lanczos transforms reject kernels above 4,096 source taps per output sample
 

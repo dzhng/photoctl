@@ -5,8 +5,10 @@ import { afterEach, expect, test } from "vitest";
 import {
   artifactPath,
   normalizeArtifact,
+  normalizeMaskArtifact,
   publishArtifact,
   readArtifactLinear,
+  readArtifactMask,
 } from "./publication.js";
 
 const directories: string[] = [];
@@ -67,4 +69,56 @@ test("publication rejects bytes that do not match their claimed content address"
     "does not match its content hash",
   );
   expect(await readFile(path)).toEqual(normalized.bytes);
+});
+
+test("mask artifacts round-trip exact single-channel coverage without accepting RGB bytes", async () => {
+  const library = await mkdtemp(join(tmpdir(), "photoctl-mask-artifact-"));
+  directories.push(library);
+  const mask = {
+    w: 3,
+    h: 2,
+    data: new Float32Array([0, 0.25, 1, 0.75, 0.5, 0.125]),
+  };
+
+  const normalized = await normalizeMaskArtifact(mask);
+  const published = await publishArtifact(library, normalized);
+  const restored = await readArtifactMask(published.path, published.artifactHash);
+
+  expect(published.mediaType).toBe("image/vnd.photoctl.mask+tiff");
+  expect(restored).toEqual(mask);
+  await expect(readArtifactLinear(published.path, published.artifactHash)).rejects.toThrow();
+
+  const rgb = await normalizeArtifact({
+    w: 1,
+    h: 1,
+    data: new Float32Array([0, 0.5, 1]),
+    space: "scene-linear-rec2020",
+    orientationApplied: true,
+    whiteLevel: 1,
+    blackLevel: 0,
+    wbPreApplied: true,
+  });
+  const rgbPublished = await publishArtifact(library, rgb);
+  await expect(readArtifactMask(rgbPublished.path, rgbPublished.artifactHash)).rejects.toThrow();
+});
+
+test("republishing canonical mask bytes repairs missing and corrupt files", async () => {
+  const library = await mkdtemp(join(tmpdir(), "photoctl-mask-repair-"));
+  directories.push(library);
+  const normalized = await normalizeMaskArtifact({
+    w: 2,
+    h: 1,
+    data: new Float32Array([0.125, 0.875]),
+  });
+  const original = await publishArtifact(library, normalized);
+
+  await rm(original.path);
+  await publishArtifact(library, normalized);
+  expect((await readArtifactMask(original.path, original.artifactHash)).data).toEqual(
+    new Float32Array([0.125, 0.875]),
+  );
+
+  await writeFile(original.path, "corrupt mask");
+  await publishArtifact(library, normalized);
+  expect(await readFile(original.path)).toEqual(normalized.bytes);
 });

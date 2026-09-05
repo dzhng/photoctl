@@ -1,6 +1,7 @@
 //! Native image operations for photoctl.
 
 mod develop;
+mod mask;
 mod publication;
 mod resample;
 mod tone_curve;
@@ -17,6 +18,10 @@ use develop::{
     Develop, apply_delta_artifact_in_place, apply_develop_artifact_in_place,
     apply_develop_in_place, camera_front, display_srgb_to_linear_rec2020,
     linear_rec2020_to_display_srgb, validate_artifact_samples,
+};
+pub use mask::{
+    composite_masked_pixels, feather_mask, lift_masked_pixels, morphology_mask,
+    overlay_masked_pixels, transform_mask_pixels,
 };
 use publication::{AtomicRenameOutcome, atomic_rename_no_replace as rename_no_replace};
 use resample::{Filter as ResampleFilter, resize};

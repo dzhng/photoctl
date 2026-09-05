@@ -1,7 +1,12 @@
 /* eslint-disable no-await-in-loop -- Sweeps bound filesystem and catalog pressure by processing one artifact at a time. */
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { artifactPath, readArtifactLinear } from "./publication.js";
+import {
+  artifactPath,
+  MASK_ARTIFACT_MEDIA_TYPE,
+  readArtifactLinear,
+  readMaskArtifactBytes,
+} from "./publication.js";
 
 interface ArtifactDatabase {
   query<Row>(sql: string, parameters?: unknown[]): Promise<{ rows: Row[] }>;
@@ -39,17 +44,24 @@ export async function reconcileArtifactAvailability(
   database: ArtifactDatabase,
   libraryPath: string,
 ): Promise<{ available: number; unavailable: number }> {
-  const artifacts = await database.query<{ artifact_hash: string; media_type: string }>(
-    "SELECT artifact_hash, media_type FROM image_artifacts ORDER BY artifact_hash",
-  );
+  const artifacts = await database.query<{
+    artifact_hash: string;
+    media_type: string;
+    w: number;
+    h: number;
+  }>("SELECT artifact_hash, media_type, w, h FROM image_artifacts ORDER BY artifact_hash");
   let available = 0;
   let unavailable = 0;
   for (const artifact of artifacts.rows) {
     let present = false;
-    if (artifact.media_type === "image/tiff") {
+    if (artifact.media_type === "image/tiff" || artifact.media_type === MASK_ARTIFACT_MEDIA_TYPE) {
       const path = artifactPath(libraryPath, artifact.artifact_hash, "tif");
       try {
-        await readArtifactLinear(path, artifact.artifact_hash);
+        if (artifact.media_type === MASK_ARTIFACT_MEDIA_TYPE) {
+          await readMaskArtifactBytes(path, artifact.artifact_hash, artifact);
+        } else {
+          await readArtifactLinear(path, artifact.artifact_hash);
+        }
         present = true;
       } catch {
         present = false;
