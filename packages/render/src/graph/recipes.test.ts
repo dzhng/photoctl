@@ -75,6 +75,41 @@ test("solid RGB is an explicit deterministic zero-input recipe", () => {
   );
 });
 
+test("resample v2 binds one affine placement into an oriented output canvas", () => {
+  const input = `node_${"1".repeat(64)}`;
+  expect(
+    canonicalNodeRecipe({
+      kind: "resample",
+      recipeVersion: 2,
+      parameters: {
+        w: 40,
+        h: 30,
+        kernel: "lanczos3",
+        matrix: [2, 0, 0, 2, 8, 6],
+      },
+      inputNodeIds: [input],
+    }),
+  ).toBe(
+    `{"input_node_ids":["${input}"],"kind":"resample","parameters":{"h":30,"kernel":"lanczos3","matrix":[2,0,0,2,8,6],"w":40},"recipe_version":2}`,
+  );
+});
+
+test.each([
+  ["five values", [1, 0, 0, 1, 0]],
+  ["a non-finite value", [1, 0, 0, 1, 0, Number.POSITIVE_INFINITY]],
+  ["a singular transform", [1, 0, 0, 0, 0, 0]],
+  ["a transform whose inverse overflows", [Number.MIN_VALUE, 0, 0, 1, 0, 0]],
+])("resample v2 rejects %s in its affine matrix", (_label, matrix) => {
+  expect(() =>
+    canonicalNodeRecipe({
+      kind: "resample",
+      recipeVersion: 2,
+      parameters: { w: 2, h: 2, kernel: "lanczos3", matrix },
+      inputNodeIds: [`node_${"1".repeat(64)}`],
+    }),
+  ).toThrow();
+});
+
 test("composite v2 binds ordered content-mask pairs to aligned pixel parameters", () => {
   const base = `node_${"1".repeat(64)}`;
   const content = `node_${"2".repeat(64)}`;

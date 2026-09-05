@@ -107,6 +107,35 @@ test("the latest schema supports promoted sampled-key collisions and cull state"
     await db.close();
   }
 });
+
+test("the latest schema permits affine resample recipes without widening other node versions", async () => {
+  const db = await testDatabase();
+  try {
+    await migrate(db);
+    await db.query(
+      `INSERT INTO photos (id, content_key, size, w, h, orientation)
+       VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', 'ck_3dac5c943a33dcc4', 1, 1, 1, 1)`,
+    );
+    await expect(
+      db.query(
+        `INSERT INTO image_nodes
+           (photo_id, id, kind, recipe_version, parameters, recipe_hash)
+         VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', $1, 'resample', 2, '{}', $2)`,
+        [`node_${"1".repeat(64)}`, `recipe_${"2".repeat(64)}`],
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      db.query(
+        `INSERT INTO image_nodes
+           (photo_id, id, kind, recipe_version, parameters, recipe_hash)
+         VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', $1, 'source', 2, '{}', $2)`,
+        [`node_${"3".repeat(64)}`, `recipe_${"4".repeat(64)}`],
+      ),
+    ).rejects.toThrow();
+  } finally {
+    await db.close();
+  }
+});
 test.each([
   ["2"],
   ["1,3"],

@@ -38,7 +38,7 @@ export interface ImageNodeDefinition {
   recipeVersions: readonly number[];
 }
 
-export const resampleParametersSchema = z
+export const resampleV1ParametersSchema = z
   .object({
     w: z.number().int().positive(),
     h: z.number().int().positive(),
@@ -64,6 +64,44 @@ export const resampleParametersSchema = z
         code: "custom",
         message: "Resample target rectangle must fit inside its output canvas",
         path: ["target"],
+      });
+    }
+  });
+
+export const resampleParametersSchema = z
+  .object({
+    w: z.number().int().positive(),
+    h: z.number().int().positive(),
+    kernel: z.literal("lanczos3"),
+    matrix: z.tuple([
+      z.number().finite(),
+      z.number().finite(),
+      z.number().finite(),
+      z.number().finite(),
+      z.number().finite(),
+      z.number().finite(),
+    ]),
+  })
+  .strict()
+  .superRefine(({ matrix }, context) => {
+    const determinant = matrix[0] * matrix[3] - matrix[1] * matrix[2];
+    const inverse = [
+      matrix[3] / determinant,
+      -matrix[1] / determinant,
+      -matrix[2] / determinant,
+      matrix[0] / determinant,
+      (matrix[2] * matrix[5] - matrix[3] * matrix[4]) / determinant,
+      (matrix[1] * matrix[4] - matrix[0] * matrix[5]) / determinant,
+    ];
+    if (
+      determinant === 0 ||
+      !Number.isFinite(determinant) ||
+      inverse.some((value) => !Number.isFinite(value))
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Resample matrix must have a finite inverse",
+        path: ["matrix"],
       });
     }
   });
@@ -112,7 +150,13 @@ export const imageNodeRegistry = {
     1,
     false,
   ),
-  resample: definition(resampleParametersSchema, 1, 1, true),
+  resample: definition(
+    z.union([resampleV1ParametersSchema, resampleParametersSchema]),
+    1,
+    1,
+    true,
+    [1, 2],
+  ),
   transform: definition(
     z
       .object({
@@ -194,7 +238,7 @@ export function canonicalNodeRecipe(input: LogicalNodeRecipeInput): string {
   return canonicalJson({
     input_node_ids: input.inputNodeIds,
     kind: input.kind,
-    parameters: canonicalParameters(input.kind, input.parameters),
+    parameters: canonicalParameters(input.kind, input.recipeVersion, input.parameters),
     recipe_version: input.recipeVersion,
   });
 }
@@ -274,8 +318,19 @@ export function newExecutionId(): `exec_${string}` {
   return `exec_${randomBytes(32).toString("hex")}`;
 }
 
-export function canonicalParameters(kind: ImageNodeKind, value: JsonValue): JsonValue {
-  return sortJson(imageNodeRegistry[kind].parameters.parse(value) as JsonValue);
+export function canonicalParameters(
+  kind: ImageNodeKind,
+  recipeVersion: number,
+  value: JsonValue,
+): JsonValue {
+  assertRecipeVersion(kind, recipeVersion);
+  const schema =
+    kind === "resample"
+      ? recipeVersion === 1
+        ? resampleV1ParametersSchema
+        : resampleParametersSchema
+      : imageNodeRegistry[kind].parameters;
+  return sortJson(schema.parse(value) as JsonValue);
 }
 
 export function canonicalJson(value: JsonValue): string {

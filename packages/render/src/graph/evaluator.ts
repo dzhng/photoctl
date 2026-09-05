@@ -21,6 +21,7 @@ import {
   imageNodeRegistry,
   newExecutionId,
   resampleParametersSchema,
+  resampleV1ParametersSchema,
 } from "./recipes.js";
 import type { ImageNodeKind, JsonValue, SourceExecutionProvenance } from "./types.js";
 import type { ExternalExecutionProvenance } from "./types.js";
@@ -370,7 +371,7 @@ async function runOperation(
       return { image: await evaluateSolid(parameters) };
     }
     if (kind === "resample") {
-      return { image: await evaluateResample(parameters, inputs) };
+      return { image: await evaluateResample(parameters, inputs, recipeVersion) };
     }
     if (kind === "composite" && recipeVersion === 2) {
       return { image: await evaluateCompositeV2(parameters, inputs) };
@@ -408,10 +409,29 @@ async function runOperation(
 async function evaluateResample(
   parameters: JsonValue,
   inputs: EvaluatedNode[],
+  recipeVersion: number,
 ): Promise<LinearImage> {
   if (inputs.length !== 1) throw new Error("Resample evaluation requires one input artifact");
-  const parsed = resampleParametersSchema.parse(parameters);
   const image = await readRgbInput(inputs[0]);
+  if (recipeVersion === 2) {
+    const parsed = resampleParametersSchema.parse(parameters);
+    return {
+      ...image,
+      w: parsed.w,
+      h: parsed.h,
+      data: await transformPixels(
+        image.data,
+        image.w,
+        image.h,
+        3,
+        parsed.w,
+        parsed.h,
+        parsed.matrix,
+        parsed.kernel,
+      ),
+    };
+  }
+  const parsed = resampleV1ParametersSchema.parse(parameters);
   if (!parsed.target && image.w === parsed.w && image.h === parsed.h)
     return linearImage(image, new Float32Array(image.data));
   if (parsed.kernel === "nearest" || parsed.kernel === "bicubic") {

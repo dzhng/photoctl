@@ -176,7 +176,7 @@ test("the current graph fixture preserves its active lazy source revision", asyn
     expect(result).toEqual({
       fromVersion: 5,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [6, 7, 8, 9, 10],
+      applied: [6, 7, 8, 9, 10, 11],
     });
     expect(document.rows).toEqual([
       {
@@ -213,7 +213,7 @@ test("the current delivery fixture preserves export history", async () => {
     expect(result).toEqual({
       fromVersion: 6,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [7, 8, 9, 10],
+      applied: [7, 8, 9, 10, 11],
     });
     expect(history.rows).toEqual([
       {
@@ -242,7 +242,7 @@ test("the current provider fixture has the bounded external-execution seam", asy
     expect(result).toEqual({
       fromVersion: 7,
       toVersion: LATEST_SCHEMA_VERSION,
-      applied: [8, 9, 10],
+      applied: [8, 9, 10, 11],
     });
     expect(column.rows).toEqual([{ is_nullable: "YES", data_type: "jsonb" }]);
     const search = await db.query<{ vector_type: string; searchable: string }>(
@@ -283,7 +283,11 @@ test("the v8 search fixture gains typed base and output roots without changing i
        ORDER BY root.root_name`,
     );
 
-    expect(result).toEqual({ fromVersion: 8, toVersion: LATEST_SCHEMA_VERSION, applied: [9, 10] });
+    expect(result).toEqual({
+      fromVersion: 8,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [9, 10, 11],
+    });
     expect(document.rows).toEqual([
       { root_name: "base", node_id: `node_${"1".repeat(64)}`, matched: true },
       { root_name: "output", node_id: `node_${"1".repeat(64)}`, matched: true },
@@ -334,7 +338,11 @@ test("the v9 layer fixture gains the explicit deterministic solid RGB node kind"
       `),
     ).rejects.toThrow();
 
-    expect(result).toEqual({ fromVersion: 9, toVersion: LATEST_SCHEMA_VERSION, applied: [10] });
+    expect(result).toEqual({
+      fromVersion: 9,
+      toVersion: LATEST_SCHEMA_VERSION,
+      applied: [10, 11],
+    });
     expect(kinds.rows).toEqual([{ kind: "solid" }]);
   } finally {
     await db.close();

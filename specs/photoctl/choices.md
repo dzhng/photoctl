@@ -2835,3 +2835,19 @@
   inferring either fact from node IDs.
 - **Verdict:** **Sound.** Graph truth and request activity are separate facts and now have separate fields.
 - **Confidence:** High.
+
+### Slice 12d — Affine resample matrices map source edges forward into the base canvas
+
+- **When:** Slice 12d affine-resample foundation, 2026-09-05.
+- **The choice:** A resample matrix maps the intrinsic source raster forward into the oriented base canvas using pixel-edge
+  coordinates. For example, `[1,0,0,1,8,6]` places the source's top-left edge at base position `(8,6)`, and
+  `[2,0,0,2,8,6]` doubles its size around that same edge before placement. The native evaluator inverts this matrix only while
+  sampling destination pixel centers. The alternative was to store the inverse destination-to-source transform or define
+  translation around pixel centers, either of which would make graph recipes disagree with the existing layer-transform owner.
+- **The gap:** The slice fixed the six affine values and source-to-base mapping but did not state whether stored matrices were
+  forward or inverse, or whether their translations referred to pixel centers or raster edges.
+- **The reach:** Refresh and transform-driven density maintenance can compose placement directly with the established native
+  transform contract; quarter-turns remain exact, off-canvas pixels remain zero, and recipe hashes have one coordinate meaning.
+- **Verdict:** **Sound.** It reuses the existing forward affine owner instead of introducing a second matrix convention at the
+  graph boundary.
+- **Confidence:** High.

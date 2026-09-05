@@ -217,7 +217,7 @@ export async function commitRevision(
       if (resolving.has(reference.localKey)) throw new Error("Image graph cycle refused");
       resolving.add(reference.localKey);
       const inputs = await mapInOrder(draft.inputs, resolveReference);
-      const parameters = canonicalParameters(draft.kind, draft.parameters);
+      const parameters = canonicalParameters(draft.kind, draft.recipeVersion, draft.parameters);
       const recipe = recipeHash(
         canonicalNodeRecipe({
           kind: draft.kind,
@@ -847,6 +847,10 @@ async function nodePixelKind(
     const actual = inputKinds[0];
     if (declared !== actual) throw new Error("Output pixel format disagrees with its input");
     return actual;
+  }
+  if (row.kind === "resample" && row.recipe_version === 2) {
+    assertPixelInputKinds(row.kind, inputKinds, ["rgb"]);
+    return "rgb";
   }
   if (row.kind === "transform" || row.kind === "resample") {
     return inputKinds[0];

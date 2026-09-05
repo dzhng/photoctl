@@ -838,6 +838,46 @@ test("a permanent mask cannot become the document's RGB base and output", async 
   }
 });
 
+test("affine resample accepts only its declared intrinsic RGB input", async () => {
+  const db = await graphDatabase();
+  try {
+    const layers: RevisionLayerDraft[] = [
+      {
+        ...layerDraft("subject", "content", "placed-mask", 0),
+        maskNode: { localKey: "placed-mask" },
+      },
+    ];
+    const projection = compositeV2Projection({ localKey: "base" }, layers);
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: null,
+        nodes: [
+          source("base"),
+          develop("content", { localKey: "base" }, 0),
+          mask("mask", "1"),
+          {
+            localKey: "placed-mask",
+            kind: "resample",
+            recipeVersion: 2,
+            parameters: { w: 1, h: 1, kernel: "lanczos3", matrix: [1, 0, 0, 1, 0, 0] },
+            inputs: [{ localKey: "mask" }],
+          },
+          { localKey: "composite", kind: "composite", recipeVersion: 2, ...projection },
+        ],
+        rootUpdates: [
+          { root: "base", node: { localKey: "base" } },
+          { root: "output", node: { localKey: "composite" } },
+        ],
+        newLayers: [{ localKey: "subject", role: "subject" }],
+        layers,
+      }),
+    ).rejects.toThrow("resample input 0 must produce RGB pixels");
+  } finally {
+    await db.close();
+  }
+});
+
 test("layer identity lookup accepts only a full id or an unambiguous photo-scoped prefix", async () => {
   const db = await graphDatabase();
   try {

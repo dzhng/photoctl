@@ -47,6 +47,128 @@ test("structured sources expose decode failure without masking graph errors", as
   }
 });
 
+test("affine resample translates an intrinsic RGB image onto a protected zero canvas", async () => {
+  const image = linearFixture(2, 1, [0.25, 0.75]);
+  const { db, library, nodeId } = await resampleGraph(image, 2, {
+    w: 4,
+    h: 3,
+    kernel: "lanczos3",
+    matrix: [1, 0, 0, 1, 1, 1],
+  });
+  try {
+    const evaluated = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId,
+      source: async () => sourceEvaluationFor(image),
+    });
+    const output = await readArtifactLinear(
+      evaluated.artifact.path,
+      evaluated.artifact.artifactHash,
+    );
+    const reused = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId,
+      source: async () => sourceEvaluationFor(image),
+    });
+
+    expect([output.w, output.h]).toEqual([4, 3]);
+    expect(reused).toMatchObject({ executionId: evaluated.executionId, reused: true });
+    expect(Array.from(output.data)).toEqual([
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.75, 0.75, 0.75, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("affine resample applies a uniform scale directly into the output canvas", async () => {
+  const image = linearFixture(1, 1, [0.5]);
+  const { db, library, nodeId } = await resampleGraph(image, 2, {
+    w: 10,
+    h: 10,
+    kernel: "lanczos3",
+    matrix: [2, 0, 0, 2, 2, 2],
+  });
+  try {
+    const evaluated = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId,
+      source: async () => sourceEvaluationFor(image),
+    });
+    const output = await readArtifactLinear(
+      evaluated.artifact.path,
+      evaluated.artifact.artifactHash,
+    );
+
+    expect([output.w, output.h]).toEqual([10, 10]);
+    expect(output.data[(3 * output.w + 3) * 3]).toBeGreaterThan(0);
+    expect(Array.from(output.data.slice(-3))).toEqual([0, 0, 0]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("affine resample quarter-rotates exactly and clips pixels outside the canvas", async () => {
+  const image = linearFixture(2, 1, [0.25, 0.75]);
+  const { db, library, nodeId } = await resampleGraph(image, 2, {
+    w: 2,
+    h: 2,
+    kernel: "lanczos3",
+    matrix: [0, 1, -1, 0, 1, 0],
+  });
+  try {
+    const evaluated = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId,
+      source: async () => sourceEvaluationFor(image),
+    });
+    const output = await readArtifactLinear(
+      evaluated.artifact.path,
+      evaluated.artifact.artifactHash,
+    );
+
+    expect(Array.from(output.data)).toEqual([0.25, 0.25, 0.25, 0, 0, 0, 0.75, 0.75, 0.75, 0, 0, 0]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("historical resample v1 recipes remain evaluable", async () => {
+  const image = linearFixture(2, 1, [0.25, 0.75]);
+  const { db, library, nodeId } = await resampleGraph(image, 1, {
+    w: 1,
+    h: 1,
+    kernel: "bilinear",
+  });
+  try {
+    const evaluated = await evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId,
+      source: async () => sourceEvaluationFor(image),
+    });
+    const output = await readArtifactLinear(
+      evaluated.artifact.path,
+      evaluated.artifact.artifactHash,
+    );
+
+    expect([output.w, output.h]).toEqual([1, 1]);
+    expect(Array.from(output.data)).toEqual([0.5, 0.5, 0.5]);
+  } finally {
+    await db.close();
+  }
+});
+
 test("evaluation failure before publication or database commit cannot create active missing state", async () => {
   const { db, library, nodeId } = await sourceGraph();
   try {
@@ -623,6 +745,78 @@ function sourceEvaluation() {
       decoderVersion: "0.35.4",
     },
   };
+}
+
+function linearFixture(w: number, h: number, samples: number[]) {
+  return {
+    w,
+    h,
+    data: new Float32Array(samples.flatMap((sample) => [sample, sample, sample])),
+    space: "scene-linear-rec2020" as const,
+    orientationApplied: true as const,
+    whiteLevel: 1 as const,
+    blackLevel: 0 as const,
+    wbPreApplied: true as const,
+  };
+}
+
+function sourceEvaluationFor(image: ReturnType<typeof linearFixture>) {
+  return {
+    image,
+    provenance: {
+      locator: { kind: "pinned-preview" as const, cache_path: "emb/photo.jpg" },
+      tier: "pinned-preview" as const,
+      w: image.w,
+      h: image.h,
+      decoderId: "fixture",
+      decoderVersion: "1",
+    },
+  };
+}
+
+async function resampleGraph(
+  image: ReturnType<typeof linearFixture>,
+  recipeVersion: 1 | 2,
+  parameters:
+    | { w: number; h: number; kernel: "bilinear" | "lanczos3" }
+    | {
+        w: number;
+        h: number;
+        kernel: "lanczos3";
+        matrix: [number, number, number, number, number, number];
+      },
+): Promise<{ db: PGlite; library: string; nodeId: string }> {
+  const db = await testDatabase();
+  await migrate(db);
+  await db.query(
+    `INSERT INTO photos (id, content_key, size, w, h, orientation)
+     VALUES ($1, 'ck_1234567890abcdef', 1, $2, $3, 1)`,
+    [photoId, image.w, image.h],
+  );
+  const revision = await commitRevision(db, {
+    photoId,
+    expectedRevisionId: null,
+    nodes: [
+      {
+        localKey: "source",
+        kind: "source",
+        recipeVersion: 1,
+        parameters: { orientation: 1 },
+        inputs: [],
+      },
+      {
+        localKey: "resample",
+        kind: "resample",
+        recipeVersion,
+        parameters,
+        inputs: [{ localKey: "source" }],
+      },
+    ],
+    rootUpdates: [{ root: "output", node: { localKey: "resample" } }],
+  });
+  const library = await mkdtemp(join(tmpdir(), "photoctl-affine-resample-"));
+  directories.push(library);
+  return { db, library, nodeId: revision.nodes.resample.id };
 }
 
 function providerResult() {
