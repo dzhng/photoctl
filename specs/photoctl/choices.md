@@ -4547,3 +4547,41 @@
   Warning messages remain intact and strict NDJSON remains the transport contract.
 - **Verdict:** **Sound.** Omission is preferable to inventing or mislabeling diagnostic facts.
 - **Confidence:** High.
+
+### Default overview — Qualify by the image graph, not an empty edit summary
+
+- **When:** Cheap source-overview integration, 2026-09-06.
+- **The choice:** After importing a photo, default `show` can render its pinned import JPEG
+  without decoding the full original. This applies only when the active graph is exactly the
+  initial source followed by its display output, with no geometry. An explicit empty develop
+  node or a disabled-layer graph still uses ordinary graph evaluation: looking empty in a
+  command summary does not prove that every pixel operation is absent. Native and detail
+  requests always retain their existing resolution planning.
+- **The gap:** The plan requires a cheap untouched overview but leaves the eligibility proof
+  unspecified. Treating every apparently neutral edit as equivalent would require a separate
+  graph simplifier that does not currently exist.
+- **The reach:** Future graph changes cannot accidentally bypass pixel operations by clearing
+  a summary field. A future authoritative simplifier may broaden eligibility; this check does
+  not become a parallel list of supposedly harmless operations.
+- **Verdict:** **Sound.** Exact recipe identity proves the shortcut preserves the intended
+  source-preview operation; visually equivalent but unproven recipes remain slower.
+- **Confidence:** Medium for the intentionally narrow performance coverage.
+
+### Default overview — Keep existing source validation and preview publication owners
+
+- **When:** Cheap source-overview integration, 2026-09-06.
+- **The choice:** A user unplugs an original after import and asks to see the photo. The cheap
+  path still checks the catalogued locator through the existing source resolver and warns
+  truthfully, then sends pinned pixels through the existing preview coordinator. That owner
+  publishes a validated, indexed JPEG protected from concurrent pruning. If the pinned JPEG
+  is corrupt, the ordinary original-source graph ladder remains available. Returning the
+  pinned file directly would avoid a bounded re-encode but bypass those derived-view rules.
+  An already-valid native master may still supply the overview, as it does for other views;
+  a render hash identifies edit state, not identical pixels across source tiers.
+- **The gap:** The plan allows direct pinned-path reuse but does not require it or specify
+  whether avoiding the full render should also skip source availability checks.
+- **The reach:** No second cache, warning, identity, or publication lifecycle is introduced.
+  Cheap overview still performs source identity I/O, and native/master reuse stays authoritative.
+- **Verdict:** **Sound.** Reuse the existing owners and accept bounded preview work rather
+  than weakening inspection safety or reporting stale source availability.
+- **Confidence:** High.

@@ -27,6 +27,7 @@ test("the built CLI persists resolved develop state without rendering new pixels
   });
   const id = (imported.json.data as { ids: string[] }).ids[0];
   const before = await spawnPhotoctl(["show", id], { libraryDir: library, env });
+  expect(before.code).toBe(0);
   const doctor = await spawnPhotoctl(["doctor"], { libraryDir: library, env });
   const libraryId = (doctor.json.data as { library_id: string }).library_id;
 
@@ -63,7 +64,7 @@ test("the built CLI persists resolved develop state without rendering new pixels
       nodes: [
         { kind: "output", artifact_available: false },
         { kind: "develop", artifact_available: false },
-        { kind: "source", artifact_available: true },
+        { kind: "source", artifact_available: false },
       ],
     },
   });

@@ -1,0 +1,49 @@
+{
+  "date": "2026-09-06",
+  "scope": "Unedited default overview selects pinned source pixels without full-resolution RAW graph evaluation",
+  "implementation_base": "91f807f",
+  "fixture": "fixtures/a7c2.ARW",
+  "public_daemon_measurement": {
+    "init_ms": 1751,
+    "import_ms": 200,
+    "cold_show_ms": 487,
+    "cached_show_ms": 180,
+    "same_pid": 41295,
+    "all_commands_succeeded": true,
+    "daemon_stopped": true,
+    "output_dimensions": [1616, 1080],
+    "source_tier": "pinned-preview",
+    "resolution_limited": false,
+    "prior_root_show_ms": 30066,
+    "comparison_limit": "Prior root timing was non-interleaved; this is a bounded public-command witness, not a statistically established speedup ratio or RAW quality comparison."
+  },
+  "behavioral_proof": {
+    "initial_red": "Public unedited show reported online-file and evaluated the canonical graph instead of selecting the pinned source.",
+    "green": "Public import/show reports pinned-preview with readable pixels and zero node executions. Native/detail/master reuse, edited/cropped frames and preview/export render identity remain covered.",
+    "healing_falsification": "Corrupt pinned JPEG plus absent derived view recovers via the existing original-source graph ladder. Temporarily removing that fallback made recovery fail; restoring it passed."
+  },
+  "visual_target": "The overview must retain the complete, upright imported source preview with the same path, railway poles, tree line and sky. It is not a native RAW color or detail oracle.",
+  "visual_telemetry": {
+    "comparison": "pinned source vs materialized overview, same 1616x1080 pixels; 256x256 center feature crop enlarged 3x with nearest neighbor",
+    "full_grayscale_mae": 0.51962,
+    "full_pixelmatch_ratio": 0,
+    "full_distance": 0.00066,
+    "crop_grayscale_mae": 0.53192,
+    "crop_pixelmatch_ratio": 0,
+    "candidate_entropy_bits": 6.26931,
+    "candidate_edge_density": 0.50309,
+    "candidate_transparent_share": 0
+  },
+  "visual_review": {
+    "mode": "Initial adversarial self-review followed by an unprimed image-only agent and integrating root inspection of all four captures.",
+    "case_against": [
+      "The magnified dark foliage and thin wires are soft and low contrast, so the overview cannot establish full-resolution detail fidelity.",
+      "Re-encoding a source JPEG could erase narrow wires or shift the framing even if a global difference score stays small."
+    ],
+    "verdict": "All four captures inspected: full scene remains upright and complete; poles, tree line and winding path align. The feature crops retain the same wires and poles, with no visible displacement or new missing content. Small encoding differences do not invalidate the overview target. Fresh reviewer found no concrete visible difference: high confidence in framing/color equivalence, medium-high confidence in retained wires and equivalent softness/fringes. Root inspection agrees. This accepts the overview target, not pixel identity or native RAW quality."
+  },
+  "review": "Independent Codex review found the linked regression fixture lacked an explicit online volume mapping and failed in its environment. The test now supplies the mapping rather than depending on ambient host volume discovery. Merged review passed show and develop tests, and flagged the not-yet-staged merge resolution (staged before commit). Its separate untracked undo-test finding is outside this pass: automatic daemon startup exists in execute, and the real host reaches Unknown command undo; no manual-start workaround was added for the review environment. No overview production finding remained.",
+  "merged_verification": "TypeScript build/typecheck passed. Show10, preview8, preview/export4 and daemon lifecycle14 passed together. The CLI develop test exposed its obsolete assumption that default show publishes a canonical RAW source artifact; the cheap-overview contract requires no such artifact. Correcting that assertion and checking initial show success passed the one-file CLI test. Total37 relevant cases green across the integration run and focused correction, not a root release gate.",
+  "reproduction": "Build TypeScript and the current native addon; initialize a scratch library/cache with an explicit online fixture volume mapping, import the committed ARW by link, invoke default show twice through the same daemon, retain preview_info and elapsed process timings, then stop the daemon. Focused tests: node node_modules/vitest/vitest.mjs run packages/commands/src/show.test.ts packages/render/src/preview.test.ts packages/commands/src/preview-export-hash.test.ts --maxWorkers=1",
+  "limits": "Only exact initial source graphs and default full-frame overview qualify. Explicit native/detail and all edited outputs still evaluate the authoritative graph. Corrupt pinned previews fall back; no new cache owner, schema, native math, or timeout policy."
+}

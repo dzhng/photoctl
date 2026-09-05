@@ -9,6 +9,12 @@ captured start time, the 30-minute grace, an exclusive path lease, and a conditi
 touch wins. It protects `emb/` and `models/` by both the pinned flag and tier, removes sidecars with their JPEGs,
 and isolates a failed deletion so later LRU candidates still run.
 
+An unedited default overview is a source-preview operation, not an excuse to decode a full RAW frame.
+The exact initial source graph can use the pinned import preview through the same coordinator and index;
+an invalid pinned JPEG falls back to the ordinary graph source ladder. Native/detail requests and edited
+graphs retain authoritative graph evaluation and existing master reuse. [Bounded command and visual evidence](../assets/gates/show-overview/evidence.json)
+records the source-tier and recovery checks separately from RAW quality or native-render latency.
+
 **03b implemented:** backups are durable plain-SQL pgDump snapshots. The daemon serializes one automatic
 snapshot through its operation lane after open, deduplicates snapshots within five minutes, and retains the
 newest ten under a 200 MiB pool while always preserving the newest file. Restore stops the daemon, builds and

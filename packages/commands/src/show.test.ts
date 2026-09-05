@@ -8,6 +8,63 @@ import { showDataSchema, type StderrEvent } from "@photoctl/protocol";
 import { PreviewCoordinator, srgb2014ProfilePath } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
 
+test("unedited default show uses the pinned overview without publishing full graph artifacts", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-show-cheap-"));
+  const libraryPath = join(directory, "library");
+  const cacheRoot = join(directory, "cache");
+  const source = join(directory, "photo.png");
+  const initialized = await initializeLibrary(libraryPath);
+  const env = {
+    noDaemon: true,
+    libraryPath,
+    cacheRoot,
+    volumeMap: `${directory}=fixture-volume:online`,
+  };
+  try {
+    await sharp({ create: { width: 64, height: 48, channels: 3, background: "red" } })
+      .png()
+      .toFile(source);
+    const imported = await dispatch(
+      { verb: "import", args: [source, "--link"], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    if (!imported.ok || !("data" in imported)) throw new Error("import failed");
+    const id = (imported.data as { ids: string[] }).ids[0]!;
+    const shown = await dispatch(
+      { verb: "show", args: [id], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    expect(shown.ok).toBe(true);
+    if (!shown.ok || !("data" in shown)) throw new Error("show failed");
+    const data = showDataSchema.parse(shown.data);
+    expect(data.preview_info).toMatchObject({
+      source_tier: "pinned-preview",
+      actual: { w: 64, h: 48 },
+    });
+    expect((await sharp(data.preview).stats()).channels[0]!.mean).toBeGreaterThan(240);
+    expect(
+      (await initialized.handle.query("SELECT count(*)::text AS count FROM node_executions")).rows,
+    ).toEqual([{ count: "0" }]);
+    await writeFile(
+      join(cacheRoot, initialized.libraryId, "emb", `${id}.jpg`),
+      "corrupt pinned JPEG",
+    );
+    await rm(data.preview);
+    const recovered = await dispatch(
+      { verb: "show", args: [id], cwd: directory, env },
+      { version: "test", library: initialized.handle },
+    );
+    expect(recovered.ok).toBe(true);
+    if (!recovered.ok || !("data" in recovered)) throw new Error("show recovery failed");
+    const restored = showDataSchema.parse(recovered.data);
+    expect(restored.preview_info.source_tier).toBe("online-file");
+    expect((await sharp(restored.preview).stats()).channels[0]!.mean).toBeGreaterThan(240);
+  } finally {
+    await initialized.handle.close();
+    await rm(directory, { recursive: true });
+  }
+});
+
 test.each([
   {
     label: "reduced",
@@ -360,7 +417,7 @@ test("show indexes a derived preview only after returning a readable artifact", 
     const graphState = await initialized.handle.query<{
       executions: string;
       artifacts: string;
-      available: boolean;
+      available: boolean | null;
     }>(
       `SELECT
          (SELECT count(*)::text FROM node_executions) AS executions,
@@ -368,7 +425,7 @@ test("show indexes a derived preview only after returning a readable artifact", 
          bool_and(artifact_available) AS available
        FROM image_artifacts`,
     );
-    expect(graphState.rows).toEqual([{ executions: "2", artifacts: "1", available: true }]);
+    expect(graphState.rows).toEqual([{ executions: "0", artifacts: "0", available: null }]);
     const repeated = await dispatch(
       {
         verb: "show",
@@ -388,7 +445,7 @@ test("show indexes a derived preview only after returning a readable artifact", 
           "SELECT count(*)::text AS count FROM node_executions",
         )
       ).rows,
-    ).toEqual([{ count: "2" }]);
+    ).toEqual([{ count: "0" }]);
   } finally {
     await initialized.handle.close();
     await rm(directory, { recursive: true });

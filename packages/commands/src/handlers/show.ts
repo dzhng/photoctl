@@ -28,6 +28,8 @@ import {
   PreviewCoordinator,
   readActiveDevelopState,
   readArtifactImage,
+  renderSource,
+  developFrame,
   SourceEvaluationError,
   viewHash,
   type ImageSource,
@@ -43,6 +45,7 @@ import {
 } from "../graph-source.js";
 import { loadPhoto, type StoredPhoto } from "../photo.js";
 import { createProgressHeartbeat } from "../progress.js";
+import { resolveOnlineOriginalSource } from "../image-source.js";
 
 export async function showCommand(
   args: string[],
@@ -128,28 +131,74 @@ export async function showCommand(
       mediaType: "image/jpeg",
       orientation: 1,
     };
-    const candidates = await resolveGraphSources({
+    const sourceOptions = {
       photo,
       resolver,
       pinned,
-      pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${id}.jpg` },
+      pinnedLocator: { kind: "pinned-preview" as const, cache_path: `emb/${id}.jpg` },
       env,
-    });
+    };
+    const sourceOverview =
+      view.region === null &&
+      view.longEdge === 1616 &&
+      !document.geometryNodeId &&
+      (
+        await handle.query(
+          `SELECT output.id FROM image_nodes output
+         JOIN image_node_inputs edge ON edge.photo_id = output.photo_id AND edge.node_id = output.id
+         JOIN image_nodes source ON source.photo_id = edge.photo_id AND source.id = edge.input_node_id
+         WHERE output.photo_id = $1 AND output.id = $2
+           AND output.kind = 'output' AND output.recipe_version = 1
+           AND output.parameters = '{"format":"display-rgb","color_space":"srgb"}'::jsonb
+           AND source.kind = 'source' AND source.recipe_version = 1
+           AND source.parameters = $3::jsonb`,
+          [id, document.outputNodeId, JSON.stringify({ orientation: photo.orientation })],
+        )
+      ).rows.length === 1;
     const materialized = await materializeWithFallback(
       {
         id,
         cacheRoot,
         renderHash,
         photo,
-        developBaseDimensions: { w: photo.w, h: photo.h },
         view,
         frame,
         coordinator,
         index,
-        handle,
-        outputNodeId: document.outputNodeId,
       },
-      candidates,
+      async function* () {
+        if (sourceOverview) {
+          const original = await resolveOnlineOriginalSource(photo, resolver);
+          yield {
+            source: pinned,
+            fallback: original ? null : ("source_offline" as const),
+            render: async () => {
+              try {
+                const image = await renderSource(photo.orientation, pinned);
+                return { image, frame: developFrame(photo, image) };
+              } catch (error) {
+                throw new SourceEvaluationError(error);
+              }
+            },
+          };
+        }
+        for (const candidate of await resolveGraphSources(sourceOptions)) {
+          yield {
+            ...candidate,
+            render: async () =>
+              await evaluatePreviewGraph(
+                {
+                  id,
+                  photo,
+                  developBaseDimensions: { w: photo.w, h: photo.h },
+                  handle,
+                  outputNodeId: document.outputNodeId,
+                },
+                candidate,
+              ),
+          };
+        }
+      },
     );
     const tags = await handle.query<{ tag: string }>(
       "SELECT tag FROM tags WHERE photo_id = $1 ORDER BY tag",
@@ -327,17 +376,18 @@ async function materializeWithFallback(
     cacheRoot: string;
     renderHash: string;
     photo: StoredPhoto;
-    developBaseDimensions: { w: number; h: number };
     view: ViewSpec;
     frame: RenderFrame;
     coordinator: PreviewCoordinator;
     index: CacheIndex;
-    handle: LibraryHandle;
-    outputNodeId: string;
   },
-  candidates: GraphSourceCandidate[],
+  candidates: () => AsyncGenerator<
+    Pick<GraphSourceCandidate, "source" | "fallback"> & {
+      render: NonNullable<Parameters<typeof materializePreview>[0]["render"]>;
+    }
+  >,
 ) {
-  for (const candidate of candidates) {
+  for await (const candidate of candidates()) {
     try {
       return {
         preview: await materializePreview({
@@ -349,7 +399,7 @@ async function materializeWithFallback(
           photo: context.photo,
           source: candidate.source,
           sourceTier: candidate.source.kind,
-          render: async () => await evaluatePreviewGraph(context, candidate),
+          render: candidate.render,
           view: context.view,
           logicalFrame: context.frame,
         }),
