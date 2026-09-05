@@ -74,9 +74,9 @@ before PNG normalization, separately from the working image. Generation and upsc
 contract, including refresh and transform-triggered density work. For mapped upscales, retain the
 whole response before its working crop and keep the adapter's coordinate mapping in provenance.
 
-Use content classification, not execution role, to validate stored artifacts. The next migration
-after reference inputs adds an artifact validation profile and a nullable execution original-artifact
-foreign key. Backfill existing working RGB TIFFs, mask TIFFs, and reference PNGs without relaxing their
+Use content classification, not execution role, to validate stored artifacts. A migration after
+reference inputs adds an artifact validation profile. Backfill existing working RGB TIFFs, mask TIFFs,
+and reference PNGs without relaxing their
 validators. A provider TIFF that passes strict canonical validation has the same classification,
 hash, and file as identical working bytes; an ordinary encoded TIFF must never enter the working
 reader merely because its MIME type is `image/tiff`. Sniff the actual format and intrinsic dimensions,
@@ -88,14 +88,29 @@ conversion semantics unchanged; do not silently narrow acceptance or call a conv
 Working readers remain strict. Both artifacts must be durable before a successful execution/revision
 transaction links them; an upscale fallback cannot hide failed original publication and claim retention.
 
-**Success and rejected-attempt boundaries are distinct.** First wire execution-linked originals
-through every successful generation/upscale producer and existing reuse. Historical NULL means
-not retained; a linked missing/corrupt file means unavailable. A valid paid image rejected for aspect,
-whole-frame, or density policy has no successful node execution today. Retaining those purchased
-images requires an explicit non-activated attempt/outcome record with provenance and reachability;
-publishing an orphan or inventing a dummy working image is not that contract. This second boundary
-remains required planning/implementation work, not implicitly satisfied by successful-execution links.
-Corrupt/non-image response bodies are not image artifacts with invented dimensions.
+**One attempt record owns the returned image, including rejected work.** Success-only execution links
+would miss valid images rejected before a node exists. Use a library-owned provider-image attempt
+journal now, and a nullable execution→attempt foreign key, rather than implementing a success-only
+original link that immediately needs another owner. Standalone generation creates no dummy photo or
+node. Historical NULL means not retained; a linked missing/corrupt file means unavailable.
+
+The journal records a sanitized typed request, observed provider provenance, exact original artifact
+link, state/outcome, and timestamps. Commit `started` before sending, then publish/register valid
+returned bytes and commit `retained` before aspect, frame, density, or whole-frame policy checks.
+Rejecting the image records `rejected` without losing it. The existing successful revision transaction
+attaches the execution and marks `committed` atomically; later conversion/commit failure records
+`failed` when possible. A crash can leave `started` or `retained`: incomplete is not proof of provider
+failure, and cannot trigger an automatic retry. A publication/registration failure can still leave an
+orphan; never claim filesystem/database atomicity. Corrupt/non-image bodies have no invented image
+artifact or dimensions.
+
+One attempt is one application-level provider invocation, not every transport retry. Record observed
+retry counts and nullable reported cost. Explicit repeat invocations get distinct attempts even when
+their bytes deduplicate; reusing purchased work retains its existing attempt link. Every attempt's
+original is a retention root independent of photo deletion or revision activation. Provide bounded
+read-only list/detail inspection and include attempt IDs in rejection/fallback diagnostics, so a user
+can find retained work. Do not add speculative grouping/configuration fields or automatic pruning.
+The projectless workbench remains outside library retention unless given an explicit library context.
 
 Verify exact bytes and distinct original/working dimensions, same-response deduplication, undo/history
 reachability, pre-migration absence, backup/restore with intact/missing/corrupt files, and publication

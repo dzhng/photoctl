@@ -140,11 +140,30 @@
 
 ## Sound
 
+### Paid response retention — Record attempts before deciding whether their images can be used
+
+- **When:** Retention producer audit, 2026-09-06; implementation remains pending.
+- **The choice:** A paid image arrives with the wrong aspect ratio. Preserve it through the ordinary
+  artifact store, then record the rejection on a library-owned attempt. A successful render execution
+  links that same attempt when its revision commits. Standalone generation can therefore retain a
+  rejected result without inventing a photo or a render node. The alternative stores originals only
+  on successful executions, losing paid results rejected before such an execution exists.
+- **The gap:** All six library image-producing paths can reject or abandon a returned image before
+  graph activation; even the provider adapter and upscale registry contain early policy checks.
+- **The reach:** One attempt journal owns sanitized request/provenance/outcome and the original-image
+  link; executions reference it rather than duplicate retention ownership. Started/retained records
+  left by a crash mean incomplete, not permission to retry. All attempt images remain retention roots,
+  including after photo deletion, until a separately measured deletion policy is chosen. Bounded
+  inspection and attempt IDs in diagnostics make rejected paid work discoverable.
+- **Verdict:** **Sound.** Capture must precede acceptance policy to preserve purchased output. The
+  journal shares the existing artifact lifecycle and avoids a success-only transitional schema.
+- **Confidence:** High in ownership; failure and crash boundaries still require implementation tests.
+
 ### Paid response artifacts — Classify bytes independently of how an execution uses them
 
 - **When:** Original-response retention recon, 2026-09-06; implementation remains pending.
 - **The choice:** A provider can return a TIFF that is already identical to the strict working TIFF
-  used by the graph. Keep one file and artifact row, with both execution links pointing to it. A
+  used by the graph. Keep one file and artifact row, with original-response and working links pointing to it. A
   different, ordinary display TIFF is preserved as encoded image data but cannot be read as working
   scene-linear RGB. A validation profile describes the content; the execution link describes whether
   that content is an original response or working output. The alternative labels artifacts by their
