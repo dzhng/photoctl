@@ -90,8 +90,8 @@ photographic quality acceptance.
 ## Native task allocation accounting
 
 Rust snapshots owned by asynchronous pixel tasks are separate from JavaScript backing stores. The task reports its actual
-vector capacity to Node's external-memory accounting until disposal or output transfer. Node already accounts returned
-typed-array backing stores, so the manual charge ends before that transfer. The shared guard stays on the task while its
+vector capacity to Node's external-memory accounting until disposal or output transfer. For pointwise color conversion,
+Node already accounts the transferred typed-array backing store, so the manual charge ends before that transfer. The shared guard stays on the task while its
 vector moves through worker computation; only the originating Node thread may adjust the counter. Task destruction covers
 completion errors that bypass `finally`. A pre-existing scheduler failure that leaks the entire task also retains its real
 allocation and charge; accounting does not claim to repair that platform leak or guarantee cleanup after process teardown.
@@ -114,8 +114,8 @@ different metric and ranges from 3.00 to 3.32 GB. This passes the recorded RSS w
 photographic-quality gate or every platform. The historical prepared-input runs are not an interleaved A/B experiment;
 allocator residency and memory compression can influence causal comparisons. Other native snapshots remain unaccounted.
 
-[Repeated full-resolution cache recheck](fullres-cache-accounting.json) remains **red** on the same code: the unchanged
+[Repeated full-resolution cache recheck](fullres-cache-accounting.json) remains **red** for the color-only accounting checkpoint: the unchanged
 7008×4672 distinct-buffer probe stopped after two of sixteen requested images at 3.161 GB peak RSS. Both masks retain the
-historical exact hash. Its display-RGB input bypasses pointwise color conversion; the full-frame resampler snapshot remains
-unaccounted. End-of-request RSS below the limit does not erase the measured peak. This fails before cache eviction is
+historical exact hash. Its display-RGB input bypasses pointwise color conversion; the full-frame resampler snapshot was
+unaccounted in that run. A rerun with resampler accounting is pending. End-of-request RSS below the limit does not erase the measured peak. This fails before cache eviction is
 exercised and is not superseded by the six passing independent CLI runs.

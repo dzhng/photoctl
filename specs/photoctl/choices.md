@@ -4341,6 +4341,24 @@
   preserve pixel and caller contracts instead of tuning an allocator around one photograph.
 - **Confidence:** High for ownership/accounting; RSS effectiveness remains measurement-dependent.
 
+### Native resampling tasks — Charge input until it is freed, independently of output
+
+- **When:** Resampler accounting, 2026-09-06, integrated as `c61195c`.
+- **The choice:** Resizing a photograph copies the caller's pixels, then computes a different output
+  allocation. Returning that output does not free the input. The task therefore retains the input's
+  manual Node memory charge while registering the separate output, frees the input, and only then
+  releases its charge. Affine transforms follow the same rule. Treating this like pointwise color
+  conversion would stop reporting a still-live input as soon as the output became visible.
+- **The gap:** The existing guard supported ownership transfer, but the plan did not prescribe how
+  to account operations whose input and output remain distinct allocations.
+- **The reach:** These tasks reuse the existing guard and completion lifecycle; output backing
+  stores retain Node's normal accounting. No predicted worker allocation, scheduler, forced
+  collection, public API, or schema is introduced. Error destruction preserves input-before-guard
+  drop order. This reports actual capacity, not a hard RSS ceiling or prevention of allocation peaks.
+- **Verdict:** **Sound.** Accounting follows the lifetime of the allocation it describes rather
+  than the promise result, preserving caller snapshots and unchanged pixel arithmetic.
+- **Confidence:** High for ownership; resource effectiveness still requires measurement.
+
 ### Real-model gate — Rebuild the requested source, with provisioning kept explicit
 
 - **When:** Docker/model gate wiring, 2026-09-06.

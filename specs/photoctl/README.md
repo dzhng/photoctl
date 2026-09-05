@@ -25,16 +25,18 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   Migration 17 retains coordinates per execution; cached masters/views retain their own frame and
   choose density from actual available sources, not tier labels. Equal pixel bytes do not imply equal
   coordinates, and old ancestry recovery never guesses the latest execution. See [12f1](slices/12-outpaint.md).
-  Photographic mutations now share one output planner; the canvas and geometry-intent state remain
-  the next implementation work in [12f2](slices/12-outpaint.md#geometry-intent-and-ordinary-layer-operations).
+  Photographic mutations now share one output planner. Deterministic canvas composition and reversible
+  border removal are integrated; restriction activation and remaining consumers are next in
+  [12f2](slices/12-outpaint.md#geometry-intent-and-ordinary-layer-operations).
 - Fit/strength, capped/full-res inputs, and reference/init controls are integrated. Migration 18
   retains exact reference PNG plus working TIFF through one artifact owner; supported references
   use documented image edits and unsupported controls warn explicitly. The speculative standalone
   reference field is removed. Follow [12f2](slices/12-outpaint.md) for immutable geometry intent,
   inherited crop exclusions, and removable extent, then wire generation in 12f3. Canvas owns the
   integrated migration 19 for immutable geometry/layer-authoring metadata; paid retention is integrated as 20.
-  Canvas pixel lifecycle remains in progress on its own worktree. Keep live quality
-  separate from deterministic evidence.
+  Migration 21 carries authored canvas composition. Independent crop/aspect activation, undo,
+  source-only SAM geometry, and offline/purchased-density consumers remain in progress.
+  Keep live quality separate from deterministic evidence.
 - Slice 11 runtime, real parity-verified weights, and `wb masks` are integrated. Real-photo
   coarse subject tests pass; foliage/wire edges remain red. Full-command RSS passes the six-run
   host/fixture witness after native accounting; that is not an all-platform resource guarantee. The report selects
@@ -60,7 +62,8 @@ The geometry prerequisite passed 77 merged migration/graph/command tests and typ
 pointwise color-buffer reuse passed its merged native build and focused color/SAM tests. These are
 allocation and storage checkpoints, not canvas completion or a passing whole-command resource gate.
 Convex support passed 78 merged geometry/pixel tests and typecheck; its canvas consumers remain in progress.
-Native accounting passed its merged build, typecheck, and 12 color/accounting consumer tests.
+Canvas core passed 156 merged consumer tests and typecheck. Native color/resampler accounting
+passed its merged build, typecheck, and 26 accounting/color/SAM-session/mask tests.
 Retention passed 85 merged tests, atomic removal 18, and upscale/develop consumers 21, each with
 typecheck. The latter verifies exposure replacement without additional provider work.
 Earlier integrations passed focused tests, Rust tests, builds, typecheck,
@@ -74,8 +77,8 @@ failed detailed edges and historical full-command memory breaches. Pointwise buf
 pixel-free cached dimensions and prepared inference handles are integrated (19 merged tests and
 typecheck). Native color snapshots now report their actual capacity to Node; six no-forced-GC CLI
 runs preserve exact masks at 2.04–2.27 GB RSS on the fixture host. The separate full-resolution
-multi-photo cache probe remains red at 3.161 GB, stopping after two inputs; resampler snapshot
-accounting is the next bounded memory pass. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
+multi-photo cache probe remains red at 3.161 GB, stopping after two inputs. Resampler snapshot
+accounting is integrated; its unchanged full-resolution RSS rerun is next. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
 single/multi-mask references all fail detailed edges. Any extra refinement is a separate decision.
 [Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
 Docker's functional gate now consumes hash-verified models and runs the shared real-model test;
