@@ -2,21 +2,6 @@
 
 ## Unsound
 
-### Upscaler spike — Inspection cases must not duplicate paid requests
-
-- **When:** Integrating the experiment runner, 2026-09-06; correction in progress.
-- **The choice:** Listing the same source twice, once to inspect text and once to inspect a mask
-  boundary, currently runs the same prompt/control requests twice. Reuse only covers a control
-  value matching the baseline within one source entry. The different crop and category describe
-  inspection, not a different provider request.
-- **The gap:** The plan separated comparison variables but did not define reuse across inspection cases.
-- **The reach:** A richer report can otherwise increase external cost without producing new evidence.
-- **Verdict:** **Unsound.** Reuse a completed result within the experiment whenever source bytes,
-  adapter/model, prompt, and controls are identical. Derive each inspection crop from that result;
-  a changed crop or category must not purchase another identical request. Do not infer reuse across
-  separate experiment runs, which may intentionally measure independent stochastic results.
-- **Confidence:** High.
-
 ### Slice 13a generate — Replace the speculative reference transport
 
 - **When:** Slice 13a standalone generation, 2026-09-05; evidence correction, 2026-09-06.
@@ -115,6 +100,20 @@
   measurements are still required before any automatic deletion policy.
 
 ## Sound
+
+### Upscaler reports — Unequal rasters have no direct pixel-drift measurement
+
+- **When:** Upscaler integration correction, 2026-09-06.
+- **The choice:** If one prompt returns 32×24 pixels and another returns 16×12, the report keeps
+  both actual dimensions and returns a null drift metric with `different_output_dimensions`.
+  It does not label this uncomputed comparison as maximum pixel difference. Equal-sized outputs
+  retain the existing normalized mean absolute RGB8 difference.
+- **The gap:** The report did not define how to measure outputs at different realized densities.
+- **The reach:** A report consumer must treat null as missing comparison evidence, not poor image
+  quality. Resizing could support a separately specified comparison, but cannot be silently added
+  without choosing its sampling and alignment contract.
+- **Verdict:** **Sound.** Unknown evidence stays unknown instead of becoming an invented score.
+- **Confidence:** High.
 
 ### Slice 12 — Regeneration revisits original selection intent under current visibility
 
@@ -1852,6 +1851,21 @@
 - **Confidence:** Medium; later slices still own the final fields and version transitions for their kinds.
 
 ## Superseded
+
+### Upscaler spike — Per-case reuse duplicated paid requests
+
+- **When:** Integration finding, corrected by `c1280d5` on 2026-09-06.
+- **The choice:** Listing the same source twice, once to inspect text and once to inspect a mask
+  boundary, originally repeated the same prompt/control requests. Reuse only covered a control
+  value matching the baseline within one source entry. The different crop and category describe
+  inspection, not a different provider request.
+- **The gap:** The plan separated comparison variables but did not define reuse across inspection cases.
+- **The reach:** A richer report could increase external cost without producing new evidence.
+- **Verdict:** **Unsound, corrected.** Completed requests now share one experiment-wide owner keyed
+  by source bytes, adapter/model/version, prompt, and controls. Independent inspection crops remain
+  separate. New experiment invocations still obtain fresh work; they may intentionally measure
+  independent stochastic results. The current contract is banked under Sound.
+- **Confidence:** High.
 
 ### Slice 08a2 implementation — Display RGB16 as the canonical graph artifact was unsound
 

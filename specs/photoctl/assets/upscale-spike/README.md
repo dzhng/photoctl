@@ -31,6 +31,8 @@ requested controls, and provider provenance together. Resolved controls are unkn
 normalization. Detail files retain native pixels. Small detail panels are not resized; oversized panels use an explicitly labeled
 fit preview to keep contact sheets bounded. The thin gray outline marks their extent, including white mask regions.
 A mask is inspection context only: the upscaler interface does not accept it, and this report does not assert compositor protection.
+Prompt-arm drift is mean absolute RGB8 difference normalized to 0..1 only when output raster dimensions match.
+Different dimensions produce a null metric with `different_output_dimensions`, not a fabricated maximum difference.
 
 The category declarations here deliberately exercise only synthetic text and mask/texture layouts. They are not photographs and
 do not prove those quality categories acceptable. The fake adapter paints flat colors and ignores control strength: matching
@@ -57,6 +59,8 @@ The experiment-wide reuse correction regenerated both evidence bundles; every fu
 Only request identities, shared output paths, accounting, and execution timing changed. Duplicate full-image fixture copies were
 replaced with request-keyed files; all inspection crops remain available.
 Fresh independent code review found no remaining issue in the reuse correction; its focused tests and TypeScript build passed.
+Integration then reproduced and corrected the unequal-dimension drift report. The public runner regression and all twenty
+workbench tests passed; an independent review accepted that correction. Comparable-image evidence remains unchanged.
 
 The three-sheet Preview checkpoint stayed open for approximately five minutes without feedback and was then closed. No model
 or control preference was selected from fake output. A fresh integration critic inspected the complete final capture set,

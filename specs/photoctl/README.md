@@ -38,8 +38,8 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   remain open. See [Slice 11](slices/11-segment.md).
 - Slice 14 packaging, shared full-feature journey, and HTML/SHA report artifacts are integrated.
   The clean-prefix fixture exam passed; real-drive acceptance remains. See [Slice 14](slices/14-gold-exam-and-release.md).
-- Slice 13's experiment runner now separates prompt, single-control, and category evidence. Finish
-  experiment-wide identical-request reuse across inspection cases, then conduct the photographic
+- Slice 13's experiment runner now separates prompt, single-control, and category evidence and reuses
+  identical requests across inspection cases. Conduct the photographic
   comparisons in [Slice 13](slices/13-generative-extras-and-markup.md) when explicitly configured.
   Missing live prerequisites do not block deterministic work.
 - Finish execution-linked original paid-response retention through the existing artifact owner after

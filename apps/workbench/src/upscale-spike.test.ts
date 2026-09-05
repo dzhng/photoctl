@@ -43,6 +43,53 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map((path) => rm(path, { recursive: true })));
 });
 
+test("different provider output dimensions are not reported as measured pixel drift", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "photoctl-upscale-drift-"));
+  directories.push(cwd);
+  await sharp({ create: { width: 8, height: 6, channels: 3, background: "#936" } })
+    .png()
+    .toFile(join(cwd, "source.png"));
+  await writeFile(
+    join(cwd, "experiment.json"),
+    JSON.stringify({
+      model: "photoctl/fake-upscale-v1",
+      controls: {
+        scale: 4,
+        fidelity: 0.7,
+        creativity: 0.3,
+        seed: 42,
+        originalOperation: "denoise",
+      },
+      controlStrength: { variable: "fidelity", values: [0.7, 0.9] },
+      sources: [{ path: "source.png" }],
+    }),
+  );
+  class VariableSizeAdapter extends FakeUpscaleAdapter {
+    override async upscale(input: UpscaleInput) {
+      return await super.upscale({
+        ...input,
+        scale: input.prompt?.startsWith("Preserve the source") ? 2 : 4,
+      });
+    }
+  }
+  const adapter = new VariableSizeAdapter();
+  const registry = new UpscaleRegistry(adapter.id);
+  registry.register(adapter);
+  const output = await runWorkbench(
+    ["upscale-spike", "--config", "experiment.json"],
+    cwd,
+    {},
+    { upscaleRegistry: registry },
+  );
+  const evidence = JSON.parse(await readFile(output, "utf8"));
+  expect(evidence.comparisons[0].guarded.dimensions).toEqual({ w: 32, h: 24 });
+  expect(evidence.comparisons[0].minimal.dimensions).toEqual({ w: 16, h: 12 });
+  expect(evidence.comparisons[0].drift).toEqual({
+    meanAbsoluteError: null,
+    reason: "different_output_dimensions",
+  });
+});
+
 test("identical source requests share a provider result across distinct inspection crops and categories", async () => {
   const cwd = await mkdtemp(join(tmpdir(), "photoctl-upscale-reuse-"));
   directories.push(cwd);

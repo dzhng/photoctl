@@ -340,12 +340,10 @@ async function runComparison(
       guarded,
       minimal,
       strength: strengthArms,
-      drift: {
-        meanAbsoluteError: await meanAbsoluteError(
-          join(outputDirectory, guarded.output),
-          join(outputDirectory, minimal.output),
-        ),
-      },
+      drift: await compareOutputPixels(
+        join(outputDirectory, guarded.output),
+        join(outputDirectory, minimal.output),
+      ),
     },
     panels: [
       ...context,
@@ -517,7 +515,7 @@ function publicControls(controls: Controls) {
   };
 }
 
-async function meanAbsoluteError(left: string, right: string): Promise<number> {
+async function compareOutputPixels(left: string, right: string) {
   const [leftImage, rightImage] = await Promise.all([
     sharp(left).removeAlpha().raw().toBuffer({ resolveWithObject: true }),
     sharp(right).removeAlpha().raw().toBuffer({ resolveWithObject: true }),
@@ -526,11 +524,11 @@ async function meanAbsoluteError(left: string, right: string): Promise<number> {
     leftImage.info.width !== rightImage.info.width ||
     leftImage.info.height !== rightImage.info.height
   )
-    return 1;
+    return { meanAbsoluteError: null, reason: "different_output_dimensions" };
   let sum = 0;
   for (let index = 0; index < leftImage.data.length; index += 1)
     sum += Math.abs(leftImage.data[index]! - rightImage.data[index]!);
-  return Number((sum / leftImage.data.length / 255).toFixed(6));
+  return { meanAbsoluteError: Number((sum / leftImage.data.length / 255).toFixed(6)) };
 }
 
 async function renderContactSheet(
