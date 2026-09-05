@@ -1,10 +1,10 @@
 # Implementation choices
 
-## Needs-user
+## Unsound
 
-### Slice 13a generate — Reference images use the gateway's generic JSON image field provisionally
+### Slice 13a generate — Replace the speculative reference transport
 
-- **When:** Slice 13a standalone generation, 2026-09-05.
+- **When:** Slice 13a standalone generation, 2026-09-05; evidence correction, 2026-09-06.
 - **The choice:** `generate --ref photo.jpg` rotates and normalizes the reference to PNG, then places one data URL in a
   `reference_image` field on the existing OpenAI-compatible `images/generations` request. The command records only that a reference
   was used, not the local path or image bytes. The fake gateway pins that wire shape. [Vercel's current GPT Image 2 surface](https://vercel.com/ai-gateway/models/gpt-image-2) advertises
@@ -15,10 +15,15 @@
   live acceptance evidence.
 - **The reach:** A live gateway can reject only reference-bearing calls while text-only generation remains valid. The uncertainty is
   isolated to `ImageModelAdapter.buildGeneration`; catalog, graph, import, and result schemas do not depend on the field name.
-- **Verdict:** **Needs-user.** Keep the keyless contract provisionally, then run one reference-image smoke with the configured release
-  model before claiming live support. If rejected, replace the adapter's request shape from provider evidence without changing the
-  command or graph contracts.
-- **Confidence:** Low; product intent is clear, but the raw transport spelling is not evidenced yet.
+- **Verdict:** **Unsound.** A fake that accepts an invented field cannot establish the live reference
+  contract. [Current Vercel documentation](https://vercel.com/docs/ai-gateway/modalities/image-generation/openai#editing-images)
+  supplies a supported alternative: reference images on `/images/edits`, with `images[].image_url`
+  documented for JSON requests. Replace the speculative generation field through the shared adapter
+  input boundary and retain pinned reference pixels for reproducible refresh. The correction is pending;
+  live photographic acceptance remains a separate check, not a reason to retain the invented field.
+- **Confidence:** High in the corrected transport decision; live execution has not been measured.
+
+## Needs-user
 
 ### Slice 12f plan — Expand the visible picture symmetrically
 

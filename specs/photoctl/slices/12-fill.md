@@ -35,6 +35,22 @@ The public-command regression in `fill-input-size.test.ts` inspects the actual u
 both modes, and checks canonical output dimensions and protected samples. This is deterministic
 geometry/provenance evidence, not a live-provider or photographic quality verdict.
 
+### Reference-input implementation boundary
+
+Pin the normalized reference as a reachable immutable RGB graph input, not just a hash inside
+request JSON. Refresh must use those pinned pixels even after the caller's reference path changes
+or disappears. A new reference or initialization request cannot reuse generation made for different
+inputs. Decoder-backed source leaves and pinned-reference leaves have distinct recipes; do not import
+a reference as an extra library photo or create a second artifact-retention owner.
+
+[Vercel's image-editing contract](https://vercel.com/docs/ai-gateway/modalities/image-generation/openai#editing-images)
+documents multiple source images on `/images/edits`, including a JSON `images[].image_url` form for
+URLs or inline data. Use a documented fixed adapter profile; the earlier standalone-generation
+`reference_image` field is not established by that contract. Reference-bearing standalone generation
+must share the supported edit-input boundary rather than retain that speculative field. Keep actual
+multipart spelling grounded in the SDK transport when using uploads. Unsupported controls still warn;
+documentation does not replace live polarity or photographic acceptance evidence.
+
 ## 12e1 effective-mask ownership
 
 Migration 16 adds deterministic `mask@2` recipes without changing pinned `mask@1` artifacts.
