@@ -19,14 +19,13 @@ the last pushed export-heartbeat checkpoint.*
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: carry exact render frames through preview caches, then finish controls and outpaint.**
+**Current pickup: finish reference/init controls, then author the outpaint canvas.**
 
-- Initial cropped-frame fill and refresh now sample the evaluated frame while retaining base-space
-  placement and authored visible coverage. The next reproduced defect is preview metadata/detail planning:
-  a reduced, fractionally cropped and straightened source renders correctly sized pixels but reports a
-  scaled logical-frame mapping. Persist the realized frame through master/view caches and make existing
-  consumers share its geometry owner. See [12f1](slices/12-outpaint.md).
-- Then finish reference/init controls and the outpaint canvas. Outpaint's independent drafts agree
+- Initial cropped-frame fill, refresh, and preview/detail planning now share exact realized frames.
+  Migration 17 retains coordinates per execution; cached masters/views retain their own frame and
+  choose density from actual available sources, not tier labels. Equal pixel bytes do not imply equal
+  coordinates, and old ancestry recovery never guesses the latest execution. See [12f1](slices/12-outpaint.md).
+- Finish reference/init controls and the outpaint canvas. Outpaint's independent drafts agree
   that graph-derived frame ownership must replace per-consumer size reconstruction; follow the
   [outpaint checkpoints](slices/12-outpaint.md), settling crop and removable-extent semantics before
   canvas implementation. Fit/strength and capped/full-res inputs

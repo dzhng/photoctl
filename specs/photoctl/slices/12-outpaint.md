@@ -108,6 +108,12 @@ cover this boundary. [Frame captures](../assets/frame-views/README.md) separate 
 pixels from corrected detail extraction. The existing ordered RGB/coverage projection stages remain
 unchanged; combined coordinate matrices do not authorize fusing pixel samplers.
 
+Root integration `b3340b2` passed 75 focused preview, show, evaluator, migration, fill, and cache tests,
+including the built CLI editing journey, plus typecheck. Integration review retained the three
+recorded choices: execution-owned coordinates, bounded historical recovery, and density-aware cache
+reuse. The production diff is +519/-432 lines including comments; the durable addition is one nullable
+execution metadata column. This is checkpoint evidence, not the full release gate.
+
 ## 12f2 — Canvas authoring and reversible extent
 
 **Decision checkpoint before coding:** use an asymmetric cropped, quarter-rotated, straightened
