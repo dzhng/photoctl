@@ -1,0 +1,21 @@
+{
+  "target": "H2 concentrates change in the selected person rectangle and preserves an independent protected pixel; H3 is the 50% linear-light composite; export matches the current H3 master.",
+  "h1_to_h2": {
+    "inside": {
+      "mae": 105.4274,
+      "rmse": 124.0527
+    },
+    "outside": {
+      "mae": 0.2076,
+      "rmse": 1.1618
+    }
+  },
+  "h3_linear_midpoint_inside": {
+    "mae": 1.5613,
+    "rmse": 2.3621
+  },
+  "h3_export_to_master": {
+    "mae": 0.6622,
+    "rmse": 1.5819
+  }
+}

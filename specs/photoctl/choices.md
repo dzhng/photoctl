@@ -2,6 +2,22 @@
 
 ## Sound
 
+### Slice 12d2 — The keyless agent journey separates state continuity from model aesthetics
+
+- **When:** Slice 12d2 agent-preview integration, 2026-09-05.
+- **The choice:** The mandatory real-CLI journey uses a code-generated, asymmetric high-resolution raster with stable subject,
+  detail, anchor, and protected-pixel facts. It accepts the fake provider's intentionally flat replacement as a deterministic state
+  transition, then judges placement, linear-light opacity, preview reuse, provider request counts, and export identity independently.
+  It does not turn the synthetic fill into an aesthetic oracle; photographic edge and texture quality remains a separate live or
+  workbench visual gate.
+- **The gap:** A keyless provider can deterministically prove orchestration and pixel ownership, but it cannot stand in for the
+  perceptual behavior of a live generative model.
+- **The reach:** CI catches stale previews, repeated paid work, coordinate drift, cache contamination, incorrect blending, and stale
+  export without credentials or lucky sampled content. Live visual review retains one clear variable instead of inheriting false
+  confidence from a synthetic image.
+- **Verdict:** **Sound.** The test's claims stop at the boundary its fixture can actually establish.
+- **Confidence:** High for state, cache, and export continuity; deliberately none for live fill aesthetics.
+
 ### Slice 12a — The generation execution and active graph revision commit together
 
 - **When:** Slice 12a strict-fill implementation, 2026-09-05.

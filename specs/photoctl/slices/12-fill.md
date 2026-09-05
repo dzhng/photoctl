@@ -183,8 +183,8 @@ remains consent even when an adapter is injected: an explicit upscale refresh wi
 Generation refresh rejects a fill whose input was already transformed, before paid work or revision mutation, because rebinding that
 mask/crop geometry directly to the document base would address the wrong pixels.
 
-Transform-driven density reevaluation, historical upscale-cache selection, person movement, the agent preview journey, live adapters,
-and visual gates remain 12d2 work. Its affine branch rebasing replaces the transformed-input refusal.
+Transform-driven density reevaluation, historical upscale-cache selection, person movement, and live adapters remain 12d2 work.
+Its affine branch rebasing replaces the transformed-input refusal.
 
 ## 12d workbench fill checkpoint — 2026-09-05
 
@@ -200,3 +200,20 @@ refusal rather than a network fallback or a misleading coordinate-space comparis
 fill-branch validation, transformed-branch refusal, HTML escaping, self-contained native crop dimensions, and a disabled global network
 seam while the report is built. These synthetic fixtures prove the report contract, not photographic boundary quality; the named
 fake-gateway agent-preview journey still owns screenshot comparison, fresh critique, and human continuity evidence.
+
+## 12d2 agent-preview checkpoint — 2026-09-05
+
+The keyless agent journey now drives the built CLI against the real HTTP fake gateway from import through export. A generated
+1920×1280 asymmetric source supplies stable native-coordinate detail and protected-pixel facts without checking in an opaque source
+fixture. H1 proves global exposure plus native-master reuse and coordinate round-tripping. H2 proves lazy fill materialization,
+distinct generate/upscale/resample/mask-composite nodes, a native crop with local change and protected exterior, and no provider replay.
+H3 proves opacity in linear light, preservation of historical views, overview derivation from the existing H3 master, and an export
+that independently decodes to the current revision.
+
+The fake gateway receives exactly one request, for generation, while the configured local fake upscaler contributes the second
+recorded execution. Gateway request count, persisted provider-execution count, `cache_source:sufficient_full_frame`, and unchanged
+master hash/mtime jointly prove later H2/H3 shows and export do not revisit a provider or reevaluate a sufficient full-frame master. The
+[agent-preview evidence](../assets/agent-preview-loop/README.md) records native crops, masters, overview, export, and objective
+difference measurements. Its flat fake fill validates state and cache mechanics only; photographic sharpness and mask-edge texture
+continuity remain owned by the named
+workbench/live visual gates.
