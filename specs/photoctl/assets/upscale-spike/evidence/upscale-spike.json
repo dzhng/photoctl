@@ -4,6 +4,8 @@
   "reason": null,
   "releaseDecision": "deferred",
   "qualityAcceptance": "not_recorded",
+  "providerRequests": 4,
+  "providerCostUsd": 0,
   "categoryCoverage": {
     "present": [
       "text-logo",
@@ -78,7 +80,8 @@
           "w": 640,
           "h": 480
         },
-        "latencyMs": 2,
+        "latencyMs": 1,
+        "requestIdentity": "e635a9ed257c27610f74ab3eb335870b0c539b07367c8396a04386ae0f84c6e7",
         "costUsd": 0,
         "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
         "prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
@@ -112,7 +115,7 @@
         "densitySatisfied": true,
         "warnings": [],
         "detail": "1-synthetic-source-guarded-detail.png",
-        "output": "1-synthetic-source-guarded.png",
+        "output": "request-e635a9ed257c27610f74ab3eb335870b0c539b07367c8396a04386ae0f84c6e7.png",
         "providerDurationMs": 0,
         "requestId": "fake_b33a245ccb7e7755a27b17c14fe1346c24d5c5458873e6761a4ab9b5ffa453d6"
       },
@@ -122,6 +125,7 @@
           "h": 480
         },
         "latencyMs": 1,
+        "requestIdentity": "898be15896a423c999712e39e838317cfec1732251e4f92cfaaa5402c318c830",
         "costUsd": 0,
         "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
         "prompt": "Preserve the source image without adding or changing content.",
@@ -155,7 +159,7 @@
         "densitySatisfied": true,
         "warnings": [],
         "detail": "1-synthetic-source-minimal-detail.png",
-        "output": "1-synthetic-source-minimal.png",
+        "output": "request-898be15896a423c999712e39e838317cfec1732251e4f92cfaaa5402c318c830.png",
         "providerDurationMs": 0,
         "requestId": "fake_53af7f12acf27cdacce81bb0f9f6ff960f2196e3fdcd5314ecbc252468b6ea8e"
       },
@@ -166,6 +170,7 @@
             "h": 480
           },
           "latencyMs": 1,
+          "requestIdentity": "33a5e4a61d939945f6c1dfdbf5a6e6d4d4c858108285508d1941375f92fb01ff",
           "costUsd": 0,
           "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
           "prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
@@ -199,7 +204,7 @@
           "densitySatisfied": true,
           "warnings": [],
           "detail": "1-synthetic-source-fidelity-0.5-detail.png",
-          "output": "1-synthetic-source-fidelity-0.5.png",
+          "output": "request-33a5e4a61d939945f6c1dfdbf5a6e6d4d4c858108285508d1941375f92fb01ff.png",
           "providerDurationMs": 0,
           "requestId": "fake_b33a245ccb7e7755a27b17c14fe1346c24d5c5458873e6761a4ab9b5ffa453d6"
         },
@@ -209,6 +214,7 @@
             "h": 480
           },
           "latencyMs": 1,
+          "requestIdentity": "9bd8e2a628e1bfb8c41e01fa8d264636b6262406dec663d71dc28fb1ffac0ab0",
           "costUsd": 0,
           "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
           "prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
@@ -242,7 +248,7 @@
           "densitySatisfied": true,
           "warnings": [],
           "detail": "1-synthetic-source-fidelity-0.9-detail.png",
-          "output": "1-synthetic-source-fidelity-0.9.png",
+          "output": "request-9bd8e2a628e1bfb8c41e01fa8d264636b6262406dec663d71dc28fb1ffac0ab0.png",
           "providerDurationMs": 0,
           "requestId": "fake_b33a245ccb7e7755a27b17c14fe1346c24d5c5458873e6761a4ab9b5ffa453d6"
         }
@@ -274,6 +280,7 @@
           "h": 480
         },
         "latencyMs": 1,
+        "requestIdentity": "e635a9ed257c27610f74ab3eb335870b0c539b07367c8396a04386ae0f84c6e7",
         "costUsd": 0,
         "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
         "prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
@@ -307,7 +314,7 @@
         "densitySatisfied": true,
         "warnings": [],
         "detail": "2-synthetic-source-guarded-detail.png",
-        "output": "2-synthetic-source-guarded.png",
+        "output": "request-e635a9ed257c27610f74ab3eb335870b0c539b07367c8396a04386ae0f84c6e7.png",
         "providerDurationMs": 0,
         "requestId": "fake_b33a245ccb7e7755a27b17c14fe1346c24d5c5458873e6761a4ab9b5ffa453d6"
       },
@@ -317,6 +324,7 @@
           "h": 480
         },
         "latencyMs": 1,
+        "requestIdentity": "898be15896a423c999712e39e838317cfec1732251e4f92cfaaa5402c318c830",
         "costUsd": 0,
         "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
         "prompt": "Preserve the source image without adding or changing content.",
@@ -350,7 +358,7 @@
         "densitySatisfied": true,
         "warnings": [],
         "detail": "2-synthetic-source-minimal-detail.png",
-        "output": "2-synthetic-source-minimal.png",
+        "output": "request-898be15896a423c999712e39e838317cfec1732251e4f92cfaaa5402c318c830.png",
         "providerDurationMs": 0,
         "requestId": "fake_53af7f12acf27cdacce81bb0f9f6ff960f2196e3fdcd5314ecbc252468b6ea8e"
       },
@@ -361,6 +369,7 @@
             "h": 480
           },
           "latencyMs": 1,
+          "requestIdentity": "33a5e4a61d939945f6c1dfdbf5a6e6d4d4c858108285508d1941375f92fb01ff",
           "costUsd": 0,
           "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
           "prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
@@ -394,7 +403,7 @@
           "densitySatisfied": true,
           "warnings": [],
           "detail": "2-synthetic-source-fidelity-0.5-detail.png",
-          "output": "2-synthetic-source-fidelity-0.5.png",
+          "output": "request-33a5e4a61d939945f6c1dfdbf5a6e6d4d4c858108285508d1941375f92fb01ff.png",
           "providerDurationMs": 0,
           "requestId": "fake_b33a245ccb7e7755a27b17c14fe1346c24d5c5458873e6761a4ab9b5ffa453d6"
         },
@@ -404,6 +413,7 @@
             "h": 480
           },
           "latencyMs": 1,
+          "requestIdentity": "9bd8e2a628e1bfb8c41e01fa8d264636b6262406dec663d71dc28fb1ffac0ab0",
           "costUsd": 0,
           "sourceHash": "a_260dd6e45bcdc356fa0134e10395997a585b0ecb0b897a0131ae171c162a1a1c",
           "prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
@@ -437,7 +447,7 @@
           "densitySatisfied": true,
           "warnings": [],
           "detail": "2-synthetic-source-fidelity-0.9-detail.png",
-          "output": "2-synthetic-source-fidelity-0.9.png",
+          "output": "request-9bd8e2a628e1bfb8c41e01fa8d264636b6262406dec663d71dc28fb1ffac0ab0.png",
           "providerDurationMs": 0,
           "requestId": "fake_b33a245ccb7e7755a27b17c14fe1346c24d5c5458873e6761a4ab9b5ffa453d6"
         }

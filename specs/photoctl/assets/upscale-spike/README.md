@@ -4,6 +4,12 @@ An experiment changes one thing at a time. Prompt arms share the same source byt
 Control arms share source bytes and guarded prompt while changing only the operator-selected fidelity or creativity value.
 Validation sheets reuse the baseline guarded output; they do not silently add more provider calls or choose a release default.
 
+Inspection cases are not provider requests. During one experiment, matching source bytes, adapter/model/version, prompt, and
+controls share one completed request, even when different filenames, crops, masks, or categories describe the inspections.
+Each case still gets its own correctly mapped detail PNG. Full provider images remain on disk; the reuse table retains metadata
+and paths only. Request identity and provider request IDs link repeated report entries to the same work, while the report's
+provider count and cost count each completed request once. Starting another experiment deliberately performs fresh work.
+
 Run the committed synthetic example from the repository root:
 
 ```sh
@@ -16,6 +22,9 @@ process directory. The [runner](../../../../apps/workbench/src/upscale-spike.ts)
 and mask is fully decoded, and sources are checked against advertised adapter limits before the first adapter call. PNG metadata
 alone is insufficient: a truncated file can still advertise valid dimensions. Invalid or interrupted runs cannot leave a previous completed JSON verdict looking current.
 Image files from an older run may remain; only the current JSON report identifies the current run's sheets.
+Provider failure stops the experiment immediately rather than spending on the remaining cases. This is a fail-stop spending
+policy, not a partial-success batch or automatic retry mechanism. Preflight checks files at validation time; processing rereads
+them and does not promise a frozen experiment-wide input snapshot. Do not edit input files while an experiment is running.
 
 The [evidence](evidence/upscale-spike.json) keeps source copies, provider outputs, source/output crop dimensions, prompts,
 requested controls, and provider provenance together. Resolved controls are unknown because the adapter boundary does not report
@@ -43,6 +52,11 @@ zoom crop was corrected by expanding that capture; dimension labels now make the
 The [large-crop example](experiment-large.json) and [report](large-evidence/upscale-spike.json) exercise fitted sheet panels without
 discarding the full native crop. Independent code review identified that bound and redundant baseline provider work; regression
 tests prove both corrections. Choosing a strength equal to the baseline reuses the guarded result and its request identity.
+
+The experiment-wide reuse correction regenerated both evidence bundles; every full contact sheet remained byte-identical.
+Only request identities, shared output paths, accounting, and execution timing changed. Duplicate full-image fixture copies were
+replaced with request-keyed files; all inspection crops remain available.
+Fresh independent code review found no remaining issue in the reuse correction; its focused tests and TypeScript build passed.
 
 The three-sheet Preview checkpoint stayed open for approximately five minutes without feedback and was then closed. No model
 or control preference was selected from fake output. A fresh integration critic inspected the complete final capture set,

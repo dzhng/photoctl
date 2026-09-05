@@ -3754,3 +3754,53 @@
   does not add latency or cost. The actual image detail and request identity remain available for inspection.
 - **Verdict:** **Sound.** The overview remains bounded without claiming fitted pixels are native or buying duplicate evidence.
 - **Confidence:** High.
+
+### Upscaler spike — Request identity owns paid work across inspection cases
+
+- **When:** Experiment-wide reuse correction, 2026-09-06.
+- **The choice:** An operator may inspect the same image once around hair and again around fabric. The runner identifies provider
+  work by source-byte hash, selected adapter/model/version, exact prompt, and exact controls—not by filename, category, mask, or
+  inspection crop. Matching requests within that experiment share one saved result and provider request ID. Each inspection still
+  extracts its own detail PNG. The report totals request count and cost over unique completed requests rather than repeated rows.
+- **The gap:** The quality-spike plan separated comparison axes but did not distinguish inspection cases from paid request identity.
+- **The reach:** Adding another inspection cannot charge for identical work. The reuse table holds paths and metadata, not all
+  full-image buffers. It lives only for one invocation; an explicitly restarted experiment obtains fresh provider work.
+- **Verdict:** **Sound.** The paid operation has one owner while crop/category-specific evidence remains independently inspectable.
+- **Confidence:** High.
+
+### Upscaler spike — Failure stops spending; preflight is not an input snapshot
+
+- **When:** Experiment-wide reuse audit, 2026-09-06.
+- **The choice:** If a provider arm fails, the command marks the run failed and does not submit later arms or cases. There is no
+  automatic retry or partial-success continuation. Before calls begin, the runner validates every current input; it then rereads
+  files one case at a time rather than retaining all source buffers. An operator modifying a later input during the run can thus
+  invalidate the earlier preflight result. Each individual case nevertheless compares the same loaded source bytes across arms.
+- **The gap:** The plan did not settle partial-failure spending or concurrent editing of experiment input files.
+- **The reach:** The default failure policy limits further spend, while bounded per-case loading avoids holding the whole input set
+  in memory. A future frozen-input or resumable experiment would need an explicit persisted-input/run contract.
+- **Verdict:** **Sound.** Conservative failure spending is explicit; preflight is not overstated as an immutable snapshot.
+- **Confidence:** Medium; freezing all inputs on disk would strengthen reproducibility if concurrent editing becomes a supported use.
+
+### Upscaler spike — Detail bounds cover intersecting mapped pixels
+
+- **When:** Experiment-wide reuse audit, 2026-09-06.
+- **The choice:** If a source crop maps to a fractional output-pixel boundary, the detail starts at the floor of the mapped origin
+  and ends at the ceiling of the mapped far edge. The output-frame offset is included. The shared registry requires the mapping's
+  source rectangle to be the entire input, so dividing by full input dimensions does not silently ignore an input crop.
+- **The gap:** The plan required native detail without choosing how partially intersecting output pixels enter a saved crop.
+- **The reach:** Inspection includes every intersecting output pixel rather than trimming border evidence. Supporting provider
+  input-crop mappings in the future would first require changing the shared registry contract.
+- **Verdict:** **Sound.** Outward rounding conservatively preserves boundary detail under the current validated full-input mapping.
+- **Confidence:** High.
+
+### Upscaler spike — Manifest control ranges are a runner restriction, not a provider guarantee
+
+- **When:** Experiment-wide reuse audit, 2026-09-06.
+- **The choice:** The manifest accepts fidelity and creativity values only between zero and one. For example, an operator cannot
+  send fidelity 70 through this runner even though the shared numeric adapter type does not itself declare units or a range.
+  This pass leaves that existing restriction unchanged and does not invent a live-provider conversion or normalized-control claim.
+- **The gap:** The plan named control-strength comparison, but the shared adapter interface does not formally own control ranges.
+- **The reach:** A future live adapter must establish its control units and mapping explicitly before the runner's numeric range
+  can be treated as a provider contract. The restriction is localized and reversible without changing stored library data.
+- **Verdict:** **Sound.** A bounded experiment input remains explicit without presenting an unverified range as provider behavior.
+- **Confidence:** Medium; the eventual shared control contract may require revisiting this runner restriction.

@@ -56,6 +56,8 @@ The deterministic runner accepts an explicit experiment manifest, rather than bo
 settings. The [runnable fixture and report evidence](../assets/upscale-spike/) demonstrate separate prompt, single-control, and
 category-validation sheets. Category labels are operator declarations, not image classification or quality acceptance; missing
 categories remain explicit. Provider-reported normalized controls are currently unavailable and must not be inferred from requests.
+Completed provider work is shared by exact request identity across inspection cases within one run; crop/category changes do not
+purchase identical work again. Source/detail files and provider-accounting evidence remain separate from photographic acceptance.
 Live photographic comparison and release-default selection remain unverified.
 
 ## Paid response retention — remaining artifact contract

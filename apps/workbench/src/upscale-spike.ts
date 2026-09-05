@@ -37,6 +37,18 @@ type Manifest = {
   controlStrength: Strength;
   sources: SpikeSource[];
 };
+type SuccessfulUpscale = Extract<Awaited<ReturnType<UpscaleRegistry["execute"]>>, { ok: true }>;
+type CompletedRequest = Omit<SuccessfulUpscale, "value"> & {
+  value: Omit<SuccessfulUpscale["value"], "artifact">;
+  output: string;
+  latencyMs: number;
+};
+type UpscaleRequests = {
+  registry: UpscaleRegistry;
+  adapter: Parameters<UpscaleRegistry["execute"]>[0];
+  model: string;
+  completed: Map<string, CompletedRequest>;
+};
 
 const object = (item: unknown, keys: string[]) =>
   item !== null &&
@@ -161,6 +173,12 @@ async function runExperiment(
     if (mask) await sharp(mask.bytes).stats();
   }, Promise.resolve());
   const completed: Awaited<ReturnType<typeof runComparison>>[] = [];
+  const requests: UpscaleRequests = {
+    registry,
+    adapter,
+    model: manifest.model,
+    completed: new Map(),
+  };
   await sources.reduce(async (previous, source, sourceIndex) => {
     await previous;
     completed.push(
@@ -168,8 +186,7 @@ async function runExperiment(
         source,
         sourceIndex,
         outputDirectory,
-        registry,
-        adapter,
+        requests,
         controls,
         controlStrength,
       ),
@@ -217,6 +234,11 @@ async function runExperiment(
     reason: null,
     releaseDecision: "deferred",
     qualityAcceptance: "not_recorded",
+    providerRequests: requests.completed.size,
+    providerCostUsd: [...requests.completed.values()].reduce(
+      (sum, request) => sum + request.value.provenance.costUsd,
+      0,
+    ),
     categoryCoverage: {
       present: categories.filter((category) =>
         sources.some((source) => source.category === category),
@@ -240,8 +262,7 @@ async function runComparison(
   source: SpikeSource,
   index: number,
   outputDirectory: string,
-  registry: UpscaleRegistry,
-  adapter: Parameters<UpscaleRegistry["execute"]>[0],
+  requests: UpscaleRequests,
   controls: Controls,
   strength: Strength,
 ) {
@@ -263,38 +284,31 @@ async function runComparison(
   }
   const guardedPrompt = buildGuardedUpscalePrompt(controls.originalOperation);
   const guarded = await runArm(
-    registry,
-    adapter,
+    requests,
     artifact,
     guardedPrompt.derived,
     controls,
-    join(outputDirectory, `${outputStem}-guarded.png`),
+    join(outputDirectory, `${outputStem}-guarded-detail.png`),
     crop,
   );
   const minimal = await runArm(
-    registry,
-    adapter,
+    requests,
     artifact,
     "Preserve the source image without adding or changing content.",
     controls,
-    join(outputDirectory, `${outputStem}-minimal.png`),
+    join(outputDirectory, `${outputStem}-minimal-detail.png`),
     crop,
   );
   const strengthArms: Awaited<ReturnType<typeof runArm>>[] = [];
   await strength.values.reduce(async (previous, value) => {
     await previous;
-    if (value === controls[strength.variable]) {
-      strengthArms.push(guarded);
-      return;
-    }
     strengthArms.push(
       await runArm(
-        registry,
-        adapter,
+        requests,
         artifact,
         guardedPrompt.derived,
         { ...controls, [strength.variable]: value },
-        join(outputDirectory, `${outputStem}-${strength.variable}-${value}.png`),
+        join(outputDirectory, `${outputStem}-${strength.variable}-${value}-detail.png`),
         crop,
       ),
     );
@@ -323,10 +337,15 @@ async function runComparison(
           }
         : null,
       sourceDimensions: artifact.dimensions,
-      guarded: guarded.evidence,
-      minimal: minimal.evidence,
-      strength: strengthArms.map(({ evidence }) => evidence),
-      drift: { meanAbsoluteError: await meanAbsoluteError(guarded.bytes, minimal.bytes) },
+      guarded,
+      minimal,
+      strength: strengthArms,
+      drift: {
+        meanAbsoluteError: await meanAbsoluteError(
+          join(outputDirectory, guarded.output),
+          join(outputDirectory, minimal.output),
+        ),
+      },
     },
     panels: [
       ...context,
@@ -369,10 +388,10 @@ function outputPanels(
   outputDirectory: string,
 ) {
   return [
-    { label, path: join(outputDirectory, arm.evidence.output) },
+    { label, path: join(outputDirectory, arm.output) },
     {
       label: `${label} detail (native)`,
-      path: join(outputDirectory, arm.evidence.detail),
+      path: join(outputDirectory, arm.detail),
       native: true,
     },
   ];
@@ -412,19 +431,42 @@ async function loadArtifact(path: string): Promise<UpscaleArtifact> {
 }
 
 async function runArm(
-  registry: UpscaleRegistry,
-  adapter: Parameters<UpscaleRegistry["execute"]>[0],
+  requests: UpscaleRequests,
   artifact: UpscaleArtifact,
   prompt: string,
   controls: Controls,
-  output: string,
+  detailPath: string,
   crop: [number, number, number, number],
 ) {
-  const started = performance.now();
-  const result = await registry.execute(adapter, { artifact, prompt, ...publicControls(controls) });
-  const latencyMs = Math.round(performance.now() - started);
-  if (!result.ok) throw new Error(result.message);
-  await writeFile(output, result.value.artifact.bytes);
+  const { registry, adapter } = requests;
+  const requestIdentity = createHash("sha256")
+    .update(
+      JSON.stringify({
+        source: artifact.hash,
+        adapter: adapter.id,
+        version: adapter.version,
+        model: requests.model,
+        prompt,
+        controls: publicControls(controls),
+      }),
+    )
+    .digest("hex");
+  let result = requests.completed.get(requestIdentity);
+  if (!result) {
+    const started = performance.now();
+    const executed = await registry.execute(adapter, {
+      artifact,
+      prompt,
+      ...publicControls(controls),
+    });
+    const latencyMs = Math.round(performance.now() - started);
+    if (!executed.ok) throw new Error(executed.message);
+    const { artifact: providerOutput, ...value } = executed.value;
+    const output = join(dirname(detailPath), `request-${requestIdentity}.png`);
+    await writeFile(output, providerOutput.bytes);
+    result = { ...executed, value, output, latencyMs };
+    requests.completed.set(requestIdentity, result);
+  }
   const frame = result.value.frameMapping?.output ?? [
     0,
     0,
@@ -433,7 +475,7 @@ async function runArm(
   ];
   const left = Math.floor((crop[0] * frame[2]!) / artifact.dimensions.w);
   const top = Math.floor((crop[1] * frame[3]!) / artifact.dimensions.h);
-  const detail = await sharp(result.value.artifact.bytes)
+  await sharp(result.output)
     .extract({
       left: frame[0]! + left,
       top: frame[1]! + top,
@@ -441,32 +483,28 @@ async function runArm(
       height: Math.ceil(((crop[1] + crop[3]) * frame[3]!) / artifact.dimensions.h) - top,
     })
     .png()
-    .toBuffer();
-  const detailPath = `${parse(output).name}-detail.png`;
-  await writeFile(join(dirname(output), detailPath), detail);
+    .toFile(detailPath);
   return {
-    bytes: result.value.artifact.bytes,
-    evidence: {
-      dimensions: result.value.dimensions,
-      latencyMs,
-      costUsd: result.value.provenance.costUsd,
-      sourceHash: artifact.hash,
-      prompt,
-      targetDimensions: {
-        w: artifact.dimensions.w * controls.scale,
-        h: artifact.dimensions.h * controls.scale,
-      },
-      requestedControls: publicControls(controls),
-      resolvedControls: null,
-      provenance: result.value.provenance,
-      samplingDimensions: result.samplingDimensions,
-      densitySatisfied: result.densitySatisfied,
-      warnings: result.warnings,
-      detail: detailPath,
-      output: basename(output),
-      providerDurationMs: result.value.provenance.durationMs,
-      requestId: result.value.provenance.requestId,
+    dimensions: result.value.dimensions,
+    latencyMs: result.latencyMs,
+    requestIdentity,
+    costUsd: result.value.provenance.costUsd,
+    sourceHash: artifact.hash,
+    prompt,
+    targetDimensions: {
+      w: artifact.dimensions.w * controls.scale,
+      h: artifact.dimensions.h * controls.scale,
     },
+    requestedControls: publicControls(controls),
+    resolvedControls: null,
+    provenance: result.value.provenance,
+    samplingDimensions: result.samplingDimensions,
+    densitySatisfied: result.densitySatisfied,
+    warnings: result.warnings,
+    detail: basename(detailPath),
+    output: basename(result.output),
+    providerDurationMs: result.value.provenance.durationMs,
+    requestId: result.value.provenance.requestId,
   };
 }
 
@@ -479,7 +517,7 @@ function publicControls(controls: Controls) {
   };
 }
 
-async function meanAbsoluteError(left: Buffer, right: Buffer): Promise<number> {
+async function meanAbsoluteError(left: string, right: string): Promise<number> {
   const [leftImage, rightImage] = await Promise.all([
     sharp(left).removeAlpha().raw().toBuffer({ resolveWithObject: true }),
     sharp(right).removeAlpha().raw().toBuffer({ resolveWithObject: true }),
