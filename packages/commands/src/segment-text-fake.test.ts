@@ -79,10 +79,22 @@ test("production text grounding uses the cropped render box and commits masks in
         context,
       ),
     ).toMatchObject({ ok: true });
-    const result = await dispatch(
-      { verb: "segment", args: [fixture.id, "--text", "person"], cwd: fixture.parent, env },
-      context,
-    );
+    const prototype = Object.getPrototypeOf(sharp()) as {
+      resize: ReturnType<typeof sharp>["resize"];
+    };
+    const resize = prototype.resize;
+    prototype.resize = () => {
+      throw new Error("Sharp must not resample grounding pixels");
+    };
+    let result;
+    try {
+      result = await dispatch(
+        { verb: "segment", args: [fixture.id, "--text", "person"], cwd: fixture.parent, env },
+        context,
+      );
+    } finally {
+      prototype.resize = resize;
+    }
     expect(result).toMatchObject({
       ok: true,
       data: {

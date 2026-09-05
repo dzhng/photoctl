@@ -4,6 +4,23 @@ import type { DevelopDict } from "./develop/dict.js";
 import { linearRec2020ToDisplaySrgb } from "./color.js";
 import type { SceneLinearImage } from "./decoder.js";
 import { composeTransformMatrices, transformPoint } from "./transforms.js";
+import { resampleDisplaySrgb8 } from "@photoctl/img";
+
+/** Keep grounding delivery bounded without introducing a second pixel resampler. */
+export function sam2GroundingPixels(image: { w: number; h: number; data: Float32Array }) {
+  const scale = Math.min(1, 1024 / Math.max(image.w, image.h));
+  const w = Math.max(1, Math.round(image.w * scale));
+  const h = Math.max(1, Math.round(image.h * scale));
+  // The borrowed U8 boundary avoids resamplePixels' full-resolution native float snapshot.
+  const pixels = Uint8Array.from(image.data, (value) =>
+    Math.round(Math.max(0, Math.min(1, value)) * 255),
+  );
+  return {
+    w,
+    h,
+    data: scale === 1 ? pixels : resampleDisplaySrgb8(pixels, image.w, image.h, w, h),
+  };
+}
 
 /** SAM sees current develop pixels; every returned mask is projected back to uncropped base space. */
 export async function prepareSam2Frame(

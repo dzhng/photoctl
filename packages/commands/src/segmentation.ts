@@ -8,6 +8,7 @@ import {
   loadActiveDocument,
   readActiveDevelopState,
   prepareSam2Frame,
+  sam2GroundingPixels,
   type SceneLinearImage,
 } from "@photoctl/render";
 import {
@@ -116,14 +117,11 @@ export async function configuredSegmentation(
     },
   };
   if (text) {
-    const pixels = Uint8Array.from(frame.image.data, (value) =>
-      Math.round(Math.max(0, Math.min(1, value)) * 255),
-    );
+    const pixels = sam2GroundingPixels(frame.image);
     dependencies.image = {
-      bytes: await sharp(pixels, {
-        raw: { width: frame.image.w, height: frame.image.h, channels: 3 },
+      bytes: await sharp(pixels.data, {
+        raw: { width: pixels.w, height: pixels.h, channels: 3 },
       })
-        .resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true })
         .jpeg()
         .toBuffer(),
       mediaType: "image/jpeg",
