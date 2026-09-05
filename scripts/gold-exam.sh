@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: scripts/gold-exam.sh <dir> [--out DIR]" >&2
+  echo "usage: scripts/gold-exam.sh <dir> [--out DIR] [--source-kind fixture|real|unverified]" >&2
   exit 2
 }
 
@@ -10,11 +10,17 @@ usage() {
 source_dir=$1
 shift
 output_dir="$PWD/out/gold-exam"
+source_kind=unverified
 while [[ $# -gt 0 ]]; do
-  [[ $1 == "--out" && $# -ge 2 ]] || usage
-  output_dir=$2
+  [[ $# -ge 2 ]] || usage
+  case "$1" in
+    --out) output_dir=$2 ;;
+    --source-kind) source_kind=$2 ;;
+    *) usage ;;
+  esac
   shift 2
 done
+[[ $source_kind == fixture || $source_kind == real || $source_kind == unverified ]] || usage
 
 command -v photoctl >/dev/null 2>&1 || {
   echo "photoctl must be on PATH" >&2
@@ -45,23 +51,7 @@ photoctl rate "${ids[@]}" --stars 5 >"$scratch/rate.json"
 photoctl develop "${ids[@]:0:3}" --preset people >"$scratch/develop.json"
 photoctl export "${ids[@]}" --to "$output_dir" --preset delivery >"$scratch/export.json"
 
-node -e '
-  const fs = require("node:fs");
-  const path = require("node:path");
-  const [scratch, output] = process.argv.slice(1);
-  const read = name => JSON.parse(fs.readFileSync(path.join(scratch, `${name}.json`), "utf8"));
-  const report = {
-    schema: 1,
-    source: path.resolve(process.argv[3]),
-    output: path.resolve(output),
-    import: read("import"),
-    list: read("list"),
-    rate: read("rate"),
-    develop: read("develop"),
-    export: read("export"),
-  };
-  fs.writeFileSync(path.join(output, "gold-exam-report.json"), `${JSON.stringify(report, null, 2)}\n`);
-' "$scratch" "$output_dir" "$source_dir"
+node "$(dirname "$0")/gold-exam-report.mjs" "$scratch" "$output_dir" "$source_dir" "$source_kind"
 
 if command -v wb >/dev/null 2>&1; then
   wb export "$output_dir" >/dev/null

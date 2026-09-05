@@ -60,4 +60,25 @@ npm publication, real-drive acceptance, or other-platform CI result is claimed b
 also passed against the development build; deliberately dropping the public continuation cursor and
 substituting a different full execution identity each failed the corresponding assertion before being
 restored. Independent review's provenance-binding and setup-budget findings were addressed. The HTML
-report and SHA manifest remain a separate release-evidence seam, not a claim of photographic acceptance.
+report and SHA manifest are implemented below, without claiming photographic acceptance.
+
+## Portable gold evidence
+
+The existing gold script remains the only exam. Its report writer consumes the command results and
+hashes the actual files named by that export, not every image already present in the output folder.
+`report.html`, `gold-exam-report.json` and `SHA256SUMS` live beside the delivered JPEGs; their relative
+links remain valid when the folder moves. The manifest covers the JPEGs and both reports. Hashes
+bind bytes for later integrity checks, not photographic quality. Skipped exports are labeled as
+pre-existing files whose match to the requested render has not been verified.
+
+`--source-kind fixture|real|unverified` records the operator's classification; omission means
+unverified, and even `real` never records human acceptance. Fixture gates name themselves explicitly.
+Use `--out assets/gold-exam/<run>` to retain a real-input bundle; no source path has been supplied
+for that remaining checkpoint. The default output-folder behavior is unchanged.
+
+The packed fixture gold and full-feature journey passed together with manifest verification. Focused
+tests additionally verify actual-byte hashes, encoded links, unknown-source labeling, exclusion of
+unrelated files, and tamper detection. Code review found a carriage-return filename escaping defect;
+the regression failed with `shasum -c`, then passed after adopting its supported escaping.
+[Report layout evidence](../assets/gold-report/README.md) records desktop/mobile inspection and the
+independent visual critique. These screenshots are fixture presentation evidence only.

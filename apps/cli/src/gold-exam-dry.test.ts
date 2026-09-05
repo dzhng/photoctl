@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -67,11 +68,15 @@ test("the keyless gold exam develops three people presets before exporting ten p
       existingImport.data.ids[0],
     ]);
     await opened.close();
-    await execute(resolve("scripts/gold-exam.sh"), [source, "--out", output], {
-      cwd: directory,
-      env,
-      timeout: 60_000,
-    });
+    await execute(
+      resolve("scripts/gold-exam.sh"),
+      [source, "--out", output, "--source-kind", "fixture"],
+      {
+        cwd: directory,
+        env,
+        timeout: 60_000,
+      },
+    );
 
     const report = JSON.parse(await readFile(join(output, "gold-exam-report.json"), "utf8")) as {
       import: { data: { imported: number; ids: string[] } };
@@ -98,6 +103,30 @@ test("the keyless gold exam develops three people presets before exporting ten p
       true,
     );
     expect((await readdir(output)).filter((name) => name.endsWith(".jpg"))).toHaveLength(10);
+    const html = await readFile(join(output, "report.html"), "utf8");
+    expect(html).toContain("Fixture evidence");
+    expect(html).toContain("Photographic acceptance not recorded");
+    const manifest = await readFile(join(output, "SHA256SUMS"), "utf8");
+    const hashedFiles = await Promise.all(
+      manifest
+        .trim()
+        .split("\n")
+        .map(async (line) => {
+          const digest = line.slice(0, 64);
+          const name = line.slice(66);
+          const bytes = await readFile(join(output, name));
+          expect(digest).toBe(createHash("sha256").update(bytes).digest("hex"));
+          expect(html).toContain(`href="${encodeURIComponent(name)}"`);
+          return name;
+        }),
+    );
+    expect(hashedFiles.toSorted()).toEqual(
+      [
+        ...(await readdir(output)).filter((name) => name.endsWith(".jpg")),
+        "gold-exam-report.json",
+        "report.html",
+      ].toSorted(),
+    );
     const highlights = await Promise.all(
       [1, 2, 3].map(async (index) => {
         const name = `frame-${String(index).padStart(2, "0")}.jpg`;

@@ -84,19 +84,27 @@ test("packed CLI starts its daemon and finds both packaged decoders outside the 
   const source = join(scratch, "source");
   const delivery = join(scratch, "delivery");
   await execute("node", ["fixtures/tools/drive.mjs", "--count", "10", "--out", source]);
-  await execute(resolve("scripts/gold-exam.sh"), [source, "--out", delivery], {
-    cwd: scratch,
-    env: {
-      ...env,
-      PATH: `${join(prefix, "bin")}:${process.env.PATH}`,
-      PHOTOCTL_VOLUME_MAP: `${scratch}=fixture-volume:online`,
+  await execute(
+    resolve("scripts/gold-exam.sh"),
+    [source, "--out", delivery, "--source-kind", "fixture"],
+    {
+      cwd: scratch,
+      env: {
+        ...env,
+        PATH: `${join(prefix, "bin")}:${process.env.PATH}`,
+        PHOTOCTL_VOLUME_MAP: `${scratch}=fixture-volume:online`,
+      },
+      timeout: 600_000,
     },
-    timeout: 600_000,
-  });
+  );
   const gold = JSON.parse(await readFile(join(delivery, "gold-exam-report.json"), "utf8"));
   expect(gold.import.data.imported).toBe(10);
   expect(gold.develop.summary.ok).toBe(3);
   expect(gold.export.summary.ok).toBe(10);
+  expect(gold.source_kind).toBe("fixture");
+  expect(gold.photographic_acceptance).toBe("not_recorded");
+  expect(await readFile(join(delivery, "report.html"), "utf8")).toContain("Fixture evidence");
+  await execute("shasum", ["-a", "256", "-c", "SHA256SUMS"], { cwd: delivery });
   expect(
     gold.export.results.every((item: { render_hash: string }) =>
       /^r_[0-9a-f]{64}$/u.test(item.render_hash),
