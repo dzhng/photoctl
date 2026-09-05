@@ -27,6 +27,7 @@ export const warningCodes = [
   "upscale_unconfigured",
   "upscale_resolution_limited",
   "upscale_failed",
+  "source_resolution_limited",
   "xmp_stale",
   "label_unknown",
   "decoder_fallback",

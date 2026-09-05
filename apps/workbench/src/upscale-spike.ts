@@ -104,11 +104,12 @@ async function runComparison(
 ) {
   const artifact = await loadArtifact(source);
   const outputStem = `${index + 1}-${parse(source).name}`;
+  const guardedPrompt = buildGuardedUpscalePrompt(controls.originalOperation);
   const guarded = await runArm(
     registry,
     adapter,
     artifact,
-    buildGuardedUpscalePrompt(controls.originalOperation),
+    guardedPrompt.derived,
     controls,
     join(outputDirectory, `${outputStem}-guarded.png`),
   );

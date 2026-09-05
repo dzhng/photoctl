@@ -2788,3 +2788,19 @@
 - **Verdict:** **Sound.** It follows the existing numeric provider seam while preserving the integer raster contract.
 - **Confidence:** Medium; the current fake adapter advertises only integer scales, so the first fractional live adapter should
   confirm its rounding convention matches this exact-output rule.
+
+### Slice 12c1 — Enablement records intent separately from whether execution can proceed
+
+- **When:** Slice 12c1 keyless policy implementation, 2026-09-05.
+- **The choice:** `enabled` answers whether policy requested upscaling, while `action` answers what the caller can do now. For
+  example, default `auto` with an unavailable or unconfigured selected adapter returns `enabled:true`,
+  `action:"preserve_generation"`, and `upscale_unconfigured`; an explicit `off` returns `enabled:false` with the same preserve
+  action and no warning. The alternative was to collapse both situations into `enabled:false`, losing the difference between a
+  user opting out and a requested service being unavailable.
+- **The gap:** The result contract names both `enabled` and `executed`, but this pure pre-execution checkpoint needed a stable way
+  to represent consent before any adapter call exists.
+- **The reach:** Slice 12c2 can report and retry unavailable policy without guessing whether the user disabled upscaling, and UI or
+  agent clients can explain why generated pixels were preserved.
+- **Verdict:** **Sound.** Separating policy intent from executable action preserves both user choice and honest partial-success
+  reporting.
+- **Confidence:** Medium; the command response integration must keep `executed:false` distinct from both fields.

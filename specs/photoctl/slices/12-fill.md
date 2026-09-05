@@ -119,3 +119,15 @@ deterministic resize to the oriented full-frame or padded base-space crop target
 largest valid output is retained, `density_satisfied` is false, and `upscale_resolution_limited` is returned; no generic tiling is
 introduced. Source-context resolution remains a separate record and cannot make an undersampled output claim sufficient density.
 Slice 12c still owns settings/flag/model precedence, configured adapter execution, guarded prompts, and partial-failure retention.
+
+## 12c1 keyless policy checkpoint — 2026-09-05
+
+Upscale policy is now a pure decision: release, library, and command model choices resolve in that order; command enablement beats
+the library mode; and sending pixels requires both explicit configuration and an available adapter. A requested but unavailable
+upscaler keeps the successful generation and reports a soft warning. Source-input resolution is reported independently, so a
+limited pinned source never masquerades as a claim about generated output density.
+
+The provider prompt owner now returns the original operation beside a versioned, exact guarded prompt instead of interpolating the
+operation back into model instructions. The guard requests balanced detail while preserving photographic and mask-boundary
+geometry. Slice 12c2 still owns adapter execution, output validation, retry reuse, and failure retention; no live or graph-mutation
+gate is claimed here.
