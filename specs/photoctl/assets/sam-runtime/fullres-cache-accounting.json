@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-06",
+  "implementationCommit": "cc1c66c",
+  "command": "node scripts/probe-sam2.mjs --models <frozen-model-directory> --width 7008 --height 4672 --runs 16 --stop-on-memory-limit",
+  "requestedRuns": 16,
+  "forcedGc": false,
+  "observation": {
+    "cpu": "Apple M5 Pro",
+    "platform": "darwin",
+    "arch": "arm64",
+    "modelHashes": {
+      "encoder": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+      "decoder": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d"
+    },
+    "dimensions": {
+      "w": 7008,
+      "h": 4672
+    },
+    "qualityVerified": false,
+    "samples": [
+      {
+        "run": 0,
+        "encodeMs": 1160.4241670000001,
+        "decodeMs": 42.34095799999977,
+        "rssBytes": 2270691328
+      },
+      {
+        "run": 1,
+        "encodeMs": 1090.3648750000011,
+        "decodeMs": 62.16500000000087,
+        "rssBytes": 1406124032
+      }
+    ],
+    "maxRssBytes": 3161260032,
+    "maskHash": "845a76e4da660f99cc7620c038f4729800654c15c68b5c6de12a75be396b6b2b",
+    "limits": {
+      "encodeMs": 4000,
+      "maxRssBytes": 3000000000
+    },
+    "passed": false
+  },
+  "interpretation": "The repeated full-resolution process fails the unchanged RSS band before cache eviction is exercised. Six independent CLI passes remain a narrower valid witness, not a replacement. This direct display-RGB probe bypasses pointwise color conversion."
+}

@@ -107,3 +107,9 @@ all preserve the baseline masks and stay below the 3 GB RSS limit, ranging from 
 different metric and ranges from 3.00 to 3.32 GB. This passes the recorded RSS witness on this host and fixture, not the
 photographic-quality gate or every platform. The historical prepared-input runs are not an interleaved A/B experiment;
 allocator residency and memory compression can influence causal comparisons. Other native snapshots remain unaccounted.
+
+[Repeated full-resolution cache recheck](fullres-cache-accounting.json) remains **red** on the same code: the unchanged
+7008×4672 distinct-buffer probe stopped after two of sixteen requested images at 3.161 GB peak RSS. Both masks retain the
+historical exact hash. Its display-RGB input bypasses pointwise color conversion; the full-frame resampler snapshot remains
+unaccounted. End-of-request RSS below the limit does not erase the measured peak. This fails before cache eviction is
+exercised and is not superseded by the six passing independent CLI runs.
