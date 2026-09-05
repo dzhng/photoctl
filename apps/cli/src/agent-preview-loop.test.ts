@@ -23,7 +23,7 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
 });
 
-test("the built CLI keeps agent previews current through fill, opacity, retouch, and reimagine revisions", async () => {
+test("the built CLI keeps agent previews current through fill, opacity, retouch, reimagine, and relight revisions", async () => {
   const fixture = await setupFixture();
   const neutralStats = await sharp(fixture.source).stats();
 
@@ -273,6 +273,39 @@ test("the built CLI keeps agent previews current through fill, opacity, retouch,
   expect(await fileIdentity(restoredH4.preview)).toEqual(h4Before);
   expect(fixture.gatewayRequests()).toBe(2);
   expect(await providerExecutionCount(fixture.library)).toBe(4);
+  const relighted = await run(fixture, [
+    "relight",
+    fixture.id,
+    "--azimuth",
+    "35",
+    "--elevation",
+    "60",
+    "--intensity",
+    "0.75",
+  ]);
+  expect(relighted.code, JSON.stringify(relighted.json)).toBe(0);
+  const relight = relighted.json.data as { layer_id: string; render_hash: string };
+  expect(relight.render_hash).not.toBe(h4);
+  await expect(access(viewDirectory(fixture, relight.render_hash))).rejects.toMatchObject({
+    code: "ENOENT",
+  });
+  const h6 = await show(fixture, ["--preview-size", "native"]);
+  expect(h6).toMatchObject({ render_hash: relight.render_hash });
+  expect(fixture.gatewayRequests()).toBe(3);
+  expect(await providerExecutionCount(fixture.library)).toBe(6);
+  const removedRelight = await run(fixture, ["layer", "remove", fixture.id, relight.layer_id]);
+  expect(removedRelight).toMatchObject({
+    code: 0,
+    json: { data: { render_hash: h4 } },
+  });
+  const restoredAfterRelight = await show(fixture, [
+    "--region",
+    AGENT_PREVIEW_FACTS.region.join(","),
+  ]);
+  expect(restoredAfterRelight.preview).toBe(h4Detail.preview);
+  expect(await fileIdentity(restoredAfterRelight.preview)).toEqual(h4Before);
+  expect(fixture.gatewayRequests()).toBe(3);
+  expect(await providerExecutionCount(fixture.library)).toBe(6);
   await captureEvidence({
     source: fixture.source,
     h1Master: h1Native.preview,

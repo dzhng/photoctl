@@ -56,6 +56,25 @@ test("reimagine idle timeout always leaves room for provider progress frames", (
   expect(timeout).toBeGreaterThan(5_000);
 });
 
+test("relight idle timeout always leaves room for provider progress frames", () => {
+  const timeout = requestTimeout({
+    verb: "relight",
+    args: [
+      "0199a7c2-0000-7000-8000-000000000001",
+      "--azimuth",
+      "35",
+      "--elevation",
+      "60",
+      "--intensity",
+      "0.75",
+    ],
+    cwd: "/",
+    env: { noDaemon: false, lockBudgetMs: "0" },
+  });
+
+  expect(timeout).toBeGreaterThan(5_000);
+});
+
 test("embed timeout still honors a longer foreground queue budget", () => {
   const timeout = requestTimeout({
     verb: "embed",

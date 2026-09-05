@@ -26,6 +26,7 @@ export async function createReimagineLayer(
     providerPrompt: string;
     promptVersion: number;
     strength: number;
+    layerName: string;
     source: EvaluateGraphNodeRequest["source"];
     sourceContext: SourceContextDensity;
     dependencies: ReimagineDependencies;
@@ -38,7 +39,7 @@ export async function createReimagineLayer(
   });
   if (hasDevelopGeometry(state.develop)) {
     throw new Error(
-      "Reimagine requires the current develop output to retain the oriented base dimensions",
+      "Full-frame generation requires the current develop output to retain the oriented base dimensions",
     );
   }
   const baseEvaluation = await evaluateGraphNode({
@@ -54,7 +55,7 @@ export async function createReimagineLayer(
   );
   if (base.w !== request.dimensions.w || base.h !== request.dimensions.h) {
     throw new Error(
-      "Reimagine requires the current develop output to retain the oriented base dimensions",
+      "Full-frame generation requires the current develop output to retain the oriented base dimensions",
     );
   }
   const inputPng = await image16Png(base);
@@ -142,7 +143,7 @@ export async function createReimagineLayer(
     })),
     {
       layer: { localKey: "reimagine-layer" },
-      name: `Reimagine ${state.layers.length + 1}`,
+      name: `${request.layerName} ${state.layers.length + 1}`,
       z: Math.max(-1, ...state.layers.map(({ z }) => z)) + 1,
       contentNode: { localKey: "resample" },
       maskNode: { localKey: "mask" },

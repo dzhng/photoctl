@@ -170,7 +170,8 @@ function parseMultipart(
       files.add(name);
       continue;
     }
-    fields[name] = part.slice(split + 4).replace(/\r\n$/, "");
+    const value = part.slice(split + 4).replace(/\r\n$/, "");
+    fields[name] = Buffer.from(value, "latin1").toString("utf8");
   }
   return { fields, files };
 }

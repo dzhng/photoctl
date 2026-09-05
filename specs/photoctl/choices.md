@@ -3182,3 +3182,34 @@
   later adapter telemetry can extend the versioned metadata contract without changing develop mutation.
 - **Verdict:** **Sound.** One preview owner avoids semantic drift, and recorded provenance stays truthful to the available boundary.
 - **Confidence:** Medium; the structured adapter may later grow shared duration and cost telemetry.
+
+### Slice 13a relight — Lighting intensity is both C3 guidance and exact blend coverage
+
+- **When:** Slice 13a keyless relight implementation, 2026-09-05.
+- **The choice:** `--intensity` is bounded to `0..1`, appears literally in the versioned C3 provider instruction, and also becomes
+  the permanent full-frame mask coverage used by the compositor. At zero, photoctl still records the requested provider operation
+  as a removable layer but renders the current pixels exactly; at one, the generated lighting result has full coverage. The
+  alternative was to make intensity prompt-only, leaving rendered strength entirely to a provider's interpretation.
+- **The gap:** C3 described light intensity “of 1” but did not define a provider-independent pixel meaning. The first deterministic
+  full-coverage fixture also showed why an opaque provider result is not useful evidence by itself: it replaced the entire frame
+  with the fake model output instead of expressing a controllable lighting change.
+- **The reach:** Reimagine strength and relight intensity now share one observable guidance-plus-blend rule in the full-frame owner.
+  Future live providers may interpret C3 differently, but they cannot silently remove the graph-owned intensity effect.
+- **Verdict:** **Sound.** One user control affects both nondeterministic guidance and deterministic composition, matching the
+  established reimagine contract.
+- **Confidence:** High.
+
+### Slice 13a relight — Public lighting controls use physical domains and a shared response shape
+
+- **When:** Slice 13a keyless relight implementation, 2026-09-05.
+- **The choice:** The command requires all three controls, accepts azimuth from 0 through 360 degrees, elevation from -90 through
+  90 degrees, and intensity from 0 through 1, and rejects non-finite or out-of-range values before opening a provider request. Its
+  response reuses the reimagine generation, source-density, upscale, execution, layer, revision, and render fields, replacing only
+  reimagine's `strength` field with flat `azimuth`, `elevation`, and `intensity` values. The alternative was an unbounded numeric
+  surface or a second near-copy of the provider response contract.
+- **The gap:** The original command spelling named the controls but not their allowed domains or response schema.
+- **The reach:** Agents receive the exact accepted lighting request alongside the same provenance and density facts as reimagine;
+  later prompt versions can change wording without changing the public units or duplicating the full-frame result schema.
+- **Verdict:** **Sound.** The angle ranges cover a full horizontal turn and all vertical light directions, while the normalized
+  intensity matches C3's documented “of 1” language.
+- **Confidence:** Medium; azimuth 0 and 360 are equivalent but both remain accepted for direct physical input.

@@ -10,7 +10,12 @@
   base-sized reimagine layer into a changed current frame without mixing coordinate spaces. The same dimension-retaining-source
   requirement excludes a smaller pinned fallback: composite-v2 requires every layer and mask to match the exact document base
   raster, so silently accepting it would commit a layer that fails when shown.
-  `relight` remains open.
+  ✓ `relight <id> --azimuth 0..360 --elevation -90..90 --intensity 0..1` applies the versioned C3
+  soft-key-light template through that same full-frame owner. Intensity controls both the provider guidance and whole-frame blend,
+  so zero preserves current pixels and one applies the generated result fully. It creates another removable `role:"reimagine"`
+  layer named Relight, retains `drift:"full-frame"`, stays lazy, and inherits the exact-base and atomic-failure contracts.
+  The deterministic built-CLI captures and comparison telemetry live in
+  [`../assets/relight-journey/`](../assets/relight-journey/).
   `generate --prompt [--ref] [--size 1024x1024] [--seed] [--model]` → canonical generated artifact → imported photo tagged
   `generated`; it has no base-density target, so library `auto` does not invent one. Explicit `--upscale` uses the requested
   `--size` only when the provider returned fewer pixels. Tests: `reimagine-layer.test.ts` (full target dimensions; remove restores),

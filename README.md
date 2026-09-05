@@ -1,9 +1,10 @@
 # photoctl
 
 A photo library and editor whose only interface is a CLI. Every verb — import, cull, rate,
-search, develop, retouch, reimagine, export — defaults to stable JSON, so an agent can run the whole
-workflow without a screen; `--human` renders that same result as text without changing execution.
-If a GUI ever exists it is a client of the same verbs, never a superset.
+search, develop, retouch, reimagine, relight, export — defaults to stable JSON, so an agent can run
+the whole workflow without a screen; `--human` renders that same result as text without changing execution.
+If a GUI ever exists it is a client of the same verbs, never a superset. Full-frame `reimagine` and
+`relight` edits remain removable layers rather than overwriting the source.
 
 Principles that shape everything here:
 
