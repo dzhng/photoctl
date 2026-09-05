@@ -335,6 +335,12 @@ test("logical mutations are immutable, lazy, CAS-protected, and undoable", async
     });
     await expect(stale).rejects.toThrow(RevisionConflictError);
     await expect(stale).rejects.toThrow("document changed");
+    await expect(
+      undoRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: original.revisionId,
+      }),
+    ).rejects.toThrow(RevisionConflictError);
     const undone = await undoRevision(db, {
       photoId: firstPhoto,
       expectedRevisionId: edited.revisionId,

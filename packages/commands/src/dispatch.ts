@@ -43,6 +43,7 @@ import { backupCommand, migrateCommand, restoreCommand } from "./handlers/librar
 import { graphCommand } from "./handlers/graph.js";
 import { xmpCommand } from "./handlers/xmp.js";
 import { developCommand, type DevelopDependencies } from "./handlers/develop.js";
+import { undoCommand } from "./handlers/undo.js";
 import { presetsCommand } from "./handlers/presets.js";
 import { renderCommand } from "./handlers/render.js";
 import { embedCommand } from "./handlers/embed.js";
@@ -122,6 +123,8 @@ export async function dispatch(
       return await graphCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "xmp")
       return await xmpCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "undo")
+      return await undoCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "develop")
       return await developCommand(
         request.args,

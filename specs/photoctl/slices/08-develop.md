@@ -106,6 +106,20 @@ the same evaluator test deletes and corrupts indexed canonical files and proves 
 database casts; `restore-artifacts.test.ts` preserves canonical bytes while restore reconciles missing references to
 `artifact_available:false`. Command/protocol tests require full hashes, and the workbench test follows a graph beyond one page.
 
+### Public revision undo
+
+`undo <id-or-prefix>` moves the active document to its parent revision through the existing transactional
+revision owner. It restores the recorded graph, geometry, layer snapshot and markup together; it does not
+replay provider work, render pixels, or create another history entry. The response is
+`{id,undone,revision_id,render_hash}`. At the first revision it succeeds with `undone:false`, retaining
+the initial source or generated image instead of clearing the document. Catalog ratings/tags and source
+files are outside document revision undo. There is no redo or batch mode.
+
+The built daemon CLI regression compares restored native-preview bytes and independently decoded export
+pixels, checks repeated first-revision no-ops and strict arguments. The public command fixture additionally
+restores markup and layer snapshots on a generated photo without another provider request. The revision
+owner's compare-and-swap check rejects a stale expected revision using the shared conflict error.
+
 `gold-exam.test.ts` (runs the script on a 10-file set; 3 people-preset JPEGs; people's `highlights=-20` lowers p98 vs neutral);
 `develop-format-matrix.test.ts` applies the same develop dict to representative whole-file, embedded-container, and
 unknown-extension inputs and proves identical envelope/result structure plus a render at the best available tier;

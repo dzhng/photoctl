@@ -666,27 +666,28 @@ async function storePreparedExecution(
 export async function undoRevision(
   database: GraphDatabase,
   request: { photoId: string; expectedRevisionId: string },
-): Promise<{ revisionId: string | null; renderHash: string | null }> {
+): Promise<{ revisionId: string; renderHash: `r_${string}` | null }> {
   return await database.transaction(async (transaction) => {
     const activeRevisionId = await lockDocument(transaction, request.photoId);
     if (activeRevisionId !== request.expectedRevisionId) {
-      throw new Error("The document changed before undo could be committed");
+      throw new RevisionConflictError();
     }
     const revision = await transaction.query<{ parent_revision_id: string | null }>(
       "SELECT parent_revision_id FROM document_revisions WHERE id = $1 AND photo_id = $2",
       [activeRevisionId, request.photoId],
     );
     const parentRevisionId = revision.rows[0]?.parent_revision_id ?? null;
-    await restoreMarkupForRevision(transaction, request.photoId, parentRevisionId);
-    await transaction.query(
-      "UPDATE photo_documents SET active_revision_id = $1 WHERE photo_id = $2",
-      [parentRevisionId, request.photoId],
-    );
-    const roots = parentRevisionId
-      ? await loadRevisionRoots(transaction, request.photoId, parentRevisionId)
-      : ({} as CommitRevisionResult["roots"]);
+    const revisionId = parentRevisionId ?? request.expectedRevisionId;
+    if (parentRevisionId) {
+      await restoreMarkupForRevision(transaction, request.photoId, parentRevisionId);
+      await transaction.query(
+        "UPDATE photo_documents SET active_revision_id = $1 WHERE photo_id = $2",
+        [parentRevisionId, request.photoId],
+      );
+    }
+    const roots = await loadRevisionRoots(transaction, request.photoId, revisionId);
     return {
-      revisionId: parentRevisionId,
+      revisionId,
       renderHash: roots.output ? renderHashForNode(roots.output, roots.geometry) : null,
     };
   });

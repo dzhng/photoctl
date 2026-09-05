@@ -190,9 +190,9 @@ merely to change the aspect convention.
 
 The current auto-enhance proposal permits no geometry fields, so ordinary immutable-root
 inheritance preserves its geometry through auto-enhance and `--undo-auto`; no extra metadata
-snapshot is needed. Revision undo is verified through the existing `undoRevision` API followed by
-public show/export. There is no general CLI undo verb today: this does not prove the literal
-built-CLI undo requirement in 12f3, which still needs public-boundary reconciliation.
+snapshot is needed. [Public revision undo](08-develop.md#public-revision-undo) uses the existing
+transactional owner and preserves the first source/generated revision. Its general CLI pixel and
+snapshot checks do not replace the complete outpaint-specific journey required in 12f3.
 
 **Decision checkpoint before coding:** use an asymmetric cropped, quarter-rotated, straightened
 example to settle the viewport policy. Merely retaining the prior final crop hides the extension;
