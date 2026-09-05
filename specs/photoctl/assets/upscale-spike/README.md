@@ -45,10 +45,11 @@ discarding the full native crop. Independent code review identified that bound a
 tests prove both corrections. Choosing a strength equal to the baseline reuses the guarded result and its request identity.
 
 The three-sheet Preview checkpoint stayed open for approximately five minutes without feedback and was then closed. No model
-or control preference was selected from fake output. A fresh reviewer was unavailable for the additional large-crop state;
-the adversarial check was: fitting could conceal texture loss, but the label explicitly says it is fitted and points to the
-retained native PNG. The saved source still contains geometry/text and the provider result visibly loses both, so the overview
-does not present that loss as successful photographic preservation.
+or control preference was selected from fake output. A fresh integration critic inspected the complete final capture set,
+including large crops: no visible label overlap, truncation, aspect distortion, or clipping. It confirmed that the mask's
+thin right-hand black strip is image content. The enlarged `detail.png` is a 2× inspection capture, not a native-scale view;
+its inherited label describes the original 112×96 crop. The fake outputs visibly lose all source content, so these sheets
+cannot establish photographic preservation.
 
 The layout is contract evidence only. Live-provider quality, photographic preservation, and release-default selection are not
 assessed by these captures.

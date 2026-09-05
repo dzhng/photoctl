@@ -2,6 +2,21 @@
 
 ## Unsound
 
+### Upscaler spike — Inspection cases must not duplicate paid requests
+
+- **When:** Integrating the experiment runner, 2026-09-06; correction in progress.
+- **The choice:** Listing the same source twice, once to inspect text and once to inspect a mask
+  boundary, currently runs the same prompt/control requests twice. Reuse only covers a control
+  value matching the baseline within one source entry. The different crop and category describe
+  inspection, not a different provider request.
+- **The gap:** The plan separated comparison variables but did not define reuse across inspection cases.
+- **The reach:** A richer report can otherwise increase external cost without producing new evidence.
+- **Verdict:** **Unsound.** Reuse a completed result within the experiment whenever source bytes,
+  adapter/model, prompt, and controls are identical. Derive each inspection crop from that result;
+  a changed crop or category must not purchase another identical request. Do not infer reuse across
+  separate experiment runs, which may intentionally measure independent stochastic results.
+- **Confidence:** High.
+
 ### Slice 13a generate — Replace the speculative reference transport
 
 - **When:** Slice 13a standalone generation, 2026-09-05; evidence correction, 2026-09-06.

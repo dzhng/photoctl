@@ -38,8 +38,10 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   remain open. See [Slice 11](slices/11-segment.md).
 - Slice 14 packaging, shared full-feature journey, and HTML/SHA report artifacts are integrated.
   The clean-prefix fixture exam passed; real-drive acceptance remains. See [Slice 14](slices/14-gold-exam-and-release.md).
-- Complete the separate prompt/control quality comparisons in [Slice 13](slices/13-generative-extras-and-markup.md)
-  when explicitly configured. Missing live prerequisites do not block deterministic work.
+- Slice 13's experiment runner now separates prompt, single-control, and category evidence. Finish
+  experiment-wide identical-request reuse across inspection cases, then conduct the photographic
+  comparisons in [Slice 13](slices/13-generative-extras-and-markup.md) when explicitly configured.
+  Missing live prerequisites do not block deterministic work.
 - Before release, run the full integrated closeout gate once, audit the full requirements and choices
   ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
   optional and unspecified, rather than an implied requirement to invent an MCP product.
