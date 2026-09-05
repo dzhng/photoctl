@@ -2,13 +2,12 @@ import { providerModelIdSchema } from "@photoctl/protocol";
 import { z } from "zod";
 import { DEFAULT_GATEWAY_URL } from "./gateway.js";
 import { DEFAULT_MODELS, resolveModels, type ResolvedModels } from "./table.js";
-import type { UpscaleSettings } from "./upscale/registry.js";
 
 interface SettingsDatabase {
   query<Row>(sql: string, parameters?: unknown[]): Promise<{ rows: Row[] }>;
 }
 
-export interface ProviderSettings extends UpscaleSettings {
+export interface ProviderSettings {
   models: Partial<ResolvedModels>;
   generation: { upscale: "auto" | "off" };
   providers: { upscale: Record<string, { configured: boolean }> };

@@ -3,38 +3,13 @@ import { FakeUpscaleAdapter } from "./fake.js";
 import { UpscaleRegistry } from "./registry.js";
 import { createHash } from "node:crypto";
 
-test("upscale selection honors command then library then release precedence and explicit consent", () => {
+test("the registry is only adapter discovery and execution, not policy", () => {
   const registry = new UpscaleRegistry("photoctl/fake-upscale-v1");
-  registry.register(new FakeUpscaleAdapter({ id: "photoctl/fake-upscale-v1" }));
-  registry.register(new FakeUpscaleAdapter({ id: "library/upscale-v2" }));
-  registry.register(new FakeUpscaleAdapter({ id: "command/upscale-v3" }));
+  const adapter = new FakeUpscaleAdapter();
+  registry.register(adapter);
 
-  const selected = registry.select({
-    settings: {
-      models: { upscale: "library/upscale-v2" },
-      generation: { upscale: "auto" },
-      providers: { upscale: { "command/upscale-v3": { configured: true } } },
-    },
-    modelOverride: "command/upscale-v3",
-  });
-
-  expect(selected).toMatchObject({ enabled: true, model: "command/upscale-v3" });
-  expect(selected.warnings).toEqual([]);
-});
-
-test("auto does not treat ambient credentials as consent for an upscaler", () => {
-  const registry = new UpscaleRegistry("photoctl/fake-upscale-v1");
-  registry.register(new FakeUpscaleAdapter());
-
-  const selected = registry.select({
-    settings: { generation: { upscale: "auto" }, providers: { upscale: {} } },
-  });
-
-  expect(selected).toMatchObject({
-    enabled: false,
-    model: "photoctl/fake-upscale-v1",
-    warnings: [{ code: "upscale_unconfigured" }],
-  });
+  expect(registry.get(adapter.id)).toBe(adapter);
+  expect(registry.get("missing/upscaler")).toBeUndefined();
 });
 
 test("the fake adapter proves fixed scales and records adapter-native tiling", async () => {
@@ -111,6 +86,41 @@ test("reported upscaler dimensions must match the returned artifact", async () =
     ok: false,
     code: "upscale_failed",
     message: "Upscaler dimensions do not match its returned artifact",
+  });
+});
+
+test("a reversible mapped frame reports only its usable sampling dimensions", async () => {
+  const registry = new UpscaleRegistry("photoctl/fake-upscale-v1");
+  const result = await registry.execute(new FakeUpscaleAdapter({ mode: "mapped-frame" }), {
+    artifact: artifact(4, 3),
+    scale: 2,
+  });
+
+  expect(result).toMatchObject({
+    ok: true,
+    samplingDimensions: { w: 8, h: 6 },
+    densitySatisfied: true,
+  });
+});
+
+test("an invalid frame mapping cannot excuse an aspect change", async () => {
+  const registry = new UpscaleRegistry("photoctl/fake-upscale-v1");
+  const adapter = new FakeUpscaleAdapter({ mode: "wrong-aspect" });
+  const original = adapter.upscale.bind(adapter);
+  adapter.upscale = async (input) => ({
+    ...(await original(input)),
+    frameMapping: {
+      source: [0, 0, input.artifact.dimensions.w, input.artifact.dimensions.h],
+      output: [0, 0, 8, 7],
+    },
+  });
+
+  await expect(
+    registry.execute(adapter, { artifact: artifact(4, 3), scale: 2 }),
+  ).resolves.toMatchObject({
+    ok: false,
+    code: "upscale_failed",
+    message: "Upscaler returned an invalid frame mapping",
   });
 });
 

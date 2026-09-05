@@ -6,6 +6,7 @@ import {
   fillLayerStrict,
   moveLayer,
   orientedDimensions,
+  resolveUpscalePolicy,
   RevisionConflictError,
   SourceEvaluationError,
   type FillGenerationDependencies,
@@ -14,7 +15,10 @@ import {
 import {
   GatewayClient,
   GatewayImageModelAdapter,
+  DEFAULT_MODELS,
   REMOVE_PROMPT_VERSION,
+  UpscaleRegistry,
+  buildGuardedUpscalePrompt,
   removePrompt,
   readProviderSettings,
   resolveModel,
@@ -33,8 +37,18 @@ export async function fillCommand(
   providedDependencies?: FillDependencies,
 ): Promise<Envelope> {
   const parsed = parseArguments(args, {
-    flags: ["--norm", "--remove"],
-    options: ["--move", "--to", "--by", "--layer", "--prompt", "--pad", "--seed", "--model"],
+    flags: ["--norm", "--remove", "--upscale", "--no-upscale"],
+    options: [
+      "--move",
+      "--to",
+      "--by",
+      "--layer",
+      "--prompt",
+      "--pad",
+      "--seed",
+      "--model",
+      "--upscale-model",
+    ],
   });
   if (parsed.positionals.length !== 1) {
     throw new PhotoctlError("usage", "fill requires exactly one photo ID or prefix");
@@ -56,7 +70,10 @@ export async function fillCommand(
     parsed.options.has("--prompt") ||
     parsed.options.has("--pad") ||
     parsed.options.has("--seed") ||
-    parsed.options.has("--model")
+    parsed.options.has("--model") ||
+    parsed.options.has("--upscale-model") ||
+    parsed.flags.has("--upscale") ||
+    parsed.flags.has("--no-upscale")
   ) {
     throw new PhotoctlError("usage", "fill generation requires --layer");
   }
@@ -137,6 +154,9 @@ export async function fillCommand(
 
 export type FillDependencies = FillGenerationDependencies & {
   source?: import("@photoctl/render").EvaluateGraphNodeRequest["source"];
+  upscaleRegistry?: UpscaleRegistry;
+  upscaleSettings?: import("@photoctl/render").UpscalePolicySettings;
+  sourceContext?: import("@photoctl/render").SourceContextDensity;
 };
 
 async function fillGenerationCommand(
@@ -152,6 +172,9 @@ async function fillGenerationCommand(
   const custom = parsed.options.get("--prompt");
   if (remove === Boolean(custom)) {
     throw new PhotoctlError("usage", "fill requires exactly one of --remove or --prompt");
+  }
+  if (parsed.flags.has("--upscale") && parsed.flags.has("--no-upscale")) {
+    throw new PhotoctlError("usage", "fill accepts only one of --upscale or --no-upscale");
   }
   const pad = parseOptionalInteger(parsed.options.get("--pad"), "--pad", 0);
   const seed = parseOptionalInteger(
@@ -178,6 +201,9 @@ async function fillGenerationCommand(
         gateway: new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl }),
         model,
       } satisfies FillDependencies);
+    const upscaleRegistry =
+      providedDependencies?.upscaleRegistry ?? new UpscaleRegistry(DEFAULT_MODELS.upscale);
+    const guardedPrompt = buildGuardedUpscalePrompt(remove ? removePrompt() : custom!);
     const resolver = createVolumeResolver(env.volumeMap, lease.handle.path);
     const libraryId = await readLibraryId(lease.handle);
     const pinned: ImageSource = {
@@ -199,10 +225,48 @@ async function fillGenerationCommand(
       });
     let result: Awaited<ReturnType<typeof fillLayerStrict>> | undefined;
     let lastSourceError: SourceEvaluationError | undefined;
-    for (const source of dependencies.source
-      ? [dependencies.source]
-      : candidates.map(({ produce }) => produce)) {
+    const dimensions = orientedDimensions({ w: photo.w, h: photo.h }, photo.orientation);
+    for (const entry of dependencies.source ? [{ produce: dependencies.source }] : candidates) {
       try {
+        let source: import("@photoctl/render").EvaluateGraphNodeRequest["source"] = entry.produce;
+        let sourceContext = providedDependencies?.sourceContext;
+        if (!sourceContext) {
+          if (typeof entry.produce !== "function") {
+            throw new Error("Structured fill source dependencies require explicit sourceContext");
+          }
+          let produced: Awaited<ReturnType<typeof entry.produce>>;
+          try {
+            produced = await entry.produce();
+          } catch (error) {
+            throw new SourceEvaluationError(error);
+          }
+          source = async () => produced;
+          const pixelScale = Math.min(
+            1,
+            produced.provenance.w / dimensions.w,
+            produced.provenance.h / dimensions.h,
+          );
+          sourceContext = {
+            tier: produced.provenance.tier,
+            pixelScale,
+            resolutionLimited: pixelScale + 1 / Math.max(dimensions.w, dimensions.h) < 1,
+          };
+        }
+        const upscalePolicy = resolveUpscalePolicy({
+          releaseDefaultModel: upscaleRegistry.releaseDefault,
+          availableAdapterIds: upscaleRegistry.list().map(({ id }) => id),
+          settings: providedDependencies?.upscaleSettings ?? settings,
+          ...(parsed.flags.has("--no-upscale")
+            ? { flag: "no-upscale" as const }
+            : parsed.flags.has("--upscale")
+              ? { flag: "upscale" as const }
+              : {}),
+          ...(parsed.options.has("--upscale-model")
+            ? { modelOverride: parsed.options.get("--upscale-model")! }
+            : {}),
+          sourceContext,
+        });
+        const upscaleAdapter = upscaleRegistry.get(upscalePolicy.upscale.model);
         result = await fillLayerStrict(lease.handle, lease.handle.path, {
           photoId,
           layer,
@@ -213,6 +277,22 @@ async function fillGenerationCommand(
           ...(seed === undefined ? {} : { seed }),
           source,
           dependencies,
+          sourceContext,
+          upscale: {
+            policy: upscalePolicy,
+            prompt: guardedPrompt,
+            ...(upscaleAdapter
+              ? {
+                  adapter: {
+                    id: upscaleAdapter.id,
+                    version: upscaleAdapter.version,
+                    supportedScales: upscaleAdapter.supportedScales,
+                    limits: upscaleAdapter.limits,
+                    execute: async (input) => await upscaleRegistry.execute(upscaleAdapter, input),
+                  },
+                }
+              : {}),
+          },
         });
         break;
       } catch (error) {
@@ -241,10 +321,36 @@ async function fillGenerationCommand(
           node: result.generationNodeId,
           adapter: dependencies.adapter.id,
           model: dependencies.model,
-          resampled: result.resampled,
           returned: result.returnedDimensions,
         },
+        source_context: {
+          tier: result.sourceContext.tier,
+          pixel_scale: result.sourceContext.pixelScale,
+          resolution_limited: result.sourceContext.resolutionLimited,
+        },
+        upscale: {
+          enabled: result.upscale.enabled,
+          executed: result.upscale.executed,
+          node: result.upscale.nodeId,
+          adapter: result.upscale.adapter,
+          model: result.upscale.model,
+          input: result.upscale.input,
+          target: result.upscale.target,
+          generated: result.upscale.generated,
+          final: result.upscale.final,
+          density_satisfied: result.upscale.densitySatisfied,
+          warnings: result.upscale.warnings,
+        },
         composite: { node: result.compositeNodeId, unmasked_bit_exact: true as const },
+        executions: result.executions.map(({ kind, nodeId, provider, reused }) => ({
+          kind,
+          node: nodeId,
+          adapter: provider.adapter,
+          model: provider.model,
+          duration_ms: provider.durationMs,
+          cost_usd: provider.costUsd,
+          reused,
+        })),
       } satisfies FillStrictData,
       warnings: result.warnings,
     };

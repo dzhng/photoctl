@@ -13,7 +13,7 @@ afterEach(async () => {
   server = undefined;
 });
 
-test("the image adapter uses multipart edits and normalizes wrong-sized PNGs", async () => {
+test("the image adapter preserves the provider's intrinsic same-ratio raster", async () => {
   server = await startGatewayFixture();
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("Fixture address unavailable");
@@ -37,8 +37,8 @@ test("the image adapter uses multipart edits and normalizes wrong-sized PNGs", a
 
   const normalized = await adapter.normalize(response.data, { w: 20, h: 12 });
 
-  expect(await sharp(normalized.png).metadata()).toMatchObject({ width: 20, height: 12 });
-  expect(normalized.resampled).toBe(true);
+  expect(await sharp(normalized.png).metadata()).toMatchObject({ width: 40, height: 24 });
+  expect(normalized.returnedDimensions).toEqual({ w: 40, h: 24 });
 });
 
 test("the fake gateway owns image generations at the sent dimensions", async () => {

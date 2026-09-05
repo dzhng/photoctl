@@ -1,5 +1,4 @@
 import { PhotoctlError, type Warning } from "@photoctl/protocol";
-import { resampleDisplaySrgb } from "@photoctl/img";
 import sharp from "sharp";
 import { z } from "zod";
 import { buildInstructionCompositePrompt } from "../prompts/image.js";
@@ -15,7 +14,6 @@ export interface SentImage {
 
 export interface NormalizedImageResponse {
   png: Buffer;
-  resampled: boolean;
   returnedDimensions: { w: number; h: number };
   wholeFrame: boolean;
   warnings: Warning[];
@@ -119,13 +117,9 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
         { returned: { w: metadata.width, h: metadata.height }, sent: sentDimensions },
       );
     }
-    const resampled = metadata.width !== sentDimensions.w || metadata.height !== sentDimensions.h;
-    const png = resampled
-      ? await resamplePng(bytes, metadata.width, metadata.height, sentDimensions)
-      : await sharp(bytes, { failOn: "error" }).png().toBuffer();
+    const png = await sharp(bytes, { failOn: "error" }).png().toBuffer();
     return {
       png,
-      resampled,
       returnedDimensions: { w: metadata.width, h: metadata.height },
       wholeFrame: parsed.photoctl_fixture?.wholeframe === true,
       warnings: parsed.photoctl_fixture?.wholeframe
@@ -186,31 +180,4 @@ const imageResponseSchema = z.object({
 
 function pngBlob(bytes: Buffer): Blob {
   return new Blob([Uint8Array.from(bytes)], { type: "image/png" });
-}
-
-async function resamplePng(
-  bytes: Buffer,
-  sourceWidth: number,
-  sourceHeight: number,
-  target: { w: number; h: number },
-): Promise<Buffer> {
-  const decoded = await sharp(bytes, { failOn: "error" })
-    .toColourspace("rgb16")
-    .removeAlpha()
-    .raw({ depth: "ushort" })
-    .toBuffer();
-  const samples = new Uint16Array(decoded.length / Uint16Array.BYTES_PER_ELEMENT);
-  for (let index = 0; index < samples.length; index += 1) {
-    samples[index] = decoded.readUInt16LE(index * Uint16Array.BYTES_PER_ELEMENT);
-  }
-  const resized = resampleDisplaySrgb(samples, sourceWidth, sourceHeight, target.w, target.h);
-  const output = Buffer.allocUnsafe(resized.length);
-  for (let index = 0; index < resized.length; index += 1) {
-    output[index] = Math.round(resized[index]! / 257);
-  }
-  return await sharp(output, {
-    raw: { width: target.w, height: target.h, channels: 3 },
-  })
-    .png()
-    .toBuffer();
 }

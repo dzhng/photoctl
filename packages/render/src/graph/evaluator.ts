@@ -144,7 +144,7 @@ async function evaluateOne(
         nodeId,
       );
       if (pinned) return { ...pinned, reused: true };
-      throw new Error(`Pinned generation artifact is unavailable: ${pinnedExecutionId}`);
+      throw new Error(`Pinned external artifact is unavailable: ${pinnedExecutionId}`);
     }
   }
   if (!deterministic && requestedExecutionId) {

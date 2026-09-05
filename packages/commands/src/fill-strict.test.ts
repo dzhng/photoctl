@@ -47,7 +47,6 @@ test("strict fill commits generated pixels through a mask composite without chan
       generation: {
         adapter: "gateway-image-v1",
         model: "openai/gpt-image-2",
-        resampled: false,
       },
       composite: {
         unmasked_bit_exact: true,
@@ -117,7 +116,7 @@ test("strict fill commits generated pixels through a mask composite without chan
   }
 });
 
-test("same-ratio provider dimensions are normalized deterministically and recorded in the DAG", async () => {
+test("same-ratio provider dimensions remain intrinsic until the graph placement", async () => {
   const fixture = await fillFixture("wrongdims");
   try {
     const segmented = success(
@@ -136,9 +135,7 @@ test("same-ratio provider dimensions are normalized deterministically and record
       ),
     );
 
-    expect(filled.generation).toEqual(
-      expect.objectContaining({ resampled: true, returned: { w: 32, h: 32 } }),
-    );
+    expect(filled.generation).toEqual(expect.objectContaining({ returned: { w: 32, h: 32 } }));
     const graph = success(await command(fixture, "graph", ["show", fixture.id])) as {
       nodes: Array<{ id: string; kind: string }>;
     };
@@ -161,7 +158,7 @@ test("same-ratio provider dimensions are normalized deterministically and record
       nodeId: generationId!,
       source: fixture.sourceProducer,
     });
-    expect(generated.artifact).toMatchObject({ w: 16, h: 16 });
+    expect(generated.artifact).toMatchObject({ w: 32, h: 32 });
     expect(
       planOutputDensity({
         target: {
@@ -181,7 +178,7 @@ test("same-ratio provider dimensions are normalized deterministically and record
         },
         sourceContext: { tier: "fixture", pixelScale: 1, resolutionLimited: false },
       }).requiredScale,
-    ).toBe(1);
+    ).toBe(0.5);
     expect(resample.parameters).toEqual({
       w: 40,
       h: 30,
@@ -195,25 +192,7 @@ test("same-ratio provider dimensions are normalized deterministically and record
       nodeId: resampleId!,
       source: fixture.sourceProducer,
     });
-    const generatedPixels = (
-      await readArtifactLinear(generated.artifact.path, generated.artifact.artifactHash)
-    ).data;
-    const placedPixels = (
-      await readArtifactLinear(placed.artifact.path, placed.artifact.artifactHash)
-    ).data;
-    for (let y = 0; y < 30; y += 1) {
-      for (let x = 0; x < 40; x += 1) {
-        const target = (y * 40 + x) * 3;
-        if (x >= 16 && x < 32 && y < 16) {
-          const source = (y * 16 + x - 16) * 3;
-          expect(placedPixels.slice(target, target + 3)).toEqual(
-            generatedPixels.slice(source, source + 3),
-          );
-        } else {
-          expect(placedPixels.slice(target, target + 3)).toEqual(new Float32Array(3));
-        }
-      }
-    }
+    expect(placed.artifact).toMatchObject({ w: 40, h: 30 });
     const evaluated = await evaluateGraphNode({
       database: fixture.handle,
       libraryPath: fixture.handle.path,
@@ -251,7 +230,7 @@ test("strict fill rejects a whole-frame provider result with data exit 65 and no
   }
 });
 
-test("provider sampling dimensions remain distinct from the normalized crop artifact", async () => {
+test("a smaller provider raster remains intrinsic for density planning", async () => {
   const fixture = await fillFixture("smallerdims");
   try {
     const segmented = success(
@@ -276,7 +255,7 @@ test("provider sampling dimensions remain distinct from the normalized crop arti
       nodeId: filled.generation.node,
       source: fixture.sourceProducer,
     });
-    expect(generated.artifact).toMatchObject({ w: 16, h: 16 });
+    expect(generated.artifact).toMatchObject({ w: 8, h: 8 });
     expect(filled.generation.returned).toEqual({ w: 8, h: 8 });
     const generation = success(
       await command(fixture, "graph", ["node", fixture.id, filled.generation.node]),
@@ -291,10 +270,6 @@ test("provider sampling dimensions remain distinct from the normalized crop arti
         generated: {
           id: generated.artifact.artifactHash,
           dimensions: { w: generated.artifact.w, h: generated.artifact.h },
-          samplingDimensions: {
-            w: generation.parameters.request.returned[0],
-            h: generation.parameters.request.returned[1],
-          },
         },
         cachedUpscales: [],
         supportedScales: [2, 4],
@@ -308,9 +283,9 @@ test("provider sampling dimensions remain distinct from the normalized crop arti
     ).toMatchObject({
       requiredScale: 2,
       upscale: {
-        generated: { w: 32, h: 32 },
+        generated: { w: 16, h: 16 },
         operations: [
-          { kind: "upscale", scale: 2, expectedDimensions: { w: 32, h: 32 } },
+          { kind: "upscale", scale: 2, expectedDimensions: { w: 16, h: 16 } },
           { kind: "resize", dimensions: { w: 16, h: 16 } },
         ],
       },

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { fullHashSchema } from "../hash.js";
+import { warningCodes } from "../envelope.js";
 
 const nodeId = fullHashSchema("node");
 const revisionFields = {
@@ -140,10 +141,44 @@ export const fillStrictDataSchema = z.object({
     node: nodeId,
     adapter: z.string().min(1),
     model: z.string().min(1),
-    resampled: z.boolean(),
     returned: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
   }),
+  source_context: z.object({
+    tier: z.string().min(1),
+    pixel_scale: z.number().positive(),
+    resolution_limited: z.boolean(),
+  }),
+  upscale: z.object({
+    enabled: z.boolean(),
+    executed: z.boolean(),
+    node: nodeId.nullable(),
+    adapter: z.string().min(1).nullable(),
+    model: z.string().min(1),
+    input: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+    target: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+    generated: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+    final: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
+    density_satisfied: z.boolean(),
+    warnings: z.array(
+      z.object({
+        code: z.enum(warningCodes),
+        message: z.string().min(1),
+        id: z.string().optional(),
+      }),
+    ),
+  }),
   composite: z.object({ node: nodeId, unmasked_bit_exact: z.literal(true) }),
+  executions: z.array(
+    z.object({
+      kind: z.enum(["generate", "upscale"]),
+      node: nodeId,
+      adapter: z.string().min(1),
+      model: z.string().min(1),
+      duration_ms: z.number().nonnegative(),
+      cost_usd: z.number().nonnegative(),
+      reused: z.boolean(),
+    }),
+  ),
 });
 
 export type SegmentData = z.infer<typeof segmentDataSchema>;

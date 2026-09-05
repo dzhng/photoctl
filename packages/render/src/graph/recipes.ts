@@ -22,6 +22,14 @@ const concreteModelSchema = z
   .string()
   .min(1)
   .refine((model) => model !== "auto" && model !== "latest" && !model.endsWith("/latest"));
+export const externalExecutionRequestSchema = z
+  .object({
+    execution_id: z
+      .string()
+      .regex(/^exec_[0-9a-f]{64}$/)
+      .optional(),
+  })
+  .catchall(jsonSchema);
 
 export interface ImageNodeDefinition {
   parameters: z.ZodType<Record<string, JsonValue>>;
@@ -81,7 +89,7 @@ export const imageNodeRegistry = {
         model_version: z.string().min(1).nullable(),
         prompt: z.string(),
         prompt_version: z.number().int().positive(),
-        request: z.record(z.string(), jsonSchema),
+        request: externalExecutionRequestSchema,
       })
       .strict(),
     1,
@@ -97,6 +105,7 @@ export const imageNodeRegistry = {
         model_version: z.string().min(1).nullable(),
         scale: z.number().positive(),
         controls: z.record(z.string(), jsonSchema),
+        request: externalExecutionRequestSchema,
       })
       .strict(),
     1,

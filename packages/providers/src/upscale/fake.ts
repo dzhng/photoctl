@@ -2,7 +2,13 @@ import { createHash } from "node:crypto";
 import sharp from "sharp";
 import type { UpscaleAdapter, UpscaleInput, UpscaleResult } from "./adapter.js";
 
-export type FakeUpscaleMode = "normal" | "wrong-aspect" | "too-small" | "transport-failure";
+export type FakeUpscaleMode =
+  | "normal"
+  | "wrong-aspect"
+  | "too-small"
+  | "transport-failure"
+  | "corrupt"
+  | "mapped-frame";
 
 export class FakeUpscaleAdapter implements UpscaleAdapter {
   readonly colorContract = "opaque-display-srgb" as const;
@@ -39,27 +45,34 @@ export class FakeUpscaleAdapter implements UpscaleAdapter {
       throw new Error("Fake upscaler input exceeds its limit");
     }
     const scale = this.largestValidScale(input.scale, source);
-    const dimensions =
+    const samplingDimensions =
       this.mode === "wrong-aspect"
         ? { w: source.w * scale + 1, h: source.h * scale }
         : this.mode === "too-small"
           ? { w: Math.max(1, source.w - 1), h: Math.max(1, source.h - 1) }
           : { w: source.w * scale, h: source.h * scale };
+    const dimensions =
+      this.mode === "mapped-frame"
+        ? { w: samplingDimensions.w + 2, h: samplingDimensions.h + 2 }
+        : samplingDimensions;
     const color = createHash("sha256")
       .update(input.artifact.bytes)
       .update(input.prompt ?? "")
       .digest()
       .subarray(0, 3);
-    const bytes = await sharp({
-      create: {
-        width: dimensions.w,
-        height: dimensions.h,
-        channels: 3,
-        background: { r: color[0]!, g: color[1]!, b: color[2]! },
-      },
-    })
-      .png()
-      .toBuffer();
+    const bytes =
+      this.mode === "corrupt"
+        ? Buffer.from("not a png")
+        : await sharp({
+            create: {
+              width: dimensions.w,
+              height: dimensions.h,
+              channels: 3,
+              background: { r: color[0]!, g: color[1]!, b: color[2]! },
+            },
+          })
+            .png()
+            .toBuffer();
     return {
       artifact: {
         bytes,
@@ -68,6 +81,19 @@ export class FakeUpscaleAdapter implements UpscaleAdapter {
         dimensions,
       },
       dimensions,
+      ...(this.mode === "mapped-frame"
+        ? {
+            frameMapping: {
+              source: [0, 0, source.w, source.h] as [number, number, number, number],
+              output: [1, 1, samplingDimensions.w, samplingDimensions.h] as [
+                number,
+                number,
+                number,
+                number,
+              ],
+            },
+          }
+        : {}),
       provenance: {
         adapter: this.id,
         adapterVersion: this.version,

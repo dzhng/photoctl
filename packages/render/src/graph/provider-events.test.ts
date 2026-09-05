@@ -77,6 +77,7 @@ test("generate and upscale attempts emit distinct events and retain bounded reda
         model_version: null,
         scale: 2,
         controls: {},
+        request: {},
       },
       input_node_ids: [generatedId],
       input_artifact_hashes: [expect.stringMatching(/^a_[0-9a-f]{64}$/)],
@@ -166,6 +167,7 @@ async function insertNode(db: PGlite, kind: "generate" | "upscale", inputId: str
           model_version: null,
           scale: 2,
           controls: {},
+          request: {},
         };
   const recipe = recipeHash(
     canonicalNodeRecipe({ kind, recipeVersion: 1, parameters, inputNodeIds: [inputId] }),

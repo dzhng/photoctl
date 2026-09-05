@@ -100,9 +100,9 @@ mask-composite, replacement-layer, and output-root state in one revision. The mu
 needed by the graph but does not create a review preview. The strict compositor remains the protection owner, so every zero-mask
 sample is copied from that node's base input exactly.
 
-The adapter owns provider-frame normalization. A same-ratio size mismatch takes the existing deterministic display-sRGB resampler;
-the generation recipe separately retains returned sampling dimensions, while its artifact remains crop-sized and the canonical
-resample recipe owns placement into the base canvas. This distinction is the input to 12b/12c density planning and upscaling.
+The adapter owns provider-frame validation while preserving the intrinsic raster it actually returned. The generation recipe records
+those same sampling dimensions, and the canonical resample recipe alone owns exact sizing and placement into the base canvas. This
+distinction is the input to 12b/12c density planning and upscaling.
 An unexplained aspect change or the fake whole-frame signal returns `provider_whole_frame` (exit 65), and neither result enters the
 catalog. The default live adapter remains fail-closed while native edit-mask polarity is unverified. Focused public-command tests use
 an injected source plus the real adapter against the HTTP fake; they cover exact protected pixels, crop/pad metadata, wrong-size
@@ -133,3 +133,16 @@ The provider prompt owner now returns the original operation beside a versioned,
 operation back into model instructions. The guard requests balanced detail while preserving photographic and mask-boundary
 geometry. Slice 12c2 still owns adapter execution, output validation, retry reuse, and failure retention; no live or graph-mutation
 gate is claimed here.
+
+## 12c2 keyless execution checkpoint — 2026-09-05
+
+Strict fill now resolves the pure upscale policy against the configured registry and runs a selected fake adapter from the original
+intrinsic generation crop. Successful output is validated, any reversible provider frame is cropped to its declared sampling area,
+and exactly one canonical Lanczos3 resample performs final sizing and placement. Sufficient generated or exact cached upscale pixels
+skip the paid call. Source-resolution provenance remains separate from output-density truth.
+
+Generation is the successful commit boundary. Transport, invalid geometry, undersized, or unreadable upscale output commits the
+generation path with `upscale_failed`, no failed image node, and unsatisfied density. A retry recognizes only the active canonical
+fill branch, reuses its pinned generation execution and original base, and retries the upscaler; an exact cached upscale also reuses
+its pinned execution during ordinary evaluation. Live adapter credentials, quality/polarity evidence, refresh, general transform
+ancestry, person movement, and visual continuity remain open for 12d and the named live gates.

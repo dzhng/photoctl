@@ -6,12 +6,12 @@ import {
   buildGuardedUpscalePrompt,
   type UpscaleArtifact,
   type UpscaleRegistry,
-  type UpscaleSettings,
 } from "@photoctl/providers";
+import { resolveUpscalePolicy, type UpscalePolicySettings } from "@photoctl/render";
 
 export interface UpscaleSpikeDependencies {
   upscaleRegistry?: UpscaleRegistry;
-  upscaleSettings?: UpscaleSettings;
+  upscaleSettings?: UpscalePolicySettings;
   upscaleControls?: {
     scale: number;
     fidelity: number;
@@ -28,11 +28,17 @@ export async function runUpscaleSpike(
 ): Promise<string> {
   const output = join(outputDirectory, "upscale-spike.json");
   const registry = dependencies.upscaleRegistry;
-  const selection = registry?.select({
-    settings: dependencies.upscaleSettings,
-    flag: "upscale",
-  });
-  if (!registry || !selection?.enabled) {
+  const policy = registry
+    ? resolveUpscalePolicy({
+        releaseDefaultModel: registry.releaseDefault,
+        availableAdapterIds: registry.list().map(({ id }) => id),
+        settings: dependencies.upscaleSettings,
+        flag: "upscale",
+        sourceContext: { tier: "workbench", pixelScale: 1, resolutionLimited: false },
+      })
+    : undefined;
+  const adapter = registry && policy ? registry.get(policy.upscale.model) : undefined;
+  if (!registry || policy?.upscale.action !== "upscale" || !adapter) {
     await writeEvidence(output, {
       schema: 1,
       status: "not_run",
@@ -52,13 +58,7 @@ export async function runUpscaleSpike(
     );
 
   const controls = dependencies.upscaleControls;
-  const completed = await runComparisons(
-    sources,
-    outputDirectory,
-    registry,
-    selection.adapter,
-    controls,
-  );
+  const completed = await runComparisons(sources, outputDirectory, registry, adapter, controls);
   const comparisons = completed.map(({ comparison }) => comparison);
   const sheetInputs = completed.flatMap(({ panels }) => panels);
   const contactSheet = "upscale-spike-contact-sheet.png";
@@ -68,8 +68,8 @@ export async function runUpscaleSpike(
     status: "completed",
     reason: null,
     releaseDecision: "deferred",
-    selectedAdapter: selection.adapter.id,
-    selectedModel: selection.model,
+    selectedAdapter: adapter.id,
+    selectedModel: policy.upscale.model,
     controls: publicControls(controls),
     contactSheet,
     comparisons,

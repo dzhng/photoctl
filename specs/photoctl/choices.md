@@ -32,15 +32,15 @@
 ### Slice 12a — Generation preserves crop sampling; resample owns base placement
 
 - **When:** Slice 12a crop-to-graph integration, 2026-09-05.
-- **The choice:** The paid generate execution publishes only its normalized provider crop. Its artifact keeps the crop dimensions,
-  while the recipe also retains the provider's returned dimensions as the distinct sampling-density fact. The existing canonical
+- **The choice:** The paid generate execution publishes only its normalized provider crop. Its artifact keeps the intrinsic raster
+  dimensions actually returned by the provider, and the recipe records the same dimensions as the sampling-density fact. The canonical
   resample node owns both deterministic sizing and placement through an optional base-canvas target rectangle; pixels outside that
   rectangle are zero because the following strict compositor copies the base wherever its mask is zero.
 - **The gap:** The existing compositor requires dimension-matched inputs, but storing a copied full-base image as the generation
   artifact erased which pixels the provider actually returned and made the 12b density planner believe a small crop already had
   full-frame sampling.
-- **The reach:** Future upscale runs from the original paid crop, density uses returned sampling dimensions even when adapter
-  normalization changed its storage dimensions, and crop-to-base geometry has one immutable recipe owner. The strict compositor
+- **The reach:** Future upscale runs from the original intrinsic paid crop, density uses those real pixel dimensions, and
+  crop-to-base geometry has one immutable recipe owner. The strict compositor
   still protects every unmasked base sample exactly.
 - **Verdict:** **Sound after correction.** It preserves provider evidence and the required generate → upscale → resample/place →
   mask-composite sequence without a compatibility branch.
@@ -2808,3 +2808,30 @@
 - **Verdict:** **Sound.** Separating policy intent from executable action preserves both user choice and honest partial-success
   reporting.
 - **Confidence:** Medium; the command response integration must keep `executed:false` distinct from both fields.
+
+### Slice 12c2 — Retry recognizes one canonical fill branch, not arbitrary ancestry
+
+- **When:** Slice 12c2 execution integration, 2026-09-05.
+- **The choice:** Upscale retry and cached reuse inspect only the active layer's immediate canonical
+  generate → optional upscale → Lanczos3 resample/place → zero-feather mask-composite branch. Exact generation execution identity is
+  reusable when the instruction matches; an upscale cache additionally requires the current adapter/version, model, and guarded-prompt
+  ID/version/text. A retry restores the composite's original base input rather than editing the already-composited layer.
+- **The gap:** The plan required exact generation reuse after an upscale failure but did not define how broadly to search history or
+  which output-recipe fields distinguish a Photoctl fill from a user-authored graph with the same rough topology.
+- **The reach:** Retrying cannot reinterpret arbitrary generate ancestors, stack the same fill repeatedly, or reuse pixels produced by
+  a stale adapter/prompt contract. A changed upscale contract can still reuse the paid generation and retry only the upscaler.
+- **Verdict:** **Sound.** Narrow structural recognition preserves the successful paid boundary without introducing general ancestry
+  rewriting ahead of Slice 12d.
+- **Confidence:** High; focused negative tests reject changed instructions, noncanonical composite settings, and stale adapter versions.
+
+### Slice 12c2 — `executed` describes the active graph path; execution records disclose reuse
+
+- **When:** Slice 12c2 command response integration, 2026-09-05.
+- **The choice:** `upscale.executed` is true whenever the committed fill graph uses an upscale node, including a matching cached node.
+  The corresponding `executions[].reused` field distinguishes a cached pinned execution from a provider call made by this command.
+- **The gap:** The response named `executed` but did not say whether it meant “called during this request” or “present in the resulting
+  image path.”
+- **The reach:** Clients can tell both what pixels the active result uses and whether the current request incurred external work without
+  inferring either fact from node IDs.
+- **Verdict:** **Sound.** Graph truth and request activity are separate facts and now have separate fields.
+- **Confidence:** High.
