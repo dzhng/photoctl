@@ -14,10 +14,9 @@ requirements, independent of missing live credentials:
   native mask owner; remove defaults to strict, prompt to expand=24. Persist the effective mask and
   its recipe so refresh, transform, and exact exterior protection agree. Verify defaults, feather
   coverage, expanded support, and unchanged pixels outside effective coverage through public commands.
-- **12e2 provider inputs:** implement `--ref`, `--init`, and `--full-res`; preserve the default sent
-  long-edge cap and map reduced provider inputs to exact base coordinates through the existing frame
-  owner. Unsupported adapter capabilities produce the specified warnings. Verify actual HTTP bodies,
-  dimensions, immutable provenance, and refresh reuse with the fake gateway.
+- **12e2 provider inputs:** input-size capping and `--full-res` are implemented; `--ref` and `--init`
+  remain. Unsupported adapter capabilities produce the specified warnings. Verify actual HTTP bodies,
+  immutable reference provenance, and refresh reuse with the fake gateway.
 - **12f outpaint:** implement `--outpaint --aspect|--px` through an explicit canvas/coordinate contract
   that retains original pixels, places invented exterior pixels, and keeps later layer, preview,
   export, and undo operations coherent. Settle this geometry in a reviewable plan before coding;
@@ -25,6 +24,17 @@ requirements, independent of missing live credentials:
 
 Each pass follows red/green public behavior tests and the existing visual gates. Live polarity and
 photographic quality remain distinct evidence requirements after these controls work deterministically.
+
+### Provider sampling contract
+
+Fill and generation refresh share the provider-input owner in
+[`external-pixels.ts`](../../../packages/render/src/fill/external-pixels.ts). Image and mask use the same
+integer sampling dimensions, while the immutable base-space crop remains the final placement target.
+The generation request records `sent` separately from `crop`, plus `full_res` so refresh preserves
+the user's sampling choice. Changing that choice cannot reuse an execution made for the other mode.
+The public-command regression in `fill-input-size.test.ts` inspects the actual uploaded PNGs, refreshes
+both modes, and checks canonical output dimensions and protected samples. This is deterministic
+geometry/provenance evidence, not a live-provider or photographic quality verdict.
 
 ## Pre-gate (with key, first): `smoke:mask-polarity` → each adapter's `maskPolarity` + a fake-gateway fixture. Until recorded,
 live native-mask fills refuse `provider_unverified_mask` 69; fake-gateway runs are unaffected.

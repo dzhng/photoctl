@@ -81,6 +81,56 @@ pub fn resample_display_srgb_region(
     .into())
 }
 
+// This synchronous boundary borrows the source buffer; only the reduced mask is allocated.
+#[allow(clippy::too_many_arguments)]
+#[napi]
+pub fn resample_mask_region(
+    data: Float32Array,
+    source_width: u32,
+    source_height: u32,
+    left: u32,
+    top: u32,
+    width: u32,
+    height: u32,
+    output_width: u32,
+    output_height: u32,
+) -> napi::Result<Float32Array> {
+    if width == 0
+        || height == 0
+        || left
+            .checked_add(width)
+            .is_none_or(|right| right > source_width)
+        || top
+            .checked_add(height)
+            .is_none_or(|bottom| bottom > source_height)
+    {
+        return Err(invalid_argument(
+            "resample region must be inside the source image".to_owned(),
+        ));
+    }
+    let sx = f64::from(output_width) / f64::from(width);
+    let sy = f64::from(output_height) / f64::from(height);
+    Ok(transform(
+        &data,
+        source_width,
+        source_height,
+        1,
+        output_width,
+        output_height,
+        [
+            sx,
+            0.0,
+            0.0,
+            sy,
+            -f64::from(left) * sx,
+            -f64::from(top) * sy,
+        ],
+        Filter::Bilinear,
+    )
+    .map_err(invalid_argument)?
+    .into())
+}
+
 #[napi]
 pub fn resample_pixels(
     data: Float32Array,

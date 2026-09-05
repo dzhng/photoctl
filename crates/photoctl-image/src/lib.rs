@@ -29,8 +29,8 @@ pub use mask::{
 use publication::{AtomicRenameOutcome, atomic_rename_no_replace as rename_no_replace};
 use resample::{Filter as ResampleFilter, resize};
 pub use resample::{
-    resample_display_srgb, resample_display_srgb_region, resample_display_srgb8, resample_pixels,
-    transform_pixels,
+    resample_display_srgb, resample_display_srgb_region, resample_display_srgb8,
+    resample_mask_region, resample_pixels, transform_pixels,
 };
 
 #[napi]

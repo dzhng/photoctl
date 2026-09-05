@@ -27,9 +27,8 @@ import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
 import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { describeFillBranch, type FillBranchDescriptor } from "./branch.js";
 import {
-  cropImagePng,
+  fillProviderInputs,
   cropMappedExternalImage,
-  cropMaskPng,
   decodeExternalImage,
   image16Png,
 } from "./external-pixels.js";
@@ -355,19 +354,17 @@ async function executeGenerationRefresh(
     mask = { ...mask, data: transformedMask };
   }
   mask = strictEffectiveMask(mask);
+  const sent = await fillProviderInputs(base, mask, cropRect, storedRequest.full_res !== false);
   const form = request.dependencies.adapter.buildEdit(
     operation,
-    { png: await cropImagePng(base, cropRect), w: cropRect.w, h: cropRect.h },
-    await cropMaskPng(mask, cropRect),
+    sent.image,
+    sent.mask,
     prompt,
     seed,
   );
   const started = (request.dependencies.now ?? Date.now)();
   const response = await request.dependencies.gateway.imageEdits(form);
-  const normalized = await request.dependencies.adapter.normalize(response.data, {
-    w: cropRect.w,
-    h: cropRect.h,
-  });
+  const normalized = await request.dependencies.adapter.normalize(response.data, sent.image);
   if (normalized.wholeFrame) {
     throw new PhotoctlError(
       "provider_whole_frame",
@@ -387,6 +384,8 @@ async function executeGenerationRefresh(
       ...storedRequest,
       execution_id: executionId,
       returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
+      sent: [sent.image.w, sent.image.h],
+      full_res: storedRequest.full_res !== false,
       source_context: {
         tier: request.sourceContext.tier,
         pixel_scale: request.sourceContext.pixelScale,
@@ -422,7 +421,7 @@ async function executeGenerationRefresh(
     seed: seed ?? null,
     durationMs: Math.max(0, (request.dependencies.now ?? Date.now)() - started),
     costUsd: 0,
-    inputPx: cropRect.w * cropRect.h,
+    inputPx: sent.image.w * sent.image.h,
     targetPx: cropRect.w * cropRect.h,
     attempt: response.attempts,
     densityVerdict: "not-applicable",

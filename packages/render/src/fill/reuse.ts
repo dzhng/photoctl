@@ -36,6 +36,7 @@ export async function findReusableFillLineage(
     promptVersion: number;
     operation: "remove" | "prompt";
     seed?: number;
+    fullResolution?: boolean;
     source: EvaluateGraphNodeRequest["source"];
     dependencies: FillGenerationDependencies;
     upscale: FillUpscaleDependencies;
@@ -118,6 +119,7 @@ export async function findReusableFillLineage(
       operation?: unknown;
       crop?: unknown;
       seed?: unknown;
+      full_res?: unknown;
       source_context?: unknown;
       upscale?: unknown;
     };
@@ -143,6 +145,7 @@ export async function findReusableFillLineage(
     JSON.stringify(generationParameters.request.crop) !==
       JSON.stringify([crop.x, crop.y, crop.w, crop.h]) ||
     generationParameters.request.seed !== request.seed ||
+    (generationParameters.request.full_res ?? true) !== (request.fullResolution ?? false) ||
     typeof generationParameters.request.execution_id !== "string"
   )
     return undefined;

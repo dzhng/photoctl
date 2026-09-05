@@ -24,7 +24,7 @@ import type { SourceContextDensity } from "./density.js";
 import { strictEffectiveMask } from "./fit.js";
 import { findReusableFillLineage } from "./reuse.js";
 import type { ResolvedUpscalePolicy } from "./upscale-policy.js";
-import { cropImagePng, cropMaskPng, image16Png } from "./external-pixels.js";
+import { fillProviderInputs, image16Png } from "./external-pixels.js";
 import {
   executeFreshGeneration,
   executeGenerationDensity,
@@ -132,6 +132,7 @@ export async function fillLayerStrict(
     promptVersion: number;
     operation: "remove" | "prompt";
     pad?: number;
+    fullResolution?: boolean;
     seed?: number;
     source: EvaluateGraphNodeRequest["source"];
     dependencies: FillGenerationDependencies;
@@ -255,12 +256,11 @@ export async function fillLayerStrict(
       };
     }
   } else {
-    const cropPng = await cropImagePng(base, crop);
-    const maskPng = await cropMaskPng(mask, crop);
+    const sent = await fillProviderInputs(base, mask, crop, request.fullResolution);
     const prepared = await executeFreshGeneration(libraryPath, {
       inputNodeId: fillBaseNodeId,
       inputArtifactHash: baseEvaluation.artifact.artifactHash,
-      sentDimensions: { w: crop.w, h: crop.h },
+      sentDimensions: sent.image,
       prompt: request.prompt,
       promptVersion: request.promptVersion,
       ...(request.seed === undefined ? {} : { seed: request.seed }),
@@ -268,8 +268,8 @@ export async function fillLayerStrict(
       buildRequest: () =>
         request.dependencies.adapter.buildEdit(
           request.operation,
-          { png: cropPng, w: crop.w, h: crop.h },
-          maskPng,
+          sent.image,
+          sent.mask,
           request.prompt,
           request.seed,
         ),
@@ -285,6 +285,8 @@ export async function fillLayerStrict(
         execution_id: executionId,
         operation: request.operation,
         crop: [crop.x, crop.y, crop.w, crop.h],
+        sent: [sent.image.w, sent.image.h],
+        full_res: request.fullResolution ?? false,
         returned: [returned.w, returned.h],
         source_context: {
           tier: request.sourceContext.tier,

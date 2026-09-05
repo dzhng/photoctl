@@ -13,8 +13,8 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last reconciled: 2026-09-05, after `9a61492`. The last pass integrated and pushed relight,
-standalone generation, and vector markup. The spec remains in implementation.*
+*Last reconciled: 2026-09-05. Relight, standalone generation, vector markup, the lossless preview
+oracle, and export heartbeats are pushed. The spec remains in implementation.*
 
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
@@ -31,6 +31,7 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   A source-tree CLI test does not establish that the shipped package works.
   See [Slice 14](slices/14-gold-exam-and-release.md).
 - Complete the still-unimplemented fill controls and outpaint canvas in [Slice 12](slices/12-fill.md),
+  with input-size capping/`--full-res` implemented and reference/init controls still pending,
   then reconcile its photographic/live evidence and the separate
   prompt/control quality comparisons in [Slice 13](slices/13-generative-extras-and-markup.md).
   Keep actual missing prerequisites distinct from implementation still possible without them.

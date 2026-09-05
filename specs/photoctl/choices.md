@@ -22,6 +22,27 @@
 
 ## Sound
 
+### Slice 12e2 — Provider sampling is separate from the final fill crop
+
+- **When:** Fill input-size pass, 2026-09-05.
+- **The choice:** A fill covering a 2048×32 crop sends a 1536×24 image and mask by default, but its
+  returned pixels still occupy the original 2048×32 region. For other aspect ratios, the short side
+  rounds to the nearest whole pixel, with a minimum of one. Both uploads share those dimensions.
+  The native region resampler uses bilinear sampling for both uploads, borrowing source buffers and
+  allocating only the sent-size outputs. The full-size mask still owns exact exterior protection.
+  `--full-res` skips this input reduction.
+- **The gap:** The plan fixed the cap and base-coordinate placement but did not specify integer
+  rounding, mask filtering, or where to retain the sampling choice for a later refresh.
+- **The reach:** The immutable generation request stores sent dimensions and full-resolution intent,
+  independently of its placement crop. Refresh uses that intent; a new fill with changed intent cannot
+  reuse the old provider execution. Earlier recipes without this field retain their original full-size
+  sampling on refresh. A borrowed native mask-region entry point complements the existing RGB entry point;
+  no database column or alternative resampling library is introduced.
+- **Verdict:** **Sound.** Provider bandwidth and final output geometry have distinct owners, so limiting
+  an upload cannot silently shrink the document or misrepresent the generated sampling density.
+- **Confidence:** Medium; the deterministic mapping is covered, while live quality at thin mask edges
+  still requires the separately named photographic evidence.
+
 ### Slice 13a generate — Standalone paid pixels are a source-less generation recipe
 
 - **When:** Slice 13a standalone generation, 2026-09-05.

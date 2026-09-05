@@ -108,6 +108,17 @@ interface NativeBinding {
     outputWidth: number,
     outputHeight: number,
   ): Uint16Array;
+  resampleMaskRegion(
+    data: Float32Array,
+    sourceWidth: number,
+    sourceHeight: number,
+    left: number,
+    top: number,
+    width: number,
+    height: number,
+    outputWidth: number,
+    outputHeight: number,
+  ): Float32Array;
   resamplePixels(
     data: Float32Array,
     sourceWidth: number,
@@ -420,6 +431,32 @@ export function resampleDisplaySrgbRegion(
     height,
     outputWidth,
     outputHeight,
+  );
+}
+
+export function resampleMaskRegion(
+  data: Float32Array,
+  sourceWidth: number,
+  sourceHeight: number,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  outputWidth: number,
+  outputHeight: number,
+): Float32Array {
+  return asFloat32Array(
+    requiredBinding().resampleMaskRegion(
+      data,
+      sourceWidth,
+      sourceHeight,
+      left,
+      top,
+      width,
+      height,
+      outputWidth,
+      outputHeight,
+    ),
   );
 }
 

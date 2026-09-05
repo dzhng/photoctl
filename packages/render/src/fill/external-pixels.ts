@@ -1,6 +1,60 @@
 import sharp from "sharp";
+import { resampleDisplaySrgbRegion, resampleMaskRegion } from "@photoctl/img";
 import type { MaskImage } from "../mask-tiff.js";
 import type { Image16 } from "../source-render.js";
+
+/** Provider sampling never changes the base-space crop used for final placement. */
+export async function fillProviderInputs(
+  base: Image16,
+  mask: MaskImage,
+  crop: { x: number; y: number; w: number; h: number },
+  fullResolution = false,
+) {
+  const scale = fullResolution ? 1 : Math.min(1, 1536 / Math.max(crop.w, crop.h));
+  const w = Math.max(1, Math.round(crop.w * scale));
+  const h = Math.max(1, Math.round(crop.h * scale));
+  if (scale === 1) {
+    return {
+      image: { png: await cropImagePng(base, crop), w, h },
+      mask: await cropMaskPng(mask, crop),
+    };
+  }
+  const pixels = resampleDisplaySrgbRegion(
+    base.data,
+    base.w,
+    base.h,
+    crop.x,
+    crop.y,
+    crop.w,
+    crop.h,
+    w,
+    h,
+  );
+  const reducedMask = resampleMaskRegion(
+    mask.data,
+    mask.w,
+    mask.h,
+    crop.x,
+    crop.y,
+    crop.w,
+    crop.h,
+    w,
+    h,
+  );
+  return {
+    image: {
+      png: await image16Png({
+        ...base,
+        w,
+        h,
+        data: pixels,
+      }),
+      w,
+      h,
+    },
+    mask: await cropMaskPng({ ...mask, w, h, data: reducedMask }, { x: 0, y: 0, w, h }),
+  };
+}
 
 export async function cropMappedExternalImage(
   png: Buffer,
@@ -10,32 +64,36 @@ export async function cropMappedExternalImage(
   return await sharp(png).extract({ left, top, width, height }).png().toBuffer();
 }
 
-export async function cropImagePng(
+async function cropImagePng(
   base: Image16,
   crop: { x: number; y: number; w: number; h: number },
 ): Promise<Buffer> {
-  const display8 = Buffer.allocUnsafe(base.data.length);
-  for (let index = 0; index < base.data.length; index += 1) {
-    display8[index] = Math.round(base.data[index]! / 257);
+  const display8 = Buffer.allocUnsafe(crop.w * crop.h * 3);
+  for (let y = 0; y < crop.h; y += 1) {
+    for (let x = 0; x < crop.w * 3; x += 1) {
+      display8[y * crop.w * 3 + x] = Math.round(
+        base.data[((crop.y + y) * base.w + crop.x) * 3 + x]! / 257,
+      );
+    }
   }
   return await sharp(display8, {
-    raw: { width: base.w, height: base.h, channels: 3 },
+    raw: { width: crop.w, height: crop.h, channels: 3 },
   })
-    .extract({ left: crop.x, top: crop.y, width: crop.w, height: crop.h })
     .png()
     .toBuffer();
 }
 
-export async function cropMaskPng(
+async function cropMaskPng(
   mask: MaskImage,
   crop: { x: number; y: number; w: number; h: number },
 ): Promise<Buffer> {
-  const pixels = Buffer.alloc(mask.w * mask.h);
-  for (let index = 0; index < pixels.length; index += 1) {
-    pixels[index] = Math.round(mask.data[index]! * 255);
+  const pixels = Buffer.allocUnsafe(crop.w * crop.h);
+  for (let y = 0; y < crop.h; y += 1) {
+    for (let x = 0; x < crop.w; x += 1) {
+      pixels[y * crop.w + x] = Math.round(mask.data[(crop.y + y) * mask.w + crop.x + x]! * 255);
+    }
   }
-  return await sharp(pixels, { raw: { width: mask.w, height: mask.h, channels: 1 } })
-    .extract({ left: crop.x, top: crop.y, width: crop.w, height: crop.h })
+  return await sharp(pixels, { raw: { width: crop.w, height: crop.h, channels: 1 } })
     .png()
     .toBuffer();
 }

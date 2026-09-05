@@ -42,7 +42,7 @@ export async function fillCommand(
   providedDependencies?: FillDependencies,
 ): Promise<Envelope> {
   const parsed = parseArguments(args, {
-    flags: ["--norm", "--remove", "--upscale", "--no-upscale"],
+    flags: ["--norm", "--remove", "--upscale", "--no-upscale", "--full-res"],
     options: [
       "--move",
       "--to",
@@ -72,6 +72,7 @@ export async function fillCommand(
   }
   if (
     parsed.flags.has("--remove") ||
+    parsed.flags.has("--full-res") ||
     parsed.options.has("--prompt") ||
     parsed.options.has("--pad") ||
     parsed.options.has("--seed") ||
@@ -355,6 +356,7 @@ async function fillGenerationCommand(
           prompt: remove ? removePrompt() : custom!,
           promptVersion: remove ? REMOVE_PROMPT_VERSION : 1,
           ...(pad === undefined ? {} : { pad }),
+          fullResolution: parsed.flags.has("--full-res"),
           ...(seed === undefined ? {} : { seed }),
           source,
           dependencies,
