@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop -- Graph ancestry must be inspected in dependency order. */
 import { warningCodes, type Warning } from "@photoctl/protocol";
 import { inspectGraphNode, type GraphNodeRecord } from "../graph/inspection.js";
-import { imageNodeRegistry, resampleParametersSchema } from "../graph/recipes.js";
+import { imageNodeRegistry, resampleV1ParametersSchema } from "../graph/recipes.js";
 import type { GraphDatabase } from "../graph/store.js";
 import type { ExternalExecutionProvenance } from "../graph/types.js";
 
@@ -67,7 +67,7 @@ export async function describeFillBranch(
     resample.inputNodeIds.length !== 1
   )
     return undefined;
-  const parsedResample = resampleParametersSchema.safeParse(resample.parameters);
+  const parsedResample = resampleV1ParametersSchema.safeParse(resample.parameters);
   const resampleParameters = parsedResample.success ? parsedResample.data : undefined;
   const crop = resampleParameters?.target;
   if (!crop || resampleParameters.kernel !== "lanczos3") return undefined;

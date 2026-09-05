@@ -267,8 +267,7 @@ export async function executeFillRefresh(
       gateway: new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl }),
       model: generationParameters.model,
     } satisfies FillDependencies);
-  const upscaleRegistry =
-    providedDependencies?.upscaleRegistry ?? new UpscaleRegistry(DEFAULT_MODELS.upscale);
+  const upscaleRegistry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
   const upscaleParameters = branch.upscale?.parameters as { model?: unknown } | null | undefined;
   const upscaleModel =
     typeof upscaleParameters?.model === "string" ? upscaleParameters.model : undefined;
