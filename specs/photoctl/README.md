@@ -104,6 +104,7 @@ See Slice 10's local dependency graph for its serialization details.
 | 08c1b global operators | `cf0dd93` |
 | 08c2 masked operators | `5d866e0` |
 | 08c3 curves/levels | `bb857e1`, corrected by `481bb9c` |
+| 08d1 local operators (G8 partial) | `fa0af32` |
 | 09a provider contracts | `90b03c4` |
 | 09b evidence | `cf34507` |
 | 09c embed/search | `ea2c715` |
