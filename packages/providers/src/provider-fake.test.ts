@@ -155,6 +155,23 @@ test("the reserved image fixture uses a distinct instruction-composite adapter p
   );
 });
 
+test("full-frame reimagine sends source pixels without inventing a native mask", async () => {
+  const adapter = createGatewayImageModelAdapter({ model: FAKE_IMAGE_EDIT_MODEL });
+  const input = await sharp({
+    create: { width: 10, height: 8, channels: 3, background: "#204060" },
+  })
+    .png()
+    .toBuffer();
+
+  const form = adapter.buildFullFrameEdit({ png: input, w: 10, h: 8 }, "painted twilight");
+
+  expect(form.has("image")).toBe(true);
+  expect(form.has("mask")).toBe(false);
+  expect(form.get("prompt")).toBe(
+    "painted twilight\n[photoctl:instruction-composite:v1]\nOnly perform the reimagine inside the supplied crop.",
+  );
+});
+
 test("the fake gateway rejects a native mask for its reserved instruction-composite model", async () => {
   server = await startGatewayFixture();
   const address = server.address();

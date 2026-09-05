@@ -16,7 +16,7 @@ import { dispatch } from "./dispatch.js";
 
 export async function fillUpscaleFixture(
   options: {
-    generationMode?: "smallerdims" | "wrongdims";
+    generationMode?: "smallerdims" | "wrongdims" | "wrongaspect";
     upscaleMode?: FakeUpscaleMode;
     upscaleConfigured?: boolean;
     upscaleLimits?: NonNullable<ConstructorParameters<typeof FakeUpscaleAdapter>[0]>["limits"];
@@ -122,6 +122,7 @@ export async function fillUpscaleFixture(
           id: imageAdapter.id,
           version: imageAdapter.version,
           buildEdit: imageAdapter.buildEdit.bind(imageAdapter),
+          buildFullFrameEdit: imageAdapter.buildFullFrameEdit.bind(imageAdapter),
           normalize: async (...args: Parameters<GatewayImageModelAdapter["normalize"]>) => {
             const normalized = await imageAdapter.normalize(...args);
             const w = Math.max(
@@ -168,7 +169,7 @@ export async function fillUpscaleFixture(
     sourceProducer,
     generationCalls: () => generationCalls,
     generationMasks: () => generationMasks,
-    replaceGenerationMode: (mode: "smallerdims" | "wrongdims" | undefined) => {
+    replaceGenerationMode: (mode: "smallerdims" | "wrongdims" | "wrongaspect" | undefined) => {
       generationMode = mode;
     },
     upscaleCalls: () => upscaleCalls,
@@ -194,10 +195,11 @@ export async function fixtureCommand(
   fixture: Awaited<ReturnType<typeof fillUpscaleFixture>>,
   verb: string,
   args: string[],
+  emit?: (event: import("@photoctl/protocol").StderrEvent) => void | Promise<void>,
 ) {
   return await dispatch(
     { verb, args, cwd: fixture.parent, env: fixture.env },
-    { version: "test", library: fixture.handle, fill: fixture.fill },
+    { version: "test", library: fixture.handle, fill: fixture.fill, emit },
   );
 }
 

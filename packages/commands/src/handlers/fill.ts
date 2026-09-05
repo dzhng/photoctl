@@ -1,7 +1,4 @@
-/* eslint-disable no-await-in-loop -- Source fallbacks must stop before the paid provider call. */
 import { resolvePhotoId, type LibraryHandle } from "@photoctl/library";
-import { createVolumeResolver } from "@photoctl/library";
-import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import {
   fillLayerStrict,
   refreshFillLayer,
@@ -13,11 +10,8 @@ import {
   orientedDimensions,
   resolveUpscalePolicy,
   RevisionConflictError,
-  SourceEvaluationError,
   transformFillLayer,
   type Transform,
-  type FillGenerationDependencies,
-  type ImageSource,
 } from "@photoctl/render";
 import {
   createGatewayImageModelAdapter,
@@ -28,13 +22,17 @@ import {
   removePrompt,
   readProviderSettings,
   resolveModel,
-  type UpscaleRegistry,
 } from "@photoctl/providers";
-import { PhotoctlError, type Envelope, type FillStrictData } from "@photoctl/protocol";
+import {
+  generationSourceTierSchema,
+  PhotoctlError,
+  type Envelope,
+  type FillStrictData,
+} from "@photoctl/protocol";
 import { parseArguments } from "../arguments.js";
-import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
-import { resolveGraphSources } from "../graph-source.js";
+import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
+import { withGenerationSource, type GenerationCommandDependencies } from "./generation-source.js";
 
 export async function fillCommand(
   args: string[],
@@ -159,12 +157,7 @@ export async function fillCommand(
   }
 }
 
-export type FillDependencies = FillGenerationDependencies & {
-  source?: import("@photoctl/render").EvaluateGraphNodeRequest["source"];
-  upscaleRegistry?: UpscaleRegistry;
-  upscaleSettings?: import("@photoctl/render").UpscalePolicySettings;
-  sourceContext?: import("@photoctl/render").SourceContextDensity;
-};
+export type FillDependencies = GenerationCommandDependencies;
 
 export async function executeFillTransform(
   handle: LibraryHandle,
@@ -210,76 +203,6 @@ export async function executeFillTransform(
           },
         }
       : {}),
-  });
-}
-
-async function withFillSource<T>(
-  handle: LibraryHandle,
-  env: RequestEnv,
-  cwd: string,
-  photo: Awaited<ReturnType<typeof loadPhoto>>,
-  dependencies: FillDependencies,
-  run: (input: {
-    source: import("@photoctl/render").EvaluateGraphNodeRequest["source"];
-    sourceContext: import("@photoctl/render").SourceContextDensity;
-  }) => Promise<T>,
-): Promise<T> {
-  const photoId = photo.id;
-  const resolver = createVolumeResolver(env.volumeMap, handle.path);
-  const libraryId = await readLibraryId(handle);
-  const pinned: ImageSource = {
-    kind: "pinned-preview",
-    path: pinnedEmbeddedJpegPath(cacheRootForLibrary(libraryId, cacheBase(env, cwd)), photoId),
-    mediaType: "image/jpeg",
-    orientation: 1,
-  };
-  const candidates = await resolveGraphSources({
-    photo,
-    resolver,
-    pinned,
-    pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${photoId}.jpg` },
-    env,
-  });
-  if (candidates.length === 0 && !dependencies.source) {
-    throw new PhotoctlError("file_offline", "No usable image source is available", { id: photoId });
-  }
-  const dimensions = orientedDimensions({ w: photo.w, h: photo.h }, photo.orientation);
-  let lastSourceError: SourceEvaluationError | undefined;
-  for (const entry of dependencies.source ? [{ produce: dependencies.source }] : candidates) {
-    try {
-      let source: import("@photoctl/render").EvaluateGraphNodeRequest["source"] = entry.produce;
-      let sourceContext = dependencies.sourceContext;
-      if (!sourceContext) {
-        if (typeof entry.produce !== "function") {
-          throw new Error("Structured fill source dependencies require explicit sourceContext");
-        }
-        let produced: Awaited<ReturnType<typeof entry.produce>>;
-        try {
-          produced = await entry.produce();
-        } catch (error) {
-          throw new SourceEvaluationError(error);
-        }
-        source = async () => produced;
-        const pixelScale = Math.min(
-          1,
-          produced.provenance.w / dimensions.w,
-          produced.provenance.h / dimensions.h,
-        );
-        sourceContext = {
-          tier: produced.provenance.tier,
-          pixelScale,
-          resolutionLimited: pixelScale + 1 / Math.max(dimensions.w, dimensions.h) < 1,
-        };
-      }
-      return await run({ source, sourceContext });
-    } catch (error) {
-      if (!(error instanceof SourceEvaluationError)) throw error;
-      lastSourceError = error;
-    }
-  }
-  throw new PhotoctlError("file_offline", "No usable image source is available", {
-    id: photoId,
-    reason: lastSourceError?.message,
   });
 }
 
@@ -360,7 +283,7 @@ export async function executeFillRefresh(
       });
     return await run({ source: pinnedSource, sourceContext: branch.sourceContext });
   }
-  return await withFillSource(handle, env, cwd, photo, dependencies, run);
+  return await withGenerationSource(handle, env, cwd, photo, dependencies, run);
 }
 
 async function fillGenerationCommand(
@@ -403,7 +326,7 @@ async function fillGenerationCommand(
       } satisfies FillDependencies);
     const upscaleRegistry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
     const guardedPrompt = buildGuardedUpscalePrompt(remove ? removePrompt() : custom!);
-    const result = await withFillSource(
+    const result = await withGenerationSource(
       lease.handle,
       env,
       cwd,
@@ -472,7 +395,7 @@ async function fillGenerationCommand(
           returned: result.returnedDimensions,
         },
         source_context: {
-          tier: result.sourceContext.tier,
+          tier: generationSourceTierSchema.parse(result.sourceContext.tier),
           pixel_scale: result.sourceContext.pixelScale,
           resolution_limited: result.sourceContext.resolutionLimited,
         },

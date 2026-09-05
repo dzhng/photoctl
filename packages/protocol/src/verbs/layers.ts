@@ -129,18 +129,23 @@ const fillGraphSchema = z.object({
   output_node: nodeId,
   render_hash: fullHashSchema("r"),
 });
-const fillGenerationSchema = z.object({
+export const fillGenerationSchema = z.object({
   node: nodeId,
   adapter: z.string().min(1),
   model: z.string().min(1),
   returned: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
 });
-const fillSourceContextSchema = z.object({
-  tier: z.string().min(1),
+export const generationSourceTierSchema = z.enum([
+  "online-file",
+  "online-jpeg-range",
+  "pinned-preview",
+]);
+export const fillSourceContextSchema = z.object({
+  tier: generationSourceTierSchema,
   pixel_scale: z.number().positive(),
   resolution_limited: z.boolean(),
 });
-const fillUpscaleSchema = z.object({
+export const fillUpscaleSchema = z.object({
   enabled: z.boolean(),
   executed: z.boolean(),
   node: nodeId.nullable(),
@@ -167,7 +172,7 @@ export const layerTransformDataSchema = z.object({
   upscale: fillUpscaleSchema.nullable(),
 });
 const fillCompositeSchema = z.object({ node: nodeId, unmasked_bit_exact: z.literal(true) });
-const fillExecutionSchema = z.object({
+export const fillExecutionSchema = z.object({
   kind: z.enum(["generate", "upscale"]),
   node: nodeId,
   adapter: z.string().min(1),

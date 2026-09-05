@@ -1,10 +1,5 @@
 import { PhotoctlError, type Warning } from "@photoctl/protocol";
-import {
-  normalizeArtifact,
-  publishArtifact,
-  readArtifactImage,
-  readArtifactMask,
-} from "../artifacts/publication.js";
+import { publishArtifact, readArtifactImage, readArtifactMask } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
 import {
   canonicalNodeRecipe,
@@ -25,17 +20,16 @@ import { compositeV2Projection, resolveLayerId, type RevisionLayerDraft } from "
 import { unfilledVacancyLayerIds } from "../layers/status.js";
 import type { Image16 } from "../source-render.js";
 import { planFillCrop } from "./crop.js";
-import { planOutputDensity, type SourceContextDensity } from "./density.js";
+import type { SourceContextDensity } from "./density.js";
 import { strictEffectiveMask } from "./fit.js";
 import { findReusableFillLineage } from "./reuse.js";
 import type { ResolvedUpscalePolicy } from "./upscale-policy.js";
+import { cropImagePng, cropMaskPng, image16Png } from "./external-pixels.js";
 import {
-  cropImagePng,
-  cropMappedExternalImage,
-  cropMaskPng,
-  decodeExternalImage,
-  image16Png,
-} from "./external-pixels.js";
+  executeFreshGeneration,
+  executeGenerationDensity,
+  type PreparedGeneration,
+} from "./generation.js";
 
 export interface FillGenerationDependencies {
   adapter: {
@@ -45,6 +39,11 @@ export interface FillGenerationDependencies {
       operation: string,
       crop: { png: Buffer; w: number; h: number },
       mask: Buffer,
+      prompt: string,
+      seed?: number,
+    ): FormData;
+    buildFullFrameEdit(
+      crop: { png: Buffer; w: number; h: number },
       prompt: string,
       seed?: number,
     ): FormData;
@@ -258,42 +257,35 @@ export async function fillLayerStrict(
   } else {
     const cropPng = await cropImagePng(base, crop);
     const maskPng = await cropMaskPng(mask, crop);
-    const executionId = newExecutionId();
-    const form = request.dependencies.adapter.buildEdit(
-      request.operation,
-      { png: cropPng, w: crop.w, h: crop.h },
-      maskPng,
-      request.prompt,
-      request.seed,
-    );
-    const started = (request.dependencies.now ?? Date.now)();
-    const response = await request.dependencies.gateway.imageEdits(form);
-    const responseImage = await request.dependencies.adapter.normalize(response.data, {
-      w: crop.w,
-      h: crop.h,
-    });
-    if (responseImage.wholeFrame) {
-      throw new PhotoctlError(
-        "provider_whole_frame",
-        "Strict fill refused a provider result that edited the whole frame",
-        { id: request.photoId, layer: layerId },
-      );
-    }
-    normalized = responseImage;
-    generated = await decodeExternalImage(normalized.png, normalized.returnedDimensions);
-    generatedPublished = await publishArtifact(libraryPath, await normalizeArtifact(generated));
-    const generationParameters = {
-      adapter: request.dependencies.adapter.id,
-      adapter_version: request.dependencies.adapter.version,
-      model: request.dependencies.model,
-      model_version: null,
+    const prepared = await executeFreshGeneration(libraryPath, {
+      inputNodeId: fillBaseNodeId,
+      inputArtifactHash: baseEvaluation.artifact.artifactHash,
+      sentDimensions: { w: crop.w, h: crop.h },
       prompt: request.prompt,
-      prompt_version: request.promptVersion,
-      request: {
+      promptVersion: request.promptVersion,
+      ...(request.seed === undefined ? {} : { seed: request.seed }),
+      dependencies: request.dependencies,
+      buildRequest: () =>
+        request.dependencies.adapter.buildEdit(
+          request.operation,
+          { png: cropPng, w: crop.w, h: crop.h },
+          maskPng,
+          request.prompt,
+          request.seed,
+        ),
+      validate: ({ wholeFrame }) => {
+        if (wholeFrame)
+          throw new PhotoctlError(
+            "provider_whole_frame",
+            "Strict fill refused a provider result that edited the whole frame",
+            { id: request.photoId, layer: layerId },
+          );
+      },
+      request: (executionId, returned) => ({
         execution_id: executionId,
         operation: request.operation,
         crop: [crop.x, crop.y, crop.w, crop.h],
-        returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
+        returned: [returned.w, returned.h],
         source_context: {
           tier: request.sourceContext.tier,
           pixel_scale: request.sourceContext.pixelScale,
@@ -310,240 +302,50 @@ export async function fillLayerStrict(
           derived_prompt: request.upscale.prompt.derived,
         },
         ...(request.seed === undefined ? {} : { seed: request.seed }),
-      },
-    };
-    const generationRecipe = recipeHash(
-      canonicalNodeRecipe({
-        kind: "generate",
-        recipeVersion: 1,
-        parameters: generationParameters,
-        inputNodeIds: [fillBaseNodeId],
       }),
-    );
-    generationNodeId = logicalNodeId(generationRecipe) as `node_${string}`;
-    provider = {
-      adapter: request.dependencies.adapter.id,
-      adapterVersion: request.dependencies.adapter.version,
-      service: request.dependencies.service ?? "gateway",
-      model: request.dependencies.model,
-      modelVersion: null,
-      providerRequestId: response.requestId,
-      seed: request.seed ?? null,
-      durationMs: Math.max(0, (request.dependencies.now ?? Date.now)() - started),
-      costUsd: 0,
-      inputPx: crop.w * crop.h,
-      targetPx: crop.w * crop.h,
-      attempt: response.attempts,
-      densityVerdict: "not-applicable",
-      warnings: normalized.warnings,
+      targetPixels: crop.w * crop.h,
+    });
+    generationNodeId = prepared.nodeId;
+    provider = prepared.provider;
+    generated = prepared.image;
+    generatedPublished = prepared.artifact;
+    normalized = {
+      png: await image16Png(prepared.image),
+      returnedDimensions: prepared.returnedDimensions,
+      warnings: prepared.warnings,
     };
-    generationDraft = {
-      localKey: "generation",
-      kind: "generate",
-      recipeVersion: 1,
-      parameters: generationParameters,
-      inputs: [{ nodeId: fillBaseNodeId }],
-    };
-    generationExecution = {
-      node: { localKey: "generation" },
-      executionId,
-      evaluationHash: evaluationHash({
-        nodeRecipeHash: generationRecipe,
-        kind: "generate",
-        recipeVersion: 1,
-        inputArtifactHashes: [baseEvaluation.artifact.artifactHash],
-      }),
-      outputArtifactHash: generatedPublished.artifactHash,
-      inputArtifactHashes: [baseEvaluation.artifact.artifactHash],
-      provider,
-    };
+    generationDraft = prepared.nodes[0];
+    generationExecution = prepared.executions[0];
   }
-  const warnings = [
-    ...normalized.warnings,
-    ...(sourceContext.resolutionLimited
-      ? [
-          {
-            code: "source_resolution_limited" as const,
-            message: `Generation used resolution-limited ${sourceContext.tier} source pixels`,
-          },
-        ]
-      : []),
-    ...request.upscale.policy.upscale.warnings,
-  ];
   const generationReference: NodeReference = generationDraft
     ? { localKey: "generation" }
     : { nodeId: generationNodeId };
-  const nodes: NodeDraft[] = generationDraft ? [generationDraft] : [];
-  const artifacts = generationDraft ? [generatedPublished] : [];
-  const executions: import("../graph/store.js").PreparedNodeExecution[] = generationExecution
-    ? [generationExecution]
-    : [];
-  let placementInput: NodeReference = generationReference;
-  let upscaleNodeId: `node_${string}` | null = null;
-  let upscaleExecuted = false;
-  let upscaleGenerated = { ...normalized.returnedDimensions };
-  let densitySatisfied =
-    normalized.returnedDimensions.w >= crop.w && normalized.returnedDimensions.h >= crop.h;
-  let upscaleProvider: ExternalExecutionProvenance | undefined;
   const cachedUpscale = reusable?.cachedUpscale;
-  const densityPlan = request.upscale.adapter
-    ? planOutputDensity({
-        target: {
-          kind: "base_space_provider_crop",
-          dimensionsIncludingPad: { w: crop.w, h: crop.h },
-        },
-        generated: {
-          id: generatedPublished.artifactHash,
-          dimensions: { ...normalized.returnedDimensions },
-        },
-        cachedUpscales: cachedUpscale
-          ? [
-              {
-                id: cachedUpscale.artifact.artifactHash,
-                sourceArtifactId: generatedPublished.artifactHash,
-                dimensions: { w: cachedUpscale.image.w, h: cachedUpscale.image.h },
-              },
-            ]
-          : [],
-        supportedScales: request.upscale.adapter.supportedScales,
-        limits: request.upscale.adapter.limits,
-        sourceContext,
-      })
-    : undefined;
-  if (densityPlan && request.upscale.policy.upscale.action === "upscale") {
-    appendWarnings(warnings, densityPlan.upscale.warnings);
-  }
-  const upscaleOperation = densityPlan?.upscale.operations.find(
-    (
-      operation,
-    ): operation is Extract<(typeof densityPlan.upscale.operations)[number], { kind: "upscale" }> =>
-      operation.kind === "upscale",
-  );
-  if (
-    request.upscale.policy.upscale.action === "upscale" &&
-    cachedUpscale &&
-    densityPlan?.upscale.inputArtifactId === cachedUpscale.artifact.artifactHash
-  ) {
-    placementInput = { nodeId: cachedUpscale.nodeId };
-    upscaleNodeId = cachedUpscale.nodeId;
-    upscaleGenerated = { w: cachedUpscale.image.w, h: cachedUpscale.image.h };
-    upscaleProvider = cachedUpscale.provider;
-    densitySatisfied = densityPlan.upscale.densitySatisfied;
-  }
-  if (
-    request.upscale.policy.upscale.action === "upscale" &&
-    request.upscale.adapter &&
-    upscaleOperation
-  ) {
-    const upscaleExecutionId = newExecutionId();
-    const upscaleResult = await request.upscale.adapter.execute({
-      artifact: {
-        bytes: await image16Png(generated),
-        mediaType: "image/png",
-        hash: generatedPublished.artifactHash,
-        dimensions: { ...normalized.returnedDimensions },
-      },
-      scale: upscaleOperation.scale,
-      prompt: request.upscale.prompt.derived,
-      ...(request.seed === undefined ? {} : { seed: request.seed }),
-    });
-    appendWarnings(warnings, upscaleResult.warnings);
-    if (upscaleResult.ok) {
-      let upscaledImage: Image16 | undefined;
-      let normalizedUpscale: Awaited<ReturnType<typeof normalizeArtifact>> | undefined;
-      try {
-        const mappedBytes = upscaleResult.value.frameMapping
-          ? await cropMappedExternalImage(
-              upscaleResult.value.artifact.bytes,
-              upscaleResult.value.frameMapping.output,
-            )
-          : upscaleResult.value.artifact.bytes;
-        upscaledImage = await decodeExternalImage(mappedBytes, upscaleResult.samplingDimensions);
-        normalizedUpscale = await normalizeArtifact(upscaledImage);
-      } catch (error) {
-        appendWarnings(warnings, [
-          {
-            code: "upscale_failed",
-            message: error instanceof Error ? error.message : "Upscaler returned unreadable pixels",
-          },
-        ]);
-        densitySatisfied = false;
-      }
-      if (upscaledImage && normalizedUpscale) {
-        const upscaledPublished = await publishArtifact(libraryPath, normalizedUpscale);
-        const upscaleParameters = {
-          adapter: request.upscale.adapter.id,
-          adapter_version: request.upscale.adapter.version,
-          model: request.upscale.policy.upscale.model,
-          model_version: upscaleResult.value.provenance.modelVersion,
-          scale: upscaleOperation.scale,
-          controls: {
-            prompt_id: request.upscale.prompt.id,
-            prompt_version: request.upscale.prompt.version,
-            original_prompt: request.upscale.prompt.original,
-            derived_prompt: request.upscale.prompt.derived,
-          },
-          request: { execution_id: upscaleExecutionId },
-        };
-        const upscaleRecipe = recipeHash(
-          canonicalNodeRecipe({
-            kind: "upscale",
-            recipeVersion: 1,
-            parameters: upscaleParameters,
-            inputNodeIds: [generationNodeId],
-          }),
-        );
-        upscaleNodeId = logicalNodeId(upscaleRecipe) as `node_${string}`;
-        nodes.push({
-          localKey: "upscale",
-          kind: "upscale",
-          recipeVersion: 1,
-          parameters: upscaleParameters,
-          inputs: [generationReference],
-        });
-        artifacts.push(upscaledPublished);
-        upscaleProvider = {
-          adapter: upscaleResult.value.provenance.adapter,
-          adapterVersion: upscaleResult.value.provenance.adapterVersion,
-          service: upscaleResult.value.provenance.service,
-          model: upscaleResult.value.provenance.model,
-          modelVersion: upscaleResult.value.provenance.modelVersion,
-          providerRequestId: upscaleResult.value.provenance.requestId,
-          seed: upscaleResult.value.provenance.seed,
-          durationMs: upscaleResult.value.provenance.durationMs,
-          costUsd: upscaleResult.value.provenance.costUsd,
-          inputPx: generated.w * generated.h,
-          targetPx: crop.w * crop.h,
-          attempt: 1,
-          densityVerdict: upscaleResult.densitySatisfied ? "satisfied" : "limited",
-          warnings: upscaleResult.warnings,
-        };
-        executions.push({
-          node: { localKey: "upscale" },
-          executionId: upscaleExecutionId,
-          evaluationHash: evaluationHash({
-            nodeRecipeHash: upscaleRecipe,
-            kind: "upscale",
-            recipeVersion: 1,
-            inputArtifactHashes: [generatedPublished.artifactHash],
-          }),
-          outputArtifactHash: upscaledPublished.artifactHash,
-          inputArtifactHashes: [generatedPublished.artifactHash],
-          provider: upscaleProvider,
-        });
-        placementInput = { localKey: "upscale" };
-        upscaleExecuted = true;
-        upscaleGenerated = { ...upscaleResult.samplingDimensions };
-        densitySatisfied =
-          upscaleResult.samplingDimensions.w >= crop.w &&
-          upscaleResult.samplingDimensions.h >= crop.h;
-      }
-    } else {
-      densitySatisfied = false;
-    }
-  } else if (densityPlan && request.upscale.policy.upscale.action === "upscale") {
-    densitySatisfied = densityPlan.upscale.densitySatisfied;
-  }
+  const density = await executeGenerationDensity(libraryPath, {
+    generation: {
+      nodeId: generationNodeId,
+      reference: generationReference,
+      provider,
+      image: generated,
+      artifact: generatedPublished,
+      returnedDimensions: normalized.returnedDimensions,
+      warnings: normalized.warnings,
+      nodes: generationDraft ? [generationDraft] : [],
+      artifacts: generationDraft ? [generatedPublished] : [],
+      executions: generationExecution ? [generationExecution] : [],
+    } satisfies PreparedGeneration,
+    target: {
+      kind: "base_space_provider_crop",
+      dimensionsIncludingPad: { w: crop.w, h: crop.h },
+    },
+    targetDimensions: { w: crop.w, h: crop.h },
+    sourceContext,
+    upscale: request.upscale,
+    ...(request.seed === undefined ? {} : { seed: request.seed }),
+    ...(cachedUpscale ? { cachedUpscale } : {}),
+  });
+  const { nodes, artifacts, executions, warnings } = density;
+  const placementInput = density.output;
   nodes.push(
     {
       localKey: "resample",
@@ -602,29 +404,27 @@ export async function fillLayerStrict(
     returnedDimensions: normalized.returnedDimensions,
     sourceContext,
     upscale: {
-      enabled: request.upscale.policy.upscale.enabled,
-      executed: upscaleNodeId !== null,
-      nodeId: upscaleNodeId,
-      adapter: upscaleNodeId
-        ? (upscaleProvider?.adapter ?? request.upscale.adapter?.id ?? null)
-        : null,
-      model: request.upscale.policy.upscale.model,
-      input: { ...normalized.returnedDimensions },
-      target: { w: crop.w, h: crop.h },
-      generated: upscaleGenerated,
-      final: { w: crop.w, h: crop.h },
-      densitySatisfied,
-      warnings: warnings.filter(({ code }) => code.startsWith("upscale_")),
+      enabled: density.upscale.enabled,
+      executed: density.upscale.executed,
+      nodeId: density.upscale.nodeId,
+      adapter: density.upscale.adapter,
+      model: density.upscale.model,
+      input: density.upscale.input,
+      target: density.upscale.target,
+      generated: density.upscale.generated,
+      final: density.upscale.final,
+      densitySatisfied: density.upscale.densitySatisfied,
+      warnings: density.upscale.warnings,
     },
     executions: [
       { kind: "generate" as const, nodeId: generationNodeId, provider, reused: Boolean(reusable) },
-      ...(upscaleProvider && upscaleNodeId
+      ...(density.upscale.provider && density.upscale.nodeId
         ? [
             {
               kind: "upscale" as const,
-              nodeId: upscaleNodeId,
-              provider: upscaleProvider,
-              reused: !upscaleExecuted,
+              nodeId: density.upscale.nodeId,
+              provider: density.upscale.provider,
+              reused: !density.upscale.executedNow,
             },
           ]
         : []),
@@ -632,12 +432,4 @@ export async function fillLayerStrict(
     crop,
     warnings,
   };
-}
-
-function appendWarnings(target: Warning[], additions: readonly Warning[]): void {
-  for (const warning of additions) {
-    if (!target.some(({ code, message }) => code === warning.code && message === warning.message)) {
-      target.push(warning);
-    }
-  }
 }

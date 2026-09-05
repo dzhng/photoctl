@@ -1,12 +1,21 @@
 # 13 — 13a reimagine/relight/generate · 13b auto_enhance · 13c markup · 13d retouch
 
-- **13a** `reimagine`/`relight` run Slice 12's DAG planner with `scope:"full-frame"`: current source/develop → generation →
+- **13a** ✓ `reimagine <id> --prompt ... [--strength f]` runs Slice 12's shared DAG planner with `scope:"full-frame"`: current source/develop → generation →
   optional density-matching generative upscale → exact resample to oriented base dimensions → `role:"reimagine"` layer root
-  (never overwrite), `drift:"full-frame"`; C3 template. Removing the layer redirects the active revision to its prior root.
+  (never overwrite), `drift:"full-frame"`; C3 template. Strength defaults to `1`, is bounded to `0..1`, becomes both versioned
+  provider guidance and a constant full-frame composite coverage, and therefore has a defined pixel effect. Removing the layer
+  redirects the active revision to its prior root and pixels exactly. The keyless fixture proves lazy materialization, one generation
+  plus optional configured upscale, target dimensions, provider provenance, no native mask, and no provider rerun during show/remove.
+  A developed exposure remains valid input. Crop/rotate output is refused before provider work because v1 cannot yet composite a
+  base-sized reimagine layer into a changed current frame without mixing coordinate spaces. The same dimension-retaining-source
+  requirement excludes a smaller pinned fallback: composite-v2 requires every layer and mask to match the exact document base
+  raster, so silently accepting it would commit a layer that fails when shown.
+  `relight` remains open.
   `generate --prompt [--ref] [--size 1024x1024] [--seed] [--model]` → canonical generated artifact → imported photo tagged
   `generated`; it has no base-density target, so library `auto` does not invent one. Explicit `--upscale` uses the requested
   `--size` only when the provider returned fewer pixels. Tests: `reimagine-layer.test.ts` (full target dimensions; remove restores),
-  `reimagine-upscale-fallback.test.ts` (generation survives upscaler failure), `generate.test.ts`, `relight-template.test.ts`. Deps 12.
+  `reimagine-upscale-fallback.test.ts` (generation survives upscaler failure), `reimagine-journey.test.ts` (built CLI),
+  `generate.test.ts`, `relight-template.test.ts`. Deps 12.
 - **13b** `develop <id> --auto-enhance`: `develop/stats.ts` on the 1024 sRGB preview (Rec.709 Y; p02/p50/p98/clipped/mean_sat/est_wb_k)
   → `StructuredModelAdapter` with the C4 schema → one `--set` batch, clamped; `develop_before_auto` stored for `--undo-auto`.
   Test: fake output lands, clamped, `--undo-auto` restores. Deps 09a, 08.

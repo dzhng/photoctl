@@ -32,6 +32,7 @@ export interface ImageModelAdapter {
     prompt: string,
     seed?: number,
   ): FormData;
+  buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): FormData;
   normalize(
     response: unknown,
     sentDimensions: { w: number; h: number },
@@ -96,6 +97,20 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     form.set(
       "prompt",
       this.mask === "native" ? prompt : buildInstructionCompositePrompt(operation, prompt),
+    );
+    form.set("size", `${crop.w}x${crop.h}`);
+    form.set("output_format", "png");
+    if (seed !== undefined) form.set("seed", String(seed));
+    return form;
+  }
+
+  buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): FormData {
+    const form = new FormData();
+    form.set("model", this.model);
+    form.set("image", pngBlob(crop.png), "image.png");
+    form.set(
+      "prompt",
+      this.mask === "native" ? prompt : buildInstructionCompositePrompt("reimagine", prompt),
     );
     form.set("size", `${crop.w}x${crop.h}`);
     form.set("output_format", "png");

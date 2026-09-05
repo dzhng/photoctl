@@ -3057,6 +3057,59 @@
 - **Verdict:** **Sound.** The rule maximizes usable density while preserving lineage and atomic graph truth.
 - **Confidence:** High.
 
+### Slice 13a — Reimagine and fill share one external generation-and-density owner
+
+- **When:** Slice 13a keyless reimagine implementation, 2026-09-05.
+- **The choice:** The fill pipeline and full-frame reimagine projection call the same generation publication, provenance, density
+  planning, upscale execution, and fallback owner. Reimagine owns only its full-frame request shape and layer projection.
+- **The gap:** Slice 13 required reusing Slice 12's DAG planner, while the first implementation draft copied that planner into a
+  second module. Keeping the copies would let provider and failure semantics drift.
+- **The reach:** Fill and reimagine now agree on successful partial generation, explicit upscaler consent, exact final resampling,
+  execution records, and warnings. Later relight can use the same bounded owner without cloning it again.
+- **Verdict:** **Sound.** The shared unit follows the paid external boundary; command-specific layer geometry remains outside it.
+- **Confidence:** High.
+
+### Slice 13a — Strength is provider guidance plus exact whole-frame blend coverage
+
+- **When:** Slice 13a keyless reimagine implementation, 2026-09-05.
+- **The choice:** `--strength` is bounded to `0..1` and defaults to `1`. A versioned prompt tells the provider how much source
+  composition and identity to preserve, while a permanent constant mask applies the same value as exact whole-frame composite
+  coverage. The alternative was a decorative flag that only changed an irrelevant feather parameter on an all-ones mask.
+- **The gap:** The gateway image adapter has no portable native strength control, but the public option still needs deterministic
+  pixel semantics independent of whether a provider follows prose perfectly.
+- **The reach:** Provider requests, graph identity, and rendered pixels all record the user's strength. A future adapter-native
+  control requires a prompt-recipe version change but cannot silently remove the compositor guarantee.
+- **Verdict:** **Sound.** Provider guidance influences generation; the graph-owned blend makes the public contract observable.
+- **Confidence:** High.
+
+### Slice 13a — Reimagine uses the edit model and non-authoritative progress
+
+- **When:** Slice 13a keyless reimagine implementation, 2026-09-05.
+- **The choice:** Full-frame reimagine resolves the library's `models.edit` purpose because it sends source pixels through the image
+  edit endpoint; `models.generate` remains for standalone generation. During its potentially long generation/upscale sequence it
+  emits five-second progress heartbeats, but progress delivery is best-effort and cannot turn an already committed revision into a
+  reported command failure.
+- **The gap:** Using the standalone generation setting could select a model without image-edit support. Without heartbeats, the
+  daemon client's idle timeout could retry a still-running paid mutation; treating the advisory frame as authoritative after commit
+  creates the inverse failure.
+- **The reach:** Model selection matches the request shape, and healthy daemon connections remain alive without making telemetry
+  part of revision atomicity.
+- **Verdict:** **Sound.** Provider work and the graph commit remain authoritative; progress only describes them.
+- **Confidence:** High.
+
+### Slice 13a — Require a dimension-retaining current base before provider work
+
+- **When:** Slice 13a keyless reimagine implementation, 2026-09-05.
+- **The choice:** Reimagine accepts a full oriented source and dimension-preserving develop roots. If geometry changes the frame, it
+  returns a usage error before any provider call or document revision. A smaller pinned source fallback is also refused because the
+  generated base-size layer would not match the active base raster. It does not guess a transform into the current composite.
+- **The gap:** Catalog dimensions describe the oriented base, while a cropped/rotated develop node renders another frame. The layer
+  model does not yet retain a durable mapping that would place a full-frame generated result back into that changed frame honestly.
+- **The reach:** Current keyless reimagine is safe and predictable; supporting developed geometry or offline low-resolution bases
+  later requires one explicit current-frame dimension/mapping contract rather than a reimagine-only workaround.
+- **Verdict:** **Sound but intentionally narrow.** A pre-provider refusal preserves atomicity and avoids corrupt composites.
+- **Confidence:** High.
+
 ### Slice 13d — Public repair extent and native reconstruction neighborhood remain separate
 
 - **When:** Slice 13d keyless retouch implementation, 2026-09-05.

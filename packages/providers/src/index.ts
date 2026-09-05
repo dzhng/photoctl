@@ -13,3 +13,4 @@ export * from "./prompts/upscale.js";
 export * from "./prompts/image.js";
 export * from "./prompts/remove.js";
 export * from "./prompts/outpaint.js";
+export * from "./prompts/reimagine.js";

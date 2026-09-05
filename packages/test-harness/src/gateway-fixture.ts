@@ -12,6 +12,11 @@ const ROUTES = new Set([
 export interface GatewayFixtureOptions {
   imageMode?: "normal" | "wrongdims" | "smallerdims" | "wrongaspect" | "wholeframe";
   onRequest?: (request: { path: string }) => void;
+  onImageRequest?: (request: {
+    path: string;
+    fields: Readonly<Record<string, unknown>>;
+    files: ReadonlySet<string>;
+  }) => void;
 }
 
 export async function startGatewayFixture(
@@ -83,6 +88,7 @@ async function handleRequest(
       ? parseMultipart(bytes, request.headers["content-type"])
       : undefined;
   const fields = multipart?.fields ?? parseJson(bytes);
+  options.onImageRequest?.({ path, fields, files: multipart?.files ?? new Set() });
   if (path === "/v1/images/edits" && fields.model === "photoctl/fake-image-edit-v1") {
     if (multipart!.files.has("mask")) {
       sendJson(response, 400, { error: "fixture image edits must not send a mask" });

@@ -23,7 +23,7 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
 });
 
-test("the built CLI keeps agent previews current through fill, opacity, and retouch revisions", async () => {
+test("the built CLI keeps agent previews current through fill, opacity, retouch, and reimagine revisions", async () => {
   const fixture = await setupFixture();
   const neutralStats = await sharp(fixture.source).stats();
 
@@ -244,6 +244,35 @@ test("the built CLI keeps agent previews current through fill, opacity, and reto
   });
   expect(fixture.gatewayRequests()).toBe(1);
   expect(await providerExecutionCount(fixture.library)).toBe(2);
+  const h4Before = await fileIdentity(h4Detail.preview);
+  const reimagined = await run(fixture, [
+    "reimagine",
+    fixture.id,
+    "--prompt",
+    "painted twilight",
+    "--strength",
+    "0.5",
+  ]);
+  expect(reimagined.code, JSON.stringify(reimagined.json)).toBe(0);
+  const reimagine = reimagined.json.data as { layer_id: string; render_hash: string };
+  expect(reimagine.render_hash).not.toBe(h4);
+  await expect(access(viewDirectory(fixture, reimagine.render_hash))).rejects.toMatchObject({
+    code: "ENOENT",
+  });
+  const h5 = await show(fixture, ["--preview-size", "native"]);
+  expect(h5).toMatchObject({ render_hash: reimagine.render_hash });
+  expect(fixture.gatewayRequests()).toBe(2);
+  expect(await providerExecutionCount(fixture.library)).toBe(4);
+  const removedReimagine = await run(fixture, ["layer", "remove", fixture.id, reimagine.layer_id]);
+  expect(removedReimagine).toMatchObject({
+    code: 0,
+    json: { data: { render_hash: h4 } },
+  });
+  const restoredH4 = await show(fixture, ["--region", AGENT_PREVIEW_FACTS.region.join(",")]);
+  expect(restoredH4.preview).toBe(h4Detail.preview);
+  expect(await fileIdentity(restoredH4.preview)).toEqual(h4Before);
+  expect(fixture.gatewayRequests()).toBe(2);
+  expect(await providerExecutionCount(fixture.library)).toBe(4);
   await captureEvidence({
     source: fixture.source,
     h1Master: h1Native.preview,
@@ -295,9 +324,14 @@ async function setupFixture() {
   expect((await spawnPhotoctl(["init", "--path", library], { env })).code).toBe(0);
   const configured = await openLibrary(library, { noDaemon: true });
   await configured.query(
-    `INSERT INTO settings (key, value) VALUES ('providers', $1::jsonb)
+    `INSERT INTO settings (key, value) VALUES
+     ('models', $1::jsonb),
+     ('providers', $2::jsonb)
      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-    [JSON.stringify({ upscale: { "photoctl/fake-upscale-v1": { configured: true } } })],
+    [
+      JSON.stringify({ edit: FAKE_IMAGE_EDIT_MODEL }),
+      JSON.stringify({ upscale: { "photoctl/fake-upscale-v1": { configured: true } } }),
+    ],
   );
   await configured.close();
   const imported = await spawnPhotoctl(["import", source, "--link"], { libraryDir: library, env });

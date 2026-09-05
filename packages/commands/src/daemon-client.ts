@@ -351,7 +351,7 @@ export function requestTimeout(request: CommandRequest): number {
   // Embed and search emit a progress heartbeat every five seconds, including
   // while one provider request is pending. Keep their idle ceiling independent of the
   // foreground queue budget without shortening a larger admission window.
-  if (request.verb === "embed" || request.verb === "search") {
+  if (request.verb === "embed" || request.verb === "search" || request.verb === "reimagine") {
     return Math.max(31_000, queueDeadline);
   }
   return queueDeadline;

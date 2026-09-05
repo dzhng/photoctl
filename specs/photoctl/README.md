@@ -48,6 +48,11 @@ revision-bound paginated graph inspection. Pixel evaluation remains lazy until a
 Moving a subject applies one matrix to its RGB and active mask, reuses one vacancy with the original silhouette, and reports active
 unfilled vacancies through both show and export. Filling that stable vacancy replaces only its content, after which it participates
 in develop compensation and staleness like other photographic layers; a later move resets it to the original placeholder.
+Keyless `reimagine` now projects the shared fill generation-and-density planner over an uncropped, unrotated current source/develop
+root at oriented base dimensions, then adds its exact-base-size result as a removable full-frame layer without eager preview work. Its strength is an explicit
+whole-frame blend as well as versioned provider guidance; crop/rotate develop geometry is refused before provider work until layer
+composition has a durable current-frame geometry contract. A smaller pinned fallback is likewise not a composable full-frame base
+under the current exact composite-v2 invariant.
 
 You are resuming photoctl. Read this README top to bottom, then open the slice file for the pickup
 point and follow it exactly. Do not re-decide anything in the original decision ledger (`visualizations/map.html`
@@ -58,7 +63,8 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
   intrinsic provider dimensions, and strict base-pixel composite; 12b owns the pure density plan; 12c owns policy, the guarded prompt,
   configured execution, and generation-preserving failure/retry; 12d1 owns explicit branch refresh; and 12d2 owns transform-driven
   density maintenance, the fill workbench, and the keyless agent-preview journey; 12d3 completes deterministic person-move and
-  vacancy-fill integration. The remaining fill work is photographic/live evidence. Slice 11 still needs the hosted SAM weights, real point probes, G6,
+  vacancy-fill integration. Slice 13a now includes the public keyless `reimagine` checkpoint; relight, standalone generate, live
+  upscaler quality evidence, and the remaining fill photographic/live evidence are still open. Slice 11 still needs the hosted SAM weights, real point probes, G6,
   and `wb masks`; fake masks are not evidence for those gates. Slice 09c's live multimodal request also remains provisional until
   the purpose-key smoke produces an accepted fixture.
 - **Blockers:** G3's SSH-only CIRAW exam needs Remote Login enabled; normal host decode is green and this
@@ -85,7 +91,7 @@ Quadrant 2), the later ledger (`choices.md`), in "Contracts", or in "Global rule
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [ ] photographic/live evidence — `slices/12-fill.md`
-- [ ] 13a reimagine/relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [ ] 13a [x] reimagine · [ ] relight/generate + upscaler quality spike · 13b auto_enhance · 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 
@@ -217,7 +223,7 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
 - **Batch verbs:** `rate flag label tag develop export xmp remove embed` accept `<id...>` and return
   per-item `results` (D6/D10). Explicit `embed` is capped at 1,000 IDs so that contract stays below the daemon frame ceiling;
   `embed --all` instead returns exact totals and at most 100 failure rows, with `data.failures_omitted` making truncation explicit.
-  Single-target verbs (`segment fill retouch layer markup`) take one id.
+  Single-target verbs (`segment fill retouch reimagine layer markup`) take one id.
 - **Warn, never refuse** on soft state — `warnings[]` with a `WarningCode`, exit 0 (D28).
 - **No runtime capability discovery** — model IDs are a fixed table; gateway `modalities` fields are never read (D25).
   Upscaling uses a separate `UpscaleAdapter` registry: the release pins a generative default, a library may override it,
