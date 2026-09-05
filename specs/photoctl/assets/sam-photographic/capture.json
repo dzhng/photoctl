@@ -1,0 +1,30 @@
+{
+  "library": "/private/tmp/photoctl-sam-photographic.OVsNFE/library",
+  "base": "a_9be2e0a4d83571011d196064efd18c86a687db17fc2c301a42dc38bc2ae28fa1",
+  "width": 7008,
+  "height": 4672,
+  "crops": [
+    {
+      "name": "foliage",
+      "left": 2900,
+      "top": 1050,
+      "width": 700,
+      "height": 650
+    },
+    {
+      "name": "wires",
+      "left": 800,
+      "top": 650,
+      "width": 800,
+      "height": 650
+    },
+    {
+      "name": "path",
+      "left": 2300,
+      "top": 2500,
+      "width": 800,
+      "height": 600
+    }
+  ],
+  "overlay": "40% cyan fill, unchanged coverage, detail nearest-neighbor 2x"
+}

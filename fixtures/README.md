@@ -29,4 +29,9 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 Wanted (see [the photoctl spec](../specs/photoctl/README.md#known-unknowns-open-on-the-map-and-where-they-land)): one A7C II frame per compression mode (Lossless L / M / S, lossy), a portrait-orientation frame, and a truncated ARW (known-bad: import must report `unsupported`, never crash).
 
 Generate the independent machine-readable facts with `python3 fixtures/tools/manifest.py`.
+The `sam_probes` annotations in `a7c2.json` are authored from visible subjects, not model outputs.
+Remeasurement preserves them only while the image SHA-256 is unchanged. Their area bands test coarse
+selection, not edge quality; [photographic evidence](../specs/photoctl/assets/sam-photographic/README.md)
+records that separate verdict. The real-model host test requires `PHOTOCTL_SAM_MODELS_DIR` and fails
+visibly if that prerequisite is missing.
 Generate the pinned segmentation artifacts with `scripts/export-sam2.py`; it writes real hashes only after both ONNX files pass CPU parity and opset checks. [Reproduction and evidence](../specs/photoctl/assets/sam-export/README.md) document the isolated export environment.

@@ -3,6 +3,22 @@
   "size": 73400320,
   "sha256": "55de0ff9abbd11c2d166fdd8cfa99129ef8478f2895a65105253e6fcdfdba430",
   "content_key": "ck_3dac5c943a33dcc4",
+  "sam_probes": [
+    {
+      "label": "clear sky above the tree line",
+      "at": [4000, 600],
+      "min_area_pct": 28,
+      "max_area_pct": 38,
+      "outside": [[2500, 1800], [1500, 3500]]
+    },
+    {
+      "label": "continuous paved path",
+      "at": [4400, 3500],
+      "min_area_pct": 4,
+      "max_area_pct": 9,
+      "outside": [[4000, 600], [1500, 3500]]
+    }
+  ],
   "previews": [
     {
       "width": 160,

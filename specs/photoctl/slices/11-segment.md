@@ -52,7 +52,8 @@ mask path consumes floating-point low-resolution logits rather than the exporter
 
 Production construction, point/text routing, geometry, cache reuse/eviction/retry, and dry-run behavior have deterministic
 tests. These are wiring evidence, not model-quality evidence. The checked-in release now pins a real export;
-real `segment-at` probes, `a7c2` thresholds, `wb masks` visual acceptance, and G6 remain open independently.
+real `segment-at` probes now pass the independently authored `a7c2` area/click checks.
+Detailed edge acceptance and full-command G6 remain open independently.
 [Export evidence](../assets/sam-export/README.md) records the real Hydra resolution regression, raw-logit ranking normalization,
 unchanged parity tolerances, and fail-closed publication boundary. Export-process RSS is not inference-process RSS.
 
@@ -70,3 +71,12 @@ Each layer exposes one bounded native-detail crop at its first covered edge, wit
 The fixed crop is an inspection starting point, not an automatic hair/foliage selection or quality verdict. Synthetic report
 tests verify pixel alignment and identity only; the real-weight hair/foliage checkpoint remains open.
 [Synthetic capture evidence](../assets/segment-masks/README.md) records the report-only visual review.
+
+## Photographic checkpoint
+
+[Real-photo evidence](../assets/sam-photographic/README.md) records passing coarse subject probes,
+failed foliage/wire and distant-path edges, and a full-command RSS breach before inference.
+The default scan-order workbench crop is not sufficient to reveal these defects; targeted detail
+crops remain necessary. Next: exact color-buffer ownership reduction and an actual photographic
+reference-model comparison. Neither passing area bands nor synthetic export parity closes the
+edge-quality checkpoint.

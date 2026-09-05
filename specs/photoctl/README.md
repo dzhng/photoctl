@@ -33,9 +33,9 @@ below; record evidence-driven deviations in the owning slice and audit new decis
   reference field is removed. Follow [12f2](slices/12-outpaint.md) for immutable geometry intent,
   inherited crop exclusions, and removable extent, then wire generation in 12f3. Canvas owns the
   next migration 19; paid retention follows with 20. Keep live quality separate from deterministic evidence.
-- Slice 11 runtime and `wb masks` are integrated. The report explicitly selects highest-resolution
-  cached current-develop context, not historical SAM input or last-shown source. Real weights and G6
-  remain open. See [Slice 11](slices/11-segment.md).
+- Slice 11 runtime, real parity-verified weights, and `wb masks` are integrated. Real-photo
+  coarse subject tests pass; foliage/wire edges and full-command G6 remain red. The report selects
+  cached current-develop context, not historical SAM input. See [Slice 11](slices/11-segment.md).
 - Slice 14 packaging, shared full-feature journey, and HTML/SHA report artifacts are integrated.
   The clean-prefix fixture exam passed; real-drive acceptance remains. See [Slice 14](slices/14-gold-exam-and-release.md).
 - Slice 13's experiment runner now separates prompt, single-control, and category evidence and reuses
@@ -58,10 +58,15 @@ formatting, and lint. It did not run the root full-suite release gate. The previ
 now compares lossless graph outputs at Float32 precision; JPEG views independently prove freshness.
 Slice files and their assets hold the detailed acceptance evidence.
 
-**External evidence still outstanding:** a real SAM export candidate is now available locally;
-export parity/publication fixes are being reviewed separately. The root manifest remains
-`awaiting_export`. [Native resource evidence](assets/sam-runtime/) covers actual model execution,
-but real photographic SAM quality and full-command resource acceptance remain open.
+**SAM pickup:** the release manifest now pins real export hashes with composed CPU parity checks.
+[Photographic evidence](assets/sam-photographic/) distinguishes passing coarse subject checks from
+failed detailed edges and a reproduced full-command memory breach. Reduce the measured pointwise
+color-conversion allocations without changing pixels, then compare real photographic inputs through
+the reference model before changing segmentation. [Native resource evidence](assets/sam-runtime/)
+covers inference alone; public model hosting and wiring Docker's model-fetch stage into the
+functional gate remain unfinished. The host model test fails visibly without its documented weights.
+
+**External evidence still outstanding:**
 G3 still requires an SSH-capable Mac session. The real-drive path, additional ARW compression fixtures,
 and actual Classic sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
 require their explicitly configured credentials and consent; an ambient key is not acceptance evidence.

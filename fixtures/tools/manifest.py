@@ -57,5 +57,11 @@ def find_ascii(pattern):
     if not found: raise ValueError(f"metadata not found: {pattern!r}")
     return found.group().decode("ascii")
 manifest={"file":path.name,"size":size,"sha256":hashlib.sha256(data).hexdigest(),"content_key":content_key,"previews":previews,"exif":{"DateTimeOriginal":find_ascii(rb"20\d\d:\d\d:\d\d \d\d:\d\d:\d\d"),"OffsetTimeOriginal":find_ascii(rb"[+-]\d\d:\d\d")}}
-out=path.with_suffix(".json"); out.write_text(json.dumps(manifest,indent=2)+"\n")
+out=path.with_suffix(".json")
+# Subject annotations are authored from the image, not inferred by this byte probe.
+if out.exists():
+    previous=json.loads(out.read_text())
+    if previous.get("sha256") == manifest["sha256"] and "sam_probes" in previous:
+        manifest["sam_probes"]=previous["sam_probes"]
+out.write_text(json.dumps(manifest,indent=2)+"\n")
 print(out)

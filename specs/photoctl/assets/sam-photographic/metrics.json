@@ -1,0 +1,225 @@
+{
+  "method": "Exact RGB 4-bit/channel histogram; luminance range; exact black/white/transparent fractions. Diagnostic framing metrics, not quality gates.",
+  "images": [
+    {
+      "file": "0.png",
+      "w": 256,
+      "h": 256,
+      "colorEntropyBits": 1.42152666576302,
+      "dominantColorShare": 0.4882965087890625,
+      "luminanceContrast": 18.88979999999998,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "1.png",
+      "w": 256,
+      "h": 256,
+      "colorEntropyBits": 0.049146636779140475,
+      "dominantColorShare": 0.9945068359375,
+      "luminanceContrast": 254.99999999999997,
+      "blackShare": 0.0054931640625,
+      "whiteShare": 0.9945068359375,
+      "transparentShare": 0
+    },
+    {
+      "file": "2.png",
+      "w": 256,
+      "h": 256,
+      "colorEntropyBits": 1.5676562517261374,
+      "dominantColorShare": 0.4845733642578125,
+      "luminanceContrast": 187.94819999999999,
+      "blackShare": 0.009124755859375,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "3.png",
+      "w": 256,
+      "h": 256,
+      "colorEntropyBits": 4.167848578552311,
+      "dominantColorShare": 0.1730499267578125,
+      "luminanceContrast": 128.90339999999998,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "4.png",
+      "w": 256,
+      "h": 256,
+      "colorEntropyBits": 0.17328370060755993,
+      "dominantColorShare": 0.97412109375,
+      "luminanceContrast": 254.99999999999997,
+      "blackShare": 0.97412109375,
+      "whiteShare": 0.02587890625,
+      "transparentShare": 0
+    },
+    {
+      "file": "5.png",
+      "w": 256,
+      "h": 256,
+      "colorEntropyBits": 4.219684771343611,
+      "dominantColorShare": 0.1730499267578125,
+      "luminanceContrast": 187.94819999999999,
+      "blackShare": 0.0068817138671875,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "context.png",
+      "w": 1400,
+      "h": 933,
+      "colorEntropyBits": 5.155561152122729,
+      "dominantColorShare": 0.09448476496708008,
+      "luminanceContrast": 220.1502,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "road-coverage.png",
+      "w": 1400,
+      "h": 933,
+      "colorEntropyBits": 0.2815772873749788,
+      "dominantColorShare": 0.9511299954065228,
+      "luminanceContrast": 254.99999999999997,
+      "blackShare": 0.9511299954065228,
+      "whiteShare": 0.04887000459347726,
+      "transparentShare": 0
+    },
+    {
+      "file": "road-overlay.png",
+      "w": 1400,
+      "h": 933,
+      "colorEntropyBits": 5.748158898182165,
+      "dominantColorShare": 0.08526412494258154,
+      "luminanceContrast": 218.65679999999998,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "road-path-context.png",
+      "w": 1600,
+      "h": 1200,
+      "colorEntropyBits": 4.199712941865687,
+      "dominantColorShare": 0.34056458333333334,
+      "luminanceContrast": 154.603,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "road-path-coverage.png",
+      "w": 1600,
+      "h": 1200,
+      "colorEntropyBits": 0.9991657570584423,
+      "dominantColorShare": 0.5170020833333333,
+      "luminanceContrast": 254.99999999999997,
+      "blackShare": 0.4829979166666667,
+      "whiteShare": 0.5170020833333333,
+      "transparentShare": 0
+    },
+    {
+      "file": "road-path-overlay.png",
+      "w": 1600,
+      "h": 1200,
+      "colorEntropyBits": 4.131134342139494,
+      "dominantColorShare": 0.40649583333333333,
+      "luminanceContrast": 165.0412,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "sky-coverage.png",
+      "w": 1400,
+      "h": 933,
+      "colorEntropyBits": 0.8934030945808495,
+      "dominantColorShare": 0.6898009493186342,
+      "luminanceContrast": 254.99999999999997,
+      "blackShare": 0.6898009493186342,
+      "whiteShare": 0.3101990506813658,
+      "transparentShare": 0
+    },
+    {
+      "file": "sky-foliage-context.png",
+      "w": 1400,
+      "h": 1300,
+      "colorEntropyBits": 4.78808231878629,
+      "dominantColorShare": 0.18133406593406592,
+      "luminanceContrast": 184.9982,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "sky-foliage-coverage.png",
+      "w": 1400,
+      "h": 1300,
+      "colorEntropyBits": 0.876118095700875,
+      "dominantColorShare": 0.7041824175824176,
+      "luminanceContrast": 254.99999999999997,
+      "blackShare": 0.7041824175824176,
+      "whiteShare": 0.29581758241758244,
+      "transparentShare": 0
+    },
+    {
+      "file": "sky-foliage-overlay.png",
+      "w": 1400,
+      "h": 1300,
+      "colorEntropyBits": 4.566786048018307,
+      "dominantColorShare": 0.29095164835164833,
+      "luminanceContrast": 184.9982,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "sky-overlay.png",
+      "w": 1400,
+      "h": 933,
+      "colorEntropyBits": 5.5427905990382635,
+      "dominantColorShare": 0.1062907671107028,
+      "luminanceContrast": 218.65679999999998,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "sky-wires-context.png",
+      "w": 1600,
+      "h": 1300,
+      "colorEntropyBits": 3.3533358580377715,
+      "dominantColorShare": 0.3169826923076923,
+      "luminanceContrast": 137.2124,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    },
+    {
+      "file": "sky-wires-coverage.png",
+      "w": 1600,
+      "h": 1300,
+      "colorEntropyBits": 0.8388253134275261,
+      "dominantColorShare": 0.7318307692307693,
+      "luminanceContrast": 254.99999999999997,
+      "blackShare": 0.26816923076923077,
+      "whiteShare": 0.7318307692307693,
+      "transparentShare": 0
+    },
+    {
+      "file": "sky-wires-overlay.png",
+      "w": 1600,
+      "h": 1300,
+      "colorEntropyBits": 3.3700866138323575,
+      "dominantColorShare": 0.3045576923076923,
+      "luminanceContrast": 137.2124,
+      "blackShare": 0,
+      "whiteShare": 0,
+      "transparentShare": 0
+    }
+  ]
+}
