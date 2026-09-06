@@ -32,6 +32,25 @@ The later Docker functional gate also has a confirmed configuration prerequisite
 Fixing host tests will not supply the missing model-download URL. Keep that external
 prerequisite separate from production defects and do not skip the model gate.
 
+## First retained CI crash logs
+
+[Run 34035723656](https://github.com/dzhng/photoctl/actions/runs/34035723656) on `920ad40`
+fails 95 tests across 46 files, with 981 tests/153 files passing. Its retained
+`daemon-startup-logs` artifact contains nine unhandled socket `EPIPE` crashes in
+`DaemonServer.respond` → `DaemonServer.route` on Node 24.20.0. This directly connects
+CI child exits to the locally reproduced disconnected-client defect below. The run
+predates the socket-error and duplicate-status-probe fixes; it does not reject either.
+
+The artifact also contains one unhandled rejection with only `#<ErrnoError>` as its
+reason, a queue-test catalog-open failure, and the deliberately missing daemon module
+from the optional-start regression. The queue library maps to a startup timeout whose
+test cleanup deletes the directory without stopping the still-starting daemon; this
+supports a cleanup race, but log timestamps do not prove ordering. The anonymous
+rejection cannot be mapped to an exposed failing library and remains unattributed.
+These logs do not establish OOM, a backup defect or a need for larger deadlines. Downloaded
+logs are retained at `/private/tmp/photoctl-ci-daemon-logs.A7tFwH` after the CI artifact
+expires. The integrated run remains the next acceptance evidence.
+
 ## Reproduced disconnected-client crash
 
 A bounded Linux ARM64/Node 24.20 comparison reproduced startup child exit 1 with an
