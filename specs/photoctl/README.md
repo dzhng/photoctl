@@ -36,40 +36,24 @@ the daemon with an unhandled socket error; residual unresponsive recovery still 
 Runner timing behavior remains unresolved. No green full CI
 gate is claimed. Do not blindly increase timeouts or repin hashes.
 
-**Camera photographic acceptance remains open.** The public fixture gold exam exports all
-ten images, but photographic delivery remains **rejected**. Reduced-RGB striping is corrected
-and the unchanged public script verifies that correction with old caches retained. The previous
-delivery set had false magenta in bright lights. Reconstruction pass A is integrated: opt-in
-portable recovery passes bounded native visual review and preserves disabled samples.
-Pass B is integrated: ordinary RAW reconstruction, truthful decoder treatment,
-public diagnostics and cache identity. Pass C's preserved-library gold comparison
-accepts the conspicuous false-color correction; all 18 saved RAW references pass
-native view/export and source-integrity checks. Same-RAW on/off comparisons
-exclude reconstruction as the cause of the specified branch, nose and lower-wire
-artifacts; the changing sky improves. Neutral-decoder comparison finds shared
-branch structure but differing scene placement. The compiled metadata witness confirms
-LibRaw applies the recorded inset (44,30; 4608×3072); no crop bug is demonstrated.
-[Coordinate evidence](assets/camera-delivery-review/coordinate-metadata/README.md)
-records that boundary; CIRAW's internal mapping remains opaque. Complete photographic
-acceptance remains open.
-Preserve failure evidence and do not replace RAW with
-its camera JPEG, tune presets around decoder defects, or weaken the oracle.
-[Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;
-the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next native/public passes.
+**Camera photographic acceptance remains open.** The gold exam exports all ten images,
+but complete photographic delivery is not yet accepted. Reduced-RGB striping and
+conspicuous highlight false color are corrected; all 18 saved RAW references pass native
+view/export and integrity checks. Residual fine-detail fidelity remains unresolved.
+[Camera delivery review](assets/camera-delivery-review/README.md) owns the evidence and
+the [reconstruction plan](slices/07-highlight-reconstruction.md) owns acceptance.
+Do not repeat the disproved reconstruction diagnosis for branch/nose/wire artifacts:
+[coordinate evidence](assets/camera-delivery-review/coordinate-metadata/README.md) records
+the remaining mapping uncertainty, not a demonstrated crop bug. Preserve failed deliveries;
+never substitute camera JPEGs, tune presets around decoder defects, or weaken the oracle.
 
 **Parallel pickup:** finish remaining outpaint and pairing release gates.
 
-- [Outpaint](slices/12-outpaint.md): framed masks, original-relative retouch and reversible
-  native-density layers are integrated. Fresh cold fallback now proves reduced source quality
-  and reconnect promotion without paid replay through built and prebuilt-runtime installed CLI.
-  The historical daemon attempt crossed 5 GB. A native validation-accounting correction
-  now has a [six-cycle JPEG/RAW witness](assets/outpaint-resources/daemon-corrected.md)
-  at 4.979 GB peak sampled RSS, with exact delivered interiors and restoration. The narrow
-  headroom and sampling limits are not a universal retention guarantee. The
-  [sampling correction](assets/outpaint-resources/README.md#isolated-optimized-runtime-verification)
-  reduces measured cold-export time with byte-identical deliveries. Fresh-native installed
-  warm/cold synthetic journeys pass; photographic and final RAW-policy release acceptance
-  remain separate. This is not a universal latency or memory bound.
+- [Outpaint](slices/12-outpaint.md): geometry, reversible layers, reduced-source fallback
+  and reconnect without paid replay are integrated; fresh-native installed synthetic journeys
+  pass. The [six-cycle JPEG/RAW witness](assets/outpaint-resources/daemon-corrected.md)
+  preserves exact delivered interiors and restoration. Photographic and final RAW-policy
+  acceptance remain open; further memory tuning is not a prerequisite under the policy above.
 - [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
   and refresh pass synthetic visual review. Retained-only input, reconnect and fresh-native
   installed lifecycle pass; whole-spec and live photographic acceptance remain separate.
@@ -113,7 +97,8 @@ a substitute for final integrated verification.
   Classic sidecars and G3 SSH-capable Mac proof remain unconfirmed. Do not require reconnection
   merely to continue fixture development.
 - [Generation controls](slices/13-generative-extras-and-markup.md#original-command-controls-still-open):
-  negative guidance is implemented and honestly reported; reference-strength semantics remain open. Live embedding, mask polarity and upscaler
+  negative guidance is implemented and honestly reported; reference-strength semantics remain open.
+  Live embedding, mask polarity and upscaler
   comparisons need purpose-specific configuration and consent; an ambient key is not authority.
 - [Artifact storage](assets/artifact-storage/README.md): representative paid-history storage
   policy remains open; automatic canonical-artifact deletion stays disabled.
