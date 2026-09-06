@@ -5472,3 +5472,39 @@
   catalog's meaning or introducing another count/volume owner.
 - **Confidence:** High; deterministic work-count, concurrency and recovery regressions
   cover the scheduling distinction. The original camera duration is not a new benchmark.
+
+### Offline export — A retained render must prove both current intent and source quality
+
+- **When:** Retained-output integration, 2026-09-06.
+- **The choice:** A user edits online, inspects the result, then disconnects the drive.
+  Export may reuse the exact canonical output already rendered, but only when its stored
+  renderer identity matches today's recipe semantics. Among valid outputs it prefers greater
+  original-source sampling, then full-file over embedded-JPEG over pinned-preview provenance,
+  then greater output sampling. It validates candidates in bounded metadata pages, using each
+  candidate's own coordinate frame. An obsolete or corrupt output cannot hide another valid
+  candidate or force a paid request to be replayed.
+- **The gap:** Immutable edit-node identity alone does not identify the renderer version or
+  the quality of the source used for that execution. Fresh execution rows now store the existing
+  opaque render identity and inherited base-source tier beside their exact frame; no migration
+  or backfill is added. External paid captures remain independently reusable.
+- **The reach:** The shared retained-output reader also compares candidates against an available
+  fallback's dimensions and tier. Export still tries the live original first, allowing reconnect
+  promotion without a second cache or source-selection owner.
+- **Verdict:** **Sound.** Reuse requires evidence about the actual execution rather than a guess
+  from its age, dimensions alone, or a reconstructed frame.
+- **Confidence:** High.
+
+### Offline export — Equal-quality automatic decoder candidates use a stable tie-break
+
+- **When:** Retained-output integration, 2026-09-06.
+- **The choice:** Two retained executions have the same source tier and sampling but came from
+  different automatic decoder choices. With no public export decoder preference, select by
+  stable execution identity after the quality criteria instead of whichever ran last. A warm
+  preview can still contain the other execution; this does not promise identical decoder pixels.
+- **The gap:** Source quality can rank these candidates equally without proving byte equality.
+- **The reach:** A future explicit decoder choice must constrain retained-output eligibility,
+  not merely change the decoder used for new work. No preview-to-execution pointer is added
+  solely to force this tie to follow inspection history.
+- **Verdict:** **Sound.** Stable selection preserves the existing automatic policy without
+  inventing a decoder preference or claiming equivalence.
+- **Confidence:** Medium; a user-facing decoder-selection contract would supersede the tie policy.

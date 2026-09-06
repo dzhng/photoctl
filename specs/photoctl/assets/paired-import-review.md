@@ -28,6 +28,11 @@ fixture gold exam, and real-CLI metadata backup/restore. The TypeScript build co
 before these tests, so the CLI exercised current built packages. These are not a
 full-suite or packed-release verdict.
 
+The independent merged static review (`01a074d9-389e-7301-8abf-7726ffbafe84`)
+found no actionable defects in ownership, pairing, lifecycle, source routing or
+adapted consumers. An earlier review was terminated after its unbounded changed-test
+sweep overloaded the shared host; it is not counted as a completed review or test gate.
+
 ## Partial live-camera witness
 
 On 2026-09-06, a development worktree linked the contents of

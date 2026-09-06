@@ -35,3 +35,8 @@ pixel checks, not photographic quality or resource-limit acceptance.
 Independent review found semantic invalidation and provenance preference gaps; both were addressed.
 The final focused follow-up found no actionable correctness issues. Its request for a new migration was deliberately rejected because the
 user requires a clean-start schema, not compatibility with existing development catalogs.
+
+Merged verification passes 57 retained-export, paired-import, preview/export, evaluator and fresh-schema
+checks after the TypeScript build, with typecheck also green. Explicit camera-JPEG access retains its
+separate source-rendition path and does not enter the document's retained-output reader. The packaged
+outpaint lifecycle and whole-spec gates remain separate acceptance requirements.
