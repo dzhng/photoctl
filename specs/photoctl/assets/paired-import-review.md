@@ -20,6 +20,14 @@ The survivor, source-routing, dimension, copy-cleanup and elapsed-time checks we
 also falsified with controlled mutations and restored. These focused checks do not
 replace the integrated packed-release or presentation gates below.
 
+## Merged integration
+
+The merged tree passes 96 focused checks across pairing and original-file lifecycle,
+existing white balance/outpaint/generation consumers, workbench output, the keyless
+fixture gold exam, and real-CLI metadata backup/restore. The TypeScript build completed
+before these tests, so the CLI exercised current built packages. These are not a
+full-suite or packed-release verdict.
+
 ## Partial live-camera witness
 
 On 2026-09-06, a development worktree linked the contents of
