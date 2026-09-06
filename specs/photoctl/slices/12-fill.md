@@ -4,21 +4,18 @@ Sub-slices: **12a** generation→mask-composite DAG with no upscaler · **12b** 
 **12c** configured upscaler execution/policy/fallback · **12d** branch refresh, transform-driven density maintenance,
 and the agent preview journey. Each rung is useful and testable before the next external behavior lands.
 
-## Remaining implementation after 12d
+## Remaining acceptance
 
-The following remaining requirements are independent of missing live credentials:
+The [outpaint subplan](12-outpaint.md) owns the implemented canvas contract, border generation,
+refresh and reversible layer lifecycle. Shared frames keep preview, export and undo coherent;
+warm/cold CLI journeys verify reduced-source fallback and reconnect without paid replay.
+Do not restart geometry implementation from the historical checkpoints below.
 
-- **12f outpaint:** implement `--outpaint --aspect|--px` through an explicit canvas/coordinate contract
-  that retains original pixels, places invented exterior pixels, and keeps later layer, preview,
-  export, and undo operations coherent. Settle this geometry in a reviewable plan before coding;
-  a larger returned provider image alone is not an outpaint implementation.
-
-The [outpaint subplan](12-outpaint.md) owns the remaining canvas implementation. Shared exact frames,
-preview provenance, and final photographic output planning are integrated. Its reversible crop,
-inherited support, and layer-extent decisions constrain the next deterministic canvas checkpoint.
-
-Each pass follows red/green public behavior tests and the existing visual gates. Live polarity and
-photographic quality remain distinct evidence requirements after these controls work deterministically.
+Remaining work is photographic acceptance and integrated release verification, not another
+canvas implementation. The [lifecycle evidence](../assets/outpaint-lifecycle/README.md)
+records the synthetic checks and their limits; the [release gate](14-gold-exam-and-release.md)
+owns packaged verification. Live polarity and photographic quality remain distinct from
+deterministic pixel preservation. Missing live credentials do not block keyless verification.
 
 Root reference integration `cfddde8`, on the shared frame/output owners, passed 63 focused command,
 provider, schema, graph, availability, and refresh tests, including the built CLI editing journey,

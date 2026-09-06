@@ -58,11 +58,12 @@ paid execution identity. The rebuilt decoder matches the accepted experimental c
 pixels; focused native/integration and both unchanged color-oracle modes pass.
 The [current delivery review](assets/camera-delivery-review/balanced-delivery/README.md)
 now verifies all 18 saved RAW deliveries, retained historical data and native details;
-the fresh packed link/copy pairing journey passes too. It accepts reduced fine false
+the [complete macOS packed-install gate](slices/14-gold-exam-and-release.md#portable-gold-evidence)
+passes all nine cases with the current decoder. The delivery review accepts reduced fine false
 color without claiming all remaining clipped-light or broad branch fringes are solved.
 Do not repeat the completed breadth captures. Next reconcile each remaining photographic
-requirement against that evidence and complete release/safety gates below; the selected
-installed pairing test is not the full installed release gate.
+requirement against that evidence and complete the remaining release/safety gates below;
+the local fixture package gate does not establish real-drive or photographic acceptance.
 
 **Parallel pickup:** finish remaining outpaint and pairing release gates.
 

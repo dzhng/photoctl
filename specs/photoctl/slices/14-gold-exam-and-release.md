@@ -38,8 +38,9 @@ Only system libraries are accepted for the current standalone macOS binaries.
 
 `test/macos/packed-install.test.ts` installs real tarballs into a temporary prefix, starts the daemon,
 requires both decoder capabilities, and runs the existing gold script against `fixtures:drive` output.
-The release workflow consumes these same tarballs, rather than repacking workspace manifests during
-publication. The same installed prefix also runs the shared
+The release workflow transfers native binaries and assembles its publication tarballs in the
+release job. Local packed tests therefore prove the packaging path, not byte-for-byte identity
+with published archives. The same installed prefix also runs the shared
 [`agent-preview` journey](../../../test/journeys/agent-preview.ts): the behavioral oracle is shared with
 the built CLI, including exact lossless opacity, local edits, lazy previews, current export identity,
 and fake generation/upscale. Public graph pagination must reconstruct the unpaged graph without
@@ -69,6 +70,16 @@ restored. Independent review's provenance-binding and setup-budget findings were
 report and SHA manifest are implemented below, without claiming photographic acceptance.
 
 ## Portable gold evidence
+
+**Current native checkpoint — 2026-09-06:** all nine macOS ARM64 packed-install cases
+pass with no skips in 182.91 seconds on source `e074e0a`. The
+[saved runner report](../assets/packed-install-balanced-2026-09-06.json) covers the
+complete file, including fixture gold, paired link/copy, preview, warm/cold outpaint and
+full-frame lifecycles. The rebuilt image addon SHA-256 is
+`c6cdb5aac1d845e63b0426bda5cf18794ed1aa73a2f9f077963ecd67c17fe5d5`.
+The separate native-load gate passes both quiet-loading and isolated-package/deployment-floor
+checks. This is current local fixture evidence, not a mounted-drive, live-provider,
+other-platform or full-repository closeout result.
 
 The existing gold script remains the only exam. Its report writer consumes the command results and
 hashes the actual files named by that export, not every image already present in the output folder.
