@@ -73,6 +73,10 @@ workarounds. No UI screenshot or fresh visual acceptance is claimed. The require
 full-image/orientation-crop comparison and unprimed screenshot critique remain
 open; a user-supplied capture or an independently permitted capture route is needed.
 
+The separate [fixture orientation evidence](paired-orientation/README.md) exercises
+public image artifacts directly without opening HTML. Its image-geometry verdict
+does not certify workbench membership-badge layout or the physical-camera journey.
+
 ## Clean-start coverage
 
 Original-byte identity now belongs to `originals`; photo IDs still own edits and

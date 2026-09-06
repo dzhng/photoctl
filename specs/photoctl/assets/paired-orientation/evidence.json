@@ -1,0 +1,4122 @@
+{
+  "sourceCommit": "270c4dcca7f4b1d4f514174d7dcb7bacde213abd",
+  "cliHash": "c181efd69db61deb4a22d8091d96c066da9eeb4f610d3b846327e86d484f329e",
+  "nativeHash": "a585553d7a53dbde6aae7a3673bf507c1521e399f74c41002925bb3d53bacc5d",
+  "commands": [
+    {
+      "lib": "paired",
+      "args": [
+        "init",
+        "--path",
+        "/private/tmp/photoctl-paired-orientation/run/paired"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "library": "/private/tmp/photoctl-paired-orientation/run/paired",
+          "db": "pglite 0.5.8 / pg 18.3",
+          "cache_max_bytes": 21474836480,
+          "embed": "manual"
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "import",
+        "/private/tmp/photoctl-paired-orientation/run/paired-drive",
+        "--link"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "imported": 3,
+          "already_present": 0,
+          "skipped_unsupported": 0,
+          "skipped_conflicts": 0,
+          "conflicts": [],
+          "ids": [
+            "01a07581-19b6-71af-bee2-349e5ee5fda1",
+            "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+            "01a07581-1a56-7593-afea-4374630e5d7b"
+          ],
+          "volume": {
+            "uuid": "AD59D467-124E-4501-BA97-83A964859849",
+            "mount": "/",
+            "online": true
+          },
+          "xmp_read": {
+            "sidecars_found": 0,
+            "ratings": 0,
+            "keywords": 0,
+            "labels": 0
+          },
+          "previews": {
+            "embedded_extracted": 3,
+            "bytes": 917582
+          },
+          "embeddings": {
+            "queued": 0,
+            "est_usd": 0,
+            "note": "manual embedding mode"
+          },
+          "elapsed_s": 1.7862615000000002
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "jpeg",
+      "args": [
+        "init",
+        "--path",
+        "/private/tmp/photoctl-paired-orientation/run/jpeg"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "library": "/private/tmp/photoctl-paired-orientation/run/jpeg",
+          "db": "pglite 0.5.8 / pg 18.3",
+          "cache_max_bytes": 21474836480,
+          "embed": "manual"
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "jpeg",
+      "args": [
+        "import",
+        "/private/tmp/photoctl-paired-orientation/run/jpeg-drive",
+        "--link"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "imported": 3,
+          "already_present": 0,
+          "skipped_unsupported": 0,
+          "skipped_conflicts": 0,
+          "conflicts": [],
+          "ids": [
+            "01a07581-2257-7795-9e55-c7f82f24a397",
+            "01a07581-238b-7099-a509-13361d163eb9",
+            "01a07581-2394-74cd-a9c0-64d5c81e90a1"
+          ],
+          "volume": {
+            "uuid": "AD59D467-124E-4501-BA97-83A964859849",
+            "mount": "/",
+            "online": true
+          },
+          "xmp_read": {
+            "sidecars_found": 0,
+            "ratings": 0,
+            "keywords": 0,
+            "labels": 0
+          },
+          "previews": {
+            "embedded_extracted": 3,
+            "bytes": 1188118
+          },
+          "embeddings": {
+            "queued": 0,
+            "est_usd": 0,
+            "note": "manual embedding mode"
+          },
+          "elapsed_s": 1.3504801659999999
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "list"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "rows": [
+            {
+              "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+              "primary_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+              "originals": [
+                {
+                  "id": "01a07581-19de-734f-961d-4ff0b7e63386",
+                  "kind": "raw",
+                  "online": true
+                },
+                {
+                  "id": "01a07581-19de-734f-961d-52592fac67a2",
+                  "kind": "jpeg",
+                  "online": true
+                }
+              ],
+              "file": "DSC07730.ARW",
+              "rating": 0,
+              "flag": "none",
+              "label": null,
+              "shot": "2026-01-21T20:19:03+08:00",
+              "online": true
+            },
+            {
+              "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+              "primary_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+              "originals": [
+                {
+                  "id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+                  "kind": "raw",
+                  "online": true
+                },
+                {
+                  "id": "01a07581-1a55-714c-999e-81f515a97e7c",
+                  "kind": "jpeg",
+                  "online": true
+                }
+              ],
+              "file": "DSC09903.ARW",
+              "rating": 0,
+              "flag": "none",
+              "label": null,
+              "shot": "2026-06-22T12:32:24+07:00",
+              "online": true
+            },
+            {
+              "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+              "primary_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+              "originals": [
+                {
+                  "id": "01a07581-19b4-7395-b033-c08a0f080e32",
+                  "kind": "raw",
+                  "online": true
+                },
+                {
+                  "id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+                  "kind": "jpeg",
+                  "online": true
+                }
+              ],
+              "file": "DSC00103.ARW",
+              "rating": 0,
+              "flag": "none",
+              "label": null,
+              "shot": "2026-08-01T20:54:00+07:00",
+              "online": true
+            }
+          ],
+          "total": 3
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "show",
+        "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "--preview-size",
+        "1200"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+          "primary_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+          "source_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+          "originals": [
+            {
+              "id": "01a07581-19de-734f-961d-4ff0b7e63386",
+              "kind": "raw",
+              "content_key": "ck_2758ad9b72eb04fe",
+              "content_hash": null,
+              "bytes": 72536064,
+              "dims": {
+                "w": 7008,
+                "h": 4672,
+                "orientation": 8
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.ARW",
+                  "online": true
+                }
+              ]
+            },
+            {
+              "id": "01a07581-19de-734f-961d-52592fac67a2",
+              "kind": "jpeg",
+              "content_key": "ck_65080345b037eff2",
+              "content_hash": null,
+              "bytes": 28779178,
+              "dims": {
+                "w": 7008,
+                "h": 4672,
+                "orientation": 8
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.JPG",
+                  "online": true
+                }
+              ]
+            }
+          ],
+          "dims": {
+            "w": 4672,
+            "h": 7008,
+            "orientation": 8,
+            "note": "oriented, uncropped — the coordinate space"
+          },
+          "crop": null,
+          "camera": {
+            "make": "SONY",
+            "model": "ILCE-7CM2",
+            "lens": "35mm F1.4 DG HSM | Art 018"
+          },
+          "exposure": {
+            "shutter": "1/25",
+            "f": 1.4,
+            "iso": 800,
+            "focal_mm": 35,
+            "wb": "auto"
+          },
+          "shot": "2026-01-21T20:19:03+08:00",
+          "rating": 0,
+          "flag": "none",
+          "label": null,
+          "tags": [],
+          "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-19df-7413-87e3-b4f6bdd0d25a/r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+          "preview_info": {
+            "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+            "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+            "requested": {
+              "region": null,
+              "long_edge": 1200
+            },
+            "actual": {
+              "region": [
+                0,
+                0,
+                4672,
+                7008
+              ],
+              "w": 800,
+              "h": 1200
+            },
+            "source_tier": "online-file",
+            "source_dimensions": {
+              "w": 4672,
+              "h": 7008
+            },
+            "pixel_scale": 0.17123287671232876,
+            "resolution_limited": false,
+            "cache_source": "render_master",
+            "color_space": "srgb",
+            "icc": "sRGB2014",
+            "base_to_view": {
+              "a": 0.17123287671232876,
+              "b": 0,
+              "c": 0,
+              "d": 0.17123287671232876,
+              "e": 0,
+              "f": 0
+            },
+            "view_to_base": {
+              "a": 5.84,
+              "b": 0,
+              "c": 0,
+              "d": 5.84,
+              "e": 0,
+              "f": 0
+            },
+            "visible_base_polygon": [
+              [
+                0,
+                0
+              ],
+              [
+                4672,
+                0
+              ],
+              [
+                4672,
+                7008
+              ],
+              [
+                0,
+                7008
+              ]
+            ]
+          },
+          "locators": [
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.ARW",
+              "online": true
+            },
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.JPG",
+              "online": true
+            }
+          ],
+          "content_key": "ck_2758ad9b72eb04fe",
+          "develop": {},
+          "develop_hash": null,
+          "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+          "layers": {
+            "count": 0,
+            "stale": 0
+          },
+          "xmp": null
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "export",
+        "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "--to",
+        "/private/tmp/photoctl-paired-orientation/run/DSC07730-raw",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+            "ok": true,
+            "file": "/private/tmp/photoctl-paired-orientation/run/DSC07730-raw/DSC07730.png",
+            "w": 4672,
+            "h": 7008,
+            "bytes": 65309667,
+            "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+            "source_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "show",
+        "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "--source",
+        "camera-jpeg",
+        "--preview-size",
+        "1200"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+          "primary_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+          "source_original_id": "01a07581-19de-734f-961d-52592fac67a2",
+          "originals": [
+            {
+              "id": "01a07581-19de-734f-961d-4ff0b7e63386",
+              "kind": "raw",
+              "content_key": "ck_2758ad9b72eb04fe",
+              "content_hash": null,
+              "bytes": 72536064,
+              "dims": {
+                "w": 7008,
+                "h": 4672,
+                "orientation": 8
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.ARW",
+                  "online": true
+                }
+              ]
+            },
+            {
+              "id": "01a07581-19de-734f-961d-52592fac67a2",
+              "kind": "jpeg",
+              "content_key": "ck_65080345b037eff2",
+              "content_hash": null,
+              "bytes": 28779178,
+              "dims": {
+                "w": 7008,
+                "h": 4672,
+                "orientation": 8
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.JPG",
+                  "online": true
+                }
+              ]
+            }
+          ],
+          "dims": {
+            "w": 4672,
+            "h": 7008,
+            "orientation": 8,
+            "note": "oriented, uncropped — the coordinate space"
+          },
+          "crop": null,
+          "camera": {
+            "make": "SONY",
+            "model": "ILCE-7CM2",
+            "lens": "35mm F1.4 DG HSM | Art 018"
+          },
+          "exposure": {
+            "shutter": "1/25",
+            "f": 1.4,
+            "iso": 800,
+            "focal_mm": 35,
+            "wb": "auto"
+          },
+          "shot": "2026-01-21T20:19:03+08:00",
+          "rating": 0,
+          "flag": "none",
+          "label": null,
+          "tags": [],
+          "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-19df-7413-87e3-b4f6bdd0d25a/r_f12e1e843dee537844f916d7b514708dfc3f562d7b8debc1f963946ae447b240/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+          "preview_info": {
+            "render_hash": "r_f12e1e843dee537844f916d7b514708dfc3f562d7b8debc1f963946ae447b240",
+            "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+            "requested": {
+              "region": null,
+              "long_edge": 1200
+            },
+            "actual": {
+              "region": [
+                0,
+                0,
+                4672,
+                7008
+              ],
+              "w": 800,
+              "h": 1200
+            },
+            "source_tier": "online-file",
+            "source_dimensions": {
+              "w": 4672,
+              "h": 7008
+            },
+            "pixel_scale": 0.17123287671232876,
+            "resolution_limited": false,
+            "cache_source": "render_master",
+            "color_space": "srgb",
+            "icc": "sRGB2014",
+            "base_to_view": {
+              "a": 0.17123287671232876,
+              "b": 0,
+              "c": 0,
+              "d": 0.17123287671232876,
+              "e": 0,
+              "f": 0
+            },
+            "view_to_base": {
+              "a": 5.84,
+              "b": 0,
+              "c": 0,
+              "d": 5.84,
+              "e": 0,
+              "f": 0
+            },
+            "visible_base_polygon": [
+              [
+                0,
+                0
+              ],
+              [
+                4672,
+                0
+              ],
+              [
+                4672,
+                7008
+              ],
+              [
+                0,
+                7008
+              ]
+            ]
+          },
+          "locators": [
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.ARW",
+              "online": true
+            },
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.JPG",
+              "online": true
+            }
+          ],
+          "content_key": "ck_65080345b037eff2",
+          "develop": {},
+          "develop_hash": null,
+          "render_hash": "r_f12e1e843dee537844f916d7b514708dfc3f562d7b8debc1f963946ae447b240",
+          "layers": {
+            "count": 0,
+            "stale": 0
+          },
+          "xmp": null
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "export",
+        "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "--source",
+        "camera-jpeg",
+        "--to",
+        "/private/tmp/photoctl-paired-orientation/run/DSC07730-camera",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+            "ok": true,
+            "file": "/private/tmp/photoctl-paired-orientation/run/DSC07730-camera/DSC07730.png",
+            "w": 4672,
+            "h": 7008,
+            "bytes": 51288036,
+            "render_hash": "r_f12e1e843dee537844f916d7b514708dfc3f562d7b8debc1f963946ae447b240",
+            "source_original_id": "01a07581-19de-734f-961d-52592fac67a2",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "show",
+        "01a07581-1a56-7593-afea-4374630e5d7b",
+        "--preview-size",
+        "1200"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+          "primary_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+          "source_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+          "originals": [
+            {
+              "id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+              "kind": "raw",
+              "content_key": "ck_f379cf2b48d8b339",
+              "content_hash": null,
+              "bytes": 21106688,
+              "dims": {
+                "w": 4608,
+                "h": 3072,
+                "orientation": 6
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.ARW",
+                  "online": true
+                }
+              ]
+            },
+            {
+              "id": "01a07581-1a55-714c-999e-81f515a97e7c",
+              "kind": "jpeg",
+              "content_key": "ck_0093ce917d64a3a0",
+              "content_hash": null,
+              "bytes": 11010820,
+              "dims": {
+                "w": 4608,
+                "h": 3072,
+                "orientation": 6
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.JPG",
+                  "online": true
+                }
+              ]
+            }
+          ],
+          "dims": {
+            "w": 3072,
+            "h": 4608,
+            "orientation": 6,
+            "note": "oriented, uncropped — the coordinate space"
+          },
+          "crop": null,
+          "camera": {
+            "make": "SONY",
+            "model": "ILCE-7CM2",
+            "lens": "35mm F1.4 DG HSM | Art 018"
+          },
+          "exposure": {
+            "shutter": "1/400",
+            "f": 3.2,
+            "iso": 100,
+            "focal_mm": 35,
+            "wb": "auto"
+          },
+          "shot": "2026-06-22T12:32:24+07:00",
+          "rating": 0,
+          "flag": "none",
+          "label": null,
+          "tags": [],
+          "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-1a56-7593-afea-4374630e5d7b/r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+          "preview_info": {
+            "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+            "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+            "requested": {
+              "region": null,
+              "long_edge": 1200
+            },
+            "actual": {
+              "region": [
+                0,
+                0,
+                3071.9999999999995,
+                4607.999999999999
+              ],
+              "w": 800,
+              "h": 1200
+            },
+            "source_tier": "online-file",
+            "source_dimensions": {
+              "w": 3072,
+              "h": 4608
+            },
+            "pixel_scale": 0.2604166666666667,
+            "resolution_limited": false,
+            "cache_source": "render_master",
+            "color_space": "srgb",
+            "icc": "sRGB2014",
+            "base_to_view": {
+              "a": 0.2604166666666667,
+              "b": 0,
+              "c": 0,
+              "d": 0.2604166666666667,
+              "e": 0,
+              "f": 0
+            },
+            "view_to_base": {
+              "a": 3.8399999999999994,
+              "b": 0,
+              "c": 0,
+              "d": 3.8399999999999994,
+              "e": 0,
+              "f": 0
+            },
+            "visible_base_polygon": [
+              [
+                0,
+                0
+              ],
+              [
+                3071.9999999999995,
+                0
+              ],
+              [
+                3071.9999999999995,
+                4607.999999999999
+              ],
+              [
+                0,
+                4607.999999999999
+              ]
+            ]
+          },
+          "locators": [
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.ARW",
+              "online": true
+            },
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.JPG",
+              "online": true
+            }
+          ],
+          "content_key": "ck_f379cf2b48d8b339",
+          "develop": {},
+          "develop_hash": null,
+          "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+          "layers": {
+            "count": 0,
+            "stale": 0
+          },
+          "xmp": null
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "export",
+        "01a07581-1a56-7593-afea-4374630e5d7b",
+        "--to",
+        "/private/tmp/photoctl-paired-orientation/run/DSC09903-raw",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+            "ok": true,
+            "file": "/private/tmp/photoctl-paired-orientation/run/DSC09903-raw/DSC09903.png",
+            "w": 3072,
+            "h": 4608,
+            "bytes": 26112100,
+            "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+            "source_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "show",
+        "01a07581-1a56-7593-afea-4374630e5d7b",
+        "--source",
+        "camera-jpeg",
+        "--preview-size",
+        "1200"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+          "primary_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+          "source_original_id": "01a07581-1a55-714c-999e-81f515a97e7c",
+          "originals": [
+            {
+              "id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+              "kind": "raw",
+              "content_key": "ck_f379cf2b48d8b339",
+              "content_hash": null,
+              "bytes": 21106688,
+              "dims": {
+                "w": 4608,
+                "h": 3072,
+                "orientation": 6
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.ARW",
+                  "online": true
+                }
+              ]
+            },
+            {
+              "id": "01a07581-1a55-714c-999e-81f515a97e7c",
+              "kind": "jpeg",
+              "content_key": "ck_0093ce917d64a3a0",
+              "content_hash": null,
+              "bytes": 11010820,
+              "dims": {
+                "w": 4608,
+                "h": 3072,
+                "orientation": 6
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.JPG",
+                  "online": true
+                }
+              ]
+            }
+          ],
+          "dims": {
+            "w": 3072,
+            "h": 4608,
+            "orientation": 6,
+            "note": "oriented, uncropped — the coordinate space"
+          },
+          "crop": null,
+          "camera": {
+            "make": "SONY",
+            "model": "ILCE-7CM2",
+            "lens": "35mm F1.4 DG HSM | Art 018"
+          },
+          "exposure": {
+            "shutter": "1/400",
+            "f": 3.2,
+            "iso": 100,
+            "focal_mm": 35,
+            "wb": "auto"
+          },
+          "shot": "2026-06-22T12:32:24+07:00",
+          "rating": 0,
+          "flag": "none",
+          "label": null,
+          "tags": [],
+          "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-1a56-7593-afea-4374630e5d7b/r_28aa85dfcc84d802514b417a02c11c30b4e85874809569580bf06c83bb874d8e/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+          "preview_info": {
+            "render_hash": "r_28aa85dfcc84d802514b417a02c11c30b4e85874809569580bf06c83bb874d8e",
+            "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+            "requested": {
+              "region": null,
+              "long_edge": 1200
+            },
+            "actual": {
+              "region": [
+                0,
+                0,
+                3071.9999999999995,
+                4607.999999999999
+              ],
+              "w": 800,
+              "h": 1200
+            },
+            "source_tier": "online-file",
+            "source_dimensions": {
+              "w": 3072,
+              "h": 4608
+            },
+            "pixel_scale": 0.2604166666666667,
+            "resolution_limited": false,
+            "cache_source": "render_master",
+            "color_space": "srgb",
+            "icc": "sRGB2014",
+            "base_to_view": {
+              "a": 0.2604166666666667,
+              "b": 0,
+              "c": 0,
+              "d": 0.2604166666666667,
+              "e": 0,
+              "f": 0
+            },
+            "view_to_base": {
+              "a": 3.8399999999999994,
+              "b": 0,
+              "c": 0,
+              "d": 3.8399999999999994,
+              "e": 0,
+              "f": 0
+            },
+            "visible_base_polygon": [
+              [
+                0,
+                0
+              ],
+              [
+                3071.9999999999995,
+                0
+              ],
+              [
+                3071.9999999999995,
+                4607.999999999999
+              ],
+              [
+                0,
+                4607.999999999999
+              ]
+            ]
+          },
+          "locators": [
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.ARW",
+              "online": true
+            },
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.JPG",
+              "online": true
+            }
+          ],
+          "content_key": "ck_0093ce917d64a3a0",
+          "develop": {},
+          "develop_hash": null,
+          "render_hash": "r_28aa85dfcc84d802514b417a02c11c30b4e85874809569580bf06c83bb874d8e",
+          "layers": {
+            "count": 0,
+            "stale": 0
+          },
+          "xmp": null
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "export",
+        "01a07581-1a56-7593-afea-4374630e5d7b",
+        "--source",
+        "camera-jpeg",
+        "--to",
+        "/private/tmp/photoctl-paired-orientation/run/DSC09903-camera",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+            "ok": true,
+            "file": "/private/tmp/photoctl-paired-orientation/run/DSC09903-camera/DSC09903.png",
+            "w": 3072,
+            "h": 4608,
+            "bytes": 22596562,
+            "render_hash": "r_28aa85dfcc84d802514b417a02c11c30b4e85874809569580bf06c83bb874d8e",
+            "source_original_id": "01a07581-1a55-714c-999e-81f515a97e7c",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "show",
+        "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "--preview-size",
+        "1200"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+          "primary_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+          "source_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+          "originals": [
+            {
+              "id": "01a07581-19b4-7395-b033-c08a0f080e32",
+              "kind": "raw",
+              "content_key": "ck_1f6e4a0e035ca4a4",
+              "content_hash": null,
+              "bytes": 19374080,
+              "dims": {
+                "w": 3504,
+                "h": 2336,
+                "orientation": 1
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.ARW",
+                  "online": true
+                }
+              ]
+            },
+            {
+              "id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+              "kind": "jpeg",
+              "content_key": "ck_0a63d2220e6338c4",
+              "content_hash": null,
+              "bytes": 23705031,
+              "dims": {
+                "w": 7008,
+                "h": 4672,
+                "orientation": 1
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.JPG",
+                  "online": true
+                }
+              ]
+            }
+          ],
+          "dims": {
+            "w": 3504,
+            "h": 2336,
+            "orientation": 1,
+            "note": "oriented, uncropped — the coordinate space"
+          },
+          "crop": null,
+          "camera": {
+            "make": "SONY",
+            "model": "ILCE-7CM2",
+            "lens": "E 70-180mm F2.8 A065"
+          },
+          "exposure": {
+            "shutter": "1/160",
+            "f": 2.8,
+            "iso": 8000,
+            "focal_mm": 144,
+            "wb": "auto"
+          },
+          "shot": "2026-08-01T20:54:00+07:00",
+          "rating": 0,
+          "flag": "none",
+          "label": null,
+          "tags": [],
+          "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-19b6-71af-bee2-349e5ee5fda1/r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+          "preview_info": {
+            "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+            "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+            "requested": {
+              "region": null,
+              "long_edge": 1200
+            },
+            "actual": {
+              "region": [
+                0,
+                0,
+                3504,
+                2336
+              ],
+              "w": 1200,
+              "h": 800
+            },
+            "source_tier": "online-file",
+            "source_dimensions": {
+              "w": 3504,
+              "h": 2336
+            },
+            "pixel_scale": 0.3424657534246575,
+            "resolution_limited": false,
+            "cache_source": "render_master",
+            "color_space": "srgb",
+            "icc": "sRGB2014",
+            "base_to_view": {
+              "a": 0.3424657534246575,
+              "b": 0,
+              "c": 0,
+              "d": 0.3424657534246575,
+              "e": 0,
+              "f": 0
+            },
+            "view_to_base": {
+              "a": 2.92,
+              "b": 0,
+              "c": 0,
+              "d": 2.92,
+              "e": 0,
+              "f": 0
+            },
+            "visible_base_polygon": [
+              [
+                0,
+                0
+              ],
+              [
+                3504,
+                0
+              ],
+              [
+                3504,
+                2336
+              ],
+              [
+                0,
+                2336
+              ]
+            ]
+          },
+          "locators": [
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.ARW",
+              "online": true
+            },
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.JPG",
+              "online": true
+            }
+          ],
+          "content_key": "ck_1f6e4a0e035ca4a4",
+          "develop": {},
+          "develop_hash": null,
+          "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+          "layers": {
+            "count": 0,
+            "stale": 0
+          },
+          "xmp": null
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "export",
+        "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "--to",
+        "/private/tmp/photoctl-paired-orientation/run/DSC00103-raw",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+            "ok": true,
+            "file": "/private/tmp/photoctl-paired-orientation/run/DSC00103-raw/DSC00103.png",
+            "w": 3504,
+            "h": 2336,
+            "bytes": 18005999,
+            "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+            "source_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "show",
+        "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "--source",
+        "camera-jpeg",
+        "--preview-size",
+        "1200"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+          "primary_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+          "source_original_id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+          "originals": [
+            {
+              "id": "01a07581-19b4-7395-b033-c08a0f080e32",
+              "kind": "raw",
+              "content_key": "ck_1f6e4a0e035ca4a4",
+              "content_hash": null,
+              "bytes": 19374080,
+              "dims": {
+                "w": 3504,
+                "h": 2336,
+                "orientation": 1
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.ARW",
+                  "online": true
+                }
+              ]
+            },
+            {
+              "id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+              "kind": "jpeg",
+              "content_key": "ck_0a63d2220e6338c4",
+              "content_hash": null,
+              "bytes": 23705031,
+              "dims": {
+                "w": 7008,
+                "h": 4672,
+                "orientation": 1
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.JPG",
+                  "online": true
+                }
+              ]
+            }
+          ],
+          "dims": {
+            "w": 7008,
+            "h": 4672,
+            "orientation": 1,
+            "note": "oriented, uncropped — the coordinate space"
+          },
+          "crop": null,
+          "camera": {
+            "make": "SONY",
+            "model": "ILCE-7CM2",
+            "lens": "E 70-180mm F2.8 A065"
+          },
+          "exposure": {
+            "shutter": "1/160",
+            "f": 2.8,
+            "iso": 8000,
+            "focal_mm": 144,
+            "wb": "auto"
+          },
+          "shot": "2026-08-01T20:54:00+07:00",
+          "rating": 0,
+          "flag": "none",
+          "label": null,
+          "tags": [],
+          "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-19b6-71af-bee2-349e5ee5fda1/r_94878edbcdd028b5b6366625c5bc0af9f400031bb8585474bbb447dd15dea496/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+          "preview_info": {
+            "render_hash": "r_94878edbcdd028b5b6366625c5bc0af9f400031bb8585474bbb447dd15dea496",
+            "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+            "requested": {
+              "region": null,
+              "long_edge": 1200
+            },
+            "actual": {
+              "region": [
+                0,
+                0,
+                7008,
+                4672
+              ],
+              "w": 1200,
+              "h": 800
+            },
+            "source_tier": "online-file",
+            "source_dimensions": {
+              "w": 7008,
+              "h": 4672
+            },
+            "pixel_scale": 0.17123287671232876,
+            "resolution_limited": false,
+            "cache_source": "render_master",
+            "color_space": "srgb",
+            "icc": "sRGB2014",
+            "base_to_view": {
+              "a": 0.17123287671232876,
+              "b": 0,
+              "c": 0,
+              "d": 0.17123287671232876,
+              "e": 0,
+              "f": 0
+            },
+            "view_to_base": {
+              "a": 5.84,
+              "b": 0,
+              "c": 0,
+              "d": 5.84,
+              "e": 0,
+              "f": 0
+            },
+            "visible_base_polygon": [
+              [
+                0,
+                0
+              ],
+              [
+                7008,
+                0
+              ],
+              [
+                7008,
+                4672
+              ],
+              [
+                0,
+                4672
+              ]
+            ]
+          },
+          "locators": [
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.ARW",
+              "online": true
+            },
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.JPG",
+              "online": true
+            }
+          ],
+          "content_key": "ck_0a63d2220e6338c4",
+          "develop": {},
+          "develop_hash": null,
+          "render_hash": "r_94878edbcdd028b5b6366625c5bc0af9f400031bb8585474bbb447dd15dea496",
+          "layers": {
+            "count": 0,
+            "stale": 0
+          },
+          "xmp": null
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "paired",
+      "args": [
+        "export",
+        "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "--source",
+        "camera-jpeg",
+        "--to",
+        "/private/tmp/photoctl-paired-orientation/run/DSC00103-camera",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+            "ok": true,
+            "file": "/private/tmp/photoctl-paired-orientation/run/DSC00103-camera/DSC00103.png",
+            "w": 7008,
+            "h": 4672,
+            "bytes": 48159574,
+            "render_hash": "r_94878edbcdd028b5b6366625c5bc0af9f400031bb8585474bbb447dd15dea496",
+            "source_original_id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "lib": "jpeg",
+      "args": [
+        "list"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "rows": [
+            {
+              "id": "01a07581-238b-7099-a509-13361d163eb9",
+              "primary_original_id": "01a07581-238b-7099-a509-0ef239c2119f",
+              "originals": [
+                {
+                  "id": "01a07581-238b-7099-a509-0ef239c2119f",
+                  "kind": "jpeg",
+                  "online": true
+                }
+              ],
+              "file": "DSC07730.JPG",
+              "rating": 0,
+              "flag": "none",
+              "label": null,
+              "shot": "2026-01-21T20:19:03+08:00",
+              "online": true
+            },
+            {
+              "id": "01a07581-2394-74cd-a9c0-64d5c81e90a1",
+              "primary_original_id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+              "originals": [
+                {
+                  "id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+                  "kind": "jpeg",
+                  "online": true
+                }
+              ],
+              "file": "DSC09903.JPG",
+              "rating": 0,
+              "flag": "none",
+              "label": null,
+              "shot": "2026-06-22T12:32:24+07:00",
+              "online": true
+            },
+            {
+              "id": "01a07581-2257-7795-9e55-c7f82f24a397",
+              "primary_original_id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+              "originals": [
+                {
+                  "id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+                  "kind": "jpeg",
+                  "online": true
+                }
+              ],
+              "file": "DSC00103.JPG",
+              "rating": 0,
+              "flag": "none",
+              "label": null,
+              "shot": "2026-08-01T20:54:00+07:00",
+              "online": true
+            }
+          ],
+          "total": 3
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "jpeg",
+      "args": [
+        "show",
+        "01a07581-238b-7099-a509-13361d163eb9",
+        "--preview-size",
+        "1200"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07581-238b-7099-a509-13361d163eb9",
+          "primary_original_id": "01a07581-238b-7099-a509-0ef239c2119f",
+          "source_original_id": "01a07581-238b-7099-a509-0ef239c2119f",
+          "originals": [
+            {
+              "id": "01a07581-238b-7099-a509-0ef239c2119f",
+              "kind": "jpeg",
+              "content_key": "ck_65080345b037eff2",
+              "content_hash": null,
+              "bytes": 28779178,
+              "dims": {
+                "w": 7008,
+                "h": 4672,
+                "orientation": 8
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC07730.JPG",
+                  "online": true
+                }
+              ]
+            }
+          ],
+          "dims": {
+            "w": 4672,
+            "h": 7008,
+            "orientation": 8,
+            "note": "oriented, uncropped — the coordinate space"
+          },
+          "crop": null,
+          "camera": {
+            "make": "SONY",
+            "model": "ILCE-7CM2",
+            "lens": "35mm F1.4 DG HSM | Art 018"
+          },
+          "exposure": {
+            "shutter": "1/25",
+            "f": 1.4,
+            "iso": 800,
+            "focal_mm": 35,
+            "wb": "auto"
+          },
+          "shot": "2026-01-21T20:19:03+08:00",
+          "rating": 0,
+          "flag": "none",
+          "label": null,
+          "tags": [],
+          "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-1dd5-7369-82e6-8cedf99b3e6c/view/01a07581-238b-7099-a509-13361d163eb9/r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+          "preview_info": {
+            "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+            "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+            "requested": {
+              "region": null,
+              "long_edge": 1200
+            },
+            "actual": {
+              "region": [
+                0,
+                0,
+                4672,
+                7008
+              ],
+              "w": 800,
+              "h": 1200
+            },
+            "source_tier": "online-file",
+            "source_dimensions": {
+              "w": 4672,
+              "h": 7008
+            },
+            "pixel_scale": 0.17123287671232876,
+            "resolution_limited": false,
+            "cache_source": "render_master",
+            "color_space": "srgb",
+            "icc": "sRGB2014",
+            "base_to_view": {
+              "a": 0.17123287671232876,
+              "b": 0,
+              "c": 0,
+              "d": 0.17123287671232876,
+              "e": 0,
+              "f": 0
+            },
+            "view_to_base": {
+              "a": 5.84,
+              "b": 0,
+              "c": 0,
+              "d": 5.84,
+              "e": 0,
+              "f": 0
+            },
+            "visible_base_polygon": [
+              [
+                0,
+                0
+              ],
+              [
+                4672,
+                0
+              ],
+              [
+                4672,
+                7008
+              ],
+              [
+                0,
+                7008
+              ]
+            ]
+          },
+          "locators": [
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC07730.JPG",
+              "online": true
+            }
+          ],
+          "content_key": "ck_65080345b037eff2",
+          "develop": {},
+          "develop_hash": null,
+          "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+          "layers": {
+            "count": 0,
+            "stale": 0
+          },
+          "xmp": null
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "jpeg",
+      "args": [
+        "export",
+        "01a07581-238b-7099-a509-13361d163eb9",
+        "--to",
+        "/private/tmp/photoctl-paired-orientation/run/DSC07730-independent",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07581-238b-7099-a509-13361d163eb9",
+            "ok": true,
+            "file": "/private/tmp/photoctl-paired-orientation/run/DSC07730-independent/DSC07730.png",
+            "w": 4672,
+            "h": 7008,
+            "bytes": 51288036,
+            "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+            "source_original_id": "01a07581-238b-7099-a509-0ef239c2119f",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "lib": "jpeg",
+      "args": [
+        "show",
+        "01a07581-2394-74cd-a9c0-64d5c81e90a1",
+        "--preview-size",
+        "1200"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07581-2394-74cd-a9c0-64d5c81e90a1",
+          "primary_original_id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+          "source_original_id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+          "originals": [
+            {
+              "id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+              "kind": "jpeg",
+              "content_key": "ck_0093ce917d64a3a0",
+              "content_hash": null,
+              "bytes": 11010820,
+              "dims": {
+                "w": 4608,
+                "h": 3072,
+                "orientation": 6
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC09903.JPG",
+                  "online": true
+                }
+              ]
+            }
+          ],
+          "dims": {
+            "w": 3072,
+            "h": 4608,
+            "orientation": 6,
+            "note": "oriented, uncropped — the coordinate space"
+          },
+          "crop": null,
+          "camera": {
+            "make": "SONY",
+            "model": "ILCE-7CM2",
+            "lens": "35mm F1.4 DG HSM | Art 018"
+          },
+          "exposure": {
+            "shutter": "1/400",
+            "f": 3.2,
+            "iso": 100,
+            "focal_mm": 35,
+            "wb": "auto"
+          },
+          "shot": "2026-06-22T12:32:24+07:00",
+          "rating": 0,
+          "flag": "none",
+          "label": null,
+          "tags": [],
+          "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-1dd5-7369-82e6-8cedf99b3e6c/view/01a07581-2394-74cd-a9c0-64d5c81e90a1/r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+          "preview_info": {
+            "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+            "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+            "requested": {
+              "region": null,
+              "long_edge": 1200
+            },
+            "actual": {
+              "region": [
+                0,
+                0,
+                3071.9999999999995,
+                4607.999999999999
+              ],
+              "w": 800,
+              "h": 1200
+            },
+            "source_tier": "online-file",
+            "source_dimensions": {
+              "w": 3072,
+              "h": 4608
+            },
+            "pixel_scale": 0.2604166666666667,
+            "resolution_limited": false,
+            "cache_source": "render_master",
+            "color_space": "srgb",
+            "icc": "sRGB2014",
+            "base_to_view": {
+              "a": 0.2604166666666667,
+              "b": 0,
+              "c": 0,
+              "d": 0.2604166666666667,
+              "e": 0,
+              "f": 0
+            },
+            "view_to_base": {
+              "a": 3.8399999999999994,
+              "b": 0,
+              "c": 0,
+              "d": 3.8399999999999994,
+              "e": 0,
+              "f": 0
+            },
+            "visible_base_polygon": [
+              [
+                0,
+                0
+              ],
+              [
+                3071.9999999999995,
+                0
+              ],
+              [
+                3071.9999999999995,
+                4607.999999999999
+              ],
+              [
+                0,
+                4607.999999999999
+              ]
+            ]
+          },
+          "locators": [
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC09903.JPG",
+              "online": true
+            }
+          ],
+          "content_key": "ck_0093ce917d64a3a0",
+          "develop": {},
+          "develop_hash": null,
+          "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+          "layers": {
+            "count": 0,
+            "stale": 0
+          },
+          "xmp": null
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "jpeg",
+      "args": [
+        "export",
+        "01a07581-2394-74cd-a9c0-64d5c81e90a1",
+        "--to",
+        "/private/tmp/photoctl-paired-orientation/run/DSC09903-independent",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07581-2394-74cd-a9c0-64d5c81e90a1",
+            "ok": true,
+            "file": "/private/tmp/photoctl-paired-orientation/run/DSC09903-independent/DSC09903.png",
+            "w": 3072,
+            "h": 4608,
+            "bytes": 22596562,
+            "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+            "source_original_id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "lib": "jpeg",
+      "args": [
+        "show",
+        "01a07581-2257-7795-9e55-c7f82f24a397",
+        "--preview-size",
+        "1200"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07581-2257-7795-9e55-c7f82f24a397",
+          "primary_original_id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+          "source_original_id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+          "originals": [
+            {
+              "id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+              "kind": "jpeg",
+              "content_key": "ck_0a63d2220e6338c4",
+              "content_hash": null,
+              "bytes": 23705031,
+              "dims": {
+                "w": 7008,
+                "h": 4672,
+                "orientation": 1
+              },
+              "locators": [
+                {
+                  "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                  "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC00103.JPG",
+                  "online": true
+                }
+              ]
+            }
+          ],
+          "dims": {
+            "w": 7008,
+            "h": 4672,
+            "orientation": 1,
+            "note": "oriented, uncropped — the coordinate space"
+          },
+          "crop": null,
+          "camera": {
+            "make": "SONY",
+            "model": "ILCE-7CM2",
+            "lens": "E 70-180mm F2.8 A065"
+          },
+          "exposure": {
+            "shutter": "1/160",
+            "f": 2.8,
+            "iso": 8000,
+            "focal_mm": 144,
+            "wb": "auto"
+          },
+          "shot": "2026-08-01T20:54:00+07:00",
+          "rating": 0,
+          "flag": "none",
+          "label": null,
+          "tags": [],
+          "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-1dd5-7369-82e6-8cedf99b3e6c/view/01a07581-2257-7795-9e55-c7f82f24a397/r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+          "preview_info": {
+            "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+            "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+            "requested": {
+              "region": null,
+              "long_edge": 1200
+            },
+            "actual": {
+              "region": [
+                0,
+                0,
+                7008,
+                4672
+              ],
+              "w": 1200,
+              "h": 800
+            },
+            "source_tier": "online-file",
+            "source_dimensions": {
+              "w": 7008,
+              "h": 4672
+            },
+            "pixel_scale": 0.17123287671232876,
+            "resolution_limited": false,
+            "cache_source": "render_master",
+            "color_space": "srgb",
+            "icc": "sRGB2014",
+            "base_to_view": {
+              "a": 0.17123287671232876,
+              "b": 0,
+              "c": 0,
+              "d": 0.17123287671232876,
+              "e": 0,
+              "f": 0
+            },
+            "view_to_base": {
+              "a": 5.84,
+              "b": 0,
+              "c": 0,
+              "d": 5.84,
+              "e": 0,
+              "f": 0
+            },
+            "visible_base_polygon": [
+              [
+                0,
+                0
+              ],
+              [
+                7008,
+                0
+              ],
+              [
+                7008,
+                4672
+              ],
+              [
+                0,
+                4672
+              ]
+            ]
+          },
+          "locators": [
+            {
+              "volume": "AD59D467-124E-4501-BA97-83A964859849",
+              "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC00103.JPG",
+              "online": true
+            }
+          ],
+          "content_key": "ck_0a63d2220e6338c4",
+          "develop": {},
+          "develop_hash": null,
+          "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+          "layers": {
+            "count": 0,
+            "stale": 0
+          },
+          "xmp": null
+        },
+        "warnings": []
+      }
+    },
+    {
+      "lib": "jpeg",
+      "args": [
+        "export",
+        "01a07581-2257-7795-9e55-c7f82f24a397",
+        "--to",
+        "/private/tmp/photoctl-paired-orientation/run/DSC00103-independent",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07581-2257-7795-9e55-c7f82f24a397",
+            "ok": true,
+            "file": "/private/tmp/photoctl-paired-orientation/run/DSC00103-independent/DSC00103.png",
+            "w": 7008,
+            "h": 4672,
+            "bytes": 48159574,
+            "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+            "source_original_id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      }
+    }
+  ],
+  "photos": [
+    {
+      "stem": "DSC07730",
+      "variant": "raw",
+      "photo": {
+        "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "primary_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+        "originals": [
+          {
+            "id": "01a07581-19de-734f-961d-4ff0b7e63386",
+            "kind": "raw",
+            "online": true
+          },
+          {
+            "id": "01a07581-19de-734f-961d-52592fac67a2",
+            "kind": "jpeg",
+            "online": true
+          }
+        ],
+        "file": "DSC07730.ARW",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "shot": "2026-01-21T20:19:03+08:00",
+        "online": true
+      },
+      "show": {
+        "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "primary_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+        "source_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+        "originals": [
+          {
+            "id": "01a07581-19de-734f-961d-4ff0b7e63386",
+            "kind": "raw",
+            "content_key": "ck_2758ad9b72eb04fe",
+            "content_hash": null,
+            "bytes": 72536064,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 8
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.ARW",
+                "online": true
+              }
+            ]
+          },
+          {
+            "id": "01a07581-19de-734f-961d-52592fac67a2",
+            "kind": "jpeg",
+            "content_key": "ck_65080345b037eff2",
+            "content_hash": null,
+            "bytes": 28779178,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 8
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.JPG",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 4672,
+          "h": 7008,
+          "orientation": 8,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "35mm F1.4 DG HSM | Art 018"
+        },
+        "exposure": {
+          "shutter": "1/25",
+          "f": 1.4,
+          "iso": 800,
+          "focal_mm": 35,
+          "wb": "auto"
+        },
+        "shot": "2026-01-21T20:19:03+08:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-19df-7413-87e3-b4f6bdd0d25a/r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+        "preview_info": {
+          "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+          "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+          "requested": {
+            "region": null,
+            "long_edge": 1200
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              4672,
+              7008
+            ],
+            "w": 800,
+            "h": 1200
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 4672,
+            "h": 7008
+          },
+          "pixel_scale": 0.17123287671232876,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.17123287671232876,
+            "b": 0,
+            "c": 0,
+            "d": 0.17123287671232876,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 5.84,
+            "b": 0,
+            "c": 0,
+            "d": 5.84,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              4672,
+              0
+            ],
+            [
+              4672,
+              7008
+            ],
+            [
+              0,
+              7008
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.ARW",
+            "online": true
+          },
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.JPG",
+            "online": true
+          }
+        ],
+        "content_key": "ck_2758ad9b72eb04fe",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "export": {
+        "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "ok": true,
+        "file": "/private/tmp/photoctl-paired-orientation/run/DSC07730-raw/DSC07730.png",
+        "w": 4672,
+        "h": 7008,
+        "bytes": 65309667,
+        "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+        "source_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+        "skipped": false
+      },
+      "path": "/private/tmp/photoctl-paired-orientation/run/DSC07730-raw/DSC07730.png",
+      "hash": "3f9ac2dd9aa0f54b356354d147782d92f47f54d72cb53ffb940bddbb870980a4",
+      "width": 4672,
+      "height": 7008,
+      "crop": {
+        "left": 2055,
+        "top": 2452,
+        "width": 397,
+        "height": 840
+      }
+    },
+    {
+      "stem": "DSC07730",
+      "variant": "camera",
+      "photo": {
+        "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "primary_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+        "originals": [
+          {
+            "id": "01a07581-19de-734f-961d-4ff0b7e63386",
+            "kind": "raw",
+            "online": true
+          },
+          {
+            "id": "01a07581-19de-734f-961d-52592fac67a2",
+            "kind": "jpeg",
+            "online": true
+          }
+        ],
+        "file": "DSC07730.ARW",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "shot": "2026-01-21T20:19:03+08:00",
+        "online": true
+      },
+      "show": {
+        "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "primary_original_id": "01a07581-19de-734f-961d-4ff0b7e63386",
+        "source_original_id": "01a07581-19de-734f-961d-52592fac67a2",
+        "originals": [
+          {
+            "id": "01a07581-19de-734f-961d-4ff0b7e63386",
+            "kind": "raw",
+            "content_key": "ck_2758ad9b72eb04fe",
+            "content_hash": null,
+            "bytes": 72536064,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 8
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.ARW",
+                "online": true
+              }
+            ]
+          },
+          {
+            "id": "01a07581-19de-734f-961d-52592fac67a2",
+            "kind": "jpeg",
+            "content_key": "ck_65080345b037eff2",
+            "content_hash": null,
+            "bytes": 28779178,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 8
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.JPG",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 4672,
+          "h": 7008,
+          "orientation": 8,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "35mm F1.4 DG HSM | Art 018"
+        },
+        "exposure": {
+          "shutter": "1/25",
+          "f": 1.4,
+          "iso": 800,
+          "focal_mm": 35,
+          "wb": "auto"
+        },
+        "shot": "2026-01-21T20:19:03+08:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-19df-7413-87e3-b4f6bdd0d25a/r_f12e1e843dee537844f916d7b514708dfc3f562d7b8debc1f963946ae447b240/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+        "preview_info": {
+          "render_hash": "r_f12e1e843dee537844f916d7b514708dfc3f562d7b8debc1f963946ae447b240",
+          "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+          "requested": {
+            "region": null,
+            "long_edge": 1200
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              4672,
+              7008
+            ],
+            "w": 800,
+            "h": 1200
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 4672,
+            "h": 7008
+          },
+          "pixel_scale": 0.17123287671232876,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.17123287671232876,
+            "b": 0,
+            "c": 0,
+            "d": 0.17123287671232876,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 5.84,
+            "b": 0,
+            "c": 0,
+            "d": 5.84,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              4672,
+              0
+            ],
+            [
+              4672,
+              7008
+            ],
+            [
+              0,
+              7008
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.ARW",
+            "online": true
+          },
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC07730.JPG",
+            "online": true
+          }
+        ],
+        "content_key": "ck_65080345b037eff2",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_f12e1e843dee537844f916d7b514708dfc3f562d7b8debc1f963946ae447b240",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "export": {
+        "id": "01a07581-19df-7413-87e3-b4f6bdd0d25a",
+        "ok": true,
+        "file": "/private/tmp/photoctl-paired-orientation/run/DSC07730-camera/DSC07730.png",
+        "w": 4672,
+        "h": 7008,
+        "bytes": 51288036,
+        "render_hash": "r_f12e1e843dee537844f916d7b514708dfc3f562d7b8debc1f963946ae447b240",
+        "source_original_id": "01a07581-19de-734f-961d-52592fac67a2",
+        "skipped": false
+      },
+      "path": "/private/tmp/photoctl-paired-orientation/run/DSC07730-camera/DSC07730.png",
+      "hash": "82f52079c223fc2a4bf8590e27b04e733aa533198e9a259befc438e172bfba6d",
+      "width": 4672,
+      "height": 7008,
+      "crop": {
+        "left": 2055,
+        "top": 2452,
+        "width": 397,
+        "height": 840
+      }
+    },
+    {
+      "stem": "DSC09903",
+      "variant": "raw",
+      "photo": {
+        "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+        "primary_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+        "originals": [
+          {
+            "id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+            "kind": "raw",
+            "online": true
+          },
+          {
+            "id": "01a07581-1a55-714c-999e-81f515a97e7c",
+            "kind": "jpeg",
+            "online": true
+          }
+        ],
+        "file": "DSC09903.ARW",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "shot": "2026-06-22T12:32:24+07:00",
+        "online": true
+      },
+      "show": {
+        "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+        "primary_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+        "source_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+        "originals": [
+          {
+            "id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+            "kind": "raw",
+            "content_key": "ck_f379cf2b48d8b339",
+            "content_hash": null,
+            "bytes": 21106688,
+            "dims": {
+              "w": 4608,
+              "h": 3072,
+              "orientation": 6
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.ARW",
+                "online": true
+              }
+            ]
+          },
+          {
+            "id": "01a07581-1a55-714c-999e-81f515a97e7c",
+            "kind": "jpeg",
+            "content_key": "ck_0093ce917d64a3a0",
+            "content_hash": null,
+            "bytes": 11010820,
+            "dims": {
+              "w": 4608,
+              "h": 3072,
+              "orientation": 6
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.JPG",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 3072,
+          "h": 4608,
+          "orientation": 6,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "35mm F1.4 DG HSM | Art 018"
+        },
+        "exposure": {
+          "shutter": "1/400",
+          "f": 3.2,
+          "iso": 100,
+          "focal_mm": 35,
+          "wb": "auto"
+        },
+        "shot": "2026-06-22T12:32:24+07:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-1a56-7593-afea-4374630e5d7b/r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+        "preview_info": {
+          "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+          "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+          "requested": {
+            "region": null,
+            "long_edge": 1200
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              3071.9999999999995,
+              4607.999999999999
+            ],
+            "w": 800,
+            "h": 1200
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 3072,
+            "h": 4608
+          },
+          "pixel_scale": 0.2604166666666667,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.2604166666666667,
+            "b": 0,
+            "c": 0,
+            "d": 0.2604166666666667,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 3.8399999999999994,
+            "b": 0,
+            "c": 0,
+            "d": 3.8399999999999994,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              3071.9999999999995,
+              0
+            ],
+            [
+              3071.9999999999995,
+              4607.999999999999
+            ],
+            [
+              0,
+              4607.999999999999
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.ARW",
+            "online": true
+          },
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.JPG",
+            "online": true
+          }
+        ],
+        "content_key": "ck_f379cf2b48d8b339",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "export": {
+        "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+        "ok": true,
+        "file": "/private/tmp/photoctl-paired-orientation/run/DSC09903-raw/DSC09903.png",
+        "w": 3072,
+        "h": 4608,
+        "bytes": 26112100,
+        "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+        "source_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+        "skipped": false
+      },
+      "path": "/private/tmp/photoctl-paired-orientation/run/DSC09903-raw/DSC09903.png",
+      "hash": "9fcb3522275209fa35680212ca873ca370b0eee1e16c03f0e47c32b7b033a655",
+      "width": 3072,
+      "height": 4608,
+      "crop": {
+        "left": 1259,
+        "top": 2995,
+        "width": 522,
+        "height": 414
+      }
+    },
+    {
+      "stem": "DSC09903",
+      "variant": "camera",
+      "photo": {
+        "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+        "primary_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+        "originals": [
+          {
+            "id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+            "kind": "raw",
+            "online": true
+          },
+          {
+            "id": "01a07581-1a55-714c-999e-81f515a97e7c",
+            "kind": "jpeg",
+            "online": true
+          }
+        ],
+        "file": "DSC09903.ARW",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "shot": "2026-06-22T12:32:24+07:00",
+        "online": true
+      },
+      "show": {
+        "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+        "primary_original_id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+        "source_original_id": "01a07581-1a55-714c-999e-81f515a97e7c",
+        "originals": [
+          {
+            "id": "01a07581-1a55-714c-999e-7f70608c7a5a",
+            "kind": "raw",
+            "content_key": "ck_f379cf2b48d8b339",
+            "content_hash": null,
+            "bytes": 21106688,
+            "dims": {
+              "w": 4608,
+              "h": 3072,
+              "orientation": 6
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.ARW",
+                "online": true
+              }
+            ]
+          },
+          {
+            "id": "01a07581-1a55-714c-999e-81f515a97e7c",
+            "kind": "jpeg",
+            "content_key": "ck_0093ce917d64a3a0",
+            "content_hash": null,
+            "bytes": 11010820,
+            "dims": {
+              "w": 4608,
+              "h": 3072,
+              "orientation": 6
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.JPG",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 3072,
+          "h": 4608,
+          "orientation": 6,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "35mm F1.4 DG HSM | Art 018"
+        },
+        "exposure": {
+          "shutter": "1/400",
+          "f": 3.2,
+          "iso": 100,
+          "focal_mm": 35,
+          "wb": "auto"
+        },
+        "shot": "2026-06-22T12:32:24+07:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-1a56-7593-afea-4374630e5d7b/r_28aa85dfcc84d802514b417a02c11c30b4e85874809569580bf06c83bb874d8e/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+        "preview_info": {
+          "render_hash": "r_28aa85dfcc84d802514b417a02c11c30b4e85874809569580bf06c83bb874d8e",
+          "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+          "requested": {
+            "region": null,
+            "long_edge": 1200
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              3071.9999999999995,
+              4607.999999999999
+            ],
+            "w": 800,
+            "h": 1200
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 3072,
+            "h": 4608
+          },
+          "pixel_scale": 0.2604166666666667,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.2604166666666667,
+            "b": 0,
+            "c": 0,
+            "d": 0.2604166666666667,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 3.8399999999999994,
+            "b": 0,
+            "c": 0,
+            "d": 3.8399999999999994,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              3071.9999999999995,
+              0
+            ],
+            [
+              3071.9999999999995,
+              4607.999999999999
+            ],
+            [
+              0,
+              4607.999999999999
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.ARW",
+            "online": true
+          },
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC09903.JPG",
+            "online": true
+          }
+        ],
+        "content_key": "ck_0093ce917d64a3a0",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_28aa85dfcc84d802514b417a02c11c30b4e85874809569580bf06c83bb874d8e",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "export": {
+        "id": "01a07581-1a56-7593-afea-4374630e5d7b",
+        "ok": true,
+        "file": "/private/tmp/photoctl-paired-orientation/run/DSC09903-camera/DSC09903.png",
+        "w": 3072,
+        "h": 4608,
+        "bytes": 22596562,
+        "render_hash": "r_28aa85dfcc84d802514b417a02c11c30b4e85874809569580bf06c83bb874d8e",
+        "source_original_id": "01a07581-1a55-714c-999e-81f515a97e7c",
+        "skipped": false
+      },
+      "path": "/private/tmp/photoctl-paired-orientation/run/DSC09903-camera/DSC09903.png",
+      "hash": "e113fb0b1a1987bc51170b11d93401d5fb5a57b1fd417c63cacd86b5b68e4d6b",
+      "width": 3072,
+      "height": 4608,
+      "crop": {
+        "left": 1259,
+        "top": 2995,
+        "width": 522,
+        "height": 414
+      }
+    },
+    {
+      "stem": "DSC00103",
+      "variant": "raw",
+      "photo": {
+        "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "primary_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+        "originals": [
+          {
+            "id": "01a07581-19b4-7395-b033-c08a0f080e32",
+            "kind": "raw",
+            "online": true
+          },
+          {
+            "id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+            "kind": "jpeg",
+            "online": true
+          }
+        ],
+        "file": "DSC00103.ARW",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "shot": "2026-08-01T20:54:00+07:00",
+        "online": true
+      },
+      "show": {
+        "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "primary_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+        "source_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+        "originals": [
+          {
+            "id": "01a07581-19b4-7395-b033-c08a0f080e32",
+            "kind": "raw",
+            "content_key": "ck_1f6e4a0e035ca4a4",
+            "content_hash": null,
+            "bytes": 19374080,
+            "dims": {
+              "w": 3504,
+              "h": 2336,
+              "orientation": 1
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.ARW",
+                "online": true
+              }
+            ]
+          },
+          {
+            "id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+            "kind": "jpeg",
+            "content_key": "ck_0a63d2220e6338c4",
+            "content_hash": null,
+            "bytes": 23705031,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 1
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.JPG",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 3504,
+          "h": 2336,
+          "orientation": 1,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "E 70-180mm F2.8 A065"
+        },
+        "exposure": {
+          "shutter": "1/160",
+          "f": 2.8,
+          "iso": 8000,
+          "focal_mm": 144,
+          "wb": "auto"
+        },
+        "shot": "2026-08-01T20:54:00+07:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-19b6-71af-bee2-349e5ee5fda1/r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+        "preview_info": {
+          "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+          "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+          "requested": {
+            "region": null,
+            "long_edge": 1200
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              3504,
+              2336
+            ],
+            "w": 1200,
+            "h": 800
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 3504,
+            "h": 2336
+          },
+          "pixel_scale": 0.3424657534246575,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.3424657534246575,
+            "b": 0,
+            "c": 0,
+            "d": 0.3424657534246575,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 2.92,
+            "b": 0,
+            "c": 0,
+            "d": 2.92,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              3504,
+              0
+            ],
+            [
+              3504,
+              2336
+            ],
+            [
+              0,
+              2336
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.ARW",
+            "online": true
+          },
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.JPG",
+            "online": true
+          }
+        ],
+        "content_key": "ck_1f6e4a0e035ca4a4",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "export": {
+        "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "ok": true,
+        "file": "/private/tmp/photoctl-paired-orientation/run/DSC00103-raw/DSC00103.png",
+        "w": 3504,
+        "h": 2336,
+        "bytes": 18005999,
+        "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+        "source_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+        "skipped": false
+      },
+      "path": "/private/tmp/photoctl-paired-orientation/run/DSC00103-raw/DSC00103.png",
+      "hash": "4a81633066be092f3aa41427272099235304f1daad816438fb5c043855a74989",
+      "width": 3504,
+      "height": 2336,
+      "crop": {
+        "left": 2225,
+        "top": 840,
+        "width": 245,
+        "height": 256
+      }
+    },
+    {
+      "stem": "DSC00103",
+      "variant": "camera",
+      "photo": {
+        "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "primary_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+        "originals": [
+          {
+            "id": "01a07581-19b4-7395-b033-c08a0f080e32",
+            "kind": "raw",
+            "online": true
+          },
+          {
+            "id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+            "kind": "jpeg",
+            "online": true
+          }
+        ],
+        "file": "DSC00103.ARW",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "shot": "2026-08-01T20:54:00+07:00",
+        "online": true
+      },
+      "show": {
+        "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "primary_original_id": "01a07581-19b4-7395-b033-c08a0f080e32",
+        "source_original_id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+        "originals": [
+          {
+            "id": "01a07581-19b4-7395-b033-c08a0f080e32",
+            "kind": "raw",
+            "content_key": "ck_1f6e4a0e035ca4a4",
+            "content_hash": null,
+            "bytes": 19374080,
+            "dims": {
+              "w": 3504,
+              "h": 2336,
+              "orientation": 1
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.ARW",
+                "online": true
+              }
+            ]
+          },
+          {
+            "id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+            "kind": "jpeg",
+            "content_key": "ck_0a63d2220e6338c4",
+            "content_hash": null,
+            "bytes": 23705031,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 1
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.JPG",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 7008,
+          "h": 4672,
+          "orientation": 1,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "E 70-180mm F2.8 A065"
+        },
+        "exposure": {
+          "shutter": "1/160",
+          "f": 2.8,
+          "iso": 8000,
+          "focal_mm": 144,
+          "wb": "auto"
+        },
+        "shot": "2026-08-01T20:54:00+07:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-12cb-708c-bcf6-57e08290152f/view/01a07581-19b6-71af-bee2-349e5ee5fda1/r_94878edbcdd028b5b6366625c5bc0af9f400031bb8585474bbb447dd15dea496/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+        "preview_info": {
+          "render_hash": "r_94878edbcdd028b5b6366625c5bc0af9f400031bb8585474bbb447dd15dea496",
+          "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+          "requested": {
+            "region": null,
+            "long_edge": 1200
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              7008,
+              4672
+            ],
+            "w": 1200,
+            "h": 800
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 7008,
+            "h": 4672
+          },
+          "pixel_scale": 0.17123287671232876,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.17123287671232876,
+            "b": 0,
+            "c": 0,
+            "d": 0.17123287671232876,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 5.84,
+            "b": 0,
+            "c": 0,
+            "d": 5.84,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              7008,
+              0
+            ],
+            [
+              7008,
+              4672
+            ],
+            [
+              0,
+              4672
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.ARW",
+            "online": true
+          },
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/paired-drive/DSC00103.JPG",
+            "online": true
+          }
+        ],
+        "content_key": "ck_0a63d2220e6338c4",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_94878edbcdd028b5b6366625c5bc0af9f400031bb8585474bbb447dd15dea496",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "export": {
+        "id": "01a07581-19b6-71af-bee2-349e5ee5fda1",
+        "ok": true,
+        "file": "/private/tmp/photoctl-paired-orientation/run/DSC00103-camera/DSC00103.png",
+        "w": 7008,
+        "h": 4672,
+        "bytes": 48159574,
+        "render_hash": "r_94878edbcdd028b5b6366625c5bc0af9f400031bb8585474bbb447dd15dea496",
+        "source_original_id": "01a07581-19b5-76fe-b754-1427d0c9d3d6",
+        "skipped": false
+      },
+      "path": "/private/tmp/photoctl-paired-orientation/run/DSC00103-camera/DSC00103.png",
+      "hash": "c491ecd57a086639ce6abe961e2e38216d07cec18bd67e09af8b036ce7cbd3fa",
+      "width": 7008,
+      "height": 4672,
+      "crop": {
+        "left": 4450,
+        "top": 1681,
+        "width": 490,
+        "height": 513
+      }
+    },
+    {
+      "stem": "DSC07730",
+      "variant": "independent",
+      "photo": {
+        "id": "01a07581-238b-7099-a509-13361d163eb9",
+        "primary_original_id": "01a07581-238b-7099-a509-0ef239c2119f",
+        "originals": [
+          {
+            "id": "01a07581-238b-7099-a509-0ef239c2119f",
+            "kind": "jpeg",
+            "online": true
+          }
+        ],
+        "file": "DSC07730.JPG",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "shot": "2026-01-21T20:19:03+08:00",
+        "online": true
+      },
+      "show": {
+        "id": "01a07581-238b-7099-a509-13361d163eb9",
+        "primary_original_id": "01a07581-238b-7099-a509-0ef239c2119f",
+        "source_original_id": "01a07581-238b-7099-a509-0ef239c2119f",
+        "originals": [
+          {
+            "id": "01a07581-238b-7099-a509-0ef239c2119f",
+            "kind": "jpeg",
+            "content_key": "ck_65080345b037eff2",
+            "content_hash": null,
+            "bytes": 28779178,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 8
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC07730.JPG",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 4672,
+          "h": 7008,
+          "orientation": 8,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "35mm F1.4 DG HSM | Art 018"
+        },
+        "exposure": {
+          "shutter": "1/25",
+          "f": 1.4,
+          "iso": 800,
+          "focal_mm": 35,
+          "wb": "auto"
+        },
+        "shot": "2026-01-21T20:19:03+08:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-1dd5-7369-82e6-8cedf99b3e6c/view/01a07581-238b-7099-a509-13361d163eb9/r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+        "preview_info": {
+          "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+          "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+          "requested": {
+            "region": null,
+            "long_edge": 1200
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              4672,
+              7008
+            ],
+            "w": 800,
+            "h": 1200
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 4672,
+            "h": 7008
+          },
+          "pixel_scale": 0.17123287671232876,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.17123287671232876,
+            "b": 0,
+            "c": 0,
+            "d": 0.17123287671232876,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 5.84,
+            "b": 0,
+            "c": 0,
+            "d": 5.84,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              4672,
+              0
+            ],
+            [
+              4672,
+              7008
+            ],
+            [
+              0,
+              7008
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC07730.JPG",
+            "online": true
+          }
+        ],
+        "content_key": "ck_65080345b037eff2",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "export": {
+        "id": "01a07581-238b-7099-a509-13361d163eb9",
+        "ok": true,
+        "file": "/private/tmp/photoctl-paired-orientation/run/DSC07730-independent/DSC07730.png",
+        "w": 4672,
+        "h": 7008,
+        "bytes": 51288036,
+        "render_hash": "r_1d378cdc5624c1bc6a16b9798f3544c3f45e51e67c7c0c93210b1c1e266fcd65",
+        "source_original_id": "01a07581-238b-7099-a509-0ef239c2119f",
+        "skipped": false
+      },
+      "path": "/private/tmp/photoctl-paired-orientation/run/DSC07730-independent/DSC07730.png",
+      "hash": "82f52079c223fc2a4bf8590e27b04e733aa533198e9a259befc438e172bfba6d",
+      "width": 4672,
+      "height": 7008,
+      "crop": {
+        "left": 2055,
+        "top": 2452,
+        "width": 397,
+        "height": 840
+      }
+    },
+    {
+      "stem": "DSC09903",
+      "variant": "independent",
+      "photo": {
+        "id": "01a07581-2394-74cd-a9c0-64d5c81e90a1",
+        "primary_original_id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+        "originals": [
+          {
+            "id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+            "kind": "jpeg",
+            "online": true
+          }
+        ],
+        "file": "DSC09903.JPG",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "shot": "2026-06-22T12:32:24+07:00",
+        "online": true
+      },
+      "show": {
+        "id": "01a07581-2394-74cd-a9c0-64d5c81e90a1",
+        "primary_original_id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+        "source_original_id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+        "originals": [
+          {
+            "id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+            "kind": "jpeg",
+            "content_key": "ck_0093ce917d64a3a0",
+            "content_hash": null,
+            "bytes": 11010820,
+            "dims": {
+              "w": 4608,
+              "h": 3072,
+              "orientation": 6
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC09903.JPG",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 3072,
+          "h": 4608,
+          "orientation": 6,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "35mm F1.4 DG HSM | Art 018"
+        },
+        "exposure": {
+          "shutter": "1/400",
+          "f": 3.2,
+          "iso": 100,
+          "focal_mm": 35,
+          "wb": "auto"
+        },
+        "shot": "2026-06-22T12:32:24+07:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-1dd5-7369-82e6-8cedf99b3e6c/view/01a07581-2394-74cd-a9c0-64d5c81e90a1/r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+        "preview_info": {
+          "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+          "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+          "requested": {
+            "region": null,
+            "long_edge": 1200
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              3071.9999999999995,
+              4607.999999999999
+            ],
+            "w": 800,
+            "h": 1200
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 3072,
+            "h": 4608
+          },
+          "pixel_scale": 0.2604166666666667,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.2604166666666667,
+            "b": 0,
+            "c": 0,
+            "d": 0.2604166666666667,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 3.8399999999999994,
+            "b": 0,
+            "c": 0,
+            "d": 3.8399999999999994,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              3071.9999999999995,
+              0
+            ],
+            [
+              3071.9999999999995,
+              4607.999999999999
+            ],
+            [
+              0,
+              4607.999999999999
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC09903.JPG",
+            "online": true
+          }
+        ],
+        "content_key": "ck_0093ce917d64a3a0",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "export": {
+        "id": "01a07581-2394-74cd-a9c0-64d5c81e90a1",
+        "ok": true,
+        "file": "/private/tmp/photoctl-paired-orientation/run/DSC09903-independent/DSC09903.png",
+        "w": 3072,
+        "h": 4608,
+        "bytes": 22596562,
+        "render_hash": "r_1a7cf649eade621b28f7ce1ba6fbb311f068c536ede24d753aefdbfd90f2019e",
+        "source_original_id": "01a07581-2394-74cd-a9c0-628561dddc6a",
+        "skipped": false
+      },
+      "path": "/private/tmp/photoctl-paired-orientation/run/DSC09903-independent/DSC09903.png",
+      "hash": "e113fb0b1a1987bc51170b11d93401d5fb5a57b1fd417c63cacd86b5b68e4d6b",
+      "width": 3072,
+      "height": 4608,
+      "crop": {
+        "left": 1259,
+        "top": 2995,
+        "width": 522,
+        "height": 414
+      }
+    },
+    {
+      "stem": "DSC00103",
+      "variant": "independent",
+      "photo": {
+        "id": "01a07581-2257-7795-9e55-c7f82f24a397",
+        "primary_original_id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+        "originals": [
+          {
+            "id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+            "kind": "jpeg",
+            "online": true
+          }
+        ],
+        "file": "DSC00103.JPG",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "shot": "2026-08-01T20:54:00+07:00",
+        "online": true
+      },
+      "show": {
+        "id": "01a07581-2257-7795-9e55-c7f82f24a397",
+        "primary_original_id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+        "source_original_id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+        "originals": [
+          {
+            "id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+            "kind": "jpeg",
+            "content_key": "ck_0a63d2220e6338c4",
+            "content_hash": null,
+            "bytes": 23705031,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 1
+            },
+            "locators": [
+              {
+                "volume": "AD59D467-124E-4501-BA97-83A964859849",
+                "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC00103.JPG",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 7008,
+          "h": 4672,
+          "orientation": 1,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "E 70-180mm F2.8 A065"
+        },
+        "exposure": {
+          "shutter": "1/160",
+          "f": 2.8,
+          "iso": 8000,
+          "focal_mm": 144,
+          "wb": "auto"
+        },
+        "shot": "2026-08-01T20:54:00+07:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/private/tmp/photoctl-paired-orientation/run/cache/01a07581-1dd5-7369-82e6-8cedf99b3e6c/view/01a07581-2257-7795-9e55-c7f82f24a397/r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd/v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb.jpg",
+        "preview_info": {
+          "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+          "view_hash": "v_f8e901a479591eb1b420d6f533f0d8fb768f36cfed784622fca2b30581a9b9fb",
+          "requested": {
+            "region": null,
+            "long_edge": 1200
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              7008,
+              4672
+            ],
+            "w": 1200,
+            "h": 800
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 7008,
+            "h": 4672
+          },
+          "pixel_scale": 0.17123287671232876,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.17123287671232876,
+            "b": 0,
+            "c": 0,
+            "d": 0.17123287671232876,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 5.84,
+            "b": 0,
+            "c": 0,
+            "d": 5.84,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              7008,
+              0
+            ],
+            [
+              7008,
+              4672
+            ],
+            [
+              0,
+              4672
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "AD59D467-124E-4501-BA97-83A964859849",
+            "path": "private/tmp/photoctl-paired-orientation/run/jpeg-drive/DSC00103.JPG",
+            "online": true
+          }
+        ],
+        "content_key": "ck_0a63d2220e6338c4",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "export": {
+        "id": "01a07581-2257-7795-9e55-c7f82f24a397",
+        "ok": true,
+        "file": "/private/tmp/photoctl-paired-orientation/run/DSC00103-independent/DSC00103.png",
+        "w": 7008,
+        "h": 4672,
+        "bytes": 48159574,
+        "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+        "source_original_id": "01a07581-2256-776a-83e9-8d0926ca2a02",
+        "skipped": false
+      },
+      "path": "/private/tmp/photoctl-paired-orientation/run/DSC00103-independent/DSC00103.png",
+      "hash": "c491ecd57a086639ce6abe961e2e38216d07cec18bd67e09af8b036ce7cbd3fa",
+      "width": 7008,
+      "height": 4672,
+      "crop": {
+        "left": 4450,
+        "top": 1681,
+        "width": 490,
+        "height": 513
+      }
+    }
+  ],
+  "verification": {
+    "target": "Same upright scene and left/right landmarks in RAW, explicit companion JPEG, independent JPEG and show previews. Original-specific dimensions retained; RAW and camera color are not expected to match.",
+    "photos": [
+      {
+        "stem": "DSC07730",
+        "variant": "raw",
+        "selectedKind": "raw",
+        "dimensions": [
+          4672,
+          7008
+        ],
+        "showExportGrayscaleMAE": 0.4698350694444444
+      },
+      {
+        "stem": "DSC07730",
+        "variant": "camera",
+        "selectedKind": "jpeg",
+        "dimensions": [
+          4672,
+          7008
+        ],
+        "showExportGrayscaleMAE": 0.7036675347222222
+      },
+      {
+        "stem": "DSC09903",
+        "variant": "raw",
+        "selectedKind": "raw",
+        "dimensions": [
+          3072,
+          4608
+        ],
+        "showExportGrayscaleMAE": 0.4339192708333333
+      },
+      {
+        "stem": "DSC09903",
+        "variant": "camera",
+        "selectedKind": "jpeg",
+        "dimensions": [
+          3072,
+          4608
+        ],
+        "showExportGrayscaleMAE": 0.6398654513888888
+      },
+      {
+        "stem": "DSC00103",
+        "variant": "raw",
+        "selectedKind": "raw",
+        "dimensions": [
+          3504,
+          2336
+        ],
+        "showExportGrayscaleMAE": 0.5584852430555556
+      },
+      {
+        "stem": "DSC00103",
+        "variant": "camera",
+        "selectedKind": "jpeg",
+        "dimensions": [
+          7008,
+          4672
+        ],
+        "showExportGrayscaleMAE": 0.6702473958333334
+      },
+      {
+        "stem": "DSC07730",
+        "variant": "independent",
+        "selectedKind": "jpeg",
+        "dimensions": [
+          4672,
+          7008
+        ],
+        "showExportGrayscaleMAE": 0.7036675347222222
+      },
+      {
+        "stem": "DSC09903",
+        "variant": "independent",
+        "selectedKind": "jpeg",
+        "dimensions": [
+          3072,
+          4608
+        ],
+        "showExportGrayscaleMAE": 0.6398654513888888
+      },
+      {
+        "stem": "DSC00103",
+        "variant": "independent",
+        "selectedKind": "jpeg",
+        "dimensions": [
+          7008,
+          4672
+        ],
+        "showExportGrayscaleMAE": 0.6702473958333334
+      }
+    ],
+    "originals": [
+      {
+        "stem": "DSC00103",
+        "orientation": 1,
+        "storedDimensions": [
+          7008,
+          4672
+        ],
+        "displayDimensions": [
+          7008,
+          4672
+        ],
+        "cameraIndependentPngHash": "c491ecd57a086639ce6abe961e2e38216d07cec18bd67e09af8b036ce7cbd3fa",
+        "expectedOrientationMAE": 0.7198350694444444,
+        "mirroredOrientationMAE": 43.09418402777778,
+        "alternatives": [
+          {
+            "rotation": 0,
+            "mae": 0.7198350694444444
+          },
+          {
+            "rotation": 90,
+            "mae": 50.91265190972222
+          },
+          {
+            "rotation": 180,
+            "mae": 55.70258246527778
+          },
+          {
+            "rotation": 270,
+            "mae": 50.91417100694444
+          }
+        ],
+        "sourceHashes": [
+          {
+            "file": "/Users/david/dev/photoctl/fixtures/camera/DSC00103.ARW",
+            "actual": "95d78941e0503eafa760e4e6ffde4ce6ae4b22e73a642ccb3b815debbcd6ee39",
+            "manifestHash": "95d78941e0503eafa760e4e6ffde4ce6ae4b22e73a642ccb3b815debbcd6ee39",
+            "matches": true,
+            "importedCopyHash": "95d78941e0503eafa760e4e6ffde4ce6ae4b22e73a642ccb3b815debbcd6ee39"
+          },
+          {
+            "file": "/Users/david/dev/photoctl/fixtures/camera/DSC00103.JPG",
+            "actual": "e1c2c961a23e917ffb2006dc017d087185cc6a9042e040ffa4cf84860aeb8241",
+            "manifestHash": "e1c2c961a23e917ffb2006dc017d087185cc6a9042e040ffa4cf84860aeb8241",
+            "matches": true,
+            "importedCopyHash": "e1c2c961a23e917ffb2006dc017d087185cc6a9042e040ffa4cf84860aeb8241"
+          }
+        ]
+      },
+      {
+        "stem": "DSC09903",
+        "orientation": 6,
+        "storedDimensions": [
+          4608,
+          3072
+        ],
+        "displayDimensions": [
+          3072,
+          4608
+        ],
+        "cameraIndependentPngHash": "e113fb0b1a1987bc51170b11d93401d5fb5a57b1fd417c63cacd86b5b68e4d6b",
+        "expectedOrientationMAE": 0.4823133680555556,
+        "mirroredOrientationMAE": 47.337565104166664,
+        "alternatives": [
+          {
+            "rotation": 0,
+            "mae": 73.86338975694444
+          },
+          {
+            "rotation": 90,
+            "mae": 0.4542100694444444
+          },
+          {
+            "rotation": 180,
+            "mae": 73.80989583333333
+          },
+          {
+            "rotation": 270,
+            "mae": 90.80598958333333
+          }
+        ],
+        "sourceHashes": [
+          {
+            "file": "/Users/david/dev/photoctl/fixtures/camera/DSC09903.ARW",
+            "actual": "ddba9d19c788b79b6058b34b4a63b6663e361087e1e34197596c347812945b41",
+            "manifestHash": "ddba9d19c788b79b6058b34b4a63b6663e361087e1e34197596c347812945b41",
+            "matches": true,
+            "importedCopyHash": "ddba9d19c788b79b6058b34b4a63b6663e361087e1e34197596c347812945b41"
+          },
+          {
+            "file": "/Users/david/dev/photoctl/fixtures/camera/DSC09903.JPG",
+            "actual": "8a4fea8cff01fbbbd54e55a30fb27d2921779b1fa9c6c35cfb36d4b7b319afaf",
+            "manifestHash": "8a4fea8cff01fbbbd54e55a30fb27d2921779b1fa9c6c35cfb36d4b7b319afaf",
+            "matches": true,
+            "importedCopyHash": "8a4fea8cff01fbbbd54e55a30fb27d2921779b1fa9c6c35cfb36d4b7b319afaf"
+          }
+        ]
+      },
+      {
+        "stem": "DSC07730",
+        "orientation": 8,
+        "storedDimensions": [
+          7008,
+          4672
+        ],
+        "displayDimensions": [
+          4672,
+          7008
+        ],
+        "cameraIndependentPngHash": "82f52079c223fc2a4bf8590e27b04e733aa533198e9a259befc438e172bfba6d",
+        "expectedOrientationMAE": 0.8285590277777778,
+        "mirroredOrientationMAE": 18.880208333333332,
+        "alternatives": [
+          {
+            "rotation": 0,
+            "mae": 23.95855034722222
+          },
+          {
+            "rotation": 90,
+            "mae": 24.59060329861111
+          },
+          {
+            "rotation": 180,
+            "mae": 23.915147569444443
+          },
+          {
+            "rotation": 270,
+            "mae": 0.4997829861111111
+          }
+        ],
+        "sourceHashes": [
+          {
+            "file": "/Users/david/dev/photoctl/fixtures/camera/DSC07730.ARW",
+            "actual": "6767d40bc29c368162343f091a110b289d156fb2047643e69406480dabf8ed0b",
+            "manifestHash": "6767d40bc29c368162343f091a110b289d156fb2047643e69406480dabf8ed0b",
+            "matches": true,
+            "importedCopyHash": "6767d40bc29c368162343f091a110b289d156fb2047643e69406480dabf8ed0b"
+          },
+          {
+            "file": "/Users/david/dev/photoctl/fixtures/camera/DSC07730.JPG",
+            "actual": "6412e8434cbea888db10c2467d891532c6144a7873827530858d9cc2d3956225",
+            "manifestHash": "6412e8434cbea888db10c2467d891532c6144a7873827530858d9cc2d3956225",
+            "matches": true,
+            "importedCopyHash": "6412e8434cbea888db10c2467d891532c6144a7873827530858d9cc2d3956225"
+          }
+        ]
+      }
+    ]
+  },
+  "captureFiles": [
+    {
+      "file": "DSC00103-camera-detail.png",
+      "bytes": 376373,
+      "sha256": "dbfc15038d56c74afc5a5d7c43e784e793f80c4b0a4f961adf24aee375f21651"
+    },
+    {
+      "file": "DSC00103-camera-overview.png",
+      "bytes": 1168242,
+      "sha256": "b6366196508dde0e6723d1f1e1e51e7d4456aa03d180fd3fc888ad8ac4b75253"
+    },
+    {
+      "file": "DSC00103-camera-show.png",
+      "bytes": 1173131,
+      "sha256": "6cd3732b14ed542f6dce5896d2b03132a1061d96c7e867385ca051917215fd9e"
+    },
+    {
+      "file": "DSC00103-independent-detail.png",
+      "bytes": 376373,
+      "sha256": "dbfc15038d56c74afc5a5d7c43e784e793f80c4b0a4f961adf24aee375f21651"
+    },
+    {
+      "file": "DSC00103-independent-overview.png",
+      "bytes": 1168242,
+      "sha256": "b6366196508dde0e6723d1f1e1e51e7d4456aa03d180fd3fc888ad8ac4b75253"
+    },
+    {
+      "file": "DSC00103-independent-show.png",
+      "bytes": 1173131,
+      "sha256": "6cd3732b14ed542f6dce5896d2b03132a1061d96c7e867385ca051917215fd9e"
+    },
+    {
+      "file": "DSC00103-raw-detail.png",
+      "bytes": 165814,
+      "sha256": "a72581a9e7284884b43a9b37343e851e049dfa0bb4ad271078320139c6ebcfea"
+    },
+    {
+      "file": "DSC00103-raw-overview.png",
+      "bytes": 1432248,
+      "sha256": "0e79a9bf46efb6d4d3f8342ece0bf5d4dab0e853bb2f3300f780fbed80f5f1df"
+    },
+    {
+      "file": "DSC00103-raw-show.png",
+      "bytes": 1204072,
+      "sha256": "3ba59f352d8df3b7190491888ab67c30d007ce823f9196a89027468c0fc23428"
+    },
+    {
+      "file": "DSC07730-camera-detail.png",
+      "bytes": 560526,
+      "sha256": "3a420d270c15319945f0185f539df0f914008c11d52c800dd4036af6210197b3"
+    },
+    {
+      "file": "DSC07730-camera-overview.png",
+      "bytes": 1311609,
+      "sha256": "aaaf0f2a38bee21788d994efa66dbcf257d67e621d2e3fcaa363ee92ff8072fe"
+    },
+    {
+      "file": "DSC07730-camera-show.png",
+      "bytes": 1173369,
+      "sha256": "9f7a9d0dc92f625fa7eeea355fbdab4dd4d75cf5a4f03b571d065ab36aa5b09f"
+    },
+    {
+      "file": "DSC07730-independent-detail.png",
+      "bytes": 560526,
+      "sha256": "3a420d270c15319945f0185f539df0f914008c11d52c800dd4036af6210197b3"
+    },
+    {
+      "file": "DSC07730-independent-overview.png",
+      "bytes": 1311609,
+      "sha256": "aaaf0f2a38bee21788d994efa66dbcf257d67e621d2e3fcaa363ee92ff8072fe"
+    },
+    {
+      "file": "DSC07730-independent-show.png",
+      "bytes": 1173369,
+      "sha256": "9f7a9d0dc92f625fa7eeea355fbdab4dd4d75cf5a4f03b571d065ab36aa5b09f"
+    },
+    {
+      "file": "DSC07730-raw-detail.png",
+      "bytes": 669850,
+      "sha256": "5e43f82609df4b15b80a058bd0dd32985aa22c879f0139713ffce1e9ecfa863f"
+    },
+    {
+      "file": "DSC07730-raw-overview.png",
+      "bytes": 1165916,
+      "sha256": "a5bf65e2a4561bd3e510cdfc50bfb0f46d7acacdb943004aa9d0addd7355d645"
+    },
+    {
+      "file": "DSC07730-raw-show.png",
+      "bytes": 981312,
+      "sha256": "0988ad948e1ad3145aae19bee40fa357e512fbb4f456370103af8dfd51ab2380"
+    },
+    {
+      "file": "DSC09903-camera-detail.png",
+      "bytes": 434493,
+      "sha256": "cddab7981495074fdc3074db02914a392c5cc9ea63a01146bd59b285c08091de"
+    },
+    {
+      "file": "DSC09903-camera-overview.png",
+      "bytes": 1394237,
+      "sha256": "1f6ed635a76ffad46b769de0cecd655904097f962296a2d10c64dce554a2c85d"
+    },
+    {
+      "file": "DSC09903-camera-show.png",
+      "bytes": 1321625,
+      "sha256": "97eed94c4a190ebbb91a34d04643dbb6b3fceb8d7d7f6b457c06bb79ed7780d5"
+    },
+    {
+      "file": "DSC09903-independent-detail.png",
+      "bytes": 434493,
+      "sha256": "cddab7981495074fdc3074db02914a392c5cc9ea63a01146bd59b285c08091de"
+    },
+    {
+      "file": "DSC09903-independent-overview.png",
+      "bytes": 1394237,
+      "sha256": "1f6ed635a76ffad46b769de0cecd655904097f962296a2d10c64dce554a2c85d"
+    },
+    {
+      "file": "DSC09903-independent-show.png",
+      "bytes": 1321625,
+      "sha256": "97eed94c4a190ebbb91a34d04643dbb6b3fceb8d7d7f6b457c06bb79ed7780d5"
+    },
+    {
+      "file": "DSC09903-raw-detail.png",
+      "bytes": 455687,
+      "sha256": "4726cfd393c7fdac74f0ae74787d647207938dc92564a98d0d9ab35dc737a995"
+    },
+    {
+      "file": "DSC09903-raw-overview.png",
+      "bytes": 1167695,
+      "sha256": "fd607513e6f6539fc7155d41959a842af197f80bc75d21d46b0181f4018da43c"
+    },
+    {
+      "file": "DSC09903-raw-show.png",
+      "bytes": 1016120,
+      "sha256": "8930d4564000565d70ce0f8c3b7193a4f68ab0ff2f5ef6cceeefab3076ca9113"
+    }
+  ]
+}
