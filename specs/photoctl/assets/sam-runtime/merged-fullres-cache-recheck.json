@@ -1,0 +1,129 @@
+{
+  "cpu": "Apple M5 Pro",
+  "platform": "darwin",
+  "arch": "arm64",
+  "modelHashes": {
+    "encoder": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+    "decoder": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d"
+  },
+  "dimensions": {
+    "w": 7008,
+    "h": 4672
+  },
+  "qualityVerified": false,
+  "samples": [
+    {
+      "run": 0,
+      "encodeMs": 1109.092459,
+      "decodeMs": 32.53666599999997,
+      "rssBytes": 2949808128
+    },
+    {
+      "run": 1,
+      "encodeMs": 1071.0494589999998,
+      "decodeMs": 51.35874999999942,
+      "rssBytes": 2989752320
+    },
+    {
+      "run": 2,
+      "encodeMs": 1076.7243330000001,
+      "decodeMs": 37.60966700000063,
+      "rssBytes": 2528509952
+    },
+    {
+      "run": 3,
+      "encodeMs": 1220.8124160000007,
+      "decodeMs": 35.29958400000032,
+      "rssBytes": 2043789312
+    },
+    {
+      "run": 4,
+      "encodeMs": 1119.9076249999998,
+      "decodeMs": 33.27966600000218,
+      "rssBytes": 2384035840
+    },
+    {
+      "run": 5,
+      "encodeMs": 1009.9289580000004,
+      "decodeMs": 33.45833300000231,
+      "rssBytes": 2516566016
+    },
+    {
+      "run": 6,
+      "encodeMs": 963.7831669999978,
+      "decodeMs": 34.83508399999846,
+      "rssBytes": 2526101504
+    },
+    {
+      "run": 7,
+      "encodeMs": 1140.7957090000054,
+      "decodeMs": 55.53666599999997,
+      "rssBytes": 2381692928
+    },
+    {
+      "run": 8,
+      "encodeMs": 1677.6089580000043,
+      "decodeMs": 116.09862499999872,
+      "rssBytes": 1982758912
+    },
+    {
+      "run": 9,
+      "encodeMs": 1459.8286669999943,
+      "decodeMs": 47.789834000002884,
+      "rssBytes": 2133049344
+    },
+    {
+      "run": 10,
+      "encodeMs": 1014.8200419999994,
+      "decodeMs": 34.9073750000025,
+      "rssBytes": 2209873920
+    },
+    {
+      "run": 11,
+      "encodeMs": 954.7057919999934,
+      "decodeMs": 30.93916700000409,
+      "rssBytes": 2106146816
+    },
+    {
+      "run": 12,
+      "encodeMs": 1054.3612090000024,
+      "decodeMs": 67.37337500000285,
+      "rssBytes": 2515304448
+    },
+    {
+      "run": 13,
+      "encodeMs": 1037.738458000007,
+      "decodeMs": 29.342250000001513,
+      "rssBytes": 2532605952
+    },
+    {
+      "run": 14,
+      "encodeMs": 1287.2147910000058,
+      "decodeMs": 54.6394169999985,
+      "rssBytes": 2511273984
+    },
+    {
+      "run": 15,
+      "encodeMs": 1371.4919999999984,
+      "decodeMs": 58.0489579999994,
+      "rssBytes": 1607565312
+    }
+  ],
+  "maxRssBytes": 3056680960,
+  "maskHash": "845a76e4da660f99cc7620c038f4729800654c15c68b5c6de12a75be396b6b2b",
+  "limits": {
+    "encodeMs": 4000,
+    "maxRssBytes": 5000000000
+  },
+  "passed": true,
+  "controls": {
+    "nativeSha256": "890e1b6193174a0cb46804f09c186b4ca8b7ae7bda4855fa6b219426485c0b08",
+    "forcedGc": false,
+    "environmentChanged": false,
+    "requestedRuns": 16,
+    "exitCode": 0,
+    "scratch": "/private/tmp/photoctl-fullres-cache-rerun.cFOPpK",
+    "scope": "One fresh-process rerun after coordinating other implementing agents to hold heavy checks",
+    "limitation": "Host still had substantial browser activity; this does not prove the cause of the earlier timing outlier"
+  }
+}

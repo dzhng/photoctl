@@ -28,6 +28,17 @@ helper and release-addon hashes bind the report to its inputs. No forced collect
 or provider work is used. This is a recorded-host resource pass, not photographic
 edge acceptance or a guarantee for every input/platform.
 
+The additional [sixteen-input full-resolution runtime check](merged-fullres-cache.json)
+completes all requests with identical masks and 2.660 GB peak RSS, but remains **red**:
+one encoder execution takes 4.124 seconds against the unchanged four-second gate.
+[Verification](merged-fullres-cache-verification.json) records the failed request and
+exact invocation. This supports bounded memory for that run, not overall acceptance.
+One [fresh-process recheck](merged-fullres-cache-recheck.json), after other implementing
+agents held heavy checks, completes all sixteen inputs at 3.057 GB peak RSS and 1.678
+seconds maximum encode time. The prior failure is retained. Passive host observations
+still showed substantial browser activity, so the recheck establishes that the timing
+overrun did not repeat, not its cause or a latency guarantee under arbitrary contention.
+
 [Before](before.json) and [after](after.json) use the same normalized SAM candidate, input, sixteen
 photo identities, default libuv pool, and Apple M5 Pro. The original mutex-serialized runtime
 peaked at 4,306,599,936 bytes; the dedicated inference thread peaked at 2,818,965,504 bytes.

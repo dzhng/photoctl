@@ -1,0 +1,16 @@
+{
+  "exitCode": 1,
+  "completedRequests": 16,
+  "requestedRequests": 16,
+  "allRequestsCompleted": true,
+  "maxEncodeMs": 4124.056542000006,
+  "failedEncodeRuns": [
+    7
+  ],
+  "rssPassed": true,
+  "passed": false,
+  "command": "node scripts/probe-sam2.mjs --models /private/tmp/photoctl-sam-export-env.77ruAk/candidate-normalized --width 7008 --height 4672 --runs 16 --stop-on-memory-limit",
+  "forcedGc": false,
+  "nativeSha256": "890e1b6193174a0cb46804f09c186b4ca8b7ae7bda4855fa6b219426485c0b08",
+  "scope": "Fresh-process runtime-only distinct full-resolution input buffers and photo identities through cache eviction; not source/command preparation or photographic quality"
+}
