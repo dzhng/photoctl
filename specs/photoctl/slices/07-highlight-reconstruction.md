@@ -26,12 +26,13 @@ records the sole-toggle comparison, all native crops and independent visual revi
 Recovery removes the candle's false magenta and preserves the orange panel, but its
 flame core remains flat at reduced exposure. The overall delivery set is still rejected.
 
-The exact upstream LibRaw spatial experiment at
-`/private/tmp/photoctl-libraw-recovery.UVyPRM/README.md` isolates recovery from common
+The [exact upstream LibRaw spatial experiment](../assets/camera-delivery-review/libraw-spatial-recovery/README.md)
+isolates recovery from common
 integer staging. Modes 3/5/9 improve the candle and preserve the orange panel relative
 to that baseline. Staging itself clips samples retained by current float processing;
 do not confuse improvement against the staged baseline with a lossless integration.
-Preserve its measured evidence before relying on the experiment for implementation.
+Its permanent measurements preserve that distinction; its quarter images are not
+native photographic acceptance.
 
 Simple highlight blending desaturated genuine unclipped colored lights. A hard
 sensor-clipping gate produced mottled panel boundaries. Both are rejected. Moving
