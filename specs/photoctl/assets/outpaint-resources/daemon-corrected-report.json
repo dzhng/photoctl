@@ -1,0 +1,652 @@
+{
+  "revision": "5592c92ff59e910aa03d32b397639571be4342bb",
+  "node": "v24.14.0",
+  "addonSha256": "95d804f431a544226789ca69b3c20f9e5e1f5f851912d7ff26863bf39e2f8984",
+  "helperSha256": "4e3dd084338697389b9a770ada0a6dd8c650cb400faffe5eec7d086250a17ec4",
+  "runnerSha256": "172ad5ca45806290da057c09e0dad1f6dee77c4df9715c698232e21351021b65",
+  "fullReportSha256": "710d2274fa492246c9d574f9832a48bce27ff742027379c358084afa0f738035",
+  "completed": true,
+  "daemonPid": 7868,
+  "daemonAbsent": true,
+  "canaryBytes": 5000000000,
+  "peakSampledRssBytes": 4978950144,
+  "sampleCount": 2037,
+  "providerCalls": 6,
+  "cases": [
+    {
+      "source": "/private/tmp/photoctl-validation-task-memory/fixtures/camera/DSC08142.JPG",
+      "sourceHash": "8e4b383dcddad62dff5b3a1b7fa3eb6ff3f9673962aff8bb1b907575cfab459b",
+      "cycles": [
+        {
+          "exposure": 0.125,
+          "interiorSha256": "dc812a5f9362d68a9e10872ad5f94136f759cedd50cd24031b6cc9976bfae619",
+          "interiorExact": true,
+          "shiftedComparisonRejected": true,
+          "baselineSha256": "486a833c24fb6dde5e0534a401ff70337a7da9aac6758584ff7d545e48a9dbe3",
+          "expandedSha256": "18f70fa090ff1a1c95b3e626b7d53e3040928aa26fad36cb3424e6f21502296a",
+          "removedSha256": "486a833c24fb6dde5e0534a401ff70337a7da9aac6758584ff7d545e48a9dbe3",
+          "removalExact": true,
+          "providerCalls": 1
+        },
+        {
+          "exposure": 0.25,
+          "interiorSha256": "869fe4b4d1b8a7b88829907bc8d681ebc5ff9e098ec64bdfe8c7277355b8419e",
+          "interiorExact": true,
+          "shiftedComparisonRejected": true,
+          "baselineSha256": "a78aed1e568f2185ff7ea6476c94d97fe408dd8c4d6bce0bd61c0b8e08620379",
+          "expandedSha256": "43423bf70cc44dee464af91c4a44bf77fb14d064a9bd83381bc1c2c81b028f29",
+          "removedSha256": "a78aed1e568f2185ff7ea6476c94d97fe408dd8c4d6bce0bd61c0b8e08620379",
+          "removalExact": true,
+          "providerCalls": 1
+        },
+        {
+          "exposure": 0.375,
+          "interiorSha256": "ae46815a2d5a1487087ebda99c035d52d14a2b01e5f80edc87cd83e81b99f71e",
+          "interiorExact": true,
+          "shiftedComparisonRejected": true,
+          "baselineSha256": "410f2999d77c39a182f30c4ae41c376528ba48d6d71d73572bf18140cd154b1c",
+          "expandedSha256": "452a8aff2c9a690e6696b072cdbfa40108674dac4f8409ae7b709c798d9186f9",
+          "removedSha256": "410f2999d77c39a182f30c4ae41c376528ba48d6d71d73572bf18140cd154b1c",
+          "removalExact": true,
+          "providerCalls": 1
+        }
+      ],
+      "id": "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+      "sourceHashAfter": "8e4b383dcddad62dff5b3a1b7fa3eb6ff3f9673962aff8bb1b907575cfab459b",
+      "sourceUnchanged": true
+    },
+    {
+      "source": "/private/tmp/photoctl-validation-task-memory/fixtures/camera/DSC08142.ARW",
+      "sourceHash": "b66ef078858f3dec8bce4eb736602f70d7df7292eeeb4a811d83bd909847250f",
+      "cycles": [
+        {
+          "exposure": 0.125,
+          "interiorSha256": "a554b1750e4e166bf40aee41e1d7f0786fce24656d35b55f4652b2deba7534b0",
+          "interiorExact": true,
+          "shiftedComparisonRejected": true,
+          "baselineSha256": "010763089ae11d2b373d428aae463c0af769c08203c7e9d0297fa43d1d4157ad",
+          "expandedSha256": "dcfeb93fd5dd323a846d6e1578d1bd4dbb8140a51e34213c03eedd48fe169962",
+          "removedSha256": "010763089ae11d2b373d428aae463c0af769c08203c7e9d0297fa43d1d4157ad",
+          "removalExact": true,
+          "providerCalls": 1
+        },
+        {
+          "exposure": 0.25,
+          "interiorSha256": "6d89b44d9490bd332c0569f03457ca2c2fe80532aa8d165e726e0af4bbd72093",
+          "interiorExact": true,
+          "shiftedComparisonRejected": true,
+          "baselineSha256": "85bc2a3bdc236c62d8d26f580a20e732a8273e26d931a6f3ef2eb9f823e39ec4",
+          "expandedSha256": "a4a79798b7e9c99d20d54f6b40c0f2c7914822f9fa84fbc628ff544e29e63b37",
+          "removedSha256": "85bc2a3bdc236c62d8d26f580a20e732a8273e26d931a6f3ef2eb9f823e39ec4",
+          "removalExact": true,
+          "providerCalls": 1
+        },
+        {
+          "exposure": 0.375,
+          "interiorSha256": "eecfd4e73fc33e2af8a4de15536308f32fcd2d3c4f29b3ada708b5b58be34834",
+          "interiorExact": true,
+          "shiftedComparisonRejected": true,
+          "baselineSha256": "480bf0a28ba0cdcbb1700f506412acaea3ad3150e556df4db4370239b14ebd6d",
+          "expandedSha256": "6fcb38e924d6f09749897aad55eaf1ad063d223a83faa944b417e0b83dc90d3d",
+          "removedSha256": "480bf0a28ba0cdcbb1700f506412acaea3ad3150e556df4db4370239b14ebd6d",
+          "removalExact": true,
+          "providerCalls": 1
+        }
+      ],
+      "id": "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+      "sourceHashAfter": "b66ef078858f3dec8bce4eb736602f70d7df7292eeeb4a811d83bd909847250f",
+      "sourceUnchanged": true
+    }
+  ],
+  "commands": [
+    {
+      "args": [
+        "init",
+        "--path",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/library"
+      ],
+      "elapsedMs": 1255.3125,
+      "cliPeakRssBytes": 1566146560,
+      "peakSampledRssBytes": 0
+    },
+    {
+      "args": [
+        "daemon",
+        "start"
+      ],
+      "elapsedMs": 121.815834,
+      "cliPeakRssBytes": 110706688,
+      "peakSampledRssBytes": 0
+    },
+    {
+      "args": [
+        "import",
+        "/private/tmp/photoctl-validation-task-memory/fixtures/camera/DSC08142.JPG",
+        "--link",
+        "--companions",
+        "jpeg"
+      ],
+      "elapsedMs": 558.795208,
+      "cliPeakRssBytes": 110559232,
+      "peakSampledRssBytes": 1089060864,
+      "lastIdleRssBytes": 1080360960
+    },
+    {
+      "args": [
+        "develop",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--set",
+        "exposure=0.125"
+      ],
+      "elapsedMs": 152.15720799999963,
+      "cliPeakRssBytes": 110936064,
+      "peakSampledRssBytes": 1089306624,
+      "lastIdleRssBytes": 1089306624
+    },
+    {
+      "args": [
+        "export",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/JPG-1-baseline",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 5943.355333,
+      "cliPeakRssBytes": 110985216,
+      "peakSampledRssBytes": 3023175680,
+      "lastIdleRssBytes": 3023175680
+    },
+    {
+      "args": [
+        "fill",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--outpaint",
+        "--px",
+        "128",
+        "--prompt",
+        "continue the scene",
+        "--model",
+        "photoctl/fake-image-edit-v1",
+        "--no-upscale"
+      ],
+      "elapsedMs": 4578.5715,
+      "cliPeakRssBytes": 110837760,
+      "peakSampledRssBytes": 3256238080,
+      "lastIdleRssBytes": 3256238080
+    },
+    {
+      "args": [
+        "export",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/JPG-1-expanded",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 17123.732541,
+      "cliPeakRssBytes": 110559232,
+      "peakSampledRssBytes": 4932911104,
+      "lastIdleRssBytes": 4932665344
+    },
+    {
+      "args": [
+        "layer",
+        "remove",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "1f088fd4-770d-4985-bbfe-da604dfef0cb"
+      ],
+      "elapsedMs": 207.51787499999773,
+      "cliPeakRssBytes": 110624768,
+      "peakSampledRssBytes": 4921884672,
+      "lastIdleRssBytes": 4918378496
+    },
+    {
+      "args": [
+        "export",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/JPG-1-removed",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 5369.616458000004,
+      "cliPeakRssBytes": 111476736,
+      "peakSampledRssBytes": 4977459200,
+      "lastIdleRssBytes": 4967989248
+    },
+    {
+      "args": [
+        "develop",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--set",
+        "exposure=0.25"
+      ],
+      "elapsedMs": 174.38350000000355,
+      "cliPeakRssBytes": 112082944,
+      "peakSampledRssBytes": 4965924864,
+      "lastIdleRssBytes": 4965924864
+    },
+    {
+      "args": [
+        "export",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/JPG-2-baseline",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 6268.1421249999985,
+      "cliPeakRssBytes": 111001600,
+      "peakSampledRssBytes": 4978950144,
+      "lastIdleRssBytes": 3071295488
+    },
+    {
+      "args": [
+        "fill",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--outpaint",
+        "--px",
+        "128",
+        "--prompt",
+        "continue the scene",
+        "--model",
+        "photoctl/fake-image-edit-v1",
+        "--no-upscale"
+      ],
+      "elapsedMs": 5437.951249999991,
+      "cliPeakRssBytes": 111968256,
+      "peakSampledRssBytes": 3232661504,
+      "lastIdleRssBytes": 2679291904
+    },
+    {
+      "args": [
+        "export",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/JPG-2-expanded",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 18770.800291000007,
+      "cliPeakRssBytes": 110673920,
+      "peakSampledRssBytes": 3121381376,
+      "lastIdleRssBytes": 1665728512
+    },
+    {
+      "args": [
+        "layer",
+        "remove",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "c46bb067-b7ac-4784-992e-a2192583805e"
+      ],
+      "elapsedMs": 160.56258300000627,
+      "cliPeakRssBytes": 111345664,
+      "peakSampledRssBytes": 1665728512,
+      "lastIdleRssBytes": 1226571776
+    },
+    {
+      "args": [
+        "export",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/JPG-2-removed",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 5524.011707999991,
+      "cliPeakRssBytes": 111853568,
+      "peakSampledRssBytes": 2373599232,
+      "lastIdleRssBytes": 1090994176
+    },
+    {
+      "args": [
+        "develop",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--set",
+        "exposure=0.375"
+      ],
+      "elapsedMs": 169.3535419999971,
+      "cliPeakRssBytes": 111132672,
+      "peakSampledRssBytes": 1090994176,
+      "lastIdleRssBytes": 698499072
+    },
+    {
+      "args": [
+        "export",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/JPG-3-baseline",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 6373.382333000001,
+      "cliPeakRssBytes": 111230976,
+      "peakSampledRssBytes": 1932034048,
+      "lastIdleRssBytes": 1586642944
+    },
+    {
+      "args": [
+        "fill",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--outpaint",
+        "--px",
+        "128",
+        "--prompt",
+        "continue the scene",
+        "--model",
+        "photoctl/fake-image-edit-v1",
+        "--no-upscale"
+      ],
+      "elapsedMs": 4796.483000000007,
+      "cliPeakRssBytes": 110772224,
+      "peakSampledRssBytes": 2578956288,
+      "lastIdleRssBytes": 2578956288
+    },
+    {
+      "args": [
+        "export",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/JPG-3-expanded",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 16910.13287499998,
+      "cliPeakRssBytes": 110952448,
+      "peakSampledRssBytes": 3128098816,
+      "lastIdleRssBytes": 1707589632
+    },
+    {
+      "args": [
+        "layer",
+        "remove",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "703acf0d-90da-4f2c-aca7-de7c7a9df7aa"
+      ],
+      "elapsedMs": 140.39441700000316,
+      "cliPeakRssBytes": 111132672,
+      "peakSampledRssBytes": 1707589632,
+      "lastIdleRssBytes": 1275297792
+    },
+    {
+      "args": [
+        "export",
+        "01a076c9-6106-7550-bf4f-8735c0d8b69e",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/JPG-3-removed",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 5014.582832999993,
+      "cliPeakRssBytes": 111099904,
+      "peakSampledRssBytes": 2416689152,
+      "lastIdleRssBytes": 1046691840
+    },
+    {
+      "args": [
+        "import",
+        "/private/tmp/photoctl-validation-task-memory/fixtures/camera/DSC08142.ARW",
+        "--link",
+        "--companions",
+        "raw"
+      ],
+      "elapsedMs": 154.882042000012,
+      "cliPeakRssBytes": 110837760,
+      "peakSampledRssBytes": 1056997376,
+      "lastIdleRssBytes": 1056997376
+    },
+    {
+      "args": [
+        "develop",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--set",
+        "exposure=0.125"
+      ],
+      "elapsedMs": 150.2180830000143,
+      "cliPeakRssBytes": 110804992,
+      "peakSampledRssBytes": 1056997376,
+      "lastIdleRssBytes": 505315328
+    },
+    {
+      "args": [
+        "export",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/ARW-1-baseline",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 6810.044750000001,
+      "cliPeakRssBytes": 111230976,
+      "peakSampledRssBytes": 2342649856,
+      "lastIdleRssBytes": 1440530432
+    },
+    {
+      "args": [
+        "fill",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--outpaint",
+        "--px",
+        "128",
+        "--prompt",
+        "continue the scene",
+        "--model",
+        "photoctl/fake-image-edit-v1",
+        "--no-upscale"
+      ],
+      "elapsedMs": 4893.593792,
+      "cliPeakRssBytes": 110657536,
+      "peakSampledRssBytes": 2383921152,
+      "lastIdleRssBytes": 2383921152
+    },
+    {
+      "args": [
+        "export",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/ARW-1-expanded",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 17204.750833999977,
+      "cliPeakRssBytes": 110706688,
+      "peakSampledRssBytes": 3139272704,
+      "lastIdleRssBytes": 2182807552
+    },
+    {
+      "args": [
+        "layer",
+        "remove",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "dc9430df-2834-4f34-854c-e57849a85b38"
+      ],
+      "elapsedMs": 153.00258299999405,
+      "cliPeakRssBytes": 110837760,
+      "peakSampledRssBytes": 2182807552,
+      "lastIdleRssBytes": 1301676032
+    },
+    {
+      "args": [
+        "export",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/ARW-1-removed",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 5465.925875000015,
+      "cliPeakRssBytes": 110772224,
+      "peakSampledRssBytes": 2541830144,
+      "lastIdleRssBytes": 1643954176
+    },
+    {
+      "args": [
+        "develop",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--set",
+        "exposure=0.25"
+      ],
+      "elapsedMs": 134.08279200000106,
+      "cliPeakRssBytes": 110379008,
+      "peakSampledRssBytes": 1643970560,
+      "lastIdleRssBytes": 1643970560
+    },
+    {
+      "args": [
+        "export",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/ARW-2-baseline",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 6313.043000000005,
+      "cliPeakRssBytes": 111017984,
+      "peakSampledRssBytes": 2534916096,
+      "lastIdleRssBytes": 2519941120
+    },
+    {
+      "args": [
+        "fill",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--outpaint",
+        "--px",
+        "128",
+        "--prompt",
+        "continue the scene",
+        "--model",
+        "photoctl/fake-image-edit-v1",
+        "--no-upscale"
+      ],
+      "elapsedMs": 4877.015333000018,
+      "cliPeakRssBytes": 111099904,
+      "peakSampledRssBytes": 3033481216,
+      "lastIdleRssBytes": 3033481216
+    },
+    {
+      "args": [
+        "export",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/ARW-2-expanded",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 17180.828291000013,
+      "cliPeakRssBytes": 111345664,
+      "peakSampledRssBytes": 4895408128,
+      "lastIdleRssBytes": 4875927552
+    },
+    {
+      "args": [
+        "layer",
+        "remove",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "8b9c81a8-f7a4-47ac-89db-5656251a1659"
+      ],
+      "elapsedMs": 191.6991660000058,
+      "cliPeakRssBytes": 110624768,
+      "peakSampledRssBytes": 4875993088,
+      "lastIdleRssBytes": 4875993088
+    },
+    {
+      "args": [
+        "export",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/ARW-2-removed",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 5763.314707999991,
+      "cliPeakRssBytes": 110624768,
+      "peakSampledRssBytes": 4876009472,
+      "lastIdleRssBytes": 3519627264
+    },
+    {
+      "args": [
+        "develop",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--set",
+        "exposure=0.375"
+      ],
+      "elapsedMs": 153.1056249999965,
+      "cliPeakRssBytes": 110657536,
+      "peakSampledRssBytes": 3519365120,
+      "lastIdleRssBytes": 3516956672
+    },
+    {
+      "args": [
+        "export",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/ARW-3-baseline",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 6405.327417000022,
+      "cliPeakRssBytes": 111116288,
+      "peakSampledRssBytes": 3832430592,
+      "lastIdleRssBytes": 3832430592
+    },
+    {
+      "args": [
+        "fill",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--outpaint",
+        "--px",
+        "128",
+        "--prompt",
+        "continue the scene",
+        "--model",
+        "photoctl/fake-image-edit-v1",
+        "--no-upscale"
+      ],
+      "elapsedMs": 4938.363582999969,
+      "cliPeakRssBytes": 110542848,
+      "peakSampledRssBytes": 3877044224,
+      "lastIdleRssBytes": 3852320768
+    },
+    {
+      "args": [
+        "export",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/ARW-3-expanded",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 17306.51120800001,
+      "cliPeakRssBytes": 110411776,
+      "peakSampledRssBytes": 4914069504,
+      "lastIdleRssBytes": 4908335104
+    },
+    {
+      "args": [
+        "layer",
+        "remove",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "05751ab4-0305-404a-a18d-ba08575a31a2"
+      ],
+      "elapsedMs": 195.25933400000213,
+      "cliPeakRssBytes": 110493696,
+      "peakSampledRssBytes": 4908482560,
+      "lastIdleRssBytes": 4908482560
+    },
+    {
+      "args": [
+        "export",
+        "01a076cb-b10a-72c5-ad98-7ad6a072d0c0",
+        "--to",
+        "/private/tmp/photoctl-daemon-corrected-runner.3ZIJOC/result/ARW-3-removed",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 5794.203792000015,
+      "cliPeakRssBytes": 110526464,
+      "peakSampledRssBytes": 4908515328,
+      "lastIdleRssBytes": 1435451392
+    }
+  ]
+}

@@ -18,6 +18,15 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
 
+**Memory policy — explicit user direction, 2026-09-06:** 5 GB is an arbitrary investigation
+canary, not a hard release limit or an optimization target. A crossing alone must not block
+delivery or trigger extended accounting/profiling work. The implementer may raise it when
+normal workloads justify that, without asking again. Prioritize correctness and the camera
+workflow; investigate concrete growth, crashes, memory pressure or poor responsiveness.
+Do not spend time or tokens on speculative memory overengineering. Preserve historical
+measurements; changing the canary does not rewrite their results. SAM's separate encoder
+latency requirement is unchanged.
+
 **First priority: resolve the failing CI gate.** The [failure triage](assets/ci-triage.md)
 separates reproduced contract defects, stale fixtures and unresolved timing failures.
 Portable fixture wiring, stale assertions and offline export hints have focused fixes;
@@ -51,9 +60,10 @@ the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next n
 - [Outpaint](slices/12-outpaint.md): framed masks, original-relative retouch and reversible
   native-density layers are integrated. Fresh cold fallback now proves reduced source quality
   and reconnect promotion without paid replay through built and prebuilt-runtime installed CLI.
-  Single-process full-resolution measurements pass the RSS canary, but the
-  [persistent-daemon attempt](assets/outpaint-resources/daemon.md) crosses 5 GB after
-  its first expanded JPEG export. Diagnose ownership/retention before repeating cycles. The
+  The historical daemon attempt crossed 5 GB. A native validation-accounting correction
+  now has a [six-cycle JPEG/RAW witness](assets/outpaint-resources/daemon-corrected.md)
+  at 4.979 GB peak sampled RSS, with exact delivered interiors and restoration. The narrow
+  headroom and sampling limits are not a universal retention guarantee. The
   [sampling correction](assets/outpaint-resources/README.md#isolated-optimized-runtime-verification)
   reduces measured cold-export time with byte-identical deliveries. Fresh-native installed
   warm/cold synthetic journeys pass; photographic and final RAW-policy release acceptance
@@ -86,7 +96,7 @@ a substitute for final integrated verification.
 | Expanded retouch and cold outpaint | [Lifecycle](assets/outpaint-lifecycle/README.md): generated/empty corners, edge-intersecting circles, exact retry/undo, cold reduced-source/reconnect and warm retained-output witnesses. Full-resolution/fresh release gates separate. |
 | Full-frame lifecycle | [Placement](assets/full-frame-geometry/README.md) and [refresh](assets/full-frame-refresh/README.md): synthetic support, retained-only reconstruction, reconnect and installed lifecycle accepted within their recorded boundaries. |
 | RAW delivery | [Camera review](assets/camera-delivery-review/README.md): reduced-RGB and conspicuous highlight-color corrections accepted within scope; all-reference breadth verified, residual fine-detail fidelity unresolved. |
-| Runtime resources | [Measurements](assets/sam-runtime/README.md): approved **5 GB decimal peak RSS**, encoder **≤4 s**. Preserve historical failures; raising memory does not waive retention, latency or forward progress. |
+| Runtime resources | [Measurements](assets/sam-runtime/README.md): **5 GB decimal RSS canary**, adjustable under the user policy above; not a release ceiling. SAM encoder **≤4 s** remains separate. |
 
 **Remaining quality and external gates:**
 

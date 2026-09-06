@@ -6,11 +6,13 @@
   `models/` pinned. `photoctl-image::sam2` via `ort` CPU EP (D40); encoder once per `(id, tier)` cached in the daemon; decoder per
   prompt. Input = develop render (offline: 1616 tier) letterboxed to 1024 (mapping in `coordinates.ts`); 256² logits → bilinear
   upsample → threshold 0 → base-res mask. Docker: weights fetched in the Dockerfile with hash check (missing → loud failure).
-  G6: encode ≤ 4 s on M5 CPU, peak process RSS ≤ 5 GB (decimal). `doctor --fetch-models`.
-  The memory budget is a regression alarm, not a product allocation cap. David approved
-  this budget on 2026-09-06; earlier evidence retains its original 3 GB threshold.
+  G6: encode ≤ 4 s on M5 CPU; observe peak process RSS against a 5 GB decimal canary.
+  `doctor --fetch-models`. The [user's memory policy](../README.md#next-agent-prompt)
+  makes this an adjustable investigation signal, not a hard release limit or optimization target.
+  Earlier evidence retains its original threshold.
   Repeated-request and cache-eviction checks remain required: a passing peak alone does
-  not prove bounded retention. Investigate breaches rather than automatically raising the budget.
+  not prove bounded retention. A crossing alone does not require further optimization;
+  raise the canary when justified by normal workloads, and investigate concrete operational problems.
 - **11b** `segment <id> --at x,y… [--dry-run]` (SAM point prompts; may combine with `--box`); `--text "…"` → `StructuredModelAdapter`
   Zod `{instances:[{box_2d:[ymin,xmin,ymax,xmax],label}]}` (0–1000, converted in the adapter) → SAM box prompt per instance, one layer each.
 - `fixtures/a7c2.json` gains `sam_probes:[{at:[x,y], min_area_pct, max_area_pct}]` derived from frame content, not model output.

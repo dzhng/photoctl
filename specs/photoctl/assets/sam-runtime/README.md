@@ -13,9 +13,11 @@ spec limits; missing models, invalid tensors, or inconsistent masks also fail lo
 ## Controlled comparison, 2026-09-06
 
 Historical measurements below retain the limits used when they ran. The current
-[G6 contract](../../slices/11-segment.md) uses a user-approved 5 GB peak-RSS budget;
-changing that policy does not relabel historical failures or complete interrupted runs.
-Repeated-request/cache checks and investigation of memory growth remain required.
+[G6 contract](../../slices/11-segment.md) uses an adjustable 5 GB peak-RSS investigation canary,
+not a hard release ceiling; the [user policy](../../README.md#next-agent-prompt) governs further work.
+Changing that policy does not relabel historical failures or complete interrupted runs.
+Repeated-request/cache correctness still matters; a canary crossing alone is not a reason
+for extended optimization or speculative accounting work.
 
 [Merged correctness checks](merged-projection-checks.json) cover native loading and
 segmentation after acquisition/composite/projection integration, not G6 resource acceptance.

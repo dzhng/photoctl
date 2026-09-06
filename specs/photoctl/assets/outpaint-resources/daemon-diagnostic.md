@@ -126,3 +126,16 @@ Corrected addon SHA-256 is `95d804f431a544226789ca69b3c20f9e5e1f5f851912d7ff2686
 native source SHA-256 is `1e4eeeab45133347411f72c3527fd5b74c4452df4d26fe963b042203de77d2e2`.
 This closes the exercised accounting defect, not the historical 5 GB failure. The unchanged
 full-resolution daemon workload must still establish its own resource and pixel results.
+
+### Remaining accounting audit
+
+Source inspection also finds uncharged invocation snapshots in display-to-linear conversion
+and native develop/delta artifact work. These are production paths: `source-render.ts` admits
+display pixels, and the graph evaluator sends canonical TIFF bytes through `develop/pixels.ts`.
+For 7008×4672, the display input alone is 196,448,256 bytes; a float RGB TIFF snapshot is
+392,896,512 pixel bytes plus its header/profile. These are bounded per-frame allocations,
+not demonstrated history growth or an attribution of the canary crossing.
+
+Further accounting work is deferred under the [explicit user memory policy](../../README.md#next-agent-prompt).
+These observations are not release blockers or a mandate to optimize. Revisit only when a
+concrete operational problem warrants it; preserve caller-snapshot correctness if doing so.
