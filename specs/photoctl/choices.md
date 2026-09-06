@@ -5886,3 +5886,116 @@
   third-party distribution obligations.
 - **Verdict:** **Sound.** Keep attribution and derivative-source access with distribution.
 - **Confidence:** High.
+
+### RAW treatment — Carry decoder revision separately from recovery method
+
+- **When:** Reconstruction pass B, 2026-09-06.
+- **The choice:** A photographer has a cached candle preview, then updates macOS.
+  CIRAW may keep the same highlight-recovery method name while selecting a different
+  decoder revision. The treatment record travelling with pixels therefore includes
+  the decoder's identity and version as well as the requested correction, actual
+  outcome, recovery method and decode scale. The adapter that produced the pixels
+  supplies the actual values; source execution columns derive from that record.
+  Keeping only the method name would let a preview made by the earlier decoder
+  satisfy a request planned for the newer decoder, even when their pixels differ.
+- **The gap:** The plan required complete effective identity but did not prescribe
+  how decoder revision would accompany treatment through descendants and previews.
+- **The reach:** Deterministic operations retain distinct execution identities when
+  treatment differs, even if their pixel bytes happen to match. Decoder version is
+  not embedded in the recovery method name, so the two can evolve independently.
+- **Verdict:** **Sound.** One actual decoder record supplies transport and reuse identity.
+- **Confidence:** Medium.
+
+### RAW treatment — Composite provenance describes the primary photographic source
+
+- **When:** Reconstruction pass B, 2026-09-06.
+- **The choice:** A reconstructed RAW photograph receives a generated replacement
+  patch. The combined output carries the treatment of its primary photographic
+  input, following the same first-input ownership used for source dimensions and
+  coordinates. This does not claim the generated patch passed through RAW recovery.
+  The patch and other inputs still have independently inspectable executions. An
+  alternative would copy every ancestor's treatment into each combined output,
+  duplicating the saved graph and requiring every consumer to interpret that list.
+- **The gap:** The plan required treatment to survive rendering but did not define
+  what one treatment field means for an operation with several image inputs.
+- **The reach:** Preview and retained-output metadata describe the base photograph,
+  not every pixel's processing ancestry. Future operations without a distinguished
+  primary source must establish their semantics instead of treating this field as
+  a complete history of all inputs.
+- **Verdict:** **Sound.** Preserve the existing base-source owner rather than duplicate ancestry.
+- **Confidence:** Medium.
+
+### RAW treatment — Require native treatment for online previews without demoting offline pixels
+
+- **When:** Reconstruction pass B, 2026-09-06.
+- **The choice:** A full RAW preview remains cached after the camera is unplugged.
+  The available source is now a smaller pinned JPEG. Requiring that JPEG's treatment
+  would discard the richer cached image, so fallback and cheap-overview requests may
+  reuse it and return its recorded RAW treatment. Once a preferred native decoder
+  is available, a warm preview must match that decoder's planned treatment as well
+  as the existing geometry and sampling requirements. In decision terms:
+  `preferred native source → require matching treatment; fallback/overview → retain
+  eligible pixels with their actual treatment`. Preferred file-image candidates also
+  keep their existing reuse policy rather than gaining a general decoder-upgrade gate.
+- **The gap:** The plan required pre-cache treatment planning and truthful offline
+  reuse but did not specify which source candidates constrain a warm preview.
+- **The reach:** Returning a source cannot silently reuse the wrong native treatment,
+  while losing a source does not automatically reduce quality. This is not a general
+  promise to invalidate every JPEG preview after a file-decoder library upgrade.
+- **Verdict:** **Sound.** Apply the RAW admission rule without replacing established fallback quality rules.
+- **Confidence:** Medium.
+
+### RAW treatment — Preserve the adapter-name fallback for unavailable version metadata
+
+- **When:** Reconstruction pass B, 2026-09-06.
+- **The choice:** A source probe can omit a decoder version. Planning retains the
+  existing source-provenance convention: use the decoder name as the identity value
+  when the version is unavailable. LibRaw's actual record uses the same convention;
+  CIRAW's actual wire result requires a version. Thus a versionless CIRAW plan does
+  not silently become a known-version result: their disagreement prevents publication.
+  The alternative was to reject every versionless native probe immediately or add a
+  separate unknown-version state to the transported record.
+- **The gap:** Adding decoder revision to transported treatment exposed the existing
+  optional probe-version contract; the plan did not redefine that contract.
+- **The reach:** Consumers must not interpret an adapter-name fallback as a verified
+  codec release. It cannot distinguish two hypothetical successful LibRaw runtimes
+  that both omit version metadata. Supported current runtimes supply their actual
+  version; admitting versionless implementations in future would reopen this choice.
+- **Verdict:** **Sound within the current decoder contract.** Preserve existing admission
+  without claiming the fallback identifies an unknown implementation revision.
+- **Confidence:** Medium; successful versionless LibRaw behavior is not established.
+
+### RAW diagnostics — Keep each oracle run immutable and publish a latest-report pointer
+
+- **When:** Reconstruction pass B, 2026-09-06.
+- **The choice:** A user compares normal decoding, then repeats the oracle with recovery
+  disabled in the same working directory. Each run receives its own directory containing
+  decoder TIFFs and measured JSON. The stable report entry is updated to the latest run,
+  but the earlier directory remains intact. Reusing fixed TIFF names would collide with
+  diagnostic no-clobber publication; deleting the first run to make room would destroy
+  the very comparison evidence the user may want to inspect.
+- **The gap:** The oracle had stable output names, while the diagnostic publication
+  contract forbids replacing existing files. The plan did not choose a repeated-run
+  storage and navigation scheme.
+- **The reach:** Repeating an oracle preserves prior evidence and needs no overwrite
+  escape hatch. The latest report is a navigation pointer, not the historical record;
+  run directories accumulate until their owner chooses to remove them.
+- **Verdict:** **Sound.** Separate immutable evidence from convenient latest navigation.
+- **Confidence:** High.
+
+### RAW diagnostics — Adopt recovery explicitly above the low-level decoder default
+
+- **When:** Reconstruction pass B, 2026-09-06.
+- **The choice:** Ordinary rendering and the public decode command explicitly request
+  recovery. A developer using the lower-level image decoder without an option still
+  receives its disabled behavior, including the existing camera-space path. This keeps
+  a raw numeric inspection from silently becoming a scene-linear recovery request.
+  Changing every omitted option to recovery would instead change those callers as
+  a side effect of adopting the photographer-facing default.
+- **The gap:** The plan selected normal product recovery but did not require changing
+  the meaning of an omitted option at every lower-level decoder entry point.
+- **The reach:** Product source planners must pass the fixed request explicitly.
+  Low-level decoder use remains suitable for disabled numeric diagnosis, while an
+  explicit public disabled request continues to exercise the same underlying route.
+- **Verdict:** **Sound.** Put product policy at its callers without changing the camera-space contract.
+- **Confidence:** High.
