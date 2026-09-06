@@ -18,7 +18,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: finish outpaint consumers and close the audited command omissions.**
+**Current pickup: integrate paired originals and native-density outpaint, then close the command omissions.**
 
 **User-added import requirement:** permanent real camera JPEG fixtures and public
 non-RAW pipeline coverage; default RAW/JPEG companions to one RAW-led logical photo,
@@ -43,8 +43,11 @@ does not waive retention or latency checks. Native acquisition and
 ownership corrections are committed in `f42530e`. The user explicitly authorized permanent camera reference
 originals in Git; acquisition and provenance live under `fixtures/camera/`.
 
-Run the independent command, canvas, and remaining target-evidence passes in parallel. Canvas sampling,
-offline-to-online cache promotion and source-only SAM geometry are integrated; next is 12f3 generation wiring.
+Run the paired-original, outpaint and white-balance passes in parallel. Pairing owns original identity,
+fresh-schema consumers and source-specific presentation. Outpaint owns generation and retained native
+pixel density with the layer's exterior mask as the single coverage owner; its development branch is
+not yet integrated. White-balance eyedropper owns the remaining sampled-neutral command (8g).
+Canvas sampling, offline-to-online cache promotion and source-only SAM geometry are integrated.
 Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
 Historical schema-v10–v12 and structured truncated-RAW fixture coverage are also integrated.
 Local horizon detection / `crop --auto` is integrated; the remaining develop command work is the
@@ -390,8 +393,10 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
   it does not claim to recover artifact files already lost outside PGlite.
 - **Determinism:** no float atomics, fixed rayon chunking; the same dict + decoder produces a byte-identical scene-linear
   canonical artifact, and deterministic display/delivery conversion is separately byte-identical.
-- **Migrations** are numbered at land time ("next number"); each schema slice adds `fixtures/libraries/schema-vN.pgsql`
-  and extends `migrate-upgrade.test.ts`. Columns exist only when a verb writes them.
+- **Development schema cutover:** the user requires a clean start for paired originals, not
+  a compatibility migration or backfill. Update fresh schema and disposable test catalogs together.
+  Historical SQL dumps remain historical evidence, not a requirement to support old development
+  catalogs. Never reset a real library automatically. Columns exist only when a verb writes them.
 
 ## Testing rules (from `/write-tests`, D38)
 
