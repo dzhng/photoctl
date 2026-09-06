@@ -32,6 +32,10 @@ export report the same hash and visible edit state; `gold-exam-dry.test.ts` runs
 
 ## Implementation evidence
 
+Full-resolution default builds retain dev diagnostics while optimizing the native pixel owners;
+the [matched performance audit](../assets/full-source-performance.md) records why this belongs
+to the workspace build profile and verifies the existing public deadlines without reduced input.
+
 Implemented on the full-hash render-DAG foundation. Each item ensures and snapshots one immutable active output node, resolves the
 actual online or pinned source provenance, evaluates that node to a canonical artifact, and reads the artifact back through its
 hash-verifying RGB16 boundary before delivery encoding. Missing node operations fail explicitly, so an edited hash is never attached

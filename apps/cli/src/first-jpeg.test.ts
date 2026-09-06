@@ -152,7 +152,7 @@ test("show reports limited offline detail and promotes it when the full source r
     data: {
       preview_info: {
         actual: { w: 1000, h: 1000 },
-        source_tier: "online-jpeg-range",
+        source_tier: "online-file",
         source_dimensions: { w: 7008, h: 4672 },
         pixel_scale: 1,
         resolution_limited: false,
@@ -186,7 +186,7 @@ test("show reports limited offline detail and promotes it when the full source r
     data: {
       preview,
       preview_info: {
-        source_tier: "online-jpeg-range",
+        source_tier: "online-file",
         source_dimensions: { w: 7008, h: 4672 },
         resolution_limited: false,
         cache_source: "exact_view",

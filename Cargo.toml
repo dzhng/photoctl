@@ -1,3 +1,11 @@
 [workspace]
 members = ["crates/libraw-sys", "crates/photoctl-image"]
 resolver = "2"
+
+# Full-resolution pixel loops need optimization even in interactive/test builds.
+# Keep dev diagnostics and overflow checks; do not optimize unrelated dependencies.
+[profile.dev.package.photoctl-image]
+opt-level = 3
+
+[profile.dev.package.libraw-sys]
+opt-level = 3

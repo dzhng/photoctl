@@ -4923,3 +4923,21 @@
   matches the specified visible photographic output. Synthetic sign/inversion/range tests and
   public offline/markup/canvas tests establish the current boundary, not general photo aesthetics.
 - **Confidence:** Medium for display-contrast weighting; high for native worker placement.
+
+### Full-source performance — Optimize image work inside the normal development build
+
+- **When:** Full-resolution CLI gate correction, 2026-09-06.
+- **The choice:** Opening an uncached full-resolution RAW made the normal development build
+  spend most of its time in unoptimized native pixel loops. Optimize the Rust image package and
+  its LibRaw decoder package while retaining development assertions, integer-overflow checks,
+  debug information, and the ordinary packaging path. Switching every build to release would
+  also speed this up, but would remove normal development checks and optimize unrelated code.
+- **The gap:** The full-source contract and existing test deadlines were specified; the default
+  native compiler optimization policy was not.
+- **The reach:** All callers of these image packages benefit, rather than one CLI command getting
+  a reduced image or larger deadline. Optimized code can be less straightforward to step through
+  in a debugger even with symbols retained. No schema, dependency, API, or rendering rule changes.
+- **Verdict:** **Sound.** The workspace compiler profile owns this decision; matched complete
+  pixel hashes and unchanged public acceptance tests support it without a special-case runtime path.
+- **Confidence:** High. The [performance audit](assets/full-source-performance.md) records the
+  experiment and its machine-specific limits.

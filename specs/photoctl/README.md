@@ -73,6 +73,7 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | Existing-photo path lookup | 21 CLI/locator/show checks and typecheck; daemon client-relative, internal-copy and wrong-volume witnesses |
 | Source-only SAM canvas | 75 merged canvas/segment/revision/progress/frame checks, TS build/typecheck; all 20 captures directly reviewed |
 | Local auto-straighten | 20 crop/public/client checks, 16 develop/state/undo/canvas neighbors and 3 native groups; independent review and all 8 captures directly inspected |
+| Full-source default-build performance | All 13 merged first-JPEG checks pass unchanged deadlines; matched dev/release/optimized-dev pixel hashes are identical |
 | [Untouched overview](assets/gates/show-overview/evidence.json) | 37 preview/daemon/develop cases across integration and focused correction; fresh visual review |
 | Paid retention / atomic removal / upscale-develop consumers | 85 / 18 / 21 checks and typecheck; no extra provider work for exposure replacement |
 
@@ -107,11 +108,11 @@ alongside uncompressed; lossless-M/S, portrait orientation, the real-drive path,
 sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
 require their explicitly configured credentials and consent; an ambient key is not acceptance evidence.
 
-**Inherited gate correction:** three full-resolution `first-jpeg` checks exceed their 30-second
-budgets on both the crop candidate and matched untouched build; root reproduces the detail timeout.
-That test also still pins embedded-JPEG provenance despite the native-source preference. Diagnose
-and correct the full-source contract/default-build cost separately; do not loosen timeouts or call
-the whole gate green from the focused passes above.
+**Full-source gate correction:** the native image packages now use optimized development builds,
+retaining assertions and debug information. All 13 merged `first-jpeg` checks pass their original
+deadlines and full-resolution input; source provenance matches actual native whole-file decoding.
+The [matched performance audit](assets/full-source-performance.md) owns the evidence and debugger
+tradeoff. This focused correction is not the whole-spec release gate.
 
 **Carry-forward invariants:** one daemon library handle; one atomic document/revision owner; exact
 scene-linear canonical artifacts; lazy preview materialization from immutable graph roots.
