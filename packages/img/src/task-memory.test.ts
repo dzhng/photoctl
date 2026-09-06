@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, test } from "vitest";
-import { resamplePixels, transformPixels } from "./index.js";
+import { resamplePixels, transformPixels, validateLinearArtifactSamples } from "./index.js";
 
 function measureTaskMemory(mode: string, reject = false) {
   // Node 24's process.memoryUsage().external reports backing stores only. Its
@@ -15,12 +15,14 @@ function measureTaskMemory(mode: string, reject = false) {
       "-e",
       `
           import { writeSync } from "node:fs";
-          import { developCameraFront, linearRec2020ToDisplaySrgb, resamplePixels, transformPixels, projectSupportedRgbPixels, compositeMaskedPixels, liftMaskedPixels, overlayMaskedPixels } from ${JSON.stringify(new URL("../dist/index.js", import.meta.url).href)};
+          import { developCameraFront, linearRec2020ToDisplaySrgb, resamplePixels, transformPixels, projectSupportedRgbPixels, compositeMaskedPixels, liftMaskedPixels, overlayMaskedPixels, validateLinearArtifactSamples } from ${JSON.stringify(new URL("../dist/index.js", import.meta.url).href)};
           const mode = ${JSON.stringify(mode)};
           const masked = ["composite", "lift", "overlay"].includes(mode);
           const mask = masked ? new Float32Array(262144).fill(0.25) : undefined;
           const projectionMatrix = [0.5,0,0,0.5,0,0];
-          const convert = mode === "lift"
+          const convert = mode === "validation"
+            ? data => validateLinearArtifactSamples(new Uint8Array(data.buffer, data.byteOffset, data.byteLength), 0, data.byteLength)
+            : mode === "lift"
             ? data => liftMaskedPixels(data, mask, 512, 512)
             : mode === "overlay"
             ? data => overlayMaskedPixels(data, data, mask, 512, 512, 0.5)
@@ -45,6 +47,7 @@ function measureTaskMemory(mode: string, reject = false) {
           const warm = await convert(new Float32Array(masked || ["resample", "transform", "projection"].includes(mode) ? 3 * 262144 : 3).fill(0.25));
           if (${reject} && mode === "projection") projectionMatrix.fill(0);
           const input = new Float32Array(3 * 262144 + (${reject} && mode !== "projection" ? 256 : 0)).fill(0.25);
+          if (${reject} && mode === "validation") input[0] = NaN;
           const checkpoint = name => {
             writeSync(1, "PHASE " + name + "\\n");
             global.gc(); global.gc();
@@ -64,7 +67,7 @@ function measureTaskMemory(mode: string, reject = false) {
             output = await pending;
           }
           checkpoint("settled");
-          writeSync(1, "RESULT " + JSON.stringify({ bytes: input.byteLength, outputBytes: output?.byteLength, sample: output?.[0], warm: warm[0], errors, errorCodes }) + "\\n");
+          writeSync(1, "RESULT " + JSON.stringify({ bytes: input.byteLength, outputBytes: output?.byteLength, sample: output?.[0], warm: warm?.[0], errors, errorCodes }) + "\\n");
         `,
     ],
     { encoding: "utf8", timeout: 10_000 },
@@ -87,6 +90,40 @@ function measureTaskMemory(mode: string, reject = false) {
 test.each(["camera", "display"])("%s pending color work reports its native snapshot", (mode) => {
   const result = measureTaskMemory(mode);
   expect(result.queued - result.before).toBe(result.bytes / 1024);
+});
+
+test("pending artifact validation reports its native byte snapshot", () => {
+  const result = measureTaskMemory("validation");
+  expect(result.queued - result.before).toBe(result.bytes / 1024);
+});
+
+test("successful artifact validation releases its snapshot without creating an output buffer", () => {
+  const result = measureTaskMemory("validation");
+  expect(result.outputBytes).toBeUndefined();
+  expect(result.settled).toBe(result.before);
+});
+
+test("rejected artifact validation releases every snapshot charge", () => {
+  const result = measureTaskMemory("validation", true);
+  expect(result.errorCodes).toEqual(Array(4).fill("InvalidArg"));
+  expect(result.errors).toEqual(Array(4).fill("linear artifact contains a non-finite sample"));
+  expect(result.outputBytes).toBeUndefined();
+  expect(result.settled).toBe(result.before);
+});
+
+test("artifact validation leaves input unchanged and rejects corrupt samples after a header", async () => {
+  const bytes = Buffer.alloc(16, 0xff);
+  for (let offset = 4; offset < 16; offset += 4) bytes.writeFloatLE(0.25, offset);
+  const original = Buffer.from(bytes);
+  await expect(validateLinearArtifactSamples(bytes, 4, 12)).resolves.toBeUndefined();
+  expect(bytes).toEqual(original);
+  bytes.writeFloatLE(NaN, 4);
+  await expect(validateLinearArtifactSamples(bytes, 4, 12)).rejects.toThrow(
+    "linear artifact contains a non-finite sample",
+  );
+  original.copy(bytes);
+  await expect(validateLinearArtifactSamples(bytes, 4, 12)).resolves.toBeUndefined();
+  expect(bytes).toEqual(original);
 });
 
 test.each(["camera", "display"])(

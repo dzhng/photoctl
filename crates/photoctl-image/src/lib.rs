@@ -612,15 +612,19 @@ fn curve_points(points: Vec<Vec<f64>>) -> Vec<Vec<f32>> {
 
 #[napi]
 pub fn validate_linear_artifact_samples(
+    env: Env,
     data: Uint8Array,
     pixel_offset: u32,
     pixel_bytes: u32,
-) -> AsyncTask<ValidateLinearArtifactTask> {
-    AsyncTask::new(ValidateLinearArtifactTask {
-        data: data.to_vec(),
+) -> napi::Result<AsyncTask<ValidateLinearArtifactTask>> {
+    let data = data.to_vec();
+    let memory = TaskMemory::for_vec(env, &data)?;
+    Ok(AsyncTask::new(ValidateLinearArtifactTask {
+        data,
+        memory,
         pixel_offset: pixel_offset as usize,
         pixel_bytes: pixel_bytes as usize,
-    })
+    }))
 }
 
 pub struct CameraFrontTask {
@@ -754,6 +758,7 @@ pub fn heal_pixels(
 
 pub struct ValidateLinearArtifactTask {
     data: Vec<u8>,
+    memory: TaskMemory,
     pixel_offset: usize,
     pixel_bytes: usize,
 }
@@ -893,6 +898,12 @@ impl Task for ValidateLinearArtifactTask {
     }
 
     fn resolve(&mut self, _env: napi::Env, _data: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(())
+    }
+
+    fn finally(self, _env: Env) -> napi::Result<()> {
+        drop(self.data);
+        drop(self.memory);
         Ok(())
     }
 }
