@@ -516,7 +516,14 @@ async function runOperation(
     if (kind === "heal") {
       if (inputs.length !== 2) throw new Error("Heal evaluation requires RGB and mask inputs");
       const image = await readRgbInput(inputs[0]!);
-      const mask = await readMaskInput(inputs[1]!, image);
+      const imageFrame = await loadBaseProjection(request.database, request.photoId, inputs[0]!);
+      const maskInput = await readFramedMaskInput(request, inputs[1]!);
+      const mask = await projectCoverageBetweenFrames(
+        maskInput.mask,
+        maskInput.frame,
+        imageFrame,
+        image,
+      );
       const parsed = imageNodeRegistry.heal.parameters.parse(parameters);
       return {
         image: linearImage(
@@ -736,21 +743,27 @@ async function evaluateCompositeV2(
     );
     const maskInput = inputs[2 + index * 2]!;
     const coverage = await supportCoverage(request, maskInput);
+    const framedMask = await readFramedMaskInput(request, maskInput, coverage);
     const projectedMask = coverage
       ? await projectCoverageBetweenFrames(
-          await projectMaskToRender(coverage, contentProjection, contentInput.artifact),
+          await projectCoverageBetweenFrames(
+            framedMask.mask,
+            framedMask.frame,
+            contentProjection,
+            contentInput.artifact,
+          ),
           contentProjection,
           projection,
           base,
         )
-      : await projectMaskToRender(
-          await readMaskInput(maskInput, projection.catalog),
-          projection,
-          base,
-        );
+      : await projectCoverageBetweenFrames(framedMask.mask, framedMask.frame, projection, base);
+    const supported = await clipCoverageToFrames(projectedMask, projection, [
+      framedMask.frame,
+      contentProjection,
+    ]);
     const mask = coverage
-      ? await applyEffectiveMask(projectedMask, { operation: "support" })
-      : projectedMask;
+      ? await applyEffectiveMask(supported, { operation: "support" })
+      : supported;
     pixels = await compositeMaskedPixels(
       pixels,
       content.data,
@@ -785,19 +798,14 @@ async function evaluateCanvasComposite(
   ) => {
     const layer = plan.layers[index]!;
     const maskInput = inputs[2 + index * 2]!;
-    let frame = layer.frame
-      ? await loadBaseProjection(request.database, request.photoId, maskInput)
-      : layerFrames[index]!;
-    const stages = [...layer.stages, ...plan.viewport_stages];
-    const supportFrames = [frame, ...stages.map(parseRenderFrame)];
     const coverage = await supportCoverage(request, maskInput);
+    const framedMask = await readFramedMaskInput(request, maskInput, coverage);
+    let frame = layer.frame ? framedMask.frame : layerFrames[index]!;
+    const stages = [...layer.stages, ...plan.viewport_stages];
+    const supportFrames = [framedMask.frame, layerFrames[index]!, ...stages.map(parseRenderFrame)];
     let mask = layer.frame
-      ? await readMaskInput(maskInput, frame.raster)
-      : await projectMaskToRender(
-          coverage ?? (await readMaskInput(maskInput, frame.catalog)),
-          frame,
-          frame.raster,
-        );
+      ? framedMask.mask
+      : await projectCoverageBetweenFrames(framedMask.mask, framedMask.frame, frame, frame.raster);
     for (const saved of [...stages, plan.frame]) {
       const target = realizeFrame(saved);
       mask = await projectCoverageBetweenFrames(mask, frame, target, target.raster);
@@ -909,6 +917,15 @@ async function readRgbInput(
     throw new Error("Composite RGB artifact dimensions do not match");
   }
   return image;
+}
+
+async function readFramedMaskInput(
+  request: EvaluateGraphNodeRequest,
+  input: EvaluatedNode,
+  coverage?: MaskImage,
+) {
+  const frame = await loadBaseProjection(request.database, request.photoId, input);
+  return { frame, mask: coverage ?? (await readMaskInput(input, frame.raster)) };
 }
 
 async function readMaskInput(

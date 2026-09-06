@@ -3,6 +3,7 @@ import { commitRevision, type GraphDatabase, type NodeDraft } from "./graph/stor
 import type { RevisionLayerDraft } from "./layers/model.js";
 import type { JsonValue } from "./graph/types.js";
 import { loadLogicalFrame } from "./graph/projection.js";
+import { savedRenderFrame } from "./graph/frame.js";
 import { readActiveDevelopState } from "./develop/state.js";
 import { invertTransformMatrix, transformPoint, type TransformMatrix } from "./transforms.js";
 
@@ -76,7 +77,7 @@ export async function createRetouchLayer(
     };
   }
 
-  const frame = await loadLogicalFrame(database, request.photoId, state.baseNodeId);
+  const frame = await loadLogicalFrame(database, request.photoId, state.pixelOutputNodeId);
   const mask = circularMask(request.dimensions, request.at, request.radius, {
     ...frame.raster,
     matrix: frame.baseToRaster,
@@ -91,6 +92,13 @@ export async function createRetouchLayer(
       inputs: [],
     },
     {
+      localKey: "mask-placement",
+      kind: "transform",
+      recipeVersion: 2,
+      parameters: { matrix: [1, 0, 0, 1, 0, 0], frame: savedRenderFrame(frame) },
+      inputs: [{ localKey: "mask" }],
+    },
+    {
       localKey: "heal",
       kind: "heal",
       recipeVersion: 1,
@@ -102,7 +110,7 @@ export async function createRetouchLayer(
         refinement_iterations: REFINEMENT_ITERATIONS,
         refinement_pixel_budget: REFINEMENT_PIXEL_BUDGET,
       },
-      inputs: [{ nodeId: state.pixelOutputNodeId }, { localKey: "mask" }],
+      inputs: [{ nodeId: state.pixelOutputNodeId }, { localKey: "mask-placement" }],
     },
   ];
   const layers: RevisionLayerDraft[] = [
@@ -121,7 +129,7 @@ export async function createRetouchLayer(
       name: `Retouch ${document.layers.length + 1}`,
       z: Math.max(-1, ...document.layers.map(({ z }) => z)) + 1,
       contentNode: { localKey: "heal" },
-      maskNode: { localKey: "mask" },
+      maskNode: { localKey: "mask-placement" },
       opacity: 1,
       blend: "normal",
       enabled: true,
