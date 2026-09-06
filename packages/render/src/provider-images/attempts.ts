@@ -24,6 +24,7 @@ export interface ProviderImageRequest {
   route?: "generations" | "edits";
   applied_controls?: PreparedImageEdit["appliedControls"];
   negative_prompt?: PreparedImageGeneration["negativePrompt"];
+  reference_strength?: PreparedImageGeneration["referenceStrength"];
   dimensions: { w: number; h: number };
   input_artifact_hashes: string[];
 }
@@ -50,6 +51,9 @@ export function imageAttemptRequestDetails(prepared: PreparedImageEdit | Prepare
     route: "route" in prepared ? prepared.route : ("edits" as const),
     ...("negativePrompt" in prepared && prepared.negativePrompt
       ? { negative_prompt: prepared.negativePrompt }
+      : {}),
+    ...("referenceStrength" in prepared && prepared.referenceStrength
+      ? { reference_strength: prepared.referenceStrength }
       : {}),
     applied_controls: {
       reference: prepared.appliedControls.reference,

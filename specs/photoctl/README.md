@@ -98,7 +98,8 @@ a substitute for final integrated verification.
   Classic sidecars and G3 SSH-capable Mac proof remain unconfirmed. Do not require reconnection
   merely to continue fixture development.
 - [Generation controls](slices/13-generative-extras-and-markup.md#original-command-controls-still-open):
-  negative guidance is implemented and honestly reported; reference-strength semantics remain open.
+  negative and reference-strength guidance are implemented and honestly reported; higher-strength
+  means more variation provisionally, pending the user's product choice.
   Live embedding, mask polarity and upscaler
   comparisons need purpose-specific configuration and consent; an ambient key is not authority.
 - [Artifact storage](assets/artifact-storage/README.md): representative paid-history storage
@@ -142,7 +143,7 @@ without deleting history.
 - [ ] 13a [x] initial reimagine/relight/generate · [x] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
 - [x] Show by existing-photo path — `slices/01-first-jpeg.md#existing-photo-path-lookup`
-- [ ] Original CLI reconciliation: reference-strength semantics. Negative guidance, reference-only generation and combined fill move/scale are implemented — `slices/13-generative-extras-and-markup.md#original-command-controls-still-open`
+- [x] Original CLI reconciliation: negative guidance, provisional reference-strength guidance, reference-only generation and combined fill move/scale — `slices/13-generative-extras-and-markup.md#original-command-controls-still-open`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 

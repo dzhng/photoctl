@@ -1,10 +1,17 @@
-import { PhotoctlError, type Warning, type NegativePromptGuidance } from "@photoctl/protocol";
+import {
+  PhotoctlError,
+  type Warning,
+  type NegativePromptGuidance,
+  type ReferenceStrengthGuidance,
+} from "@photoctl/protocol";
 import sharp from "sharp";
 import { z } from "zod";
 import {
   buildInstructionCompositePrompt,
   buildNegativeGuidancePrompt,
   NEGATIVE_GUIDANCE_PROMPT_VERSION,
+  buildReferenceStrengthPrompt,
+  REFERENCE_STRENGTH_PROMPT_VERSION,
 } from "../prompts/image.js";
 
 export type ImageMaskMode = "native" | "instruction+composite";
@@ -32,6 +39,7 @@ export interface PreparedImageEdit {
 
 export type PreparedImageGeneration = Omit<PreparedImageEdit, "body"> & {
   negativePrompt?: NegativePromptGuidance;
+  referenceStrength?: ReferenceStrengthGuidance;
 } & ({ route: "generations"; body: Record<string, unknown> } | { route: "edits"; body: FormData });
 
 export interface NormalizedImageResponse {
@@ -59,7 +67,7 @@ export interface ImageModelAdapter {
     prompt: string,
     dimensions: { w: number; h: number },
     seed?: number,
-    reference?: { png: Buffer },
+    reference?: { png: Buffer; strength?: number },
     negativePrompt?: string,
   ): PreparedImageGeneration;
   normalize(
@@ -180,15 +188,19 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     prompt: string,
     dimensions: { w: number; h: number },
     seed?: number,
-    reference?: { png: Buffer },
+    reference?: { png: Buffer; strength?: number },
     negativePrompt?: string,
   ): PreparedImageGeneration {
     const prepared = this.prepareControls(reference ? { reference } : {});
+    const strength = reference?.strength;
+    if (strength !== undefined && !prepared.reference)
+      throw new PhotoctlError("usage", `Reference strength is unsupported by ${this.model}`);
     if (negativePrompt !== undefined) prompt = buildNegativeGuidancePrompt(prompt, negativePrompt);
+    if (strength !== undefined) prompt = buildReferenceStrengthPrompt(prompt, strength);
     if (prepared.reference && this.mask === "instruction+composite")
       prompt = buildInstructionCompositePrompt("generate", prompt);
     // Multipart normalizes field line endings; retain the actual transmitted guidance text.
-    if (negativePrompt !== undefined && prepared.reference)
+    if ((negativePrompt !== undefined || strength !== undefined) && prepared.reference)
       prompt = prompt.replace(/\r\n|\r|\n/g, "\r\n");
     const fields = {
       model: this.model,
@@ -200,6 +212,16 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     const metadata = {
       warnings: prepared.warnings,
       appliedControls: prepared.appliedControls,
+      ...(strength === undefined
+        ? {}
+        : {
+            referenceStrength: {
+              requested: strength,
+              applied: "prompt-guidance" as const,
+              version: REFERENCE_STRENGTH_PROMPT_VERSION,
+              provider_prompt: prompt,
+            },
+          }),
       ...(negativePrompt === undefined
         ? {}
         : {

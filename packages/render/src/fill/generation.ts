@@ -121,6 +121,9 @@ export async function executeStandaloneGeneration(
             returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
             reference_used: prepared.appliedControls.reference,
             ...(prepared.negativePrompt ? { negative_prompt: prepared.negativePrompt } : {}),
+            ...(prepared.referenceStrength
+              ? { reference_strength: prepared.referenceStrength }
+              : {}),
             ...(input.seed === undefined ? {} : { seed: input.seed }),
           },
         };

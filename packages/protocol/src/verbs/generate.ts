@@ -9,6 +9,10 @@ export const negativePromptGuidanceSchema = z.object({
   provider_prompt: z.string().min(1),
 });
 export type NegativePromptGuidance = z.infer<typeof negativePromptGuidanceSchema>;
+export const referenceStrengthGuidanceSchema = negativePromptGuidanceSchema.extend({
+  requested: z.number().min(0).max(1),
+});
+export type ReferenceStrengthGuidance = z.infer<typeof referenceStrengthGuidanceSchema>;
 
 export const generateDataSchema = z.object({
   id: z.uuid(),
@@ -19,6 +23,7 @@ export const generateDataSchema = z.object({
   requested: z.object({ w: z.number().int().positive(), h: z.number().int().positive() }),
   reference: z.object({ used: z.boolean() }),
   negative_prompt: negativePromptGuidanceSchema.optional(),
+  reference_strength: referenceStrengthGuidanceSchema.optional(),
   artifact: z.object({
     hash: fullHashSchema("a"),
     media_type: z.literal("image/tiff"),

@@ -6122,3 +6122,25 @@
 - **Verdict:** **Sound.** Use one authoritative acknowledgement instead of discarding it and
   introducing a second opportunity to misreport startup.
 - **Confidence:** High.
+
+### Reference strength — More freedom to vary, not a promise of exact pixels
+
+- **When:** Generate reference-strength guidance pass, 2026-09-06.
+- **The choice:** A user supplies a vase photograph with `generate --ref ... --strength 0.25`.
+  The model receives an instruction asking for low freedom to vary that reference: zero asks for
+  closest preservation, while one allows greatest variation. This follows reimagine's numeric
+  direction, but does not borrow its pixel blending. A newly generated photograph has no editable
+  base to blend against, so even zero may differ from the reference. The public result and saved
+  history call this prompt guidance, retain the numeric request and exact transmitted instruction,
+  and do not claim native denoising or provider compliance. If the model cannot receive the
+  reference, explicit strength is refused before payment instead of buying a text-only image.
+- **The gap:** The original flag did not say whether a larger number meant more resemblance or
+  more change. The optional question is still pending; no user approval is claimed.
+- **The reach:** The interpretation is versioned in immutable intent. Existing requests without
+  strength retain their prompts and identities; a later direction change must use a new guidance
+  version rather than reinterpret previously purchased work. No local blending or capability
+  framework is introduced.
+- **Verdict:** **Needs-user; provisional and reversible.** Recommend higher means more variation
+  for consistency with reimagine. If the user chooses similarity strength instead, reverse the
+  wording for new requests under a new guidance version and retain old records unchanged.
+- **Confidence:** Medium.

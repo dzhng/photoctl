@@ -42,7 +42,7 @@ export async function generateCommand(
 ): Promise<Envelope> {
   const parsed = parseArguments(args, {
     flags: ["--upscale"],
-    options: ["--prompt", "--ref", "--size", "--seed", "--model", "--neg"],
+    options: ["--prompt", "--ref", "--size", "--seed", "--model", "--neg", "--strength"],
   });
   if (parsed.positionals.length !== 0)
     throw new PhotoctlError("usage", "generate does not accept positional arguments");
@@ -53,6 +53,13 @@ export async function generateCommand(
   if (!prompt) throw new PhotoctlError("usage", "generate requires --prompt or --ref");
   const negativePrompt = parsed.options.get("--neg")?.trim();
   if (negativePrompt === "") throw new PhotoctlError("usage", "--neg must not be empty");
+  const strengthValue = parsed.options.get("--strength");
+  const strength = strengthValue === undefined ? undefined : Number(strengthValue);
+  if (strength !== undefined) {
+    if (!strengthValue?.trim() || !Number.isFinite(strength) || strength < 0 || strength > 1)
+      throw new PhotoctlError("usage", "--strength must be between 0 and 1");
+    if (!parsed.options.has("--ref")) throw new PhotoctlError("usage", "--strength requires --ref");
+  }
   const dimensions = parseSize(parsed.options.get("--size") ?? "1024x1024");
   const seed = parseSeed(parsed.options.get("--seed"));
   const reference = await readImageReference(parsed.options.get("--ref"), cwd);
@@ -116,7 +123,7 @@ export async function generateCommand(
       prompt,
       dimensions,
       seed,
-      reference,
+      reference && strength !== undefined ? { ...reference, strength } : reference,
       negativePrompt,
     );
     if (referenceOnly && !preparedRequest.appliedControls.reference) {
@@ -173,6 +180,9 @@ export async function generateCommand(
         reference: { used: preparedRequest.appliedControls.reference },
         ...(preparedRequest.negativePrompt
           ? { negative_prompt: preparedRequest.negativePrompt }
+          : {}),
+        ...(preparedRequest.referenceStrength
+          ? { reference_strength: preparedRequest.referenceStrength }
           : {}),
         artifact: {
           hash: prepared.finalArtifact.artifactHash,
