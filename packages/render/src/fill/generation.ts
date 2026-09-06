@@ -120,6 +120,7 @@ export async function executeStandaloneGeneration(
             requested: [input.dimensions.w, input.dimensions.h],
             returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
             reference_used: prepared.appliedControls.reference,
+            ...(prepared.negativePrompt ? { negative_prompt: prepared.negativePrompt } : {}),
             ...(input.seed === undefined ? {} : { seed: input.seed }),
           },
         };

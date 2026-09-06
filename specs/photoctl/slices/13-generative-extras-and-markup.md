@@ -49,12 +49,18 @@ least one representative mutation. The next `show` remains the only required pre
 
 ## Original command controls still open
 
-The original input names `generate --neg` and reference `--strength`; neither was explicitly cut.
-Current generation accepts a pinned reference but rejects both controls. Define their intent and
-adapter behavior before implementation: retain requested versus applied controls and immutable
-request identity, inspect actual transmitted HTTP bodies, and report unsupported behavior honestly.
-Do not pretend prompt guidance is latent denoise, infer dynamic capabilities, or introduce local
-blending without a recorded product choice. The abbreviated reference-only `generate --ref` form
+`generate --neg` is versioned exclusion guidance appended to the provider prompt, not a native
+negative-conditioning parameter or a guarantee that the model obeys it. The optional public
+`negative_prompt` record retains requested text, applied mode, guidance version and actual provider
+prompt; the immutable generation request and attempt journal retain the same record. Missing
+`--neg` leaves the existing prompt, recipe version and request metadata unchanged. Empty guidance
+is refused before library/provider work. The existing gateway adapter applies guidance on both
+text and reference routes; real HTTP fixtures verify transmitted text and saved provenance.
+
+Reference `--strength` remains open and was not explicitly cut. Define its intent and adapter
+behavior before implementation; do not pretend guidance is latent denoise, infer dynamic
+capabilities, or introduce local blending without a recorded product choice.
+The abbreviated reference-only `generate --ref` form
 means a new variation of the supplied image, preserving its main subject and composition while
 allowing detail changes. A versioned default instruction is used only when `--prompt` is absent;
 an explicitly empty prompt is still invalid. The pinned reference and resolved instruction remain

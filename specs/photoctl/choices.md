@@ -6087,3 +6087,23 @@
 - **Verdict:** **Sound.** Preserve the missing explanation within existing CI instead of
   guessing at failures or adding production diagnostics machinery.
 - **Confidence:** High.
+
+### Generation exclusions — Report guidance rather than pretend native conditioning
+
+- **When:** Generate negative-guidance pass, 2026-09-06.
+- **The choice:** Asking for a vase with `--neg "text, logos"` appends a versioned instruction
+  asking the general image model to avoid those elements. The result explicitly calls this
+  prompt guidance and preserves the requested exclusions plus the actual provider prompt in
+  the generated image's immutable request and paid-attempt journal. It does not claim that the
+  provider accepted a special negative-conditioning parameter or that unwanted content cannot
+  appear. Without the flag, existing prompts and identities are unchanged. No local image blend
+  or reference-strength meaning is introduced.
+- **The gap:** The original spec named the flag but did not define a provider-independent
+  interpretation; the current adapters have no verified native negative-conditioning contract.
+- **The reach:** Future native controls must report a distinct application mode rather than
+  reinterpret already-recorded guidance. Multipart guidance records its normalized transmitted
+  line endings so inspection agrees with the HTTP request. Current gateway adapters all apply
+  this guidance; no speculative capability registry or unsupported-adapter branch is introduced.
+- **Verdict:** **Sound, provisional interpretation.** This provides useful general-model guidance
+  through the existing prompt owner while preserving uncertainty about model compliance.
+- **Confidence:** Medium; the user can revise the product meaning, but historical intent remains explicit.

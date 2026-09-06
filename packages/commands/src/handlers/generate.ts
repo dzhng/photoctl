@@ -42,7 +42,7 @@ export async function generateCommand(
 ): Promise<Envelope> {
   const parsed = parseArguments(args, {
     flags: ["--upscale"],
-    options: ["--prompt", "--ref", "--size", "--seed", "--model"],
+    options: ["--prompt", "--ref", "--size", "--seed", "--model", "--neg"],
   });
   if (parsed.positionals.length !== 0)
     throw new PhotoctlError("usage", "generate does not accept positional arguments");
@@ -51,6 +51,8 @@ export async function generateCommand(
     ? REFERENCE_VARIATION_PROMPT.text
     : parsed.options.get("--prompt")?.trim();
   if (!prompt) throw new PhotoctlError("usage", "generate requires --prompt or --ref");
+  const negativePrompt = parsed.options.get("--neg")?.trim();
+  if (negativePrompt === "") throw new PhotoctlError("usage", "--neg must not be empty");
   const dimensions = parseSize(parsed.options.get("--size") ?? "1024x1024");
   const seed = parseSeed(parsed.options.get("--seed"));
   const reference = await readImageReference(parsed.options.get("--ref"), cwd);
@@ -110,7 +112,13 @@ export async function generateCommand(
           : {}),
       };
     }
-    const preparedRequest = adapter.buildGeneration(prompt, dimensions, seed, reference);
+    const preparedRequest = adapter.buildGeneration(
+      prompt,
+      dimensions,
+      seed,
+      reference,
+      negativePrompt,
+    );
     if (referenceOnly && !preparedRequest.appliedControls.reference) {
       throw new PhotoctlError("usage", `Reference-only generation is unsupported by ${model}`);
     }
@@ -163,6 +171,9 @@ export async function generateCommand(
         tag: "generated",
         requested: dimensions,
         reference: { used: preparedRequest.appliedControls.reference },
+        ...(preparedRequest.negativePrompt
+          ? { negative_prompt: preparedRequest.negativePrompt }
+          : {}),
         artifact: {
           hash: prepared.finalArtifact.artifactHash,
           media_type: "image/tiff",

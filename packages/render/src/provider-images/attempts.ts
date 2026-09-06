@@ -23,6 +23,7 @@ export interface ProviderImageRequest {
   prompt_version?: number;
   route?: "generations" | "edits";
   applied_controls?: PreparedImageEdit["appliedControls"];
+  negative_prompt?: PreparedImageGeneration["negativePrompt"];
   dimensions: { w: number; h: number };
   input_artifact_hashes: string[];
 }
@@ -47,6 +48,9 @@ export function imageAttemptRequestDetails(prepared: PreparedImageEdit | Prepare
   return {
     provider_prompt: typeof prompt === "string" ? prompt : null,
     route: "route" in prepared ? prepared.route : ("edits" as const),
+    ...("negativePrompt" in prepared && prepared.negativePrompt
+      ? { negative_prompt: prepared.negativePrompt }
+      : {}),
     applied_controls: {
       reference: prepared.appliedControls.reference,
       init: prepared.appliedControls.init,

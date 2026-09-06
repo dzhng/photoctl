@@ -1,4 +1,9 @@
 export const IMAGE_INSTRUCTION_PROMPT_VERSION = 1;
+export const NEGATIVE_GUIDANCE_PROMPT_VERSION = 1;
+
+export function buildNegativeGuidancePrompt(prompt: string, negative: string): string {
+  return `${prompt}\n[photoctl:negative-guidance:v${NEGATIVE_GUIDANCE_PROMPT_VERSION}]\nAvoid these things: ${negative}`;
+}
 export const REFERENCE_VARIATION_PROMPT = {
   version: 1,
   text: "Create a new variation of the reference image. Preserve its main subject and composition while varying visual details.",

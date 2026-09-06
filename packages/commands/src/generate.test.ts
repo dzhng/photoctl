@@ -55,6 +55,7 @@ test("reference-only generation sends variation intent and retains its source wi
   expect(envelope, JSON.stringify(envelope)).toMatchObject({ ok: true });
   if (!envelope.ok || !("data" in envelope)) throw new Error("Expected generation");
   const result = generateDataSchema.parse(envelope.data);
+  expect(result).not.toHaveProperty("negative_prompt");
   expect(result.reference.used).toBe(true);
   expect(requests).toEqual([
     {
@@ -70,6 +71,7 @@ test("reference-only generation sends variation intent and retains its source wi
     nodeId: result.generation.node,
   });
   expect(node.parameters).toMatchObject({ prompt: requests[0]!.fields.prompt, prompt_version: 1 });
+  expect(node.parameters).not.toHaveProperty("request.negative_prompt");
   expect(node.inputNodeIds).toHaveLength(1);
   expect((await handle.query<{ id: string }>("SELECT id FROM photos")).rows).toEqual([
     { id: result.id },
