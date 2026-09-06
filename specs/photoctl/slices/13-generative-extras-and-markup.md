@@ -1,24 +1,23 @@
 # 13 — 13a reimagine/relight/generate · 13b auto_enhance · 13c markup · 13d retouch
 
 The integrated geometry/offline contract is owned by
-[full-frame authored coordinates](13-full-frame-geometry.md). Its verified creation
-and refresh passes supersede the provisional refusals below; whole-spec release
-and live photographic acceptance remain separate.
+[full-frame authored coordinates](13-full-frame-geometry.md). Whole-spec release
+and live photographic acceptance remain separate from its verified creation and refresh.
 
-- **13a** ✓ `reimagine <id> --prompt ... [--strength f]` runs Slice 12's shared DAG planner with `scope:"full-frame"`: current source/develop → generation →
-  optional density-matching generative upscale → exact resample to oriented base dimensions → `role:"reimagine"` layer root
+- **13a** ✓ `reimagine <id> --prompt ... [--strength f]` runs Slice 12's shared DAG planner with `scope:"full-frame"`: captured photographic input → generation →
+  optional density-matching generative upscale → authored-frame placement → `role:"reimagine"` layer root
   (never overwrite), `drift:"full-frame"`; C3 template. Strength defaults to `1`, is bounded to `0..1`, becomes both versioned
   provider guidance and a constant full-frame composite coverage, and therefore has a defined pixel effect. Removing the layer
   redirects the active revision to its prior root and pixels exactly. The keyless fixture proves lazy materialization, one generation
   plus optional configured upscale, target dimensions, provider provenance, no native mask, and no provider rerun during show/remove.
-  A developed exposure remains valid input. Crop/rotate output is refused before provider work because v1 cannot yet composite a
-  base-sized reimagine layer into a changed current frame without mixing coordinate spaces. The same dimension-retaining-source
-  requirement excludes a smaller pinned fallback: composite-v2 requires every layer and mask to match the exact document base
-  raster, so silently accepting it would commit a layer that fails when shown.
+  Cropped, rotated, straightened and reduced offline inputs retain their authored
+  frames through the shared placement owner. The linked full-frame plan owns
+  input selection, density, placement and explicit refresh; catalog dimensions
+  must not be substituted for a realized input frame.
   ✓ `relight <id> --azimuth 0..360 --elevation -90..90 --intensity 0..1` applies the versioned C3
   soft-key-light template through that same full-frame owner. Intensity controls both the provider guidance and whole-frame blend,
   so zero preserves current pixels and one applies the generated result fully. It creates another removable `role:"reimagine"`
-  layer named Relight, retains `drift:"full-frame"`, stays lazy, and inherits the exact-base and atomic-failure contracts.
+  layer named Relight, retains `drift:"full-frame"`, stays lazy, and inherits the authored-frame and atomic-failure contracts.
   The deterministic built-CLI captures and comparison telemetry live in
   [`../assets/relight-journey/`](../assets/relight-journey/).
   ✓ `generate --prompt [--ref] [--size 1024x1024] [--seed] [--model]` → canonical generated artifact → imported photo tagged
