@@ -33,6 +33,7 @@ export interface DaemonStatus extends DaemonEndpoint {
 export interface DaemonConnection {
   endpoint: DaemonEndpoint;
   action: "spawned" | "connected";
+  verifiedStatus?: DaemonStatus;
 }
 
 interface ExchangeResult {
@@ -78,7 +79,11 @@ export async function ensureDaemon(
     const existing = await statusFromPayload(payload);
     if (existing) {
       if (existing.version === version) {
-        return { endpoint: daemonEndpoint(existing), action: "connected" };
+        return {
+          endpoint: daemonEndpoint(existing),
+          action: "connected",
+          verifiedStatus: existing,
+        };
       }
       await exchange(existing.socket, { type: "control", action: "stop" }, 5_000);
       if (!(await waitForExit(existing.pid, deadline, pollCeilingMs))) {
@@ -140,7 +145,8 @@ export async function ensureDaemon(
       await lock.detach();
       while (Date.now() <= deadline) {
         const status = await statusAt(socket);
-        if (status) return { endpoint: daemonEndpoint(status), action: "spawned" };
+        if (status)
+          return { endpoint: daemonEndpoint(status), action: "spawned", verifiedStatus: status };
         if (spawnError) throw daemonUnavailable(libraryPath, spawnError);
         if (child.exitCode !== null || child.signalCode !== null) {
           throw daemonUnavailable(libraryPath, undefined, {

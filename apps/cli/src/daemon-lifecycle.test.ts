@@ -10,6 +10,61 @@ import { encodeFrame, FrameDecoder, type DaemonClientFrame } from "@photoctl/pro
 
 const directories: string[] = [];
 
+test("daemon start returns its verified status without probing again", async () => {
+  const { version } = JSON.parse(
+    await readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ) as { version: string };
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-start-snapshot-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+  const socket = daemonSocketPath(library, version);
+  const status = {
+    pid: process.pid,
+    socket,
+    version,
+    uptime_s: 17,
+    queue: 2,
+    background_busy: true,
+  };
+  const lock = await acquireLibraryLock(join(library, OPEN_LOCK_NAME));
+  await lock.rewrite({ pid: process.pid, socket, startedAt: Date.now() });
+  const probes: unknown[] = [];
+  const server = createServer((client) => {
+    client.on("error", () => client.destroy());
+    const decoder = new FrameDecoder();
+    client.on("data", (chunk) => {
+      for (const frame of decoder.push(chunk)) {
+        probes.push(frame);
+        if (probes.length > 1) client.end();
+        else
+          client.end(
+            encodeFrame({
+              type: "response",
+              envelope: { schema: 1, ok: true, warnings: [], data: status },
+            }),
+          );
+      }
+    });
+  });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(socket, resolve);
+    });
+    const started = await spawnPhotoctl(["daemon", "start"], {
+      libraryDir: library,
+      env: { PHOTOCTL_NO_DAEMON: "0" },
+    });
+    expect(started.code, JSON.stringify(started)).toBe(0);
+    expect(started.json?.data).toEqual(status);
+    expect(probes).toEqual([{ type: "control", action: "status" }]);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await lock.release();
+  }
+}, 30_000);
+
 test("a disconnected control client does not kill the daemon", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-disconnected-control-"));
   directories.push(parent);
@@ -19,7 +74,7 @@ test("a disconnected control client does not kill the daemon", async () => {
   expect(initialized.code, JSON.stringify(initialized)).toBe(0);
   const started = await spawnPhotoctl(["daemon", "status"], options);
   expect(started.code, JSON.stringify(started)).toBe(0);
-  const { pid, socket } = started.json?.data as { pid: number; socket: string };
+  const { pid, socket } = (started.json as { data: { pid: number; socket: string } }).data;
   expect(pid).toBeGreaterThan(0);
   let completed = false;
   try {

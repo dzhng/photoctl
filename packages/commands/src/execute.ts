@@ -161,7 +161,7 @@ async function executeDaemonControl(
       ...daemonOptions(request),
       verifyExisting: true,
     });
-    const status = await inspectDaemon(path);
+    const status = connection.verifiedStatus;
     if (!status)
       throw new PhotoctlError("daemon_unavailable", "The photoctl daemon is not responding");
     return {
