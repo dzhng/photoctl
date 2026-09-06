@@ -1,0 +1,93 @@
+{
+  "expectedMaskHash": "a_e60a6c1bb2a1d212d450f128f9ff70809ee6e704e8bf6f093d18645ee68157cd",
+  "daemonPids": [
+    67534
+  ],
+  "date": "2026-09-06",
+  "baseCommit": "771e0f705fd75188bb71f6e4dc5ec703512370aa",
+  "nativeSha256": "72e36efb05efabac1925fcdd700787813f1991718bb73d95975d7efd7ed62192",
+  "scope": "Full-resolution cropped/rotated expanded canvas, public segment requests through one persistent daemon",
+  "source": {
+    "w": 7008,
+    "h": 4672
+  },
+  "frame": {
+    "catalog": {
+      "w": 7008,
+      "h": 4672
+    },
+    "source": {
+      "w": 7008,
+      "h": 4672
+    },
+    "raster": {
+      "w": 4328,
+      "h": 6728
+    },
+    "sourceToRaster": [
+      0,
+      1,
+      -1,
+      0,
+      4464,
+      -136
+    ],
+    "baseToRaster": [
+      0,
+      1,
+      -1,
+      0,
+      4464,
+      -136
+    ],
+    "rasterToBase": [
+      0,
+      -1,
+      1,
+      0,
+      136,
+      4464
+    ],
+    "visibleBasePolygon": [
+      [
+        136,
+        4464
+      ],
+      [
+        136,
+        136
+      ],
+      [
+        6864,
+        136
+      ],
+      [
+        6864,
+        4464
+      ]
+    ]
+  },
+  "forcedGc": false,
+  "requests": 1,
+  "masks": [
+    "a_e60a6c1bb2a1d212d450f128f9ff70809ee6e704e8bf6f093d18645ee68157cd"
+  ],
+  "peakRssBytes": 4693262336,
+  "limits": {
+    "rssBytes": 3000000000,
+    "encodeMs": 4000
+  },
+  "encodes": [
+    {
+      "event": "runEncoder:done",
+      "pid": 67534,
+      "ms": 4776.516459,
+      "rss": 4248584192,
+      "maxRss": 4693262336,
+      "durationMs": 1084.8621669999998
+    }
+  ],
+  "daemonPid": 67534,
+  "daemonStopped": true,
+  "passed": false
+}

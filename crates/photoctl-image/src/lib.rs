@@ -124,7 +124,7 @@ impl Task for DrawMarkupTask {
 }
 
 #[derive(Debug)]
-pub struct CameraImage {
+pub struct DecodedImage {
     width: u32,
     height: u32,
     space: &'static str,
@@ -136,7 +136,7 @@ pub struct CameraImage {
     wb_pre_applied: bool,
 }
 
-fn decode_libraw(path: &Path, scale: f64) -> Result<CameraImage, String> {
+fn decode_libraw(path: &Path, scale: f64) -> Result<DecodedImage, String> {
     if !matches!(scale, 1.0 | 0.5 | 0.25) {
         return Err("scale must be 1, 0.5, or 0.25".to_owned());
     }
@@ -168,7 +168,7 @@ fn decode_libraw(path: &Path, scale: f64) -> Result<CameraImage, String> {
     } else {
         [1.0, 1.0, 1.0]
     };
-    Ok(CameraImage {
+    Ok(DecodedImage {
         width,
         height,
         space: "camera",
@@ -198,8 +198,8 @@ pub struct LibrawImageResult {
     pub data: Float32Array,
     pub white_level: f64,
     pub black_level: f64,
-    pub cam_xyz: Vec<f64>,
-    pub as_shot_wb: Vec<f64>,
+    pub cam_xyz: Option<Vec<f64>>,
+    pub as_shot_wb: Option<Vec<f64>>,
     pub wb_pre_applied: bool,
 }
 
@@ -887,21 +887,44 @@ pub fn probe_libraw(path: String) -> LibrawProbeResult {
 }
 
 #[napi]
-pub fn decode_libraw_image(path: String, scale: f64) -> AsyncTask<DecodeLibrawTask> {
-    AsyncTask::new(DecodeLibrawTask { path, scale })
+pub fn decode_libraw_image(
+    path: String,
+    scale: f64,
+    output_space: Option<String>,
+) -> napi::Result<AsyncTask<DecodeLibrawTask>> {
+    if output_space
+        .as_deref()
+        .is_some_and(|space| space != "scene-linear-rec2020")
+    {
+        return Err(Error::new(
+            Status::InvalidArg,
+            "unsupported decode output space",
+        ));
+    }
+    Ok(AsyncTask::new(DecodeLibrawTask {
+        path,
+        scale,
+        scene_linear: output_space.is_some(),
+    }))
 }
 
 pub struct DecodeLibrawTask {
     path: String,
     scale: f64,
+    scene_linear: bool,
 }
 
 impl Task for DecodeLibrawTask {
-    type Output = CameraImage;
+    type Output = DecodedImage;
     type JsValue = LibrawImageResult;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        decode_libraw(Path::new(&self.path), self.scale)
+        let decoded = decode_libraw(Path::new(&self.path), self.scale)
+            .map_err(|message| Error::new(Status::GenericFailure, message))?;
+        if !self.scene_linear {
+            return Ok(decoded);
+        }
+        develop_decoded_camera(decoded)
             .map_err(|message| Error::new(Status::GenericFailure, message))
     }
 
@@ -910,8 +933,24 @@ impl Task for DecodeLibrawTask {
     }
 }
 
-impl From<CameraImage> for LibrawImageResult {
-    fn from(image: CameraImage) -> Self {
+fn develop_decoded_camera(mut image: DecodedImage) -> Result<DecodedImage, String> {
+    image.data = camera_front(
+        image.data,
+        image.white_level as f32,
+        image.black_level as f32,
+        &image.cam_xyz.map(f64::from),
+        &image.as_shot_wb.map(f64::from),
+        image.wb_pre_applied,
+    )?;
+    image.space = "scene-linear-rec2020";
+    image.white_level = 1.0;
+    image.black_level = 0.0;
+    image.wb_pre_applied = true;
+    Ok(image)
+}
+
+impl From<DecodedImage> for LibrawImageResult {
+    fn from(image: DecodedImage) -> Self {
         Self {
             width: image.width,
             height: image.height,
@@ -919,8 +958,10 @@ impl From<CameraImage> for LibrawImageResult {
             data: image.data.into(),
             white_level: image.white_level,
             black_level: image.black_level,
-            cam_xyz: image.cam_xyz.into_iter().map(f64::from).collect(),
-            as_shot_wb: image.as_shot_wb.into_iter().map(f64::from).collect(),
+            cam_xyz: (image.space == "camera")
+                .then(|| image.cam_xyz.into_iter().map(f64::from).collect()),
+            as_shot_wb: (image.space == "camera")
+                .then(|| image.as_shot_wb.into_iter().map(f64::from).collect()),
             wb_pre_applied: image.wb_pre_applied,
         }
     }
@@ -929,6 +970,51 @@ impl From<CameraImage> for LibrawImageResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn decoded_camera_front_transfers_its_owned_allocation_and_exact_samples() {
+        let image = DecodedImage {
+            width: 2,
+            height: 1,
+            space: "camera",
+            data: vec![-0.01, 0.25, 1.5, 2.0, 1.0, 0.0],
+            white_level: 2.0,
+            black_level: 0.01,
+            cam_xyz: [
+                0.746, -0.2365, -0.0588, -0.5687, 1.3442, 0.2474, -0.0624, 0.1156, 0.6584,
+            ],
+            as_shot_wb: [2.0, 1.0, 0.5],
+            wb_pre_applied: false,
+        };
+        let expected = camera_front(
+            image.data.clone(),
+            image.white_level as f32,
+            image.black_level as f32,
+            &image.cam_xyz.map(f64::from),
+            &image.as_shot_wb.map(f64::from),
+            false,
+        )
+        .unwrap();
+        let pointer = image.data.as_ptr();
+        let actual = develop_decoded_camera(image).unwrap();
+        assert_eq!(actual.data.as_ptr(), pointer);
+        assert_eq!(
+            actual.data.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            (actual.width, actual.height, actual.space),
+            (2, 1, "scene-linear-rec2020")
+        );
+        assert_eq!(
+            (
+                actual.white_level,
+                actual.black_level,
+                actual.wb_pre_applied
+            ),
+            (1.0, 0.0, true)
+        );
+    }
 
     #[test]
     fn solid_rgb_repeats_the_exact_asymmetric_triplet() {

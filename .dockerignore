@@ -6,4 +6,5 @@ node_modules
 target
 **/dist
 **/*.tsbuildinfo
+**/__pycache__
 throwaway

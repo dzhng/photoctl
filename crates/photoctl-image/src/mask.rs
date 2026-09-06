@@ -1,11 +1,12 @@
 use napi::{
-    Error, Status, Task,
+    Env, Error, Status, Task,
     bindgen_prelude::{AsyncTask, Float32Array},
 };
 use napi_derive::napi;
 use std::collections::VecDeque;
 
-use crate::resample::{Filter, transform};
+use crate::resample::{Filter, frame_contains, transform};
+use crate::task_memory::TaskMemory;
 
 /// Intersect coverage with an authored visible footprint without changing selection ancestry.
 #[napi]
@@ -32,10 +33,7 @@ pub fn clip_mask_to_frame(
     let mut output = data.to_vec();
     for y in 0..height {
         for x in 0..width {
-            let fx = a * (f64::from(x) + 0.5) + c * (f64::from(y) + 0.5) + tx;
-            let fy = b * (f64::from(x) + 0.5) + d * (f64::from(y) + 0.5) + ty;
-            if fx < 0.0 || fy < 0.0 || fx >= f64::from(frame_width) || fy >= f64::from(frame_height)
-            {
+            if !frame_contains([a, b, c, d, tx, ty], frame_width, frame_height, x, y) {
                 output[(y * width + x) as usize] = 0.0;
             }
         }
@@ -146,23 +144,28 @@ pub fn transform_mask_pixels(
 
 #[napi]
 pub fn lift_masked_pixels(
+    env: Env,
     content: Float32Array,
     mask: Float32Array,
     width: u32,
     height: u32,
 ) -> napi::Result<AsyncTask<CompositeTask>> {
     validate_rgb_and_mask(&content, &mask, width, height)?;
-    Ok(AsyncTask::new(CompositeTask {
-        base: vec![0.0; content.len()],
-        content: content.to_vec(),
-        mask: mask.to_vec(),
-        opacity: 1.0,
-        lift: true,
-    }))
+    CompositeTask::new(
+        env,
+        CompositeTaskInputs {
+            base: Vec::new(),
+            content: content.to_vec(),
+            mask: mask.to_vec(),
+            opacity: 1.0,
+            lift: true,
+        },
+    )
 }
 
 #[napi]
 pub fn overlay_masked_pixels(
+    env: Env,
     base: Float32Array,
     content: Float32Array,
     mask: Float32Array,
@@ -170,11 +173,12 @@ pub fn overlay_masked_pixels(
     height: u32,
     opacity: f64,
 ) -> napi::Result<AsyncTask<CompositeTask>> {
-    composite_task(base, content, mask, width, height, opacity)
+    composite_task(env, base, content, mask, width, height, opacity)
 }
 
 #[napi]
 pub fn composite_masked_pixels(
+    env: Env,
     base: Float32Array,
     content: Float32Array,
     mask: Float32Array,
@@ -182,10 +186,11 @@ pub fn composite_masked_pixels(
     height: u32,
     opacity: f64,
 ) -> napi::Result<AsyncTask<CompositeTask>> {
-    composite_task(base, content, mask, width, height, opacity)
+    composite_task(env, base, content, mask, width, height, opacity)
 }
 
 fn composite_task(
+    env: Env,
     base: Float32Array,
     content: Float32Array,
     mask: Float32Array,
@@ -198,13 +203,16 @@ fn composite_task(
     if !opacity.is_finite() || !(0.0..=1.0).contains(&opacity) {
         return Err(invalid("mask composite opacity must be between 0 and 1"));
     }
-    Ok(AsyncTask::new(CompositeTask {
-        base: base.to_vec(),
-        content: content.to_vec(),
-        mask: mask.to_vec(),
-        opacity,
-        lift: false,
-    }))
+    CompositeTask::new(
+        env,
+        CompositeTaskInputs {
+            base: base.to_vec(),
+            content: content.to_vec(),
+            mask: mask.to_vec(),
+            opacity,
+            lift: false,
+        },
+    )
 }
 
 pub struct MaskTask {
@@ -295,6 +303,11 @@ fn threshold_coverage(data: &[f32], threshold: f64, inclusive: bool) -> Vec<f32>
 }
 
 pub struct CompositeTask {
+    inputs: CompositeTaskInputs,
+    memory: [TaskMemory; 3],
+}
+
+struct CompositeTaskInputs {
     base: Vec<f32>,
     content: Vec<f32>,
     mask: Vec<f32>,
@@ -302,23 +315,38 @@ pub struct CompositeTask {
     lift: bool,
 }
 
+impl CompositeTask {
+    fn new(env: Env, inputs: CompositeTaskInputs) -> napi::Result<AsyncTask<Self>> {
+        let memory = [
+            TaskMemory::for_vec(env, &inputs.base)?,
+            TaskMemory::for_vec(env, &inputs.content)?,
+            TaskMemory::for_vec(env, &inputs.mask)?,
+        ];
+        Ok(AsyncTask::new(Self { inputs, memory }))
+    }
+}
+
 impl Task for CompositeTask {
     type Output = Vec<f32>;
     type JsValue = Float32Array;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        if self.lift {
-            return Ok(lift(&self.content, &self.mask));
+        if self.inputs.lift {
+            return Ok(lift(&self.inputs.content, &self.inputs.mask));
         }
         Ok(composite(
-            &self.base,
-            &self.content,
-            &self.mask,
-            self.opacity,
+            std::mem::take(&mut self.inputs.base),
+            &self.inputs.content,
+            &self.inputs.mask,
+            self.inputs.opacity,
         ))
     }
 
     fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        if !self.inputs.lift {
+            // The reused base becomes Node's output backing store; other snapshots stay task-owned.
+            self.memory[0].release()?;
+        }
         Ok(data.into())
     }
 }
@@ -466,8 +494,7 @@ fn lift(content: &[f32], mask: &[f32]) -> Vec<f32> {
     output
 }
 
-fn composite(base: &[f32], content: &[f32], mask: &[f32], opacity: f64) -> Vec<f32> {
-    let mut output = base.to_vec();
+fn composite(mut output: Vec<f32>, content: &[f32], mask: &[f32], opacity: f64) -> Vec<f32> {
     for (pixel, coverage) in mask.iter().copied().enumerate() {
         let alpha = f64::from(coverage) * opacity;
         if alpha == 0.0 {
@@ -475,8 +502,8 @@ fn composite(base: &[f32], content: &[f32], mask: &[f32], opacity: f64) -> Vec<f
         }
         for channel in 0..3 {
             let index = pixel * 3 + channel;
-            output[index] = (f64::from(base[index])
-                + (f64::from(content[index]) - f64::from(base[index])) * alpha)
+            output[index] = (f64::from(output[index])
+                + (f64::from(content[index]) - f64::from(output[index])) * alpha)
                 as f32;
         }
     }
@@ -486,6 +513,22 @@ fn composite(base: &[f32], content: &[f32], mask: &[f32], opacity: f64) -> Vec<f
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn composite_reuses_the_owned_frame_allocation() {
+        let base = vec![-0.0, 0.5, 2.0, 0.0, 0.0, 0.0];
+        let allocation = base.as_ptr();
+        let output = composite(base, &[2.0, 1.0, 4.0, 2.0, 0.5, -0.0], &[0.0, 0.25], 1.0);
+        assert_eq!(
+            output.as_ptr(),
+            allocation,
+            "compositing must not allocate another RGB frame"
+        );
+        assert_eq!(
+            output.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            [-0.0_f32, 0.5, 2.0, 0.5, 0.125, 0.0].map(f32::to_bits)
+        );
+    }
 
     #[test]
     fn hard_coverage_keeps_half_coverage_and_support_keeps_every_positive_sample() {
@@ -511,8 +554,8 @@ mod tests {
     fn composite_preserves_every_zero_coverage_sample_bit_exactly() {
         let base = vec![-0.25, 0.5, 2.0, 10.0, 20.0, 30.0];
         let content = vec![1.0, 1.0, 1.0, 30.0, 40.0, 50.0];
-        let output = composite(&base, &content, &[0.0, 0.5], 0.5);
-        assert_eq!(&output[..3], &base[..3]);
+        let output = composite(base, &content, &[0.0, 0.5], 0.5);
+        assert_eq!(&output[..3], &[-0.25, 0.5, 2.0]);
         assert_eq!(&output[3..], &[15.0, 25.0, 35.0]);
     }
 

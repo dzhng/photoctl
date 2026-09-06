@@ -5,7 +5,7 @@ edition = "2024"
 license = "MIT"
 [lib]
 path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 fontdue = "0.9"
@@ -14,6 +14,8 @@ libraw-sys = { path = "../libraw-sys" }
 napi = { version = "3.3", default-features = false, features = ["napi8"] }
 napi-derive = "3.2"
 ort = "=2.0.0-rc.13"
+# Unify only native acquisition/linking, not ort's alternative runtime API.
+ort-sys = { version = "=2.0.0-rc.13", features = ["disable-linking"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

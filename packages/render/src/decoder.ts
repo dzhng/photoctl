@@ -65,7 +65,12 @@ export type SceneLinearImage = Omit<LinearImage, "space"> & {
 export interface Decoder {
   readonly id: "file" | "ciraw" | "libraw";
   probe(source: ImageSource): Promise<DecoderProbe>;
-  decode(source: ImageSource, options: { scale: DecodeScale }): Promise<LinearImage>;
+  decode(source: ImageSource, options: DecodeOptions): Promise<LinearImage>;
+}
+
+export interface DecodeOptions {
+  scale: DecodeScale;
+  outputSpace?: "scene-linear-rec2020";
 }
 
 export interface DecoderImageProbe {
@@ -99,7 +104,7 @@ export class FileImageDecoder implements Decoder {
     }
   }
 
-  async decode(source: ImageSource, options: { scale: DecodeScale }): Promise<LinearImage> {
+  async decode(source: ImageSource, options: DecodeOptions): Promise<LinearImage> {
     const display = await this.decodeDisplay(source, options);
     return {
       w: display.w,
@@ -196,7 +201,7 @@ export class CirawDecoder implements Decoder {
     };
   }
 
-  async decode(source: ImageSource, options: { scale: DecodeScale }): Promise<LinearImage> {
+  async decode(source: ImageSource, options: DecodeOptions): Promise<LinearImage> {
     if (source.kind !== "online-file") {
       throw new DecoderUnavailableError("CIRAW requires an online whole-file source");
     }
@@ -266,21 +271,20 @@ export class LibrawDecoder implements Decoder {
     }
   }
 
-  async decode(source: ImageSource, options: { scale: DecodeScale }): Promise<LinearImage> {
+  async decode(source: ImageSource, options: DecodeOptions): Promise<LinearImage> {
     if (source.kind !== "online-file") {
       throw new DecoderUnavailableError("LibRaw requires an online whole-file source");
     }
     try {
-      const image = await decodeLibraw(source.path, options.scale);
+      const image = await decodeLibraw(source.path, options.scale, options.outputSpace);
       if (
         !Number.isSafeInteger(image.width) ||
         image.width <= 0 ||
         !Number.isSafeInteger(image.height) ||
         image.height <= 0 ||
-        image.space !== "camera" ||
+        image.space !== (options.outputSpace ?? "camera") ||
         image.data.length !== image.width * image.height * 3 ||
-        image.camXyz.length !== 9 ||
-        image.asShotWb.length !== 3
+        (image.space === "camera" && (image.camXyz.length !== 9 || image.asShotWb.length !== 3))
       ) {
         throw new DecoderUnavailableError("LibRaw returned an incompatible image contract");
       }
@@ -288,12 +292,11 @@ export class LibrawDecoder implements Decoder {
         w: image.width,
         h: image.height,
         orientationApplied: true,
-        space: "camera",
+        space: image.space,
         data: image.data,
         whiteLevel: image.whiteLevel,
         blackLevel: image.blackLevel,
-        camXyz: image.camXyz,
-        asShotWb: image.asShotWb,
+        ...(image.space === "camera" ? { camXyz: image.camXyz, asShotWb: image.asShotWb } : {}),
         wbPreApplied: image.wbPreApplied,
       };
     } catch (error) {

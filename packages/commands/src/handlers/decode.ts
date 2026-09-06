@@ -91,7 +91,10 @@ export async function decodeCommand(
     }
     let image;
     try {
-      image = await selected.decoder.decode(selected.source, { scale });
+      image = await selected.decoder.decode(selected.source, {
+        scale,
+        outputSpace: "scene-linear-rec2020",
+      });
     } catch (error) {
       if (error instanceof DecoderUnavailableError) {
         throw new PhotoctlError("decoder_unavailable", error.message, {

@@ -1,7 +1,5 @@
 use std::{env, path::PathBuf};
 
-const MACOS_DEPLOYMENT_TARGET: &str = "11.0";
-
 fn main() {
     let manifest = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("manifest directory"));
     let vendor = manifest.join("vendor");
@@ -32,10 +30,12 @@ fn main() {
         .files(sources);
 
     if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
+        let deployment_target = env::var("MACOSX_DEPLOYMENT_TARGET")
+            .expect("the workspace Cargo config supplies the image-addon deployment target");
         build.flag("-stdlib=libc++");
-        build.flag(&format!("-mmacosx-version-min={MACOS_DEPLOYMENT_TARGET}"));
+        build.flag(&format!("-mmacosx-version-min={deployment_target}"));
         println!("cargo:rustc-link-lib=dylib=c++");
-        println!("cargo:rustc-link-arg=-mmacosx-version-min={MACOS_DEPLOYMENT_TARGET}");
+        println!("cargo:rustc-link-arg=-mmacosx-version-min={deployment_target}");
     } else if env::var("CARGO_CFG_TARGET_ENV").as_deref() != Ok("msvc") {
         println!("cargo:rustc-link-lib=dylib=stdc++");
     }
@@ -45,4 +45,5 @@ fn main() {
     println!("cargo:rerun-if-changed=src/photoctl_libraw.h");
     println!("cargo:rerun-if-changed=vendor/src");
     println!("cargo:rerun-if-changed=vendor/libraw");
+    println!("cargo:rerun-if-env-changed=MACOSX_DEPLOYMENT_TARGET");
 }

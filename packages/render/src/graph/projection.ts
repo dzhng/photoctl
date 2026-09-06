@@ -1,6 +1,7 @@
 import {
   clipMaskToFrame,
-  compositeMaskedPixels,
+  projectSupportedRgbPixels,
+  type PixelFrameTransform,
   transformMaskPixels,
   transformPixels,
 } from "@photoctl/img";
@@ -185,6 +186,18 @@ function frameToFrameMatrix(
     : composeTransformMatrices(toMatrix, invertTransformMatrix(fromMatrix));
 }
 
+function isIdentityProjection(
+  from: RenderFrame["raster"],
+  to: RenderFrame["raster"],
+  matrix: PixelFrameTransform["matrix"],
+) {
+  return (
+    from.w === to.w &&
+    from.h === to.h &&
+    matrix.every((value, coefficient) => value === [1, 0, 0, 1, 0, 0][coefficient])
+  );
+}
+
 export async function projectCoverageBetweenFrames(
   mask: MaskImage,
   from: Awaited<ReturnType<typeof loadBaseProjection>>,
@@ -211,12 +224,7 @@ export async function projectRgbToRender(
   frame: { w: number; h: number },
 ): Promise<LinearImage> {
   const matrix = frameToFrameMatrix(from, to);
-  if (
-    image.w === frame.w &&
-    image.h === frame.h &&
-    matrix.every((value, coefficient) => value === [1, 0, 0, 1, 0, 0][coefficient])
-  )
-    return image;
+  if (isIdentityProjection(image, frame, matrix)) return image;
   return {
     ...image,
     ...frame,
@@ -242,26 +250,31 @@ export async function projectSupportedRgbToRender(
   realize: (frame: RenderFrame) => RenderFrame,
 ): Promise<LinearImage> {
   const restrictions = [from, ...stages];
+  const sampling: PixelFrameTransform[] = [];
   let frame = from;
+  let raster: RenderFrame["raster"] = image;
   for (const authored of [...stages, output]) {
     const target = realize(authored);
-    image = await projectRgbToRender(image, frame, target, target.raster);
+    const matrix = frameToFrameMatrix(frame, target);
+    if (!isIdentityProjection(raster, target.raster, matrix)) {
+      sampling.push({ width: target.raster.w, height: target.raster.h, matrix });
+    }
     frame = target;
+    raster = target.raster;
   }
-  const support = clipCoverageToFrames(
-    { ...frame.raster, data: new Float32Array(image.w * image.h).fill(1) },
-    frame,
-    restrictions,
-  );
   return {
     ...image,
-    data: await compositeMaskedPixels(
-      new Float32Array(image.data.length),
+    ...frame.raster,
+    data: await projectSupportedRgbPixels(
       image.data,
-      support.data,
       image.w,
       image.h,
-      1,
+      sampling,
+      restrictions.map((restriction) => ({
+        width: restriction.raster.w,
+        height: restriction.raster.h,
+        matrix: composeTransformMatrices(restriction.baseToRaster, frame.rasterToBase),
+      })),
     ),
   };
 }

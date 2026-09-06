@@ -300,6 +300,144 @@
 
 ## Sound
 
+### Native decoding — Request scene pixels without a second full-image snapshot
+
+- **When:** Owned LibRaw camera conversion integration, 2026-09-06.
+- **The choice:** When an editor needs light values in the shared Rec.2020 color space,
+  it requests that space through the existing decoder. LibRaw decodes and scales first,
+  then converts its owned pixels before returning them to JavaScript. Returning camera
+  pixels first would require another full-image snapshot for the subsequent native color
+  conversion. Callers that need camera samples can still request the default decode.
+- **The gap:** The allocation requirement did not specify the decoder API or ownership
+  boundary for combining these operations.
+- **The reach:** The public decode command and shared graph source request scene pixels;
+  there is no segmentation-only decoder. File and CIRAW already return scene pixels.
+  The existing color conversion remains unchanged and idempotent for scene input.
+- **Verdict:** **Sound.** Explicit output space keeps one decoder-selection owner and
+  preserves resize-before-color arithmetic without borrowing mutable caller pixels.
+- **Confidence:** High.
+
+### Native decoding — Calibration belongs only to camera-channel pixels
+
+- **When:** Independent review correction integrated with scene decoding, 2026-09-06.
+- **The choice:** Converted scene pixels carry normalized black/white levels and already
+  applied white balance, but no camera matrix or camera white-balance gains. Leaving
+  those fields on the result would let later operations carry calibration that no longer
+  describes the pixels. Default camera output retains its calibration.
+- **The gap:** The new native scene result needed an explicit metadata contract, not
+  merely matching pixel values and a color-space label.
+- **The reach:** Camera calibration cannot be mistaken for instructions to convert scene
+  pixels again. Historical calibration, if needed later, needs separate provenance.
+- **Verdict:** **Sound after correction.** Metadata describes the returned pixels; the
+  initial stale-field implementation was rejected rather than preserved as compatibility.
+- **Confidence:** High.
+
+### Native decoding — Do not count predicted worker allocations as owned memory
+
+- **When:** Owned LibRaw camera conversion integration, 2026-09-06.
+- **The choice:** The background decoder allocates its pixels and reuses them for color
+  conversion. Node accounts the final returned array. We do not pre-charge a guessed
+  image size while the task is queued or call Node's thread-bound accounting API from
+  the background worker. Those alternatives would change an actual-allocation counter
+  into a reservation estimate or violate its thread requirement.
+- **The gap:** Removing a JavaScript-to-native snapshot also removes that snapshot's
+  charge; the existing guard does not account decoder-created worker allocations.
+- **The reach:** This removes a duplicate image without claiming complete cross-thread
+  accounting. Process residency still requires its own measured resource checks.
+- **Verdict:** **Sound.** Keep accounting honest; a future worker-reporting mechanism
+  needs its own design and evidence rather than a fictional reservation here.
+- **Confidence:** High for accounting semantics; residency remains measurement-dependent.
+
+### Camera references — Keep real JPEG companions and separate geometry from color evidence
+
+- **When:** Permanent camera JPEG fixture pass, 2026-09-06.
+- **The choice:** A camera writes a RAW and a processed JPEG for the same exposure. Keep
+  both original files together, with separate integrity manifests, rather than generating
+  the JPEG from photoctl's RAW renderer. Exercise representative landscape and both portrait
+  rotations through public import, offline preview and full-size delivery. Compare generated
+  pixels as stored against the correctly oriented camera image; require a substantially
+  closer match than any quarter-turn alternative. This checks upright content, not an exact
+  match between different resamplers' colors.
+- **The gap:** The user requested permanent realistic JPEG and paired examples, but did not
+  prescribe fixture naming or the photographic regression oracle.
+- **The reach:** JPEG manifests use `.JPG.json` so the RAW facts are not overwritten. Tests
+  stream integrity hashes and use a second locator to exercise byte-identity deduplication.
+  These references do not by themselves prove paired import or photographic color fidelity.
+- **Verdict:** **Sound.** Camera-produced files expose metadata and codec behavior that our
+  own generated fixtures cannot independently establish; narrowly named assertions avoid
+  presenting an orientation test as a photographic-quality gate.
+- **Confidence:** High.
+
+### Native compositing — Reuse owned inputs without changing mask meaning
+
+- **When:** Full-resolution allocation correction, 2026-09-06.
+- **The choice:** A composite job snapshots its inputs for caller safety, then reuses its
+  owned background for the result instead of allocating another full frame. Its actual
+  vector capacities are reported through the existing native task-memory owner. Lift
+  keeps its distinct fractional-mask behavior and no longer allocates an unused background.
+- **The gap:** The resource requirement did not dictate intermediate allocation ownership.
+- **The reach:** Caller snapshots, fractional arithmetic and signed-zero results remain
+  unchanged; no model, schema, sampling, GC or memory-limit policy changes.
+- **Verdict:** **Sound.** Removes proven redundant allocation without asserting that allocator
+  residency or the whole-command memory ceiling is solved.
+- **Confidence:** High.
+
+### Supported projection — Keep one RGB worker behind the shared frame planner
+
+- **When:** Full-source G6 owned-projection checkpoint, 2026-09-06; API proposed and approved before implementation.
+- **The choice:** A photograph is cropped, rotated, and placed on a larger canvas. The shared renderer
+  still decides each intermediate frame, but submits the whole ordered list to one native worker.
+  Its new RGB-only API receives source pixels and dimensions, stages mapping each input to its next
+  output, and restrictions mapping final pixel centers into earlier visible frames. It returns only
+  final RGB. A separate SAM-only shortcut would make segmentation and ordinary rendering disagree;
+  combining the stage matrices into one transform would change fractional sampling.
+- **The gap:** The required single native owner did not prescribe the boundary's data shape or
+  whether it should also accept mask channels and selectable filters.
+- **The reach:** SAM and rendering keep one geometry planner. The new worker implements their
+  existing Lanczos RGB contract, not a second general transform API or a new saved graph schema.
+  Other masks and transforms retain their existing owners. Finite geometry and final RGB errors
+  reject the request; caller pixels and geometry are copied before asynchronous work begins.
+- **Verdict:** **Sound.** The narrow contract removes repeated boundary snapshots while exact
+  staged and fractional tests preserve existing behavior. It does not itself establish G6 acceptance.
+- **Confidence:** High.
+
+### Supported projection — Share the visible-frame predicate with mask clipping
+
+- **When:** Full-source G6 owned-projection checkpoint, 2026-09-06.
+- **The choice:** A crop cuts through a fractional pixel footprint. Both mask clipping and the new
+  RGB worker ask the same native predicate whether the final pixel center lies inside that frame.
+  The RGB worker writes positive zero outside the intersection of all restrictions, and normalizes
+  selected negative zero exactly as the former zero-base composite did. Copying the predicate into
+  the new task would let future boundary fixes change masks but not RGB; materializing a full mask
+  would preserve the former memory cost without contributing additional information.
+- **The gap:** Ordered exclusions were required, but the existing center-in-frame calculation had
+  no shared native owner available to the new task.
+- **The reach:** The small predicate in the resampling module serves both operations; no mask
+  storage format or geometric comparison changes. Tests pin fractional/out-of-frame intersection
+  and Float32 signed-zero bits, not just visually similar output.
+- **Verdict:** **Sound.** One predicate preserves the same boundary arithmetic for both callers.
+- **Confidence:** High.
+
+### Supported projection — Allocate and account two reusable stage buffers
+
+- **When:** Full-source G6 owned-projection checkpoint, 2026-09-06.
+- **The choice:** A large source is reduced and later expanded. The worker allocates two vectors
+  large enough for their alternating stages, copies the source once, and swaps the vectors after
+  each sampler. Node is charged for those actual allocated capacities while work is pending, not
+  for an estimate of future output. At completion the unused vector is freed and the output is
+  tightened to its exposed length before Node takes ownership. Allocating a new vector per stage
+  would leave more freed storage behind; charging predicted work without allocating it would
+  change the existing memory counter's meaning.
+- **The gap:** The native owner requirement left intermediate storage and output-capacity transfer
+  unspecified. Node accounts typed-array length, not a Rust vector's spare capacity.
+- **The reach:** Long stage chains reuse bounded native workspace but reserve each buffer's largest
+  required stage up front. Tightening can reallocate, and freed storage may stay resident in the
+  process allocator. Counter tests prove actual queued charges, final-output-only transfer, and
+  cleanup after a failed later stage; they do not prove a process RSS ceiling.
+- **Verdict:** **Sound.** Actual ownership and accounting agree without tuning GC or G6 limits.
+  The recorded full-resolution witness remains red; separate runs are not a reliable RSS ranking.
+- **Confidence:** Medium for allocator tradeoffs; high for counter and pixel correctness.
+
 ### Slice 11 — Serial SAM inference keeps one allocation thread
 
 - **When:** Native real-model resource pass, 2026-09-06.
@@ -4941,3 +5079,93 @@
   pixel hashes and unchanged public acceptance tests support it without a special-case runtime path.
 - **Confidence:** High. The [performance audit](assets/full-source-performance.md) records the
   experiment and its machine-specific limits.
+
+### Native runtime acquisition — Cargo owns a target-local source build
+
+- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
+- **The choice:** A developer runs Cargo directly, or a release job calls it through Bun.
+  Both reach the same pinned source-and-patch recipe; the Rust dependency cannot download
+  another runtime. Docker prepares that same cache before copying ordinary application
+  sources. A new Cargo target directory pays for a cold C++ build; later builds reuse its
+  archive. Sharing one cache across unrelated worktrees would save cold builds but require
+  another concurrency and cleanup owner, so the parent explicitly selected Cargo's existing
+  target-directory lock instead.
+- **The gap:** The successful experiment selected a private scratch archive explicitly. No
+  published patched archive or exact served-archive builder provenance was available, while
+  direct Cargo, Docker and release builds all needed the same selection behavior.
+- **The reach:** Developers now need Python, CMake, Ninja and the documented native compiler.
+  The preparer installs nothing and uploads nothing. This changes build cost and prerequisites,
+  not the model files, CPU feature choices or public image API.
+- **Verdict:** **Sound with acceptance gates.** One build owner prevents silent platform
+  divergence. Cold-build cost and actual target acceptance must remain visible.
+- **Confidence:** Medium for the build-time cost tradeoff; high for shared ownership.
+
+### Native runtime acquisition — Record the actual toolchain, do not imply binary equivalence
+
+- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
+- **The choice:** Two machines use the same pinned source but different Apple SDKs or GCC
+  revisions. Their compiler/tool information and build flags select different cache entries;
+  each output records its own hash. Neither output is called byte-equivalent to the vendor's
+  archive. Native hosts build their own target; cross-compilation is not guessed from a name.
+- **The gap:** The source and patch recipe was established, but the complete vendor build
+  environment and supported packaged Linux ABI floor were not.
+- **The reach:** Compiler/SDK changes require rebuilding, and Linux ARM64 success does not
+  close macOS, x64, old-CPU or packaged-linkage acceptance. The existing x64 feature floor
+  remains unchanged. No untested platform silently keeps the unpatched archive.
+- **Verdict:** **Sound.** Reproducible source inputs and observed toolchain identity are useful
+  evidence without pretending that they define a hermetic, bit-identical build.
+- **Confidence:** High for the evidence boundary; medium for native-only build ergonomics.
+
+### Native runtime acquisition — Damaged cache entries fail explicitly
+
+- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
+- **The choice:** A completed archive no longer matches its recorded hash, or a source patch
+  was interrupted. The build reports the exact disposable cache entry to remove; it does not
+  reset project sources or quietly download another implementation. An interrupted compilation
+  with intact prepared sources resumes through Ninja, the existing incremental build tool.
+- **The gap:** The plan required cache-safe acquisition but did not prescribe recovery from
+  partial patch application or damaged completed output.
+- **The reach:** Rare acquisition damage needs explicit build-cache cleanup. There is no
+  background janitor, stale-process detector, or runtime command that mutates this build state.
+- **Verdict:** **Sound with limits.** Failure remains visible and scoped; ordinary warm builds
+  are idempotent, while destructive cleanup is not inferred.
+- **Confidence:** Medium.
+
+### Native image packaging — The image addon, not a Rust SDK, owns final linkage
+
+- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
+- **The choice:** A release builds the Node image addon or Cargo builds its native tests.
+  Rust first supplies the image code and its Rust dependencies; the final linker then
+  resolves their native ORT calls from the pinned archive, followed by its system C++
+  dependencies. Loading every archive member forcibly, or calling an otherwise unnecessary
+  ORT function from image code, would make application behavior compensate for build order.
+  The compiler support libraries also follow ORT: the real Linux test link demonstrated
+  that GCC's outlined ARM atomics require its static support archive, not only libgcc_s.
+  The package instead produces only the Node dynamic library, not an unused Rust library
+  whose future callers would need a different transitive-linking contract.
+- **The gap:** The plan specified a Node native addon and one runtime acquisition owner,
+  but did not prescribe how that owner participates in Rust's final native link.
+- **The reach:** Existing Node APIs and native unit tests retain their contract. A future
+  public Rust SDK would require an explicit dependency/linkage design; this package does
+  not silently promise one. There is no database or image-protocol change.
+- **Verdict:** **Sound.** Link ordering belongs to the build owner, without broadening
+  the selected native objects or adding runtime calls solely to influence the linker.
+- **Confidence:** Medium for narrowing the crate's build outputs; high for final-link ownership.
+
+### Native image packaging — One shared macOS deployment floor
+
+- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
+- **The choice:** A developer compiles on a newer Mac to distribute an image addon to an
+  older Mac. The workspace Cargo configuration supplies one minimum macOS version to Rust,
+  LibRaw and ORT; an explicit build environment can override it. Without that shared value,
+  one C++ dependency could quietly target the builder's OS while the rest targeted an older
+  OS. A standalone Apple runtime preparation must supply its target explicitly, and the
+  packaged addon is checked against the same policy after installation outside the checkout.
+- **The gap:** LibRaw had an explicit image-addon floor, but the new runtime source build
+  did not yet consume a shared platform policy.
+- **The reach:** Changing the floor affects all native image components together and changes
+  the runtime cache identity. It does not declare the CLI's Node or Swift-helper OS support;
+  those are separate runtime requirements.
+- **Verdict:** **Sound.** A release's builder version cannot implicitly choose the image
+  addon's deployment floor, and explicit overrides remain visible in build provenance.
+- **Confidence:** High.

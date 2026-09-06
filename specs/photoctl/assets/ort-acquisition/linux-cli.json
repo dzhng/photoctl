@@ -1,0 +1,16 @@
+{
+  "code": 0,
+  "warnings": [
+    {
+      "event": "warn",
+      "code": "runtime_warning",
+      "message": "[runtime warning] Unknown CPU vendor. cpuinfo_vendor value: 0 (cpuid_info.cc:105 LogEarlyWarning)"
+    },
+    {
+      "event": "warn",
+      "code": "runtime_warning",
+      "message": "[session warning] Error merging shape info for output. '/image_encoder/trunk/Concat_3_output_0' source:{4} target:{5}. Falling back to lenient merge. (graph.cc:123 MergeShapeInfo)"
+    }
+  ],
+  "mask": "a_81c99b3c4cfa8cfdcc9e9dc8a23d5f3b90247de5321d3d9fbd810c274e44d488"
+}

@@ -1,0 +1,15 @@
+{
+  "source": "https://github.com/microsoft/onnxruntime.git",
+  "commit": "da9b5e364c465de65c49d91e696cd6485270757f",
+  "version": "1.28.0",
+  "builder": "https://github.com/pykeio/ort-artifacts/tree/29e64feda5106a3f9b1a5cab715f718219e080a9",
+  "patches": {
+    "0001-no-soname.patch": "2c663cfc6ff5ea9d024f832faad7b0c406b22a96a41435bc96c1347105573f04",
+    "0002-ignore-cpuinfo-arm64-patch.patch": "776365d103172b05e31b55bbd8999897175ee2b878bce813604f6d227818c632",
+    "0003-leak-logger-mutex.patch": "3c40758d13fe43ecc5119d74af39f9a81ba7993e6d3ee3944cf17104e03ae270",
+    "0004-faulty-kernel-registry-release.patch": "a76f0d5c7c3228554ea35af50d3039f2b3fb94709ffc2bcb647d6fa8fefb082b",
+    "0006-clang-nvcc-fixes.patch": "98e81a33b9a6d14c60ceabcd58270f9428694c252c6d95fff7cfc1e29c2c8952",
+    "0007-cuda-compilation.patch": "0a712d81b47e9708e2736a02c47795296662caea02241a999ee82851e694afe9",
+    "0008-lazy-cpu.patch": "8870236df9069c267672ab0a9cbc78ecab87884bf69881a6260db7b9db950b5c"
+  }
+}

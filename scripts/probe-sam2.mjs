@@ -29,7 +29,7 @@ const encoder = await readFile(join(values.models, "encoder.onnx"));
 const decoder = await readFile(join(values.models, "decoder.onnx"));
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const runtime = createSam2OnnxRuntime(encoder, decoder);
-const limits = { encodeMs: 4000, maxRssBytes: 3_000_000_000 };
+const limits = { encodeMs: 4000, maxRssBytes: 5_000_000_000 };
 const samples = [];
 let maskHash;
 let encodeMs;

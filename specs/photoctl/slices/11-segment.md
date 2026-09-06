@@ -6,7 +6,11 @@
   `models/` pinned. `photoctl-image::sam2` via `ort` CPU EP (D40); encoder once per `(id, tier)` cached in the daemon; decoder per
   prompt. Input = develop render (offline: 1616 tier) letterboxed to 1024 (mapping in `coordinates.ts`); 256² logits → bilinear
   upsample → threshold 0 → base-res mask. Docker: weights fetched in the Dockerfile with hash check (missing → loud failure).
-  G6: encode ≤ 4 s on M5 CPU, RSS ≤ 3 GB. `doctor --fetch-models`.
+  G6: encode ≤ 4 s on M5 CPU, peak process RSS ≤ 5 GB (decimal). `doctor --fetch-models`.
+  The memory budget is a regression alarm, not a product allocation cap. David approved
+  this budget on 2026-09-06; earlier evidence retains its original 3 GB threshold.
+  Repeated-request and cache-eviction checks remain required: a passing peak alone does
+  not prove bounded retention. Investigate breaches rather than automatically raising the budget.
 - **11b** `segment <id> --at x,y… [--dry-run]` (SAM point prompts; may combine with `--box`); `--text "…"` → `StructuredModelAdapter`
   Zod `{instances:[{box_2d:[ymin,xmin,ymax,xmax],label}]}` (0–1000, converted in the adapter) → SAM box prompt per instance, one layer each.
 - `fixtures/a7c2.json` gains `sam_probes:[{at:[x,y], min_area_pct, max_area_pct}]` derived from frame content, not model output.
@@ -62,9 +66,9 @@ Detailed edge acceptance and full-command G6 remain open independently.
 [Export evidence](../assets/sam-export/README.md) records the real Hydra resolution regression, raw-logit ranking normalization,
 unchanged parity tolerances, and fail-closed publication boundary. Export-process RSS is not inference-process RSS.
 
-## Linux runtime initialization — causal proof, integration next
+## Linux runtime initialization — default acquisition integrated
 
-The mandatory Linux model gate is red before inference: loading the ARM64 addon emits an ORT
+The original mandatory Linux model gate was red before inference: loading the ARM64 addon emitted an ORT
 CPU-vendor warning outside the NDJSON stderr contract. The
 [portable gate evidence](../assets/sam-photographic/README.md#portable-gate-checkpoint) identifies
 the native static initializer. Do not filter stderr, make this test optional, disable CPU features,
@@ -105,13 +109,16 @@ passes the unchanged shared photographic CLI model test with strict NDJSON parsi
 CLI capture retains both the CPU-vendor warning and the encoder's shape-merge warning. This proves
 the native/command transport with the override, not the repository's default artifact acquisition.
 
-A production patch must have one pinned, reproducible source/patch/build identity selected by host,
-Docker, and release builds; none may silently fall back to the old archive. The supported
-`ORT_LIB_PATH` static-link seam is available, but distribution details remain to be decided from
-the proof. Public artifact hosting stays unconfigured until explicitly supplied. Acceptance requires
-load/identity/error tests, unchanged model parity, actual strict CLI model gates, and packaged-target
-load checks; coarse Mac success alone cannot close Linux or release compatibility. No database
-migration or backward-compatibility shim is required by this proof.
+The [production acquisition owner](../../../crates/photoctl-image/ort/README.md) now selects
+one pinned source/patch/build identity through Cargo for host, Docker and release builds.
+`ort-sys` linking is disabled to prevent a competing download/selection path, not to choose
+an alternative API backend. No public artifact host or runtime-library override is required.
+The [default-acquisition evidence](../assets/ort-acquisition/README.md) records actual quiet
+workspace and packed native initialization, unchanged photographic model gates and native
+SAM tests on Linux ARM64 and macOS ARM64. The Mac full external packed-install/linkage journey
+also remains green. All four native release jobs require packed initialization; unrun x64
+jobs and older Linux ABI compatibility remain release limits, not inferred acceptance.
+No database migration or backward-compatibility shim is required by this integration.
 
 ## Mask inspection contract
 

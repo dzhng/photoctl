@@ -25,3 +25,5 @@ Principles that shape everything here:
 - [`fixtures/`](fixtures/README.md) — committed known-good and known-bad assets, each with the
   fact it proves.
 - Root `package.json` scripts are the inventory of build, test, and release commands.
+- [Native CPU runtime acquisition](crates/photoctl-image/ort/README.md) explains the
+  pinned source build, required tools, cache ownership, and platform limits.

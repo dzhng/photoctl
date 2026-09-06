@@ -28,7 +28,24 @@ export interface DevelopedImage {
   wbPreApplied: true;
 }
 
+export type NativeDecodedImage =
+  | NativeLinearImage
+  | (DevelopedImage & { width: number; height: number });
+
+export interface PixelFrameTransform {
+  width: number;
+  height: number;
+  matrix: readonly [number, number, number, number, number, number];
+}
+
 interface NativeBinding {
+  projectSupportedRgbPixels(
+    data: Float32Array,
+    width: number,
+    height: number,
+    stages: readonly PixelFrameTransform[],
+    restrictions: readonly PixelFrameTransform[],
+  ): Promise<Float32Array>;
   clipMaskToFrame(
     data: Float32Array,
     width: number,
@@ -68,7 +85,11 @@ interface NativeBinding {
   atomicRenameNoReplace(source: string, destination: string): AtomicRenameOutcome;
   librawVersion(): string;
   probeLibraw(path: string): NativeProbe;
-  decodeLibrawImage(path: string, scale: number): Promise<NativeLinearImage>;
+  decodeLibrawImage(
+    path: string,
+    scale: number,
+    outputSpace?: "scene-linear-rec2020",
+  ): Promise<NativeDecodedImage>;
   solidRgbPixels(
     width: number,
     height: number,
@@ -443,8 +464,18 @@ export function probeLibraw(path: string): NativeProbe {
   return requiredBinding().probeLibraw(path);
 }
 
-export async function decodeLibraw(path: string, scale: number): Promise<NativeLinearImage> {
-  const image = await requiredBinding().decodeLibrawImage(path, scale);
+export function decodeLibraw(path: string, scale: number): Promise<NativeLinearImage>;
+export function decodeLibraw(
+  path: string,
+  scale: number,
+  outputSpace: "scene-linear-rec2020" | undefined,
+): Promise<NativeDecodedImage>;
+export async function decodeLibraw(
+  path: string,
+  scale: number,
+  outputSpace?: "scene-linear-rec2020",
+): Promise<NativeDecodedImage> {
+  const image = await requiredBinding().decodeLibrawImage(path, scale, outputSpace);
   return {
     ...image,
     data:
@@ -604,6 +635,19 @@ export async function detectHorizon(
   return (
     (await requiredBinding().detectHorizon(data, width, height, analysisToView, currentDegrees)) ??
     null
+  );
+}
+
+/** Snapshot RGB once, preserving ordered sampling and final visible-frame restrictions. */
+export async function projectSupportedRgbPixels(
+  data: Float32Array,
+  width: number,
+  height: number,
+  stages: readonly PixelFrameTransform[],
+  restrictions: readonly PixelFrameTransform[],
+): Promise<Float32Array> {
+  return asFloat32Array(
+    await requiredBinding().projectSupportedRgbPixels(data, width, height, stages, restrictions),
   );
 }
 

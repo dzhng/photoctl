@@ -1,0 +1,103 @@
+{
+  "expectedMaskHash": "a_e60a6c1bb2a1d212d450f128f9ff70809ee6e704e8bf6f093d18645ee68157cd",
+  "daemonPids": [
+    86057
+  ],
+  "date": "2026-09-06",
+  "baseCommit": "3cf74dd + uncommitted owned supported projection",
+  "nativeSha256": "80b83285a254332d64c4e1b3958545a68fed0f5350ed2e31286b3b0d46630864",
+  "scope": "Full-resolution cropped/rotated expanded canvas, public segment requests through one persistent daemon",
+  "source": {
+    "w": 7008,
+    "h": 4672
+  },
+  "frame": {
+    "catalog": {
+      "w": 7008,
+      "h": 4672
+    },
+    "source": {
+      "w": 7008,
+      "h": 4672
+    },
+    "raster": {
+      "w": 4328,
+      "h": 6728
+    },
+    "sourceToRaster": [
+      0,
+      1,
+      -1,
+      0,
+      4464,
+      -136
+    ],
+    "baseToRaster": [
+      0,
+      1,
+      -1,
+      0,
+      4464,
+      -136
+    ],
+    "rasterToBase": [
+      0,
+      -1,
+      1,
+      0,
+      136,
+      4464
+    ],
+    "visibleBasePolygon": [
+      [
+        136,
+        4464
+      ],
+      [
+        136,
+        136
+      ],
+      [
+        6864,
+        136
+      ],
+      [
+        6864,
+        4464
+      ]
+    ]
+  },
+  "forcedGc": false,
+  "requests": 1,
+  "masks": [
+    "a_e60a6c1bb2a1d212d450f128f9ff70809ee6e704e8bf6f093d18645ee68157cd"
+  ],
+  "peakRssBytes": 3747168256,
+  "limits": {
+    "rssBytes": 3000000000,
+    "encodeMs": 4000
+  },
+  "encodes": [
+    {
+      "event": "runEncoder:done",
+      "pid": 86057,
+      "ms": 4021.518917,
+      "rss": 3560325120,
+      "maxRss": 3747168256,
+      "durationMs": 938.5813330000001
+    }
+  ],
+  "daemonPid": 86057,
+  "daemonStopped": true,
+  "passed": false,
+  "controls": {
+    "ort": "Unchanged default ort-sys prebuilt CPU runtime from base f458595; isolated release addon only",
+    "helperSha256": "5aa6bf2d4fd8960c3dcae851faa3ddd1ff6584485df01484f464e23ca432343c",
+    "encoderSha256": "113d37e2911d63f84c16daa4944260382741738dec80248bfd7adea8a796311e",
+    "decoderSha256": "be578ee71ad617050c9266b5c36f046302e8333a9e1d351f113848327b0f339d",
+    "sourceDecoder": "decodeLibrawImage",
+    "scratch": "/private/tmp/photoctl-owned-projection-g6.EHaLJn",
+    "observer": "Unchanged native-boundary and 100 ms RSS instrumentation, with projectSupportedRgbPixels added",
+    "scopeLimit": "Safety-stopped after first request; not all-three G6 acceptance or a controlled interleaved RSS comparison"
+  }
+}

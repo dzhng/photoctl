@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-06",
+  "baseCommit": "5c526a8",
+  "scope": "Root integration of pinned ORT acquisition, owned composite buffers and ordered supported RGB projection",
+  "nativeSha256": "d834378d3163ffb252a9b839b5b68dd6f617e5fb858593e104576e2789d43073",
+  "checks": [
+    {
+      "command": "node node_modules/vitest/vitest.mjs run packages/render/src/sam2-frame.test.ts packages/render/src/sam2.test.ts packages/render/src/sam2-runtime.test.ts packages/commands/src/segment-text-fake.test.ts",
+      "filesPassed": 4,
+      "testsPassed": 23,
+      "exitCode": 0
+    },
+    {
+      "command": "PHOTOCTL_SAM_MODELS_DIR=/private/tmp/photoctl-sam-export-env.77ruAk/candidate-staged node node_modules/vitest/vitest.mjs run --config vitest.models.config.ts",
+      "filesPassed": 2,
+      "testsPassed": 3,
+      "exitCode": 0
+    }
+  ],
+  "limitations": [
+    "Focused correctness and native-loading checks, not whole-spec closeout",
+    "No merged-build G6 resource acceptance established by these tests",
+    "Does not include the subsequent owned scene-decode change"
+  ]
+}

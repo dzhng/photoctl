@@ -1,0 +1,46 @@
+{
+  "identity": {
+    "recipe": {
+      "source": "https://github.com/microsoft/onnxruntime.git",
+      "commit": "da9b5e364c465de65c49d91e696cd6485270757f",
+      "version": "1.28.0",
+      "builder": "https://github.com/pykeio/ort-artifacts/tree/29e64feda5106a3f9b1a5cab715f718219e080a9",
+      "patches": {
+        "0001-no-soname.patch": "2c663cfc6ff5ea9d024f832faad7b0c406b22a96a41435bc96c1347105573f04",
+        "0002-ignore-cpuinfo-arm64-patch.patch": "776365d103172b05e31b55bbd8999897175ee2b878bce813604f6d227818c632",
+        "0003-leak-logger-mutex.patch": "3c40758d13fe43ecc5119d74af39f9a81ba7993e6d3ee3944cf17104e03ae270",
+        "0004-faulty-kernel-registry-release.patch": "a76f0d5c7c3228554ea35af50d3039f2b3fb94709ffc2bcb647d6fa8fefb082b",
+        "0006-clang-nvcc-fixes.patch": "98e81a33b9a6d14c60ceabcd58270f9428694c252c6d95fff7cfc1e29c2c8952",
+        "0007-cuda-compilation.patch": "0a712d81b47e9708e2736a02c47795296662caea02241a999ee82851e694afe9",
+        "0008-lazy-cpu.patch": "8870236df9069c267672ab0a9cbc78ecab87884bf69881a6260db7b9db950b5c"
+      }
+    },
+    "target": "aarch64-unknown-linux-gnu",
+    "tools": {
+      "gcc-14": "gcc-14 (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "g++-14": "g++-14 (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "cmake": "cmake version 3.31.6\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+      "ninja": "1.12.1",
+      "python": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+      "ar": "GNU ar (GNU Binutils for Debian) 2.44\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) any later version.\nThis program has absolutely no warranty.",
+      "ld": "GNU ld (GNU Binutils for Debian) 2.44\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) a later version.\nThis program has absolutely no warranty."
+    },
+    "flags": [
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_CONFIGURATION_TYPES=Release",
+      "-DCMAKE_C_COMPILER=gcc-14",
+      "-DCMAKE_CXX_COMPILER=g++-14",
+      "-Donnxruntime_BUILD_UNIT_TESTS=OFF",
+      "-Donnxruntime_CLIENT_PACKAGE_BUILD=ON",
+      "-Donnxruntime_USE_KLEIDIAI=ON",
+      "-DCMAKE_EXE_LINKER_FLAGS=",
+      "-DCMAKE_SHARED_LINKER_FLAGS=",
+      "-DCMAKE_C_FLAGS=",
+      "-DCMAKE_CXX_FLAGS="
+    ],
+    "preparer": "3a49f5470f192b205061bd432ec890482cefe159696f2a9c1c3a76e2b13a4567",
+    "cmake": "617083ada99d48d4ae4db1dba999b67bf4ec651b22b50b29e6432db1d4504a40"
+  },
+  "sha256": "9900fb35293eb7c493046e326ad5e712c33c3489b492e32a07d9bd97543a90e2",
+  "build_seconds": 1736.004211623993
+}

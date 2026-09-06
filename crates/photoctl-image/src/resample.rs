@@ -13,6 +13,153 @@ pub enum Filter {
 
 const MAX_LANCZOS_TRANSFORM_SAMPLES_PER_PIXEL: f64 = 4_096.0;
 
+#[napi(object)]
+pub struct PixelFrameTransform {
+    pub width: u32,
+    pub height: u32,
+    pub matrix: Vec<f64>,
+}
+
+struct FrameTransform {
+    width: u32,
+    height: u32,
+    matrix: [f64; 6],
+}
+
+impl TryFrom<PixelFrameTransform> for FrameTransform {
+    type Error = Error;
+
+    fn try_from(frame: PixelFrameTransform) -> napi::Result<Self> {
+        let matrix: [f64; 6] = frame
+            .matrix
+            .try_into()
+            .map_err(|_| invalid_argument("frame matrix must contain six values".to_owned()))?;
+        if frame.width == 0 || frame.height == 0 || matrix.iter().any(|v| !v.is_finite()) {
+            return Err(invalid_argument(
+                "frame requires finite geometry and positive dimensions".to_owned(),
+            ));
+        }
+        Ok(Self {
+            width: frame.width,
+            height: frame.height,
+            matrix,
+        })
+    }
+}
+
+pub(crate) fn frame_contains(matrix: [f64; 6], width: u32, height: u32, x: u32, y: u32) -> bool {
+    let [a, b, c, d, tx, ty] = matrix;
+    let fx = a * (f64::from(x) + 0.5) + c * (f64::from(y) + 0.5) + tx;
+    let fy = b * (f64::from(x) + 0.5) + d * (f64::from(y) + 0.5) + ty;
+    !(fx < 0.0 || fy < 0.0 || fx >= f64::from(width) || fy >= f64::from(height))
+}
+
+#[napi]
+pub fn project_supported_rgb_pixels(
+    env: Env,
+    data: Float32Array,
+    width: u32,
+    height: u32,
+    stages: Vec<PixelFrameTransform>,
+    restrictions: Vec<PixelFrameTransform>,
+) -> napi::Result<AsyncTask<SupportedProjectionTask>> {
+    validate(&data, width, height, 3, width, height).map_err(invalid_argument)?;
+    let stages = stages
+        .into_iter()
+        .map(FrameTransform::try_from)
+        .collect::<napi::Result<Vec<_>>>()?;
+    let restrictions = restrictions
+        .into_iter()
+        .map(FrameTransform::try_from)
+        .collect::<napi::Result<Vec<_>>>()?;
+    let mut capacities = [data.len(), 0];
+    for (index, stage) in stages.iter().enumerate() {
+        let len = validate(&data, width, height, 3, stage.width, stage.height)
+            .map_err(invalid_argument)?;
+        capacities[(index + 1) % 2] = capacities[(index + 1) % 2].max(len);
+    }
+    // Charge actual owned allocations, not predicted work. Alternating buffers
+    // keep intermediate frames off the JS heap and avoid per-stage snapshots.
+    let mut owned = Vec::with_capacity(capacities[0]);
+    owned.extend_from_slice(&data);
+    let scratch = Vec::with_capacity(capacities[1]);
+    let memory = [
+        TaskMemory::for_vec(env, &owned)?,
+        TaskMemory::for_vec(env, &scratch)?,
+    ];
+    Ok(AsyncTask::new(SupportedProjectionTask {
+        data: owned,
+        scratch,
+        memory,
+        width,
+        height,
+        stages,
+        restrictions,
+    }))
+}
+
+pub struct SupportedProjectionTask {
+    data: Vec<f32>,
+    scratch: Vec<f32>,
+    memory: [TaskMemory; 2],
+    width: u32,
+    height: u32,
+    stages: Vec<FrameTransform>,
+    restrictions: Vec<FrameTransform>,
+}
+
+impl Task for SupportedProjectionTask {
+    type Output = Vec<f32>;
+    type JsValue = Float32Array;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        for stage in &self.stages {
+            transform_into(
+                &self.data,
+                self.width,
+                self.height,
+                3,
+                stage.width,
+                stage.height,
+                stage.matrix,
+                Filter::Lanczos3,
+                &mut self.scratch,
+            )
+            .map_err(invalid_argument)?;
+            std::mem::swap(&mut self.data, &mut self.scratch);
+            self.width = stage.width;
+            self.height = stage.height;
+        }
+        if self.data.iter().any(|value| !value.is_finite()) {
+            return Err(invalid_argument("RGB samples must be finite".to_owned()));
+        }
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let supported = self
+                    .restrictions
+                    .iter()
+                    .all(|frame| frame_contains(frame.matrix, frame.width, frame.height, x, y));
+                for value in &mut self.data[((y * self.width + x) as usize) * 3..][..3] {
+                    // A zero-base support composite produces positive zero,
+                    // including for selected negative-zero content.
+                    if !supported || *value == 0.0 {
+                        *value = 0.0;
+                    }
+                }
+            }
+        }
+        // Node accounts the exposed backing-store length, not spare Vec capacity.
+        // Release the unused workspace before tightening the final allocation.
+        self.scratch = Vec::new();
+        Ok(std::mem::take(&mut self.data).into_boxed_slice().into_vec())
+    }
+
+    fn resolve(&mut self, _env: Env, data: Self::Output) -> napi::Result<Self::JsValue> {
+        self.memory[self.stages.len() % 2].release()?;
+        Ok(data.into())
+    }
+}
+
 #[napi]
 pub fn resample_display_srgb(
     data: Uint16Array,
@@ -695,6 +842,33 @@ pub fn transform(
     matrix: [f64; 6],
     filter: Filter,
 ) -> Result<Vec<f32>, String> {
+    let mut output = Vec::new();
+    transform_into(
+        input,
+        source_width,
+        source_height,
+        channels,
+        output_width,
+        output_height,
+        matrix,
+        filter,
+        &mut output,
+    )?;
+    Ok(output)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn transform_into(
+    input: &[f32],
+    source_width: u32,
+    source_height: u32,
+    channels: u32,
+    output_width: u32,
+    output_height: u32,
+    matrix: [f64; 6],
+    filter: Filter,
+    output: &mut Vec<f32>,
+) -> Result<(), String> {
     let output_len = validate(
         input,
         source_width,
@@ -736,7 +910,7 @@ pub fn transform(
     {
         return Err("Lanczos3 transform kernel exceeds the safe work limit".to_owned());
     }
-    let mut output = vec![0.0; output_len];
+    output.resize(output_len, 0.0);
     for output_y in 0..output_height {
         for output_x in 0..output_width {
             let output_center_x = f64::from(output_x) + 0.5;
@@ -774,7 +948,7 @@ pub fn transform(
             }
         }
     }
-    Ok(output)
+    Ok(())
 }
 
 fn is_exact_integer_transform(matrix: [f64; 6]) -> bool {

@@ -1,0 +1,3 @@
+[env]
+# Shared image-addon floor; an explicit build environment may select a newer OS.
+MACOSX_DEPLOYMENT_TARGET = "11.0"

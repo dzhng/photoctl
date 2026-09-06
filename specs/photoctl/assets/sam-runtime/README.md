@@ -12,6 +12,22 @@ spec limits; missing models, invalid tensors, or inconsistent masks also fail lo
 
 ## Controlled comparison, 2026-09-06
 
+Historical measurements below retain the limits used when they ran. The current
+[G6 contract](../../slices/11-segment.md) uses a user-approved 5 GB peak-RSS budget;
+changing that policy does not relabel historical failures or complete interrupted runs.
+Repeated-request/cache checks and investigation of memory growth remain required.
+
+[Merged correctness checks](merged-projection-checks.json) cover native loading and
+segmentation after acquisition/composite/projection integration, not G6 resource acceptance.
+
+The [merged scene-decode witness](merged-scene-resource.json) separately passes the
+full-resolution cropped/rotated canvas journey under the approved budget. All three
+public requests use one daemon and preserve the expected mask. Peak RSS is 3.477 GB,
+the encoder runs once in 1.264 seconds, and the daemon exits cleanly. Source, models,
+helper and release-addon hashes bind the report to its inputs. No forced collection
+or provider work is used. This is a recorded-host resource pass, not photographic
+edge acceptance or a guarantee for every input/platform.
+
 [Before](before.json) and [after](after.json) use the same normalized SAM candidate, input, sixteen
 photo identities, default libuv pool, and Apple M5 Pro. The original mutex-serialized runtime
 peaked at 4,306,599,936 bytes; the dedicated inference thread peaked at 2,818,965,504 bytes.
@@ -88,6 +104,48 @@ ownership evidence only, never resource acceptance. This establishes an earlier 
 photographic quality acceptance.
 
 ## Native task allocation accounting
+
+Scene-linear consumers can request that output space from the existing decoder contract. LibRaw
+then moves its decoded, already-scaled vector through the same camera-front conversion before
+publishing pixels to JavaScript. Default decode still returns camera samples and calibration;
+scene output carries canonical levels and no stale camera-only calibration fields. File and CIRAW
+already produce scene-linear pixels, and generic camera conversion remains idempotent for scene
+input. Decoder selection, orientation, crop dimensions, and resize-before-color ordering do not change.
+
+This avoids the full camera Float32 round trip through JavaScript and the next native snapshot.
+A Rust allocation-identity regression fails on a deliberate clone; the public quarter-scale exact
+hash fails when color conversion is moved before resizing. Full-source 7008×4672 output matches
+the original two-step conversion exactly (SHA-256 `c65b76a77523358b919f8492227f7f70b7fca81b0bc6089035977701d9ded35b`).
+This is pixel/allocation evidence, not an RSS or G6 pass. Decode allocations arise on the worker;
+no predicted Node memory reservation or worker-thread Node-API call is added.
+
+The shared [supported RGB projection](../../../../packages/render/src/graph/projection.ts) plans
+ordered native sampling stages and final visible-frame restrictions. Stage matrices map each input
+to its next output; restriction matrices map final output centers into an authored visible frame.
+The native worker snapshots RGB once, alternates two owned vectors, and clips the final pixels
+without publishing intermediate RGB or materializing support masks. It uses the existing sampler
+and the mask clipper's shared containment predicate: folding successive transforms would change
+fractional sampling, while forgetting earlier frame restrictions would restore cropped-away pixels.
+
+The task charges actual allocated vector capacities, including its reusable workspace. Before
+transferring final pixels, it frees the other vector and tightens output capacity to the exposed
+typed-array length, which is all Node accounts. This can reallocate; it is not a promise of constant
+RSS. Public tests pin exact staged/fractional pixels, signed zero, invocation snapshots, queued
+charges, output transfer, and rejection after an intermediate stage. Deliberately reversing stages,
+disabling clipping/zero normalization, delaying the snapshot, and omitting a buffer charge fail
+their respective regressions. The independent static review found no actionable defect.
+
+[Supported-projection measurement](supported-projection-resource.json) remains **red** at
+3,747,168,256 bytes. The unchanged safety rule stopped after the first of three required requests;
+its mask remains exact and encoding took 939 ms. The own release build uses the old default ORT,
+matched helper and models, and no forced GC. High-water RSS reaches 2.692 GB after camera-front
+conversion, 3.405 GB after supported projection, then 3.747 GB during display conversion before
+inference. This removes demonstrable intermediate allocations, but does not close G6 or establish
+a reliable RSS ranking against separate historical runs. Source/front lifetimes and allocator
+residency remain separate from the task's exact allocation accounting.
+
+The [composite allocation audit](composite-memory.md) extends the same ownership principle to
+masked operations and separates exact allocation/counter proofs from full-command RSS acceptance.
 
 Rust snapshots owned by asynchronous pixel tasks are separate from JavaScript backing stores. The task reports its actual
 vector capacity to Node's external-memory accounting until disposal or output transfer. For pointwise color conversion,

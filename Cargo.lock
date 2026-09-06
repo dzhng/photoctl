@@ -599,6 +599,7 @@ dependencies = [
  "napi-build",
  "napi-derive",
  "ort",
+ "ort-sys",
  "serde",
  "serde_json",
 ]

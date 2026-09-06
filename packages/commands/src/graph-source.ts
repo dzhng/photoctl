@@ -134,7 +134,9 @@ function nativeCandidate(
     file,
     fallback: null,
     produce: async () => {
-      const image = await renderLinearSource(await decoder.decode(source, { scale: 1 }));
+      const image = await renderLinearSource(
+        await decoder.decode(source, { scale: 1, outputSpace: "scene-linear-rec2020" }),
+      );
       return {
         image,
         provenance: {

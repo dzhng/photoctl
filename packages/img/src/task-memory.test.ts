@@ -15,9 +15,23 @@ function measureTaskMemory(mode: string, reject = false) {
       "-e",
       `
           import { writeSync } from "node:fs";
-          import { developCameraFront, linearRec2020ToDisplaySrgb, resamplePixels, transformPixels } from ${JSON.stringify(new URL("../dist/index.js", import.meta.url).href)};
+          import { developCameraFront, linearRec2020ToDisplaySrgb, resamplePixels, transformPixels, projectSupportedRgbPixels, compositeMaskedPixels, liftMaskedPixels, overlayMaskedPixels } from ${JSON.stringify(new URL("../dist/index.js", import.meta.url).href)};
           const mode = ${JSON.stringify(mode)};
-          const convert = mode === "resample"
+          const masked = ["composite", "lift", "overlay"].includes(mode);
+          const mask = masked ? new Float32Array(262144).fill(0.25) : undefined;
+          const projectionMatrix = [0.5,0,0,0.5,0,0];
+          const convert = mode === "lift"
+            ? data => liftMaskedPixels(data, mask, 512, 512)
+            : mode === "overlay"
+            ? data => overlayMaskedPixels(data, data, mask, 512, 512, 0.5)
+            : mode === "composite"
+            ? data => compositeMaskedPixels(data, data, mask, 512, 512, 0.5)
+            : mode === "projection"
+            ? data => projectSupportedRgbPixels(data, 512, 512, [
+                { width: 256, height: 256, matrix: [0.5,0,0,0.5,0,0] },
+                { width: 128, height: 128, matrix: projectionMatrix },
+              ], [])
+            : mode === "resample"
             ? data => resamplePixels(data, 512, 512, 3, 256, 256, "bilinear")
             : mode === "transform"
             ? data => transformPixels(data, 512, 512, 3, 256, 256, [0.5,0,0,0.5,0,0], "bilinear")
@@ -28,8 +42,9 @@ function measureTaskMemory(mode: string, reject = false) {
                 whiteLevel: 1, blackLevel: 0,
                 camXyz: [1,0,0,0,1,0,0,0,1], asShotWb: [1,1,1], wbPreApplied: true,
               })).data;
-          const warm = await convert(new Float32Array(mode === "resample" || mode === "transform" ? 3 * 262144 : 3).fill(0.25));
-          const input = new Float32Array(3 * 262144 + (${reject} ? 256 : 0)).fill(0.25);
+          const warm = await convert(new Float32Array(masked || ["resample", "transform", "projection"].includes(mode) ? 3 * 262144 : 3).fill(0.25));
+          if (${reject} && mode === "projection") projectionMatrix.fill(0);
+          const input = new Float32Array(3 * 262144 + (${reject} && mode !== "projection" ? 256 : 0)).fill(0.25);
           const checkpoint = name => {
             writeSync(1, "PHASE " + name + "\\n");
             global.gc(); global.gc();
@@ -101,9 +116,51 @@ test("resample pending work reports its native input snapshot", () => {
   expect(result.queued - result.before).toBe(result.bytes / 1024);
 });
 
+test.each(["composite", "lift", "overlay"])(
+  "%s pending work reports its RGB snapshots and mask capacity",
+  (mode) => {
+    const result = measureTaskMemory(mode);
+    expect(result.queued - result.before).toBe(
+      (result.bytes * (mode === "lift" ? 4 : 7)) / 3 / 1024,
+    );
+  },
+);
+
+test.each(["composite", "lift", "overlay"])(
+  "%s settles with only its output backing store charged",
+  (mode) => {
+    const result = measureTaskMemory(mode);
+    expect(result.sample).toBe(0.25);
+    expect(result.outputBytes).toBe(result.bytes);
+    expect(result.settled - result.before).toBe(result.bytes / 1024);
+  },
+);
+
+test.each(["composite", "lift", "overlay"])(
+  "invalid %s requests leave no native snapshot charge",
+  (mode) => {
+    const result = measureTaskMemory(mode, true);
+    expect(result.errors).toEqual(Array(4).fill("RGB data does not match the mask dimensions"));
+    expect(result.settled).toBe(result.before);
+  },
+);
+
 test("transform pending work reports its native input snapshot", () => {
   const result = measureTaskMemory("transform");
   expect(result.queued - result.before).toBe(result.bytes / 1024);
+});
+
+test("supported projection accounts its two owned stage buffers and transfers only final pixels", () => {
+  const result = measureTaskMemory("projection");
+  expect(result.queued - result.before).toBe(((512 * 512 + 256 * 256) * 3 * 4) / 1024);
+  expect(result.outputBytes).toBe(128 * 128 * 3 * 4);
+  expect(result.settled - result.before).toBe(result.outputBytes / 1024);
+});
+
+test("supported projection rejection after an intermediate stage releases both charges", () => {
+  const result = measureTaskMemory("projection", true);
+  expect(result.errors).toEqual(Array(4).fill("transform matrix must be invertible"));
+  expect(result.settled).toBe(result.before);
 });
 
 test.each(["resample", "transform"])("%s settles with only its distinct output charged", (mode) => {
