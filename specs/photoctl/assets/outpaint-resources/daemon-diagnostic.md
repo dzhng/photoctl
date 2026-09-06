@@ -107,3 +107,22 @@ PID 98307 exits, and the artifact hash remains
 full observations. The next implementation gate is the existing native task-counter test:
 charge the pending snapshot and release it after both success and rejection. Its test-only
 GC observes the counter; it must not become runtime behavior or an RSS acceptance workaround.
+
+## Validation accounting correction
+
+The native validator now charges its owned byte snapshot through the existing `TaskMemory`
+guard. Successful completion frees the snapshot before releasing the charge; task destruction
+also covers rejection and early exits. No output pixel allocation is returned or transferred,
+and JavaScript arguments, finite-sample validation and pixel math are unchanged.
+
+The regression observes a pending delta of 0 KB on the old addon where 3,072 KB is required.
+The corrected addon passes; intentionally retaining the guard fails both success and rejection
+cleanup checks, and bypassing finite validation fails corrupt-input rejection. After restoration,
+all 47 task-memory, artifact-publication and linear-TIFF tests pass in both the isolated worktree
+and the integrated root runtime. Controlled GC exists only inside the pre-existing counter-test
+harness, not production or resource acceptance.
+
+Corrected addon SHA-256 is `95d804f431a544226789ca69b3c20f9e5e1f5f851912d7ff26863bf39e2f8984`;
+native source SHA-256 is `1e4eeeab45133347411f72c3527fd5b74c4452df4d26fe963b042203de77d2e2`.
+This closes the exercised accounting defect, not the historical 5 GB failure. The unchanged
+full-resolution daemon workload must still establish its own resource and pixel results.
