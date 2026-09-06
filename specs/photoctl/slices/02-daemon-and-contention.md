@@ -63,6 +63,12 @@ window does not consume the caller's lock-wait budget. Recovery takes the adviso
 metadata as authoritative, so stale artifacts with a reused PID remain replaceable. The Unix socket and current-run log are
 owner-only, and daemon restarts truncate the prior log.
 
+Terminal startup failure includes the child's `exit_code` or `signal` and the existing
+private `log_path`, while retaining `daemon_unavailable`/69 and `library`. Log contents
+are never copied into public JSON. A signalled child is terminal immediately rather than
+waiting for the remaining startup budget; the inherited lock can be acquired afterward.
+This improves diagnosis and recovery without replaying the interrupted request.
+
 Command recovery distinguishes connection failure from lost acknowledgement. Before any request
 can be sent, a failed connection may recover the daemon and try once. After sending starts, a lost
 response returns `daemon_unavailable` with an unknown-outcome message; the CLI must not replay a

@@ -53,3 +53,9 @@ build label nor the total test count proves the cause of the camera timeouts. Ac
 telemetry and actionable startup failure details remain missing. The audit's complete scratch
 record is `/private/tmp/photoctl-highlight-measure/ci-performance-audit.md`; no runner or native
 configuration was changed on the strength of this bounded experiment.
+
+Startup failures now report observed child exit/signal and the existing private log path
+without serializing log contents. Signal termination is detected promptly. Focused public
+tests cover both terminal modes, lock reacquisition and later successful startup, alongside
+lost-response no-replay and optional-init behavior. This enables diagnosis, not a claim that
+the earlier CI startup failure's cause has been reproduced or fixed.

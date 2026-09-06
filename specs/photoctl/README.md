@@ -21,7 +21,7 @@ update this handoff, and continue until every requirement is verified—not mere
 **First priority: resolve the failing CI gate.** The [failure triage](assets/ci-triage.md)
 separates reproduced contract defects, stale fixtures and unresolved timing failures.
 Portable fixture wiring, stale assertions and offline export hints have focused fixes;
-daemon startup diagnostics and runner resource behavior are the next concrete work. No green full CI
+daemon startup diagnostics are integrated and runner resource behavior remains unresolved. No green full CI
 gate is claimed. Do not blindly increase timeouts or repin hashes.
 
 **Camera photographic acceptance remains open.** The public fixture gold exam exports all
@@ -50,7 +50,9 @@ the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next n
 - [Outpaint](slices/12-outpaint.md): framed masks, original-relative retouch and reversible
   native-density layers are integrated. Fresh cold fallback now proves reduced source quality
   and reconnect promotion without paid replay through built and prebuilt-runtime installed CLI.
-  Full-resolution resource measurements pass the RSS canary. The
+  Single-process full-resolution measurements pass the RSS canary, but the
+  [persistent-daemon attempt](assets/outpaint-resources/daemon.md) crosses 5 GB after
+  its first expanded JPEG export. Diagnose ownership/retention before repeating cycles. The
   [sampling correction](assets/outpaint-resources/README.md#isolated-optimized-runtime-verification)
   reduces measured cold-export time with byte-identical deliveries. Fresh-native installed
   warm/cold synthetic journeys pass; photographic and final RAW-policy release acceptance

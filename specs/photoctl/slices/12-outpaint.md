@@ -9,8 +9,10 @@ canvas. This subplan owns the remaining geometry decisions before generation is 
 Frame ownership, deterministic canvas, paid border creation and refresh are implemented
 through the shared graph owners. Warm/cold public lifecycles and fresh-native installed
 journeys pass within their synthetic pixel/coordinate boundaries. Full-resolution camera
-resource observations are recorded below. Remaining acceptance concerns photographic
-generation, persistent-daemon resource retention and the final integrated release policy;
+resource observations are recorded below. The first persistent-daemon attempt
+[crosses the 5 GB canary](../assets/outpaint-resources/daemon.md) after expanded JPEG export;
+diagnose memory ownership before another repeated-cycle acceptance run. Remaining acceptance
+concerns photographic generation, persistent-daemon retention and the final integrated release policy;
 do not restart the historical frame/canvas checkpoints below.
 
 ## Plan rationale

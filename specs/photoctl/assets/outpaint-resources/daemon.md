@@ -80,6 +80,9 @@ One original float RGB canvas alone is 392,896,512 bytes; several simultaneous
 full-resolution buffers can be substantial without proving a leak. No buffer
 owner or lifetime has yet been attributed by this observation.
 
+A [single instrumented replay](daemon-diagnostic.md) observes natural reclamation and
+byte-identical output, without closing this failed acceptance or attributing its cause.
+
 The next acceptance attempt must retain the same canary, same PID requirement,
 fixed canvas, exact interior/removal checks and both source cases. Stopping here
 does not waive those unrun requirements or authorize forced collection, allocator
