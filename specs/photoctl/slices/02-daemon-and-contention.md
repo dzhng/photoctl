@@ -79,6 +79,11 @@ Client transport failure is local to that socket. A control caller may time out 
 before the daemon writes its reply; the resulting socket error must not terminate the daemon
 or affect another client. The daemon closes the failed socket without replaying any request.
 
+`daemon start` returns the actual status that acknowledged startup or an existing daemon.
+It does not make a redundant second probe whose failure could contradict that successful
+acknowledgement. This is a verified snapshot, not a promise of future availability; ordinary
+commands retain their endpoint-only fast path, and `daemon status` still performs a fresh query.
+
 Command recovery distinguishes connection failure from lost acknowledgement. Before any request
 can be sent, a failed connection may recover the daemon and try once. After sending starts, a lost
 response returns `daemon_unavailable` with an unknown-outcome message; the CLI must not replay a

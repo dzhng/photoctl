@@ -32,7 +32,8 @@ separates reproduced contract defects, stale fixtures and unresolved timing fail
 Portable fixture wiring, stale assertions and offline export hints have focused fixes;
 daemon startup diagnostics are integrated, and the embedding drain now observes worker completion
 instead of counting provider responses. A reproduced disconnected control client no longer crashes
-the daemon with an unhandled socket error; residual unresponsive recovery still needs evidence.
+the daemon with an unhandled socket error. Explicit startup now returns its verified status
+without a redundant second probe; the matching recovery regression passes.
 Runner timing behavior remains unresolved. No green full CI
 gate is claimed. Do not blindly increase timeouts or repin hashes.
 

@@ -6107,3 +6107,18 @@
 - **Verdict:** **Sound, provisional interpretation.** This provides useful general-model guidance
   through the existing prompt owner while preserving uncertainty about model compliance.
 - **Confidence:** Medium; the user can revise the product meaning, but historical intent remains explicit.
+
+### Daemon startup — Return the acknowledgement already received
+
+- **When:** Recovery observation correction, 2026-09-06.
+- **The choice:** When the daemon answers the startup handshake, `daemon start` returns that
+  actual status snapshot. It no longer asks again and reports failure if the second reply is
+  lost. The internal connection result carries the verified snapshot only when a handshake
+  occurred; normal command routing still avoids an extra status request.
+- **The gap:** The plan required verified startup but did not prescribe how its acknowledgement
+  reaches the public command result.
+- **The reach:** Success proves the daemon answered, not that it cannot exit afterward.
+  Explicit `daemon status` remains a fresh observation. Wire fields and retry policy do not change.
+- **Verdict:** **Sound.** Use one authoritative acknowledgement instead of discarding it and
+  introducing a second opportunity to misreport startup.
+- **Confidence:** High.

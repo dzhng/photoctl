@@ -27,6 +27,13 @@ impostor-recovery case still reports an unresponsive daemon. That run overlapped
 regression, so it is not a controlled performance comparison or a full CI pass. No timeout,
 queue policy, process-wide exception handler or command retry is added.
 
+The remaining recovery envelope came from a second status probe after startup had already
+received a valid acknowledgement. A deterministic real-socket regression sends one valid
+snapshot and closes the redundant probe: old `daemon start` fails with the same “not responding”
+message. Startup now returns its verified snapshot directly; seven focused lifecycle cases
+pass, including recovery, disconnect survival and no replay. This removes the duplicate
+observation, not a timeout or a claim that every CI timing failure is resolved.
+
 ## Earlier CI evidence
 
 The completed [Linux run 34023344394](https://github.com/dzhng/photoctl/actions/runs/34023344394)
