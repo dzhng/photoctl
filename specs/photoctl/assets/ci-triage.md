@@ -59,3 +59,13 @@ without serializing log contents. Signal termination is detected promptly. Focus
 tests cover both terminal modes, lock reacquisition and later successful startup, alongside
 lost-response no-replay and optional-init behavior. This enables diagnosis, not a claim that
 the earlier CI startup failure's cause has been reproduced or fixed.
+
+## Embedding drain completion
+
+Run 34027448298 stopped the drain at 1,496 persisted rows; the unchanged test reproduced locally
+at 1,493 instead of 1,500. Its HTTP response counter included canceled requests and could advance
+before database writes. Waiting for the daemon's existing background worker state to settle fixes
+the observation boundary without changing embedding scheduling. The test checks busy then settled
+state on the same PID and still requires exactly 1,500 persisted rows and the unchanged foreground
+latency bound. The new status assertion failed against the old runtime before implementation;
+the corrected built-runtime drain passes. This does not settle the other CI failures.

@@ -102,6 +102,9 @@ Foreground manual embedding uses the existing progress-frame path to keep a slow
 raising the 16 MiB frame ceiling. The final `--all` response is catalog-size independent apart from integer totals.
 
 The built CLI/daemon drain gate completed 1,500 photos (30 batches) while foreground `rate` stayed inside the required p95 bound.
+Its completion witness is settled background work from the same live daemon, followed by the
+exact persisted embedding count after shutdown. Provider response counts cannot establish
+completion: foreground cancellation can discard a response before its database write.
 The migration, consent, per-item isolation, strict response-shape, provider-failure text-only fallback, streaming warning, tag-only/vector-only
 hybrid retrieval, and RRF unit seams all pass keylessly. The production multimodal body remains the named
 `openai-compatible-content-parts-candidate-v1`: an explicit `embed` command or saved automatic mode may attempt it, exactly one

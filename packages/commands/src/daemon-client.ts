@@ -27,6 +27,7 @@ export interface DaemonEndpoint {
 export interface DaemonStatus extends DaemonEndpoint {
   uptime_s: number;
   queue: number;
+  background_busy: boolean;
 }
 
 export interface DaemonConnection {

@@ -19,7 +19,7 @@ The CLI can render the same typed envelopes for a person without changing their 
   rewrites the payload with its pid + socket), connect; spawn fails → `daemon_unavailable` 69. `--no-daemon`: if a daemon
   holds the lock, send `stop` and wait, then run `dispatch` in-process under the lock.
 - Batch semantics: ids are resolved before the transaction; the found subset commits; per-item `results` reflect it.
-- Verbs: `daemon start|stop|status` → `{pid,socket,uptime_s,queue,version}`; `tag <id...> --add|--remove <tag>` (the row-append
+- Verbs: `daemon start|stop|status` → `{pid,socket,uptime_s,queue,background_busy,version}`; `tag <id...> --add|--remove <tag>` (the row-append
   primitive the race uses; `tags(photo_id, tag, pk)` migration, next number).
 - `probe:race` (from `assets/concurrency-spike/boundary.sh`, spawning the real CLI) → `out/wb/race.html` + G1 verdict.
 - **2b** `apps/cli/src/output.ts`: `--human` is a global presentation option removed before `CommandRequest` construction.
@@ -62,6 +62,12 @@ one 5 ms admission window so a simultaneous burst observes the configured ceilin
 window does not consume the caller's lock-wait budget. Recovery takes the advisory lock before treating live-looking PID/socket
 metadata as authoritative, so stale artifacts with a reused PID remain replaceable. The Unix socket and current-run log are
 owner-only, and daemon restarts truncate the prior log.
+
+`background_busy` observes the same worker registry that prevents idle exit, independently
+of the foreground queue. A control status request does not pause or kick embedding work.
+False means no registered worker is currently running, not that every catalog item succeeded;
+callers still verify their required result. Stopping an already-stopped daemon reports false;
+stopping a live daemon returns its last observed status, as before.
 
 Terminal startup failure includes the child's `exit_code` or `signal` and the existing
 private `log_path`, while retaining `daemon_unavailable`/69 and `library`. Log contents

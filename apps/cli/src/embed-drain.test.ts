@@ -1,6 +1,6 @@
 import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import { initializeLibrary, newLibraryEntityId, openLibrary } from "@photoctl/library";
-import { dispatch } from "@photoctl/commands";
+import { dispatch, type DaemonStatus } from "@photoctl/commands";
 import { measureProcessTiming, spawnPhotoctl } from "@photoctl/test-harness";
 import { afterEach, expect, test } from "vitest";
 import { link, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -120,6 +120,15 @@ test("rate p95 stays within 2x warm show p50 while thirty embedding batches drai
     (await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env: drainEnv })).code,
   ).toBe(0);
   await waitFor(() => requests > 0);
+  const active = await spawnPhotoctl(["daemon", "status"], {
+    libraryDir: library,
+    env: drainEnv,
+  });
+  expect(active, JSON.stringify(active)).toMatchObject({
+    code: 0,
+    json: { ok: true, data: { background_busy: true } },
+  });
+  const daemonPid = (active.json as { data: DaemonStatus }).data.pid;
 
   const rateTimes: number[] = [];
   for (let index = 0; index < 12; index += 1) {
@@ -134,8 +143,32 @@ test("rate p95 stays within 2x warm show p50 while thirty embedding batches drai
     ).toBe(0);
     rateTimes.push(performance.now() - start);
   }
-  await waitFor(() => requests >= 1_500, 60_000);
-  await spawnPhotoctl(["daemon", "stop"], { libraryDir: library, env: drainEnv });
+  // Provider responses precede commits and include requests aborted for rate.
+  // Control status observes the worker without pausing it or starting more work.
+  await waitFor(async () => {
+    const status = await spawnPhotoctl(["daemon", "status"], {
+      libraryDir: library,
+      env: drainEnv,
+    });
+    expect(status, JSON.stringify(status)).toMatchObject({
+      code: 0,
+      json: { ok: true, data: { pid: daemonPid } },
+    });
+    return (status.json as { data: DaemonStatus }).data.background_busy === false;
+  }, 60_000);
+  const stopped = await spawnPhotoctl(["daemon", "stop"], { libraryDir: library, env: drainEnv });
+  expect(stopped, JSON.stringify(stopped)).toMatchObject({
+    code: 0,
+    json: { ok: true, data: { pid: daemonPid, background_busy: false } },
+  });
+  const alreadyStopped = await spawnPhotoctl(["daemon", "stop"], {
+    libraryDir: library,
+    env: drainEnv,
+  });
+  expect(alreadyStopped, JSON.stringify(alreadyStopped)).toMatchObject({
+    code: 0,
+    json: { ok: true, data: { pid: 0, background_busy: false } },
+  });
 
   const verified = await openLibrary(library);
   const embedded = Number(
@@ -172,9 +205,12 @@ function percentile(values: number[], fraction: number): number {
   return sorted[Math.ceil(sorted.length * fraction) - 1]!;
 }
 
-async function waitFor(predicate: () => boolean, timeoutMs = 10_000): Promise<void> {
+async function waitFor(
+  predicate: () => boolean | Promise<boolean>,
+  timeoutMs = 10_000,
+): Promise<void> {
   const deadline = Date.now() + timeoutMs;
-  while (!predicate()) {
+  while (!(await predicate())) {
     if (Date.now() > deadline) throw new Error("timed out waiting for the embedding drain");
     await new Promise((resolveDelay) => setTimeout(resolveDelay, 20));
   }

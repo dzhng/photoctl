@@ -6055,3 +6055,20 @@
 - **Verdict:** **Sound.** The source test drives the real CLI without depending on a warmed
   development environment or introducing a production fallback.
 - **Confidence:** High.
+
+### Daemon status — Report background activity separately from the command queue
+
+- **When:** Embedding drain CI repair, 2026-09-06.
+- **The choice:** A photographer's rate command has finished, but automatic search indexing
+  is still saving embeddings. Status now reports `background_busy` from the worker registry
+  that already keeps the daemon alive. Reading status does not interrupt indexing. Once it
+  reports false, a caller knows the worker has settled, but must still check the desired
+  result: a failed worker can also stop. The drain test therefore retains its exact saved-row
+  assertion rather than treating inactivity or network responses as success.
+- **The gap:** The plan exposed the foreground queue but did not define how callers observe
+  background activity without interrupting it.
+- **The reach:** One boolean is added to daemon control results, false for an already-stopped daemon. There
+  is no new database query, worker counter, scheduling mechanism or success guarantee.
+- **Verdict:** **Sound.** Expose the existing state owner rather than infer completed work
+  from provider responses, which can arrive before a canceled database write.
+- **Confidence:** High.

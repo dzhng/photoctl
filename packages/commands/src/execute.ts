@@ -231,5 +231,12 @@ function success(data: unknown): Envelope {
 }
 
 function stoppedStatus(path: string, version: string): DaemonStatus {
-  return { pid: 0, socket: daemonSocketPath(path, version), uptime_s: 0, queue: 0, version };
+  return {
+    pid: 0,
+    socket: daemonSocketPath(path, version),
+    uptime_s: 0,
+    queue: 0,
+    background_busy: false,
+    version,
+  };
 }

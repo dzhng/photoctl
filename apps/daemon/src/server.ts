@@ -219,6 +219,7 @@ export class DaemonServer {
       socket: this.socketPath,
       uptime_s: (Date.now() - this.startedAt) / 1000,
       queue: this.pending.length + Number(this.running),
+      background_busy: this.background.isBusy(),
       version: this.version,
     };
   }
