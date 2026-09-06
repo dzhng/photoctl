@@ -48,6 +48,10 @@ encoder gate belongs to SAM, not fill or export. The roughly eightfold expanded
 export cost merits profiling before calling this workflow responsive; these
 measurements do not isolate its cause.
 
+The subsequent [cold/warm profile](profile.md) attributes the dominant cold work
+to repeated Lanczos weight computation in the shared native affine sampler.
+It proposes an exact-arithmetic-preserving correction; no speedup is claimed yet.
+
 ## Reproduction and runtime identity
 
 Run the ordinary CLI from a built checkout with separate empty library/cache

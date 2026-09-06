@@ -1,0 +1,215 @@
+{
+  "revision": "5fa235e720c17e208814f5154bfadcd0dfdb40f1",
+  "runtimeSha256": "8b07dbac0a76ca0ff10c0a9486f56d72497444a6055779ea8bfcc9b401ed3c55",
+  "coldSampleWindowSeconds": 30,
+  "coldSampleTicksPerLongLivedThread": 2490,
+  "profilingInterference": "Native and integration tests were permitted; ordinary desktop activity continued. Not a clean latency comparison.",
+  "cases": [
+    {
+      "name": "cold",
+      "elapsedMs": 42469.518666,
+      "code": 0,
+      "sampleCode": 0,
+      "args": [
+        "--cpu-prof",
+        "--cpu-prof-dir=/private/tmp/photoctl-outpaint-resource-measurement/profile",
+        "--cpu-prof-name=cold.cpuprofile",
+        "apps/cli/dist/bin.js",
+        "export",
+        "01a0753f-3107-741c-8b36-ba8242faaa58",
+        "--to",
+        "/private/tmp/photoctl-outpaint-resource-measurement/profile/cold",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a0753f-3107-741c-8b36-ba8242faaa58",
+            "ok": true,
+            "file": "/private/tmp/photoctl-outpaint-resource-measurement/profile/cold/DSC08142.png",
+            "w": 7264,
+            "h": 4928,
+            "bytes": 40625884,
+            "render_hash": "r_adfb94cb2e4492645ded5bd08abe8d8ecb52c394193a84cf106f618f50669cd0",
+            "source_original_id": "01a0753f-3107-741c-8b36-b5d8ad939ae1",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      },
+      "sampleSha256": "193c0d1bcca12bf495111d9f742b9312deb8f494813ed567e34c32f0ea83e8b0",
+      "v8ProfileSha256": "323293c92dd761e97cb2b0592da7db8035e40f77a38d70428bd2abd0633362c4",
+      "topV8BucketsMs": [
+        {
+          "frame": "(idle) @ ",
+          "milliseconds": 37196.331
+        },
+        {
+          "frame": "update @ node:internal/crypto/hash",
+          "milliseconds": 1555.04
+        },
+        {
+          "frame": "normalizeArtifact @ file:///Users/david/dev/photoctl/packages/render/dist/artifacts/publication.js",
+          "milliseconds": 774.835
+        },
+        {
+          "frame": "decodeArtifactLinearTiff @ file:///Users/david/dev/photoctl/packages/render/dist/linear-tiff.js",
+          "milliseconds": 536.792
+        },
+        {
+          "frame": "readArtifactImage @ file:///Users/david/dev/photoctl/packages/render/dist/artifacts/publication.js",
+          "milliseconds": 327
+        },
+        {
+          "frame": "encodeRgbFloatTiff @ file:///Users/david/dev/photoctl/packages/render/dist/linear-tiff.js",
+          "milliseconds": 309.959
+        },
+        {
+          "frame": "toEightBit @ file:///Users/david/dev/photoctl/packages/render/dist/export/run.js",
+          "milliseconds": 190.292
+        },
+        {
+          "frame": "validateMaskTiff @ file:///Users/david/dev/photoctl/packages/render/dist/mask-tiff.js",
+          "milliseconds": 183.875
+        },
+        {
+          "frame": "compositeMaskedPixels @ file:///Users/david/dev/photoctl/packages/img/dist/index.js",
+          "milliseconds": 178.958
+        },
+        {
+          "frame": "clipMaskToFrame @ file:///Users/david/dev/photoctl/packages/img/dist/index.js",
+          "milliseconds": 174.625
+        },
+        {
+          "frame": "decodeMaskTiff @ file:///Users/david/dev/photoctl/packages/render/dist/mask-tiff.js",
+          "milliseconds": 113.375
+        },
+        {
+          "frame": "(program) @ ",
+          "milliseconds": 110.204
+        }
+      ],
+      "nativeStackEvidence": [
+        "    +       :   | 664 _$LT$photoctl_image..mask..MaskTask$u20$as$u20$napi..task..Task$GT$::compute::h84701fd89902b180  (in photoctl-image.darwin-arm64.node) + 296  [0x14760b448]  mask.rs:269",
+        "    +     ! :   | 1554 _$LT$photoctl_image..resample..TransformF32Task$u20$as$u20$napi..task..Task$GT$::compute::h6d2a97739941d29f  (in photoctl-image.darwin-arm64.node) + 84  [0x147653aec]  resample.rs:444",
+        "    +       :     35 _$LT$photoctl_image..resample..SupportedProjectionTask$u20$as$u20$napi..task..Task$GT$::compute::ha229f49f473f387d  (in photoctl-image.darwin-arm64.node) + 196  [0x147653da8]  resample.rs:117",
+        "        sin  (in libsystem_m.dylib)        730",
+        "        photoctl_image::resample::transform_into::h3db358c0ee14e557  (in photoctl-image.darwin-arm64.node)        620"
+      ]
+    },
+    {
+      "name": "warm",
+      "elapsedMs": 6153.9205,
+      "code": 0,
+      "sampleCode": 0,
+      "args": [
+        "--cpu-prof",
+        "--cpu-prof-dir=/private/tmp/photoctl-outpaint-resource-measurement/profile",
+        "--cpu-prof-name=warm.cpuprofile",
+        "apps/cli/dist/bin.js",
+        "export",
+        "01a0753f-3107-741c-8b36-ba8242faaa58",
+        "--to",
+        "/private/tmp/photoctl-outpaint-resource-measurement/profile/warm",
+        "--format",
+        "png"
+      ],
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a0753f-3107-741c-8b36-ba8242faaa58",
+            "ok": true,
+            "file": "/private/tmp/photoctl-outpaint-resource-measurement/profile/warm/DSC08142.png",
+            "w": 7264,
+            "h": 4928,
+            "bytes": 40625884,
+            "render_hash": "r_adfb94cb2e4492645ded5bd08abe8d8ecb52c394193a84cf106f618f50669cd0",
+            "source_original_id": "01a0753f-3107-741c-8b36-b5d8ad939ae1",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      },
+      "sampleSha256": "1619362675ec644602119b9bc19d47e1456f7e771df68398a0710734ca67a6ef",
+      "v8ProfileSha256": "0354d81c492b9cdd1b25c89a1ccc924377b8b3300db712e9fbddc2773f6830f2",
+      "topV8BucketsMs": [
+        {
+          "frame": "(idle) @ ",
+          "milliseconds": 2645.08
+        },
+        {
+          "frame": "update @ node:internal/crypto/hash",
+          "milliseconds": 775.834
+        },
+        {
+          "frame": "normalizeArtifact @ file:///Users/david/dev/photoctl/packages/render/dist/artifacts/publication.js",
+          "milliseconds": 369.168
+        },
+        {
+          "frame": "readArtifactImage @ file:///Users/david/dev/photoctl/packages/render/dist/artifacts/publication.js",
+          "milliseconds": 351.124
+        },
+        {
+          "frame": "linearRec2020ToDisplaySrgb @ file:///Users/david/dev/photoctl/packages/img/dist/index.js",
+          "milliseconds": 334.417
+        },
+        {
+          "frame": "decodeArtifactLinearTiff @ file:///Users/david/dev/photoctl/packages/render/dist/linear-tiff.js",
+          "milliseconds": 333.917
+        },
+        {
+          "frame": "toEightBit @ file:///Users/david/dev/photoctl/packages/render/dist/export/run.js",
+          "milliseconds": 209.542
+        },
+        {
+          "frame": "validateMaskTiff @ file:///Users/david/dev/photoctl/packages/render/dist/mask-tiff.js",
+          "milliseconds": 172.667
+        },
+        {
+          "frame": "encodeRgbFloatTiff @ file:///Users/david/dev/photoctl/packages/render/dist/linear-tiff.js",
+          "milliseconds": 152.334
+        },
+        {
+          "frame": "validateLinearArtifactSamples @ file:///Users/david/dev/photoctl/packages/img/dist/index.js",
+          "milliseconds": 92.375
+        },
+        {
+          "frame": "dlopen @ ",
+          "milliseconds": 91.959
+        },
+        {
+          "frame": "(garbage collector) @ ",
+          "milliseconds": 55.207
+        }
+      ],
+      "nativeStackEvidence": []
+    }
+  ],
+  "canonicalOutput": [
+    {
+      "root_name": "output",
+      "node_id": "node_de5f73afb0b8de8d78dd349c49059551025af96861176a91b351a3c7e04d2e81",
+      "execution_id": "exec_cf5e65169a21fbf945cd4965f6d6061e4ec4c40fdebe7da886473786efba9749",
+      "output_artifact_hash": "a_1e60d175baaa564a9d357ef15f2ee3d89fcc587a074e8facb1f31cb296270cf9",
+      "w": 7264,
+      "h": 4928,
+      "path": "/private/tmp/photoctl-outpaint-resource-measurement/first/JPG/library/artifacts/sha256/1e/a_1e60d175baaa564a9d357ef15f2ee3d89fcc587a074e8facb1f31cb296270cf9.tif",
+      "verifiedSha256": "1e60d175baaa564a9d357ef15f2ee3d89fcc587a074e8facb1f31cb296270cf9"
+    }
+  ],
+  "pngsEqual": true,
+  "pngSha256": "ea591435a43389e0d3f7c3e7f07b0d17a9066ee0344b41b0cbb42f9fe7510e46"
+}
