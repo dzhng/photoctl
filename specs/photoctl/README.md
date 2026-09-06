@@ -36,11 +36,12 @@ the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next n
   and reconnect promotion without paid replay through built and prebuilt-runtime installed CLI.
   Full-resolution resource measurements pass the RSS canary. The
   [sampling correction](assets/outpaint-resources/README.md#isolated-optimized-runtime-verification)
-  reduces measured cold-export time with byte-identical deliveries. Fresh-native-release
-  acceptance remains separate; this is not a universal latency or memory bound.
+  reduces measured cold-export time with byte-identical deliveries. Fresh-native installed
+  warm/cold synthetic journeys pass; photographic and final RAW-policy release acceptance
+  remain separate. This is not a universal latency or memory bound.
 - [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
-  and refresh pass synthetic visual review. Retained-only input, reconnect and installed
-  lifecycle are integrated; whole-spec and live photographic acceptance remain separate.
+  and refresh pass synthetic visual review. Retained-only input, reconnect and fresh-native
+  installed lifecycle pass; whole-spec and live photographic acceptance remain separate.
   Use captured photographic predecessors excluding markup;
   that input policy remains provisional pending the user's answer.
 - [Pairing](slices/04-paired-import.md): default one RAW-led logical photo retaining both

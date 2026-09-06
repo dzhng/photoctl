@@ -94,3 +94,10 @@ Root integration passed the TypeScript build, 43 full-frame/outpaint tests and 4
 shared evaluator/preview/export tests. Independent commit review
 `01a07545-737e-7de0-a984-1634303bcc9c` found no actionable correctness issue.
 These are focused integration gates, not the whole-spec closeout.
+
+At `85a4643`, the registered full-frame journey also passed through the normal
+fresh-native packed-install hook in 7.94 seconds. The hook rebuilt native and
+Swift release binaries and installed their tarballs outside the checkout. The
+targeted run passed this journey and all three warm/cold outpaint cases. This
+closes the prebuilt-only boundary for the current synthetic lifecycle, not
+photographic acceptance or the subsequent normal RAW recovery policy.

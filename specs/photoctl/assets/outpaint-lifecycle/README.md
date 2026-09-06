@@ -167,3 +167,13 @@ seconds. Repository typecheck, standalone strict checking of the new journey, an
 lint/format checks passed. The reviewer could not run the local gateway in its read-only sandbox;
 that execution limitation is separate from the successful outer-process and installed-package
 runs above.
+
+## Fresh native installed integration
+
+At `85a4643`, the normal packed-install hook rebuilt the native runtime and Swift
+helper, packed and installed the CLI outside the checkout, and ran both warm
+outpaint cases plus cold disconnect/reconnect. All three passed, alongside the
+full-frame journey, in a 42.95-second targeted run. This closes the earlier
+prebuilt-only boundary for these keyless synthetic lifecycle checks. It does not
+measure full-camera resources or prove photographic generation quality; public
+RAW recovery policy still requires its later integrated release verification.
