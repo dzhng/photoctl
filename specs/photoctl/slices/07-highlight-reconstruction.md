@@ -255,6 +255,18 @@ The next proposal must improve chroma without hiding the defect through blur, pr
 measured samples/headroom and earn an owner-specific regression. Do not repeat this
 comparison or infer a WB-order/default-decoder change from it.
 
+The [balanced-working-channel experiment](../assets/camera-delivery-review/normalized-interpolation/README.md)
+supports that narrower correction: normalize only the AHD working buffer, undo into
+float camera samples and restore measured CFA sites exactly. The common camera front
+retains WB/matrix ownership. Real decoder-input red/green regressions now cover
+color/detail and above-white preservation. The rebuilt decoder matches the reviewed
+experimental camera pixels; focused normal-rendering, derived-cache separation and
+both unchanged G4 modes pass. Current ordinary photographic delivery and installed
+package verification remain open; scratch visual acceptance does not close C.
+This distinct decoder-fidelity revision changes interpolated samples in both recovery
+modes. Earlier disabled-output hashes remain historical evidence for the recovery
+toggle, not a requirement to retain defective interpolation forever.
+
 C must conclude per defect, not repeatedly reject everything because lights are
 clipped. Flat cores where channels were lost are not themselves a failed correction.
 New or exaggerated colored rims or serrated transitions require a bounded causal

@@ -50,9 +50,14 @@ Do not repeat the disproved reconstruction diagnosis for branch/nose/wire artifa
 the remaining mapping uncertainty, not a demonstrated crop bug. Preserve failed deliveries;
 never substitute camera JPEGs, tune presets around decoder defects, or weaken the oracle.
 The [interpolation witness](assets/camera-delivery-review/interpolation-owner/README.md)
-now isolates fine false color but rejects bilinear as an unqualified fix because it
-softens detail. Next scope a representation-preserving chroma correction with its
-own regression; do not repeat the completed diagnostic comparisons.
+isolates fine false color but rejects bilinear because it softens detail. The
+[balanced interpolation correction](assets/camera-delivery-review/normalized-interpolation/README.md)
+is now integrated: temporary channel balancing is undone before the shared color front,
+measured sensor samples stay exact, and derived-cache identities advance without changing
+paid execution identity. The rebuilt decoder matches the accepted experimental camera
+pixels; focused native/integration and both unchanged color-oracle modes pass.
+Next verify current ordinary photographic delivery and the installed package, not another
+diagnostic comparison. Earlier breadth evidence used the preceding native runtime.
 
 **Parallel pickup:** finish remaining outpaint and pairing release gates.
 

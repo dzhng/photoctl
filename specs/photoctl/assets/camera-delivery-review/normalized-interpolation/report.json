@@ -1,0 +1,142 @@
+{
+  "source": {
+    "path": "/Users/david/dev/photoctl/fixtures/camera/DSC08819.ARW",
+    "sha256": "a713c1a8723cff8a7db702b01a72d6367830aed792f23d6b3d366e39e3d53d55"
+  },
+  "metadata": {
+    "whiteLevel": 15871,
+    "blackLevel": 0,
+    "asShotWb": [
+      2.5263671875,
+      1,
+      1.5712890625
+    ],
+    "camXyz": [
+      0.7459999918937683,
+      -0.23649999499320984,
+      -0.058800000697374344,
+      -0.5687000155448914,
+      1.3442000150680542,
+      0.24740000069141388,
+      -0.06239999830722809,
+      0.11559999734163284,
+      0.6583999991416931
+    ],
+    "wbPreApplied": false
+  },
+  "gains": [
+    1,
+    0.3958252802473908,
+    0.6219559335137225
+  ],
+  "results": {
+    "photo-baseline": {
+      "sampleHash": "c45651b52aa68aa04ace2ce25a97bc20e6a63f83ed5e1460cfecf40cdd84c4fa",
+      "sites": 14155776,
+      "changed": 0,
+      "aboveWhite": 0,
+      "maximum": 15871
+    },
+    "photo-normalized": {
+      "sampleHash": "49ed0492691bb3789fbf3805f87c3820906d5015ee5aae998acd02fb4572f670",
+      "sites": 14155776,
+      "changed": 0,
+      "aboveWhite": 0,
+      "maximum": 15871
+    },
+    "control-baseline": {
+      "sampleHash": "f71bb630bd697eb88b628e2cafac9fd4dcc61dd8d46b9ef4af51f356a9c7c1f5",
+      "sites": 65536,
+      "changed": 0,
+      "aboveWhite": 0,
+      "maximum": 8507,
+      "metrics": {
+        "pixels": 14392,
+        "mae": 0.00006619976612213053,
+        "max": 0.0004775440465314095,
+        "p95ChannelSpread": 0.0003885698561842954
+      }
+    },
+    "control-normalized": {
+      "sampleHash": "3f12a24bacd62a770e731cb04925aef5e8dfe3f8b59e385bbf19d91898795aab",
+      "sites": 65536,
+      "changed": 0,
+      "aboveWhite": 0,
+      "maximum": 8507,
+      "metrics": {
+        "pixels": 14392,
+        "mae": 0.000053358306857890714,
+        "max": 0.0004775440465314095,
+        "p95ChannelSpread": 0.00021825135073405555
+      }
+    },
+    "control64-baseline": {
+      "sampleHash": "d7990589fd177ccf8d96be8ba45688dad5b8d857ff477725c7f94d90426ea8fc",
+      "sites": 65536,
+      "changed": 0,
+      "aboveWhite": 0,
+      "maximum": 8507,
+      "metrics": {
+        "pixels": 1848,
+        "mae": 0.003602211653465151,
+        "max": 0.022444570186976247,
+        "p95ChannelSpread": 0.02144493346748788
+      }
+    },
+    "control64-normalized": {
+      "sampleHash": "6ade1261d2c0c2679db7cfeb1024348942b0ee160daaa14607b4c28054fe6cac",
+      "sites": 65536,
+      "changed": 0,
+      "aboveWhite": 0,
+      "maximum": 8507,
+      "metrics": {
+        "pixels": 1848,
+        "mae": 0.00030814417657835615,
+        "max": 0.0012799671396146492,
+        "p95ChannelSpread": 0.0009550785989830279
+      }
+    }
+  },
+  "captures": [
+    {
+      "path": "baseline/photo-overview.png",
+      "sha256": "3361273166f1d1a38d23c36856dd1106100daa2747cff9d9a6848b19df5a4511"
+    },
+    {
+      "path": "baseline/photo-detail.png",
+      "sha256": "9252a87c4c0f32e25d4e90bb6f2d75594c3988ef523a584e243850c751ef24c2"
+    },
+    {
+      "path": "baseline/photo-detail-minus2.png",
+      "sha256": "759bcf184fac9cbfca6ed34ce56a2832d7de91ea34256106017500f2a7c8792b"
+    },
+    {
+      "path": "normalized/photo-overview.png",
+      "sha256": "4d90c2e94f1b048a12457fcb6b6ee5472c337ca967c6e2170dbdf3f8518601a2"
+    },
+    {
+      "path": "normalized/photo-detail.png",
+      "sha256": "c1ca1baa2cba930914206e3b9fb24221bef586879159c7b8ee0685ef169a6c89"
+    },
+    {
+      "path": "normalized/photo-detail-minus2.png",
+      "sha256": "f62b85764d3c54f407c3fd44d3373ec9b187fbd61540829fe114a3216c2b90be"
+    },
+    {
+      "path": "baseline/control.png",
+      "sha256": "890d6896ea124fa4d74cc69258448ab809e619caecb07cee599080806d13fdaf"
+    },
+    {
+      "path": "normalized/control.png",
+      "sha256": "2688e28ab2cc4d23ec4680b688773690c63b3ff5b6389a0c583abd1d28d6f789"
+    },
+    {
+      "path": "baseline/control64.png",
+      "sha256": "d57c6f7467e3e38d636b6efa578822bff5e05b2d0ec0b840b3b9d395149c1f8a"
+    },
+    {
+      "path": "normalized/control64.png",
+      "sha256": "1c3cc6600e68842dcbb422f2164ae5fef3367115c3beb71c4a289cf5a9dc52e3"
+    }
+  ]
+}

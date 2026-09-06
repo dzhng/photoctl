@@ -6174,3 +6174,28 @@
 - **Verdict:** **Sound.** A small deterministic boundary sample follows the user's policy without
   deleting broader coverage. Native-cache and host-load machinery are unnecessary for this gate.
 - **Confidence:** High.
+
+### RAW interpolation — Balance the working channels, not the public image
+
+- **When:** Fine-color correction, 2026-09-06.
+- **The choice:** A sensor measures different colors at different pixel positions.
+  AHD estimates the missing colors using nearby channel differences. Feeding it
+  unequal sensor-channel scales creates colored edges on a known gray subject.
+  Normalize a working copy using the recorded channel gains, run the same AHD,
+  undo the normalization into floating-point camera samples, then restore every
+  actually measured sample exactly. The normal camera front still owns white
+  balance and color conversion. This avoids adopting a blurrier interpolator or
+  moving white balance for every downstream consumer.
+- **The gap:** The original camera-space boundary did not specify the internal
+  representation AHD needs. Its integer working buffer also requires explicit
+  rounding and headroom handling; inverse-scaled values must not be clamped back
+  to integers before the existing float image receives them.
+- **The reach:** The private native buffer changes to float; the public image and
+  metadata stay camera-space. Unsupported channel patterns or gains must not
+  silently take the known-wrong path. Derived render identity changes while paid
+  execution identity and history remain intact. The regression and rebuilt-path
+  checks must prove the implementation, not merely reproduce the scratch images.
+- **Verdict:** **Sound.** Controlled known-field and photographic evidence support
+  this representation correction, with exact measured-site preservation and no
+  need for a new setting, decoder or color-processing owner.
+- **Confidence:** High.

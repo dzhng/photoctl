@@ -8,7 +8,36 @@ import {
   newExecutionId,
   recipeHash,
   renderHashForNode,
+  renderHashForOriginal,
 } from "./recipes.js";
+
+test("corrected interpolation changes derived-cache identities but preserves paid execution identity", () => {
+  // Recorded before the interpolation correction: these name real prior cache
+  // namespaces, not an expected value for the current revision counter.
+  expect(renderHashForNode(`node_${"1".repeat(64)}`)).not.toBe(
+    "r_d8ab35f5092a5a92dde74aa34644201ba7ea7183bc3b87ff5f4326d2da8b45b2",
+  );
+  expect(
+    renderHashForOriginal({
+      id: "camera-jpeg",
+      contentKey: "ck_camera",
+      w: 4608,
+      h: 3072,
+      orientation: 1,
+    }),
+  ).not.toBe("r_355f73a4a5fe27f00d5466c27f282974beea6cafd56cb2cf5dbbac9fd9dcf3e9");
+  const common = {
+    nodeRecipeHash: `recipe_${"2".repeat(64)}`,
+    recipeVersion: 1,
+    inputArtifactHashes: [`a_${"3".repeat(64)}`],
+  };
+  expect(evaluationHash({ ...common, kind: "develop" })).not.toBe(
+    "eval_08b328729e690b6b8f5f62d9d7b8fdbfef6af506c9aa7a53cb1ad8a8d0f64425",
+  );
+  expect(evaluationHash({ ...common, kind: "generate" })).toBe(
+    "eval_6d10148eb50bc2ae7f7e52acda636d77672113e6e3a0f923c5d033f7eaba36cc",
+  );
+});
 
 test("placement transforms require their frame and cannot masquerade as intrinsic raster transforms", () => {
   const inputNodeIds = [`node_${"1".repeat(64)}`];

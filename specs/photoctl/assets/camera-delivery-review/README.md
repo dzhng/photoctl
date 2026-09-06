@@ -16,7 +16,10 @@ The [neutral-decoder comparison](neutral-decoder-residuals/README.md) finds shar
 branch structure and differing fine chroma, but also differing scene placement
 despite equal raster dimensions. The [coordinate witness](coordinate-metadata/README.md)
 does not establish a crop bug. The [interpolation experiment](interpolation-owner/README.md)
-isolates a fine-chroma/detail tradeoff; no replacement is accepted.
+isolates a fine-chroma/detail tradeoff and rejects bilinear. The
+[balanced interpolation correction](normalized-interpolation/README.md) now passes
+native and focused integration checks, with the rebuilt decoder matching its reviewed
+experimental camera pixels. Complete current-runtime photographic delivery remains open.
 
 ## Reproduction and evidence boundary
 
