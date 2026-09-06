@@ -86,6 +86,12 @@ independent visual critique. These screenshots are fixture presentation evidence
 
 ## External evidence boundary
 
+[Camera-reference delivery review](../assets/camera-delivery-review/README.md)
+records a successful local gold-script run whose photographic output **failed**
+inspection: highlight color corruption and reduced-RAW striping require decoder
+boundary diagnosis and regression coverage. Successful command exits do not close
+this quality gate.
+
 The [camera reference collection](../../../fixtures/camera/README.md) retains real original pairs
 covering every observed format/crop/orientation group on the supplied card. The camera need not
 remain connected for development. [Paired-import evidence](../assets/paired-import-review.md)

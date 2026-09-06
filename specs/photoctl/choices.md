@@ -107,6 +107,26 @@
   outstanding consumer contract, not permission to force every source to the authoring raster.
 - **Confidence:** High.
 
+### Shared mask projection — preserve both authored footprints
+
+- **When:** Authored mask-frame integration, 2026-09-06.
+- **The choice:** After extending and rotating a photograph, a retouch circle belongs
+  to that photographic frame, not a same-sized rectangle guessed from the original.
+  Its existing placement transform records that location. During composition, mask
+  coverage is projected from its own recorded frame and clipped to both the mask's
+  and the covered image's physical footprints. Otherwise filtering can reveal pixels
+  outside the area either input actually supplied. Binary support for already-covered
+  RGB is derived only after projection, retaining the existing single-coverage rule.
+- **The gap:** Earlier consumers assumed ordinary masks were catalog-sized; the plan
+  did not specify how a retouch mask should carry an expanded photographic footprint.
+- **The reach:** Retouch, ordinary layer composition and canvas composition share the
+  existing frame/projection owners. No new mask schema or special retouch compositor
+  is introduced. Masks are authored at logical photographic density and realized
+  against actual input execution density; source fallback does not redefine location.
+- **Verdict:** **Sound.** The general authored-support contract covers cropped,
+  rotated and expanded inputs without a dimension-based special case.
+- **Confidence:** High.
+
 ### Canvas restrictions — Aspect edits start from the stable authored canvas
 
 - **When:** 12f2 restriction-activation pass, 2026-09-06.

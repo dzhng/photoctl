@@ -29,6 +29,11 @@ build or the root closeout gate. Sixty-nine narrow retouch, manual-layer, fill, 
 density-transform neighbors passed; TypeScript build/typecheck and scoped lint/format checks passed.
 No camera access, full-resolution probe or paid provider request was made.
 
+After integration with paired originals and combined move/scale, 54 merged
+retouch/outpaint/canvas/fill-refresh/move and built-journey checks passed. TypeScript
+build/typecheck and scoped lint passed. Main review inspected all eight enlarged
+lifecycle frames and agrees with the placement/support verdict below.
+
 Packed artifact SHA-256 identities:
 
 - CLI: `120042bc5902ae35ac1ebf769e959cf91631e37f9f1f4087414090cf7641c25c`
@@ -53,4 +58,3 @@ cache reset was used to hide a mismatch.
 This mask-frame prerequisite still uses catalog-bounded retouch coordinates. Full expanded-canvas
 validation is a separate pass: coordinates remain in oriented original space, with normalized
 coordinates anchored to original dimensions rather than renormalized whenever the canvas changes.
-

@@ -18,7 +18,13 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: finish the packaged outpaint/retouch journey, then integrate combined move/scale and the shared-frame full-frame generation pass.**
+**Current pickup: diagnose the failed camera-delivery quality check while finishing expanded-canvas retouch and shared-frame full-frame generation.**
+
+The local camera-reference gold script completed, but full-set and native-detail
+inspection found highlight color corruption and reduced-RAW striping. The
+[camera delivery review](assets/camera-delivery-review/README.md) owns that failed
+quality checkpoint and reproduction evidence. Preserve the failures and correct
+the responsible decoder/render boundary before photographic acceptance.
 
 **User-added import requirement:** permanent real camera JPEG fixtures and public
 non-RAW pipeline coverage; default RAW/JPEG companions to one RAW-led logical photo,
@@ -49,8 +55,9 @@ listing now bounds availability checks to returned rows without changing totals,
 order or stream backpressure. Retained offline export is integrated and verified:
 its execution identity, exact frame and source quality remain coupled, and live originals still
 take precedence. Native-density outpaint is integrated: generation, refresh and retry retain native RGB
-sampling with the layer's exterior mask as the single coverage owner. Its packaged lifecycle and
-full-resolution resource acceptance remain open. Sampled white balance (8g) is integrated through
+sampling with the layer's exterior mask as the single coverage owner. Its shared lifecycle now passes
+the built CLI and an isolated prebuilt-runtime install; fresh release-build and full-resolution
+resource acceptance remain open. Sampled white balance (8g) is integrated through
 ordinary develop controls; the response names its provisional pre-user-develop sampling stage.
 Canvas sampling, offline-to-online cache promotion and source-only SAM geometry are integrated.
 Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
@@ -113,7 +120,9 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | Sampled white balance integration | 21 merged command/built-CLI/native-boundary/develop/undo checks, 2 Rust numerical groups, native and TS builds/typecheck. No gray-card photographic acceptance claim. |
 | Paired-originals integration | 96 merged checks across paired import, outpaint refresh density, white balance, generation, workbench, keyless fixture gold exam, identity/location, XMP/search and backup/restore; TS build and clean independent merged review. Presentation/real-drive gates remain open. |
 | Bounded culling availability | 19 merged cull/XMP/real-CLI streaming checks, TS build; independent pass review. Work-count proof, not a new camera timing claim. |
-| Retained offline export | 57 merged retained-export/paired-import/preview-export/evaluator/schema checks, TS build/typecheck. Current semantics, source-quality promotion and corrupt/missing fallback covered; packaged journey remains open. |
+| Retained offline export | 57 merged retained-export/paired-import/preview-export/evaluator/schema checks, TS build/typecheck. Current semantics, source-quality promotion and corrupt/missing fallback covered; warm-output installed journey below. |
+| Combined move and relative scale | 33 merged command/density/person-move/built-CLI checks, TS build/typecheck; one atomic revision and exact undo. |
+| Authored mask frames | 54 merged retouch/outpaint/canvas/fill-refresh/move/built-journey checks, TS build/typecheck and scoped lint. [Lifecycle evidence](assets/outpaint-lifecycle/README.md) distinguishes warm retained-output packaging from cold fallback and photographic quality. |
 
 **SAM pickup:** the release manifest now pins real export hashes with composed CPU parity checks.
 [Photographic evidence](assets/sam-photographic/) distinguishes passing coarse subject checks from
