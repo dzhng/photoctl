@@ -152,6 +152,13 @@ interface NativeBinding {
     outputHeight: number,
     filter: ResampleFilter,
   ): Promise<Float32Array>;
+  detectHorizon(
+    data: Float32Array,
+    width: number,
+    height: number,
+    analysisToView: readonly number[],
+    currentDegrees: number,
+  ): Promise<number | null>;
   transformPixels(
     data: Float32Array,
     sourceWidth: number,
@@ -584,6 +591,19 @@ export async function resamplePixels(
       outputHeight,
       filter,
     ),
+  );
+}
+
+export async function detectHorizon(
+  data: Float32Array,
+  width: number,
+  height: number,
+  analysisToView: readonly [number, number, number, number],
+  currentDegrees: number,
+): Promise<number | null> {
+  return (
+    (await requiredBinding().detectHorizon(data, width, height, analysisToView, currentDegrees)) ??
+    null
   );
 }
 

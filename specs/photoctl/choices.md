@@ -4898,3 +4898,28 @@
 - **Verdict:** **Sound.** The initial omission is corrected through the existing revision owner,
   without another lock or transaction lifecycle.
 - **Confidence:** High.
+
+### Local horizon — Analyze visible contrast in the existing native worker runtime
+
+- **When:** Slice 8e local crop checkpoint, 2026-09-06.
+- **The choice:** When an agent asks to level a photograph, the renderer first reduces the saved
+  photographic output with its existing native resampler, converts those reduced pixels to display
+  RGB, and sends their visible brightness edges to a native background worker. The line search
+  does not run on the daemon's JavaScript event loop. A JavaScript implementation would avoid a
+  new native entry point but could occupy the same thread that answers other commands. Searching
+  linear-light brightness instead would weight scene energy rather than the contrast the visible
+  image presents. The worker receives the real frame's direction mapping so pixel rounding does
+  not become a different physical tilt.
+- **The gap:** The plan delegates a portable bounded line detector, but does not choose its runtime
+  placement or luminance domain. The photographic-versus-markup sampling policy and abstention
+  behavior were already specified and are not new decisions here.
+- **The reach:** Future detector refinements share the image crate's existing async allocation
+  accounting and host/Linux build path. Display-contrast edges may disappear after photographic
+  edits, correctly leaving less evidence under the chosen visible-output policy; this is not a
+  claim of semantic horizon recognition. No dependency, schema, provider or alternate geometry
+  owner is added. Thresholds and the level deadband remain delegated algorithm constants, with
+  failure witnesses in the crop review evidence.
+- **Verdict:** **Sound.** Bounded pixel work stays off the command thread, and the analyzed contrast
+  matches the specified visible photographic output. Synthetic sign/inversion/range tests and
+  public offline/markup/canvas tests establish the current boundary, not general photo aesthetics.
+- **Confidence:** Medium for display-contrast weighting; high for native worker placement.

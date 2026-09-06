@@ -3,6 +3,7 @@
 mod develop;
 mod draw;
 mod heal;
+mod horizon;
 mod mask;
 mod publication;
 mod resample;
@@ -24,6 +25,7 @@ use develop::{
     apply_develop_in_place, camera_front, display_srgb_to_linear_rec2020,
     linear_rec2020_to_display_srgb, validate_artifact_samples,
 };
+pub use horizon::detect_horizon;
 pub use mask::{
     clip_mask_to_frame, composite_masked_pixels, feather_mask, lift_masked_pixels, morphology_mask,
     overlay_masked_pixels, threshold_mask, transform_mask_pixels,

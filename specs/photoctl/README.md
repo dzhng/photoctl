@@ -14,7 +14,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 ## Next Agent Prompt
 
 *Last reconciled: 2026-09-06. The spec remains in implementation; staging was pushed through
-`6c8848c`, including canvas sampling, historical fixtures and the public filter command.*
+`a5ff42b`, including existing-photo path lookup and source-only SAM canvas integration.*
 
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
@@ -25,7 +25,8 @@ Run the independent command, canvas, and runtime-build passes in parallel. Canva
 offline-to-online cache promotion and source-only SAM geometry are integrated; next is 12f3 generation wiring.
 Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
 Historical schema-v10–v12 and structured truncated-RAW fixture coverage are also integrated.
-Next independent command work is D24 local horizon detection / `crop --auto`; full-frame generation
+Local horizon detection / `crop --auto` is integrated; the remaining develop command work is the
+white-balance eyedropper sampling contract (8g). Full-frame generation
 consumers must then use the shared frame contract rather than retain their provisional geometry refusal.
 
 - **Canvas:** [12f1/12f2](slices/12-outpaint.md) share exact execution frames and one output planner.
@@ -71,6 +72,7 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | Historical schema fixtures | 31 merged migration checks, including version-authored v10–v12 preservation; no production schema change |
 | Existing-photo path lookup | 21 CLI/locator/show checks and typecheck; daemon client-relative, internal-copy and wrong-volume witnesses |
 | Source-only SAM canvas | 75 merged canvas/segment/revision/progress/frame checks, TS build/typecheck; all 20 captures directly reviewed |
+| Local auto-straighten | 20 crop/public/client checks, 16 develop/state/undo/canvas neighbors and 3 native groups; independent review and all 8 captures directly inspected |
 | [Untouched overview](assets/gates/show-overview/evidence.json) | 37 preview/daemon/develop cases across integration and focused correction; fresh visual review |
 | Paid retention / atomic removal / upscale-develop consumers | 85 / 18 / 21 checks and typecheck; no extra provider work for exposure replacement |
 
@@ -136,7 +138,7 @@ Update this handoff after each pass and continue to the next unfinished requirem
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 manual geometry · [x] 8d4 filters/B&W/selective color · [x] keyless fixture gold exam · [ ] 8e local auto-straighten / `crop --auto` (D24) · [x] 8f public filter · [ ] 8g white-balance eyedropper — `slices/08-develop.md`
+- [ ] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 manual geometry · [x] 8d4 filters/B&W/selective color · [x] keyless fixture gold exam · [x] 8e local auto-straighten / `crop --auto` (D24) · [x] 8f public filter · [ ] 8g white-balance eyedropper — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`

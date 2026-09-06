@@ -107,3 +107,14 @@ test("segment idle timeout permits progress while immediately admitted model wor
     }),
   ).toBeGreaterThan(5_000);
 });
+
+test("auto crop idle timeout permits progress while immediately admitted image work is pending", () => {
+  expect(
+    requestTimeout({
+      verb: "crop",
+      args: ["photo", "--auto"],
+      cwd: "/",
+      env: { noDaemon: false, lockBudgetMs: "0" },
+    }),
+  ).toBeGreaterThan(5_000);
+});

@@ -366,6 +366,7 @@ export function requestTimeout(request: CommandRequest): number {
     request.verb === "generate" ||
     request.verb === "show" ||
     request.verb === "segment" ||
+    request.verb === "crop" ||
     request.verb === "export"
   ) {
     return Math.max(31_000, queueDeadline);

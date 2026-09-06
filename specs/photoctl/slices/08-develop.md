@@ -151,6 +151,8 @@ automatic edits return `auto:{detected:boolean,correction_deg:number|null}`. An 
 has `detected:false,correction_deg:null`; a detected already-level image reports zero correction.
 It introduces no database column, migration, saved auto mode, provider
 attempt or alternate native dependency. Ordinary `undo` reverses any committed change.
+Automatic analysis uses the existing advisory progress heartbeat throughout photographic evaluation
+and publication. Disconnects do not cancel or replay the mutation; inspect state after a lost response.
 
 **Verification:** start with one built/public command RED. Pin clockwise/counterclockwise synthetic
 horizons independently, a level repeat/no-op, blank and conflicting-line no-ops, a portrait/quarter-turn,
@@ -167,6 +169,14 @@ of every possible natural horizon are not established by synthetic lines. Open t
 non-blocking review window with `preview-shots`, record the evidence-based call and close them.
 Keep the existing develop, canvas, undo and built preview journey checks green. Review and audit
 choices before committing; the root release gate remains reserved for whole-spec closeout.
+
+**Checkpoint:** the public crop path and portable async native detector are implemented through
+the existing photographic-output/frame and develop-state owners. No stored auto mode, crop
+rectangle, database migration, provider call or extra resampler is introduced. Signed-range,
+abstention, undo, snapshot conflict, markup/offline and consumed-canvas witnesses are covered;
+the [review evidence](../assets/crop-auto/review.md) records public images, falsifications,
+independent critiques and the explicitly inherited full-source JPEG gate failures. The corrected
+slope and trim are accepted; existing edge aliasing/preview softness are not claimed fixed.
 
 ## Verification
 8a1's recipe/store/migration tests prove strict kind schemas, ordered shared inputs, photo scoping, immutable lazy replacement,
