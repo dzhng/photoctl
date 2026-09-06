@@ -38,8 +38,8 @@ and camera-JPEG source independence at the built command boundary.
 The built lifecycle passes, and the same shared journey passes through a clean installed
 tarball produced from the audited native addon/helper without rebuilding either. The
 normal packed-install suite registers the journey; its native-build hook was not run
-in this bounded pass. Whole-spec gates, fresh independent visual review and live
-photographic/provider acceptance remain parent-owned; no paid service or camera was used.
+in this bounded pass. Whole-spec gates and live photographic/provider acceptance remain
+separate; no paid service or camera was used.
 
 The first independent static review found incorrect active-upscale status after a failed
 upscale-only refresh. A public failure witness confirmed it; status now describes the
@@ -68,3 +68,29 @@ boundary in 4.8 seconds, and all seven final installed captures match these PNGs
 byte. TypeScript build/typecheck, formatting and diff checks passed; scoped lint reports
 only pre-existing warnings. Independent static reviews were sessions
 `01a07524-5b99-7780-ad61-06ebd51bc18a` and `01a0752e-a7e3-7a52-ab93-8b814f9439d7`.
+
+## Integrated visual review
+
+Main inspection covered all fourteen full images and enlargements. Fresh unprimed
+review `01a0753c-a999-7b00-81e2-c687b8e7ad3b` found stable placement through the generated,
+refreshed and undo states, conspicuous checkerboard texture at native sampling, and
+large color changes. Those observations agree with direct inspection: the synthetic
+source contains alternating one-pixel color values, and the fake gateway supplies the
+changed color treatment. Smoothing those stimuli would weaken the sampling comparison.
+This accepts placement and source-promotion evidence, not photographic texture or model quality.
+
+The reviewer suspected the reduced-before enlargement was narrower and clipped. Direct
+PNG metadata disproves its claimed width: both reduced images are 30×40 and both
+enlargements are 480×640. The public coordinate transforms above independently bind
+the same physical extent. No unexplained offset, missing edge or coverage change was
+found in main inspection. Independent decoded RGB hashes confirm both undo outputs
+exactly match native-refreshed (`7bd54998229e398d999e9ecc33053794a35dcfc129a8b27fa7c2ff7d50d3947f`).
+
+The reduced/native generated enlargements were opened for a non-blocking human review.
+After five minutes without feedback, only those two documents were closed. The
+placement/sampling-only verdict above remains the evidence-based decision.
+
+Root integration passed the TypeScript build, 43 full-frame/outpaint tests and 45
+shared evaluator/preview/export tests. Independent commit review
+`01a07545-737e-7de0-a984-1634303bcc9c` found no actionable correctness issue.
+These are focused integration gates, not the whole-spec closeout.

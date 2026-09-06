@@ -27,15 +27,18 @@ its camera JPEG, tune presets around decoder defects, or weaken the oracle.
 [Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;
 the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next native/public passes.
 
-**Parallel pickup, then integration:** finish full-frame pass B and remaining outpaint release gates.
+**Parallel pickup:** reduce measured outpaint sampling work and finish remaining release gates.
 
 - [Outpaint](slices/12-outpaint.md): framed masks, original-relative retouch and reversible
   native-density layers are integrated. Fresh cold fallback now proves reduced source quality
   and reconnect promotion without paid replay through built and prebuilt-runtime installed CLI.
-  Full-resolution resource and fresh-native-release acceptance remain separate.
+  Full-resolution resource measurements pass the RSS canary, but the cold-export
+  [profile](assets/outpaint-resources/profile.md) identifies repeated affine sampling work
+  as the next performance correction. Fresh-native-release acceptance remains separate.
 - [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
-  pass synthetic visual review. Explicit refresh, retained-only input, reconnect and installed
-  lifecycle remain in pass B. Use captured photographic predecessors excluding markup;
+  and refresh pass synthetic visual review. Retained-only input, reconnect and installed
+  lifecycle are integrated; whole-spec and live photographic acceptance remain separate.
+  Use captured photographic predecessors excluding markup;
   that input policy remains provisional pending the user's answer.
 - [Pairing](slices/04-paired-import.md): default one RAW-led logical photo retaining both
   originals, explicit camera-JPEG access, and raw/jpeg/both alternatives are integrated.
@@ -57,7 +60,7 @@ a substitute for final integrated verification.
 | Current contract | Evidence boundary |
 | --- | --- |
 | Expanded retouch and cold outpaint | [Lifecycle](assets/outpaint-lifecycle/README.md): generated/empty corners, edge-intersecting circles, exact retry/undo, cold reduced-source/reconnect and warm retained-output witnesses. Full-resolution/fresh release gates separate. |
-| Full-frame creation | [Placement](assets/full-frame-geometry/README.md): synthetic authored support accepted; refresh/source lifecycle remains open. |
+| Full-frame lifecycle | [Placement](assets/full-frame-geometry/README.md) and [refresh](assets/full-frame-refresh/README.md): synthetic support, retained-only reconstruction, reconnect and installed lifecycle accepted within their recorded boundaries. |
 | RAW delivery | [Camera review](assets/camera-delivery-review/README.md): reduced-RGB fix accepted, whole delivery set still rejected. |
 | Runtime resources | [Measurements](assets/sam-runtime/README.md): approved **5 GB decimal peak RSS**, encoder **≤4 s**. Preserve historical failures; raising memory does not waive retention, latency or forward progress. |
 
@@ -109,7 +112,7 @@ without deleting history.
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
-- [ ] 13a [x] initial reimagine/relight/generate · [ ] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [ ] 13a [x] initial reimagine/relight/generate · [x] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
 - [x] Show by existing-photo path — `slices/01-first-jpeg.md#existing-photo-path-lookup`
 - [ ] Original CLI reconciliation: generation negative/reference-strength controls. Reference-only generation and combined fill move/scale are implemented — `slices/13-generative-extras-and-markup.md#original-command-controls-still-open`

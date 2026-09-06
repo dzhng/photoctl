@@ -162,8 +162,8 @@ new deterministic descendants. It reuses verified executions by their exact node
 it never supplies a photographic composite as the original source or reapplies predecessors.
 Upscale-only refresh consumes the retained generation; failure preserves the last usable
 upscale. [Refresh evidence](../assets/full-frame-refresh/README.md) records focused, built,
-installed and permanent-original boundaries. Fresh visual acceptance and integrated
-whole-spec closeout remain pending in the parent task.
+installed and permanent-original boundaries, plus fresh independent visual acceptance
+for synthetic placement/sampling. Integrated whole-spec closeout remains separate.
 
 Use write-tests red/green and the narrow owning Node/Vitest runners during iteration;
 then review/refactor-clean/code-review/write-docs and audit-choices before each commit.
