@@ -1,0 +1,580 @@
+{
+  "cpu": "Apple M5 Pro",
+  "node": "v24.14.0",
+  "revision": "8e25286a2a3162846c60a782f5a243053ef64472",
+  "runtimeSha256": "fc3e6399382c1c8e317c9f66ed56f98b45e8b0a4caeccb56dc98e942a3a9dabc",
+  "helperSha256": "5aa6bf2d4fd8960c3dcae851faa3ddd1ff6584485df01484f464e23ca432343c",
+  "memoryCanaryBytes": 5000000000,
+  "latencyThresholdMs": null,
+  "freshNativeReleaseVerified": false,
+  "photographicQualityVerified": false,
+  "cases": [
+    {
+      "source": "/private/tmp/photoctl-outpaint-resources/fixtures/camera/DSC08142.JPG",
+      "sourceHash": "8e4b383dcddad62dff5b3a1b7fa3eb6ff3f9673962aff8bb1b907575cfab459b",
+      "commands": [
+        {
+          "args": [
+            "init",
+            "--path",
+            "/private/tmp/photoctl-outpaint-resource-measurement/optimized/JPG/library"
+          ],
+          "elapsedMs": 913.624292,
+          "peakRssBytes": 1416249344,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "data": {
+              "library": "/private/tmp/photoctl-outpaint-resource-measurement/optimized/JPG/library",
+              "db": "pglite 0.5.8 / pg 18.3",
+              "cache_max_bytes": 21474836480,
+              "embed": "manual"
+            },
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "import",
+            "/private/tmp/photoctl-outpaint-resources/fixtures/camera/DSC08142.JPG",
+            "--link"
+          ],
+          "elapsedMs": 690.036167,
+          "peakRssBytes": 1044692992,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "data": {
+              "imported": 1,
+              "already_present": 0,
+              "skipped_unsupported": 0,
+              "skipped_conflicts": 0,
+              "conflicts": [],
+              "ids": [
+                "01a07557-63a4-70ef-a294-9234e987a09e"
+              ],
+              "volume": {
+                "uuid": "fixture-volume",
+                "mount": "/private/tmp/photoctl-outpaint-resources/fixtures/camera",
+                "online": true
+              },
+              "xmp_read": {
+                "sidecars_found": 0,
+                "ratings": 0,
+                "keywords": 0,
+                "labels": 0
+              },
+              "previews": {
+                "embedded_extracted": 1,
+                "bytes": 238921
+              },
+              "embeddings": {
+                "queued": 0,
+                "est_usd": 0,
+                "note": "manual embedding mode"
+              },
+              "elapsed_s": 0.5627759170000001
+            },
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "export",
+            "01a07557-63a4-70ef-a294-9234e987a09e",
+            "--to",
+            "/private/tmp/photoctl-outpaint-resource-measurement/optimized/JPG/baseline",
+            "--format",
+            "png"
+          ],
+          "elapsedMs": 4908.209290999999,
+          "peakRssBytes": 2644049920,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "summary": {
+              "ok": 1,
+              "failed": 0
+            },
+            "results": [
+              {
+                "id": "01a07557-63a4-70ef-a294-9234e987a09e",
+                "ok": true,
+                "file": "/private/tmp/photoctl-outpaint-resource-measurement/optimized/JPG/baseline/DSC08142.png",
+                "w": 7008,
+                "h": 4672,
+                "bytes": 39794464,
+                "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+                "source_original_id": "01a07557-63a3-7776-89f8-a7e51558f1ea",
+                "skipped": false
+              }
+            ],
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "fill",
+            "01a07557-63a4-70ef-a294-9234e987a09e",
+            "--outpaint",
+            "--px",
+            "128",
+            "--prompt",
+            "continue the scene",
+            "--model",
+            "photoctl/fake-image-edit-v1",
+            "--no-upscale"
+          ],
+          "elapsedMs": 4494.755542,
+          "peakRssBytes": 2808725504,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "data": {
+              "id": "01a07557-63a4-70ef-a294-9234e987a09e",
+              "graph": {
+                "revision": "a0687b64-012f-4f16-8a10-532f442c4087",
+                "layer": "b8be11f1-b5a7-4eff-95fa-d34d46deec4d",
+                "output_node": "node_76f012fa1f41f09b3247377273d5caf99dccf161c185bad8c90742f2a6524b4e",
+                "render_hash": "r_95bac952304b36187cc9945e8a9a24072fd626a32231f2e4bb3c74927e46c866"
+              },
+              "generation": {
+                "node": "node_84bad6c115514399d4f062c728439fbb1657fb13986d0dcf9152e6e7cc5254c6",
+                "adapter": "gateway-image-instruction-composite-v1",
+                "model": "photoctl/fake-image-edit-v1",
+                "returned": {
+                  "w": 1536,
+                  "h": 1042
+                }
+              },
+              "source_context": {
+                "tier": "online-file",
+                "pixel_scale": 1,
+                "resolution_limited": false
+              },
+              "upscale": {
+                "enabled": false,
+                "executed": false,
+                "node": null,
+                "adapter": null,
+                "model": "photoctl/fake-upscale-v1",
+                "input": {
+                  "w": 1536,
+                  "h": 1042
+                },
+                "target": {
+                  "w": 7264,
+                  "h": 4928
+                },
+                "generated": {
+                  "w": 1536,
+                  "h": 1042
+                },
+                "final": {
+                  "w": 7264,
+                  "h": 4928
+                },
+                "density_satisfied": false,
+                "warnings": []
+              },
+              "composite": {
+                "node": "node_76f012fa1f41f09b3247377273d5caf99dccf161c185bad8c90742f2a6524b4e",
+                "unmasked_bit_exact": true
+              },
+              "executions": [
+                {
+                  "kind": "generate",
+                  "node": "node_84bad6c115514399d4f062c728439fbb1657fb13986d0dcf9152e6e7cc5254c6",
+                  "adapter": "gateway-image-instruction-composite-v1",
+                  "model": "photoctl/fake-image-edit-v1",
+                  "duration_ms": 181,
+                  "cost_usd": 0,
+                  "reused": false
+                }
+              ]
+            },
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "export",
+            "01a07557-63a4-70ef-a294-9234e987a09e",
+            "--to",
+            "/private/tmp/photoctl-outpaint-resource-measurement/optimized/JPG/expanded",
+            "--format",
+            "png"
+          ],
+          "elapsedMs": 18289.16225,
+          "peakRssBytes": 3315712000,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "summary": {
+              "ok": 1,
+              "failed": 0
+            },
+            "results": [
+              {
+                "id": "01a07557-63a4-70ef-a294-9234e987a09e",
+                "ok": true,
+                "file": "/private/tmp/photoctl-outpaint-resource-measurement/optimized/JPG/expanded/DSC08142.png",
+                "w": 7264,
+                "h": 4928,
+                "bytes": 40822099,
+                "render_hash": "r_95bac952304b36187cc9945e8a9a24072fd626a32231f2e4bb3c74927e46c866",
+                "source_original_id": "01a07557-63a3-7776-89f8-a7e51558f1ea",
+                "skipped": false
+              }
+            ],
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "layer",
+            "remove",
+            "01a07557-63a4-70ef-a294-9234e987a09e",
+            "b8be11f1-b5a7-4eff-95fa-d34d46deec4d"
+          ],
+          "elapsedMs": 332.7703330000004,
+          "peakRssBytes": 995786752,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "data": {
+              "id": "01a07557-63a4-70ef-a294-9234e987a09e",
+              "layer_id": "b8be11f1-b5a7-4eff-95fa-d34d46deec4d",
+              "revision_id": "b9fa21e1-af7d-4692-b746-ada8146f4d53",
+              "render_hash": "r_9b4e1b1cb44d0815c7c212369c9ddaad2277abf71b618253041a299f084e17ba"
+            },
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "export",
+            "01a07557-63a4-70ef-a294-9234e987a09e",
+            "--to",
+            "/private/tmp/photoctl-outpaint-resource-measurement/optimized/JPG/removed",
+            "--format",
+            "png"
+          ],
+          "elapsedMs": 4996.502167000002,
+          "peakRssBytes": 2815229952,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "summary": {
+              "ok": 1,
+              "failed": 0
+            },
+            "results": [
+              {
+                "id": "01a07557-63a4-70ef-a294-9234e987a09e",
+                "ok": true,
+                "file": "/private/tmp/photoctl-outpaint-resource-measurement/optimized/JPG/removed/DSC08142.png",
+                "w": 7008,
+                "h": 4672,
+                "bytes": 39794464,
+                "render_hash": "r_9b4e1b1cb44d0815c7c212369c9ddaad2277abf71b618253041a299f084e17ba",
+                "source_original_id": "01a07557-63a3-7776-89f8-a7e51558f1ea",
+                "skipped": false
+              }
+            ],
+            "warnings": []
+          }
+        }
+      ],
+      "retainedInteriorExact": true,
+      "interiorHash": "915ef4707dd2d5058feaeb9a6339c07f9fb647a2ae75fe6e247eec1088325f75",
+      "removalExact": true,
+      "providerCalls": 1,
+      "originalUnchanged": true
+    },
+    {
+      "source": "/private/tmp/photoctl-outpaint-resources/fixtures/camera/DSC08142.ARW",
+      "sourceHash": "b66ef078858f3dec8bce4eb736602f70d7df7292eeeb4a811d83bd909847250f",
+      "commands": [
+        {
+          "args": [
+            "init",
+            "--path",
+            "/private/tmp/photoctl-outpaint-resource-measurement/optimized/ARW/library"
+          ],
+          "elapsedMs": 1053.5298750000002,
+          "peakRssBytes": 1567932416,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "data": {
+              "library": "/private/tmp/photoctl-outpaint-resource-measurement/optimized/ARW/library",
+              "db": "pglite 0.5.8 / pg 18.3",
+              "cache_max_bytes": 21474836480,
+              "embed": "manual"
+            },
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "import",
+            "/private/tmp/photoctl-outpaint-resources/fixtures/camera/DSC08142.ARW",
+            "--link"
+          ],
+          "elapsedMs": 333.3509999999951,
+          "peakRssBytes": 990642176,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "data": {
+              "imported": 1,
+              "already_present": 0,
+              "skipped_unsupported": 0,
+              "skipped_conflicts": 0,
+              "conflicts": [],
+              "ids": [
+                "01a07557-ec0b-71df-abd1-6a7ecf50d26b"
+              ],
+              "volume": {
+                "uuid": "fixture-volume",
+                "mount": "/private/tmp/photoctl-outpaint-resources/fixtures/camera",
+                "online": true
+              },
+              "xmp_read": {
+                "sidecars_found": 0,
+                "ratings": 0,
+                "keywords": 0,
+                "labels": 0
+              },
+              "previews": {
+                "embedded_extracted": 1,
+                "bytes": 206164
+              },
+              "embeddings": {
+                "queued": 0,
+                "est_usd": 0,
+                "note": "manual embedding mode"
+              },
+              "elapsed_s": 0.20128783299999997
+            },
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "export",
+            "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+            "--to",
+            "/private/tmp/photoctl-outpaint-resource-measurement/optimized/ARW/baseline",
+            "--format",
+            "png"
+          ],
+          "elapsedMs": 6232.921125000001,
+          "peakRssBytes": 2522693632,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "summary": {
+              "ok": 1,
+              "failed": 0
+            },
+            "results": [
+              {
+                "id": "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+                "ok": true,
+                "file": "/private/tmp/photoctl-outpaint-resource-measurement/optimized/ARW/baseline/DSC08142.png",
+                "w": 7008,
+                "h": 4672,
+                "bytes": 52720293,
+                "render_hash": "r_be3c042c349bc1bf3a05e110de57962059e08cf55a669bff5368723ec4df3dbd",
+                "source_original_id": "01a07557-ec0a-702c-8000-f9b037a48139",
+                "skipped": false
+              }
+            ],
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "fill",
+            "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+            "--outpaint",
+            "--px",
+            "128",
+            "--prompt",
+            "continue the scene",
+            "--model",
+            "photoctl/fake-image-edit-v1",
+            "--no-upscale"
+          ],
+          "elapsedMs": 4942.512875,
+          "peakRssBytes": 2825207808,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "data": {
+              "id": "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+              "graph": {
+                "revision": "3b1487cc-de52-4e24-96af-eed32990d2c5",
+                "layer": "eaa67459-c32c-4365-a0a1-56950d92f9b2",
+                "output_node": "node_046f985a92a433c8a212760cc247a3dc4dd57b68ef5497348afd46f15464b2e6",
+                "render_hash": "r_b739355fb448b9ba7928d8af878a686de716bc4cda9b6b843dea5bcdae06a95b"
+              },
+              "generation": {
+                "node": "node_2572a3885e11aadf427612da4ff3fd77e114796eee699fcfb8877222174e9ec9",
+                "adapter": "gateway-image-instruction-composite-v1",
+                "model": "photoctl/fake-image-edit-v1",
+                "returned": {
+                  "w": 1536,
+                  "h": 1042
+                }
+              },
+              "source_context": {
+                "tier": "online-file",
+                "pixel_scale": 1,
+                "resolution_limited": false
+              },
+              "upscale": {
+                "enabled": false,
+                "executed": false,
+                "node": null,
+                "adapter": null,
+                "model": "photoctl/fake-upscale-v1",
+                "input": {
+                  "w": 1536,
+                  "h": 1042
+                },
+                "target": {
+                  "w": 7264,
+                  "h": 4928
+                },
+                "generated": {
+                  "w": 1536,
+                  "h": 1042
+                },
+                "final": {
+                  "w": 7264,
+                  "h": 4928
+                },
+                "density_satisfied": false,
+                "warnings": []
+              },
+              "composite": {
+                "node": "node_046f985a92a433c8a212760cc247a3dc4dd57b68ef5497348afd46f15464b2e6",
+                "unmasked_bit_exact": true
+              },
+              "executions": [
+                {
+                  "kind": "generate",
+                  "node": "node_2572a3885e11aadf427612da4ff3fd77e114796eee699fcfb8877222174e9ec9",
+                  "adapter": "gateway-image-instruction-composite-v1",
+                  "model": "photoctl/fake-image-edit-v1",
+                  "duration_ms": 190,
+                  "cost_usd": 0,
+                  "reused": false
+                }
+              ]
+            },
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "export",
+            "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+            "--to",
+            "/private/tmp/photoctl-outpaint-resource-measurement/optimized/ARW/expanded",
+            "--format",
+            "png"
+          ],
+          "elapsedMs": 17944.10716600001,
+          "peakRssBytes": 3374940160,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "summary": {
+              "ok": 1,
+              "failed": 0
+            },
+            "results": [
+              {
+                "id": "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+                "ok": true,
+                "file": "/private/tmp/photoctl-outpaint-resource-measurement/optimized/ARW/expanded/DSC08142.png",
+                "w": 7264,
+                "h": 4928,
+                "bytes": 53776604,
+                "render_hash": "r_b739355fb448b9ba7928d8af878a686de716bc4cda9b6b843dea5bcdae06a95b",
+                "source_original_id": "01a07557-ec0a-702c-8000-f9b037a48139",
+                "skipped": false
+              }
+            ],
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "layer",
+            "remove",
+            "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+            "eaa67459-c32c-4365-a0a1-56950d92f9b2"
+          ],
+          "elapsedMs": 297.61104199998954,
+          "peakRssBytes": 986923008,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "data": {
+              "id": "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+              "layer_id": "eaa67459-c32c-4365-a0a1-56950d92f9b2",
+              "revision_id": "06005817-c6d5-4d6e-b0d0-34afe8b8d52e",
+              "render_hash": "r_9b4e1b1cb44d0815c7c212369c9ddaad2277abf71b618253041a299f084e17ba"
+            },
+            "warnings": []
+          }
+        },
+        {
+          "args": [
+            "export",
+            "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+            "--to",
+            "/private/tmp/photoctl-outpaint-resource-measurement/optimized/ARW/removed",
+            "--format",
+            "png"
+          ],
+          "elapsedMs": 5151.944000000003,
+          "peakRssBytes": 2829336576,
+          "result": {
+            "schema": 1,
+            "ok": true,
+            "summary": {
+              "ok": 1,
+              "failed": 0
+            },
+            "results": [
+              {
+                "id": "01a07557-ec0b-71df-abd1-6a7ecf50d26b",
+                "ok": true,
+                "file": "/private/tmp/photoctl-outpaint-resource-measurement/optimized/ARW/removed/DSC08142.png",
+                "w": 7008,
+                "h": 4672,
+                "bytes": 52720293,
+                "render_hash": "r_9b4e1b1cb44d0815c7c212369c9ddaad2277abf71b618253041a299f084e17ba",
+                "source_original_id": "01a07557-ec0a-702c-8000-f9b037a48139",
+                "skipped": false
+              }
+            ],
+            "warnings": []
+          }
+        }
+      ],
+      "retainedInteriorExact": true,
+      "interiorHash": "d28d22e8ff8dc3ed01608d8960280f8da76d8ddf3fcdbc08172bc05b8ec91e26",
+      "removalExact": true,
+      "providerCalls": 1,
+      "originalUnchanged": true
+    }
+  ],
+  "completed": true
+}

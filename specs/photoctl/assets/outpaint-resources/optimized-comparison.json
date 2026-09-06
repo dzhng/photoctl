@@ -1,0 +1,54 @@
+[
+  {
+    "source": "/private/tmp/photoctl-outpaint-resources/fixtures/camera/DSC08142.JPG",
+    "originalHashEqual": true,
+    "retainedInteriorHashEqual": true,
+    "outputs": [
+      {
+        "stage": "baseline",
+        "equal": true,
+        "sha256": "ecf63c8bd7d641acd367204cebddb637985c3e66770265b85acdc33b69ff963d"
+      },
+      {
+        "stage": "expanded",
+        "equal": true,
+        "sha256": "f12c202a8a3e14b022c2de94fe7b08b8b344eebb218d8e1a9e5aea8ab9556750"
+      },
+      {
+        "stage": "removed",
+        "equal": true,
+        "sha256": "ecf63c8bd7d641acd367204cebddb637985c3e66770265b85acdc33b69ff963d"
+      }
+    ],
+    "oldExpandedMs": 40518.538292,
+    "newExpandedMs": 18289.16225,
+    "oldExpandedRss": 4468572160,
+    "newExpandedRss": 3315712000
+  },
+  {
+    "source": "/private/tmp/photoctl-outpaint-resources/fixtures/camera/DSC08142.ARW",
+    "originalHashEqual": true,
+    "retainedInteriorHashEqual": true,
+    "outputs": [
+      {
+        "stage": "baseline",
+        "equal": true,
+        "sha256": "f6ea3c0bacef002aa7185f63ea8694a0b41972073d1753a139fdc3b90571b249"
+      },
+      {
+        "stage": "expanded",
+        "equal": true,
+        "sha256": "98870bf1273d2e77731f66cd2b7d63d73c1b34e2f454c870585e94aaaf1e30d0"
+      },
+      {
+        "stage": "removed",
+        "equal": true,
+        "sha256": "f6ea3c0bacef002aa7185f63ea8694a0b41972073d1753a139fdc3b90571b249"
+      }
+    ],
+    "oldExpandedMs": 41127.365708,
+    "newExpandedMs": 17944.10716600001,
+    "oldExpandedRss": 4586881024,
+    "newExpandedRss": 3374940160
+  }
+]

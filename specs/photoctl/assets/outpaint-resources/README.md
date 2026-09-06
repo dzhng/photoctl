@@ -50,7 +50,8 @@ measurements do not isolate its cause.
 
 The subsequent [cold/warm profile](profile.md) attributes the dominant cold work
 to repeated Lanczos weight computation in the shared native affine sampler.
-It proposes an exact-arithmetic-preserving correction; no speedup is claimed yet.
+The isolated optimized-runtime check below measures the resulting correction
+through the same full-resolution public workflow.
 
 ## Reproduction and runtime identity
 
@@ -74,3 +75,42 @@ binds the prebuilt addon and helper to their hashes. The addon is
 `8b07dbac0a76ca0ff10c0a9486f56d72497444a6055779ea8bfcc9b401ed3c55`.
 A fresh native build, installed release, and the complete lifecycle gates remain
 separate. No product code or performance threshold changed in this evidence pass.
+
+## Isolated optimized-runtime verification
+
+The [unchanged-runner recheck](optimized-report.json) uses fresh JPEG/RAW
+libraries, the same original bytes, border dimensions, fake model, disabled
+upscaling and public commands. Both complete all seven commands, make one fake
+generation request, preserve every interior pixel, restore exact removal PNGs,
+and leave originals unchanged. [Cross-run hashes](optimized-comparison.json)
+prove all six baseline/expanded/removed PNGs byte-identical to the prior witness,
+including the generated border, not merely the protected interior.
+
+| Expanded native PNG export | Earlier runtime | Optimized runtime |
+|---|---:|---:|
+| Camera JPEG | 40.519 s / 4.469 GB | 18.289 s / 3.316 GB |
+| Camera RAW | 41.127 s / 4.587 GB | 17.944 s / 3.375 GB |
+
+These are observed 2.22× / 2.29× elapsed-time reductions; each is one run, not
+an interleaved benchmark or a latency guarantee. Root/native build lanes held
+during the recheck, but an unrelated VM and Playwright Chromium were observed at
+about 207% and 188% CPU before it. Lower RSS is recorded, not attributed solely
+to the weight calculation change. The five-GB canary and all pixel/request
+assertions remain unchanged; an 18-second export still deserves further work.
+
+The optimized addon was copied from root's freshly built debug dylib into an
+isolated worktree and ad-hoc codesigned there. Its SHA-256 is
+`fc3e6399382c1c8e317c9f66ed56f98b45e8b0a4caeccb56dc98e942a3a9dabc`;
+the prior addon hash above was verified before copying. The optimized Rust source
+SHA-256 is `e772320747c23f83172e2cdc87af129966bfdfb1af3d367b157f05d13099c956`.
+Current root TypeScript outputs at `4854845` were copied into the isolated runtime;
+package resolution was verified to use its own native package, not root's addon.
+The report's Git revision names the evidence worktree, not the optimized source
+commit. The unchanged scratch runner SHA-256 remains `0be1cad77b85c160dd0a82283251d767ac237abb80907df789b5b12e9bbe566d`.
+
+Scratch outputs remain at
+`/private/tmp/photoctl-outpaint-resource-measurement/optimized`. The older resource
+report, profile and its exact Float32 TIFF are retained unchanged. This check
+does not rerender that separate exposure-0.125 profile state, prove a persistent
+daemon retention bound, or replace installed/fresh-release acceptance. No runtime
+binary, scratch script or production code is committed with this evidence.
