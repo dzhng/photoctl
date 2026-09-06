@@ -241,6 +241,14 @@ reference capture, treat CIRAW as pixel truth, or change interpolation/WB order
 without an owner-specific regression and representation-preserving proposal.
 The accepted highlight correction is not reopened by artifacts that predate it.
 
+The read-only mapping trace found no proven code defect: LibRaw's inset-crop
+operation updates both live and saved margins, and the helper renders from
+CIRAW's actual extent origin. Current evidence omits the selected inset origin
+and framework extent mapping. Next collect those metadata facts for the same
+two originals without another image sweep or a product API change. Existing G4
+dimension equality and patch means do not establish registration; inventing
+expected coordinates from either decoder would not be an honest regression.
+
 C must conclude per defect, not repeatedly reject everything because lights are
 clipped. Flat cores where channels were lost are not themselves a failed correction.
 New or exaggerated colored rims or serrated transitions require a bounded causal
