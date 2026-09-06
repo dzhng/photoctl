@@ -50,6 +50,16 @@ ignoring camera-JPEG export selection failed the source-identity assertion, then
 after restoration. These are source-routing and lifecycle proofs, not a fresh-native
 full packed gate, photographic verdict, or mounted-camera acceptance.
 
+The current-native installed witness also passes both link/copy cases (20.41 seconds)
+on source `c201502`, using the unchanged shared oracle outside the checkout with its
+persistent daemon. The installed and tarball-extracted addon both match
+`95d804f431a544226789ca69b3c20f9e5e1f5f851912d7ff26863bf39e2f8984`;
+both decoders are available and both daemon PIDs are absent after stop. Existing
+compiled native/helper artifacts were packaged through the normal pack owner, not
+rebuilt. This closes the current-runtime installed pairing gap, not the full fresh-build
+release gate. The report, command results, package hashes and test output remain at
+`/private/tmp/photoctl-pairing-current-install.so0AVR/REPORT.md`.
+
 ## Partial live-camera witness
 
 On 2026-09-06, a development worktree linked the contents of
