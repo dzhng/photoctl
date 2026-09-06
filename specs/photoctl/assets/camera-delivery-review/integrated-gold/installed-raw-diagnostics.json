@@ -1,0 +1,122 @@
+[
+  {
+    "args": [
+      "decode",
+      "01a075f4-27e7-7236-9b7a-05ee2fd56468",
+      "--with",
+      "libraw",
+      "--scale",
+      "0.25",
+      "--to",
+      "/private/tmp/photoctl-packed-b.zNUreV/libraw-reconstruct.tif"
+    ],
+    "data": {
+      "id": "01a075f4-27e7-7236-9b7a-05ee2fd56468",
+      "decoder": "libraw",
+      "file": "/private/tmp/photoctl-packed-b.zNUreV/libraw-reconstruct.tif",
+      "w": 1168,
+      "h": 1752,
+      "space": "scene-linear-rec2020",
+      "treatment": {
+        "decoderId": "libraw",
+        "decoderVersion": "0.22.2-Release",
+        "requested": "reconstruct",
+        "status": "applied",
+        "method": "libraw-spatial-float-v1",
+        "scale": 0.25
+      }
+    },
+    "sha256": "eed707ecc63f6dfed73f52f532738b18f46df4deac59e739b3ee88482305b887"
+  },
+  {
+    "args": [
+      "decode",
+      "01a075f4-27e7-7236-9b7a-05ee2fd56468",
+      "--with",
+      "libraw",
+      "--scale",
+      "0.25",
+      "--to",
+      "/private/tmp/photoctl-packed-b.zNUreV/libraw-disabled.tif",
+      "--highlight-reconstruction",
+      "disabled"
+    ],
+    "data": {
+      "id": "01a075f4-27e7-7236-9b7a-05ee2fd56468",
+      "decoder": "libraw",
+      "file": "/private/tmp/photoctl-packed-b.zNUreV/libraw-disabled.tif",
+      "w": 1168,
+      "h": 1752,
+      "space": "scene-linear-rec2020",
+      "treatment": {
+        "decoderId": "libraw",
+        "decoderVersion": "0.22.2-Release",
+        "requested": "disabled",
+        "status": "disabled",
+        "method": null,
+        "scale": 0.25
+      }
+    },
+    "sha256": "0fa240a0fdc5bb9f23ab75d59cc0def0ca4d9ae5b4fa625c2f14d6c5149f0cc8"
+  },
+  {
+    "args": [
+      "decode",
+      "01a075f4-27e7-7236-9b7a-05ee2fd56468",
+      "--with",
+      "ciraw",
+      "--scale",
+      "0.25",
+      "--to",
+      "/private/tmp/photoctl-packed-b.zNUreV/ciraw-reconstruct.tif"
+    ],
+    "data": {
+      "id": "01a075f4-27e7-7236-9b7a-05ee2fd56468",
+      "decoder": "ciraw",
+      "file": "/private/tmp/photoctl-packed-b.zNUreV/ciraw-reconstruct.tif",
+      "w": 1168,
+      "h": 1752,
+      "space": "scene-linear-rec2020",
+      "treatment": {
+        "decoderId": "ciraw",
+        "decoderVersion": "8",
+        "requested": "reconstruct",
+        "status": "applied",
+        "method": "ciraw-highlight-v1",
+        "scale": 0.25
+      }
+    },
+    "sha256": "ceca0bae0139519237a3a3587111d09c687b01285a90edde194caf715a764b01"
+  },
+  {
+    "args": [
+      "decode",
+      "01a075f4-27e7-7236-9b7a-05ee2fd56468",
+      "--with",
+      "ciraw",
+      "--scale",
+      "0.25",
+      "--to",
+      "/private/tmp/photoctl-packed-b.zNUreV/ciraw-disabled.tif",
+      "--highlight-reconstruction",
+      "disabled"
+    ],
+    "data": {
+      "id": "01a075f4-27e7-7236-9b7a-05ee2fd56468",
+      "decoder": "ciraw",
+      "file": "/private/tmp/photoctl-packed-b.zNUreV/ciraw-disabled.tif",
+      "w": 1168,
+      "h": 1752,
+      "space": "scene-linear-rec2020",
+      "treatment": {
+        "decoderId": "ciraw",
+        "decoderVersion": "8",
+        "requested": "disabled",
+        "status": "disabled",
+        "method": null,
+        "scale": 0.25
+      }
+    },
+    "sha256": "eb41dd98ad6b62a2f48a98d66870de4c68b290c1b6ea7e74d36ff2faab023897"
+  }
+]

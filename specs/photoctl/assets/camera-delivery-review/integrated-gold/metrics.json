@@ -1,0 +1,173 @@
+{
+  "target": "Preserve scene geometry, reliable color and detail while removing artificial clipped-light color; camera processing is not an exact target.",
+  "A": "prior corrected decoder, recovery disabled",
+  "B": "integrated default reconstruction",
+  "metrics": [
+    {
+      "name": "DSC00103",
+      "sha256": [
+        "698ee568e7d9e8c6606ee3a1a2d9dbfa7c57af61807666aae515dfd1ffdefc41",
+        "698ee568e7d9e8c6606ee3a1a2d9dbfa7c57af61807666aae515dfd1ffdefc41"
+      ],
+      "sameBytes": true,
+      "overviewRgbMae": 0,
+      "changedOverviewSamples": 0,
+      "detail": {
+        "rect": [
+          2160,
+          850,
+          240,
+          160
+        ],
+        "nearestEnlargement": 2
+      }
+    },
+    {
+      "name": "DSC00104",
+      "sha256": [
+        "567561d89b64579d2ba6bc3de0e4ada58335e467c944d578a46ce9af147d0696",
+        "04804eba8505c3a9d90618c2fa1cdb9ef32381f1fb3373a073adb0f7900895a5"
+      ],
+      "sameBytes": false,
+      "overviewRgbMae": 0.33094402798600697,
+      "changedOverviewSamples": 77203,
+      "detail": {
+        "rect": [
+          2500,
+          540,
+          1000,
+          520
+        ],
+        "nearestEnlargement": 2
+      }
+    },
+    {
+      "name": "DSC00107",
+      "sha256": [
+        "a1d09d78418abb34c329419d7a005fcad409a78a1e676412de2b13be4305f6b2",
+        "4767b8462cab603d934ab26988553a32235284bed2759ebb666308fb5f961d1b"
+      ],
+      "sameBytes": false,
+      "overviewRgbMae": 0.14473263368315842,
+      "changedOverviewSamples": 31533,
+      "detail": {
+        "rect": [
+          2000,
+          3280,
+          460,
+          960
+        ],
+        "nearestEnlargement": 2
+      }
+    },
+    {
+      "name": "DSC00122",
+      "sha256": [
+        "2a33233cba1a7ac99de09698bd26f08e7ec7c2324405246dea5e09e3bff29a76",
+        "5c1d083c8cc8d79be7e4e1c4b04c99253bff1f193d00aeb74a6cb96c5cb0fd04"
+      ],
+      "sameBytes": false,
+      "overviewRgbMae": 0.00703448275862069,
+      "changedOverviewSamples": 1174,
+      "detail": {
+        "rect": [
+          2240,
+          1260,
+          460,
+          360
+        ],
+        "nearestEnlargement": 2
+      }
+    },
+    {
+      "name": "DSC00290",
+      "sha256": [
+        "1ade3f4f0d81af23be1f1723e0fbfd888c22a34d96b2c6e4d42b1ed651ee4d53",
+        "809356846494e42e33ca010f3a18c10d754061d0934392306c116db803a65620"
+      ],
+      "sameBytes": false,
+      "overviewRgbMae": 0.00005197401299350325,
+      "changedOverviewSamples": 46,
+      "detail": null
+    },
+    {
+      "name": "DSC00434",
+      "sha256": [
+        "8e7210a43ec8319667a770ddc87fdb9714501a1db1853cbb0e828a704cf52922",
+        "be7941c320d269c4a1ffe32261ccffcfe9b561e606fb07cfc9ea1e68ad59c99a"
+      ],
+      "sameBytes": false,
+      "overviewRgbMae": 0.4674897551224388,
+      "changedOverviewSamples": 106802,
+      "detail": {
+        "rect": [
+          1700,
+          0,
+          1100,
+          800
+        ],
+        "nearestEnlargement": 2
+      }
+    },
+    {
+      "name": "DSC00442",
+      "sha256": [
+        "5c1755653c58936b2fea3586b942d4b8403151b14472991defbcf1e68608ec31",
+        "baa0fe7e9de962b04fa595e98de3fdad91332b364ad6d34addc222af54895a65"
+      ],
+      "sameBytes": false,
+      "overviewRgbMae": 0.5107371314342829,
+      "changedOverviewSamples": 52485,
+      "detail": {
+        "rect": [
+          200,
+          700,
+          1200,
+          650
+        ],
+        "nearestEnlargement": 2
+      }
+    },
+    {
+      "name": "DSC07633",
+      "sha256": [
+        "ce04dfb23b138a64d6711386aa868ef19884b5086562ddc6bc3318e3816137a8",
+        "8f1c15c9bbd145d139b60973cf836673c83853f23b188fd4dfe39de128e70877"
+      ],
+      "sameBytes": false,
+      "overviewRgbMae": 0.000016991504247876063,
+      "changedOverviewSamples": 23,
+      "detail": null
+    },
+    {
+      "name": "DSC07668",
+      "sha256": [
+        "ad6930ef7b9660677326eb8446d9bd335518719ce488f620c2b5692d59853b97",
+        "d5f3cbe1c0450acd08f390c53a8db796d8fce1a26fb85b37a1a8c9778e5fe325"
+      ],
+      "sameBytes": false,
+      "overviewRgbMae": 0.007430284857571214,
+      "changedOverviewSamples": 1581,
+      "detail": null
+    },
+    {
+      "name": "DSC07730",
+      "sha256": [
+        "4dba9bec7c135bc61a5a479af5b65c62de8119754b2c7fc0dacc15d1ac5e7730",
+        "540ea10994528943fa3de79f04a1122db08a709bbb038ef4b7b69e9486e7b0cd"
+      ],
+      "sameBytes": false,
+      "overviewRgbMae": 0.04513293353323338,
+      "changedOverviewSamples": 9609,
+      "detail": {
+        "rect": [
+          2900,
+          4000,
+          1200,
+          650
+        ],
+        "nearestEnlargement": 2
+      }
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 # Portable native reconstruction checkpoint
 
 Explicit opt-in through `@photoctl/img` now reconstructs LibRaw RGB highlights on
-the native decoder grid, before reduction. Ordinary decode/render requests remain
-unreconstructed until the public-policy pass. This checkpoint accepts a **less-wrong
+the native decoder grid, before reduction. This checkpoint left ordinary requests
+unreconstructed; the public-policy pass has since adopted recovery. This accepts a **less-wrong
 false-color primitive**, not the complete photographic delivery set.
 
 ## Representation and ownership
@@ -36,7 +36,7 @@ Complete-RGB reduced Sony data and four-color CFA are unsupported; an opt-in sti
 decodes their RAW without reconstruction and reports that fact. A pre-applied-WB
 flag is not a saturation map. No companion JPEG, migration, cache deletion or
 adapter preference change is involved. The actual policy/method identity in graph
-planning remains the next pass's responsibility.
+planning belongs to the integrated public-policy pass.
 
 The native probe exposes `highlightReconstructionMethod` only when the same
 metadata admission used by decoding supports reconstruction. An applied decode

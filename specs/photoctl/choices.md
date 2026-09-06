@@ -5702,15 +5702,16 @@
 
 ### RAW reconstruction plan — Normal treatment with an explicit diagnostic escape
 
-- **When:** Highlight reconstruction planning, 2026-09-06; not yet production behavior.
+- **When:** Highlight reconstruction planning, 2026-09-06; implemented by pass B.
 - **The choice:** Opening a candle photograph should normally correct false highlight color.
   A caller inspecting the decoder can explicitly request the version without that correction.
   Both still use RAW pixels, white balance and color conversion; neither substitutes the camera
   JPEG. Results identify whether correction actually ran and which decoder supplied it.
 - **The gap:** The neutral decoder contract disabled recovery, but delivery review exposed false
   magenta. The user has not yet answered the question about ordinary versus diagnostic treatment.
-- **The reach:** The proposed default changes derived rendering identity, not original files,
-  catalog schema or paid edit history. LibRaw remains the preferred decoder. Explicitly disabling
+- **The reach:** The default changes derived rendering identity, not original files or paid
+  edit history. Effective treatment is recorded in the existing execution table's nullable
+  provenance column under the clean-start schema. LibRaw remains the preferred decoder. Explicitly disabling
   recovery remains available for diagnosis, but cannot replace testing the normal delivery path.
 - **Verdict:** **Needs-user; provisional recommendation is normal recovery with explicit disabled
   diagnostics.** Reversing the default is a policy change with a corresponding render identity,
@@ -5999,3 +6000,27 @@
   explicit public disabled request continues to exercise the same underlying route.
 - **Verdict:** **Sound.** Put product policy at its callers without changing the camera-space contract.
 - **Confidence:** High.
+
+### Export safety — Historical mount hints may reserve a destination, never identify a source
+
+- **When:** Original-overwrite protection, 2026-09-06.
+- **The choice:** A fixture library remembers an original on a drive that is no longer
+  in its configured volume map. An explicit delivery overwrite outside the current
+  map checks existing historical mount paths before replacing the destination. If
+  a recorded original occupies that canonical path—or its leaf is missing—the write
+  is refused. An unrelated absent mount is ignored; a permission or I/O failure is
+  not proof of absence and refuses publication. Recreating an old mount directory
+  does not erase its recorded original-path reservation.
+- **The gap:** Protecting originals was mandatory, but the plan did not specify how
+  stale fixture mappings interact with an explicitly requested overwrite outside
+  the active map. Ignoring all history would expose originals; rejecting any absent
+  historical mount would block unrelated deliveries whenever a drive was unplugged.
+- **The reach:** This conservative use of historical paths applies only to destination
+  safety. Source lookup still requires current volume identity and never treats a
+  reused mount path as proof that a different drive contains the old source. Canonical
+  path checks handle file/directory aliases, but are not an adversarial filesystem
+  transaction against concurrent directory renames. No whole-catalog inode scan or
+  new-file source-folder policy is introduced.
+- **Verdict:** **Sound.** Uncertain replacement may be refused without turning historical
+  location hints into source identity or treating ordinary absence as an error.
+- **Confidence:** Medium; permission/I/O uncertainty favors preserving originals over delivery availability.

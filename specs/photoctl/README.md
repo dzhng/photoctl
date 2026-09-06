@@ -20,8 +20,8 @@ update this handoff, and continue until every requirement is verified—not mere
 
 **First priority: repair camera highlight rendering.** The public fixture gold exam exports all
 ten images, but photographic delivery remains **rejected**. Reduced-RGB striping is corrected
-and the unchanged public script verifies that correction with old caches retained. False magenta
-in bright lights remains in ordinary rendering. Reconstruction pass A is integrated: opt-in
+and the unchanged public script verifies that correction with old caches retained. The previous
+delivery set had false magenta in bright lights. Reconstruction pass A is integrated: opt-in
 portable recovery passes bounded native visual review and preserves disabled samples.
 Pass B is integrated: ordinary RAW reconstruction, truthful decoder treatment,
 public diagnostics and cache identity. Next is pass C: rerun the preserved camera

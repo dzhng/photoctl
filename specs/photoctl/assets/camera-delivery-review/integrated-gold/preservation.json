@@ -1,0 +1,500 @@
+{
+  "baselineSha256": "71a3bf0f4506025b8b2a9eed045f7aa17078073d9201dfba3da4ecf7f90bd209",
+  "tables": {
+    "photos": {
+      "before": 18,
+      "after": 18,
+      "unchangedPriorRows": 18
+    },
+    "originals": {
+      "before": 36,
+      "after": 36,
+      "unchangedPriorRows": 36
+    },
+    "files": {
+      "before": 36,
+      "after": 36,
+      "unchangedPriorRows": 36
+    },
+    "photo_documents": {
+      "before": 10,
+      "after": 10,
+      "unchangedPriorRows": 10
+    },
+    "document_revisions": {
+      "before": 13,
+      "after": 13,
+      "unchangedPriorRows": 13
+    },
+    "document_revision_roots": {
+      "before": 26,
+      "after": 26,
+      "unchangedPriorRows": 26
+    },
+    "document_revision_layers": {
+      "before": 0,
+      "after": 0,
+      "unchangedPriorRows": 0
+    },
+    "layers": {
+      "before": 0,
+      "after": 0,
+      "unchangedPriorRows": 0
+    },
+    "image_nodes": {
+      "before": 26,
+      "after": 26,
+      "unchangedPriorRows": 26
+    },
+    "image_artifacts": {
+      "before": 15,
+      "after": 26,
+      "unchangedPriorRows": 15
+    },
+    "node_executions": {
+      "before": 46,
+      "after": 69,
+      "unchangedPriorRows": 46
+    },
+    "provider_image_attempts": {
+      "before": 0,
+      "after": 0,
+      "unchangedPriorRows": 0
+    },
+    "cache_index": {
+      "before": 19,
+      "after": 19,
+      "unchangedPriorRows": 1
+    }
+  },
+  "artifacts": [
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/16/a_16f1a1f3e8509f774afb6c31d6552b2f426d827b281281a34006e2e9261cc092.tif",
+      "sha256": "16f1a1f3e8509f774afb6c31d6552b2f426d827b281281a34006e2e9261cc092",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/46/a_46b9ea6969dc84e72551c3a04dfeb6303b5b643d757eac65f7688bb95b4c9d4d.tif",
+      "sha256": "46b9ea6969dc84e72551c3a04dfeb6303b5b643d757eac65f7688bb95b4c9d4d",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/55/a_55e119ec3d6ad00d7bde2260de5ae84a23e26981db7a3944c472eab91050b1df.tif",
+      "sha256": "55e119ec3d6ad00d7bde2260de5ae84a23e26981db7a3944c472eab91050b1df",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/7a/a_7a32544bd329858f6c980c58a068a567f52cd6639e0bdc4bc4d5e0ffa3c32e53.tif",
+      "sha256": "7a32544bd329858f6c980c58a068a567f52cd6639e0bdc4bc4d5e0ffa3c32e53",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/7f/a_7ff019f66e73a5a79caa2a78f7487e2942b492213b2cc4159cbfdf46509179c8.tif",
+      "sha256": "7ff019f66e73a5a79caa2a78f7487e2942b492213b2cc4159cbfdf46509179c8",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/86/a_8625a50bc55b5e0b4841dcf04c1003b07b37847288605f67ceab9d4162f480b1.tif",
+      "sha256": "8625a50bc55b5e0b4841dcf04c1003b07b37847288605f67ceab9d4162f480b1",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/98/a_981863c5a3e248ab5ac095166afc94f94b7e4605e822c2545ff7ffbbfc71ad0f.tif",
+      "sha256": "981863c5a3e248ab5ac095166afc94f94b7e4605e822c2545ff7ffbbfc71ad0f",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/a3/a_a3d6f1548b0870051db48458ac885493210c281b573d7d9500679141b3ce60e8.tif",
+      "sha256": "a3d6f1548b0870051db48458ac885493210c281b573d7d9500679141b3ce60e8",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/b1/a_b198c326b89cf97a6ed751fa7e10552bfdc866ebbc69abe0e9626ee7f8ad3e5d.tif",
+      "sha256": "b198c326b89cf97a6ed751fa7e10552bfdc866ebbc69abe0e9626ee7f8ad3e5d",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/b3/a_b3de8ef3679e12dacbc59547ccb9385f9b0859eb7139ab2c66b67122719151cf.tif",
+      "sha256": "b3de8ef3679e12dacbc59547ccb9385f9b0859eb7139ab2c66b67122719151cf",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/b4/a_b4a7c394d34074ef0e188e3a6c2408c2ab04e34786a86877e343944c1127b4b4.tif",
+      "sha256": "b4a7c394d34074ef0e188e3a6c2408c2ab04e34786a86877e343944c1127b4b4",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/c6/a_c6318a625b1a6496a97548a72e57b193802567865053401286160b32e67afda3.tif",
+      "sha256": "c6318a625b1a6496a97548a72e57b193802567865053401286160b32e67afda3",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/ed/a_ed12e533f1298a81907026c2b3cfc5ff7bfb9de6e163eff1a526120f76d70072.tif",
+      "sha256": "ed12e533f1298a81907026c2b3cfc5ff7bfb9de6e163eff1a526120f76d70072",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/f0/a_f07bc6f655e53ded3864549f8c5b0677df972dd924f25fdc917b71c94673158b.tif",
+      "sha256": "f07bc6f655e53ded3864549f8c5b0677df972dd924f25fdc917b71c94673158b",
+      "preserved": true
+    },
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/library/artifacts/sha256/f2/a_f29084045e3d965f1c8790cae5d9b8793f4aadeb13dfd74a2a60ec4cf1611159.tif",
+      "sha256": "f29084045e3d965f1c8790cae5d9b8793f4aadeb13dfd74a2a60ec4cf1611159",
+      "preserved": true
+    }
+  ],
+  "cacheFiles": [
+    {
+      "path": "emb/01a074e2-5fb1-72b2-8f6b-2b535726d86c.jpg",
+      "sha256": "8d79e6095a6309dc887fd1ad81cadb6bc4086edd69aa875d548f9f69d838828e",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-5fd6-775b-888d-4afbf34d0195.jpg",
+      "sha256": "cb82fc267a3f6c3dd768dd9cc142124720890cba6aef37c89b18dab893656b50",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-60af-7309-a2b6-b7734751ea36.jpg",
+      "sha256": "8e4ff6b87f34ccb1798056d40fb0d82e17c06d8f9442162abbfb74749898b11e",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-618f-702e-90d2-35619b366a61.jpg",
+      "sha256": "2b836f2f9a39911195b2ca47d775ba04c6cf187e93035c9d9b2f739a19eb5fe8",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-6269-71d2-a5cb-e96a283ead38.jpg",
+      "sha256": "7f43ed485150162c413316f6a6443537eba5283a86e147b9ed3735dedd61ad0b",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-634e-719b-a270-42e3b4213145.jpg",
+      "sha256": "3f876b10fcf6b9bfbefdbab6a7be9d618ee9a451e24b7eef15264a31d2c82622",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-640d-77d5-b47a-a0902dc0b69c.jpg",
+      "sha256": "05fa45039a61f7c9a6f38287abcda69ef1593f11ce26ed7cc7d4b65eb4f6f97f",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-64de-7107-8634-ceab5e197ca3.jpg",
+      "sha256": "b7ef597a9f901bd5392e2d491700baad48243deeef8a1341fd3942fba75e4e97",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-6549-74e6-b258-cbe8bae67422.jpg",
+      "sha256": "77046aaf1fd439ccc81917062e4b321d29dacc17b15015b74fb8a78d45f1798e",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-664d-77ea-bf3c-4d766c21143e.jpg",
+      "sha256": "ea5328e8f6043123b694285818c66b35f69a60007300b5ec4c8eeb13d0011b40",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-6710-7007-8f2d-5ae9c17e8367.jpg",
+      "sha256": "c0710545856baecbc413fce7e7192f8c16ffdbdc0feb056879f263e8d87ad734",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-67ea-7477-825b-1ea4c7d0b49d.jpg",
+      "sha256": "d187e2d3bdcf9d92ccd0446c9f152db63828816179ec020cdce96cc30ff9890f",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-6886-72ec-919f-f0ca81a590eb.jpg",
+      "sha256": "fa8246d6302c8754aecdf9735a5bc904e3bff9857a12d679b25ec6989c0e1f01",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-691e-7096-8d35-fdd49b7cdb22.jpg",
+      "sha256": "64f656abc8b18b97dc7d54adfdf3e12418a241c927b366692e3ba265e87761d0",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-6a51-77ef-931d-e1a6d56f7d66.jpg",
+      "sha256": "b5567134cd093ff9cbcf65341485036c83f5784b894e3b6dd541a8449ae81c51",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-6b12-703f-b72c-68e6a9a4943b.jpg",
+      "sha256": "7f5f084d1c9d544f417ca240a6c7ffbd151f070763639afd7f52dc9c2c3d9880",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-6bb8-76b5-ad26-0a5b431c5c5a.jpg",
+      "sha256": "e4149e8faf79eee1c7ce2de72a665a50804a00d486919f3b7107711fa80e6d93",
+      "preserved": true
+    },
+    {
+      "path": "emb/01a074e2-6c44-747b-8707-820294298f80.jpg",
+      "sha256": "882ed14fba0ebb4984dd889cac79fcbad2b2101719a2ce2eb97878f3e506a2cc",
+      "preserved": true
+    },
+    {
+      "path": "view/01a074e2-5fb1-72b2-8f6b-2b535726d86c/r_fd84c0b4d5bf5c8bfe365d83102a4a861b6e7d3d4ecb1d1087eaa8dc9fc15fdf/master.jpg",
+      "sha256": "dce4d4c1561f3c25b95e961f667eb7d381cd7c5daf1f0fe0dc910e55c3847589",
+      "preserved": true
+    }
+  ],
+  "reportSha256": "d2b7cee0460b34ce7edc54ff035cb155a3bc18ddb68d6a4e10433026fea055eb",
+  "treatments": [
+    {
+      "executionId": "exec_979fb82c1b722332791b4b59feb456f3e64cd65ba383a13fefb647f3e5a27730",
+      "treatment": {
+        "scale": 1,
+        "method": null,
+        "status": "unsupported",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_f66ae0fde524e8f73433cc24edabf52e5825725db56c05b1873cf2d1198e24b0",
+      "treatment": {
+        "scale": 1,
+        "method": null,
+        "status": "unsupported",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_7bb192cb9b7c0e5c89c6b4931e2a593768f5e4e99fc7ae0e2d8455b3c06a6b0a",
+      "treatment": {
+        "scale": 1,
+        "method": null,
+        "status": "unsupported",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_075f6b5f7d7127e77e8aff8d7404120b325c1444175099a81fb2b007b8de0a54",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_ee32bdc2d67ab612c6594860b2f810177bf6d8229156385471e20502e1f7c281",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_fe973fded7a975d8f13a369fb880b568004f7f35b48f967550281d974258bb74",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_de70a58c3e7fbf28bd364bc19ba5ac6273aae05c758614fb8fc76c040ba1d18f",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_95c6a732ee6de532aef4f2e50e1d166e7f27cbe0ac495e19a8b4a4d14ee3785c",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_d066b3d5a0ec685a35bd11c733456fd671c35e72a5a2fe34293e880058a076df",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_fea4afcac39ef270cbdb9e42ce75f63c1789e22189324a400fbfc743c296eca6",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_e02f416b676102a65e9d17b01328b11c10e825557d106429ea495ce66d00bc31",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_1b9da458579879930814b5cebdb3bae1f751e71ce7aa8705940a6d0b1cbe50c5",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_eef0ae0b97327c1435161ebe1c7063d3c286933d2a1155582b1afafc25a25918",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_004ceaccb1cf7431164f8148e13259027e9283219e7fd45371aece30d7bf567f",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_dd6083951d2e78540dc5eab957928d7571201360faa7876f7b8f8c73771711b2",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_f94c188f2ce8a3bc73132ea2d2a60b95b6c2dc12e39d4623c0a36c27fc3bb552",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_d7b04f5fa7a08120a7283692d7dbf1c6e2c5bec7890ea166672df008be1e07f4",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_3576b0e7e7d125d9f1788815b0aa764dcda70be92c6b04fbf83ffdf6797d9ec1",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_fbc5ca9a10016585c04237860f1e14842b9da90fc868be7357d510529355d5f9",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_a70ee6cfc95a2bbe1627f57052a2b7fa3d87f6ab0fec417cf37c5200be913397",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_2c98bd1e80789fc27255626616e4fac8670840b8d9b03e1f5d9bebad2ccf9991",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_51208f0e50bf9731378c4b321267e71207b8f0802b6d7a5e183b13d57cbe57e6",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    },
+    {
+      "executionId": "exec_1621a837ce76e2bfe7dd9f100235ab8fa1e9c85f89e5caa853e86e8199cc22da",
+      "treatment": {
+        "scale": 1,
+        "method": "libraw-spatial-float-v1",
+        "status": "applied",
+        "decoderId": "libraw",
+        "requested": "reconstruct",
+        "decoderVersion": "0.22.2-Release"
+      }
+    }
+  ]
+}

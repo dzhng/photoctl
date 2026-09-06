@@ -38,6 +38,21 @@ export report the same hash and visible edit state; `gold-exam-dry.test.ts` runs
 
 ## Implementation evidence
 
+Explicit overwrite applies to deliveries, never catalogued originals. The locator
+owner checks the destination before rendering and again before publication, including
+other photos, JPEG companions, copied originals and canonicalized path aliases.
+Missing recorded original paths remain reserved. Historical fixture mount hints may
+refuse an overwrite but never identify a source or override a known live volume UUID.
+An absent historical mount is irrelevant to an already-resolved destination; permission
+and I/O failures remain unverifiable and refuse publication. These checks do not claim
+protection from adversarial concurrent directory renames or implement the separate
+new-file-in-source-folder policy.
+
+The merged protection selection passes 13 tests after rebuilding the library package;
+the initial stale-build run exposed the old absent-mount behavior and was not accepted.
+Existing template and locator selections pass another ten tests. Independent review
+`01a075f1-bdb6-7930-b663-2a865c1021ec` found no further issue.
+
 Full-resolution default builds retain dev diagnostics while optimizing the native pixel owners;
 the [matched performance audit](../assets/full-source-performance.md) records why this belongs
 to the workspace build profile and verifies the existing public deadlines without reduced input.

@@ -4,6 +4,10 @@ The permanent camera originals are sufficient to reproduce these failures withou
 reconnecting the camera. This checkpoint separates successful command execution
 from photographic deliverability: **the inspected delivery set is rejected**.
 
+The [integrated recovery comparison](integrated-gold/README.md) now accepts removal
+of the conspicuous magenta cores against that historical set. Complete acceptance
+remains open for all-reference review and classification of residual light edges.
+
 ## Reproduction and evidence boundary
 
 On 2026-09-06, the built CLI at `89811b3` ran the unchanged `scripts/gold-exam.sh`

@@ -202,6 +202,20 @@ to diagnostic mode to conceal changed normal behavior.
 
 ## C — Complete RAW-led delivery acceptance
 
+The [preserved-library comparison](../assets/camera-delivery-review/integrated-gold/README.md)
+accepts the conspicuous highlight-color correction within its recorded scope. Keep
+the ten-delivery judgment, all-reference coverage, unchanged history and installed
+runtime gates separate. A fixture library with no paid attempts cannot prove paid
+history retention, and a local run cannot close G3 or physical-card acceptance.
+
+C must conclude per defect, not repeatedly reject everything because lights are
+clipped. Flat cores where channels were lost are not themselves a failed correction.
+New or exaggerated colored rims or serrated transitions require a bounded causal
+comparison followed by a separately verifiable fidelity pass. Uncertain optical
+versus decoder origin stays a named uncertainty, not an inferred success. Interior
+highlight edges must not be attributed to incomplete spatial cells at image borders
+without evidence linking those distinct regions.
+
 Run the unchanged gold script against the retained fixture library with its old caches
 still present. Verify source identities, reports, decoded output files and all ten
 deliveries, then inspect native details of the previously rejected lights/sky. Check

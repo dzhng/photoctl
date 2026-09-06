@@ -1,0 +1,30 @@
+{
+  "capturedAt": "2026-09-06T09:01:07.721Z",
+  "files": [
+    {
+      "file": "/private/tmp/photoctl-packed-b.zNUreV/photoctl-install-KDe7G5/tarballs/photoctl-cli-0.1.0.tgz",
+      "bytes": 607686,
+      "sha256": "43ba1f777f3fd41f133d2267a6e80708ef29e5f8e369705f734ac0855c566005"
+    },
+    {
+      "file": "/private/tmp/photoctl-packed-b.zNUreV/photoctl-install-KDe7G5/tarballs/photoctl-img-darwin-arm64-0.1.0.tgz",
+      "bytes": 8927354,
+      "sha256": "94c3ff82f53e562c63f85f330fb85b12ec9304e205638ce7fc5945b7aadbc614"
+    },
+    {
+      "file": "/private/tmp/photoctl-packed-b.zNUreV/photoctl-install-KDe7G5/tarballs/photoctl-mac-helper-darwin-arm64-0.1.0.tgz",
+      "bytes": 38384,
+      "sha256": "b14a0253ea97c96cbe8689414a5591854bc3c3cbd4063b156b4c548a81e95679"
+    },
+    {
+      "file": "/private/tmp/photoctl-packed-b.zNUreV/photoctl-install-KDe7G5/prefix/lib/node_modules/@photoctl/img-darwin-arm64/photoctl-image.darwin-arm64.node",
+      "bytes": 26854048,
+      "sha256": "8405dc5dac3d532b4def8b187f8737a0861ce7b73a3c5865c2f98ab5a7f6190d"
+    },
+    {
+      "file": "/private/tmp/photoctl-packed-b.zNUreV/photoctl-install-KDe7G5/prefix/lib/node_modules/@photoctl/mac-helper-darwin-arm64/photoctl-mac",
+      "bytes": 175456,
+      "sha256": "ee9e002485a1659be8180c2b04b29400548c23869776cea117f75de8d2c1f506"
+    }
+  ]
+}
