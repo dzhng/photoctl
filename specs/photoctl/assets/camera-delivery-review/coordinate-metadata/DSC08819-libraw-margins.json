@@ -1,0 +1,114 @@
+{
+  "version": "0.22.2-Release",
+  "headerVersion": "0.22.2-Release",
+  "sizeofData": 381576,
+  "afterOpen": {
+    "live": {
+      "rawWidth": 5120,
+      "rawHeight": 3584,
+      "width": 4624,
+      "height": 3080,
+      "leftMargin": 0,
+      "topMargin": 0,
+      "iwidth": 4624,
+      "iheight": 3080,
+      "flip": 0,
+      "inset0": {
+        "left": 44,
+        "top": 30,
+        "width": 4608,
+        "height": 3072
+      }
+    },
+    "saved": {
+      "rawWidth": 5120,
+      "rawHeight": 3584,
+      "width": 4624,
+      "height": 3080,
+      "leftMargin": 0,
+      "topMargin": 0,
+      "iwidth": 4624,
+      "iheight": 3080,
+      "flip": 0,
+      "inset0": {
+        "left": 44,
+        "top": 30,
+        "width": 4608,
+        "height": 3072
+      }
+    }
+  },
+  "afterUnpack": {
+    "live": {
+      "rawWidth": 5120,
+      "rawHeight": 3584,
+      "width": 4624,
+      "height": 3080,
+      "leftMargin": 0,
+      "topMargin": 0,
+      "iwidth": 4624,
+      "iheight": 3080,
+      "flip": 0,
+      "inset0": {
+        "left": 44,
+        "top": 30,
+        "width": 4608,
+        "height": 3072
+      }
+    },
+    "saved": {
+      "rawWidth": 5120,
+      "rawHeight": 3584,
+      "width": 4624,
+      "height": 3080,
+      "leftMargin": 0,
+      "topMargin": 0,
+      "iwidth": 4624,
+      "iheight": 3080,
+      "flip": 0,
+      "inset0": {
+        "left": 44,
+        "top": 30,
+        "width": 4608,
+        "height": 3072
+      }
+    }
+  },
+  "selectedInsetReturn": 1,
+  "afterInset": {
+    "live": {
+      "rawWidth": 5120,
+      "rawHeight": 3584,
+      "width": 4608,
+      "height": 3072,
+      "leftMargin": 44,
+      "topMargin": 30,
+      "iwidth": 4624,
+      "iheight": 3080,
+      "flip": 0,
+      "inset0": {
+        "left": 44,
+        "top": 30,
+        "width": 4608,
+        "height": 3072
+      }
+    },
+    "saved": {
+      "rawWidth": 5120,
+      "rawHeight": 3584,
+      "width": 4608,
+      "height": 3072,
+      "leftMargin": 44,
+      "topMargin": 30,
+      "iwidth": 4624,
+      "iheight": 3080,
+      "flip": 0,
+      "inset0": {
+        "left": 44,
+        "top": 30,
+        "width": 4608,
+        "height": 3072
+      }
+    }
+  }
+}

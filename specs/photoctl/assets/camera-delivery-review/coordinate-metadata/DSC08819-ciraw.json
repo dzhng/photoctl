@@ -1,0 +1,41 @@
+{
+  "controlReadback" : {
+    "baselineExposure" : 0,
+    "boostAmount" : 0,
+    "boostShadowAmount" : 0,
+    "colorNoiseReductionAmount" : 0,
+    "contrastAmount" : 0,
+    "detailAmount" : 0,
+    "exposure" : 0,
+    "extendedDynamicRangeAmount" : 0,
+    "highlightRecoveryEnabled" : false,
+    "isGamutMappingEnabled" : false,
+    "isLensCorrectionEnabled" : false,
+    "localToneMapAmount" : 0,
+    "luminanceNoiseReductionAmount" : 0,
+    "moireReductionAmount" : 0,
+    "scaleFactor" : 1,
+    "shadowBias" : 0,
+    "sharpnessAmount" : 0
+  },
+  "decoderVersion" : "8",
+  "imageIO" : {
+    "height" : 3072,
+    "orientation" : 1,
+    "width" : 4608
+  },
+  "nativeSize" : {
+    "height" : 3072,
+    "width" : 4608
+  },
+  "os" : "Version 26.4.1 (Build 25E253)",
+  "outputExtent" : {
+    "height" : 3072,
+    "width" : 4608,
+    "x" : 0,
+    "y" : 0
+  },
+  "recordedAt" : "2026-09-06T10:00:03Z",
+  "scope" : "CIRAW metadata and lazy outputImage extent only; no CIContext, bitmap render, encoded image, or float delivery",
+  "source" : "\/Users\/david\/dev\/photoctl\/fixtures\/camera\/DSC08819.ARW"
+}

@@ -1,0 +1,241 @@
+{
+  "source": "/Users/david/dev/photoctl/fixtures/camera/DSC08819.ARW",
+  "sha256": "a713c1a8723cff8a7db702b01a72d6367830aed792f23d6b3d366e39e3d53d55",
+  "recordedAt": "2026-09-06T09:59:32.017Z",
+  "byteOrder": "II",
+  "ifds": [
+    {
+      "offset": 8,
+      "tags": [
+        {
+          "tag": 259,
+          "hex": "0x103",
+          "name": "Compression",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 22,
+          "dataOffset": 30,
+          "values": [
+            6
+          ]
+        },
+        {
+          "tag": 274,
+          "hex": "0x112",
+          "name": "Orientation",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 70,
+          "dataOffset": 78,
+          "values": [
+            1
+          ]
+        },
+        {
+          "tag": 330,
+          "hex": "0x14a",
+          "name": "SubIFDs",
+          "type": 4,
+          "count": 1,
+          "entryOffset": 142,
+          "dataOffset": 150,
+          "values": [
+            138530
+          ]
+        },
+        {
+          "tag": 34665,
+          "hex": "0x8769",
+          "name": "ExifIFD",
+          "type": 4,
+          "count": 1,
+          "entryOffset": 202,
+          "dataOffset": 210,
+          "values": [
+            4544
+          ]
+        }
+      ]
+    },
+    {
+      "offset": 138530,
+      "tags": [
+        {
+          "tag": 256,
+          "hex": "0x100",
+          "name": "ImageWidth",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 138544,
+          "dataOffset": 138552,
+          "values": [
+            5120
+          ]
+        },
+        {
+          "tag": 257,
+          "hex": "0x101",
+          "name": "ImageLength",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 138556,
+          "dataOffset": 138564,
+          "values": [
+            3584
+          ]
+        },
+        {
+          "tag": 259,
+          "hex": "0x103",
+          "name": "Compression",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 138568,
+          "dataOffset": 138576,
+          "values": [
+            7
+          ]
+        },
+        {
+          "tag": 50719,
+          "hex": "0xc61f",
+          "name": "DefaultCropOrigin",
+          "type": 4,
+          "count": 2,
+          "entryOffset": 138880,
+          "dataOffset": 139198,
+          "values": [
+            44,
+            30
+          ]
+        },
+        {
+          "tag": 50720,
+          "hex": "0xc620",
+          "name": "DefaultCropSize",
+          "type": 4,
+          "count": 2,
+          "entryOffset": 138892,
+          "dataOffset": 139206,
+          "values": [
+            4608,
+            3072
+          ]
+        },
+        {
+          "tag": 29895,
+          "hex": "0x74c7",
+          "name": "SonyRawImageCropTopLeft",
+          "type": 4,
+          "count": 2,
+          "entryOffset": 138904,
+          "dataOffset": 139214,
+          "values": [
+            44,
+            30
+          ]
+        },
+        {
+          "tag": 29896,
+          "hex": "0x74c8",
+          "name": "SonyRawImageCroppedSize",
+          "type": 4,
+          "count": 2,
+          "entryOffset": 138916,
+          "dataOffset": 139222,
+          "values": [
+            4608,
+            3072
+          ]
+        }
+      ]
+    },
+    {
+      "offset": 4544,
+      "tags": []
+    },
+    {
+      "offset": 43636,
+      "tags": [
+        {
+          "tag": 259,
+          "hex": "0x103",
+          "name": "Compression",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 43650,
+          "dataOffset": 43658,
+          "values": [
+            6
+          ]
+        },
+        {
+          "tag": 274,
+          "hex": "0x112",
+          "name": "Orientation",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 43698,
+          "dataOffset": 43706,
+          "values": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "offset": 138222,
+      "tags": [
+        {
+          "tag": 256,
+          "hex": "0x100",
+          "name": "ImageWidth",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 138236,
+          "dataOffset": 138244,
+          "values": [
+            4608
+          ]
+        },
+        {
+          "tag": 257,
+          "hex": "0x101",
+          "name": "ImageLength",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 138248,
+          "dataOffset": 138256,
+          "values": [
+            3072
+          ]
+        },
+        {
+          "tag": 259,
+          "hex": "0x103",
+          "name": "Compression",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 138272,
+          "dataOffset": 138280,
+          "values": [
+            7
+          ]
+        },
+        {
+          "tag": 274,
+          "hex": "0x112",
+          "name": "Orientation",
+          "type": 3,
+          "count": 1,
+          "entryOffset": 138308,
+          "dataOffset": 138316,
+          "values": [
+            1
+          ]
+        }
+      ]
+    }
+  ],
+  "note": "Raw tag observations only; not observed LibRaw selected margins. Follows main/next/SubIFD/ExifIFD chains, does not interpret MakerNote internals."
+}
