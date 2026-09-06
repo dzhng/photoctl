@@ -151,6 +151,9 @@ images alone cannot prove. The apparent grid is not accepted as natural photogra
 Exact undo and exterior checks corroborate the unchanged placement. The images are accepted for
 sampling/provenance evidence only; photographic generation quality and Workbench layout remain
 unverified. All three warm/cold journeys pass on the merged tree in 31.31 seconds.
+The cold/reconnected enlargements were opened for a non-blocking human checkpoint;
+after more than five minutes without feedback, only those documents were closed.
+The sampling/provenance-only verdict above remains the evidence-based decision.
 
 Packed SHA-256 identities for this bounded witness:
 

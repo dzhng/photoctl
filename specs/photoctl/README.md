@@ -24,7 +24,8 @@ and the unchanged public script verifies that correction with old caches retaine
 in bright lights remains. Native CIRAW recovery experiments are promising; portable LibRaw
 recovery still needs a measured design. Preserve failure evidence and do not replace RAW with
 its camera JPEG, tune presets around decoder defects, or weaken the oracle.
-[Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance.
+[Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;
+the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next native/public passes.
 
 **Parallel pickup, then integration:** finish full-frame pass B and remaining outpaint release gates.
 

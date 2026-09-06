@@ -5699,3 +5699,40 @@
 - **Verdict:** Sound; both first-use consumers are proven cold by their exact current output identity,
   and all mutation goes through public commands except explicit local provider configuration.
 - **Confidence:** High. No product API, persistence or fallback policy changes were introduced.
+
+### RAW reconstruction plan — Normal treatment with an explicit diagnostic escape
+
+- **When:** Highlight reconstruction planning, 2026-09-06; not yet production behavior.
+- **The choice:** Opening a candle photograph should normally correct false highlight color.
+  A caller inspecting the decoder can explicitly request the version without that correction.
+  Both still use RAW pixels, white balance and color conversion; neither substitutes the camera
+  JPEG. Results identify whether correction actually ran and which decoder supplied it.
+- **The gap:** The neutral decoder contract disabled recovery, but delivery review exposed false
+  magenta. The user has not yet answered the question about ordinary versus diagnostic treatment.
+- **The reach:** The proposed default changes derived rendering identity, not original files,
+  catalog schema or paid edit history. LibRaw remains the preferred decoder. Explicitly disabling
+  recovery remains available for diagnosis, but cannot replace testing the normal delivery path.
+- **Verdict:** **Needs-user; provisional recommendation is normal recovery with explicit disabled
+  diagnostics.** Reversing the default is a policy change with a corresponding render identity,
+  not a migration or destructive cache reset. Native sample-preservation proof comes first.
+- **Confidence:** Medium.
+
+### RAW reconstruction plan — Preserve floating samples instead of adopting integer staging
+
+- **When:** Highlight reconstruction planning, 2026-09-06.
+- **The choice:** The upstream recovery routine infers a clipped color channel from nearby channel
+  ratios. Its integer input conversion also discards some values our current decoder preserves.
+  Translate the neighborhood operation into the existing floating-point camera front, keeping
+  reliable samples and bright values rather than accepting that conversion loss. Begin with
+  upstream mode 3 as a fixed, bounded reference; do not expose a speculative strength control.
+- **The gap:** The spec requires correct RAW output but did not choose a recovery algorithm or
+  numeric representation. Two photographs improving under several upstream modes do not prove
+  those modes interchangeable or establish a safe production port.
+- **The reach:** Reconstruction runs on native decoder neighborhoods before reduction, between
+  the single WB and color-matrix owners. Differential tests establish representable-input behavior;
+  separate float tests preserve what the integer baseline cannot express. Reduced complete-RGB
+  decoding needs truthful saturation information, not assumptions from its dimensions or WB flag.
+- **Verdict:** **Sound as an implementation experiment, not accepted rendering.** Mode 3 and any
+  numerical/grid-edge departures must survive native detail and colored-light review. If that
+  fails, reslice the responsible seam rather than weaken the photographic target.
+- **Confidence:** Medium. Production policy and whole-camera acceptance remain later gates.
