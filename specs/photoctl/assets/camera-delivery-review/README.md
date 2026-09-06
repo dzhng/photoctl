@@ -52,3 +52,32 @@ switch every RAW to its companion JPEG, or weaken the decoder oracle. Add a
 behavioral regression before correcting the responsible owner, then rerender and
 inspect the complete set plus native details. Until that passes, the camera
 workflow is not photographically accepted.
+
+## Reduced-RGB decoder correction
+
+Sony reduced YCbCr RAW already contains complete RGB pixels. The LibRaw wrapper
+must respect the decoder's absence of a color-filter array before invoking Bayer
+interpolation; filenames, compression tags and image dimensions cannot own that
+decision. The existing white-balance metadata and camera-space interface remain
+unchanged. The [LibRaw boundary](../../../../crates/libraw-sys/README.md) owns this
+invariant.
+
+The native-resolution regression reads an illuminated label patch in DSC00103.
+Before correction, 200 of its 400 green samples were exactly zero in alternating
+columns; after correction none are zero (range 3018–5523). Its first green row
+changes from `[3018,0,3195,0,3455,0,3587,0,4087,0]` to
+`[3287,3176,3146,3283,3471,3411,3461,3859,4096,4219]`. The test failed at
+`(2201,900)` with unconditional interpolation and passed after respecting the
+decoded format. All three LibRaw Rust tests pass, including the existing full
+Bayer decode. The native addon was rebuilt and directly exercised; an independent
+Codex review found no actionable issues.
+
+The retained `reduced-{before,after}-{full,detail}.png` images use identical
+native input, shared scene/display conversion and bounded PNG encoding, with no
+develop adjustments. Full views are quarter-sized; detail crops retain native
+samples enlarged twice with nearest-neighbor sampling. Mean absolute RGB delta
+is 8.324/255 in the overview and 50.371/255 in detail, proving the corrected path
+changed actual pixels. Native detail no longer shows the alternating red/dark
+columns; independent visual acceptance and rerunning the complete delivery set
+remain the integrating pass's responsibility. Highlight reconstruction is outside
+this correction and the overall delivery checkpoint remains rejected.

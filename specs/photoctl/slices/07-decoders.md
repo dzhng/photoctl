@@ -9,7 +9,8 @@
   [`../assets/gates/G3-ciraw-headless.md`](../assets/gates/G3-ciraw-headless.md). File decoding uses Sharp for codec/profile
   handling; scaled pixels pass through the shared Rust resampler, not Sharp resizing.
 - [x] **7b LibRaw:** vendored 0.22.2 builds into the optional per-platform napi package; decode runs
-  AHD into oriented, black-subtracted camera space on a native worker; probe exposes compression and
+  AHD for mosaiced sensor data into oriented, black-subtracted camera space on a native worker;
+  complete-RGB codecs bypass demosaicing. Probe exposes compression and
   the camera matrix. The fixture, CLI, macOS dependency, and Docker evidence live in
   [`../assets/gates/G2-libraw-build.md`](../assets/gates/G2-libraw-build.md).
 - [x] **7c oracle:** the Rust color core owns camera levels/WB/matrix and display transfer in both
@@ -40,7 +41,7 @@ Every imported photo can enter the same develop/render graph. A whole-file decod
   space linear Rec.2020 → `space:"scene-linear-rec2020"`; validity `supportedDecoderVersions != ["None"]`; `identifierHint`
   required. `probe:headless-ciraw` (ssh, no window server; md5 of two runs) → G3. FAIL ⇒ `doctor` marks `requires_window_server`.
 - **7b** `crates/libraw-sys` (vendored 0.22.2, CDDL, `build.rs` glob `src/**/*.cpp`, `--disable-openmp`, libc++ dynamic, pinned
-  deployment target); `photoctl-image::decode` = unpack + metadata + demosaic AHD (`user_qual=3`) only → `space:"camera"`;
+  deployment target); `photoctl-image::decode` = unpack + metadata + AHD for mosaiced sensor data only → `space:"camera"`;
   `packages/img` per-platform packages. G2: `otool -L` free of `/opt/homebrew`/libomp; `|camXyz[0] − 0.7460| < 5e-4`; Docker builds it.
   `probe()` reports the original selected RAW IFD's TIFF compression tag, not LibRaw's normalized decoder-dispatch code.
 - **7c** `photoctl-image::develop::front` = levels → WB → cam_xyz→Rec.2020 (runs only for `space:"camera"`); TRC + `sRGB2014.icc`

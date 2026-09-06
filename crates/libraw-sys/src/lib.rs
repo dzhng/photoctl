@@ -139,6 +139,26 @@ mod tests {
     }
 
     #[test]
+    fn reduced_sony_rgb_preserves_cream_label_at_native_resolution() {
+        let fixture =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/camera/DSC00103.ARW");
+        let image = decode(&fixture).expect("reduced Sony RAW decodes");
+        assert_eq!((image.metadata.width, image.metadata.height), (3504, 2336));
+        assert!(image.metadata.wb_pre_applied);
+
+        // This illuminated patch of the pale upper-shelf label has continuous
+        // green signal at native resolution. Interpolating complete RGB as a
+        // Bayer mosaic instead erases green in every other column. Inspect the
+        // whole patch: averaging or resizing can hide those missing samples.
+        for y in 900..920 {
+            for x in 2200..2220 {
+                let offset = (y * image.metadata.width as usize + x) * 3;
+                assert!(image.data[offset + 1] > 0.0, "missing green at ({x}, {y})");
+            }
+        }
+    }
+
+    #[test]
     fn decodes_a7c2_as_oriented_camera_space_without_white_balance() {
         let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/a7c2.ARW");
         let image = decode(&fixture).expect("fixture decodes");

@@ -1,5 +1,36 @@
 # Implementation choices
 
+## Reduced-RGB decode correction — sound
+
+- **When:** Reduced camera RAW correction, 2026-09-06.
+- **The choice:** Keep the regression at native pixel resolution. When a pale
+  label is decoded, every other column must not lose its green signal. The test
+  checks a whole illuminated patch before resizing; a small preview can average
+  missing columns into plausible-looking colors. It does not require the RAW to
+  match the camera's finished JPEG or pin a host-specific pixel hash.
+- **The gap:** The repair request required photographic regression coverage but
+  did not choose its measurement or test boundary.
+- **The reach:** The fixture guards erased native detail through the public Rust
+  decoder; it is not a complete color-rendering or highlight-recovery oracle.
+- **Verdict:** **Sound.** The observed missing-channel failure is deterministic,
+  and the test was observed red before the correction and green afterward.
+- **Confidence:** High.
+
+- **When:** Reduced camera RAW correction, 2026-09-06.
+- **The choice:** Let the decoded sensor layout decide whether demosaicing runs.
+  Demosaicing fills missing colors in a sensor mosaic. A reduced Sony RAW already
+  holds all three colors per pixel, so it bypasses that operation. A normal Bayer
+  RAW continues through it. Choosing by Sony filename or compression would confuse
+  storage format with whether colors are actually missing.
+- **The gap:** The request named the broken reduced format; the general dispatch
+  criterion was unspecified.
+- **The reach:** Other complete-RGB codecs receive the same treatment without new
+  flags, wire fields, dependencies or format-specific exceptions. Codec-applied
+  white balance remains reported through the existing metadata.
+- **Verdict:** **Sound.** LibRaw already owns this distinction and uses it in its
+  own processing path.
+- **Confidence:** High.
+
 ## Unsound
 
 ### Slice 13a generate — Speculative reference transport superseded

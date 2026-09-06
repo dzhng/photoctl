@@ -16,7 +16,7 @@ public:
 
   int oriented_index(int row, int column) { return flip_index(row, column); }
 
-  int decode_ahd() {
+  int decode_camera() {
     try {
       const int result = raw2image();
       if (result != LIBRAW_SUCCESS)
@@ -24,7 +24,10 @@ public:
       adjust_bl();
       subtract_black_internal();
       pre_interpolate();
-      ahd_interpolate();
+      // Non-CFA formats (including Sony reduced YCbCr RAW) already contain
+      // complete RGB pixels; Bayer interpolation would overwrite real channels.
+      if (imgdata.idata.filters)
+        ahd_interpolate();
       return LIBRAW_SUCCESS;
     } catch (const std::bad_alloc &) {
       return LIBRAW_UNSUFFICIENT_MEMORY;
@@ -80,7 +83,7 @@ extern "C" int photoctl_libraw_decode_file(const char *path,
     return result;
   raw.adjust_to_raw_inset_crop(1);
   raw.imgdata.params.user_qual = 3;
-  result = raw.decode_ahd();
+  result = raw.decode_camera();
   if (result != LIBRAW_SUCCESS)
     return result;
   if (!raw.imgdata.image || raw.imgdata.idata.colors < 3)

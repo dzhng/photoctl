@@ -16,7 +16,11 @@ The build deliberately compiles the upstream source directly, without OpenMP, JP
 dependencies. Keep those constraints when updating LibRaw: native packages must not acquire a package
 manager path or a runtime dependency that is absent on a clean host.
 
-The wrapper stops after black subtraction and AHD demosaicing. Color conversion, white balance,
+The wrapper stops after black subtraction and, for color-filter-array sensor data, AHD demosaicing.
+Formats whose codec already supplies complete RGB pixels must bypass demosaicing: treating them as
+a Bayer mosaic overwrites measured channels with fabricated detail. Codec-applied white balance
+remains explicit in the existing metadata so the common front end never applies it twice.
+Color conversion, white balance,
 transfer curves, denoising, and crop policy belong to the shared photoctl develop pipeline; adding any
 of them here would make LibRaw pixels disagree with other camera-space decoders before that common
 pipeline sees them.
