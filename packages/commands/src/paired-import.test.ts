@@ -538,6 +538,15 @@ test("an online camera JPEG does not make a missing RAW primary available", asyn
       ),
     ).toMatchObject({ ok: true });
     await rename(join(drive, "frame.JPG"), join(root, "disconnected.JPG"));
+    const cameraMount = join(root, "camera-jpeg-drive");
+    await library.handle.query(
+      "INSERT INTO volumes (uuid, label, last_mount, last_seen) VALUES ($1, $2, $3, now())",
+      ["camera-jpeg-volume", "Camera JPEG", cameraMount],
+    );
+    await library.handle.query("UPDATE files SET volume_uuid = $1 WHERE original_id = $2", [
+      "camera-jpeg-volume",
+      originals[0].id,
+    ]);
     expect(
       await dispatch(
         { ...request, verb: "show", args: cameraArgs },
@@ -553,7 +562,18 @@ test("an online camera JPEG does not make a missing RAW primary available", asyn
         },
         { version: "test", library: library.handle },
       ),
-    ).toMatchObject({ ok: false, results: [{ id, ok: false, code: "file_offline" }] });
+    ).toMatchObject({
+      ok: false,
+      results: [
+        {
+          id,
+          ok: false,
+          code: "file_offline",
+          volume: "camera-jpeg-volume",
+          hint: `mount ${cameraMount}`,
+        },
+      ],
+    });
   } finally {
     await library.handle.close();
     await rm(root, { recursive: true });

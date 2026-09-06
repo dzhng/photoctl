@@ -149,10 +149,16 @@ export async function exportCommand(
           results.push(exported.result);
         } catch (error) {
           if (error instanceof PhotoctlError) {
+            const sourceFile = snapshot.photo.originals.find(
+              (original) => original.id === snapshot.photo.primaryOriginalId,
+            )?.files[0];
             results.push({
               id: snapshot.input,
               ok: false,
               code: error.code,
+              ...(error.code === "file_offline" && sourceFile
+                ? { volume: sourceFile.volumeUuid, hint: `mount ${sourceFile.lastMount}` }
+                : {}),
               ...errorData(error.data),
             });
             return;
@@ -428,8 +434,6 @@ async function exportOne(
     if (hasErrorCode(error, "file_offline")) {
       throw new PhotoctlError("file_offline", error.message, {
         id: snapshot.id,
-        volume: fallbackFile.volumeUuid,
-        hint: `mount ${fallbackFile.lastMount}`,
       });
     }
     throw error;

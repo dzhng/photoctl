@@ -340,6 +340,7 @@ test("import counts an unsupported file without opening it as a photo", async ()
 
   const imported = await spawnPhotoctl(["import", textFile, "--link"], {
     libraryDir: library,
+    env: { PHOTOCTL_VOLUME_MAP: `${parent}=fixture-volume:online` },
   });
 
   expect(imported.code).toBe(0);
