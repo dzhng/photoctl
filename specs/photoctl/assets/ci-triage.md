@@ -1,6 +1,6 @@
 # CI failure triage
 
-The newer completed [run 34033139818](https://github.com/dzhng/photoctl/actions/runs/34033139818)
+Completed [run 34033139818](https://github.com/dzhng/photoctl/actions/runs/34033139818)
 on `7ceed67` has 25 failing files and 53 failing tests, with 173 files and 1,018 tests passing.
 Several daemon startups now expose child exit 1 with no signal; other requests report an
 unresponsive daemon. This is not proof of OOM or a timeout-only defect. That run retained no
@@ -9,6 +9,15 @@ host test processes and preserves only its daemon log files after test failure, 
 images or environment dumps are uploaded. Docker-container logs are outside this scope.
 Read the retained host logs before changing startup behavior.
 This run predates the embedding drain fix; its 1,496-row failure does not test that correction.
+
+The subsequent [run 34033861168](https://github.com/dzhng/photoctl/actions/runs/34033861168)
+on `56f5a5b` has 44 failing files/90 failing tests, 154 passing files/981 passing tests,
+and one unhandled rejection. Its embedding drain times out waiting for background work to
+settle; successful same-PID status replies continue until the 60-second deadline. It never
+reaches the final row-count or latency assertions, so the fix is not CI-accepted. This is a
+different failure from premature stopping at 1,496 rows. Diagnose actual progress and retry
+state rather than increasing the deadline. That run also predates the disconnected-socket
+and redundant-startup-probe fixes, and retained no child-log artifacts.
 
 The later Docker functional gate also has a confirmed configuration prerequisite:
 [public model distribution](ort-acquisition/README.md#public-model-distribution) is not set up.
