@@ -46,8 +46,9 @@ The retained [stripe crop](DSC00103-crop.png) and
 capture set supplied to the reviewer. No image has been accepted merely because
 it is nonblank, carries a profile, or matches a hash.
 
-Next, isolate the failure boundary using both RAW decoders, their working-space
-samples, and display encoding. Do not hide a decoder defect with preset tuning,
+The decoder-boundary experiments below isolate the failure and the native opt-in
+checkpoint now supplies a bounded correction. Next, integrate effective public
+treatment and cache identity, then repeat the complete delivery review. Do not hide a decoder defect with preset tuning,
 switch every RAW to its companion JPEG, or weaken the decoder oracle. Add a
 behavioral regression before correcting the responsible owner, then rerender and
 inspect the complete set plus native details. Until that passes, the camera
@@ -110,3 +111,9 @@ it does not restore lost texture or establish a portable production correction.
 The [upstream LibRaw spatial comparison](libraw-spatial-recovery/README.md)
 preserves the portable-algorithm experiment, including its integer-staging losses.
 Its quarter-resolution captures are not native photographic acceptance.
+
+The [portable native checkpoint](native-reconstruction/README.md) accepts opt-in
+floating-point reconstruction for false-magenta cores while retaining disabled
+output exactly. Ordinary rendering has not adopted it yet. Residual light-edge
+defects and complete delivery acceptance remain open under the
+[reconstruction plan](../../slices/07-highlight-reconstruction.md).
