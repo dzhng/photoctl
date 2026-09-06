@@ -17,8 +17,11 @@ metrics do not decide whether the placement is correct. Direct inspection finds 
 generated rectangle attached to its authored footprint, with the expected inverse
 quarter-turn and no spill into the surrounding asymmetric source.
 
-**Independent unprimed screenshot critique is pending integration.** This is a captured
-candidate, not final visual acceptance or a photographic/provider-aesthetics claim.
+Independent visual review `01a074fc-0263-7591-b7fd-191f8b9418bd` inspected all eight
+full/enlarged PNGs and found the patch anchored, consistently rotated and unclipped,
+with no visible gap or loss on restoration. Main inspection agrees. This accepts
+synthetic placement/support only, not photographic or provider aesthetics. A fresh
+read-only CLI reviewer was used after the team reviewer limit rejected dispatch.
 
 Focused evidence: 14 checks across the public geometry/input/strength/failure witnesses,
 the existing reimagine lifecycle/upscale neighbors and the built CLI journey pass with

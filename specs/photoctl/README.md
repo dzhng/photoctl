@@ -123,6 +123,7 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | Retained offline export | 57 merged retained-export/paired-import/preview-export/evaluator/schema checks, TS build/typecheck. Current semantics, source-quality promotion and corrupt/missing fallback covered; warm-output installed journey below. |
 | Combined move and relative scale | 33 merged command/density/person-move/built-CLI checks, TS build/typecheck; one atomic revision and exact undo. |
 | Authored mask frames | 54 merged retouch/outpaint/canvas/fill-refresh/move/built-journey checks, TS build/typecheck and scoped lint. [Lifecycle evidence](assets/outpaint-lifecycle/README.md) distinguishes warm retained-output packaging from cold fallback and photographic quality. |
+| Full-frame creation / generic placement | 38 merged creation/retouch-transform/manual-layer/density/built-CLI checks, TS build/typecheck and scoped lint; independent static and eight-image visual reviews. Explicit refresh and retained-only input remain open. |
 
 **SAM pickup:** the release manifest now pins real export hashes with composed CPU parity checks.
 [Photographic evidence](assets/sam-photographic/) distinguishes passing coarse subject checks from

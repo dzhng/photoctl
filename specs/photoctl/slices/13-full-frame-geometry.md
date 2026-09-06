@@ -28,10 +28,10 @@ delegated; new storage is justified only when an actual writer and reader need i
 ## Existing owners and prerequisite
 
 The full-frame entry point is `packages/render/src/reimagine.ts`; both CLI verbs use
-the command full-frame owner. It currently reads the developed base, requires exact
-catalog dimensions and attaches a bare resample plus catalog-sized mask. Deleting
-the refusal alone would misplace cropped pixels: generated/resampled raster size
-does not establish its location in the document.
+the command full-frame owner. Creation now reads the photographic output and places
+RGB and coverage with their authored frames. Raster dimensions alone cannot establish
+location in the document; the former geometry refusal was removed only after the
+public placement and restoration regressions passed.
 
 Use the graph's existing `RenderFrame`, raster-preserving placement transforms,
 photographic output planner, geometry checkpoints and exact execution frames.
@@ -62,9 +62,8 @@ Do not create a competing compositor, apply strength twice, or use a full-frame 
 to reveal content outside the authored footprint after a later crop change.
 
 Commit the new layer through the single photographic output/revision owner. The
-existing geometry refusal stays until the corresponding public red/green tests
-prove placement and restoration. No temporary placement library ships without a
-real consumer.
+public red/green tests prove placement and restoration. No temporary placement
+library ships without a real consumer.
 
 Public gates:
 
@@ -94,7 +93,16 @@ photographic predecessor input without markup, reduced pinned-source generation 
 publication/CAS failure retention. Replacing the creation owner with its pre-pass code
 produces the expected geometry/pinned refusal and wrong-input failures; restoration is green.
 The existing built reimagine journey also passes. [Candidate evidence](../assets/full-frame-geometry/README.md)
-records the exact limits; independent visual critique remains an integration gate.
+records the exact limits and the independent eight-image visual acceptance for
+synthetic placement/support only.
+
+Merged generic transforms preserve each branch's authored placement when replacing
+its movement matrix. The public retouch regression failed even for a zero translation
+before this correction; it now preserves exact pixels and survives a translation
+round trip. Full-frame zero translation, ordinary layers and density-transform
+neighbors also pass: 38 merged checks plus build/typecheck and scoped lint. Independent
+static review found no remaining actionable issue. Border identity is no longer a
+special case for recovering a frame already owned by the branch.
 
 Creation records the input execution alongside its actual frame because generated-node
 input artifact hashes cannot distinguish identical bytes in different coordinates. The

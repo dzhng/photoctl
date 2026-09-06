@@ -30,15 +30,8 @@ import { describeFillBranch } from "../fill/branch.js";
 import { prepareFillDensity, type FillDensityRequest } from "../fill/prepare-density.js";
 import type { PublishedArtifact } from "../artifacts/publication.js";
 import { markupFreeOutputNode } from "../markup/graph.js";
-import { loadGeometryAncestry } from "../graph/geometry-intent.js";
 import { loadLogicalFrame } from "../graph/projection.js";
-import {
-  parseRenderFrame,
-  savedRenderFrame,
-  placedFrame,
-  frameAtRaster,
-  type RenderFrame,
-} from "../graph/frame.js";
+import { savedRenderFrame, placedFrame, type RenderFrame } from "../graph/frame.js";
 
 export type ManualMaskShape =
   | { kind: "box"; bbox: [number, number, number, number] }
@@ -229,22 +222,23 @@ export async function transformLayer(
   if (JSON.stringify(content.matrix) !== JSON.stringify(mask.matrix)) {
     throw new Error("Layer content and mask transforms disagree");
   }
-  const checkpoint =
-    selected.role === "border" && document.roots.geometry
-      ? (await loadGeometryAncestry(database, request.photoId, document.roots.geometry)).nodes.get(
-          selected.authoredCheckpointNodeId!,
-        )?.parameters
+  const frames =
+    content.frame || mask.frame
+      ? {
+          content:
+            content.frame ??
+            (await loadLogicalFrame(database, request.photoId, content.baseNodeId)),
+          mask: mask.frame ?? (await loadLogicalFrame(database, request.photoId, mask.baseNodeId)),
+        }
       : undefined;
-  const authored =
-    checkpoint?.type === "checkpoint" ? parseRenderFrame(checkpoint.outer_frame) : undefined;
   const intrinsicCentroid = await maskCentroid(
     database,
     libraryPath,
     request.photoId,
     mask.baseNodeId,
   );
-  const centroid = authored
-    ? transformPoint(authored.rasterToBase, intrinsicCentroid)
+  const centroid = frames
+    ? transformPoint(frames.mask.rasterToBase, intrinsicCentroid)
     : intrinsicCentroid;
   const anchor =
     request.relative && request.transform.anchor === "centroid"
@@ -256,18 +250,6 @@ export async function transformLayer(
     request.relative,
     anchor,
   );
-  const frames = authored
-    ? {
-        content: frameAtRaster(
-          authored,
-          (await loadLogicalFrame(database, request.photoId, content.baseNodeId)).raster,
-        ),
-        mask: frameAtRaster(
-          authored,
-          (await loadLogicalFrame(database, request.photoId, mask.baseNodeId)).raster,
-        ),
-      }
-    : undefined;
   const transformed = transformBranches("layer", content, mask, matrix, frames);
   const layers = document.layers.map((layer) =>
     layer.id === layerId
@@ -654,6 +636,7 @@ interface TransformLineage {
   baseNodeId: string;
   matrix: TransformMatrix;
   prefix: ChainNode[];
+  frame?: RenderFrame;
 }
 
 async function firstInputChain(database: GraphDatabase, photoId: string, root: string) {
@@ -707,9 +690,17 @@ async function splitTransformLineage(
   while (true) {
     const node = await loadChainNode(database, photoId, nodeId);
     if (node.kind === "transform") {
+      const matrix = transformMatrixFrom(node.parameters);
       return {
         baseNodeId: node.inputNodeIds[0],
-        matrix: transformMatrixFrom(node.parameters),
+        matrix,
+        frame:
+          node.recipeVersion === 2
+            ? placedFrame(
+                await loadLogicalFrame(database, photoId, node.id),
+                invertTransformMatrix(matrix),
+              )
+            : undefined,
         prefix,
       };
     }

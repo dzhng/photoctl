@@ -114,6 +114,42 @@ async function fixture() {
   };
 }
 
+test("transforming a cropped retouch preserves its authored mask placement", async () => {
+  const f = await fixture();
+  try {
+    await f.command("develop", [f.id, "--set", 'crop={"x":5,"y":7,"w":20,"h":12}', "rotate=90"]);
+    const before = await f.pixels();
+    const edit = await f.command<{ layer_id: string }>("retouch", [
+      f.id,
+      "--at",
+      "13,12",
+      "--radius",
+      "2",
+    ]);
+    const healed = await f.pixels();
+    expect(healed.image.data).not.toEqual(before.image.data);
+    await f.command("layer", ["transform", f.id, edit.layer_id, "--dx", "0"]);
+    const unchanged = await f.pixels();
+    expect(unchanged.frame).toEqual(healed.frame);
+    expect(unchanged.image.data).toEqual(healed.image.data);
+    await f.command("layer", ["transform", f.id, edit.layer_id, "--dx", "2", "--dy", "1"]);
+    expect((await f.pixels()).image.data).not.toEqual(healed.image.data);
+    await f.command("layer", [
+      "transform",
+      f.id,
+      edit.layer_id,
+      "--dx",
+      "-2",
+      "--dy",
+      "-1",
+      "--relative",
+    ]);
+    expect((await f.pixels()).image.data).toEqual(healed.image.data);
+  } finally {
+    await f.close();
+  }
+});
+
 test("full-frame edits retain cropped coordinates through show, toggle, later crop, remove and undo", async () => {
   const f = await fixture();
   try {
@@ -130,6 +166,8 @@ test("full-frame edits retain cropped coordinates through show, toggle, later cr
     expect(generated.image).toMatchObject({ w: before.image.w, h: before.image.h });
     expect(generated.frame).toEqual(before.frame);
     expect(generated.image.data).not.toEqual(before.image.data);
+    await f.command("layer", ["transform", f.id, edit.layer_id, "--dx", "0"]);
+    expect((await f.pixels()).image.data).toEqual(generated.image.data);
     const exported = await f.command<{ results: ExportResult[] }>("export", [
       f.id,
       "--to",
