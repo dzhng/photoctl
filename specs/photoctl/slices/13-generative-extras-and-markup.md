@@ -53,12 +53,11 @@ Do not pretend prompt guidance is latent denoise, infer dynamic capabilities, or
 blending without a recorded product choice. The abbreviated reference-only `generate --ref` form
 also needs an explicit interpretation; today's mandatory prompt is not evidence it was removed.
 
-The same input audit found two adjacent syntax gaps: `fill --move … --scale` must reconcile with
-the shared transform/vacancy owner (separate `layer transform` is not the combined command), and
-`show <path>` must resolve an existing catalogued photo or receive an explicit scope ruling. It must
-not silently import a file during inspection. These are open acceptance contracts, not new pixel
-algorithms. Slice 12 owns combined movement, Slice 01 owns lookup, and Slice 08 owns the separate
-filter and neutral-point white-balance omissions.
+The same input audit found the combined `fill --move … --scale` form still needs the shared
+transform/vacancy owner (separate `layer transform` is not the combined command). Slice 12 owns
+that acceptance contract. [Existing-photo path lookup](01-first-jpeg.md#existing-photo-path-lookup)
+is implemented without implicit import; Slice 08 owns the implemented filter verb and the still-open
+neutral-point white-balance command.
 
 ## 13a upscaler quality spike (non-blocking)
 

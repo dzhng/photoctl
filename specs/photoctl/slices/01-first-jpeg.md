@@ -92,7 +92,7 @@ Every successfully imported decodable still image also becomes independently vie
   Slice 08 hard-cuts canonical render/view identities to full SHA-256 and derives render identity from the immutable
   DAG output root. No short-hash compatibility alias survives outside `--human` presentation.
 - Verbs: `import <file|folder> --link` (single file, non-recursive OK; result = A2 shape with `xmp_read` and `embeddings` zeroed),
-  `show <id|prefix>` (A5 shape from day one: `preview` is a readable absolute JPEG path;
+  `show <id|prefix|path>` (A5 shape from day one: `preview` is a readable absolute JPEG path;
   `preview_info:{render_hash,view_hash,requested,actual,source_tier,source_dimensions,pixel_scale,resolution_limited,cache_source,
   color_space:"srgb",icc:"sRGB2014",base_to_view,view_to_base,visible_base_polygon}`;
   `develop:{}`, `develop_hash:null`, `render_hash:"r_…"`, `layers:{count:0,stale:0}`, `xmp:null`, `crop:null`),
@@ -120,6 +120,35 @@ Both pass without a production change. Deliberately allowing the TIFF parser exc
 the format probe made the truncated case fail with missing CLI JSON; restoring the existing probe
 boundary and rebuilding returned both cases to green. This witnesses malformed-container handling,
 not a blanket refusal of damaged RAW payloads whose embedded preview remains usable.
+
+## Existing-photo path lookup
+
+`show` accepts a path as a selector for an existing catalog record, never as an implicit import.
+The [locator owner](../../../packages/library/src/locators.ts) resolves relative paths against the
+requesting client's working directory and follows symlinks. It matches the current volume UUID plus
+volume-relative path through the existing unique index. A mounted replacement drive with the same
+directory spelling cannot select the old drive's photo. Library-owned copies use their existing
+catalog-local namespace, without changing import's volume discovery.
+
+Bare ID-shaped text remains an ID or prefix even when a file has that name; use `./abcdef` to select
+such a file. A resolved unindexed path returns `not_found`. A missing path or one whose directory
+entries cannot be resolved returns `file_offline`, with guidance to use the photo ID: historical
+mount names are not enough to establish which volume the caller means. Resolving a path does not
+require readable image bytes. If its volume identity is known, source availability and cached-preview
+fallback retain the ordinary warning-and-success contract, just as for an ID. Path lookup changes
+neither the selected document nor the show response schema.
+
+The built-CLI regression covers client-relative lookup through a daemon started elsewhere,
+symlinks, edited preview identity, internal copies, wrong-volume rejection and unchanged offline
+ID access. Disabling the volume predicate must fail the wrong-drive assertion rather than quietly
+showing the old photo. Pixel rendering and photographic-quality acceptance are unchanged.
+
+The focused closeout passed 21 CLI/locator/show checks and typecheck. Absolute-path lookup first
+failed on the ID-only parser; internal-copy lookup then failed until its existing namespace was
+included. Two deliberate faults—dropping the volume predicate and refusing a known offline
+locator—each failed the corresponding public assertion; both were restored. Independent review's
+two findings exposed the identity-versus-readability documentation ambiguity above, not a need for
+another source-readability guard. The final public file passes with that boundary explicit.
 
 ## Delegated: UUIDv7 lib; `--human` table renderer; JSON key order.
 ## Checkpoint (01b)

@@ -4784,3 +4784,53 @@
   schema, kernel, persistence field or public result type to keep synchronized.
 - **Verdict:** **Sound.** Reuse the established editing contract instead of duplicating it behind new syntax.
 - **Confidence:** High.
+
+### Show path — Keep IDs stable and do not guess missing-path identity
+
+- **When:** Existing-photo path lookup, 2026-09-06.
+- **The choice:** If an agent types `show abcdef`, treat it as an ID prefix just as before; if the
+  agent means a file named `abcdef`, `show ./abcdef` is explicit. If a requested file has disappeared,
+  return `file_offline` and tell the agent to use the photo ID, which can still show the cached image.
+  Do not select a record by joining an old remembered mount name to a relative path: a different
+  drive may now occupy that mount name. The unbuilt alternative would search historical path
+  spellings and need a separate ambiguity and stale-volume policy.
+- **The gap:** The original `show <id|path>` syntax did not define ID-like filenames or how a missing
+  path identifies a volume. Offline viewing is required, but the existing stable photo ID already
+  supplies that identity.
+- **The reach:** This is a selector rule, not removal of offline viewing. Missing-path lookup could
+  later be expanded with explicit volume identity without changing photo records or previews.
+- **Verdict:** **Sound.** Preserve existing ID behavior and require enough evidence to know which
+  file the caller means instead of silently selecting an unrelated catalog entry.
+- **Confidence:** Medium.
+
+### Show path — Select by the existing locator, not image content or implicit import
+
+- **When:** Existing-photo path lookup, 2026-09-06.
+- **The choice:** An agent inspects a symlink to a linked photograph. Resolve it from the client's
+  working directory, ask the existing volume resolver for the real volume and relative filename,
+  then look up that pair in the catalog's unique file index. If the path belongs to a library-owned
+  copy, use the existing library-local file identity first. An unindexed file returns `not_found`;
+  inspection neither imports it nor searches for a same-content photograph elsewhere. Once selected,
+  the same show pipeline returns the saved edits and current preview as an ID request.
+- **The gap:** The original path form did not specify whether the path selects an indexed location,
+  searches by content, or opens a new image. The reconciliation explicitly forbids implicit import.
+- **The reach:** There is no additional index, persistence field, image hashing pass or response
+  schema. Library-owned copy lookup does not alter how import discovers physical volumes.
+- **Verdict:** **Sound.** The existing locator is the canonical relationship between a file path
+  and a photo; reuse it without another identity or mutation owner.
+- **Confidence:** High.
+
+### Show path — Separate path identity from source-pixel availability
+
+- **When:** Existing-photo path lookup review, 2026-09-06.
+- **The choice:** A mounted path can still identify the catalogued photo even when its image bytes
+  cannot be read, or when the explicit fixture volume mapping declares that known volume offline.
+  Once the locator resolves, ordinary show handles source availability and returns a cached preview
+  with a warning. The alternative is to require source read access before selecting the photo, which
+  would refuse a view that the existing preview contract can satisfy.
+- **The gap:** The initial path documentation used “inaccessible” for both failed path resolution
+  and unreadable image bytes. Review exposed that these are different conditions.
+- **The reach:** File identity lookup does not become a second source-readability check. A path
+  that cannot establish identity still needs an ID; no missing-volume guessing is added.
+- **Verdict:** **Sound.** Keep selection separate from the existing truthful fallback owner.
+- **Confidence:** High.

@@ -14,7 +14,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 ## Next Agent Prompt
 
 *Last reconciled: 2026-09-06. The spec remains in implementation; staging was pushed through
-`8e895fb`, including public undo and the full-resolution storage measurement.*
+`6c8848c`, including canvas sampling, historical fixtures and the public filter command.*
 
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
@@ -68,6 +68,7 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | Public undo | 46 merged CLI/command/revision/markup/canvas/develop checks, TS build/typecheck |
 | Canvas sampling / reconnect | 71 merged canvas/preview/export/undo/evaluator/SAM and built-journey checks, TS build/typecheck; independent review |
 | Historical schema fixtures | 31 merged migration checks, including version-authored v10–v12 preservation; no production schema change |
+| Existing-photo path lookup | 21 CLI/locator/show checks and typecheck; daemon client-relative, internal-copy and wrong-volume witnesses |
 | [Untouched overview](assets/gates/show-overview/evidence.json) | 37 preview/daemon/develop cases across integration and focused correction; fresh visual review |
 | Paid retention / atomic removal / upscale-develop consumers | 85 / 18 / 21 checks and typecheck; no extra provider work for exposure replacement |
 
@@ -131,7 +132,8 @@ Update this handoff after each pass and continue to the next unfinished requirem
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
 - [ ] 13a [x] initial reimagine/relight/generate · [ ] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
-- [ ] Original CLI reconciliation: generation negative/reference-strength controls and reference-only form; combined fill move/scale; show by existing-photo path — `slices/13-generative-extras-and-markup.md#original-command-controls-still-open`
+- [x] Show by existing-photo path — `slices/01-first-jpeg.md#existing-photo-path-lookup`
+- [ ] Original CLI reconciliation: generation negative/reference-strength controls and reference-only form; combined fill move/scale — `slices/13-generative-extras-and-markup.md#original-command-controls-still-open`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 

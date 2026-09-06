@@ -3,7 +3,7 @@ import { cacheRootForLibrary, formatShotInstant, pinnedEmbeddedJpegPath } from "
 import {
   CacheIndex,
   createVolumeResolver,
-  resolvePhotoId,
+  resolvePhotoReference,
   xmpStateIsStale,
   type LibraryHandle,
 } from "@photoctl/library";
@@ -60,7 +60,7 @@ export async function showCommand(
     options: ["--preview-size", "--region"],
   });
   if (parsed.positionals.length !== 1) {
-    throw new PhotoctlError("usage", "show requires exactly one photo ID or prefix");
+    throw new PhotoctlError("usage", "show requires exactly one photo ID, prefix or path");
   }
   const lease = await openRequestLibrary(env, cwd, provided);
   const { handle } = lease;
@@ -78,11 +78,17 @@ export async function showCommand(
     total: 1,
   });
   try {
-    const id = await resolvePhotoId(handle, parsed.positionals[0]);
+    const resolver = createVolumeResolver(env.volumeMap, handle.path);
+    const id = await resolvePhotoReference(
+      handle,
+      parsed.positionals[0],
+      resolver,
+      cwd,
+      handle.path,
+    );
     await progress.start();
     const photo = await loadPhoto(handle, id);
     const libraryId = await readLibraryId(handle);
-    const resolver = createVolumeResolver(env.volumeMap, handle.path);
     const cacheRoot = cacheRootForLibrary(libraryId, cacheBase(env, cwd));
     const index = new CacheIndex(handle, cacheRoot);
     const coordinator = providedCoordinator ?? new PreviewCoordinator();

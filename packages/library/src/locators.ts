@@ -181,8 +181,54 @@ export class MacVolumeResolver implements VolumeResolver {
   }
 }
 
+const photoIdPattern = /^[0-9a-f-]{1,36}$/i;
+
+export async function resolvePhotoReference(
+  db: Pick<PGlite, "query">,
+  input: string,
+  resolver: VolumeResolver,
+  cwd: string,
+  libraryPath: string,
+): Promise<string> {
+  if (photoIdPattern.test(input)) return await resolvePhotoId(db, input);
+  const path = resolvePath(cwd, input);
+  let location: VolumeLocation;
+  try {
+    const canonicalPath = await realpath(path);
+    const libraryRelative = relativeWithin(await realpath(libraryPath), canonicalPath);
+    if (libraryRelative) {
+      const internalId = await photoAtLocator(db, LIBRARY_VOLUME_UUID, libraryRelative);
+      if (internalId) return internalId;
+    }
+    location = await resolver.locate(canonicalPath);
+  } catch (error) {
+    if (error instanceof PhotoctlError) throw error;
+    if (
+      ["ENOENT", "ENOTDIR", "EACCES", "EPERM"].includes((error as NodeJS.ErrnoException).code ?? "")
+    ) {
+      throw new PhotoctlError(
+        "file_offline",
+        "Cannot resolve this path; use the photo ID to view its offline preview",
+        { path },
+      );
+    }
+    throw error;
+  }
+  const id = await photoAtLocator(db, location.uuid, location.relPath);
+  if (!id) throw new PhotoctlError("not_found", `No catalogued photo at: ${path}`, { path });
+  return id;
+}
+
+async function photoAtLocator(db: Pick<PGlite, "query">, volumeUuid: string, relPath: string) {
+  const matches = await db.query<{ id: string }>(
+    "SELECT photo_id::text AS id FROM files WHERE volume_uuid = $1 AND rel_path = $2",
+    [volumeUuid, relPath],
+  );
+  return matches.rows[0]?.id;
+}
+
 export async function resolvePhotoId(db: Pick<PGlite, "query">, input: string): Promise<string> {
-  if (!/^[0-9a-f-]{1,36}$/i.test(input)) {
+  if (!photoIdPattern.test(input)) {
     throw new PhotoctlError("usage", `Invalid photo ID or prefix: ${input}`);
   }
   const matches = await db.query<{ id: string }>(
