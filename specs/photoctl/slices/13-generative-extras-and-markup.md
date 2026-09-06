@@ -1,8 +1,9 @@
 # 13 — 13a reimagine/relight/generate · 13b auto_enhance · 13c markup · 13d retouch
 
-The remaining geometry/offline correction is scoped in
-[full-frame authored coordinates](13-full-frame-geometry.md). Its creation and
-refresh passes supersede the provisional refusals below only after their gates pass.
+The integrated geometry/offline contract is owned by
+[full-frame authored coordinates](13-full-frame-geometry.md). Its verified creation
+and refresh passes supersede the provisional refusals below; whole-spec release
+and live photographic acceptance remain separate.
 
 - **13a** ✓ `reimagine <id> --prompt ... [--strength f]` runs Slice 12's shared DAG planner with `scope:"full-frame"`: current source/develop → generation →
   optional density-matching generative upscale → exact resample to oriented base dimensions → `role:"reimagine"` layer root
