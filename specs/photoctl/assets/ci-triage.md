@@ -60,6 +60,13 @@ tests cover both terminal modes, lock reacquisition and later successful startup
 lost-response no-replay and optional-init behavior. This enables diagnosis, not a claim that
 the earlier CI startup failure's cause has been reproduced or fixed.
 
+The contention tests now retain the complete startup result in assertion failures.
+An injected child exit 23 verifies that the failure exposes `daemon_unavailable`,
+exit/signal and log path instead of only exit 69. Both unchanged concurrency cases
+pass locally and in the existing Linux ARM64/Node 24.20 runtime. The latter is not
+CI's x64 environment and retains its existing native binary; no queue policy,
+timeout or workflow change follows from these focused results.
+
 ## Embedding drain completion
 
 Run 34027448298 stopped the drain at 1,496 persisted rows; the unchanged test reproduced locally
