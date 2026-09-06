@@ -92,3 +92,10 @@ refresh/upscale and graph-store suites. TypeScript build, targeted formatting, l
 passed (lint warnings remain). Independent review `01a0747b-8814-7093-88fe-a33b43e10a10` returned no
 actionable findings on the complete refresh/retry diff. No root full-suite or release-resource gate
 was run for this focused checkpoint.
+
+The subsequent clean-start correction removes the separate intrinsic-mask schema step and admits
+the recipe directly in the existing fresh border schema. Removing the extra step first makes the
+fresh-library outpaint activation test fail; widening its owning constraint restores it. All four
+outpaint activation and both ordinary fill runtime cases pass with the corrected shared request
+type, which carries a layer selection only for an actual selected-layer fill. Build, formatting,
+lint and diff checks pass. No user library is migrated, reset or deleted by this correction.

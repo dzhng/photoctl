@@ -5213,10 +5213,10 @@
 - **The choice:** A rotated cropped photo expanded to a larger canvas stores an exterior mask in
   that expanded raster. The compositor reads this coverage at intrinsic dimensions; its outer
   placement owns the physical frame. Existing catalog-space masks keep their projection behavior.
-- **The gap:** Reinterpreting the existing recipe would change old persisted nodes, while making
+- **The gap:** Intrinsic and catalog-space coverage have different coordinate meaning; making
   the outpaint caller separately interpret coverage would duplicate the compositor's ownership.
-- **The reach:** `mask_composite@2` distinguishes intrinsic coverage; schema 22 widens only the
-  allowed recipe-version constraint. Schema-21 migration preserves old nodes and output artifacts.
+- **The reach:** `mask_composite@2` distinguishes intrinsic coverage. The existing fresh border
+  schema admits it directly; no additional migration or old-catalog compatibility is required.
   Invalid intrinsic dimensions are rejected instead of being rescaled as catalog coverage.
 - **Verdict:** Settled with parent review; no new table, column or second mask compositor.
 - **Confidence:** High.

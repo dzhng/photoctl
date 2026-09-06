@@ -125,7 +125,7 @@ included in document render identity and follows ordinary revision inheritance a
 `layer set --enabled true|false` boundary controls the existing enabled snapshot field explicitly.
 Migration 19 and its real dump fixture cover this storage contract. They do **not** implement canvas
 composition, crop consumption, extent, uncovered warnings, SAM geometry, or pixel lifecycle acceptance;
-those remain 12f2 work. Subsequent canvas pixel kinds require their own migration, not edits to 19.
+those remain 12f2 work. New development-only canvas contracts edit their owning fresh schema directly.
 
 ### Deterministic core maintenance checkpoint
 
@@ -355,8 +355,9 @@ or permission to fuse ordered samplers.
 
 Implement the immutable canvas/extent recipe and the
 canonical layer/output builder together. Current enabled layer state derives the extent; do not add
-a mutable canvas table. New constrained node kinds or roles use the next numbered migration with its
-schema fixture and upgrade test. All output-building paths must retain the same extent contract.
+a mutable canvas table. New constrained node kinds or roles edit the existing fresh-schema owner
+and are tested through fresh libraries. No migration or old-catalog compatibility is required.
+All output-building paths must retain the same extent contract.
 
 **Verification:** deterministic artifacts first, through public layer mutations and show/export.
 Independently known original pixels copy exactly at integer offsets; source bytes/catalog dimensions

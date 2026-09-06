@@ -332,7 +332,7 @@ async function fillGenerationCommand(
   providedDependencies?: FillDependencies,
 ): Promise<Envelope> {
   const idInput = parsed.positionals[0]!;
-  const layer = parsed.options.get("--layer")!;
+  const layer = parsed.options.get("--layer");
   const outpaint = parsed.flags.has("--outpaint");
   const expansion = outpaint ? parseOutpaintExpansion(parsed) : undefined;
   const remove = parsed.flags.has("--remove");
@@ -418,7 +418,6 @@ async function fillGenerationCommand(
         const upscaleAdapter = upscaleRegistry.get(upscalePolicy.upscale.model);
         const request = {
           photoId,
-          layer,
           operation: remove ? ("remove" as const) : ("prompt" as const),
           prompt: remove ? removePrompt() : custom!,
           promptVersion: remove ? REMOVE_PROMPT_VERSION : 1,
@@ -447,10 +446,15 @@ async function fillGenerationCommand(
                 }
               : {}),
           },
-        } satisfies Parameters<typeof fillLayer>[2];
-        return canvas
-          ? await outpaintCanvas(lease.handle, lease.handle.path, { ...request, prepared: canvas })
-          : await fillLayer(lease.handle, lease.handle.path, request);
+        } satisfies Omit<Parameters<typeof fillLayer>[2], "layer">;
+        if (canvas)
+          return await outpaintCanvas(lease.handle, lease.handle.path, {
+            ...request,
+            prepared: canvas,
+          });
+        if (!layer)
+          throw new PhotoctlError("usage", "Fill requires a layer selection or outpaint expansion");
+        return await fillLayer(lease.handle, lease.handle.path, { ...request, layer });
       },
     );
     return {
