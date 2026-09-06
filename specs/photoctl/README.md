@@ -75,7 +75,8 @@ the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next n
   that input policy remains provisional pending the user's answer.
 - [Pairing](slices/04-paired-import.md): default one RAW-led logical photo retaining both
   originals, explicit camera-JPEG access, and raw/jpeg/both alternatives are integrated.
-  Fixture source-selection/orientation review passes; finish workbench presentation
+  Fixture source-selection/orientation review and shared built/installed pairing journeys pass;
+  [pairing evidence](assets/paired-import-review.md) records their boundaries. Finish workbench presentation
   and real-drive acceptance. Use a clean-start development
   schema, never add migration/compatibility machinery or reset a real library.
 

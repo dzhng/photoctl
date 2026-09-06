@@ -33,6 +33,23 @@ found no actionable defects in ownership, pairing, lifecycle, source routing or
 adapted consumers. An earlier review was terminated after its unbounded changed-test
 sweep overloaded the shared host; it is not counted as a completed review or test gate.
 
+## Built and installed fixture journey
+
+The [shared paired-originals journey](../../../test/journeys/paired-originals.ts) drives
+both the built CLI and the packed-install suite. It uses a permanent camera pair with
+unequal RAW/JPEG dimensions in link and copy modes. Default import keeps one RAW-led
+photo; RAW edits leave explicit camera-JPEG previews and deliveries unchanged. Removing
+only the scratch JPEG makes explicit JPEG access fail honestly while RAW access works;
+restoration and reimport preserve photo/original identities. Original and managed-copy
+hashes are checked after the complete journey.
+
+The isolated built and prebuilt-runtime installed executions passed all four cases
+on 2026-09-06; the installed CLI ran outside the checkout with its persistent daemon.
+The integrated built pair also passed on the corrected native runtime. Deliberately
+ignoring camera-JPEG export selection failed the source-identity assertion, then passed
+after restoration. These are source-routing and lifecycle proofs, not a fresh-native
+full packed gate, photographic verdict, or mounted-camera acceptance.
+
 ## Partial live-camera witness
 
 On 2026-09-06, a development worktree linked the contents of

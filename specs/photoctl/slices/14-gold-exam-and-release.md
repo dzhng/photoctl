@@ -49,6 +49,12 @@ canonical-artifact checks can open the library directly; the fixture gold gate i
 the installed persistent daemon. Neither gate substitutes for real-drive photographs or
 compression-mode fixtures.
 
+The [shared paired-originals journey](../../../test/journeys/paired-originals.ts) also runs
+through the installed persistent daemon, outside the checkout. The fixture gold input is
+RAW-only, so this separate journey owns paired RAW/JPEG source selection and companion
+offline behavior. [Pairing evidence](../assets/paired-import-review.md#built-and-installed-fixture-journey)
+distinguishes the completed prebuilt-runtime checks from the full fresh-package gate.
+
 **2026-09-05 checkpoint:** the macOS ARM64 packed-install gate passed in 133 seconds, including the
 normal daemon path and all ten fixture ARW exports. Release-mode native kernel tests, version drift
 and repair tests, and positive/negative linkage probes passed. The first debug-build delivery had taken
