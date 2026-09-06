@@ -102,8 +102,8 @@ a substitute for final integrated verification.
 - [Generation controls](slices/13-generative-extras-and-markup.md#original-command-controls-still-open):
   negative and reference-strength guidance are implemented and honestly reported; higher-strength
   means more variation provisionally, pending the user's product choice.
-  Live embedding, mask polarity and upscaler
-  comparisons need purpose-specific configuration and consent; an ambient key is not authority.
+  Live provider comparisons are conditional evidence, not prerequisites for the
+  keyless release gates; see the boundary below.
 - [Artifact storage](assets/artifact-storage/README.md): representative paid-history storage
   policy remains open; automatic canonical-artifact deletion stays disabled.
 - Preserve sampled white balance's explicitly reported provisional pre-user-develop sampling
@@ -114,6 +114,14 @@ a substitute for final integrated verification.
   policy before shared destination enforcement; the user question remains open.
 - Run the whole-spec closeout gate once at the end, audit requirements and consolidated choices,
   then close/archive only when every required gate is proved. Slice 15 is optional and unspecified.
+
+**Conditional provider evidence:** [slice 09](slices/09-providers-embed-search.md)
+and [slice 14](slices/14-gold-exam-and-release.md) explicitly keep an unconfigured
+live upscaler spike non-blocking, including at closeout. Live embedding and mask
+checks likewise require purpose-specific configuration and consent; an ambient key
+is not authority. Preserve their unverified status and the refusal to send real
+native-mask fills with unverified polarity. Do not turn missing paid experiments
+into a reason to defer keyless acceptance, or call fake-provider proof live quality.
 
 **Carry-forward invariants:** one daemon library handle and one atomic document/revision owner;
 exact scene-linear canonical artifacts; lazy previews from immutable roots. An execution's
@@ -142,7 +150,7 @@ without deleting history.
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
-- [ ] 13a [x] initial reimagine/relight/generate · [x] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [ ] 13a [x] initial reimagine/relight/generate · [x] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike (conditional, non-blocking) · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
 - [x] Show by existing-photo path — `slices/01-first-jpeg.md#existing-photo-path-lookup`
 - [x] Original CLI reconciliation: negative guidance, provisional reference-strength guidance, reference-only generation and combined fill move/scale — `slices/13-generative-extras-and-markup.md#original-command-controls-still-open`
