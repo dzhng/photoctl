@@ -8,8 +8,10 @@ The [integrated recovery comparison](integrated-gold/README.md) now accepts remo
 of the conspicuous magenta cores against that historical set. Complete acceptance
 remains open for classification of residual fine-detail issues. The
 [all-reference review](integrated-reconstruction-allrefs/README.md) now covers
-all 18 pairs at native size with source integrity verified; same-RAW treatment
-comparisons are the next diagnostic step, not another breadth rerun.
+all 18 pairs at native size with source integrity verified. The
+[controlled toggle comparison](residual-causal/README.md) excludes reconstruction
+for the reported branch, nose and lower-wire artifacts. Their remaining origin
+belongs to a neutral decoder/color-boundary investigation, not another breadth rerun.
 
 ## Reproduction and evidence boundary
 

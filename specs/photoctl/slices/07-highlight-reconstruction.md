@@ -218,6 +218,15 @@ the unsupported reduced complete-RGB source remains RAW-led. Remaining branch
 and wire fringes and portrait-highlight chroma are now a bounded same-RAW
 enabled/disabled diagnostic pickup, not a reason to rerun the breadth capture.
 
+That [causal comparison](../assets/camera-delivery-review/residual-causal/README.md)
+is now complete: the branch, nose and lower-wire regions have exactly unchanged
+scene floats. The changing upper sky is less pink, without apparent new contour
+damage. Root and a fresh reviewer inspected all 18 controlled images; the merged
+capture and source hashes verify. Keep the improvement, and investigate the
+remaining preexisting edge/noise concerns at the neutral decoder/color boundary
+before proposing a distinct fidelity change. This does not certify general RAW
+fidelity or close external release gates.
+
 C must conclude per defect, not repeatedly reject everything because lights are
 clipped. Flat cores where channels were lost are not themselves a failed correction.
 New or exaggerated colored rims or serrated transitions require a bounded causal

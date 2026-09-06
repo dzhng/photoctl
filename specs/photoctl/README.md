@@ -26,9 +26,10 @@ portable recovery passes bounded native visual review and preserves disabled sam
 Pass B is integrated: ordinary RAW reconstruction, truthful decoder treatment,
 public diagnostics and cache identity. Pass C's preserved-library gold comparison
 accepts the conspicuous false-color correction; all 18 saved RAW references pass
-native view/export and source-integrity checks. Next isolate remaining branch,
-wire and portrait-highlight edge/noise concerns with same-RAW reconstruction
-on/off comparisons. Complete photographic acceptance remains open.
+native view/export and source-integrity checks. Same-RAW on/off comparisons
+exclude reconstruction as the cause of the specified branch, nose and lower-wire
+artifacts; the changing sky improves. Next isolate remaining fine-edge fidelity
+at the neutral decoder/color boundary. Complete photographic acceptance remains open.
 Preserve failure evidence and do not replace RAW with
 its camera JPEG, tune presets around decoder defects, or weaken the oracle.
 [Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;

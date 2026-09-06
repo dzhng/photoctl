@@ -93,6 +93,13 @@ for the branch, coastal-portrait and street-wire regions. This accepts breadth
 and source correctness, not complete photographic fidelity, a human image
 checkpoint or an attribution of every JPEG/RAW difference to a decoder bug.
 
+The [controlled follow-up](../residual-causal/README.md) now establishes exact
+unchanged scene floats in the reported branch, nose and lower-wire regions.
+Reconstruction is therefore not their cause in these captures. Root opened the
+RAW/camera branch-detail pair in Preview at 09:32:11 UTC on 2026-09-06 and closed
+only those two documents at 09:38:06, with no user response. The checkpoint
+retains the bounded diagnostic conclusion, not whole-camera acceptance.
+
 There is no disabled/current same-RAW comparison in this folder. Any claim that
 reconstruction introduced or exaggerated branch echoes or colored fringes needs
 that bounded comparison. This fresh catalog is also not evidence for old-cache
