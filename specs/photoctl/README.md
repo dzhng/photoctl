@@ -35,9 +35,9 @@ running that suite on every push. Do not resume CI load profiling or native-cach
 for the smoke gate. Preserve all local checks and separate product performance bars.
 The [failure triage](assets/ci-triage.md) retains the real daemon fixes and their evidence.
 
-**First priority:** verify the small hosted gate, then resume camera photographic
-acceptance and the remaining release requirements below. A smoke pass cannot close
-the full spec or replace the local closeout gate.
+**First priority:** resume camera photographic acceptance and the remaining release
+requirements below. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
+records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
 **Camera photographic acceptance remains open.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and

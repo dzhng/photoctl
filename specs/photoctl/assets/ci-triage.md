@@ -8,7 +8,13 @@ explicit `test:ci` smoke subset; native, Docker and full photographic journeys r
 local/release gates. Host-load collection is removed from the smoke workflow. Historical
 timeout counts are not new product defects or reasons to resume that diagnostic loop.
 
-## Current integrated result
+[Smoke run 34041259123](https://github.com/dzhng/photoctl/actions/runs/34041259123)
+on `1989608` passes all steps in 90 seconds: dependency installation, lint, typecheck
+and the explicit smoke subset. Local Mac and isolated Linux runs also pass its ten
+tests; the Linux check runs without the project's photo addon or Mac helper installed.
+This verifies the hosted policy, not native rendering or full local/release acceptance.
+
+## Historical full-suite result
 
 [Run 34036649789](https://github.com/dzhng/photoctl/actions/runs/34036649789), on
 `b8728d7` with both daemon fixes, passes all 18 daemon lifecycle cases and the
