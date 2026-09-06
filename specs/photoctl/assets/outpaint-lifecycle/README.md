@@ -83,13 +83,17 @@ byte-for-byte. This follow-on uses the same prebuilt native binaries and has the
 boundary above; its CLI tarball SHA-256 is
 `4ede55aaa180c5a79f410e2b5235696fc7a61b344518fd47a6e83b940096bbea`.
 
-No fresh visual agent slot was available for the additional coordinate case. The required
-adversarial inspection considered whether the isolated green square was an accidental artifact,
-whether the dark interior hid clipping, and whether the stepped border concealed scale changes.
-Full images and four-times crops show the intended localized square and stable gradient/interior;
-exact outside-mask and restoration checks corroborate those observations. The candidate is accepted
-for coordinate/support correctness, not photographic healing quality. The first coordinate case is
-byte-identical to the earlier independently critiqued set.
+Fresh visual review `01a07512-430d-7d83-adf8-d58890d20584` inspected all eighteen images.
+It identified the tiled border, hard interior seam, small green square and apparently smaller
+interior as visible concerns. Direct inspection agrees with those observations but not the proposed
+aesthetic fixes: the fake gateway deliberately supplies unrelated patterned pixels, the square is
+the four-pixel repair stimulus, and expansion increases canvas size without rescaling the interior.
+Blending or smoothing these differences would weaken this placement test. Independent pixel checks
+confirm the unchanged original interior and changes only at `(63,5)`, `(64,5)`, `(63,6)`, `(64,6)`.
+The reviewer also found the restored/offline/refreshed states visually indistinguishable; their
+byte identity is the required lifecycle outcome. No unexpected clipping or blur was identified.
+The candidate is accepted for coordinate/support correctness only, not photographic healing or
+generated-image quality. The first coordinate case remains byte-identical to its earlier critique.
 
 Review `01a074f7-778e-7163-9740-39b32c9b2d80` proposed refusing an exact authored retry after a
 hiding crop. That was dismissed because it would replace the existing idempotent retry contract;
@@ -100,6 +104,17 @@ checks passed. Scoped lint reports existing sequential-await warnings and the eq
 mask-stage loop; stage operations intentionally depend on their predecessor, so they cannot run
 in parallel.
 
-Root integration owns the new full-frame-generated corner coverage neighbor, because that creation
-work and paired schema are outside this worktree's dependency stack. Fresh reduced offline rendering,
-full-resolution resource acceptance and fresh native packaged release gates remain separate.
+The merged public full-frame neighbor rejects an empty rotated corner, accepts it when a visible
+generated layer supplies pixels, and rejects it again at zero opacity or after removal. Retouch
+preserves all other pixels and undo restores exact output without another provider request.
+Deliberately omitting generated support makes the valid repair fail; restoring support passes.
+Integration also updated the hidden-retry fixture to the clean-start original/photo schema.
+The merged sweep passed 67 checks across six files. Independent integration review
+`01a07513-aea0-7e21-8d46-a1e1048ad3fa` found that a leftover center-in-viewport guard
+contradicted the circle-intersection rule. Public left/right edge cases reproduced the refusal;
+removing that guard passed all 43 affected checks across four files, including both built journeys.
+Final scoped review `01a07519-f827-7d91-a52e-e7d61fd1d82b` found no remaining actionable issue.
+The two detail images were opened for a non-blocking human checkpoint and closed after five
+minutes without feedback; the support-only acceptance above remains the evidence-based call.
+Fresh reduced offline rendering, full-resolution resource acceptance and fresh native packaged
+release gates remain separate.

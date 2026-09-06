@@ -18,7 +18,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: diagnose the failed camera-delivery quality check while finishing expanded-canvas retouch and shared-frame full-frame generation.**
+**Current pickup: correct camera highlight rendering while finishing cold offline canvas and full-frame refresh lifecycles.**
 
 The local camera-reference gold script completed, but full-set and native-detail
 inspection found highlight color corruption and reduced-RAW striping. The reduced
@@ -65,11 +65,17 @@ Canvas sampling, offline-to-online cache promotion and source-only SAM geometry 
 Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
 Historical schema-v10–v12 and structured truncated-RAW fixture coverage are also integrated.
 Local horizon detection / `crop --auto` and the white-balance eyedropper are integrated. Full-frame creation
-now consumes the shared frame contract; independent visual acceptance and pass B remain open.
+now consumes the shared frame contract and passes independent synthetic placement review; pass B remains open.
 The [full-frame correction plan](slices/13-full-frame-geometry.md) has two passes: authored
 creation/placement, then explicit refresh and offline/packaged lifecycle. Retouch's shared mask-frame
 correction is its prerequisite. Current photographic-composite input (excluding markup) is provisional
 pending the user's answer; do not silently substitute the developed original or add a new mode flag.
+
+Expanded-coordinate retouch is integrated: original-relative positions may address generated
+extensions, but validation follows actual photographic masks rather than the rectangular canvas.
+The generated-corner integration test distinguishes an opaque full-frame layer from zero opacity
+or removal, with exact undo and no extra provider requests. Cold reduced-source lifecycle and
+full-resolution resource checks remain separate from the warm retained-output package witness.
 
 - **Canvas:** [12f1/12f2](slices/12-outpaint.md) share exact execution frames and one output planner.
   Equal pixel bytes do not imply equal coordinates; historical recovery never guesses the latest execution.
@@ -125,6 +131,7 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | Retained offline export | 57 merged retained-export/paired-import/preview-export/evaluator/schema checks, TS build/typecheck. Current semantics, source-quality promotion and corrupt/missing fallback covered; warm-output installed journey below. |
 | Combined move and relative scale | 33 merged command/density/person-move/built-CLI checks, TS build/typecheck; one atomic revision and exact undo. |
 | Authored mask frames | 54 merged retouch/outpaint/canvas/fill-refresh/move/built-journey checks, TS build/typecheck and scoped lint. [Lifecycle evidence](assets/outpaint-lifecycle/README.md) distinguishes warm retained-output packaging from cold fallback and photographic quality. |
+| Expanded-coordinate retouch | 67 merged support/full-frame/density/built-journey checks; independent review identified and corrected an extra center constraint, then all 43 affected checks passed. [Lifecycle evidence](assets/outpaint-lifecycle/README.md) records the eighteen-image review and exact support measurements. |
 | Full-frame creation / generic placement | 38 merged creation/retouch-transform/manual-layer/density/built-CLI checks, TS build/typecheck and scoped lint; independent static and eight-image visual reviews. Explicit refresh and retained-only input remain open. |
 
 **SAM pickup:** the release manifest now pins real export hashes with composed CPU parity checks.
@@ -345,7 +352,9 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
   and `--upscale-model` wins per command. `generation.upscale` is `auto|off` (default `auto`), but `auto` runs only
   after that adapter is explicitly configured; ambient credentials are not consent to send pixels to another vendor.
 - **Coordinates** are oriented, uncropped, top-left base pixels; `bbox = [x,y,w,h]`; crop/straighten apply
-  last; adapters convert external frames once and never leak them (D13). `--norm` (0..1) accepted wherever coordinates are (from 10).
+  last; adapters convert external frames once and never leak them (D13). `--norm` expresses coordinates
+  relative to original dimensions (from 10); retouch may exceed the unit interval when its circle
+  intersects current photographic support.
 - **Two buckets:** generation = SOTA general model + versioned prompt; restoration/geometry = specific local solution (D26).
   Resolution matching of generated pixels is a generative processing node, not ordinary restoration or resampling.
 - **CoreML EP** is a constraint, not a plan item: no slice enables it in v1; if ever enabled it must be per

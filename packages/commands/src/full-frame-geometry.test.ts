@@ -13,6 +13,8 @@ import {
   loadActiveDocument,
   readArtifactLinear,
   readArtifactImage,
+  loadLogicalFrame,
+  transformPoint,
 } from "@photoctl/render";
 import { image16Png } from "../../render/src/fill/external-pixels.js";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
@@ -113,6 +115,65 @@ async function fixture() {
     },
   };
 }
+
+test("retouch accepts a generated corner only while its photographic layer supplies coverage", async () => {
+  const f = await fixture();
+  try {
+    await f.command("develop", [f.id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+    const border = await f.command<{ graph: { layer: string } }>("fill", [
+      f.id,
+      "--outpaint",
+      "--px",
+      "2",
+      "--prompt",
+      "continue the scene",
+    ]);
+    await f.command("layer", [
+      "transform",
+      f.id,
+      border.graph.layer,
+      "--rotate",
+      "30",
+      "--anchor",
+      "0,0",
+    ]);
+    const empty = await f.pixels();
+    expect(empty.image.data.slice(0, 3)).toEqual(new Float32Array([0, 0, 0]));
+    const document = (await loadActiveDocument(f.handle, f.id))!;
+    const frame = await loadLogicalFrame(f.handle, f.id, document.roots.output);
+    const corner = transformPoint(frame.rasterToBase, { x: 0.5, y: 0.5 });
+    const args = [f.id, "--at", `${corner.x},${corner.y}`, "--radius", "0.1"];
+    const rejected = async () => {
+      const before = (await loadActiveDocument(f.handle, f.id))!.revisionId;
+      expect(await f.response("retouch", args)).toMatchObject({ ok: false, code: "usage" });
+      expect((await loadActiveDocument(f.handle, f.id))!.revisionId).toBe(before);
+    };
+    await rejected();
+    const generated = await f.command<ReimagineData>("reimagine", [
+      f.id,
+      "--prompt",
+      "painted",
+      "--strength",
+      "1",
+    ]);
+    expect((await f.pixels()).image.data.slice(0, 3)).not.toEqual(new Float32Array([0, 0, 0]));
+    await f.command("layer", ["set", f.id, generated.layer_id, "--opacity", "0"]);
+    await rejected();
+    await f.command("layer", ["set", f.id, generated.layer_id, "--opacity", "1"]);
+    const beforeHeal = await f.pixels();
+    await f.command("retouch", args);
+    const healed = await f.pixels();
+    expect(healed.frame).toEqual(beforeHeal.frame);
+    expect(healed.image.data.slice(3)).toEqual(beforeHeal.image.data.slice(3));
+    await f.command("undo", [f.id]);
+    expect(await f.pixels()).toEqual(beforeHeal);
+    await f.command("layer", ["remove", f.id, generated.layer_id]);
+    await rejected();
+    expect(f.sent).toHaveLength(2);
+  } finally {
+    await f.close();
+  }
+});
 
 test("transforming a cropped retouch preserves its authored mask placement", async () => {
   const f = await fixture();

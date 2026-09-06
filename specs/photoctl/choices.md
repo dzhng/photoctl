@@ -5662,11 +5662,15 @@
 ### Retouch — Original-relative coordinates and supported photographic pixels
 
 - **When:** Expanded-canvas retouch follow-on, 2026-09-06.
-- **The choice:** Absolute positions remain oriented original coordinates. `--norm` continues to
-  scale positions by original width/height and radius by the original long edge. Values outside
-  the original rectangle or normalized unit interval are allowed when the new circle intersects
-  actual photographic support and leaves supported surroundings. The circle is clipped to that
-  support; the viewport rectangle alone does not authorize healing an excluded corner.
+- **The choice:** Extend a photo to the left, then heal a spot in that extension: its horizontal
+  coordinate is negative because zero still means the original photo's left edge. `--norm` scales
+  positions by original width/height and radius by the original long edge, so the same request
+  does not move when the canvas changes. A new circle must intersect actual photographic pixels
+  and leave photographic surroundings. Empty corners inside a rotated canvas rectangle do not
+  count, but a visible generated layer can supply those pixels. The circle is clipped to that
+  coverage rather than healing empty canvas. A circle centered just outside the viewport is valid
+  when its edge still covers supported pixel centers. Positive projected mask coverage counts as
+  photographic support; this is geometric validity, not a judgment of visible brightness.
 - **The gap:** Canvas expansion made the original catalog bounds too narrow, but renormalizing
   coordinates to each new canvas would silently move existing requests. Rectangular bounds also
   include empty corners and gaps left by authored geometry.
@@ -5676,8 +5680,6 @@
   retains bounded working buffers. No new support schema or mask-lineage parser is introduced.
   Existing exact retries return the authored layer even if a later crop hides it; fresh invalid
   circles are rejected. That distinction preserves the existing idempotent operation contract.
-- **Verdict:** Sound for the bounded public support and revision tests. The full-frame-generated
-  corner neighbor belongs to root integration; cold reduced rendering and full-resolution resource
-  acceptance are not established by the warm small-raster lifecycle witness.
-- **Confidence:** High for coordinate anchoring and authored retry; medium for the unintegrated
-  ordinary full-frame generation neighbor.
+- **Verdict:** **Sound.** Original-relative coordinates preserve request meaning, and the same
+  projected coverage governs rendering and whether a new repair has photographic input.
+- **Confidence:** High.

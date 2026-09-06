@@ -181,10 +181,7 @@ function circularMask(
   radius: number,
   support?: MaskImage,
 ) {
-  const point = transformPoint(frame.baseToRaster, { x: at[0], y: at[1] });
   const { w, h } = frame.raster;
-  if (point.x < 0 || point.x > w || point.y < 0 || point.y > h)
-    throw new Error("Retouch point must be inside the current photographic viewport");
   const data = new Float32Array(w * h);
   const squared = radius * radius;
   let surrounding = 0;

@@ -88,7 +88,7 @@ test("retouch resolves normalized geometry and exact retries without eager pixel
   }
 });
 
-test("retouch uses oriented bounds and rejects invalid target geometry", async () => {
+test("retouch uses oriented photographic support and rejects invalid target geometry", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-retouch-oriented-"));
   directories.push(parent);
   const library = await initializeLibrary(join(parent, "library"));
@@ -120,7 +120,17 @@ test("retouch uses oriented bounds and rejects invalid target geometry", async (
         success(await command(library.handle, parent, [defaultId, "--at", "50,25"])),
       ),
     ).toMatchObject({ radius: 2 });
-    expect(await command(library.handle, parent, [id, "--at", "51,20"])).toMatchObject({
+    for (const [at, expected] of [
+      ["-0.25,10.5", [-0.25, 10.5]],
+      ["50.25,10.5", [50.25, 10.5]],
+    ] as const) {
+      expect(
+        retouchDataSchema.parse(
+          success(await command(library.handle, parent, [id, "--at", at, "--radius", "1"])),
+        ),
+      ).toMatchObject({ at: expected, radius: 1, reused: false });
+    }
+    expect(await command(library.handle, parent, [id, "--at", "53,20"])).toMatchObject({
       ok: false,
       code: "usage",
     });
@@ -150,7 +160,11 @@ test("an authored retouch retry survives a hiding crop while a fresh excluded ci
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c406";
   try {
     await library.handle.query(
-      "INSERT INTO photos (id,content_key,size,w,h,orientation) VALUES ($1,'ck_6234567890abcdef',1,100,50,1)",
+      `WITH inserted AS (
+        INSERT INTO photos (id, primary_original_id, w, h, orientation)
+        VALUES ($1, $1, 100, 50, 1)
+      ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+        VALUES ($1, $1, 'image', 'ck_6234567890abcdef', 1, 100, 50, 1)`,
       [id],
     );
     const authored = retouchDataSchema.parse(
