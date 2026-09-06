@@ -1,5 +1,15 @@
 # CI failure triage
 
+The newer completed [run 34033139818](https://github.com/dzhng/photoctl/actions/runs/34033139818)
+on `7ceed67` has 25 failing files and 53 failing tests, with 173 files and 1,018 tests passing.
+Several daemon startups now expose child exit 1 with no signal; other requests report an
+unresponsive daemon. This is not proof of OOM or a timeout-only defect. That run retained no
+artifacts, so the child stack traces were lost. CI now uses the job's temporary directory for
+host test processes and preserves only its daemon log files after test failure, for three days. No catalogs,
+images or environment dumps are uploaded. Docker-container logs are outside this scope.
+Read the retained host logs before changing startup behavior.
+This run predates the embedding drain fix; its 1,496-row failure does not test that correction.
+
 The completed [Linux run 34023344394](https://github.com/dzhng/photoctl/actions/runs/34023344394)
 tested `dbe550a77eed97775bb41ee403a69819d3684031`: native build and lint passed;
 TypeScript tests failed (103 failed, 961 passed; 51 failing files). The later root gates

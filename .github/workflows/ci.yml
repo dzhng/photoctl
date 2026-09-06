@@ -35,6 +35,17 @@ jobs:
         run: bun run lint
 
       - name: Test
+        id: tests
         env:
+          TMPDIR: ${{ runner.temp }}
           PHOTOCTL_MODELS_BASE_URL: ${{ vars.PHOTOCTL_MODELS_BASE_URL }}
         run: bun run test
+
+      - name: Preserve failed-test daemon logs
+        if: failure() && steps.tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: daemon-startup-logs
+          path: ${{ runner.temp }}/photoctl-????????.log
+          retention-days: 3
+          if-no-files-found: ignore

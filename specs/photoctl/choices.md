@@ -6072,3 +6072,18 @@
 - **Verdict:** **Sound.** Expose the existing state owner rather than infer completed work
   from provider responses, which can arrive before a canceled database write.
 - **Confidence:** High.
+
+### CI diagnostics — Retain only failed-test daemon logs briefly
+
+- **When:** Startup failure triage, 2026-09-06.
+- **The choice:** When a test daemon exits before it can answer, the caller reports its
+  private log path. A disposable CI machine otherwise disappears with that explanation.
+  Host test processes now use the job's temporary directory, and a failed test step saves only the
+  daemon's eight-character-named log files as a three-day GitHub artifact. It does not
+  save catalogs, photographs, environment dumps or logs from a developer's computer.
+- **The gap:** The plan required actionable failure evidence but did not specify CI log retention.
+- **The reach:** People with artifact access can read fixture paths and internal error details.
+  Public CLI responses still do not embed log contents; the upload does not change test outcomes.
+- **Verdict:** **Sound.** Preserve the missing explanation within existing CI instead of
+  guessing at failures or adding production diagnostics machinery.
+- **Confidence:** High.
