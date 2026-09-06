@@ -64,6 +64,12 @@ pixel bytes establishes equivalent reconstruction method, frame or source qualit
 
 ## A — Representation-preserving native reconstruction
 
+Native opt-in and its representation/resource/visual evidence are implemented in
+the [portable checkpoint](../assets/camera-delivery-review/native-reconstruction/README.md).
+Ordinary rendering remains unchanged; B and C are still required. The checkpoint
+records exact disabled output, unsupported representations and remaining light-edge
+artifacts rather than asserting complete photographic acceptance.
+
 First make the portable operation measurable through the existing native decode
 boundary, without changing ordinary rendering defaults yet. Extend the native owner
 with an explicit treatment request consumed by a real decode path; do not land an

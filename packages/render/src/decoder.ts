@@ -42,6 +42,8 @@ export interface DecoderProbe {
   supported: boolean;
   compression?: number;
   decoderVersion?: string;
+  /** Effective native reconstruction capability; absent when unsupported. */
+  highlightReconstructionMethod?: string;
   notes: string[];
 }
 

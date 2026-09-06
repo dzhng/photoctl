@@ -16,6 +16,7 @@ typedef struct photoctl_libraw_probe {
   float cam_xyz[12];
   float as_shot_wb[4];
   uint8_t wb_pre_applied;
+  uint32_t cfa_colors;
   int32_t orientation;
 } photoctl_libraw_probe;
 
@@ -23,6 +24,11 @@ typedef struct photoctl_libraw_image {
   photoctl_libraw_probe metadata;
   uint16_t *pixels;
   uint64_t pixel_count;
+  uint32_t native_width;
+  uint32_t native_height;
+  int64_t native_origin;
+  int64_t native_x_step;
+  int64_t native_y_step;
 } photoctl_libraw_image;
 
 int photoctl_libraw_probe_file(const char *path, photoctl_libraw_probe *probe);

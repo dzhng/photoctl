@@ -1,0 +1,38 @@
+{
+  "name": "DSC08142",
+  "width": 7008,
+  "height": 4672,
+  "disabledMs": 983.246417,
+  "reconstructedMs": 995.959333,
+  "status": "applied",
+  "disabledHash": "954fd3ca62539aeba03257a720f26dc9a2b11128d4112ab312949cafd5958718",
+  "reconstructedHash": "9465c8afe736c7f4ec7869f2cd26f2c86d187bed0aa7d131f09c9869dc2f068b",
+  "changed": 3267,
+  "reliableChanged": 0,
+  "maxReliableDelta": 0,
+  "maxDelta": 1.6720648407936096,
+  "maxA": 2.570661783218384,
+  "maxB": 2.570661783218384,
+  "rois": {
+    "orange": {
+      "rect": [
+        6820,
+        1680,
+        144,
+        80
+      ],
+      "changedSamples": 0,
+      "maxDelta": 0
+    },
+    "lights": {
+      "rect": [
+        6660,
+        1860,
+        300,
+        300
+      ],
+      "changedSamples": 9801,
+      "maxDelta": 1.6720648407936096
+    }
+  }
+}

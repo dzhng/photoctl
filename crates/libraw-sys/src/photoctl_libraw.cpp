@@ -49,6 +49,7 @@ static void copy_probe(const PhotoctlLibRaw &raw, photoctl_libraw_probe *probe) 
   std::memcpy(probe->as_shot_wb, raw.imgdata.color.cam_mul,
               sizeof(probe->as_shot_wb));
   probe->wb_pre_applied = raw.imgdata.color.as_shot_wb_applied ? 1 : 0;
+  probe->cfa_colors = raw.imgdata.idata.filters ? raw.imgdata.idata.colors : 0;
   probe->orientation = raw.imgdata.sizes.flip;
 }
 
@@ -106,7 +107,13 @@ extern "C" int photoctl_libraw_decode_file(const char *path,
   uint64_t output = 0;
   for (uint32_t row = 0; row < output_height; ++row) {
     for (uint32_t column = 0; column < output_width; ++column) {
-      const auto *source = raw.imgdata.image[raw.oriented_index(row, column)];
+      const auto index = raw.oriented_index(row, column);
+      // Preserve physical-grid addressing using LibRaw's sole orientation owner.
+      // The origin and two adjacent native pixels define its affine permutation.
+      if (index == 0) image->native_origin = output / 3;
+      if (index == 1) image->native_x_step = output / 3;
+      if (index == source_width) image->native_y_step = output / 3;
+      const auto *source = raw.imgdata.image[index];
       pixels[output++] = source[0];
       pixels[output++] = source[1];
       pixels[output++] = source[2];
@@ -120,6 +127,10 @@ extern "C" int photoctl_libraw_decode_file(const char *path,
   image->metadata.orientation = 0;
   image->pixels = pixels;
   image->pixel_count = sample_count;
+  image->native_width = source_width;
+  image->native_height = source_height;
+  image->native_x_step -= image->native_origin;
+  image->native_y_step -= image->native_origin;
   return LIBRAW_SUCCESS;
 }
 

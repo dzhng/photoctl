@@ -1,0 +1,47 @@
+[
+  {
+    "name": "DSC00107",
+    "scale": 1,
+    "sha256": "06e0ee0608f332a200b1203fc9f65739f79215fc10446870a1a5400b51cb79f0"
+  },
+  {
+    "name": "DSC00107",
+    "scale": 0.5,
+    "sha256": "edf55350b6903e26683e2c23d72e9c36ff3d0aafa0eaccd8ba3f59f163935bf0"
+  },
+  {
+    "name": "DSC00107",
+    "scale": 0.25,
+    "sha256": "774bf09991fa124415425ef5e0b0324717884c0b669aeb91916c0fde980684e9"
+  },
+  {
+    "name": "DSC08142",
+    "scale": 1,
+    "sha256": "954fd3ca62539aeba03257a720f26dc9a2b11128d4112ab312949cafd5958718"
+  },
+  {
+    "name": "DSC08142",
+    "scale": 0.5,
+    "sha256": "b8ab6917cd0b4ab1c57d47ebda0a96f18970ff66ce633190c1ce341044c5b90a"
+  },
+  {
+    "name": "DSC08142",
+    "scale": 0.25,
+    "sha256": "3ccc375b0bfe5879ab5da9f327494a02526a1ad6ac4d06c55ceb7fd72f06010d"
+  },
+  {
+    "name": "DSC00103",
+    "scale": 1,
+    "sha256": "0eed9e325beaf93e468b90f55eade72bf0e55fe8ba2ddd98f3c3e5bac52d6e73"
+  },
+  {
+    "name": "DSC00103",
+    "scale": 0.5,
+    "sha256": "cfa71933593c4d19db09b646ba9089afd006a05f7121489b796f0352b88bdcc2"
+  },
+  {
+    "name": "DSC00103",
+    "scale": 0.25,
+    "sha256": "0545848302ab56dfa05a9319c16d94ad2be7ad71594028e01b9aed26501612cb"
+  }
+]

@@ -104,7 +104,32 @@ try {
         { stdio: "inherit" },
       );
     }
-    pack(directory);
+    if (manifest.name.startsWith("@photoctl/img-")) {
+      const native = join(staging, "native-runtime");
+      mkdirSync(native);
+      cpSync(join(directory, manifest.main), join(native, manifest.main));
+      const notices = {
+        "LICENSE.CDDL": "crates/libraw-sys/vendor/LICENSE.CDDL",
+        NOTICE: "crates/photoctl-image/NOTICE",
+        "highlight.rs": "crates/photoctl-image/src/highlight.rs",
+      };
+      for (const [name, source] of Object.entries(notices)) cpSync(source, join(native, name));
+      writeFileSync(
+        join(native, "package.json"),
+        `${JSON.stringify(
+          {
+            ...manifest,
+            files: [manifest.main, ...Object.keys(notices)],
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      pack(native);
+      rmSync(native, { recursive: true });
+    } else {
+      pack(directory);
+    }
   }
 } finally {
   rmSync(staging, { recursive: true, force: true });

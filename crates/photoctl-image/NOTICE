@@ -1,0 +1,14 @@
+photoctl native image runtime
+
+The Rust highlight reconstruction source included as highlight.rs is derived
+from LibRaw 0.22.2 recover_highlights and is distributed under CDDL-1.0, not MIT.
+Copyright 2019-2025 LibRaw LLC (info@libraw.org).
+LibRaw incorporates dcraw.c, copyright 1997-2018 Dave Coffin.
+Floating-domain modifications copyright 2026 photoctl contributors.
+The included LICENSE.CDDL contains the applicable terms.
+
+This runtime also links the vendored LibRaw decoder under CDDL-1.0.
+Corresponding source, modifications, and native build instructions are available
+at https://github.com/dzhng/photoctl (crates/libraw-sys and crates/photoctl-image).
+The reconstruction source is included directly so its floating-domain changes
+remain available with the executable package.

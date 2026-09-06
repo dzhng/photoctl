@@ -1,0 +1,28 @@
+{
+  "name": "DSC00122",
+  "width": 4672,
+  "height": 7008,
+  "disabledMs": 698.212709,
+  "reconstructedMs": 1014.7798750000001,
+  "status": "applied",
+  "disabledHash": "f67a943d555fda050c608f54d166a7dda1e0c3a81f71531ce614cb29c25596e8",
+  "reconstructedHash": "bcb20f431601b4c7f224421bb0a9bfc71feeaf2ed63d46074e159371db474bc9",
+  "changed": 14341,
+  "reliableChanged": 0,
+  "maxReliableDelta": 0,
+  "maxDelta": 1.7660124897956848,
+  "maxA": 2.292235851287842,
+  "maxB": 2.767817735671997,
+  "rois": {
+    "lights": {
+      "rect": [
+        2240,
+        1260,
+        460,
+        360
+      ],
+      "changedSamples": 5001,
+      "maxDelta": 1.7660124897956848
+    }
+  }
+}

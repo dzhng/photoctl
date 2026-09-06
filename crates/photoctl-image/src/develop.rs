@@ -927,47 +927,89 @@ pub(crate) fn camera_front(
     as_shot_wb: &[f64],
     wb_pre_applied: bool,
 ) -> Result<Vec<f32>, String> {
-    if data.len() % 3 != 0 || cam_xyz.len() != 9 || as_shot_wb.len() != 3 {
-        return Err(
-            "camera front expects RGB samples, a 3x3 matrix, and three WB gains".to_owned(),
-        );
+    let front = CameraFront::new(
+        white_level,
+        black_level,
+        cam_xyz,
+        as_shot_wb,
+        wb_pre_applied,
+    )?;
+    if data.len() % 3 != 0 {
+        return Err("camera front expects RGB samples".to_owned());
     }
-    let range = white_level - black_level;
-    if !range.is_finite() || range <= 0.0 {
-        return Err("camera front requires a finite positive black/white range".to_owned());
-    }
-    if cam_xyz
-        .iter()
-        .chain(as_shot_wb)
-        .any(|value| !value.is_finite())
-    {
-        return Err("camera front metadata must be finite".to_owned());
-    }
-
-    let mut xyz_to_camera = [[0.0; 3]; 3];
-    for row in 0..3 {
-        let response = (0..3)
-            .map(|column| cam_xyz[row * 3 + column] * D65_XYZ[column])
-            .sum::<f64>();
-        if response.abs() < f64::EPSILON {
-            return Err("camera matrix cannot normalize D65".to_owned());
-        }
-        for column in 0..3 {
-            xyz_to_camera[row][column] = cam_xyz[row * 3 + column] / response;
-        }
-    }
-    let camera_to_xyz = invert_3x3(xyz_to_camera)?;
-    let camera_to_rec2020 = multiply_3x3(SRGB_TO_REC2020, multiply_3x3(XYZ_TO_SRGB, camera_to_xyz));
-
     for pixel in data.chunks_exact_mut(3) {
-        let balanced = [
-            level(pixel[0], black_level, range) * if wb_pre_applied { 1.0 } else { as_shot_wb[0] },
-            level(pixel[1], black_level, range) * if wb_pre_applied { 1.0 } else { as_shot_wb[1] },
-            level(pixel[2], black_level, range) * if wb_pre_applied { 1.0 } else { as_shot_wb[2] },
-        ];
-        pixel.copy_from_slice(&mat_vec(camera_to_rec2020, balanced).map(|sample| sample as f32));
+        pixel.copy_from_slice(&front.convert(front.balance(pixel)));
     }
     Ok(data)
+}
+
+pub(crate) struct CameraFront {
+    black: f32,
+    range: f32,
+    gains: [f64; 3],
+    matrix: [[f64; 3]; 3],
+}
+
+impl CameraFront {
+    pub(crate) fn new(
+        white_level: f32,
+        black_level: f32,
+        cam_xyz: &[f64],
+        as_shot_wb: &[f64],
+        wb_pre_applied: bool,
+    ) -> Result<Self, String> {
+        if cam_xyz.len() != 9 || as_shot_wb.len() != 3 {
+            return Err(
+                "camera front expects RGB samples, a 3x3 matrix, and three WB gains".to_owned(),
+            );
+        }
+        let range = white_level - black_level;
+        if !range.is_finite() || range <= 0.0 {
+            return Err("camera front requires a finite positive black/white range".to_owned());
+        }
+        if cam_xyz
+            .iter()
+            .chain(as_shot_wb)
+            .any(|value| !value.is_finite())
+        {
+            return Err("camera front metadata must be finite".to_owned());
+        }
+
+        let mut xyz_to_camera = [[0.0; 3]; 3];
+        for row in 0..3 {
+            let response = (0..3)
+                .map(|column| cam_xyz[row * 3 + column] * D65_XYZ[column])
+                .sum::<f64>();
+            if response.abs() < f64::EPSILON {
+                return Err("camera matrix cannot normalize D65".to_owned());
+            }
+            for column in 0..3 {
+                xyz_to_camera[row][column] = cam_xyz[row * 3 + column] / response;
+            }
+        }
+        let camera_to_xyz = invert_3x3(xyz_to_camera)?;
+        let camera_to_rec2020 =
+            multiply_3x3(SRGB_TO_REC2020, multiply_3x3(XYZ_TO_SRGB, camera_to_xyz));
+
+        Ok(Self {
+            black: black_level,
+            range,
+            gains: if wb_pre_applied {
+                [1.0; 3]
+            } else {
+                as_shot_wb.try_into().unwrap()
+            },
+            matrix: camera_to_rec2020,
+        })
+    }
+
+    pub(crate) fn balance(&self, pixel: &[f32]) -> [f64; 3] {
+        std::array::from_fn(|c| level(pixel[c], self.black, self.range) * self.gains[c])
+    }
+
+    pub(crate) fn convert(&self, balanced: [f64; 3]) -> [f32; 3] {
+        mat_vec(self.matrix, balanced).map(|sample| sample as f32)
+    }
 }
 
 pub(crate) fn display_srgb_to_linear_rec2020(samples: &[u16]) -> Result<Vec<f32>, String> {

@@ -1,0 +1,28 @@
+{
+  "name": "DSC00103",
+  "width": 3504,
+  "height": 2336,
+  "disabledMs": 154.7035,
+  "reconstructedMs": 133.555625,
+  "status": "unsupported",
+  "disabledHash": "0eed9e325beaf93e468b90f55eade72bf0e55fe8ba2ddd98f3c3e5bac52d6e73",
+  "reconstructedHash": "0eed9e325beaf93e468b90f55eade72bf0e55fe8ba2ddd98f3c3e5bac52d6e73",
+  "changed": 0,
+  "reliableChanged": 0,
+  "maxReliableDelta": 0,
+  "maxDelta": 0,
+  "maxA": 1.4035764932632446,
+  "maxB": 1.4035764932632446,
+  "rois": {
+    "label": {
+      "rect": [
+        2160,
+        850,
+        240,
+        160
+      ],
+      "changedSamples": 0,
+      "maxDelta": 0
+    }
+  }
+}

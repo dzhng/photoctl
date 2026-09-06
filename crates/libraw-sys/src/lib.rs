@@ -14,6 +14,7 @@ struct NativeProbe {
     cam_xyz: [f32; 12],
     as_shot_wb: [f32; 4],
     wb_pre_applied: u8,
+    cfa_colors: u32,
     orientation: i32,
 }
 
@@ -23,6 +24,11 @@ struct NativeImage {
     metadata: NativeProbe,
     pixels: *mut u16,
     pixel_count: u64,
+    native_width: u32,
+    native_height: u32,
+    native_origin: i64,
+    native_x_step: i64,
+    native_y_step: i64,
 }
 
 unsafe extern "C" {
@@ -43,6 +49,7 @@ pub struct Probe {
     pub cam_xyz: [f32; 12],
     pub as_shot_wb: [f32; 4],
     pub wb_pre_applied: bool,
+    pub sensor_saturation: bool,
     pub orientation: i32,
 }
 
@@ -50,6 +57,23 @@ pub struct Probe {
 pub struct Image {
     pub metadata: Probe,
     pub data: Vec<f32>,
+    pub grid: NativeGrid,
+}
+
+/// Affine pixel addressing of the decoder's physical grid inside its oriented RGB buffer.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct NativeGrid {
+    pub width: u32,
+    pub height: u32,
+    pub origin: i64,
+    pub x_step: i64,
+    pub y_step: i64,
+}
+
+impl NativeGrid {
+    pub fn index(self, x: u32, y: u32) -> usize {
+        (self.origin + i64::from(x) * self.x_step + i64::from(y) * self.y_step) as usize
+    }
 }
 
 pub fn probe(path: &Path) -> Result<Probe, String> {
@@ -88,6 +112,13 @@ pub fn decode(path: &Path) -> Result<Image, String> {
     Ok(Image {
         metadata: probe_from_native(native.metadata),
         data,
+        grid: NativeGrid {
+            width: native.native_width,
+            height: native.native_height,
+            origin: native.native_origin,
+            x_step: native.native_x_step,
+            y_step: native.native_y_step,
+        },
     })
 }
 
@@ -101,6 +132,12 @@ fn probe_from_native(native: NativeProbe) -> Probe {
         cam_xyz: native.cam_xyz,
         as_shot_wb: native.as_shot_wb,
         wb_pre_applied: native.wb_pre_applied != 0,
+        sensor_saturation: native.cfa_colors == 3
+            && native.wb_pre_applied == 0
+            && native.white_level > native.black_level
+            && native.as_shot_wb[..3]
+                .iter()
+                .all(|gain| gain.is_finite() && *gain > 0.0),
         orientation: native.orientation,
     }
 }
@@ -122,6 +159,47 @@ pub fn version() -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn saturation_support_requires_actual_three_color_sensor_metadata() {
+        let valid = NativeProbe {
+            cfa_colors: 3,
+            white_level: 100,
+            as_shot_wb: [2.0, 1.0, 0.5, 0.0],
+            ..NativeProbe::default()
+        };
+        assert!(probe_from_native(valid).sensor_saturation);
+        for colors in [0, 1, 2, 4] {
+            assert!(
+                !probe_from_native(NativeProbe {
+                    cfa_colors: colors,
+                    ..valid
+                })
+                .sensor_saturation
+            );
+        }
+        assert!(
+            !probe_from_native(NativeProbe {
+                wb_pre_applied: 1,
+                ..valid
+            })
+            .sensor_saturation
+        );
+        assert!(
+            !probe_from_native(NativeProbe {
+                black_level: 100,
+                ..valid
+            })
+            .sensor_saturation
+        );
+        for channel in 0..3 {
+            for invalid in [0.0, -1.0, f32::NAN, f32::INFINITY] {
+                let mut metadata = valid;
+                metadata.as_shot_wb[channel] = invalid;
+                assert!(!probe_from_native(metadata).sensor_saturation);
+            }
+        }
+    }
 
     #[test]
     fn probes_a7c2_with_the_pinned_libraw_matrix_and_compression_tag() {

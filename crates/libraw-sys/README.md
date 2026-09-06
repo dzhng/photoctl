@@ -24,3 +24,10 @@ Color conversion, white balance,
 transfer curves, denoising, and crop policy belong to the shared photoctl develop pipeline; adding any
 of them here would make LibRaw pixels disagree with other camera-space decoders before that common
 pipeline sees them.
+
+Oriented pixels retain internal affine addressing of the decoder's physical grid.
+Spatial reconstruction can therefore use sensor-aligned neighborhoods without
+reinterpreting orientation or changing public dimensions. Its saturation reference
+is admitted only for three-color CFA data with positive finite actual RGB WB gains
+and a positive black/white range, without codec-applied WB; complete RGB
+and four-color sensor representations must not masquerade as that contract.

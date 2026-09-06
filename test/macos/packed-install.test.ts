@@ -60,6 +60,20 @@ afterAll(async () => {
   await rm(scratch, { recursive: true, force: true });
 });
 
+test("native package retains CDDL terms, attribution and the translated source", async () => {
+  const runtime = join(prefix, `lib/node_modules/@photoctl/img-darwin-${process.arch}`);
+  expect(await readFile(join(runtime, "LICENSE.CDDL"), "utf8")).toBe(
+    await readFile(resolve("crates/libraw-sys/vendor/LICENSE.CDDL"), "utf8"),
+  );
+  expect(await readFile(join(runtime, "highlight.rs"), "utf8")).toBe(
+    await readFile(resolve("crates/photoctl-image/src/highlight.rs"), "utf8"),
+  );
+  const notice = await readFile(join(runtime, "NOTICE"), "utf8");
+  expect(notice).toContain("https://github.com/dzhng/photoctl");
+  expect(notice).toContain("LibRaw LLC");
+  expect(notice).toContain("CDDL-1.0");
+});
+
 test("packed CLI starts its daemon and finds both packaged decoders outside the checkout", async () => {
   const { version } = JSON.parse(await readFile(resolve("package.json"), "utf8"));
   expect((await run(["--version"])).data.version).toBe(version);

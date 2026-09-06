@@ -2,7 +2,7 @@
 name = "photoctl-image"
 version = "0.1.0"
 edition = "2024"
-license = "MIT"
+license = "MIT AND CDDL-1.0"
 [lib]
 path = "src/lib.rs"
 crate-type = ["cdylib"]

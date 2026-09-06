@@ -3,6 +3,7 @@
 mod develop;
 mod draw;
 mod heal;
+mod highlight;
 mod horizon;
 mod mask;
 mod publication;
@@ -134,9 +135,10 @@ pub struct DecodedImage {
     cam_xyz: [f32; 9],
     as_shot_wb: [f32; 3],
     wb_pre_applied: bool,
+    highlight_reconstruction: &'static str,
 }
 
-fn decode_libraw(path: &Path, scale: f64) -> Result<DecodedImage, String> {
+fn decode_libraw(path: &Path, scale: f64, reconstruct: bool) -> Result<DecodedImage, String> {
     if !matches!(scale, 1.0 | 0.5 | 0.25) {
         return Err("scale must be 1, 0.5, or 0.25".to_owned());
     }
@@ -145,19 +147,6 @@ fn decode_libraw(path: &Path, scale: f64) -> Result<DecodedImage, String> {
     let source_height = decoded.metadata.height;
     let width = (source_width as f64 * scale).floor() as u32;
     let height = (source_height as f64 * scale).floor() as u32;
-    let data = if width == source_width && height == source_height {
-        decoded.data
-    } else {
-        resize(
-            &decoded.data,
-            source_width,
-            source_height,
-            3,
-            width,
-            height,
-            ResampleFilter::Bilinear,
-        )?
-    };
     let green = decoded.metadata.as_shot_wb[1];
     let as_shot_wb = if green.is_finite() && green > 0.0 {
         [
@@ -168,11 +157,11 @@ fn decode_libraw(path: &Path, scale: f64) -> Result<DecodedImage, String> {
     } else {
         [1.0, 1.0, 1.0]
     };
-    Ok(DecodedImage {
-        width,
-        height,
+    let mut image = DecodedImage {
+        width: source_width,
+        height: source_height,
         space: "camera",
-        data,
+        data: decoded.data,
         white_level: f64::from(decoded.metadata.white_level),
         black_level: f64::from(decoded.metadata.black_level),
         cam_xyz: decoded.metadata.cam_xyz[..9]
@@ -180,7 +169,53 @@ fn decode_libraw(path: &Path, scale: f64) -> Result<DecodedImage, String> {
             .expect("camera matrix has nine values"),
         as_shot_wb,
         wb_pre_applied: decoded.metadata.wb_pre_applied,
-    })
+        highlight_reconstruction: if reconstruct {
+            "unsupported"
+        } else {
+            "disabled"
+        },
+    };
+    if reconstruct && decoded.metadata.sensor_saturation {
+        let front = develop::CameraFront::new(
+            image.white_level as f32,
+            image.black_level as f32,
+            &image.cam_xyz.map(f64::from),
+            &image.as_shot_wb.map(f64::from),
+            image.wb_pre_applied,
+        )?;
+        let recovery = highlight::Reconstruction::plan(
+            decoded.grid,
+            image.as_shot_wb.map(f64::from),
+            |index| front.balance(&image.data[index * 3..index * 3 + 3]),
+        )?;
+        for y in 0..decoded.grid.height {
+            for x in 0..decoded.grid.width {
+                let index = decoded.grid.index(x, y) * 3;
+                let balanced = front.balance(&image.data[index..index + 3]);
+                image.data[index..index + 3]
+                    .copy_from_slice(&front.convert(recovery.apply(x, y, balanced)));
+            }
+        }
+        image.space = "scene-linear-rec2020";
+        image.white_level = 1.0;
+        image.black_level = 0.0;
+        image.wb_pre_applied = true;
+        image.highlight_reconstruction = "applied";
+    }
+    if width != source_width || height != source_height {
+        image.data = resize(
+            &image.data,
+            source_width,
+            source_height,
+            3,
+            width,
+            height,
+            ResampleFilter::Bilinear,
+        )?;
+        image.width = width;
+        image.height = height;
+    }
+    Ok(image)
 }
 
 #[napi(object)]
@@ -188,6 +223,7 @@ pub struct LibrawProbeResult {
     pub supported: bool,
     pub compression: Option<u32>,
     pub notes: Vec<String>,
+    pub highlight_reconstruction_method: Option<String>,
 }
 
 #[napi(object)]
@@ -201,6 +237,8 @@ pub struct LibrawImageResult {
     pub cam_xyz: Option<Vec<f64>>,
     pub as_shot_wb: Option<Vec<f64>>,
     pub wb_pre_applied: bool,
+    pub highlight_reconstruction: String,
+    pub highlight_reconstruction_method: Option<String>,
 }
 
 #[napi(object)]
@@ -900,11 +938,15 @@ pub fn probe_libraw(path: String) -> LibrawProbeResult {
             supported: true,
             compression: Some(probe.compression),
             notes: vec![format!("LibRaw {}", libraw_sys::version())],
+            highlight_reconstruction_method: probe
+                .sensor_saturation
+                .then(|| highlight::METHOD.to_owned()),
         },
         Err(message) => LibrawProbeResult {
             supported: false,
             compression: None,
             notes: vec![message],
+            highlight_reconstruction_method: None,
         },
     }
 }
@@ -914,6 +956,7 @@ pub fn decode_libraw_image(
     path: String,
     scale: f64,
     output_space: Option<String>,
+    highlight_reconstruction: Option<String>,
 ) -> napi::Result<AsyncTask<DecodeLibrawTask>> {
     if output_space
         .as_deref()
@@ -924,10 +967,27 @@ pub fn decode_libraw_image(
             "unsupported decode output space",
         ));
     }
+    if highlight_reconstruction
+        .as_deref()
+        .is_some_and(|value| value != "disabled" && value != "reconstruct")
+    {
+        return Err(Error::new(
+            Status::InvalidArg,
+            "unsupported highlight treatment",
+        ));
+    }
+    let reconstruct = highlight_reconstruction.as_deref() == Some("reconstruct");
+    if reconstruct && output_space.is_none() {
+        return Err(Error::new(
+            Status::InvalidArg,
+            "highlight reconstruction requires scene-linear-rec2020 output",
+        ));
+    }
     Ok(AsyncTask::new(DecodeLibrawTask {
         path,
         scale,
         scene_linear: output_space.is_some(),
+        reconstruct,
     }))
 }
 
@@ -935,6 +995,7 @@ pub struct DecodeLibrawTask {
     path: String,
     scale: f64,
     scene_linear: bool,
+    reconstruct: bool,
 }
 
 impl Task for DecodeLibrawTask {
@@ -942,9 +1003,9 @@ impl Task for DecodeLibrawTask {
     type JsValue = LibrawImageResult;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        let decoded = decode_libraw(Path::new(&self.path), self.scale)
+        let decoded = decode_libraw(Path::new(&self.path), self.scale, self.reconstruct)
             .map_err(|message| Error::new(Status::GenericFailure, message))?;
-        if !self.scene_linear {
+        if !self.scene_linear || decoded.space == "scene-linear-rec2020" {
             return Ok(decoded);
         }
         develop_decoded_camera(decoded)
@@ -986,6 +1047,9 @@ impl From<DecodedImage> for LibrawImageResult {
             as_shot_wb: (image.space == "camera")
                 .then(|| image.as_shot_wb.into_iter().map(f64::from).collect()),
             wb_pre_applied: image.wb_pre_applied,
+            highlight_reconstruction: image.highlight_reconstruction.to_owned(),
+            highlight_reconstruction_method: (image.highlight_reconstruction == "applied")
+                .then(|| highlight::METHOD.to_owned()),
         }
     }
 }
@@ -1008,6 +1072,7 @@ mod tests {
             ],
             as_shot_wb: [2.0, 1.0, 0.5],
             wb_pre_applied: false,
+            highlight_reconstruction: "disabled",
         };
         let expected = camera_front(
             image.data.clone(),
@@ -1052,7 +1117,7 @@ mod tests {
         let fixture =
             std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/a7c2.ARW");
 
-        let image = decode_libraw(&fixture, 0.25).expect("fixture decodes");
+        let image = decode_libraw(&fixture, 0.25, false).expect("fixture decodes");
 
         assert_eq!((image.width, image.height), (1752, 1168));
         assert_eq!(image.data.len(), 1752 * 1168 * 3);

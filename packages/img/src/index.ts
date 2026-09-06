@@ -6,6 +6,7 @@ interface NativeProbe {
   supported: boolean;
   compression?: number;
   notes: string[];
+  highlightReconstructionMethod?: string;
 }
 
 export interface NativeLinearImage {
@@ -28,9 +29,13 @@ export interface DevelopedImage {
   wbPreApplied: true;
 }
 
-export type NativeDecodedImage =
+export type NativeDecodedImage = (
   | NativeLinearImage
-  | (DevelopedImage & { width: number; height: number });
+  | (DevelopedImage & { width: number; height: number })
+) & {
+  highlightReconstruction: "disabled" | "applied" | "unsupported";
+  highlightReconstructionMethod?: string;
+};
 
 export interface PixelFrameTransform {
   width: number;
@@ -90,6 +95,7 @@ interface NativeBinding {
     path: string,
     scale: number,
     outputSpace?: "scene-linear-rec2020",
+    highlightReconstruction?: "disabled" | "reconstruct",
   ): Promise<NativeDecodedImage>;
   solidRgbPixels(
     width: number,
@@ -477,18 +483,28 @@ export function probeLibraw(path: string): NativeProbe {
   return requiredBinding().probeLibraw(path);
 }
 
-export function decodeLibraw(path: string, scale: number): Promise<NativeLinearImage>;
+export function decodeLibraw(
+  path: string,
+  scale: number,
+): Promise<NativeLinearImage & Pick<NativeDecodedImage, "highlightReconstruction">>;
 export function decodeLibraw(
   path: string,
   scale: number,
   outputSpace: "scene-linear-rec2020" | undefined,
+  highlightReconstruction?: "disabled" | "reconstruct",
 ): Promise<NativeDecodedImage>;
 export async function decodeLibraw(
   path: string,
   scale: number,
   outputSpace?: "scene-linear-rec2020",
+  highlightReconstruction?: "disabled" | "reconstruct",
 ): Promise<NativeDecodedImage> {
-  const image = await requiredBinding().decodeLibrawImage(path, scale, outputSpace);
+  const image = await requiredBinding().decodeLibrawImage(
+    path,
+    scale,
+    outputSpace,
+    highlightReconstruction,
+  );
   return {
     ...image,
     data:

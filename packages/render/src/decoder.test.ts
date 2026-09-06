@@ -144,6 +144,7 @@ test.each(await readRawManifests())(
       supported: true,
       compression: manifest.raw.compression,
       decoderVersion: "0.22.2-Release",
+      highlightReconstructionMethod: expect.any(String),
       notes: ["LibRaw 0.22.2-Release"],
     });
     const image = await decoder.decode(source, { scale: 0.25 });

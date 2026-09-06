@@ -1,0 +1,28 @@
+{
+  "name": "DSC00107",
+  "width": 4672,
+  "height": 7008,
+  "disabledMs": 825.0507079999999,
+  "reconstructedMs": 1268.226125,
+  "status": "applied",
+  "disabledHash": "06e0ee0608f332a200b1203fc9f65739f79215fc10446870a1a5400b51cb79f0",
+  "reconstructedHash": "b5f2794786b3ddf1f74e540e9a53f78a3ffe8af48086eb909cfbb2eb6ecba1bc",
+  "changed": 173543,
+  "reliableChanged": 0,
+  "maxReliableDelta": 0,
+  "maxDelta": 2.303486615419388,
+  "maxA": 2.9900693893432617,
+  "maxB": 2.719784736633301,
+  "rois": {
+    "flame": {
+      "rect": [
+        2000,
+        3280,
+        460,
+        960
+      ],
+      "changedSamples": 364539,
+      "maxDelta": 2.271821916103363
+    }
+  }
+}
