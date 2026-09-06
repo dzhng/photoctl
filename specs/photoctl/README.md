@@ -20,8 +20,8 @@ update this handoff, and continue until every requirement is verified—not mere
 
 **First priority: resolve the failing CI gate.** The [failure triage](assets/ci-triage.md)
 separates reproduced contract defects, stale fixtures and unresolved timing failures.
-Portable fixture wiring and stale assertions have focused fixes; offline export hints,
-daemon startup and runner resource behavior are the next concrete work. No green full CI
+Portable fixture wiring, stale assertions and offline export hints have focused fixes;
+daemon startup diagnostics and runner resource behavior are the next concrete work. No green full CI
 gate is claimed. Do not blindly increase timeouts or repin hashes.
 
 **Camera photographic acceptance remains open.** The public fixture gold exam exports all

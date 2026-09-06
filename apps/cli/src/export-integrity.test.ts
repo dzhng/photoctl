@@ -20,7 +20,7 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true })));
 });
 
-test("export refuses a linked source whose content no longer matches the catalogue", async () => {
+test("export falls back when linked bytes change without an mtime change", async () => {
   const setup = await setupImportedPhoto("mutated-source");
   const before = await stat(setup.source);
   const source = await open(setup.source, "r+");
@@ -66,7 +66,7 @@ test("export accepts matching linked content after an mtime-only touch", async (
     results: [{ id: setup.id, ok: true, w: 7008, h: 4672, bytes: expect.any(Number) }],
     warnings: [],
   });
-});
+}, 30_000); // Full-resolution RAW journey; a hang guard, not an export latency target.
 
 test("export tries later catalogued locators when the first source is gone", async () => {
   const setup = await setupImportedPhoto("multiple-locators");
@@ -105,7 +105,7 @@ test("export tries later catalogued locators when the first source is gone", asy
     ],
     warnings: [],
   });
-});
+}, 30_000); // Includes import, reimport and a full-resolution RAW export.
 
 test("a corrupt pinned preview returns the stable offline envelope", async () => {
   const setup = await setupImportedPhoto("corrupt-pin");

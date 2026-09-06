@@ -16,6 +16,21 @@
   and the test was observed red before the correction and green afterward.
 - **Confidence:** High.
 
+### Verification — Separate full-RAW journey hang guards from speed acceptance
+
+- **When:** CI repair pass, 2026-09-06.
+- **The choice:** Two integrity tests import a full camera RAW and deliver its full-resolution
+  pixels. Their implicit five-second runner cutoff interrupted healthy six-second journeys.
+  They now receive the same 30-second hang guard as neighboring RAW-delivery tests, without
+  changing their dimensions, source files or assertions.
+- **The gap:** These functional tests had no explicitly chosen execution budget; the framework
+  default was accidentally acting as an unrequested export-speed requirement.
+- **The reach:** Only these two tests change. Explicit warm-preview and encoder performance
+  gates, the RSS canary, and other test deadlines remain authoritative and unchanged.
+- **Verdict:** **Sound.** The functional oracle can finish observing actual output while a finite
+  hang guard remains; measured completion does not become a universal latency guarantee.
+- **Confidence:** High.
+
 - **When:** Reduced camera RAW correction, 2026-09-06.
 - **The choice:** Let the decoded sensor layout decide whether demosaicing runs.
   Demosaicing fills missing colors in a sensor mosaic. A reduced Sony RAW already

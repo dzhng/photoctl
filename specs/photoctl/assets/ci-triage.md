@@ -15,9 +15,11 @@ did not run. The entire failed-test section was inspected, not only its final su
 - The gold-script fixture assumed checkout-local executable links created during installation.
   Its disposable command directory now invokes the actual built entry points. This tests the
   existing exam, not package installation; the packed-install gate remains separate.
-- Offline export loses actionable volume/mount hints. This is reproduced locally and remains
-  a public-contract defect, not an assertion to remove. Unsupported-file import also omits
-  portable fixture volume mapping; authoritative offline checks must remain before inspection.
+- Offline export's lost volume/mount hints are restored from the selected original; a distinct-drive
+  companion regression proves explicit camera-JPEG failures do not point at the RAW's drive.
+  Unsupported-file import now supplies portable fixture volume mapping; production's authoritative
+  offline check still precedes inspection. Targeted Linux cases pass, as do the complete local
+  first-JPEG, pairing and original-protection files (46 tests).
 - Daemon starts return exit 69 in several CLI tests; one subsequent unchecked PID causes a
   secondary type error. Isolated Linux reimport succeeds, so the CI startup cause is unresolved.
 - Many tests exceed runner deadlines, including 5, 15, 30 and 60 seconds. Directory-removal
@@ -29,3 +31,25 @@ did not run. The entire failed-test section was inspected, not only its final su
 Focused green results prove their stated scope only. A subsequent full integrated run is
 required; camera delivery quality, native RSS and encoder latency gates are not replaced by
 test-runner timing. Do not discard historical failures or cancel unrelated CI jobs as a fix.
+
+## Timing boundaries
+
+The two export-integrity cases that materialize a full 7008×4672 RAW fail the implicit five-second
+runner limit even alone. An unchanged diagnostic run with an observation budget completes in
+6.195 and 6.601 seconds. Those cases now use the existing neighboring RAW-journey 30-second hang
+guard, retaining every assertion. All eight export-integrity tests pass together afterward.
+This does not change any native speed requirement or the default timeout for other tests.
+
+A current-source Linux experiment under a fixed three-CPU/6-GiB container quota compares three
+small database/CLI cases with one and three workers. Both pass the unchanged five-second limit;
+individual durations rise from 1.05–1.99 seconds to 2.09–3.69 seconds while total wall time falls
+from 5.22 to 4.04 seconds. This demonstrates a latency/throughput tradeoff, not CI saturation.
+The existing container native artifact is older and no RAW rendering is exercised, so this is
+not native-runtime acceptance. A daemon replay starts successfully; its stop encounters a zombie
+because the container lacks a reaping init. That is not reproduction of CI's startup failure.
+
+CI's debug-profile image and LibRaw crates already have optimization level three. Neither the
+build label nor the total test count proves the cause of the camera timeouts. Actual CI resource
+telemetry and actionable startup failure details remain missing. The audit's complete scratch
+record is `/private/tmp/photoctl-highlight-measure/ci-performance-audit.md`; no runner or native
+configuration was changed on the strength of this bounded experiment.
