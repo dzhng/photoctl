@@ -254,7 +254,7 @@ export async function catalogPhotoAtDestination(
       error.data.reason !== "outside_configured_volume"
     )
       throw error;
-    // Prior test mappings can reserve this path. Unverifiable mounts fail closed;
+    // Prior test mappings can reserve this path. Unverifiable existing mounts fail closed;
     // stale mount hints may refuse an overwrite but must never identify a source.
     const volumes = await db.query<{ uuid: string; last_mount: string }>(
       "SELECT uuid, last_mount FROM volumes WHERE uuid <> $1",
@@ -262,7 +262,14 @@ export async function catalogPhotoAtDestination(
     );
     const matches = await Promise.all(
       volumes.rows.map(async (volume) => {
-        const relPath = relativeWithin(await realpath(volume.last_mount), canonicalPath);
+        let mount: string;
+        try {
+          mount = await realpath(volume.last_mount);
+        } catch (mountError) {
+          if ((mountError as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+          throw mountError;
+        }
+        const relPath = relativeWithin(mount, canonicalPath);
         return relPath === null ? undefined : await photoAtLocator(db, volume.uuid, relPath);
       }),
     );

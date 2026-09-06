@@ -1,4 +1,6 @@
 import { copyFile, mkdir, mkdtemp, readFile, rm, symlink } from "node:fs/promises";
+import fs from "node:fs/promises";
+import { syncBuiltinESMExports } from "node:module";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import sharp from "sharp";
@@ -15,6 +17,7 @@ test.each([
   "missing",
   "companion",
   "prior-volume",
+  "recreated-mount",
 ])(
   "export overwrite preserves the %s catalog original",
   async (kind) => {
@@ -81,10 +84,11 @@ test.each([
         await symlink(dirname(original), join(root, "alias"));
         target = join(root, "alias", basename(original));
       } else if (kind === "missing") await rm(original);
-      if (kind === "prior-volume") {
+      if (kind === "prior-volume" || kind === "recreated-mount") {
         const otherDrive = join(root, "new-drive");
         await mkdir(otherDrive);
         env.volumeMap = `${otherDrive}=new-drive:online`;
+        if (kind === "recreated-mount") await rm(drive, { recursive: true });
         expect(await command("show", [original])).toMatchObject({
           ok: false,
           code: "file_offline",
@@ -105,7 +109,8 @@ test.each([
         ok: false,
         results: [{ id, ok: false, code: "volume_readonly", path: target }],
       });
-      if (kind === "missing")
+      if (kind === "recreated-mount") expect((await fs.stat(drive)).isDirectory()).toBe(true);
+      if (kind === "missing" || kind === "recreated-mount")
         await expect(readFile(original)).rejects.toMatchObject({ code: "ENOENT" });
       else expect((await readFile(original)).equals(bytes)).toBe(true);
       expect((await library.handle.query("SELECT path FROM exports")).rows).toEqual([]);
@@ -117,8 +122,8 @@ test.each([
   30_000,
 );
 
-test.each([false, true])(
-  "delivery overwrite fails closed only when location lookup fails: %s",
+test.each([false, true, "EACCES", "EIO"])(
+  "delivery overwrite ignores absent mounts but not lookup failures: %s",
   async (failLookup) => {
     const root = await mkdtemp(join(tmpdir(), "photoctl-export-delivery-"));
     const drive = join(root, "drive");
@@ -149,10 +154,23 @@ test.each([false, true])(
       );
       if (!imported.ok || !("data" in imported)) throw new Error("import failed");
       const id = (imported.data as { ids: string[] }).ids[0];
-      if (failLookup)
+      if (failLookup === true)
         vi.spyOn(EnvVolumeResolver.prototype, "locate").mockRejectedValue(
           new Error("volume lookup failed"),
         );
+      await library.handle.query(
+        "INSERT INTO volumes (uuid, last_mount, last_seen) VALUES ('unplugged', $1, now())",
+        [join(root, "unplugged-drive")],
+      );
+      if (typeof failLookup === "string") {
+        const realpath = fs.realpath;
+        vi.spyOn(fs, "realpath").mockImplementation(async (path) => {
+          if (path === join(root, "unplugged-drive"))
+            throw Object.assign(new Error("historical mount lookup failed"), { code: failLookup });
+          return await realpath(path);
+        });
+        syncBuiltinESMExports();
+      }
       const exported = await dispatch(
         {
           verb: "export",
@@ -183,6 +201,7 @@ test.each([false, true])(
       expect(await readFile(source)).toEqual(original);
     } finally {
       vi.restoreAllMocks();
+      syncBuiltinESMExports();
       await library.handle.close();
       await rm(root, { recursive: true });
     }
