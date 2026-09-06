@@ -116,5 +116,49 @@ removing that guard passed all 43 affected checks across four files, including b
 Final scoped review `01a07519-f827-7d91-a52e-e7d61fd1d82b` found no remaining actionable issue.
 The two detail images were opened for a non-blocking human checkpoint and closed after five
 minutes without feedback; the support-only acceptance above remains the evidence-based call.
-Fresh reduced offline rendering, full-resolution resource acceptance and fresh native packaged
-release gates remain separate.
+Full-resolution resource acceptance and fresh native packaged release gates remain separate.
+
+## Cold reduced-source lifecycle
+
+The separate [cold public journey](../../../../test/journeys/outpaint-cold.ts) imports a source
+large enough for the normal import pipeline to produce a reduced pinned preview. A new lazy edit
+has no execution of its current output node before disconnect. This distinguishes first-use
+fallback decoding from the warm retained-output guarantee above; no cache deletion or replacement
+creates the condition. A fractional straighten and quarter-turn exercise ordered reduced sampling.
+
+Native border pixels can supply native output sampling while the original underneath is reduced.
+The exact execution frame retains that reduced source size, and refresh reports its fallback
+source context honestly. A second new state is exported before any preview. Disabling the border
+then exposes reduced output sampling, and undo restores exact pixels with the fixture gateway
+closed. Reconnecting promotes original detail without changing the render identity or replaying
+generation. The upper exterior rows remain exact across that source-only change.
+
+Bypassing preview source-quality sufficiency made reconnect incorrectly retain `pinned-preview`;
+the cold journey failed at that assertion. Restoring the existing owner passed. No production
+change was needed. The built journey passed in 10.34 seconds and the isolated installed journey
+in 12.28 seconds. Both use the existing native runtime, not a fresh native release build. The
+complete five-state [capture set](cold/candidate/) and [enlargements](cold/crops/) are byte-identical
+between built and installed runs. Reconnect changes 4,212 of 6,256 pixels (maximum channel delta
+122); the exact exterior comparison remains unchanged. These differences locate source promotion,
+not a photographic quality score.
+
+No fresh visual-agent slot was available. Adversarial inspection asked whether the soft diagonal
+interior hid misalignment, whether reconnect's finer stripes were noise, and whether disabling the
+border silently changed sampling. All full states and four-times enlargements show stable border
+placement, a visibly reduced interior before reconnect, finer original detail afterward, and a
+smaller border-free output. Exact undo and exterior checks support that reading. The images are
+accepted for sampling/provenance evidence only: their synthetic gradients are not photographic
+generation quality, and no Workbench HTML layout was checked.
+
+Packed SHA-256 identities for this bounded witness:
+
+- CLI: `e63d6975e7f2869203e4a013e2a153418293cc196a4962bb0d97aa91e6e4adb4`
+- Image runtime: `e18c71e082e69163693ce302e2a3627c6fe4eb376bcab421b1d71f3f5a83b2a5`
+- macOS helper: `34c851e3c52c106011769b6c0bd2c201de6769717f6a88fd2d31ea279ed83076`
+
+Independent cold-journey review `01a0751f-86da-7122-b1d4-6aed19f7a4b0` found no actionable
+correctness regression. The complete built warm/cold journey file passed three tests in 31.08
+seconds. Repository typecheck, standalone strict checking of the new journey, and scoped
+lint/format checks passed. The reviewer could not run the local gateway in its read-only sandbox;
+that execution limitation is separate from the successful outer-process and installed-package
+runs above.

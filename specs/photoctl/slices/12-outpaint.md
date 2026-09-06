@@ -447,7 +447,10 @@ cropped-away extension, repeat generation, removal/undo, refresh and warm offlin
 both the built CLI and an isolated prebuilt-runtime package. Masks carry their own execution frames
 through the shared evaluator; they are not assumed to use catalog-sized rasters. Expanded-coordinate
 retouch uses actual projected photographic support, including permanent masks, while exact authored
-retries remain idempotent. Fresh reduced offline rendering remains a separate acceptance boundary.
+retries remain idempotent. Its separate cold journey uses a normal import-produced reduced source,
+with no current output execution before preview or direct export; refresh, disable/undo and reconnect
+preserve honest source quality without implicit provider replay. This is bounded prebuilt-runtime
+evidence, not full-resolution resource acceptance or a fresh native packaged-release gate.
 
 Pure translation, rotation and shrinking do not retry failed border density. Increased scale can
 request configured upscaling; explicit retry remains available for a failed processing step.

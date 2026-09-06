@@ -7,6 +7,7 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 import { registerAgentPreviewJourney } from "../journeys/agent-preview.js";
 import { registerOutpaintJourney } from "../journeys/outpaint.js";
+import { registerColdOutpaintJourney } from "../journeys/outpaint-cold.js";
 
 const execute = promisify(execFile);
 
@@ -133,4 +134,13 @@ registerOutpaintJourney(
       env: { ...options.env, PHOTOCTL_NO_DAEMON: "1" },
     }),
   "packed CLI preserves outpaint pixels through the complete keyless lifecycle",
+);
+
+registerColdOutpaintJourney((args, options = {}) =>
+  spawnPhotoctl(args, {
+    ...options,
+    cliPath: binary,
+    cwd: scratch,
+    env: { ...options.env, PHOTOCTL_NO_DAEMON: "1" },
+  }),
 );

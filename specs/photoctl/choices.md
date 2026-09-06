@@ -5683,3 +5683,19 @@
 - **Verdict:** **Sound.** Original-relative coordinates preserve request meaning, and the same
   projected coverage governs rendering and whether a new repair has photographic input.
 - **Confidence:** High.
+
+### Outpaint verification — Make cold fallback through a new edit, not cache surgery
+
+- **When:** Cold offline lifecycle witness, 2026-09-06.
+- **The choice:** Import a modest synthetic original through the normal pipeline, author a border,
+  then make a new edit before disconnecting its file. Verify the new whole-photo output has never
+  been rendered before asking for a preview or export. The saved reduced import preview remains
+  intact. Deleting cached output or replacing that preview could instead manufacture a state users
+  do not naturally reach and hide whether normal import produced useful fallback pixels.
+- **The gap:** The plan required cold reduced-source evidence but did not prescribe its stimulus.
+- **The reach:** The built and installed CLI share this public journey. The synthetic fine pattern
+  makes original-detail promotion visible without a full-resolution camera decode. It does not
+  replace real-camera, paid-model quality, resource-budget or fresh-native-release acceptance.
+- **Verdict:** Sound; both first-use consumers are proven cold by their exact current output identity,
+  and all mutation goes through public commands except explicit local provider configuration.
+- **Confidence:** High. No product API, persistence or fallback policy changes were introduced.
