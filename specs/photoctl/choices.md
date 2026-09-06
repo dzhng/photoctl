@@ -4770,3 +4770,17 @@
 - **Verdict:** **Sound.** It proves the metadata-only backup contract without inventing a broader
   recovery guarantee from a database-only test.
 - **Confidence:** High.
+
+### Filter command — Share the develop mutation and its result envelope
+
+- **When:** Original filter verb completion, 2026-09-06.
+- **The choice:** `filter PHOTO --name vivid --strength 0.5` validates its single-photo syntax, then
+  performs the same two assignments as `develop`. It returns that command's one-item `results`
+  envelope, including layer compensation and stale warnings. Asking both forms in succession does
+  not add another revision, so one undo restores the original state.
+- **The gap:** The input required the verb and D21 chose its two stored keys, but did not specify
+  whether the convenience verb needed a distinct response shape or mutation implementation.
+- **The reach:** One develop writer owns validation, history and rendering. There is no new filter
+  schema, kernel, persistence field or public result type to keep synchronized.
+- **Verdict:** **Sound.** Reuse the established editing contract instead of duplicating it behind new syntax.
+- **Confidence:** High.

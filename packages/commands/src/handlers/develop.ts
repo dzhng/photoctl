@@ -16,6 +16,7 @@ import { PhotoctlError, type DevelopResult, type Envelope, type Warning } from "
 import { batchEnvelope, batchFailure, resolveBatchInputs, type BatchFailure } from "../batch.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
+import { parseArguments } from "../arguments.js";
 import {
   planAutoEnhance,
   readAutoEnhanceSnapshot,
@@ -34,6 +35,32 @@ interface ParsedDevelop {
 }
 
 export type { DevelopDependencies } from "./develop-auto.js";
+
+export async function filterCommand(
+  args: string[],
+  env: RequestEnv,
+  cwd: string,
+  provided?: LibraryHandle,
+): Promise<Envelope> {
+  const parsed = parseArguments(args, { options: ["--name", "--strength"] });
+  const name = parsed.options.get("--name");
+  const strength = parsed.options.get("--strength");
+  if (parsed.positionals.length !== 1 || name === undefined || strength === undefined) {
+    throw new PhotoctlError("usage", "filter requires one photo ID, --name and --strength");
+  }
+  return await developCommand(
+    [
+      parsed.positionals[0]!,
+      "--set",
+      `filter.name=${JSON.stringify(name)}`,
+      "--set",
+      `filter.strength=${strength}`,
+    ],
+    env,
+    cwd,
+    provided,
+  );
+}
 
 export async function developCommand(
   args: string[],

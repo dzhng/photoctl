@@ -42,7 +42,7 @@ import { tagCommand } from "./handlers/tag.js";
 import { backupCommand, migrateCommand, restoreCommand } from "./handlers/library-lifecycle.js";
 import { graphCommand } from "./handlers/graph.js";
 import { xmpCommand } from "./handlers/xmp.js";
-import { developCommand, type DevelopDependencies } from "./handlers/develop.js";
+import { developCommand, filterCommand, type DevelopDependencies } from "./handlers/develop.js";
 import { undoCommand } from "./handlers/undo.js";
 import { presetsCommand } from "./handlers/presets.js";
 import { renderCommand } from "./handlers/render.js";
@@ -125,6 +125,8 @@ export async function dispatch(
       return await xmpCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "undo")
       return await undoCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "filter")
+      return await filterCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "develop")
       return await developCommand(
         request.args,
