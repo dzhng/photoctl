@@ -8,6 +8,83 @@ import { materializePreview, viewHash } from "./preview.js";
 import { PreviewCoordinator, type PreviewIndexAdapter } from "./preview-coordinator.js";
 import { srgb2014ProfilePath } from "./color.js";
 import { developFrame } from "./graph/frame.js";
+import type { SourceTreatment } from "@photoctl/protocol";
+
+test("preview reuse requires the online decoder treatment and retains actual treatment offline", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-treatment-"));
+  const treatment: SourceTreatment = {
+    decoderId: "libraw",
+    decoderVersion: "fixture",
+    requested: "reconstruct",
+    status: "applied",
+    method: "spatial-v1",
+    scale: 1,
+  };
+  const photo = { w: 2, h: 1, orientation: 1 as const };
+  const image = {
+    w: 2,
+    h: 1,
+    channels: 3 as const,
+    data: new Uint16Array([65535, 0, 0, 65535, 0, 0]),
+  };
+  const request = {
+    coordinator: new PreviewCoordinator(),
+    index: { recordCompleted: async () => {}, touch: async () => {} },
+    cacheRoot: directory,
+    photoId: "treatment",
+    renderHash: testRenderHash("9"),
+    photo,
+    source: {
+      kind: "online-file" as const,
+      path: join(directory, "absent.raw"),
+      mediaType: "image/x-sony-arw",
+      w: 2,
+      h: 1,
+    },
+    view: { region: null, longEdge: "native" as const },
+  };
+  try {
+    const first = await materializePreview({
+      ...request,
+      render: async () => ({
+        image,
+        frame: developFrame(photo, image),
+        sourceTreatment: treatment,
+      }),
+    });
+    const changed = { ...treatment, decoderVersion: "next" };
+    const second = await materializePreview({
+      ...request,
+      requiredTreatment: changed,
+      render: async () => ({ image, frame: developFrame(photo, image), sourceTreatment: changed }),
+    });
+    expect(second.sourceTreatment).toEqual(changed);
+    expect(first.sourceTreatment).toEqual(treatment);
+    const offline = await materializePreview({
+      ...request,
+      source: {
+        kind: "pinned-preview",
+        path: request.source.path,
+        mediaType: "image/jpeg",
+        orientation: 1,
+      },
+      render: async () => {
+        throw new Error("No offline decoder");
+      },
+    });
+    expect(offline.sourceTreatment).toEqual(changed);
+    expect(offline.cacheSource).toBe("exact_view");
+    const unknown = await materializePreview({
+      ...request,
+      renderHash: testRenderHash("a"),
+      requiredTreatment: changed,
+      render: async () => ({ image, frame: developFrame(photo, image) }),
+    });
+    expect(unknown.sourceTreatment).toBeNull();
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 function testRenderHash(hex: string): `r_${string}` {
   return `r_${hex.repeat(64)}`;

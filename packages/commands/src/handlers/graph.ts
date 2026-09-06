@@ -182,6 +182,7 @@ export async function graphCommand(
           output_artifact_hash: execution.outputArtifactHash,
           artifact_available: execution.artifactAvailable,
           source_provenance: execution.sourceProvenance,
+          source_treatment: execution.sourceTreatment,
           provider_provenance: execution.providerProvenance,
         })),
         execution_count: node.executionCount,

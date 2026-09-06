@@ -4,7 +4,8 @@ import { resampleDisplaySrgb8, resampleDisplaySrgbRegion } from "@photoctl/img";
 import sharp from "sharp";
 import { orientedDimensions, type ExifOrientation } from "./coordinates.js";
 import { srgb2014ProfilePath } from "./color.js";
-import type { ImageSource } from "./decoder.js";
+import { planSourceTreatment, sameSourceTreatment, type ImageSource } from "./decoder.js";
+import type { SourceTreatment } from "@photoctl/protocol";
 import { canonicalJson } from "./graph/recipes.js";
 import { developFrame, frameSamplingDensity, viewFrame, type RenderFrame } from "./graph/frame.js";
 import { developBaseRegion, projectDevelopView } from "./develop/geometry.js";
@@ -37,6 +38,7 @@ export function viewHash(spec: ViewSpec): `v_${string}` {
 export type PreviewCacheSource = "exact_view" | "sufficient_full_frame" | "render_master";
 export type { PreviewSourceTier } from "./preview-artifact.js";
 export interface MaterializedPreview {
+  sourceTreatment: SourceTreatment | null;
   path: string;
   actualRegion: [number, number, number, number];
   w: number;
@@ -58,7 +60,13 @@ export async function materializePreview(request: {
   renderHash: string;
   photo: { orientation: ExifOrientation; w: number; h: number };
   source: ImageSource;
-  render?: () => Promise<{ image: Image16; frame: RenderFrame; sourceTier?: PreviewSourceTier }>;
+  render?: () => Promise<{
+    image: Image16;
+    frame: RenderFrame;
+    sourceTier?: PreviewSourceTier;
+    sourceTreatment?: SourceTreatment | null;
+  }>;
+  requiredTreatment?: SourceTreatment;
   logicalFrame?: RenderFrame;
   sourceTier?: PreviewSourceTier;
   view: ViewSpec;
@@ -96,6 +104,11 @@ export async function materializePreview(request: {
     return artifact.frame.source.w >= maximum.w && artifact.frame.source.h >= maximum.h;
   };
   const sufficient = async (artifact: ValidPreviewArtifact) => {
+    if (
+      request.requiredTreatment &&
+      !sameSourceTreatment(artifact.sourceTreatment, request.requiredTreatment)
+    )
+      return false;
     const plan = planView(artifact.frame, request.view);
     const originalFrame = developFrame(artifact.frame.catalog, artifact.frame.source);
     const originalCovers = frameSamplingDensity(target.frame, originalFrame) <= 1;
@@ -108,7 +121,14 @@ export async function materializePreview(request: {
   const render = async () => {
     if (request.render) return await request.render();
     const image = await renderSource(request.photo.orientation, request.source);
-    return { image, frame: developFrame(request.photo, image) };
+    return {
+      image,
+      frame: developFrame(request.photo, image),
+      sourceTreatment: planSourceTreatment("file", undefined, {
+        scale: 1,
+        highlightReconstruction: "reconstruct",
+      }),
+    };
   };
   const master = async () =>
     await request.coordinator.materialize(
@@ -125,6 +145,7 @@ export async function materializePreview(request: {
         const rendered = await render();
         await writePreviewArtifact(masterPath, await encodeJpeg(rendered.image), {
           sourceTier: rendered.sourceTier ?? request.sourceTier ?? request.source.kind,
+          sourceTreatment: rendered.sourceTreatment ?? null,
           sourceDimensions: { w: rendered.image.w, h: rendered.image.h },
           frame: rendered.frame,
         });
@@ -172,6 +193,7 @@ export async function materializePreview(request: {
         const bytes = await encodeJpeg({ ...rendered.image, w: plan.w, h: plan.h, data: pixels });
         const provenance = {
           sourceTier: rendered.sourceTier ?? request.sourceTier ?? request.source.kind,
+          sourceTreatment: rendered.sourceTreatment ?? null,
           sourceDimensions: { w: rendered.image.w, h: rendered.image.h },
           frame: plan.frame,
         };
@@ -228,6 +250,7 @@ async function derive(
     .toBuffer();
   const provenance = {
     sourceTier: source.sourceTier,
+    sourceTreatment: source.sourceTreatment ?? null,
     sourceDimensions: source.sourceDimensions,
     frame: plan.frame,
   };
@@ -237,7 +260,10 @@ async function derive(
 
 function result(
   path: string,
-  artifact: Pick<ValidPreviewArtifact, "frame" | "w" | "h" | "sourceTier" | "sourceDimensions">,
+  artifact: Pick<
+    ValidPreviewArtifact,
+    "frame" | "w" | "h" | "sourceTier" | "sourceDimensions" | "sourceTreatment"
+  >,
   target: ReturnType<typeof planView>,
   cacheSource: PreviewCacheSource,
 ): MaterializedPreview {
@@ -250,6 +276,7 @@ function result(
     h: artifact.h,
     sourceDimensions: artifact.sourceDimensions,
     sourceTier: artifact.sourceTier,
+    sourceTreatment: artifact.sourceTreatment ?? null,
     pixelScale,
     resolutionLimited: artifact.w + 1 < target.w || artifact.h + 1 < target.h,
     cacheSource,

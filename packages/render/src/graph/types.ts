@@ -43,6 +43,7 @@ export interface StoredImageNode {
 }
 
 export interface SourceExecutionProvenance {
+  treatment?: import("@photoctl/protocol").SourceTreatment;
   locator:
     | { kind: "online-file"; volume_uuid: string; rel_path: string }
     | {

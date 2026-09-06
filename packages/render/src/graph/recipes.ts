@@ -1,6 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
-import { markupDocumentSchema } from "@photoctl/protocol";
+import {
+  markupDocumentSchema,
+  sourceTreatmentSchema,
+  type SourceTreatment,
+} from "@photoctl/protocol";
 import type {
   ImageNodeKind,
   JsonValue,
@@ -52,7 +56,7 @@ const layerCompositeParametersSchema = z
   .strict();
 
 // Pixel-kernel semantics select derived artifacts/views, never paid execution identities.
-const rendererSemanticRevision = 7;
+const rendererSemanticRevision = 8;
 
 const jsonSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
@@ -365,6 +369,7 @@ export function evaluationHash(input: {
   recipeVersion: number;
   inputArtifactHashes: string[];
   inputFrames?: JsonValue[];
+  inputTreatments?: Array<SourceTreatment | null>;
   source?: SourceExecutionProvenance & { outputArtifactHash: string };
 }): `eval_${string}` {
   assertHash(input.nodeRecipeHash, "recipe");
@@ -387,7 +392,7 @@ export function evaluationHash(input: {
     canonicalJson({
       input_artifact_hashes: input.inputArtifactHashes,
       ...(imageNodeRegistry[input.kind].deterministic
-        ? { input_frames: input.inputFrames ?? [] }
+        ? { input_frames: input.inputFrames ?? [], input_treatments: input.inputTreatments ?? [] }
         : {}),
       kind: input.kind,
       node_recipe_hash: input.nodeRecipeHash,
@@ -487,6 +492,7 @@ function canonicalSourceProvenance(
       h: z.number().int().positive(),
       decoderId: z.string().min(1),
       decoderVersion: z.string().min(1),
+      treatment: sourceTreatmentSchema.optional(),
       outputArtifactHash: z.string().regex(/^a_[0-9a-f]{64}$/),
     })
     .strict()
@@ -494,6 +500,7 @@ function canonicalSourceProvenance(
     .transform((value) => ({
       decoder_id: value.decoderId,
       decoder_version: value.decoderVersion,
+      treatment: value.treatment ?? null,
       h: value.h,
       locator: value.locator,
       output_artifact_hash: value.outputArtifactHash,

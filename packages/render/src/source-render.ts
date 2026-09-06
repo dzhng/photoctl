@@ -1,6 +1,11 @@
 import type { ExifOrientation } from "./coordinates.js";
 import { displaySrgbToLinearRec2020, toSceneLinearRec2020 } from "./color.js";
-import { FileImageDecoder, type ImageSource, type LinearImage } from "./decoder.js";
+import {
+  FileImageDecoder,
+  planSourceTreatment,
+  type ImageSource,
+  type LinearImage,
+} from "./decoder.js";
 import type { SourceExecutionProvenance } from "./graph/types.js";
 import sharp from "sharp";
 
@@ -63,6 +68,10 @@ export async function renderSourceExecution(
       h: image.h,
       decoderId: "file",
       decoderVersion: sharp.versions.sharp,
+      treatment: planSourceTreatment("file", undefined, {
+        scale: 1,
+        highlightReconstruction: "reconstruct",
+      }),
     },
   };
 }

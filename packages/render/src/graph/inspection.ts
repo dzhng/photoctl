@@ -61,6 +61,7 @@ export interface GraphNodeRecord extends GraphNodeSummary {
     outputArtifactHash: string;
     artifactAvailable: boolean;
     sourceProvenance: unknown | null;
+    sourceTreatment: import("@photoctl/protocol").SourceTreatment | null;
     providerProvenance: unknown | null;
   }>;
   executionCount: number;
@@ -288,6 +289,7 @@ export async function inspectGraphNode(
       output_artifact_hash: string;
       artifact_available: boolean;
       source_locator: unknown | null;
+      source_treatment: import("@photoctl/protocol").SourceTreatment | null;
       source_tier: string | null;
       source_w: number | null;
       source_h: number | null;
@@ -300,7 +302,7 @@ export async function inspectGraphNode(
     }>(
       `SELECT execution.execution_id, execution.provider_image_attempt_id, execution.evaluation_hash, execution.deterministic,
          execution.output_artifact_hash, artifact.artifact_available,
-         execution.source_locator, execution.source_tier, execution.source_w,
+         execution.source_locator, execution.source_treatment, execution.source_tier, execution.source_w,
          execution.source_h, execution.decoder_id, execution.decoder_version,
          execution.provider_execution,
          ARRAY(
@@ -347,6 +349,7 @@ export async function inspectGraphNode(
       deterministic: execution.deterministic,
       outputArtifactHash: execution.output_artifact_hash,
       artifactAvailable: execution.artifact_available,
+      sourceTreatment: execution.source_treatment,
       sourceProvenance: execution.source_locator
         ? {
             locator: execution.source_locator,

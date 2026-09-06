@@ -2,6 +2,7 @@ import { z } from "zod";
 import { fullHashSchema } from "../hash.js";
 import { warningCodes } from "../envelope.js";
 import { providerModelIdSchema } from "../provider.js";
+import { sourceTreatmentSchema } from "../treatment.js";
 
 const nodeId = fullHashSchema("node");
 const recipeHash = fullHashSchema("recipe");
@@ -112,6 +113,7 @@ export const graphNodeDataSchema = graphNodeSummarySchema.extend({
         output_artifact_hash: artifactHash,
         artifact_available: z.boolean(),
         source_provenance: z.unknown().nullable(),
+        source_treatment: sourceTreatmentSchema.nullable(),
         provider_provenance: providerProvenanceSchema.nullable(),
       }),
     )

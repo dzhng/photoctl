@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sourceTreatmentSchema } from "../treatment.js";
 import { fullHashSchema } from "../hash.js";
 
 const affineSchema = z.object({
@@ -71,6 +72,7 @@ export const showDataSchema = z.object({
   tags: z.array(z.string()),
   preview: z.string(),
   preview_info: z.object({
+    source_treatment: sourceTreatmentSchema.nullable(),
     render_hash: fullHashSchema("r"),
     view_hash: fullHashSchema("v"),
     requested: z.object({

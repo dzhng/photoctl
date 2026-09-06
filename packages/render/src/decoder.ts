@@ -83,7 +83,14 @@ export function planSourceTreatment(
         : method
           ? "applied"
           : "unsupported";
-  return { requested, status, method: status === "applied" ? method! : null, scale: options.scale };
+  return {
+    decoderId: decoder,
+    decoderVersion: decoder === "file" ? sharp.versions.sharp : (probe?.decoderVersion ?? decoder),
+    requested,
+    status,
+    method: status === "applied" ? method! : null,
+    scale: options.scale,
+  };
 }
 
 export function sameSourceTreatment(
@@ -92,6 +99,8 @@ export function sameSourceTreatment(
 ): boolean {
   if (!left || !right) return left == null && right == null;
   return (
+    left.decoderId === right.decoderId &&
+    left.decoderVersion === right.decoderVersion &&
     left.requested === right.requested &&
     left.status === right.status &&
     left.method === right.method &&
@@ -279,6 +288,8 @@ export class CirawDecoder implements Decoder {
         blackLevel: 0,
         wbPreApplied: true,
         treatment: {
+          decoderId: this.id,
+          decoderVersion: result.decoderVersion,
           requested: options.highlightReconstruction ?? "disabled",
           status: result.highlightReconstruction,
           method: result.highlightReconstructionMethod ?? null,
@@ -355,6 +366,8 @@ export class LibrawDecoder implements Decoder {
         ...(image.space === "camera" ? { camXyz: image.camXyz, asShotWb: image.asShotWb } : {}),
         wbPreApplied: image.wbPreApplied,
         treatment: {
+          decoderId: this.id,
+          decoderVersion: inspectLibraw().version ?? this.id,
           requested: options.highlightReconstruction ?? "disabled",
           status: image.highlightReconstruction,
           method: image.highlightReconstructionMethod ?? null,

@@ -56,12 +56,16 @@ test("CIRAW decodes the committed camera file deterministically without presenta
       highlightReconstruction: "reconstruct",
     });
     expect(reconstructed.treatment).toEqual({
+      decoderId: "ciraw",
+      decoderVersion: probe.decoderVersion,
       requested: "reconstruct",
       status: "applied",
       method: probe.highlightReconstructionMethod,
       scale: 0.25,
     });
     expect(image.treatment).toEqual({
+      decoderId: "ciraw",
+      decoderVersion: probe.decoderVersion,
       requested: "disabled",
       status: "disabled",
       method: null,

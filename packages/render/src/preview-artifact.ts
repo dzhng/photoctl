@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdir, open, readFile, readdir, rename, rm } from "node:fs/promises";
 import { basename, dirname } from "node:path";
 import sharp from "sharp";
+import { sourceTreatmentSchema, type SourceTreatment } from "@photoctl/protocol";
 import { srgb2014ProfilePath } from "./color.js";
 import type { ImageSource } from "./decoder.js";
 import { parseRenderFrame, savedRenderFrame, type RenderFrame } from "./graph/frame.js";
@@ -9,6 +10,7 @@ import { parseRenderFrame, savedRenderFrame, type RenderFrame } from "./graph/fr
 export type PreviewSourceTier = ImageSource["kind"];
 
 export interface PreviewProvenance {
+  sourceTreatment?: SourceTreatment | null;
   sourceTier: PreviewSourceTier;
   sourceDimensions: { w: number; h: number };
   frame: RenderFrame;
@@ -61,6 +63,7 @@ export async function readValidPreviewArtifact(
       w: metadata.width,
       h: metadata.height,
       sourceTier: provenance.sourceTier,
+      sourceTreatment: provenance.sourceTreatment ?? null,
       sourceDimensions: provenance.sourceDimensions,
       frame: provenance.frame,
     };
@@ -84,6 +87,7 @@ export async function writePreviewArtifact(
         schema: 2,
         jpeg_sha256: createHash("sha256").update(bytes).digest("hex"),
         source_tier: provenance.sourceTier,
+        source_treatment: provenance.sourceTreatment ?? null,
         source_dimensions: provenance.sourceDimensions,
         frame: savedRenderFrame(provenance.frame),
       })}\n`,
@@ -116,6 +120,7 @@ function parseProvenance(bytes: Buffer): PreviewProvenance & { jpegSha256: strin
     schema?: unknown;
     jpeg_sha256?: unknown;
     source_tier?: unknown;
+    source_treatment?: unknown;
     source_dimensions?: { w?: unknown; h?: unknown };
     frame?: unknown;
   };
@@ -135,6 +140,8 @@ function parseProvenance(bytes: Buffer): PreviewProvenance & { jpegSha256: strin
   return {
     jpegSha256: value.jpeg_sha256,
     sourceTier: value.source_tier as PreviewSourceTier,
+    sourceTreatment:
+      value.source_treatment == null ? null : sourceTreatmentSchema.parse(value.source_treatment),
     sourceDimensions: {
       w: Number(value.source_dimensions?.w),
       h: Number(value.source_dimensions?.h),

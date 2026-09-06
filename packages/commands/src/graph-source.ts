@@ -7,13 +7,17 @@ import {
   renderLinearSource,
   renderSourceExecution,
   selectDecoder,
+  planSourceTreatment,
+  sameSourceTreatment,
+  DecoderUnavailableError,
+  type DecoderProbe,
   type Decoder,
   type ImageSource,
   type LinearImage,
   type SourceExecutionProvenance,
 } from "@photoctl/render";
 import type { RequestEnv } from "./context.js";
-import type { Warning } from "@photoctl/protocol";
+import type { Warning, SourceTreatment } from "@photoctl/protocol";
 import {
   fileDecodeSource,
   resolveOnlineOriginalSource,
@@ -28,6 +32,7 @@ export interface GraphSourceCandidate {
   source: ImageSource;
   file?: StoredFile;
   fallback: GraphSourceFallback;
+  treatment: SourceTreatment;
   produce(): Promise<{ image: LinearImage; provenance: SourceExecutionProvenance }>;
 }
 
@@ -36,14 +41,15 @@ export function graphSourceWarning(id: string, fallback: GraphSourceFallback): W
     return {
       code: "decoder_fallback",
       id,
-      message: "Used a file preview because the full-resolution source could not be decoded",
+      message:
+        "Used available preview or retained pixels because the full-resolution source could not be decoded",
     };
   }
   if (fallback === "source_offline") {
     return {
       code: "source_offline",
       id,
-      message: "Used the pinned preview because no online source is available",
+      message: "Used available preview or retained pixels because no online source is available",
     };
   }
   return undefined;
@@ -76,7 +82,7 @@ export async function resolveGraphSources(options: {
       candidates.push(
         nativeCandidate(
           selected.decoder,
-          selected.probe?.decoderVersion ?? selected.decoder.id,
+          selected.probe,
           original.source,
           selectedSourceLocator(original),
           original.file,
@@ -118,25 +124,37 @@ function fileCandidate(
     source,
     file,
     fallback,
+    treatment: planSourceTreatment("file", undefined, {
+      scale: 1,
+      highlightReconstruction: "reconstruct",
+    }),
     produce: async () => await renderSourceExecution(source.orientation ?? 1, source, locator),
   };
 }
 
 function nativeCandidate(
   decoder: Decoder,
-  decoderVersion: string,
+  probe: DecoderProbe | undefined,
   source: ImageSource,
   locator: SourceExecutionProvenance["locator"],
   file: StoredFile,
 ): GraphSourceCandidate {
+  const options = {
+    scale: 1,
+    outputSpace: "scene-linear-rec2020",
+    highlightReconstruction: "reconstruct",
+  } as const;
+  const treatment = planSourceTreatment(decoder.id, probe, options);
   return {
     source,
     file,
     fallback: null,
+    treatment,
     produce: async () => {
-      const image = await renderLinearSource(
-        await decoder.decode(source, { scale: 1, outputSpace: "scene-linear-rec2020" }),
-      );
+      const decoded = await decoder.decode(source, options);
+      if (!sameSourceTreatment(decoded.treatment, treatment))
+        throw new DecoderUnavailableError("Decoder treatment changed after source planning");
+      const image = await renderLinearSource(decoded);
       return {
         image,
         provenance: {
@@ -144,8 +162,9 @@ function nativeCandidate(
           tier: source.kind,
           w: image.w,
           h: image.h,
-          decoderId: decoder.id,
-          decoderVersion,
+          decoderId: decoded.treatment.decoderId,
+          decoderVersion: decoded.treatment.decoderVersion,
+          treatment: decoded.treatment,
         },
       };
     },

@@ -3,6 +3,8 @@ import { z } from "zod";
 /** Actual decoder treatment travels with its pixels, including retained/offline pixels. */
 export const sourceTreatmentSchema = z
   .object({
+    decoderId: z.enum(["file", "ciraw", "libraw"]),
+    decoderVersion: z.string().min(1),
     requested: z.enum(["disabled", "reconstruct"]),
     status: z.enum(["applied", "disabled", "unsupported", "not-applicable"]),
     method: z.string().min(1).nullable(),

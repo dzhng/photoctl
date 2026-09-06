@@ -30,6 +30,7 @@ import {
   readActiveDevelopState,
   readArtifactImage,
   renderSource,
+  planSourceTreatment,
   developFrame,
   SourceEvaluationError,
   viewHash,
@@ -198,7 +199,14 @@ export async function showCommand(
             fallback: null,
             render: async () => {
               const image = await renderSource(photo.orientation, original.source);
-              return { image, frame: developFrame(photo, image) };
+              return {
+                image,
+                frame: developFrame(photo, image),
+                sourceTreatment: planSourceTreatment("file", undefined, {
+                  scale: 1,
+                  highlightReconstruction: "reconstruct",
+                }),
+              };
             },
           };
           return;
@@ -211,7 +219,14 @@ export async function showCommand(
             render: async () => {
               try {
                 const image = await renderSource(photo.orientation, pinned);
-                return { image, frame: developFrame(photo, image) };
+                return {
+                  image,
+                  frame: developFrame(photo, image),
+                  sourceTreatment: planSourceTreatment("file", undefined, {
+                    scale: 1,
+                    highlightReconstruction: "reconstruct",
+                  }),
+                };
               } catch (error) {
                 throw new SourceEvaluationError(error);
               }
@@ -252,6 +267,7 @@ export async function showCommand(
               ),
               frame: await loadBaseProjection(handle, id, evaluated),
               sourceTier: evaluated.sourceTier,
+              sourceTreatment: evaluated.sourceTreatment,
             };
           },
         };
@@ -335,6 +351,7 @@ export async function showCommand(
       tags: tags.rows.map((row) => row.tag),
       preview: materialized.preview.path,
       preview_info: {
+        source_treatment: materialized.preview.sourceTreatment,
         render_hash: renderHash,
         view_hash: viewHash(view),
         requested: { region: view.region, long_edge: view.longEdge },
@@ -463,6 +480,7 @@ async function materializeWithFallback(
   candidates: () => AsyncGenerator<
     Pick<GraphSourceCandidate, "source" | "fallback"> & {
       retained?: boolean;
+      treatment?: GraphSourceCandidate["treatment"];
       render: NonNullable<Parameters<typeof materializePreview>[0]["render"]>;
     }
   >,
@@ -480,6 +498,10 @@ async function materializeWithFallback(
           source: candidate.source,
           sourceTier: candidate.source.kind,
           render: candidate.render,
+          requiredTreatment:
+            !candidate.fallback && candidate.treatment?.decoderId !== "file"
+              ? candidate.treatment
+              : undefined,
           view: context.view,
           logicalFrame: context.frame,
         }),
@@ -529,5 +551,6 @@ async function evaluatePreviewGraph(
     image: await readArtifactImage(evaluated.artifact.path),
     frame: await loadBaseProjection(context.handle, context.id, evaluated),
     sourceTier: evaluated.sourceTier,
+    sourceTreatment: evaluated.sourceTreatment,
   };
 }

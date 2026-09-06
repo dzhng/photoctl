@@ -74,6 +74,8 @@ test.each([undefined, "disabled"] as const)(
         {
           decoder: "file",
           treatment: {
+            decoderId: "file",
+            decoderVersion: expect.any(String),
             requested: treatment ?? "reconstruct",
             status: "not-applicable",
             method: null,
@@ -83,6 +85,8 @@ test.each([undefined, "disabled"] as const)(
         ...["ciraw", "libraw"].map((decoder) => ({
           decoder,
           treatment: {
+            decoderId: decoder,
+            decoderVersion: expect.any(String),
             requested: treatment ?? "reconstruct",
             status: treatment ? "disabled" : "applied",
             method: treatment ? null : expect.any(String),

@@ -53,6 +53,7 @@ export const migration0005 = `
     deterministic boolean NOT NULL,
     output_artifact_hash text NOT NULL REFERENCES image_artifacts(artifact_hash),
     source_locator jsonb,
+    source_treatment jsonb,
     source_tier text,
     source_w integer CONSTRAINT node_executions_source_w_check CHECK (source_w > 0),
     source_h integer CONSTRAINT node_executions_source_h_check CHECK (source_h > 0),

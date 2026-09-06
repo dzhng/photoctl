@@ -1,5 +1,6 @@
 /* eslint-disable no-await-in-loop -- Ordered execution inputs are registered sequentially in one transaction. */
 import { applyEffectiveMask, effectiveMaskParametersSchema } from "../mask-operations.js";
+import type { SourceTreatment } from "@photoctl/protocol";
 import {
   artifactPath,
   MASK_ARTIFACT_MEDIA_TYPE,
@@ -77,6 +78,7 @@ export interface EvaluatedNode {
   executionId: string;
   reused: boolean;
   sourceTier?: ImageSource["kind"];
+  sourceTreatment: SourceTreatment | null;
 }
 
 export class SourceEvaluationError extends Error {
@@ -408,6 +410,7 @@ async function evaluateOne(
     recipeVersion: node.recipeVersion,
     inputArtifactHashes: inputs.map((input) => input.artifact.artifactHash),
     inputFrames: inputFrames.map((frame) => savedRenderFrame(frame)),
+    inputTreatments: inputs.map((input) => input.sourceTreatment),
     source:
       source && normalizedSource
         ? { ...source.provenance, outputArtifactHash: normalizedSource.artifactHash }
@@ -489,14 +492,15 @@ async function evaluateOne(
   );
   const frame = frameForNode(node.kind, node.parameters, photo.rows[0]!, artifact, inputFrames[0]);
   const inputTier = inputs[0]?.sourceTier;
+  const sourceTreatment = source?.provenance.treatment ?? inputs[0]?.sourceTreatment ?? null;
   const stored = await request.database.transaction(async (transaction) => {
     await registerPublishedArtifact(transaction, artifact);
     await transaction.query(
       `INSERT INTO node_executions (
          photo_id, execution_id, node_id, evaluation_hash, deterministic,
          output_artifact_hash, source_locator, source_tier, source_w, source_h,
-         decoder_id, decoder_version, provider_execution, render_frame, render_identity, render_source_tier
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb, $15, $16)
+         decoder_id, decoder_version, provider_execution, render_frame, render_identity, render_source_tier, source_treatment
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb, $15, $16, $17::jsonb)
        ON CONFLICT (photo_id, execution_id) DO NOTHING`,
       [
         request.photoId,
@@ -515,6 +519,7 @@ async function evaluateOne(
         JSON.stringify(savedRenderFrame(frame)),
         renderHashForNode(nodeId),
         source?.provenance.tier ?? inputTier ?? null,
+        sourceTreatment ? JSON.stringify(sourceTreatment) : null,
       ],
     );
     for (const [index, input] of inputs.entries()) {
@@ -1195,6 +1200,7 @@ async function loadByExecutionId(
     evaluation_hash: string;
     output_artifact_hash: string;
     render_source_tier: ImageSource["kind"] | null;
+    source_treatment: SourceTreatment | null;
     media_type: string;
     bytes: string;
     w: number;
@@ -1203,7 +1209,7 @@ async function loadByExecutionId(
   }>(
     `SELECT execution.execution_id, execution.node_id, execution.evaluation_hash,
        execution.output_artifact_hash, artifact.media_type, artifact.bytes::text,
-       artifact.w, artifact.h, artifact.artifact_available, execution.render_source_tier
+       artifact.w, artifact.h, artifact.artifact_available, execution.render_source_tier, execution.source_treatment
      FROM node_executions AS execution
      JOIN image_artifacts AS artifact
        ON artifact.artifact_hash = execution.output_artifact_hash
@@ -1245,6 +1251,7 @@ async function loadByExecutionId(
     },
     evaluationHash: row.evaluation_hash,
     executionId: row.execution_id,
+    sourceTreatment: row.source_treatment,
     ...(row.render_source_tier ? { sourceTier: row.render_source_tier } : {}),
   };
 }

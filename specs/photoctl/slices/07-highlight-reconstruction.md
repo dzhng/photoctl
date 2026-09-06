@@ -66,7 +66,7 @@ pixel bytes establishes equivalent reconstruction method, frame or source qualit
 
 Native opt-in and its representation/resource/visual evidence are implemented in
 the [portable checkpoint](../assets/camera-delivery-review/native-reconstruction/README.md).
-Ordinary rendering remains unchanged; B and C are still required. The checkpoint
+The native checkpoint is opt-in; B owns ordinary adoption and C owns delivery. It
 records exact disabled output, unsupported representations and remaining light-edge
 artifacts rather than asserting complete photographic acceptance.
 
@@ -124,8 +124,35 @@ The decoder/diagnostic boundary is implemented: `decode` exposes an explicit
 reconstruction override, reports requested versus actual treatment, and rejects a
 probe/result disagreement before TIFF publication. Both normal and disabled public
 oracle paths retain the same G4 threshold and exclusions. Repeated oracle runs keep
-their prior TIFFs and measured evidence. Graph identity, retained-output sufficiency,
-preview provenance and ordinary render adoption remain the next B checkpoint.
+their prior TIFFs and measured evidence. Ordinary graph rendering now explicitly
+requests reconstruction. Its canonical candle floats match A's reviewed native
+reconstructed bytes, while an untouched overview stays on the cheap JPEG path.
+
+The existing execution table carries nullable `source_treatment`; NULL means unknown,
+not disabled or applied. Actual treatment follows the base source through deterministic
+descendants, retained execution reads, graph inspection and preview metadata. It
+includes adapter identity/version separately from method and scale, because equal
+pixels do not establish interchangeable decoder provenance. Online preview reuse
+requires the planned treatment; offline reuse reports the retained actual treatment.
+The renderer semantic revision separates corrected ordinary artifacts without
+changing logical identity on disconnect/reconnect. No library reset or product
+migration is introduced.
+
+Online graph evaluation still reads and hashes actual source pixels before execution
+reuse. Matching treatment alone must not become a shortcut around that check: a
+source may have changed at its locator. Retained-only fallback selects verified
+current pixels by its existing quality rules and preserves their actual provenance.
+
+B verification is green through real ordinary RAW float output, cheap-overview and
+offline/reconnect public journeys, treatment-separated equal-pixel executions,
+unknown-treatment falsification, existing retained-cache rejection, and non-vacuous
+generated/upscale journeys that preserve paid execution/attempt/artifact records
+without provider replay. Both public G4 modes retain their thresholds. The independent
+review (`01a075a2-c866-7542-b727-a402428b4c90`) requested an upgrade migration; that
+suggestion is deliberately not adopted under the approved clean-start development
+cutover. Existing-library verification remains C's explicit scratch-only setup, not
+an automatic reset or backfill. Photographic acceptance is still C, including A's
+documented residual highlight edges.
 
 The decoder owns source-specific admission and method identity; the protocol's
 [`sourceTreatmentSchema`](../../../packages/protocol/src/treatment.ts) owns the

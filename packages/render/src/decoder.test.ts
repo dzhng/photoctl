@@ -49,6 +49,8 @@ if (args[0] === "probe") {
     highlightReconstruction: "reconstruct",
   });
   expect(image.treatment).toEqual({
+    decoderId: "ciraw",
+    decoderVersion: "8",
     requested: "reconstruct",
     status: "applied",
     method: "ciraw-highlight-v1",

@@ -27,12 +27,16 @@ test("the RAW adapter reports the planned reconstruction and preserves explicit 
     highlightReconstruction: "reconstruct",
   });
   expect(recovered.treatment).toEqual({
+    decoderId: decoder.id,
+    decoderVersion: probe.decoderVersion,
     requested: "reconstruct",
     status: "applied",
     method: probe.highlightReconstructionMethod,
     scale: 0.25,
   });
   expect(disabled.treatment).toEqual({
+    decoderId: decoder.id,
+    decoderVersion: probe.decoderVersion,
     requested: "disabled",
     status: "disabled",
     method: null,
@@ -59,9 +63,12 @@ test.each([
       outputSpace: "scene-linear-rec2020",
       highlightReconstruction: "reconstruct",
     } as const;
-    const plan = planSourceTreatment(decoder.id, await decoder.probe(source), options);
+    const probe = await decoder.probe(source);
+    const plan = planSourceTreatment(decoder.id, probe, options);
     const image = await decoder.decode(source, options);
     expect(image.treatment).toEqual({
+      decoderId: decoder.id,
+      decoderVersion: probe.decoderVersion,
       requested: "reconstruct",
       status,
       method: null,

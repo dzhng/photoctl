@@ -38,6 +38,7 @@ const successfulShow = {
     tags: [],
     preview: `/tmp/cache/emb/${photoId}.jpg`,
     preview_info: {
+      source_treatment: null,
       render_hash: "r_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
       view_hash: "v_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
       requested: { region: null, long_edge: 1616 },

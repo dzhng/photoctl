@@ -8,13 +8,79 @@ import { afterEach, expect, test } from "vitest";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { findOrphanArtifacts, retainedArtifacts } from "../artifacts/availability.js";
 import { readArtifactLinear } from "../artifacts/publication.js";
-import { evaluateGraphNode, SourceEvaluationError } from "./evaluator.js";
+import { evaluateGraphNode, readRetainedGraphOutput, SourceEvaluationError } from "./evaluator.js";
 import { canonicalNodeRecipe, logicalNodeId, recipeHash } from "./recipes.js";
 import { commitRevision } from "./store.js";
 import { loadBaseProjection } from "./projection.js";
+import { inspectGraphNode } from "./inspection.js";
 
 const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c011";
 const directories: string[] = [];
+
+test("equal pixels retain distinct source treatment through deterministic descendants", async () => {
+  const image = linearFixture(2, 1, [0.1, 0.2]);
+  const { db, library, nodeId } = await resampleGraph(image, 1, { w: 2, h: 1, kernel: "bilinear" });
+  const disabled = {
+    decoderId: "libraw",
+    decoderVersion: "fixture",
+    requested: "disabled",
+    status: "disabled",
+    method: null,
+    scale: 1,
+  } as const;
+  const applied = {
+    decoderId: "libraw",
+    decoderVersion: "fixture",
+    requested: "reconstruct",
+    status: "applied",
+    method: "fixture-spatial-v1",
+    scale: 1,
+  } as const;
+  const evaluate = async (treatment: import("@photoctl/protocol").SourceTreatment) =>
+    evaluateGraphNode({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId,
+      source: async () => ({
+        image,
+        provenance: { ...sourceEvaluationFor(image).provenance, treatment },
+      }),
+    });
+  try {
+    const first = await evaluate(disabled);
+    const second = await evaluate(applied);
+    expect(second.artifact.artifactHash).toBe(first.artifact.artifactHash);
+    expect(second.executionId).not.toBe(first.executionId);
+    expect(first.sourceTreatment).toEqual(disabled);
+    expect(second.sourceTreatment).toEqual(applied);
+    expect((await evaluate(applied)).executionId).toBe(second.executionId);
+    expect((await evaluate({ ...applied, decoderVersion: "next" })).executionId).not.toBe(
+      second.executionId,
+    );
+    expect(
+      (
+        await db.query("SELECT source_treatment FROM node_executions WHERE execution_id = $1", [
+          first.executionId,
+        ])
+      ).rows,
+    ).toEqual([{ source_treatment: disabled }]);
+    const inspected = await inspectGraphNode(db, { photoId, nodeId });
+    expect(
+      inspected.executions.find((execution) => execution.executionId === first.executionId)
+        ?.sourceTreatment,
+    ).toEqual(disabled);
+    const retained = await readRetainedGraphOutput({
+      database: db,
+      libraryPath: library,
+      photoId,
+      nodeId,
+    });
+    expect(retained?.sourceTreatment).toEqual({ ...applied, decoderVersion: "next" });
+  } finally {
+    await db.close();
+  }
+});
 
 test("equal RGB artifacts do not collapse executions with different realized frames", async () => {
   const { db, library, nodeId: sourceId } = await sourceGraph();
