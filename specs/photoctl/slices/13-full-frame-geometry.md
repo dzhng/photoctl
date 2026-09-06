@@ -110,9 +110,8 @@ physical viewport comes from that execution; logical viewport sampling controls 
 target. RGB retains its generated/upscaled sampling, and an explicitly placed constant mask
 owns strength and coverage. This uses the shared mask-frame evaluator prerequisite.
 
-The next pass must add explicit refresh and source promotion. In particular, creation with
-only a retained current output and neither a live nor pinned original remains in B's source
-selection work; the reduced pinned-source witness is not a retained-only offline claim.
+Pass B now supplies explicit refresh and retained-input source selection; its evidence is
+separate from these creation witnesses.
 
 ## B — Explicit refresh, source promotion and packaged lifecycle
 
@@ -144,6 +143,27 @@ offline/online detail at identical base coordinates, run compare-screenshots, th
 unprimed screenshot-critique. Record photographic/live acceptance separately.
 
 ## Closeout and draft synthesis
+
+### Refresh candidate evidence
+
+The shared layer-refresh boundary recognizes a typed full-frame descriptor instead of
+inventing masked-fill crop fields. Fresh generation, density processing, attempt retention
+and atomic revision publication keep their existing owners. Refresh reconstructs captured
+predecessor membership with current enablement and ordering. An already matching viewport
+keeps the ordinary photographic recipe and its retained execution; changed geometry uses
+the same photographic planner with the captured physical viewport and current color develop.
+RGB sampling can change without changing the constant mask, placement or strength.
+
+The source-selection owner prefers live original evaluation, then a verified retained
+current input at least as good as a fallback, and finally retained-only input if no bytes
+can be decoded. It never substitutes a different photographic recipe or replays paid work.
+The same evaluator has a no-source/no-provider retained policy for first show/export of
+new deterministic descendants. It reuses verified executions by their exact node identity;
+it never supplies a photographic composite as the original source or reapplies predecessors.
+Upscale-only refresh consumes the retained generation; failure preserves the last usable
+upscale. [Refresh evidence](../assets/full-frame-refresh/README.md) records focused, built,
+installed and permanent-original boundaries. Fresh visual acceptance and integrated
+whole-spec closeout remain pending in the parent task.
 
 Use write-tests red/green and the narrow owning Node/Vitest runners during iteration;
 then review/refactor-clean/code-review/write-docs and audit-choices before each commit.

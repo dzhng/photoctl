@@ -19,6 +19,7 @@ import {
   readCanvasStatus,
   ensurePhotoDocument,
   evaluateGraphNode,
+  evaluateRetainedGraphNode,
   readRetainedGraphOutput,
   orientedDimensions,
   exportImage,
@@ -397,6 +398,7 @@ async function exportOne(
       warnings: evaluated.warnings,
     };
   } catch (error) {
+    if (error instanceof PhotoctlError) throw error;
     if (hasErrorCode(error, "decoder_unavailable"))
       throw new PhotoctlError("decoder_unavailable", error.message, { id: snapshot.id });
     if (hasErrorCode(error, "volume_readonly")) {
@@ -492,10 +494,33 @@ async function evaluateExportImage(
         warnings: warning ? [warning] : [],
       };
     } catch (error) {
+      if (error instanceof PhotoctlError) throw error;
       if (!(error instanceof SourceEvaluationError)) {
         throw new PhotoctlError("decoder_unavailable", errorMessage(error), { id: snapshot.id });
       }
     }
+  }
+  try {
+    const retained = await evaluateRetainedGraphNode({
+      database: handle,
+      libraryPath: handle.path,
+      photoId: snapshot.id,
+      nodeId: snapshot.outputNodeId,
+    });
+    return {
+      image: await readArtifactImage(retained.artifact.path, retained.artifact.artifactHash),
+      warnings: [
+        {
+          code: "source_offline",
+          id: snapshot.id,
+          message: "Used retained graph pixels because no image source could be decoded",
+        },
+      ],
+    };
+  } catch (error) {
+    if (error instanceof PhotoctlError) throw error;
+    if (!(error instanceof SourceEvaluationError))
+      throw new PhotoctlError("decoder_unavailable", errorMessage(error), { id: snapshot.id });
   }
   throw new PhotoctlError(
     "file_offline",

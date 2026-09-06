@@ -24,6 +24,7 @@ import {
   DevelopRegionOutsideError,
   materializePreview,
   evaluateGraphNode,
+  evaluateRetainedGraphNode,
   PreviewDestinationError,
   PreviewCoordinator,
   readActiveDevelopState,
@@ -233,6 +234,27 @@ export async function showCommand(
               ),
           };
         }
+        yield {
+          source: pinned,
+          fallback: "source_offline",
+          retained: true,
+          render: async () => {
+            const evaluated = await evaluateRetainedGraphNode({
+              database: handle,
+              libraryPath: handle.path,
+              photoId: id,
+              nodeId: document!.outputNodeId,
+            });
+            return {
+              image: await readArtifactImage(
+                evaluated.artifact.path,
+                evaluated.artifact.artifactHash,
+              ),
+              frame: await loadBaseProjection(handle, id, evaluated),
+              sourceTier: evaluated.sourceTier,
+            };
+          },
+        };
       },
     );
     const tags = await handle.query<{ tag: string }>(
@@ -254,7 +276,13 @@ export async function showCommand(
       : false;
     if (xmpStale)
       warnings.push({ code: "xmp_stale", id, message: "The source XMP changed after it was read" });
-    const sourceWarning = graphSourceWarning(id, materialized.candidate.fallback);
+    const sourceWarning = materialized.candidate.retained
+      ? {
+          code: "source_offline" as const,
+          id,
+          message: "Used retained graph pixels because no image source could be decoded",
+        }
+      : graphSourceWarning(id, materialized.candidate.fallback);
     if (sourceWarning && !warnings.some((warning) => warning.code === sourceWarning.code)) {
       warnings.push(sourceWarning);
     }
@@ -434,6 +462,7 @@ async function materializeWithFallback(
   },
   candidates: () => AsyncGenerator<
     Pick<GraphSourceCandidate, "source" | "fallback"> & {
+      retained?: boolean;
       render: NonNullable<Parameters<typeof materializePreview>[0]["render"]>;
     }
   >,
@@ -460,6 +489,7 @@ async function materializeWithFallback(
       if (error instanceof DevelopRegionOutsideError) {
         throw new PhotoctlError("usage", "--region does not intersect the visible image");
       }
+      if (error instanceof PhotoctlError) throw error;
       if (error instanceof PreviewDestinationError) {
         throw new PhotoctlError("volume_readonly", error.message, {
           path: error.path,
@@ -498,5 +528,6 @@ async function evaluatePreviewGraph(
   return {
     image: await readArtifactImage(evaluated.artifact.path),
     frame: await loadBaseProjection(context.handle, context.id, evaluated),
+    sourceTier: evaluated.sourceTier,
   };
 }

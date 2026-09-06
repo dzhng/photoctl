@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import { readFile } from "node:fs/promises";
+import { relightDataSchema } from "@photoctl/protocol";
 import { fillUpscaleFixture, fixtureCommand, success } from "./fill-upscale-fixture.js";
 
 test("relight validates every required control before provider work or revision change", async () => {
@@ -30,7 +31,7 @@ test("relight validates every required control before provider work or revision 
   }
 });
 
-test("relight preserves the exact-base refusal before provider work or revision change", async () => {
+test("relight accepts reduced input and removal restores the available original", async () => {
   const fixture = await fillUpscaleFixture();
   try {
     fixture.fill.source = async () => ({
@@ -61,11 +62,7 @@ test("relight preserves the exact-base refusal before provider work or revision 
     const before = success(await fixtureCommand(fixture, "show", [fixture.id])) as {
       render_hash: string;
     };
-    const beforeLayers = success(await fixtureCommand(fixture, "layer", ["list", fixture.id])) as {
-      revision_id: string;
-    };
-
-    const refused = await fixtureCommand(fixture, "relight", [
+    const result = await fixtureCommand(fixture, "relight", [
       fixture.id,
       "--azimuth",
       "35",
@@ -74,23 +71,23 @@ test("relight preserves the exact-base refusal before provider work or revision 
       "--intensity",
       "0.75",
     ]);
-    expect(refused).toMatchObject({ ok: false, code: "usage" });
+    const edit = relightDataSchema.parse(success(result));
+    expect(edit).toMatchObject({
+      source_context: { tier: "pinned-preview", pixel_scale: 0.5, resolution_limited: true },
+      upscale: { target: { w: 40, h: 30 } },
+    });
+    success(await fixtureCommand(fixture, "layer", ["remove", fixture.id, edit.layer_id]));
     const after = success(await fixtureCommand(fixture, "show", [fixture.id])) as {
       render_hash: string;
     };
-    const afterLayers = success(await fixtureCommand(fixture, "layer", ["list", fixture.id])) as {
-      revision_id: string;
-    };
     expect(after.render_hash).toBe(before.render_hash);
-    expect(afterLayers.revision_id).toBe(beforeLayers.revision_id);
-    expect(fixture.generationCalls()).toBe(0);
-    expect(fixture.upscaleCalls()).toBe(0);
+    expect(fixture.generationCalls()).toBe(1);
   } finally {
     await fixture.close();
   }
 });
 
-test("relight refuses crop and rotation geometry before provider work", async () => {
+test("relight accepts cropped quarter-turn geometry and removal restores its viewport", async () => {
   const fixture = await fillUpscaleFixture();
   try {
     const developed = await fixtureCommand(fixture, "develop", [
@@ -105,23 +102,30 @@ test("relight refuses crop and rotation geometry before provider work", async ()
       render_hash: string;
     };
 
-    expect(
-      await fixtureCommand(fixture, "relight", [
-        fixture.id,
-        "--azimuth",
-        "35",
-        "--elevation",
-        "60",
-        "--intensity",
-        "0.75",
-      ]),
-    ).toMatchObject({ ok: false, code: "usage" });
+    const edit = relightDataSchema.parse(
+      success(
+        await fixtureCommand(fixture, "relight", [
+          fixture.id,
+          "--azimuth",
+          "35",
+          "--elevation",
+          "60",
+          "--intensity",
+          "0.75",
+        ]),
+      ),
+    );
+    expect(edit).toMatchObject({
+      generation: { returned: { w: 10, h: 20 } },
+      upscale: { target: { w: 10, h: 20 } },
+    });
+    success(await fixtureCommand(fixture, "layer", ["remove", fixture.id, edit.layer_id]));
     const after = success(await fixtureCommand(fixture, "layer", ["list", fixture.id])) as {
       revision_id: string;
       render_hash: string;
     };
-    expect(after).toMatchObject(before);
-    expect(fixture.generationCalls()).toBe(0);
+    expect(after.render_hash).toBe(before.render_hash);
+    expect(fixture.generationCalls()).toBe(1);
     expect(fixture.upscaleCalls()).toBe(0);
   } finally {
     await fixture.close();

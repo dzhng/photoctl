@@ -1,6 +1,56 @@
 import { reimagineDataSchema } from "@photoctl/protocol";
+import { loadActiveDocument } from "@photoctl/render";
 import { expect, test } from "vitest";
 import { fillUpscaleFixture, fixtureCommand, success } from "./fill-upscale-fixture.js";
+
+test("full-frame upscale-only refresh preserves generation and retains the last successful upscale on failure", async () => {
+  const fixture = await fillUpscaleFixture({ generationMode: "smallerdims" });
+  try {
+    const edit = reimagineDataSchema.parse(
+      success(await fixtureCommand(fixture, "reimagine", [fixture.id, "--prompt", "twilight"])),
+    );
+    const refresh = success(
+      await fixtureCommand(fixture, "layer", [
+        "refresh",
+        fixture.id,
+        edit.layer_id,
+        "--from",
+        edit.upscale.node!,
+      ]),
+    ) as { upscale: { node: string }; executions: unknown[]; render_hash: string };
+    expect(fixture.generationCalls()).toBe(1);
+    expect(fixture.upscaleCalls()).toBe(2);
+    expect(refresh.upscale.node).not.toBe(edit.upscale.node);
+    expect(refresh.executions).toMatchObject([
+      { kind: "generate", node: edit.generation.node, reused: true },
+      { kind: "upscale", reused: false },
+    ]);
+    const beforeFailure = await loadActiveDocument(fixture.handle, fixture.id);
+    fixture.replaceUpscaleMode("transport-failure");
+    const failed = success(
+      await fixtureCommand(fixture, "layer", [
+        "refresh",
+        fixture.id,
+        edit.layer_id,
+        "--from",
+        refresh.upscale.node,
+      ]),
+    ) as { render_hash: string; upscale: { node: string }; executions: unknown[] };
+    expect((await loadActiveDocument(fixture.handle, fixture.id))!.roots.output).toBe(
+      beforeFailure!.roots.output,
+    );
+    expect(failed.upscale.node).toBe(refresh.upscale.node);
+    expect(failed.upscale).toMatchObject({ executed: true, density_satisfied: true });
+    expect(failed.executions).toMatchObject([
+      { kind: "generate", reused: true },
+      { kind: "upscale", reused: true },
+    ]);
+    expect(fixture.generationCalls()).toBe(1);
+    expect(fixture.upscaleCalls()).toBe(3);
+  } finally {
+    await fixture.close();
+  }
+});
 
 test("reimagine keeps successful generation active when density matching fails", async () => {
   const fixture = await fillUpscaleFixture({

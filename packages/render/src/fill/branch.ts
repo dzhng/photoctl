@@ -339,7 +339,7 @@ function sameRect(
   return left.x === right.x && left.y === right.y && left.w === right.w && left.h === right.h;
 }
 
-function asUpscaleIdentity(
+export function asUpscaleIdentity(
   value: unknown,
   upscale: GraphNodeRecord | undefined,
 ): FillUpscaleIdentity | undefined {
@@ -431,7 +431,7 @@ export async function directUpscaleChildren(
   return matches;
 }
 
-async function inspectModifierPrefix(
+export async function inspectModifierPrefix(
   database: GraphDatabase,
   photoId: string,
   root: string,
@@ -449,7 +449,7 @@ async function inspectModifierPrefix(
   return { nodes, terminal };
 }
 
-function providerFromExecution(
+export function providerFromExecution(
   execution: GraphNodeRecord["executions"][number],
 ): ExternalExecutionProvenance | undefined {
   const value = asRecord(execution.providerProvenance);
@@ -523,7 +523,7 @@ function validPaidNode(node: GraphNodeRecord, kind: "generate" | "upscale"): boo
   );
 }
 
-function pinnedExecution(node: GraphNodeRecord) {
+export function pinnedExecution(node: GraphNodeRecord) {
   const executionId = asRecord(asRecord(node.parameters)?.request)?.execution_id;
   return node.executions.find(
     (execution) =>

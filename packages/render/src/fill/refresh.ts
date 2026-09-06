@@ -367,7 +367,7 @@ export async function refreshFillLayer(
 }
 
 export function resolveFillRefreshTarget(
-  branch: FillBranchDescriptor,
+  branch: Pick<FillBranchDescriptor, "generation" | "upscale">,
   from: string | undefined,
 ): { id: string; kind: "generate" | "upscale" } {
   const candidates = [branch.generation, ...(branch.upscale ? [branch.upscale] : [])];

@@ -27,7 +27,7 @@ import {
 } from "./recipes.js";
 import type { ImageNodeKind, JsonValue, SourceExecutionProvenance } from "./types.js";
 import type { ExternalExecutionProvenance } from "./types.js";
-import { warningCodes, type ProviderEvent } from "@photoctl/protocol";
+import { PhotoctlError, warningCodes, type ProviderEvent } from "@photoctl/protocol";
 import { z } from "zod";
 import { renderSourceExecution } from "../source-render.js";
 import type { ExifOrientation } from "../coordinates.js";
@@ -76,6 +76,7 @@ export interface EvaluatedNode {
   evaluationHash: string;
   executionId: string;
   reused: boolean;
+  sourceTier?: ImageSource["kind"];
 }
 
 export class SourceEvaluationError extends Error {
@@ -127,6 +128,21 @@ export interface EvaluateGraphNodeRequest {
 }
 
 export async function evaluateGraphNode(request: EvaluateGraphNodeRequest): Promise<EvaluatedNode> {
+  return await evaluateGraph(request, false);
+}
+
+/** Rebuild deterministic descendants from verified retained nodes; no source or provider callbacks. */
+export async function evaluateRetainedGraphNode(
+  request: Pick<EvaluateGraphNodeRequest, "database" | "libraryPath" | "photoId" | "nodeId">,
+): Promise<EvaluatedNode> {
+  const { database, libraryPath, photoId, nodeId } = request;
+  return await evaluateGraph({ database, libraryPath, photoId, nodeId }, true);
+}
+
+async function evaluateGraph(
+  request: EvaluateGraphNodeRequest,
+  retainedOnly: boolean,
+): Promise<EvaluatedNode> {
   const memo = new Map<string, Promise<EvaluatedNode>>();
   const evaluate = async (nodeId: string): Promise<EvaluatedNode> => {
     let pending = memo.get(nodeId);
@@ -136,6 +152,7 @@ export async function evaluateGraphNode(request: EvaluateGraphNodeRequest): Prom
         nodeId,
         evaluate,
         nodeId === request.nodeId ? request.executionId : undefined,
+        retainedOnly,
       );
       memo.set(nodeId, pending);
     }
@@ -287,6 +304,7 @@ async function evaluateOne(
   nodeId: string,
   evaluate: (nodeId: string) => Promise<EvaluatedNode>,
   requestedExecutionId: string | undefined,
+  retainedOnly: boolean,
 ): Promise<EvaluatedNode> {
   const node = await loadNode(request.database, request.photoId, nodeId);
   const deterministic = imageNodeRegistry[node.kind].deterministic;
@@ -310,7 +328,16 @@ async function evaluateOne(
         nodeId,
       );
       if (pinned) return { ...pinned, reused: true };
-      throw new Error(`Pinned external artifact is unavailable: ${pinnedExecutionId}`);
+      throw new PhotoctlError(
+        "file_offline",
+        `Pinned external artifact is unavailable: ${pinnedExecutionId}`,
+        {
+          id: request.photoId,
+          node_id: nodeId,
+          execution_id: pinnedExecutionId,
+          reason: "retained_artifact_unavailable",
+        },
+      );
     }
   }
   if (!deterministic && requestedExecutionId) {
@@ -332,8 +359,25 @@ async function evaluateOne(
       [request.photoId, requestedExecutionId],
     );
     if (exists.rows[0]?.exists) {
-      throw new Error(`Execution artifact is unavailable: ${requestedExecutionId}`);
+      throw new PhotoctlError(
+        "file_offline",
+        `Execution artifact is unavailable: ${requestedExecutionId}`,
+        {
+          id: request.photoId,
+          node_id: nodeId,
+          execution_id: requestedExecutionId,
+          reason: "retained_artifact_unavailable",
+        },
+      );
     }
+  }
+  if (retainedOnly && deterministic) {
+    const retained = await readRetainedGraphOutput({ ...request, nodeId });
+    if (retained) return { ...retained, reused: true };
+    if (node.kind === "source" && node.recipeVersion === 1)
+      throw new SourceEvaluationError(
+        new Error("No verified retained source execution is available"),
+      );
   }
   const inputs = await Promise.all(node.inputNodeIds.map(evaluate));
   let source: { image: LinearImage; provenance: SourceExecutionProvenance } | undefined;
@@ -444,14 +488,7 @@ async function evaluateOne(
     [request.photoId],
   );
   const frame = frameForNode(node.kind, node.parameters, photo.rows[0]!, artifact, inputFrames[0]);
-  const inputTier = inputs[0]
-    ? (
-        await request.database.query<{ render_source_tier: string | null }>(
-          "SELECT render_source_tier FROM node_executions WHERE photo_id = $1 AND execution_id = $2",
-          [request.photoId, inputs[0].executionId],
-        )
-      ).rows[0]?.render_source_tier
-    : null;
+  const inputTier = inputs[0]?.sourceTier;
   const stored = await request.database.transaction(async (transaction) => {
     await registerPublishedArtifact(transaction, artifact);
     await transaction.query(
@@ -1157,6 +1194,7 @@ async function loadByExecutionId(
     node_id: string;
     evaluation_hash: string;
     output_artifact_hash: string;
+    render_source_tier: ImageSource["kind"] | null;
     media_type: string;
     bytes: string;
     w: number;
@@ -1165,7 +1203,7 @@ async function loadByExecutionId(
   }>(
     `SELECT execution.execution_id, execution.node_id, execution.evaluation_hash,
        execution.output_artifact_hash, artifact.media_type, artifact.bytes::text,
-       artifact.w, artifact.h, artifact.artifact_available
+       artifact.w, artifact.h, artifact.artifact_available, execution.render_source_tier
      FROM node_executions AS execution
      JOIN image_artifacts AS artifact
        ON artifact.artifact_hash = execution.output_artifact_hash
@@ -1207,5 +1245,6 @@ async function loadByExecutionId(
     },
     evaluationHash: row.evaluation_hash,
     executionId: row.execution_id,
+    ...(row.render_source_tier ? { sourceTier: row.render_source_tier } : {}),
   };
 }

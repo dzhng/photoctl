@@ -32,19 +32,25 @@ export async function createReimagineLayer(
     sourceContext: SourceContextDensity;
     dependencies: ReimagineDependencies;
     upscale: FillUpscaleDependencies;
+    state?: Awaited<ReturnType<typeof readActiveDevelopState>>;
+    inputEvaluation?: import("./graph/evaluator.js").EvaluatedNode;
   },
 ) {
-  const state = await readActiveDevelopState(database, {
-    photoId: request.photoId,
-    orientation: request.orientation,
-  });
-  const inputEvaluation = await evaluateGraphNode({
-    database,
-    libraryPath,
-    photoId: request.photoId,
-    nodeId: state.pixelOutputNodeId,
-    source: request.source,
-  });
+  const state =
+    request.state ??
+    (await readActiveDevelopState(database, {
+      photoId: request.photoId,
+      orientation: request.orientation,
+    }));
+  const inputEvaluation =
+    request.inputEvaluation ??
+    (await evaluateGraphNode({
+      database,
+      libraryPath,
+      photoId: request.photoId,
+      nodeId: state.pixelOutputNodeId,
+      source: request.source,
+    }));
   const input = await readArtifactImage(
     inputEvaluation.artifact.path,
     inputEvaluation.artifact.artifactHash,

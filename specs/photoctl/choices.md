@@ -5736,3 +5736,88 @@
   numerical/grid-edge departures must survive native detail and colored-light review. If that
   fails, reslice the responsible seam rather than weaken the photographic target.
 - **Confidence:** Medium. Production policy and whole-camera acceptance remain later gates.
+
+### Full-frame refresh — Reuse an unchanged viewport recipe before normalizing geometry
+
+- **When:** Full-frame pass B, 2026-09-06.
+- **The choice:** A photograph is cropped and generated while online, then its original
+  disappears. Refresh first reconstructs the selected layer's earlier layers using today's
+  settings. If that recipe already describes the captured physical rectangle, it keeps the
+  recipe, so its verified retained pixels remain usable. If the crop has moved, the shared
+  photographic planner projects today's color adjustments and earlier layers into the old
+  rectangle. It does not use the selected generation or later layers as input.
+- **The gap:** The plan required current settings, fixed coordinates and retained-only input
+  but did not prescribe how to preserve ordinary recipe identity when no geometry changed.
+- **The reach:** Future planner changes must not normalize every refresh to a new recipe
+  gratuitously: that would make a valid retained-only input unreachable. The equality check
+  compares coordinates and intended sampling, never artifact bytes.
+- **Verdict:** **Sound.** One photographic planner owns both forms, and changed recipes do
+  not silently receive stale retained inputs.
+- **Confidence:** Medium.
+
+### Full-frame refresh — Retained input follows existing fallback quality ranking
+
+- **When:** Full-frame pass B, 2026-09-06.
+- **The choice:** The original disappears but a small pinned preview and a previously rendered
+  native version of the same photographic input remain. Generation uses the verified native
+  render rather than sending the smaller preview. With no decodable source at all, it may use
+  that same exact retained input. Reconnecting first tries the live original again. All choices
+  name one snapped photographic recipe, not a different input policy or an old complete stack.
+- **The gap:** Retained-only support was explicit; its ordering against a usable but smaller
+  pinned fallback was not. Existing export already ranks retained current pixels this way.
+- **The reach:** The shared source-selection boundary owns ranking and reports the retained
+  execution's original-source density, not its generated detail. Missing/corrupt retained
+  input cannot authorize a replacement purchase.
+- **Verdict:** **Sound.** It preserves the best eligible current input using the established
+  retained-output reader and quality ordering, while source failures stop before paid work.
+- **Confidence:** High.
+
+### Full-frame refresh — Failed upscale-only refresh preserves the previous purchase
+
+- **When:** Full-frame pass B, 2026-09-06.
+- **The choice:** A layer already has a usable upscale. The user explicitly retries that
+  upscale and the provider fails. The failure remains inspectable, but the layer keeps its
+  previous upscale and generation, rather than switching to smaller generated pixels. A
+  successful generation refresh can still keep its new generation if optional density work
+  fails, matching the existing creation contract.
+- **The gap:** The pass required no extra generation for upscale-only refresh but did not
+  restate the existing masked-fill failure fallback.
+- **The reach:** Refresh replies distinguish reused executions from new ones; retry failures
+  never pretend a paid output was successfully replaced.
+- **Verdict:** **Sound.** The full-frame path retains the established refresh failure semantics
+  and uses the same attempt/density/publication owners.
+- **Confidence:** High.
+
+### Full-frame refresh — Missing source bytes permit deterministic retained-graph evaluation
+
+- **When:** Full-frame pass B, 2026-09-06.
+- **The choice:** A retained photographic input can support a new purchase while both original
+  and preview files are absent. The new combined output has not been rendered yet. Show and
+  export therefore get one final evaluation policy after their normal source attempts fail:
+  reuse verified retained executions at their exact graph nodes, then run only deterministic
+  descendants such as compositing. A node is a saved image operation; using its own saved
+  result means earlier layers are not applied twice. A missing paid result is an error, not
+  permission to invoke its provider. Reconnecting uses normal live-source evaluation first.
+- **The gap:** The spec required the complete retained-only lifecycle, but the existing reader
+  could reuse only a finished current output. It could not create the first new composite
+  without descending to the unavailable original.
+- **The reach:** This is an explicit policy on the existing evaluator, not a second evaluator
+  or source type. Its public entry accepts no source/provider callbacks and strips any extra
+  runtime fields. Exact execution source tier accompanies pixels into preview metadata, so
+  retained generated detail cannot claim that the original source is native.
+- **Verdict:** **Sound.** The existing registry, cache identity, frame validation and store own
+  every evaluation; only the permitted source of reusable deterministic inputs changes.
+- **Confidence:** Medium.
+
+### Full-frame refresh — Unavailable retained bytes use the existing unavailable exit class
+
+- **When:** Full-frame pass B, 2026-09-06.
+- **The choice:** Missing or corrupt pinned execution bytes report `file_offline` with a
+  structured `retained_artifact_unavailable` reason at the evaluator boundary. Consumers
+  preserve the typed error instead of misreporting a decoder failure.
+- **The gap:** Static review exposed an untyped retained-artifact failure. The existing
+  offline contract reserves exit 69 for required missing or corrupt cached artifacts;
+  `not_found` would instead classify it as a data lookup failure (exit 65).
+- **The reach:** No new protocol code, migration, retry or paid replay is introduced.
+- **Verdict:** **Sound.** Reuses the established unavailable contract.
+- **Confidence:** High.

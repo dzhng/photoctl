@@ -13,6 +13,7 @@ import {
   assertNewRasterSize,
   canvasGeometryPlan,
   frameAtRaster,
+  type RenderFrame,
 } from "./frame.js";
 import { loadGeometryAncestry, geometryNodeParametersSchema } from "./geometry-intent.js";
 import type { DevelopDict } from "../develop/dict.js";
@@ -159,6 +160,8 @@ export async function planPhotographicOutput(
     geometryNodeId?: string;
     layers: readonly RevisionLayer[];
     fixedInputCheckpointNodeId?: string;
+    /** Refresh a captured photographic input without re-authoring its physical viewport. */
+    fixedViewportFrame?: RenderFrame;
   },
 ): Promise<Pick<CommitRevisionRequest, "nodes" | "rootUpdates">> {
   const base = { nodeId: request.baseNodeId };
@@ -229,13 +232,15 @@ export async function planPhotographicOutput(
         ...parseRenderFrame(latest.input_frame).visibleBasePolygon.map(([x, y]) => ({ x, y })),
         ...admissibleCanvasSupport([], [...borderFrames.values()]).flat(),
       ]);
-    const tail = request.fixedInputCheckpointNodeId
-      ? [savedRenderFrame(outer)]
-      : canvasViewportStages(outer, latest, {
-          geometry: controls,
-          crop_activation: ancestry.parameters.crop_activation,
-          aspect_activation: ancestry.parameters.aspect_activation,
-        }).map(savedRenderFrame);
+    if (request.fixedViewportFrame) outer = request.fixedViewportFrame;
+    const tail =
+      request.fixedInputCheckpointNodeId || request.fixedViewportFrame
+        ? [savedRenderFrame(outer)]
+        : canvasViewportStages(outer, latest, {
+            geometry: controls,
+            crop_activation: ancestry.parameters.crop_activation,
+            aspect_activation: ancestry.parameters.aspect_activation,
+          }).map(savedRenderFrame);
     outer = parseRenderFrame(tail.at(-1)!);
     canvas = {
       frame: savedRenderFrame(outer),
@@ -258,6 +263,20 @@ export async function planPhotographicOutput(
           stages: stagesAfter(checkpoint?.sequence ?? 0),
         };
       }),
+    };
+  } else if (request.fixedViewportFrame) {
+    const input = await loadLogicalFrame(transaction, request.photoId, source.developInputNodeId);
+    canvas = {
+      frame: savedRenderFrame(request.fixedViewportFrame),
+      uncovered: hasUncoveredCanvas(request.fixedViewportFrame, [input], []),
+      viewport_stages: [savedRenderFrame(request.fixedViewportFrame)],
+      base_stages: [],
+      layers: enabled.map((layer) => ({
+        opacity: layer.opacity,
+        blend: layer.blend,
+        frame: null,
+        stages: [],
+      })),
     };
   } else if (controls.crop) {
     const input = await loadLogicalFrame(transaction, request.photoId, source.developInputNodeId);

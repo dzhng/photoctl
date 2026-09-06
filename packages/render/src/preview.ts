@@ -58,7 +58,7 @@ export async function materializePreview(request: {
   renderHash: string;
   photo: { orientation: ExifOrientation; w: number; h: number };
   source: ImageSource;
-  render?: () => Promise<{ image: Image16; frame: RenderFrame }>;
+  render?: () => Promise<{ image: Image16; frame: RenderFrame; sourceTier?: PreviewSourceTier }>;
   logicalFrame?: RenderFrame;
   sourceTier?: PreviewSourceTier;
   view: ViewSpec;
@@ -124,7 +124,7 @@ export async function materializePreview(request: {
           return { path: masterPath, artifact: existing, created: false };
         const rendered = await render();
         await writePreviewArtifact(masterPath, await encodeJpeg(rendered.image), {
-          sourceTier: request.sourceTier ?? request.source.kind,
+          sourceTier: rendered.sourceTier ?? request.sourceTier ?? request.source.kind,
           sourceDimensions: { w: rendered.image.w, h: rendered.image.h },
           frame: rendered.frame,
         });
@@ -171,7 +171,7 @@ export async function materializePreview(request: {
         );
         const bytes = await encodeJpeg({ ...rendered.image, w: plan.w, h: plan.h, data: pixels });
         const provenance = {
-          sourceTier: request.sourceTier ?? request.source.kind,
+          sourceTier: rendered.sourceTier ?? request.sourceTier ?? request.source.kind,
           sourceDimensions: { w: rendered.image.w, h: rendered.image.h },
           frame: plan.frame,
         };

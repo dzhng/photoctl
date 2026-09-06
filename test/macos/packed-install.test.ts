@@ -8,6 +8,7 @@ import { spawnPhotoctl } from "@photoctl/test-harness";
 import { registerAgentPreviewJourney } from "../journeys/agent-preview.js";
 import { registerOutpaintJourney } from "../journeys/outpaint.js";
 import { registerColdOutpaintJourney } from "../journeys/outpaint-cold.js";
+import { registerFullFrameJourney } from "../journeys/full-frame.js";
 
 const execute = promisify(execFile);
 
@@ -143,4 +144,15 @@ registerColdOutpaintJourney((args, options = {}) =>
     cwd: scratch,
     env: { ...options.env, PHOTOCTL_NO_DAEMON: "1" },
   }),
+);
+
+registerFullFrameJourney(
+  (args, options = {}) =>
+    spawnPhotoctl(args, {
+      ...options,
+      cliPath: binary,
+      cwd: scratch,
+      env: { ...options.env, PHOTOCTL_NO_DAEMON: "1" },
+    }),
+  "packed CLI preserves full-frame source promotion and explicit refresh lifecycle",
 );

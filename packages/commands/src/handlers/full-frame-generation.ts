@@ -1,6 +1,7 @@
 import { resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import {
   createReimagineLayer,
+  readActiveDevelopState,
   resolveUpscalePolicy,
   RevisionConflictError,
 } from "@photoctl/render";
@@ -67,13 +68,17 @@ export async function executeFullFrameGeneration(
         };
     const upscaleRegistry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
     const guardedPrompt = buildGuardedUpscalePrompt(request.prompt);
+    const state = await readActiveDevelopState(lease.handle, {
+      photoId: id,
+      orientation: photo.orientation,
+    });
     const result = await withGenerationSource(
       lease.handle,
       env,
       cwd,
       photo,
       dependencies,
-      async ({ source, sourceContext }) => {
+      async ({ source, sourceContext, inputEvaluation }) => {
         const policy = resolveUpscalePolicy({
           releaseDefaultModel: upscaleRegistry.releaseDefault,
           availableAdapterIds: upscaleRegistry.list().map(({ id: adapterId }) => adapterId),
@@ -92,6 +97,8 @@ export async function executeFullFrameGeneration(
           source,
           sourceContext,
           dependencies,
+          state,
+          inputEvaluation,
           upscale: {
             policy,
             prompt: guardedPrompt,
@@ -110,6 +117,7 @@ export async function executeFullFrameGeneration(
           },
         });
       },
+      state.pixelOutputNodeId,
     );
     await progress.advance(1);
     return {

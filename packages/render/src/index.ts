@@ -48,6 +48,8 @@ export * from "./retouch.js";
 export * from "./markup/flatten.js";
 export * from "./markup/state.js";
 export * from "./reimagine.js";
+export * from "./full-frame-branch.js";
+export * from "./full-frame-refresh.js";
 export * from "./generate.js";
 export { failProviderImageAttempts } from "./provider-images/attempts.js";
 export * from "./provider-images/inspection.js";

@@ -7,6 +7,8 @@ import {
   refreshFillLayer,
   resolveFillRefreshTarget,
   describeFillBranch,
+  prepareFullFrameRefresh,
+  refreshFullFrameLayer,
   loadActiveDocument,
   resolveLayerId,
   moveLayer,
@@ -286,7 +288,8 @@ export async function executeFillRefresh(
   const layerId = await resolveLayerId(handle, photoId, layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  const branch = await describeFillBranch(handle, photoId, selected);
+  const fullFrame = await prepareFullFrameRefresh(handle, photoId, layerId, from);
+  const branch = fullFrame?.branch ?? (await describeFillBranch(handle, photoId, selected));
   if (!branch) throw new Error("Layer does not contain a refreshable fill branch");
   const generationParameters = branch.generation.parameters as { model?: unknown } | null;
   if (typeof generationParameters?.model !== "string") {
@@ -318,8 +321,9 @@ export async function executeFillRefresh(
   const run = async (sourceInput: {
     source: import("@photoctl/render").EvaluateGraphNodeRequest["source"];
     sourceContext: import("@photoctl/render").SourceContextDensity;
-  }) =>
-    await refreshFillLayer(handle, handle.path, {
+    inputEvaluation?: import("@photoctl/render").EvaluatedNode;
+  }) => {
+    const refreshRequest: Parameters<typeof refreshFillLayer>[2] = {
       photoId,
       layer,
       from: target.id,
@@ -338,7 +342,15 @@ export async function executeFillRefresh(
             },
           }
         : {}),
-    });
+    };
+    return fullFrame
+      ? await refreshFullFrameLayer(handle, handle.path, {
+          ...refreshRequest,
+          prepared: fullFrame,
+          inputEvaluation: sourceInput.inputEvaluation,
+        })
+      : await refreshFillLayer(handle, handle.path, refreshRequest);
+  };
   if (target.kind === "upscale") {
     const pinnedSource =
       dependencies.source ??
@@ -347,7 +359,15 @@ export async function executeFillRefresh(
       });
     return await run({ source: pinnedSource, sourceContext: branch.sourceContext });
   }
-  return await withGenerationSource(handle, env, cwd, photo, dependencies, run);
+  return await withGenerationSource(
+    handle,
+    env,
+    cwd,
+    photo,
+    dependencies,
+    run,
+    fullFrame?.inputNodeId,
+  );
 }
 
 async function fillGenerationCommand(
