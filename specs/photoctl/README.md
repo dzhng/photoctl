@@ -13,15 +13,37 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last reconciled: 2026-09-06. The spec remains in implementation; staging was pushed through
-`a5ff42b`, including existing-photo path lookup and source-only SAM canvas integration.*
+*Last reconciled: 2026-09-06. The spec remains in implementation; Git owns commit and push status.*
 
 Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
 below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
 
-**Current pickup: finish outpaint consumers and the corrected default runtime; close the audited command omissions.**
+**Current pickup: finish outpaint consumers and close the audited command omissions.**
 
-Run the independent command, canvas, and runtime-build passes in parallel. Canvas sampling,
+**User-added import requirement:** permanent real camera JPEG fixtures and public
+non-RAW pipeline coverage; default RAW/JPEG companions to one RAW-led logical photo,
+retain both originals, and provide explicit camera-JPEG access and raw/jpeg/both
+import alternatives. The user requires a direct development-schema cutover, not
+migrations or compatibility layers. [Paired import](slices/04-paired-import.md) owns
+the model, remaining lifecycle consumers and real-camera verification.
+
+**Current resource gate:** David approved a 5 GB peak-RSS regression budget on 2026-09-06.
+The [integrated full-resolution G6 run](assets/sam-runtime/merged-scene-resource.json) passes
+all three same-daemon requests at 3.477 GB peak RSS with the exact mask and one 1.264-second
+encoder run; clean shutdown is verified. Historical 3 GB
+failures stay recorded: the root acquisition checkpoint peaked at 4.407 GB and the isolated
+owned-projection checkpoint at 3.747 GB, preserving the exact mask. These are different
+builds, not a controlled memory comparison or a completed three-request acceptance run.
+[Resource evidence](assets/sam-runtime/README.md) owns the measurements and remaining buffer-lifetime
+work. The additional sixteen-input full-resolution cache check stays within 2.660 GB
+but records a timing-only failure at 4.124 seconds. Its single coordinated recheck passes
+all sixteen at 3.057 GB and 1.678 seconds maximum encode; substantial remaining browser
+activity prevents a causal explanation of the earlier outlier. A higher memory budget
+does not waive retention or latency checks. Native acquisition and
+ownership corrections are committed in `f42530e`. The user explicitly authorized permanent camera reference
+originals in Git; acquisition and provenance live under `fixtures/camera/`.
+
+Run the independent command, canvas, and remaining target-evidence passes in parallel. Canvas sampling,
 offline-to-online cache promotion and source-only SAM geometry are integrated; next is 12f3 generation wiring.
 Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
 Historical schema-v10–v12 and structured truncated-RAW fixture coverage are also integrated.
@@ -94,18 +116,21 @@ single/multi-mask references all fail detailed edges. Any extra refinement is a 
 [Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
 Docker's functional gate now consumes hash-verified models and runs the shared real-model test;
 the Mac default gate runs the same test and fails visibly without its documented weights.
-Public model hosting remains unfinished. The corrected ORT initialization patch plus integrated
-bounded diagnostic transport passes the unchanged Linux photographic CLI gate with an explicit
-candidate-library override, preserving warnings as NDJSON. The default runtime still selects the old
-archive: the active acquisition pass must make host, Docker and release builds consume one pinned
-source/patch recipe through Cargo. Its clean default Linux build, host/x64 and packaged-target checks
-remain open. [Runtime evidence](assets/ort-lazy-proof/README.md) separates the override proof from
-release-default acceptance; neither stderr filtering nor a model change is acceptable.
+Public model hosting remains unfinished. Cargo now owns one pinned corrected ORT source/patch
+recipe for native host, Docker and release builds, with no competing archive download or runtime
+override. The [default-acquisition evidence](assets/ort-acquisition/README.md) records passing
+ARM64 Mac/Linux native-load, packed-load and unchanged model/CLI gates; diagnostics remain NDJSON.
+The merged Mac default build also passes all 3 runtime/model checks and 71 native tests. Other
+target builds and older Linux compatibility remain open: workflow wiring is not acceptance, and
+release tags must not be used merely to test because they publish packages. The image addon's
+shared macOS floor does not imply Node or Swift-helper support on that OS.
 
 **External evidence still outstanding:**
-G3 still requires an SSH-capable Mac session. Public CC0 RAW fixtures now cover lossless-L and lossy
-alongside uncompressed; lossless-M/S, portrait orientation, the real-drive path, and actual Classic
-sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
+G3 still requires an SSH-capable Mac session. Permanent user-provided camera references now cover
+uncompressed, lossy, full-size and reduced lossless RAWs, portrait orientations and real JPEG
+companions; [fixture provenance](../../fixtures/camera/README.md) distinguishes these from public
+CC0 assets and does not guess reduced-lossless M/S labels. The real-drive acceptance journey and
+actual Classic sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
 require their explicitly configured credentials and consent; an ambient key is not acceptance evidence.
 
 **Full-source gate correction:** the native image packages now use optimized development builds,
@@ -129,6 +154,7 @@ bypasses old derived caches without deleting history or replaying paid generatio
 Update this handoff after each pass and continue to the next unfinished requirement.
 
 ### Global TODO
+- [ ] Real camera JPEG pipeline and paired-by-default RAW/JPEG logical photos — `slices/04-paired-import.md`
 - [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
 - [x] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
 - [x] 01b universal image source → show → offline preview → export (A7C II embedded-container proof) — `slices/01-first-jpeg.md`
