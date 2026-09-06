@@ -1,11 +1,40 @@
 # CI failure triage
 
+## Current integrated result
+
+[Run 34036649789](https://github.com/dzhng/photoctl/actions/runs/34036649789), on
+`b8728d7` with both daemon fixes, passes all 18 daemon lifecycle cases and the
+embedding drain (89.516 seconds). The full host gate still fails: 48 failing files,
+152 passing files, 97 failing tests and 985 passing tests. Of the failures, 96 hit
+test deadlines and one asserts on a startup deadline. Retained logs contain no
+socket EPIPE crash. Missing-database logs are consistent with timed-out tests
+removing catalogs while child work continues, not evidence of a new database defect.
+These targeted passes do not make the whole gate green or establish host saturation.
+
+The existing Test step now records processor count, initial memory totals and
+five-second `vmstat` samples alongside failed-test daemon logs. The first vmstat row
+is a since-boot average; subsequent rows describe intervals. Use timestamps to
+compare runnable/blocked work, free memory, swapping, CPU busy/idle and I/O wait
+with failures before changing scheduling or deadlines. This is aggregate host data,
+not per-process attribution, proof of OOM or a production memory limit. No process
+arguments, environment, catalogs or images are sampled; the failure artifact retains
+the small log for the existing three days.
+
+The actual workflow shell was checked in an existing Debian Linux container with
+procps vmstat: dummy test exits 0 and 23 remained unchanged, both initial and interval
+rows were recorded, and the sampler was absent after both exits. YAML parsing and
+artifact path checks passed. The old workflow failed the missing-telemetry assertion.
+This is shell/cleanup evidence, not Ubuntu CI pressure evidence; the next integrated
+run must supply that. Scratch proof is `/private/tmp/photoctl-ci-host-load-proof.sOKG2v`.
+
+## Earlier uninstrumented runs
+
 Completed [run 34033139818](https://github.com/dzhng/photoctl/actions/runs/34033139818)
 on `7ceed67` has 25 failing files and 53 failing tests, with 173 files and 1,018 tests passing.
 Several daemon startups now expose child exit 1 with no signal; other requests report an
 unresponsive daemon. This is not proof of OOM or a timeout-only defect. That run retained no
 artifacts, so the child stack traces were lost. CI now uses the job's temporary directory for
-host test processes and preserves only its daemon log files after test failure, for three days. No catalogs,
+host test processes and preserves daemon log files after test failure, for three days. No catalogs,
 images or environment dumps are uploaded. Docker-container logs are outside this scope.
 Read the retained host logs before changing startup behavior.
 This run predates the embedding drain fix; its 1,496-row failure does not test that correction.

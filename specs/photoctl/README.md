@@ -27,15 +27,13 @@ Do not spend time or tokens on speculative memory overengineering. Preserve hist
 measurements; changing the canary does not rewrite their results. SAM's separate encoder
 latency requirement is unchanged.
 
-**First priority: resolve the failing CI gate.** The [failure triage](assets/ci-triage.md)
-separates reproduced contract defects, stale fixtures and unresolved timing failures.
-Portable fixture wiring, stale assertions and offline export hints have focused fixes;
-daemon startup diagnostics are integrated, and the embedding drain now observes worker completion
-instead of counting provider responses. A reproduced disconnected control client no longer crashes
-the daemon with an unhandled socket error. Explicit startup now returns its verified status
-without a redundant second probe; the matching recovery regression passes.
-Runner timing behavior remains unresolved. No green full CI
-gate is claimed. Do not blindly increase timeouts or repin hashes.
+**First priority: resolve the failing CI gate.** The latest integrated run passes all
+daemon lifecycle cases and embedding drain, with no retained socket EPIPE crash. It
+still fails 97 tests: 96 test deadlines and one startup-deadline assertion. The
+[failure triage](assets/ci-triage.md) owns details and the next evidence: aggregate
+host-load samples retained alongside failed-test daemon logs. Read those samples
+before attributing failures to host saturation or changing scheduling. No green
+full CI gate is claimed; do not blindly increase timeouts or repin hashes.
 
 **Camera photographic acceptance remains open.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and

@@ -6144,3 +6144,20 @@
   for consistency with reimagine. If the user chooses similarity strength instead, reverse the
   wording for new requests under a new guidance version and retain old records unchanged.
 - **Confidence:** Medium.
+
+### CI pressure — Observe the host without collecting test data
+
+- **When:** CI host-load diagnostic pass, 2026-09-06.
+- **The choice:** When many CI tests exceed their deadlines, the test step records a CPU-count
+  and memory snapshot, then one small host-load sample every five seconds. A failed run retains
+  that text beside its existing daemon logs for three days. The sampler stops when the test shell
+  exits without replacing the test's exit code. It records no process arguments, environment,
+  images or catalogs. This can show a busy or swapping host, but cannot identify which process
+  owns memory or prove why a specific test failed.
+- **The gap:** Existing failures had no host-pressure observation, so increasing deadlines or
+  changing worker scheduling would be based on symptoms rather than measured contention.
+- **The reach:** Existing Linux runner tools provide the observation without a new dependency,
+  telemetry service or production setting. The first sample is a since-boot average, not an
+  interval; future diagnosis must respect that distinction and preserve historical failures.
+- **Verdict:** **Sound.** Collect proportionate aggregate evidence before changing execution policy.
+- **Confidence:** High.
