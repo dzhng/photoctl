@@ -75,6 +75,17 @@ Read-only ELF inspection of this Linux ARM64 debug addon found required symbol v
 that binary. These are observed requirements of this artifact, not the requirements of unbuilt
 release or x64 artifacts. No release workflow run was available to substitute for those gates.
 
+## Public model distribution
+
+Read-only repository verification on 2026-09-06 found no repository variables, releases
+or release-workflow runs; `PHOTOCTL_MODELS_BASE_URL` is absent. The Docker functional
+target requires that URL before downloading the normalized encoder/decoder pair.
+The committed manifests and hash-verifying fetcher are ready, but local model acceptance
+does not prove public distribution. A hosting choice and publication authorization are
+pending. Upload only the exact normalized model bytes, then verify public downloads into
+an empty scratch directory against the existing hashes; upstream checkpoints are not
+substitutes for these exported graphs. Do not publish a CLI release as a hosting experiment.
+
 ## Root integration
 
 The root build verified the same compiler/SDK/recipe identity and archive SHA before copying only

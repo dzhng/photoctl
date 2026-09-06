@@ -10,6 +10,11 @@ images or environment dumps are uploaded. Docker-container logs are outside this
 Read the retained host logs before changing startup behavior.
 This run predates the embedding drain fix; its 1,496-row failure does not test that correction.
 
+The later Docker functional gate also has a confirmed configuration prerequisite:
+[public model distribution](ort-acquisition/README.md#public-model-distribution) is not set up.
+Fixing host tests will not supply the missing model-download URL. Keep that external
+prerequisite separate from production defects and do not skip the model gate.
+
 ## Reproduced disconnected-client crash
 
 A bounded Linux ARM64/Node 24.20 comparison reproduced startup child exit 1 with an
