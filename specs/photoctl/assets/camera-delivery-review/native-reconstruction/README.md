@@ -130,3 +130,10 @@ or grid finding remained. Final focused gates passed: four LibRaw boundary tests
 installed native-package terms/source check. TypeScript workspace builds passed.
 The installed-package check followed an initial missing-CDDL red tarball witness.
 No root whole-spec gate was used as an iteration loop.
+
+Integration with the exact-output affine sampler passed four LibRaw boundary tests,
+78 native image tests and 17 decoder/color/reconstruction consumer tests. The merged
+release addon and TypeScript workspace built successfully. A fresh actual pack and
+installation passed the targeted native terms/source check; its six other installed
+journeys were not selected, so this is not whole-release acceptance. The integrated
+addon SHA-256 is `a585553d7a53dbde6aae7a3673bf507c1521e399f74c41002925bb3d53bacc5d`.

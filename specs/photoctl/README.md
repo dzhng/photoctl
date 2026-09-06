@@ -21,8 +21,10 @@ update this handoff, and continue until every requirement is verified—not mere
 **First priority: repair camera highlight rendering.** The public fixture gold exam exports all
 ten images, but photographic delivery remains **rejected**. Reduced-RGB striping is corrected
 and the unchanged public script verifies that correction with old caches retained. False magenta
-in bright lights remains. Next is reconstruction pass A: opt-in portable native recovery with
-unchanged disabled samples, before default-policy adoption. Preserve failure evidence and do not replace RAW with
+in bright lights remains in ordinary rendering. Reconstruction pass A is integrated: opt-in
+portable recovery passes bounded native visual review and preserves disabled samples.
+Next is pass B: effective decoder treatment, public diagnostics and cache identity before
+default-policy adoption. Preserve failure evidence and do not replace RAW with
 its camera JPEG, tune presets around decoder defects, or weaken the oracle.
 [Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;
 the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next native/public passes.

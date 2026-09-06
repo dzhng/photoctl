@@ -5840,3 +5840,49 @@
 - **Verdict:** **Sound.** Remove redundant work at its owner without substituting a
   different filter or skipping newly edited renders.
 - **Confidence:** High.
+
+### Native highlight recovery — Preserve complete physical cells at image edges
+
+- **When:** Reconstruction pass A, 2026-09-06.
+- **The choice:** Recovery estimates channel ratios from complete four-by-four pixel
+  neighborhoods in the decoder's physical grid. If a photo has one to three pixels
+  left over at its right or bottom edge, those samples remain unchanged. Rotating
+  the displayed image does not move these physical neighborhoods.
+- **The gap:** The plan required explicit partial-cell behavior but did not choose
+  padding, smaller edge neighborhoods or unchanged samples. Padding would invent
+  neighboring evidence that the reference algorithm never saw.
+- **The reach:** Tiny images without a complete cell also remain unchanged. An
+  applied status means the operation ran, not that every pixel was reconstructed;
+  visible edge defects would reopen this numerical choice during delivery review.
+- **Verdict:** **Sound.** Preserve the reference grid without invented samples.
+- **Confidence:** Medium.
+
+### Native highlight recovery — Retain fractional channel estimates
+
+- **When:** Reconstruction pass A, 2026-09-06.
+- **The choice:** A clipped lamp's missing channel is estimated using double-precision
+  ratio maps, and the estimate can only increase that channel. Unlike the integer
+  reference, the result keeps fractional values and brightness above display white.
+  Two small maps replace the need for another full white-balanced RGB image.
+- **The gap:** The plan required floating-point preservation but left intermediate
+  precision unspecified. Copying the reference's integer writes would discard the
+  very headroom the current camera pipeline preserves.
+- **The reach:** This is a floating-domain translation, not a promise of integer
+  bit parity. Its maps consume about 32.7 MB for the measured full-resolution photo;
+  reduced requests still reconstruct the full source before resizing.
+- **Verdict:** **Sound.** Preserve the working representation and bound extra storage.
+- **Confidence:** Medium.
+
+### Native highlight recovery — Ship derivative source with the native package
+
+- **When:** Reconstruction pass A, 2026-09-06.
+- **The choice:** Installing the native runtime also installs the translated recovery
+  source, its CDDL terms and attribution/source-location notice. The translated file
+  is not presented as covered by the repository's MIT license.
+- **The gap:** The plan selected the vendored CDDL algorithm but did not specify how
+  the new derivative source would accompany binary distribution.
+- **The reach:** The native crate declares both licenses; packaging owns the source
+  and notice alongside the binary. This does not assert an audit of unrelated
+  third-party distribution obligations.
+- **Verdict:** **Sound.** Keep attribution and derivative-source access with distribution.
+- **Confidence:** High.
