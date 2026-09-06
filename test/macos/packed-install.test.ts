@@ -9,6 +9,7 @@ import { registerAgentPreviewJourney } from "../journeys/agent-preview.js";
 import { registerOutpaintJourney } from "../journeys/outpaint.js";
 import { registerColdOutpaintJourney } from "../journeys/outpaint-cold.js";
 import { registerFullFrameJourney } from "../journeys/full-frame.js";
+import { registerPairedOriginalsJourney } from "../journeys/paired-originals.js";
 
 const execute = promisify(execFile);
 
@@ -128,6 +129,23 @@ test("packed CLI starts its daemon and finds both packaged decoders outside the 
     ),
   ).toBe(true);
 }, 900_000);
+
+registerPairedOriginalsJourney(
+  (args, options = {}) =>
+    spawnPhotoctl(args, {
+      ...options,
+      cliPath: binary,
+      cwd: scratch,
+      env: {
+        ...options.env,
+        PHOTOCTL_NO_DAEMON: "0",
+        PHOTOCTL_DAEMON_ENTRY: undefined,
+        PHOTOCTL_MAC_HELPER_PATH: undefined,
+        NODE_PATH: undefined,
+      },
+    }),
+  "packed CLI preserves RAW-led pairs and explicit camera-JPEG access",
+);
 
 registerAgentPreviewJourney(
   (args, options = {}) =>
