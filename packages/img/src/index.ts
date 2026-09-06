@@ -39,6 +39,7 @@ export interface PixelFrameTransform {
 }
 
 interface NativeBinding {
+  fitWhiteBalance(mean: readonly number[]): WhiteBalanceFit;
   projectSupportedRgbPixels(
     data: Float32Array,
     width: number,
@@ -271,6 +272,18 @@ interface NativeBinding {
     pixelOffset: number,
     pixelBytes: number,
   ): Promise<void>;
+}
+
+export interface WhiteBalanceFit {
+  tempOffsetK: number;
+  tint: number;
+  limited: boolean;
+  /** RMS channel departure from the corrected mean, divided by that mean. */
+  residual: number;
+}
+
+export function fitWhiteBalance(mean: readonly number[]): WhiteBalanceFit {
+  return requiredBinding().fitWhiteBalance(mean);
 }
 
 interface NativeSam2OnnxRuntime {

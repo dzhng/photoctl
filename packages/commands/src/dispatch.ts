@@ -45,6 +45,7 @@ import { xmpCommand } from "./handlers/xmp.js";
 import { developCommand, filterCommand, type DevelopDependencies } from "./handlers/develop.js";
 import { undoCommand } from "./handlers/undo.js";
 import { cropCommand } from "./handlers/crop.js";
+import { whiteBalanceCommand } from "./handlers/white-balance.js";
 import { presetsCommand } from "./handlers/presets.js";
 import { renderCommand } from "./handlers/render.js";
 import { embedCommand } from "./handlers/embed.js";
@@ -85,6 +86,14 @@ export async function dispatch(
     if (request.verb === "version") {
       return { schema: 1, ok: true, data: { version: context.version }, warnings: [] };
     }
+    if (request.verb === "white_balance")
+      return await whiteBalanceCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+        context.emit,
+      );
     if (request.verb === "crop")
       return await cropCommand(
         request.args,

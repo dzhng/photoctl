@@ -394,6 +394,29 @@ pub fn apply_develop_pixels(
     })
 }
 
+#[napi(object)]
+pub struct WhiteBalanceFit {
+    pub temp_offset_k: f64,
+    pub tint: f64,
+    pub limited: bool,
+    pub residual: f64,
+}
+
+#[napi]
+pub fn fit_white_balance(mean: Vec<f64>) -> napi::Result<WhiteBalanceFit> {
+    let sample = mean
+        .try_into()
+        .map_err(|_| Error::new(Status::InvalidArg, "Neutral sample requires three channels"))?;
+    let (temperature, tint, limited, residual) = develop::fit_white_balance(sample)
+        .map_err(|message| Error::new(Status::InvalidArg, message))?;
+    Ok(WhiteBalanceFit {
+        temp_offset_k: f64::from(temperature),
+        tint: f64::from(tint),
+        limited,
+        residual,
+    })
+}
+
 #[napi]
 pub fn apply_develop_artifact(
     data: Uint8Array,

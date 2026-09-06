@@ -20,6 +20,7 @@ export * from "./verbs/xmp.js";
 export * from "./verbs/version.js";
 export * from "./verbs/develop.js";
 export * from "./verbs/crop.js";
+export * from "./verbs/white-balance.js";
 export * from "./verbs/undo.js";
 export * from "./verbs/presets.js";
 export * from "./verbs/render.js";

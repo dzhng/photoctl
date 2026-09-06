@@ -798,6 +798,106 @@ fn white_balance_matrix(temperature_offset_k: f32, tint: f32) -> Result<[[f64; 3
     ))
 }
 
+/// Fit the existing grading kernel, not a second camera white-balance model.
+pub(crate) fn fit_white_balance(sample: [f64; 3]) -> Result<(f32, f32, bool, f64), String> {
+    let cone = mat_vec(BRADFORD, mat_vec(REC2020_TO_XYZ, sample));
+    if sample.iter().any(|v| !v.is_finite()) || cone.iter().any(|v| *v <= 0.0 || !v.is_finite()) {
+        return Err("Neutral sample must have finite positive cone responses".to_owned());
+    }
+    let error = |temperature: f32, tint: f32| -> f64 {
+        let rgb = mat_vec(white_balance_matrix(temperature, tint).unwrap(), sample);
+        let mean = rgb.iter().sum::<f64>() / 3.0;
+        if mean <= 0.0 {
+            return f64::INFINITY;
+        }
+        (rgb.iter().map(|v| (v / mean - 1.0).powi(2)).sum::<f64>() / 3.0).sqrt()
+    };
+    if error(0.0, 0.0) < 1e-12 {
+        return Ok((0.0, 0.0, false, 0.0));
+    }
+    // Invert Binv * diag(target / D65cone) * B * XYZ(sample) = k * XYZ(gray).
+    // Invert the actual stored matrices, including their rounding, so the
+    // inferred target belongs to the exact forward kernel above.
+    let gray_cone = mat_vec(
+        invert_3x3(BRADFORD_INVERSE)?,
+        mat_vec(REC2020_TO_XYZ, [1.0; 3]),
+    );
+    let reference = mat_vec(BRADFORD, D65_XYZ);
+    let target = mat_vec(
+        invert_3x3(BRADFORD)?,
+        std::array::from_fn(|i| gray_cone[i] * reference[i] / cone[i]),
+    );
+    let sum = target.iter().sum::<f64>();
+    if !sum.is_finite() || sum <= 0.0 {
+        return Err("Neutral sample has no physical correction".to_owned());
+    }
+    let (x, y) = (target[0] / sum, target[1] / sum);
+    let anchor = planckian_xy(6504.0);
+    let d65_sum = D65_XYZ.iter().sum::<f64>();
+    let xy = |offset: f64| {
+        let p = planckian_xy(6504.0 - offset);
+        (
+            D65_XYZ[0] / d65_sum + p.0 - anchor.0,
+            D65_XYZ[1] / d65_sum + p.1 - anchor.1,
+        )
+    };
+    let limited_x = x < xy(-1500.0).0 || x > xy(1500.0).0;
+    let (mut lo, mut hi) = (-1500.0, 1500.0);
+    for _ in 0..48 {
+        let mid = (lo + hi) * 0.5;
+        if xy(mid).0 < x {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    let temperature = ((lo + hi) * 0.5) as f32;
+    let tint = (xy(f64::from(temperature)).1 - y) / 0.0005;
+    let limited = limited_x || !(-100.0..=100.0).contains(&tint);
+    let mut best = (temperature, tint.clamp(-100.0, 100.0) as f32);
+    // An out-of-range neutral has its constrained minimum on a boundary.
+    // Search all four edges against the SAME forward matrix and RGB residual.
+    if limited {
+        for edge in 0..4 {
+            let point = |v: f64| {
+                if edge < 2 {
+                    (if edge == 0 { -1500.0 } else { 1500.0 }, v as f32)
+                } else {
+                    (v as f32, if edge == 2 { -100.0 } else { 100.0 })
+                }
+            };
+            let (mut a, mut b) = if edge < 2 {
+                (-100.0, 100.0)
+            } else {
+                (-1500.0, 1500.0)
+            };
+            for _ in 0..48 {
+                let l = a + (b - a) / 3.0;
+                let r = b - (b - a) / 3.0;
+                let lp = point(l);
+                let rp = point(r);
+                if error(lp.0, lp.1) <= error(rp.0, rp.1) {
+                    b = r;
+                } else {
+                    a = l;
+                }
+            }
+            for v in [
+                a,
+                b,
+                if edge < 2 { -100.0 } else { -1500.0 },
+                if edge < 2 { 100.0 } else { 1500.0 },
+            ] {
+                let p = point(v);
+                if error(p.0, p.1) < error(best.0, best.1) {
+                    best = p;
+                }
+            }
+        }
+    }
+    Ok((best.0, best.1, limited, error(best.0, best.1)))
+}
+
 fn planckian_xy(temperature: f64) -> (f64, f64) {
     let x = if temperature <= 4_000.0 {
         -0.266_123_9e9 / temperature.powi(3) - 0.234_358_0e6 / temperature.powi(2)
@@ -971,6 +1071,59 @@ fn invert_3x3(matrix: [[f64; 3]; 3]) -> Result<[[f64; 3]; 3], String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn neutral_fit_recovers_known_controls_on_both_axes() {
+        for temperature in [-1499.0, -700.0, -0.01, 0.01, 700.0, 1499.0] {
+            for tint in [-99.0, -25.0, 0.0, 25.0, 99.0] {
+                let forward = white_balance_matrix(temperature, tint).unwrap();
+                let sample = mat_vec(invert_3x3(forward).unwrap(), [0.2; 3]);
+                let fitted = fit_white_balance(sample).unwrap();
+                assert!(!fitted.2, "{temperature} {tint}: {fitted:?}");
+                assert!(
+                    (fitted.0 - temperature).abs() < 0.001,
+                    "{temperature} {tint}: {fitted:?}"
+                );
+                assert!(
+                    (fitted.1 - tint).abs() < 0.0001,
+                    "{temperature} {tint}: {fitted:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn neutral_fit_beats_exhaustive_grid_for_each_limited_axis_and_corner() {
+        for (temperature, tint) in [
+            (2500.0, 0.0),
+            (0.0, 150.0),
+            (2500.0, 150.0),
+            (-2500.0, -150.0),
+        ] {
+            let sample = mat_vec(
+                invert_3x3(white_balance_matrix(temperature, tint).unwrap()).unwrap(),
+                [0.2; 3],
+            );
+            let fitted = fit_white_balance(sample).unwrap();
+            assert!(fitted.2, "{temperature} {tint}: {fitted:?}");
+            let residual = |temperature, tint| {
+                let rgb = mat_vec(white_balance_matrix(temperature, tint).unwrap(), sample);
+                let mean = rgb.iter().sum::<f64>() / 3.0;
+                (rgb.iter().map(|v| (v / mean - 1.0).powi(2)).sum::<f64>() / 3.0).sqrt()
+            };
+            let achieved = residual(fitted.0, fitted.1);
+            assert!((achieved - fitted.3).abs() < 1e-12);
+            assert!(achieved < residual(0.0, 0.0));
+            for t in (-1500..=1500).step_by(50) {
+                for tint in (-100..=100).step_by(5) {
+                    assert!(
+                        achieved <= residual(t as f32, tint as f32) + 1e-7,
+                        "{sample:?}: fit {fitted:?} is worse than {t}, {tint}"
+                    );
+                }
+            }
+        }
+    }
 
     fn apply_global(data: &[f32], parameters: Develop) -> Result<Vec<f32>, String> {
         let mut output = data.to_vec();

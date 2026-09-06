@@ -106,11 +106,43 @@ strict argument handling and preview/export identity. Its initial unknown-comman
 the 11 neighboring develop checks and typecheck pass. Independent review found no issue. This is
 command equivalence evidence, not another visual filter-quality claim; existing G10 owns that judgment.
 
-8g supplies the original white-balance eyedropper capability; temperature/tint controls and the
-whole-image gray-world estimate are not a sampled neutral patch. Before implementation, define the
-point/patch CLI, source sampling stage and coordinate rules. Reuse the white-balance math owner and
-store ordinary resolved develop adjustments. Known-neutral correction, geometry/offline mapping,
-repeat and undo need consumer proofs. Neither surface has an explicit removal decision.
+8g supplies sampled neutral correction through `white_balance <id> (--point x,y | --region x,y,w,h)
+[--norm]`. The provisional sampling policy is the editable base **before user develop adjustments**:
+the camera's as-shot processing has already entered scene-linear Rec.2020, while user grading,
+crop/rotation, generated layers and markup do not contaminate the sample. Purchased processing below
+the editable develop node remains part of that base. This makes repeat an absolute replacement of
+ordinary temperature/tint controls, not a correction repeatedly compounded onto itself.
+
+Coordinates retain oriented, uncropped base space. A point selects the containing available pixel;
+a patch averages available pixel centers in its half-open base rectangle. Requests outside the base
+are rejected, and a patch containing no available centers is rejected rather than enlarged. The saved
+execution frame maps offline and resized pixels; the response exposes the actual raster, count and
+scene-linear mean, with the source ladder's normal warnings. It does not claim native-resolution
+measurement from an offline overview. Canonical bytes are verified by the artifact owner; sampling
+reads them in yielding row batches without a second full-frame float array.
+
+The native Bradford owner resolves ordinary develop controls. It algebraically inverts its exact
+stored matrices and existing D65-anchored Planckian parameterization. The cone-ratio structure is
+described by [ICC's chromatic adaptation specification](https://www.color.org/specifications/ICC.1-2022-05.pdf)
+and the [Colour reference implementation](https://www.colour-science.org/api/0.3.4/html/_modules/colour/adaptation/vonkries.html);
+neither is a new runtime dependency. A neutral outside the existing control ranges gets a bounded
+fit against the same forward kernel, with `limited:true` and `residual`: RMS channel departure from
+the corrected RGB mean divided by that mean. This is not a perceptual color difference or a promise
+that an arbitrary colored object is truly gray. Black/nonphysical cone responses are usage errors.
+The snapshot/CAS develop owner preserves other controls, layer compensation/staleness and undo.
+
+Focused verification covers actual neutral linear and built-CLI delivery pixels, explicit-control
+equivalence, repeat/undo, user-grade and markup exclusion, portrait orientation, reduced offline
+mapping, malformed/black no-mutation, and a concurrent-edit conflict. Substituting displayed output
+for the pre-develop input makes the stage regression fail. These are deterministic contract proofs,
+not aesthetic acceptance on gray-card photography.
+
+Independent review found no production defect and requested stronger numerical/frame oracles.
+Known control pairs now round-trip through inverse-authored neutral samples; constrained fits beat
+an exhaustive grid for each limited axis and corners. The offline test compares the exact selected
+RGB triple against independently read public linear output, and fractional patches pin half-open
+center inclusion. Zero-correction, omitted-frame-scaling and inclusive-far-edge mutants each fail
+their intended assertions; the restored implementations pass.
 
 ## 8e — Local horizon detection and the crop command
 

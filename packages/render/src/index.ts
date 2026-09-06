@@ -62,3 +62,4 @@ export * from "./fill/refresh.js";
 export * from "./fill/rebuild.js";
 export * from "./fill/transform-density.js";
 export * from "./fill/upscale-policy.js";
+export * from "./develop/white-balance.js";

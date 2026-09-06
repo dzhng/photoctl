@@ -5289,3 +5289,49 @@
   authored-layer lifecycle journey remain required before feature completion.
 - **Confidence:** High for the tested source/activation contract; medium for full-scale resource
   behavior.
+
+### Slice 08g — A neutral click reads the editable base before user grading
+
+- **When:** Eyedropper pass, 2026-09-06.
+- **The choice:** Clicking a gray patch samples the photographic input beneath the editable
+  develop adjustments. Camera as-shot processing has already happened. A user-added tint,
+  generated layer or red annotation cannot change which correction the same click resolves.
+  Existing purchased processing beneath develop is retained. Sampling the displayed composite
+  instead would let annotations or prior grading change the inferred light color.
+- **The gap:** The original eyedropper requirement did not name the sampling stage. David's
+  base-versus-composite question remains unanswered; the parent approved this provisional call.
+- **The reach:** Clients can repeat a click without compounding a correction; resolved values
+  use the ordinary develop shape and undo. A later composite policy would change sampling,
+  not add another stored white-balance model.
+- **Verdict:** **Needs-user.** Recommend the implemented pre-develop base policy; it is reversible
+  at the sampling owner and explicitly named in the response.
+- **Confidence:** Medium.
+
+### Slice 08g — Limited correction stays useful and exposes what remains colored
+
+- **When:** Eyedropper pass, 2026-09-06.
+- **The choice:** A severely blue patch may need more correction than the current temperature
+  slider permits. Keep the existing bounds, return the best bounded correction along their edges,
+  and report both the limit flag and a relative RGB neutrality residual. The alternative would
+  reject all such clicks or quietly widen the control model. The same native forward grade evaluates
+  the result; its matrix inverse supplies attainable neutral targets without a second color formula.
+- **The gap:** The initial requirement did not settle out-of-range samples. The parent explicitly
+  approved a limited fit with visible residual instead of refusal.
+- **The reach:** Manual controls, layers and undo inherit unchanged stored values and ranges.
+  The residual is a numerical channel mismatch, not a photographic gray-card confidence score.
+- **Verdict:** **Sound.** Useful bounded work is honest about its remaining error.
+- **Confidence:** High.
+
+### Slice 08g — Offline sampling reports available pixel centers instead of inventing detail
+
+- **When:** Eyedropper pass, 2026-09-06.
+- **The choice:** An offline click maps the same oriented base position into the available
+  preview and selects its containing pixel. A rectangle averages actual centers within its
+  half-open bounds. A tiny rectangle with no available centers fails instead of silently growing
+  into a different patch. The result reports its pixel count, actual raster and scene-linear mean.
+  Sampling reads verified canonical bytes in yielding batches without another full-frame float copy.
+- **The gap:** Point footprint, fractional patch edges and reduced-resolution behavior were not specified.
+- **The reach:** Clients can distinguish native and overview measurements; neighboring patches do
+  not double-count boundary centers. Another footprint policy would require an explicit API decision.
+- **Verdict:** **Sound.** It preserves the existing coordinate/source owners and avoids false precision.
+- **Confidence:** Medium.
