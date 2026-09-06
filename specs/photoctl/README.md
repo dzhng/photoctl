@@ -21,8 +21,8 @@ update this handoff, and continue until every requirement is verified—not mere
 **First priority: repair camera highlight rendering.** The public fixture gold exam exports all
 ten images, but photographic delivery remains **rejected**. Reduced-RGB striping is corrected
 and the unchanged public script verifies that correction with old caches retained. False magenta
-in bright lights remains. Native CIRAW recovery experiments are promising; portable LibRaw
-recovery still needs a measured design. Preserve failure evidence and do not replace RAW with
+in bright lights remains. Next is reconstruction pass A: opt-in portable native recovery with
+unchanged disabled samples, before default-policy adoption. Preserve failure evidence and do not replace RAW with
 its camera JPEG, tune presets around decoder defects, or weaken the oracle.
 [Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;
 the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next native/public passes.
@@ -103,6 +103,7 @@ without deleting history.
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
+- [ ] RAW highlight reconstruction: native float preservation → effective policy/identity → complete photographic delivery — `slices/07-highlight-reconstruction.md`
 - [x] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 manual geometry · [x] 8d4 filters/B&W/selective color · [x] keyless fixture gold exam · [x] 8e local auto-straighten / `crop --auto` (D24) · [x] 8f public filter · [x] 8g white-balance eyedropper — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
