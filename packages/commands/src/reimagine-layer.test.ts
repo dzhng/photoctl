@@ -153,25 +153,25 @@ test("reimagine adds a lazy full-frame layer and removing it restores the prior 
       { version: "test", library: library.handle },
     );
     expect(croppedEnvelope).toMatchObject({ ok: true });
-    const activeBeforeRefusal = (
+    const activeBeforeCropGeneration = (
       await library.handle.query<{ active_revision_id: string }>(
         "SELECT active_revision_id::text FROM photo_documents WHERE photo_id = $1",
         [id],
       )
     ).rows[0]!.active_revision_id;
-    const refused = await dispatch(
-      { verb: "reimagine", args: [id, "--prompt", "should not run"], cwd: parent, env },
+    const croppedGeneration = await dispatch(
+      { verb: "reimagine", args: [id, "--prompt", "painted crop"], cwd: parent, env },
       { version: "test", library: library.handle },
     );
-    expect(refused).toMatchObject({ ok: false, code: "usage" });
-    expect(requests).toEqual(["/v1/images/edits", "/v1/images/edits"]);
+    expect(croppedGeneration).toMatchObject({ ok: true });
+    expect(requests).toEqual(["/v1/images/edits", "/v1/images/edits", "/v1/images/edits"]);
     const active = (
       await library.handle.query<{ active_revision_id: string }>(
         "SELECT active_revision_id::text FROM photo_documents WHERE photo_id = $1",
         [id],
       )
     ).rows[0]!;
-    expect(active.active_revision_id).toBe(activeBeforeRefusal);
+    expect(active.active_revision_id).not.toBe(activeBeforeCropGeneration);
   } finally {
     await new Promise<void>((resolve) => gateway.close(() => resolve()));
     await library.handle.close();

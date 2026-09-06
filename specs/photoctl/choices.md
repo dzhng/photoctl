@@ -5531,11 +5531,11 @@
 
 ### Full-frame generation — Use the inspected photographic result as model input
 
-- **When:** Shared-frame full-frame planning, 2026-09-06; provisional, not implemented.
+- **When:** Shared-frame full-frame planning and creation pass, 2026-09-06; implemented provisionally.
 - **The choice:** A user retouches a face or extends a border, then asks to relight the photo.
   Send that current photographic result to the model, excluding presentation markup such
   as arrows or labels. Sending only the developed original would omit edits the user has
-  already inspected. Existing generation currently uses that developed-original branch.
+  already inspected. Creation now records and uses the photographic-composite policy.
 - **The gap:** The original full-frame plan described source/develop input; extending it to
   the current canvas exposes a product choice about preceding photographic layers. A direct
   question is pending. Neither interpretation changes strength into a denoise control.
@@ -5595,4 +5595,34 @@
   configuration or silently retrying a failed upscale; its density verdict does not invent a
   configuration warning. Explicit refresh owns retries, and no ambient credentials become consent.
 - **Verdict:** **Sound.** One preparation owner and one atomic revision preserve existing failure semantics.
+- **Confidence:** High.
+
+### Full-frame creation — Preserve exact input execution in generation intent
+
+- **When:** Full-frame creation pass A, 2026-09-06.
+- **The choice:** Two cropped views can contain the same pixel bytes while occupying different
+  places in the photo. The generation request stores the specific input execution ID alongside
+  its saved frame, so inspection and later refresh can identify which view supplied the pixels.
+  An artifact hash alone identifies bytes and cannot answer that coordinate question.
+- **The gap:** The plan required an exact execution/frame binding but did not prescribe where
+  to persist that link. Existing generation execution inputs only retain artifact hashes.
+- **The reach:** This extends immutable generation intent without a table, migration or second
+  provenance owner. Future refresh must honor that recorded physical viewport.
+- **Verdict:** **Sound.** The existing generation intent is the durable owner of the purchased
+  request, and the shared execution-frame reader establishes the binding before provider work.
+- **Confidence:** High.
+
+### Full-frame creation — Sample constant coverage at the intended viewport density
+
+- **When:** Full-frame creation pass A, 2026-09-06.
+- **The choice:** A provider can return fewer or more pixels than the requested photo viewport.
+  RGB keeps that intrinsic sampling, while the constant strength mask uses the intended
+  viewport raster. Both are placed in the same physical footprint. Attaching the mask to
+  whichever RGB sampling happened to arrive would couple coverage to provider density.
+- **The gap:** The plan separated RGB placement from coverage but left the mask's sampling
+  choice to implementation.
+- **The reach:** Density processing can change retained RGB detail without changing the
+  strength mask or exposing pixels outside the authored viewport after a later crop change.
+- **Verdict:** **Sound.** Coverage has one owner and native generated sampling remains available
+  to the existing compositor; no additional resample branch or strength multiplication is added.
 - **Confidence:** High.

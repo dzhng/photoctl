@@ -70,7 +70,7 @@ test("reimagine leaves the active revision unchanged when generation geometry is
   }
 });
 
-test("reimagine refuses a low-resolution base before provider work or revision change", async () => {
+test("reimagine accepts a reduced pinned source and targets the authored viewport density", async () => {
   const fixture = await fillUpscaleFixture();
   try {
     fixture.fill.source = async () => ({
@@ -102,18 +102,25 @@ test("reimagine refuses a low-resolution base before provider work or revision c
       render_hash: string;
     };
 
-    const refused = await fixtureCommand(fixture, "reimagine", [
+    const created = await fixtureCommand(fixture, "reimagine", [
       fixture.id,
       "--prompt",
       "painted twilight",
     ]);
-    expect(refused).toMatchObject({ ok: false, code: "usage" });
+    expect(created).toMatchObject({
+      ok: true,
+      data: {
+        source_context: { tier: "pinned-preview", pixel_scale: 0.5, resolution_limited: true },
+        generation: { returned: { w: 20, h: 15 } },
+        upscale: { target: { w: 40, h: 30 } },
+      },
+    });
     const after = success(await fixtureCommand(fixture, "show", [fixture.id])) as {
       render_hash: string;
     };
-    expect(after.render_hash).toBe(before.render_hash);
-    expect(fixture.generationCalls()).toBe(0);
-    expect(fixture.upscaleCalls()).toBe(0);
+    expect(after.render_hash).not.toBe(before.render_hash);
+    expect(fixture.generationCalls()).toBe(1);
+    expect(fixture.upscaleCalls()).toBe(1);
   } finally {
     await fixture.close();
   }

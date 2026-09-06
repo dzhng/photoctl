@@ -117,7 +117,7 @@ test("the built CLI reimagines lazily at base density and removal restores exact
     (inspected.json.data as { chain: { content: Array<{ kind: string }> } }).chain.content.map(
       ({ kind }) => kind,
     ),
-  ).toEqual(expect.arrayContaining(["generate", "upscale", "resample"]));
+  ).toEqual(expect.arrayContaining(["generate", "upscale"]));
   const after = await show(library, env, id);
   expect(after.render_hash).toBe(changed.render_hash);
   expect(await sharp(after.preview).metadata()).toMatchObject({ width: 160, height: 120 });

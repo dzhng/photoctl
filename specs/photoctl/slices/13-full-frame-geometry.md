@@ -85,6 +85,27 @@ asymmetric fixture. Judge placement/support only, not provider aesthetics. Run
 compare-screenshots telemetry and an unprimed screenshot-critique last; retain the
 small comparison set under the owning spec assets. Human feedback is non-blocking.
 
+### Creation candidate evidence
+
+Pass A is implemented as a frame-owned creation candidate. Its focused public checks
+cover crop/quarter-turn placement, fractional straighten and all three strength regimes,
+same-size shifted viewports, exact later-crop support, show/PNG export, toggle/remove/undo,
+photographic predecessor input without markup, reduced pinned-source generation and
+publication/CAS failure retention. Replacing the creation owner with its pre-pass code
+produces the expected geometry/pinned refusal and wrong-input failures; restoration is green.
+The existing built reimagine journey also passes. [Candidate evidence](../assets/full-frame-geometry/README.md)
+records the exact limits; independent visual critique remains an integration gate.
+
+Creation records the input execution alongside its actual frame because generated-node
+input artifact hashes cannot distinguish identical bytes in different coordinates. The
+physical viewport comes from that execution; logical viewport sampling controls the density
+target. RGB retains its generated/upscaled sampling, and an explicitly placed constant mask
+owns strength and coverage. This uses the shared mask-frame evaluator prerequisite.
+
+The next pass must add explicit refresh and source promotion. In particular, creation with
+only a retained current output and neither a live nor pinned original remains in B's source
+selection work; the reduced pinned-source witness is not a retained-only offline claim.
+
 ## B — Explicit refresh, source promotion and packaged lifecycle
 
 Recognize full-frame generation explicitly at the shared layer-refresh dispatch

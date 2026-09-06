@@ -1,0 +1,22 @@
+[
+  {
+    "a": "before",
+    "b": "generated",
+    "width": 12,
+    "height": 20,
+    "changedPixels": 240,
+    "totalPixels": 240,
+    "meanAbsoluteChannelDifference": 106.43333333333334,
+    "maxChannelDifference": 215
+  },
+  {
+    "a": "restored",
+    "b": "expanded",
+    "width": 40,
+    "height": 30,
+    "changedPixels": 240,
+    "totalPixels": 1200,
+    "meanAbsoluteChannelDifference": 21.286666666666665,
+    "maxChannelDifference": 215
+  }
+]

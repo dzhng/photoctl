@@ -62,8 +62,8 @@ ordinary develop controls; the response names its provisional pre-user-develop s
 Canvas sampling, offline-to-online cache promotion and source-only SAM geometry are integrated.
 Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
 Historical schema-v10–v12 and structured truncated-RAW fixture coverage are also integrated.
-Local horizon detection / `crop --auto` and the white-balance eyedropper are integrated. Full-frame generation
-consumers must then use the shared frame contract rather than retain their provisional geometry refusal.
+Local horizon detection / `crop --auto` and the white-balance eyedropper are integrated. Full-frame creation
+now consumes the shared frame contract; independent visual acceptance and pass B remain open.
 The [full-frame correction plan](slices/13-full-frame-geometry.md) has two passes: authored
 creation/placement, then explicit refresh and offline/packaged lifecycle. Retouch's shared mask-frame
 correction is its prerequisite. Current photographic-composite input (excluding markup) is provisional
@@ -170,9 +170,10 @@ tradeoff. This focused correction is not the whole-spec release gate.
 
 **Carry-forward invariants:** one daemon library handle; one atomic document/revision owner; exact
 scene-linear canonical artifacts; lazy preview materialization from immutable graph roots.
-Generation owns migration 14 and markup migration 15. Full-frame reimagine/relight still require
-an uncropped, unrotated exact-size base; this provisional refusal needs its shared-frame consumer pass
-before full completion. Keep the guard until placement/removal/refresh and offline pixels are proved. Markup stays a final,
+Generation owns migration 14 and markup migration 15. Full-frame reimagine/relight creation records
+the exact photographic input execution and authored footprint, placing RGB and strength coverage
+through the shared frame owner. Explicit refresh and retained-only offline source selection remain
+in the [next pass](slices/13-full-frame-geometry.md). Markup stays a final,
 removable presentation node, with editable vectors and the revision updated in the same transaction.
 Migration 16 owns derived effective-mask recipes: the original selection controls positioning/vacancy,
 the effective mask controls fractional coverage, and derived binary support prevents double coverage.

@@ -1,0 +1,84 @@
+{
+  "kind": "screenshot-scene-metrics",
+  "generatedAt": "2026-09-06T04:25:53.295Z",
+  "note": "Absolute per-image telemetry, no reference involved. Low values locate flat, sparse, or empty captures; they never accept or reject an image on their own.",
+  "imageCount": 4,
+  "results": [
+    {
+      "id": "before",
+      "image": "../candidate/before.png",
+      "dimensions": {
+        "width": 12,
+        "height": 20
+      },
+      "sceneMetrics": {
+        "colorBuckets": 69,
+        "colorEntropyBits": 5.93653,
+        "edgeDensity": 0.33014,
+        "dominantColorShare": 0.03333,
+        "transparentShare": 0,
+        "luminanceMean": 99.45998,
+        "luminanceP5": 69.0704,
+        "luminanceP95": 129.2662,
+        "luminanceContrast": 60.1958
+      }
+    },
+    {
+      "id": "expanded",
+      "image": "../candidate/expanded.png",
+      "dimensions": {
+        "width": 40,
+        "height": 30
+      },
+      "sceneMetrics": {
+        "colorBuckets": 470,
+        "colorEntropyBits": 8.61162,
+        "edgeDensity": 0.49248,
+        "dominantColorShare": 0.00667,
+        "transparentShare": 0,
+        "luminanceMean": 122.83454,
+        "luminanceP5": 41.7566,
+        "luminanceP95": 200.4168,
+        "luminanceContrast": 158.6602
+      }
+    },
+    {
+      "id": "generated",
+      "image": "../candidate/generated.png",
+      "dimensions": {
+        "width": 12,
+        "height": 20
+      },
+      "sceneMetrics": {
+        "colorBuckets": 192,
+        "colorEntropyBits": 7.50689,
+        "edgeDensity": 1,
+        "dominantColorShare": 0.00833,
+        "transparentShare": 0,
+        "luminanceMean": 140.7875,
+        "luminanceP5": 52.7968,
+        "luminanceP95": 235.1728,
+        "luminanceContrast": 182.376
+      }
+    },
+    {
+      "id": "restored",
+      "image": "../candidate/restored.png",
+      "dimensions": {
+        "width": 40,
+        "height": 30
+      },
+      "sceneMetrics": {
+        "colorBuckets": 338,
+        "colorEntropyBits": 8.27169,
+        "edgeDensity": 0.33333,
+        "dominantColorShare": 0.00667,
+        "transparentShare": 0,
+        "luminanceMean": 114.56904,
+        "luminanceP5": 43.284,
+        "luminanceP95": 186.1128,
+        "luminanceContrast": 142.8288
+      }
+    }
+  ]
+}

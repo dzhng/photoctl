@@ -4,7 +4,9 @@ import {
   readArtifactImage,
 } from "./artifacts/publication.js";
 import { readActiveDevelopState } from "./develop/state.js";
-import { hasDevelopGeometry } from "./develop/geometry.js";
+import { loadBaseProjection, loadLogicalFrame } from "./graph/projection.js";
+import { frameAtRaster, savedRenderFrame } from "./graph/frame.js";
+import { failProviderImageAttempts } from "./provider-images/attempts.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "./graph/evaluator.js";
 import { commitRevision, type GraphDatabase, type NodeDraft } from "./graph/store.js";
 import { executeFreshGeneration, executeGenerationDensity } from "./fill/generation.js";
@@ -21,7 +23,6 @@ export async function createReimagineLayer(
   request: {
     photoId: string;
     orientation: number;
-    dimensions: { w: number; h: number };
     prompt: string;
     providerPrompt: string;
     promptVersion: number;
@@ -37,49 +38,50 @@ export async function createReimagineLayer(
     photoId: request.photoId,
     orientation: request.orientation,
   });
-  if (hasDevelopGeometry(state.develop)) {
-    throw new Error(
-      "Full-frame generation requires the current develop output to retain the oriented base dimensions",
-    );
-  }
-  const baseEvaluation = await evaluateGraphNode({
+  const inputEvaluation = await evaluateGraphNode({
     database,
     libraryPath,
     photoId: request.photoId,
-    nodeId: state.baseNodeId,
+    nodeId: state.pixelOutputNodeId,
     source: request.source,
   });
-  const base = await readArtifactImage(
-    baseEvaluation.artifact.path,
-    baseEvaluation.artifact.artifactHash,
+  const input = await readArtifactImage(
+    inputEvaluation.artifact.path,
+    inputEvaluation.artifact.artifactHash,
   );
-  if (base.w !== request.dimensions.w || base.h !== request.dimensions.h) {
-    throw new Error(
-      "Full-frame generation requires the current develop output to retain the oriented base dimensions",
-    );
-  }
-  const inputPng = await image16Png(base);
+  const inputFrame = await loadBaseProjection(database, request.photoId, inputEvaluation);
+  const logicalFrame = await loadLogicalFrame(database, request.photoId, state.pixelOutputNodeId);
+  const authoredFrame = frameAtRaster(inputFrame, logicalFrame.raster);
+  const targetDimensions = authoredFrame.raster;
+  const inputPng = await image16Png(input);
   const generation = await executeFreshGeneration(database, libraryPath, {
-    inputNodeId: state.baseNodeId,
-    inputArtifactHash: baseEvaluation.artifact.artifactHash,
-    sentDimensions: { w: base.w, h: base.h },
+    inputNodeId: state.pixelOutputNodeId,
+    inputArtifactHash: inputEvaluation.artifact.artifactHash,
+    sentDimensions: { w: input.w, h: input.h },
     prompt: request.prompt,
     promptVersion: request.promptVersion,
     dependencies: request.dependencies,
     buildRequest: () =>
       request.dependencies.adapter.buildFullFrameEdit(
-        { png: inputPng, w: base.w, h: base.h },
+        { png: inputPng, w: input.w, h: input.h },
         request.providerPrompt,
       ),
     request: (executionId, returned) => ({
       execution_id: executionId,
       scope: "full-frame",
       drift: "full-frame",
-      sent: [base.w, base.h],
+      sent: [input.w, input.h],
       returned: [returned.w, returned.h],
       strength: request.strength,
       blend_coverage: request.strength,
       provider_prompt: request.providerPrompt,
+      full_frame: {
+        input_policy: "photographic-composite",
+        input_frame: savedRenderFrame(inputFrame),
+        authored_frame: savedRenderFrame(authoredFrame),
+        input_execution_id: inputEvaluation.executionId,
+        predecessor_layer_ids: state.layers.map(({ id }) => id),
+      },
       source_context: {
         tier: request.sourceContext.tier,
         pixel_scale: request.sourceContext.pixelScale,
@@ -96,95 +98,118 @@ export async function createReimagineLayer(
         derived_prompt: request.upscale.prompt.derived,
       },
     }),
-    targetPixels: request.dimensions.w * request.dimensions.h,
+    targetPixels: targetDimensions.w * targetDimensions.h,
   });
   const density = await executeGenerationDensity(database, libraryPath, {
     generation,
-    target: { kind: "oriented_full_frame", dimensions: request.dimensions },
-    targetDimensions: request.dimensions,
+    target: { kind: "oriented_full_frame", dimensions: targetDimensions },
+    targetDimensions,
     sourceContext: request.sourceContext,
     upscale: request.upscale,
   });
-  const mask = await publishArtifact(
-    libraryPath,
-    await normalizeMaskArtifact({
-      w: request.dimensions.w,
-      h: request.dimensions.h,
-      data: new Float32Array(request.dimensions.w * request.dimensions.h).fill(request.strength),
-    }),
-  );
-  const nodes: NodeDraft[] = [
-    ...density.nodes,
-    {
-      localKey: "resample",
-      kind: "resample",
-      recipeVersion: 1,
-      parameters: { w: request.dimensions.w, h: request.dimensions.h, kernel: "lanczos3" },
-      inputs: [density.output],
-    },
-    {
-      localKey: "mask",
-      kind: "mask",
-      recipeVersion: 1,
-      parameters: { artifact_hash: mask.artifactHash },
-      inputs: [],
-    },
-  ];
-  const layers: RevisionLayerDraft[] = [
-    ...state.layers.map((layer) => ({
-      layer: { layerId: layer.id },
-      name: layer.name,
-      z: layer.z,
-      contentNode: { nodeId: layer.contentNodeId },
-      maskNode: { nodeId: layer.maskNodeId },
-      opacity: layer.opacity,
-      blend: layer.blend,
-      enabled: layer.enabled,
-    })),
-    {
-      layer: { localKey: "reimagine-layer" },
-      name: `${request.layerName} ${state.layers.length + 1}`,
-      z: Math.max(-1, ...state.layers.map(({ z }) => z)) + 1,
-      contentNode: { localKey: "resample" },
-      maskNode: { localKey: "mask" },
-      opacity: 1,
-      blend: "normal",
-      enabled: true,
-    },
-  ];
-  const committed = await commitRevision(database, {
-    outputPlan: "photographic",
-    photoId: request.photoId,
-    expectedRevisionId: state.revisionId,
-    artifacts: [...density.artifacts, mask],
-    executions: density.executions,
-    nodes,
-    newLayers: [{ localKey: "reimagine-layer", role: "reimagine" }],
-    layers,
-    rootUpdates: [],
-  });
-  if (!committed.renderHash) throw new Error("A reimagine revision must have a render hash");
-  return {
-    layerId: committed.newLayers["reimagine-layer"]!,
-    revisionId: committed.revisionId,
-    outputNodeId: committed.roots.output! as `node_${string}`,
-    renderHash: committed.renderHash as `r_${string}`,
-    generationNodeId: generation.nodeId,
-    returnedDimensions: generation.returnedDimensions,
-    sourceContext: request.sourceContext,
-    warnings: density.warnings,
-    upscale: density.upscale,
-    executions: [
-      { kind: "generate" as const, nodeId: generation.nodeId, provider: generation.provider },
-      ...(density.upscale.nodeId && density.upscale.provider
-        ? [
-            {
-              kind: "upscale" as const,
-              nodeId: density.upscale.nodeId,
-              provider: density.upscale.provider,
-            },
-          ]
-        : []),
-    ],
-  };
+  try {
+    const mask = await publishArtifact(
+      libraryPath,
+      await normalizeMaskArtifact({
+        w: targetDimensions.w,
+        h: targetDimensions.h,
+        data: new Float32Array(targetDimensions.w * targetDimensions.h).fill(request.strength),
+      }),
+    );
+    const nodes: NodeDraft[] = [
+      ...density.nodes,
+      {
+        localKey: "mask",
+        kind: "mask",
+        recipeVersion: 1,
+        parameters: { artifact_hash: mask.artifactHash },
+        inputs: [],
+      },
+      ...(
+        [
+          ["content-placement", density.output, density.upscale.generated],
+          ["mask-placement", { localKey: "mask" }, targetDimensions],
+        ] as const
+      ).map(([localKey, input, raster]) => ({
+        localKey,
+        kind: "transform" as const,
+        recipeVersion: 2,
+        parameters: {
+          matrix: [1, 0, 0, 1, 0, 0],
+          frame: savedRenderFrame(frameAtRaster(authoredFrame, raster)),
+        },
+        inputs: [input],
+      })),
+    ];
+    const layers: RevisionLayerDraft[] = [
+      ...state.layers.map((layer) => ({
+        layer: { layerId: layer.id },
+        name: layer.name,
+        z: layer.z,
+        contentNode: { nodeId: layer.contentNodeId },
+        maskNode: { nodeId: layer.maskNodeId },
+        opacity: layer.opacity,
+        blend: layer.blend,
+        enabled: layer.enabled,
+      })),
+      {
+        layer: { localKey: "reimagine-layer" },
+        name: `${request.layerName} ${state.layers.length + 1}`,
+        z: Math.max(-1, ...state.layers.map(({ z }) => z)) + 1,
+        contentNode: { localKey: "content-placement" },
+        maskNode: { localKey: "mask-placement" },
+        opacity: 1,
+        blend: "normal",
+        enabled: true,
+      },
+    ];
+    const committed = await commitRevision(database, {
+      outputPlan: "photographic",
+      photoId: request.photoId,
+      expectedRevisionId: state.revisionId,
+      artifacts: [...density.artifacts, mask],
+      executions: density.executions,
+      nodes,
+      newLayers: [{ localKey: "reimagine-layer", role: "reimagine" }],
+      layers,
+      rootUpdates: [],
+    });
+    if (!committed.renderHash) throw new Error("A reimagine revision must have a render hash");
+    return {
+      layerId: committed.newLayers["reimagine-layer"]!,
+      revisionId: committed.revisionId,
+      outputNodeId: committed.roots.output! as `node_${string}`,
+      renderHash: committed.renderHash as `r_${string}`,
+      generationNodeId: generation.nodeId,
+      returnedDimensions: generation.returnedDimensions,
+      sourceContext: request.sourceContext,
+      warnings: density.warnings,
+      upscale: density.upscale,
+      executions: [
+        { kind: "generate" as const, nodeId: generation.nodeId, provider: generation.provider },
+        ...(density.upscale.nodeId && density.upscale.provider
+          ? [
+              {
+                kind: "upscale" as const,
+                nodeId: density.upscale.nodeId,
+                provider: density.upscale.provider,
+              },
+            ]
+          : []),
+      ],
+    };
+  } catch (error) {
+    try {
+      await failProviderImageAttempts(
+        database,
+        density.executions.flatMap((execution) =>
+          execution.providerImageAttemptId ? [execution.providerImageAttemptId] : [],
+        ),
+        error,
+      );
+    } catch {
+      /* Keep the publication diagnostic when the catalog is unavailable. */
+    }
+    throw error;
+  }
 }

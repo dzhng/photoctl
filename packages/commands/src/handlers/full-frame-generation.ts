@@ -84,7 +84,6 @@ export async function executeFullFrameGeneration(
         return await createReimagineLayer(lease.handle, lease.handle.path, {
           photoId: id,
           orientation: photo.orientation,
-          dimensions: { w: photo.w, h: photo.h },
           prompt: request.prompt,
           promptVersion: request.promptVersion,
           providerPrompt: request.providerPrompt,
@@ -157,12 +156,6 @@ export async function executeFullFrameGeneration(
         id: request.id,
         reason: "revision_conflict",
       });
-    if (
-      error instanceof Error &&
-      error.message ===
-        "Full-frame generation requires the current develop output to retain the oriented base dimensions"
-    )
-      throw new PhotoctlError("usage", error.message, { id: request.id });
     throw new PhotoctlError("catalog_unreadable", `Could not commit ${request.operation}`, {
       id: request.id,
       reason: error instanceof Error ? error.message : String(error),
