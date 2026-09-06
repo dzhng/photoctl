@@ -10,6 +10,7 @@ import {
 import { cacheRootForLibrary, formatShotInstant } from "@photoctl/importer";
 import {
   createVolumeResolver,
+  catalogPhotoAtDestination,
   resolvePhotoId,
   type LibraryHandle,
   type VolumeResolver,
@@ -371,7 +372,24 @@ async function exportOne(
   }
 
   try {
+    const protectOriginal = async () => {
+      if (options.onCollision !== "overwrite") return;
+      try {
+        if (!(await catalogPhotoAtDestination(handle, collision.path, resolver, handle.path)))
+          return;
+      } catch {
+        throw new PhotoctlError("volume_readonly", "Could not verify export destination safety", {
+          path: collision.path,
+        });
+      }
+      throw new PhotoctlError("volume_readonly", "Export cannot replace a catalog original", {
+        path: collision.path,
+      });
+    };
+    await protectOriginal();
     const evaluated = await evaluate();
+    // Rendering may be slow; recheck ownership before replacing a destination.
+    await protectOriginal();
     const exported = await exportImage({
       id: snapshot.id,
       image: evaluated.image,

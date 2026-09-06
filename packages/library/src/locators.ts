@@ -110,7 +110,9 @@ export class EnvVolumeResolver implements VolumeResolver {
     const mount = await canonicalMount(this.#volume);
     const relPath = relativeWithin(mount, absolutePath);
     if (relPath === null) {
-      throw new PhotoctlError("file_offline", `Path is outside the configured volume: ${path}`);
+      throw new PhotoctlError("file_offline", `Path is outside the configured volume: ${path}`, {
+        reason: "outside_configured_volume",
+      });
     }
     return {
       uuid: this.#volume.uuid,
@@ -217,6 +219,60 @@ export async function resolvePhotoReference(
   const id = await photoAtLocator(db, location.uuid, location.relPath);
   if (!id) throw new PhotoctlError("not_found", `No catalogued photo at: ${path}`, { path });
   return id;
+}
+
+/** Conservative destination protection, not proof of source identity on a mounted volume. */
+export async function catalogPhotoAtDestination(
+  db: Pick<PGlite, "query">,
+  path: string,
+  resolver: VolumeResolver,
+  libraryPath: string,
+): Promise<string | undefined> {
+  let canonicalPath: string;
+  let missing = false;
+  try {
+    canonicalPath = await realpath(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    canonicalPath = join(await realpath(dirname(path)), basename(path));
+    missing = true;
+  }
+  const libraryRelative = relativeWithin(await realpath(libraryPath), canonicalPath);
+  if (libraryRelative) {
+    const internalId = await photoAtLocator(db, LIBRARY_VOLUME_UUID, libraryRelative);
+    if (internalId) return internalId;
+  }
+  let location: VolumeLocation;
+  try {
+    location = await resolver.locate(missing ? dirname(canonicalPath) : canonicalPath);
+  } catch (error) {
+    if (
+      !(error instanceof PhotoctlError) ||
+      !error.data ||
+      typeof error.data !== "object" ||
+      !("reason" in error.data) ||
+      error.data.reason !== "outside_configured_volume"
+    )
+      throw error;
+    // Prior test mappings can reserve this path. Unverifiable mounts fail closed;
+    // stale mount hints may refuse an overwrite but must never identify a source.
+    const volumes = await db.query<{ uuid: string; last_mount: string }>(
+      "SELECT uuid, last_mount FROM volumes WHERE uuid <> $1",
+      [LIBRARY_VOLUME_UUID],
+    );
+    const matches = await Promise.all(
+      volumes.rows.map(async (volume) => {
+        const relPath = relativeWithin(await realpath(volume.last_mount), canonicalPath);
+        return relPath === null ? undefined : await photoAtLocator(db, volume.uuid, relPath);
+      }),
+    );
+    return matches.find((id) => id !== undefined);
+  }
+  return await photoAtLocator(
+    db,
+    location.uuid,
+    missing ? join(location.relPath, basename(canonicalPath)) : location.relPath,
+  );
 }
 
 async function photoAtLocator(db: Pick<PGlite, "query">, volumeUuid: string, relPath: string) {
