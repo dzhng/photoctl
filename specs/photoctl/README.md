@@ -49,6 +49,10 @@ Do not repeat the disproved reconstruction diagnosis for branch/nose/wire artifa
 [coordinate evidence](assets/camera-delivery-review/coordinate-metadata/README.md) records
 the remaining mapping uncertainty, not a demonstrated crop bug. Preserve failed deliveries;
 never substitute camera JPEGs, tune presets around decoder defects, or weaken the oracle.
+The [interpolation witness](assets/camera-delivery-review/interpolation-owner/README.md)
+now isolates fine false color but rejects bilinear as an unqualified fix because it
+softens detail. Next scope a representation-preserving chroma correction with its
+own regression; do not repeat the completed diagnostic comparisons.
 
 **Parallel pickup:** finish remaining outpaint and pairing release gates.
 

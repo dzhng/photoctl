@@ -1,0 +1,54 @@
+[
+  {
+    "name": "photo-overview",
+    "width": 1440,
+    "height": 960,
+    "grayMae": 0.25860241001816814,
+    "grayRmse": 0.41004829297524914,
+    "diffRatio16": 0,
+    "diffRatio32": 0,
+    "diffRatio64": 0,
+    "edgeA": 17.145581755374522,
+    "edgeB": 16.956966835222303,
+    "edgeRatio": 0.9889992114094878
+  },
+  {
+    "name": "photo-detail",
+    "width": 1024,
+    "height": 1024,
+    "grayMae": 0.8339716227719691,
+    "grayRmse": 1.733934767802337,
+    "diffRatio16": 0.00130462646484375,
+    "diffRatio32": 0.000095367431640625,
+    "diffRatio64": 0.00000762939453125,
+    "edgeA": 13.112280977944721,
+    "edgeB": 11.034927848857137,
+    "edgeRatio": 0.8415719482688208
+  },
+  {
+    "name": "photo-detail-minus2",
+    "width": 1024,
+    "height": 1024,
+    "grayMae": 0.481574586577608,
+    "grayRmse": 0.9678317936003947,
+    "diffRatio16": 0.0001220703125,
+    "diffRatio32": 0.00000762939453125,
+    "diffRatio64": 0,
+    "edgeA": 7.128790433287143,
+    "edgeB": 6.066188595811901,
+    "edgeRatio": 0.8509421973588207
+  },
+  {
+    "name": "control",
+    "width": 512,
+    "height": 512,
+    "grayMae": 0.014092331170104444,
+    "grayRmse": 0.07301927176592038,
+    "diffRatio16": 0,
+    "diffRatio32": 0,
+    "diffRatio64": 0,
+    "edgeA": 2.1172966379002713,
+    "edgeB": 2.101889698900533,
+    "edgeRatio": 0.9927232969041988
+  }
+]

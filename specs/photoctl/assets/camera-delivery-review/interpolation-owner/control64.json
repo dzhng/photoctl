@@ -1,0 +1,80 @@
+{
+  "period": 64,
+  "maxFrequency": 0.109375,
+  "source": {
+    "path": "/Users/david/dev/photoctl/fixtures/camera/DSC08819.ARW",
+    "sha256": "a713c1a8723cff8a7db702b01a72d6367830aed792f23d6b3d366e39e3d53d55"
+  },
+  "metadata": {
+    "whiteLevel": 15871,
+    "blackLevel": 0,
+    "asShotWb": [
+      2.5263671875,
+      1,
+      1.5712890625
+    ],
+    "camXyz": [
+      0.7459999918937683,
+      -0.23649999499320984,
+      -0.058800000697374344,
+      -0.5687000155448914,
+      1.3442000150680542,
+      0.24740000069141388,
+      -0.06239999830722809,
+      0.11559999734163284,
+      0.6583999991416931
+    ],
+    "wbPreApplied": false
+  },
+  "domain": "x,y in[16,240),abs(x+.25*y-160)<=4: central edge, 8x narrower band matching period change",
+  "results": {
+    "a": {
+      "pixels": 1848,
+      "mae": 0.0036022116534651484,
+      "max": 0.022444570186976237,
+      "p95ChannelSpread": 0.02144493346748788,
+      "maxChannelSpread": 0.02244789287458257,
+      "samplePreservation": {
+        "sites": 65536,
+        "changed": 0
+      },
+      "capture": {
+        "path": "a/control64.png",
+        "sha256": "d57c6f7467e3e38d636b6efa578822bff5e05b2d0ec0b840b3b9d395149c1f8a"
+      },
+      "sampleSha256": "9149611885d6f5c6b26e27172751b0ff618e1c274744c8776b288f49b54ddc65"
+    },
+    "b": {
+      "pixels": 1848,
+      "mae": 0.004218817261738269,
+      "max": 0.013848777349410812,
+      "p95ChannelSpread": 0.013703194407252206,
+      "maxChannelSpread": 0.013821642067292528,
+      "samplePreservation": {
+        "sites": 65536,
+        "changed": 0
+      },
+      "capture": {
+        "path": "b/control64.png",
+        "sha256": "5f87a4e36ab854cee5ca2fafdae056b97f55fb354c4fd217d2f2b3f3258bd9a7"
+      },
+      "sampleSha256": "026f5cc22b45fce040e5d7f4312736c438ae1d7099f95393f4433a19af7d0e7b"
+    },
+    "truth": {
+      "pixels": 1848,
+      "mae": 0,
+      "max": 0,
+      "p95ChannelSpread": 0.00011463272241823974,
+      "maxChannelSpread": 0.00011666325373321795,
+      "samplePreservation": {
+        "sites": 65536,
+        "changed": 0
+      },
+      "capture": {
+        "path": "truth/control64.png",
+        "sha256": "d73549e7f885f662c17cacffe7b086035f91e7dd73dcc31f1b4f4304d317eadc"
+      },
+      "sampleSha256": "be34a090265bd921da9b52e43b056a8dbc3aa24e2705c5eba640f5fa5d0373b3"
+    }
+  }
+}

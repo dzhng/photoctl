@@ -14,8 +14,9 @@ for the reported branch, nose and lower-wire artifacts. Their remaining origin
 belongs to a separate decoder-fidelity investigation, not another breadth rerun.
 The [neutral-decoder comparison](neutral-decoder-residuals/README.md) finds shared
 branch structure and differing fine chroma, but also differing scene placement
-despite equal raster dimensions. Coordinate provenance must precede registered
-pixel comparisons or a proposed decoder change.
+despite equal raster dimensions. The [coordinate witness](coordinate-metadata/README.md)
+does not establish a crop bug. The [interpolation experiment](interpolation-owner/README.md)
+isolates a fine-chroma/detail tradeoff; no replacement is accepted.
 
 ## Reproduction and evidence boundary
 
@@ -61,8 +62,8 @@ it is nonblank, carries a profile, or matches a hash.
 
 The decoder-boundary experiments below isolate the failure and the native opt-in
 checkpoint now supplies a bounded correction. Effective public treatment and cache
-identity and the complete reference review are integrated; next isolate remaining
-fine-edge concerns with the reconstruction toggle. Do not hide a decoder defect with preset tuning,
+identity and the complete reference review are integrated. The reconstruction toggle
+and interpolation experiments above own the remaining causal evidence. Do not hide a decoder defect with preset tuning,
 switch every RAW to its companion JPEG, or weaken the decoder oracle. Add a
 behavioral regression before correcting the responsible owner, then rerender and
 inspect the complete set plus native details. Until that passes, the camera

@@ -1,0 +1,143 @@
+{
+  "source": {
+    "path": "/Users/david/dev/photoctl/fixtures/camera/DSC08819.ARW",
+    "sha256": "a713c1a8723cff8a7db702b01a72d6367830aed792f23d6b3d366e39e3d53d55"
+  },
+  "productionHash": "c45651b52aa68aa04ace2ce25a97bc20e6a63f83ed5e1460cfecf40cdd84c4fa",
+  "scratchHash": "c45651b52aa68aa04ace2ce25a97bc20e6a63f83ed5e1460cfecf40cdd84c4fa",
+  "filters": 2492765332,
+  "dimensions": [
+    4608,
+    3072
+  ],
+  "roi": [
+    2606,
+    957,
+    512,
+    512
+  ],
+  "metadata": {
+    "whiteLevel": 15871,
+    "blackLevel": 0,
+    "asShotWb": [
+      2.5263671875,
+      1,
+      1.5712890625
+    ],
+    "camXyz": [
+      0.7459999918937683,
+      -0.23649999499320984,
+      -0.058800000697374344,
+      -0.5687000155448914,
+      1.3442000150680542,
+      0.24740000069141388,
+      -0.06239999830722809,
+      0.11559999734163284,
+      0.6583999991416931
+    ],
+    "wbPreApplied": false
+  },
+  "nativeSha256": "95d804f431a544226789ca69b3c20f9e5e1f5f851912d7ff26863bf39e2f8984",
+  "archiveSha256": "1d0fee415a673b5543c8c724891979f5bbdbfdcfc2109b45501aacd696231ae2",
+  "stages": {
+    "a": {
+      "cameraHash": "c45651b52aa68aa04ace2ce25a97bc20e6a63f83ed5e1460cfecf40cdd84c4fa",
+      "cameraRoiHash": "a21e5a418c6aafb045a48c8d6a66f43aae8400a2bab05e4b96fbeb01bce5a7f6",
+      "sceneHash": "93b9b06a0ef7dab81398f0b5b8c7badaedd7d22907184ae8dd4c85a882c3212d",
+      "sceneRoiHash": "378b2b056484046ecda5faa5c167aa1c21d87541ca84798429959e4da96245e0"
+    },
+    "b": {
+      "cameraHash": "792802c760873b9c7248b235f5ab8fcafdaf0391b7027b73b205a42b6624303c",
+      "cameraRoiHash": "7c3dfecc694896726986b079d60021ea532e9af0e40c6f2434385aa03d34b23a",
+      "sceneHash": "72da58497f1d25cceca112c89e90aea17bbde7a67ed0a04f1cd1ee7cfd5720f1",
+      "sceneRoiHash": "fe448dc8e13feeee07bd55112ccf091c9e4f61311eae3c4e81ed807d77f231f2"
+    }
+  },
+  "photoCameraRoiDifference": {
+    "changedSamples": 502104,
+    "totalSamples": 786432,
+    "mae": 24.713480631510418,
+    "max": 12025
+  },
+  "samplePreservation": {
+    "photoA": {
+      "nonzeroSites": 14155776,
+      "changed": 0
+    },
+    "photoB": {
+      "nonzeroSites": 14155776,
+      "changed": 0
+    },
+    "controlA": {
+      "nonzeroSites": 65536,
+      "changed": 0
+    },
+    "controlB": {
+      "nonzeroSites": 65536,
+      "changed": 0
+    }
+  },
+  "control": {
+    "formula": "L=.35+.2*(sin(t)+sin(3t)/3+sin(5t)/5+sin(7t)/7); t=2*pi*(x+.25*y-160)/512. Channel sample=round(L*white*Ggain/channelGain). Finite Fourier edge, no frequencies above 7/512 cycles/pixel along x. No noise or clipping.",
+    "metricsDomain": "WB-normalized camera channels / white; x,y in[16,240),abs(x+.25*y-160)<=32",
+    "a": {
+      "pixels": 14392,
+      "mae": 0.000066199766122129,
+      "max": 0.0004775440465314418,
+      "p95ChannelSpread": 0.0003885698561841844,
+      "maxChannelSpread": 0.0004989569222165757
+    },
+    "b": {
+      "pixels": 14392,
+      "mae": 0.00007376727214007735,
+      "max": 0.00031836269768770187,
+      "p95ChannelSpread": 0.00031257876000251317,
+      "maxChannelSpread": 0.0003651264491840722
+    },
+    "quantizationFloor": {
+      "pixels": 14392,
+      "mae": 0,
+      "max": 0,
+      "p95ChannelSpread": 0.00010798734720562919,
+      "maxChannelSpread": 0.00012533916026086223
+    }
+  },
+  "captures": [
+    {
+      "file": "a/photo-overview.png",
+      "sha256": "3361273166f1d1a38d23c36856dd1106100daa2747cff9d9a6848b19df5a4511"
+    },
+    {
+      "file": "a/photo-detail.png",
+      "sha256": "9252a87c4c0f32e25d4e90bb6f2d75594c3988ef523a584e243850c751ef24c2"
+    },
+    {
+      "file": "a/photo-detail-minus2.png",
+      "sha256": "759bcf184fac9cbfca6ed34ce56a2832d7de91ea34256106017500f2a7c8792b"
+    },
+    {
+      "file": "b/photo-overview.png",
+      "sha256": "93d6650a66895ea4f82525e04538e9fac0484a7d8545fe0457ac37e60a8fc82d"
+    },
+    {
+      "file": "b/photo-detail.png",
+      "sha256": "71e9f79d1646a194d9a9f2e2c180ef7d507cf36e89548fcdb1b934af218c3452"
+    },
+    {
+      "file": "b/photo-detail-minus2.png",
+      "sha256": "25a556f0a28abb79eef8b975d370c8759efec201ee1a613fb705d5c560463b46"
+    },
+    {
+      "file": "a/control.png",
+      "sha256": "890d6896ea124fa4d74cc69258448ab809e619caecb07cee599080806d13fdaf"
+    },
+    {
+      "file": "b/control.png",
+      "sha256": "4b2ad7299910eced9cf9e23b4fd29299cecf6b5d7c3e0276258400ac8eaa58ae"
+    },
+    {
+      "file": "truth/control.png",
+      "sha256": "d8e1ff63584027df7cb5f301fc20ed4e27bb10bc0b4683a2a7d74ce3ec6f7e1b"
+    }
+  ]
+}

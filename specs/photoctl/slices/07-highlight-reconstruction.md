@@ -247,6 +247,14 @@ Metadata collection is complete within that boundary; do not repeat it as the
 next task. Existing G4 dimension equality and patch means do not establish registration; inventing
 expected coordinates from either decoder would not be an honest regression.
 
+The [sole-interpolator experiment](../assets/camera-delivery-review/interpolation-owner/README.md)
+now isolates interpolation's contribution using identical CFA input and an exact
+production-baseline match. A sharper known-neutral control exposes invented chroma;
+bilinear reduces it but softens photographic detail and is not accepted as a replacement.
+The next proposal must improve chroma without hiding the defect through blur, preserve
+measured samples/headroom and earn an owner-specific regression. Do not repeat this
+comparison or infer a WB-order/default-decoder change from it.
+
 C must conclude per defect, not repeatedly reject everything because lights are
 clipped. Flat cores where channels were lost are not themselves a failed correction.
 New or exaggerated colored rims or serrated transitions require a bounded causal
