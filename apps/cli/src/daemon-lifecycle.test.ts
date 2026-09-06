@@ -120,6 +120,62 @@ test("init remains successful when its optional daemon start fails", async () =>
   await expect(stat(join(library, "PG_VERSION"))).resolves.toBeDefined();
 }, 30_000);
 
+test.each([
+  { termination: "exit", script: "process.exit(23);", exitCode: 23, signal: null },
+  {
+    termination: "signal",
+    script: 'process.kill(process.pid, "SIGTERM");',
+    exitCode: null,
+    signal: "SIGTERM",
+  },
+])(
+  "a failed daemon startup reports its $termination and releases the inherited lock",
+  async ({ script, exitCode, signal }) => {
+    const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-exit-"));
+    directories.push(parent);
+    const library = join(parent, "library");
+    const entry = join(parent, "exit.cjs");
+    await writeFile(entry, `process.stderr.write("private diagnostic\\n"); ${script}`);
+    expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+    const failed = await spawnPhotoctl(["daemon", "start"], {
+      libraryDir: library,
+      env: {
+        PHOTOCTL_NO_DAEMON: "0",
+        PHOTOCTL_DAEMON_ENTRY: entry,
+        PHOTOCTL_LOCK_BUDGET_MS: "10000",
+      },
+    });
+    const { version } = JSON.parse(
+      await readFile(new URL("../package.json", import.meta.url), "utf8"),
+    ) as { version: string };
+    const logPath = daemonSocketPath(library, version).replace(/\.sock$/u, ".log");
+    expect(failed.code, JSON.stringify(failed.json)).toBe(69);
+    expect(failed.json).toMatchObject({
+      ok: false,
+      code: "daemon_unavailable",
+      data: { library, exit_code: exitCode, signal, log_path: logPath },
+    });
+    expect(JSON.stringify(failed.json)).not.toContain("private diagnostic");
+    expect((await stat(logPath)).mode & 0o777).toBe(0o600);
+    expect(await readFile(logPath, "utf8")).toContain("private diagnostic");
+    const lock = await acquireLibraryLock(join(library, OPEN_LOCK_NAME), 0);
+    await lock.release();
+    try {
+      const recovered = await spawnPhotoctl(["daemon", "start"], {
+        libraryDir: library,
+        env: { PHOTOCTL_NO_DAEMON: "0" },
+      });
+      expect(recovered.code, JSON.stringify(recovered.json)).toBe(0);
+    } finally {
+      await spawnPhotoctl(["daemon", "stop"], {
+        libraryDir: library,
+        env: { PHOTOCTL_NO_DAEMON: "0" },
+      });
+    }
+  },
+  30_000,
+);
+
 test("the first ordinary command starts one daemon and status reports it", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-start-"));
   directories.push(parent);
@@ -135,7 +191,7 @@ test("the first ordinary command starts one daemon and status reports it", async
     env: { PHOTOCTL_NO_DAEMON: "0" },
   });
 
-  expect(diagnosed.code).toBe(0);
+  expect(diagnosed.code, JSON.stringify(diagnosed.json)).toBe(0);
   expect(diagnosed.events).toContainEqual(
     expect.objectContaining({ event: "daemon", action: "spawned", schema: 1 }),
   );
@@ -192,7 +248,8 @@ test("an idle daemon accepts an uncontended request with a zero lock budget", as
   const library = join(parent, "library");
   expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
   const env = { PHOTOCTL_NO_DAEMON: "0" };
-  expect((await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env })).code).toBe(0);
+  const started = await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env });
+  expect(started.code, JSON.stringify(started.json)).toBe(0);
 
   const diagnosed = await spawnPhotoctl(["doctor"], {
     libraryDir: library,
@@ -244,6 +301,7 @@ test("daemon stop does not report success while a live holder is unresponsive", 
   const env = { PHOTOCTL_NO_DAEMON: "0" };
   expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
   const started = await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env });
+  expect(started.code, JSON.stringify(started.json)).toBe(0);
   const pid = (started.json as { data: { pid: number } }).data.pid;
 
   process.kill(pid, "SIGSTOP");
@@ -363,7 +421,7 @@ test("an accepting impostor reports an unknown outcome before explicit recovery"
       libraryDir: library,
       env: { PHOTOCTL_NO_DAEMON: "0" },
     });
-    expect(recovered.code).toBe(0);
+    expect(recovered.code, JSON.stringify(recovered.json)).toBe(0);
     expect(recovered.events).toContainEqual(expect.objectContaining({ action: "spawned" }));
     expect((recovered.json as { data: { pid: number } }).data.pid).not.toBe(process.pid);
     expect(

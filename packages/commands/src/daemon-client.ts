@@ -141,7 +141,13 @@ export async function ensureDaemon(
         const status = await statusAt(socket);
         if (status) return { endpoint: daemonEndpoint(status), action: "spawned" };
         if (spawnError) throw daemonUnavailable(libraryPath, spawnError);
-        if (child.exitCode !== null) throw daemonUnavailable(libraryPath);
+        if (child.exitCode !== null || child.signalCode !== null) {
+          throw daemonUnavailable(libraryPath, undefined, {
+            exit_code: child.exitCode,
+            signal: child.signalCode,
+            log_path: logPath,
+          });
+        }
         await delay(Math.min(pollCeilingMs, Math.max(1, deadline - Date.now())));
       }
       throw daemonUnavailable(libraryPath);
@@ -374,10 +380,15 @@ export function requestTimeout(request: CommandRequest): number {
   return queueDeadline;
 }
 
-function daemonUnavailable(libraryPath: string, cause?: unknown): PhotoctlError {
+function daemonUnavailable(
+  libraryPath: string,
+  cause?: unknown,
+  startup?: { exit_code: number | null; signal: NodeJS.Signals | null; log_path: string },
+): PhotoctlError {
   return new PhotoctlError("daemon_unavailable", "Could not start the photoctl daemon", {
     library: resolve(libraryPath),
     ...(cause instanceof Error ? { message: cause.message } : {}),
+    ...startup,
   });
 }
 
