@@ -1841,6 +1841,7 @@
   point at a replacement by then.
 - **The gap:** The plan fixed the hash bytes but did not define the API result or concurrent source-file
   behavior.
+
 - **The reach:** Import and later relocation logic receive one coherent set of file facts; callers must
   retry a file that changes during inspection.
 - **Verdict:** **Sound.** It makes the content key describe one observed file state rather than a race
@@ -5657,3 +5658,26 @@
 - **Verdict:** **Sound.** Coverage has one owner and native generated sampling remains available
   to the existing compositor; no additional resample branch or strength multiplication is added.
 - **Confidence:** High.
+
+### Retouch — Original-relative coordinates and supported photographic pixels
+
+- **When:** Expanded-canvas retouch follow-on, 2026-09-06.
+- **The choice:** Absolute positions remain oriented original coordinates. `--norm` continues to
+  scale positions by original width/height and radius by the original long edge. Values outside
+  the original rectangle or normalized unit interval are allowed when the new circle intersects
+  actual photographic support and leaves supported surroundings. The circle is clipped to that
+  support; the viewport rectangle alone does not authorize healing an excluded corner.
+- **The gap:** Canvas expansion made the original catalog bounds too narrow, but renormalizing
+  coordinates to each new canvas would silently move existing requests. Rectangular bounds also
+  include empty corners and gaps left by authored geometry.
+- **The reach:** Validation consumes the stored canvas plan and existing mask projection owner.
+  It may materialize deterministic mask execution/cache artifacts, but never decodes a source,
+  replays paid generation, or changes nodes/document revisions. Sequential layer-mask processing
+  retains bounded working buffers. No new support schema or mask-lineage parser is introduced.
+  Existing exact retries return the authored layer even if a later crop hides it; fresh invalid
+  circles are rejected. That distinction preserves the existing idempotent operation contract.
+- **Verdict:** Sound for the bounded public support and revision tests. The full-frame-generated
+  corner neighbor belongs to root integration; cold reduced rendering and full-resolution resource
+  acceptance are not established by the warm small-raster lifecycle witness.
+- **Confidence:** High for coordinate anchoring and authored retry; medium for the unintegrated
+  ordinary full-frame generation neighbor.

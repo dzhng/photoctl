@@ -8,6 +8,8 @@ import {
   undoRevision,
   readValidPreviewArtifact,
   Sam2Segmenter,
+  loadLogicalFrame,
+  transformPoint,
 } from "@photoctl/render";
 import { showDataSchema, segmentDataSchema } from "@photoctl/protocol";
 import type { StructuredModelAdapter } from "@photoctl/providers";
@@ -118,6 +120,46 @@ async function createCanvasFixture(w = 16, h = 12) {
     throw error;
   }
 }
+
+test.each([0, 5])(
+  "retouch rejects an excluded corner inside a rotated border viewport at straighten %s without a revision",
+  async (straighten) => {
+    const fixture = await createCanvasFixture();
+    const { id, handle, command, author } = fixture;
+    try {
+      await command("develop", [id, "--set", 'crop={"x":4,"y":3,"w":6,"h":4}']);
+      const border = await author(2, "blue");
+      await command("layer", [
+        "transform",
+        id,
+        border.layerId,
+        "--rotate",
+        "30",
+        "--anchor",
+        "0,0",
+      ]);
+      await command("develop", [id, "--set", `straighten_deg=${straighten}`]);
+      await command("show", [id, "--preview-size", "native"]);
+      expect((await fixture.currentPixels()).data.slice(0, 3)).toEqual(new Float32Array([0, 0, 0]));
+      const before = (await loadActiveDocument(handle, id))!;
+      const frame = await loadLogicalFrame(handle, id, before.roots.output);
+      const corner = transformPoint(frame.rasterToBase, { x: 0.5, y: 0.5 });
+      const result = await dispatch(
+        {
+          verb: "retouch",
+          args: [id, "--at", `${corner.x},${corner.y}`, "--radius", "0.1"],
+          cwd: fixture.parent,
+          env: { noDaemon: true },
+        },
+        { version: "test", library: handle },
+      );
+      expect(result).toMatchObject({ ok: false, code: "usage" });
+      expect((await loadActiveDocument(handle, id))!.revisionId).toBe(before.revisionId);
+    } finally {
+      await fixture.close();
+    }
+  },
+);
 
 test("SAM sees source-only pixels in the expanded canvas without reactivating its consumed crop", async () => {
   const fixture = await createCanvasFixture();

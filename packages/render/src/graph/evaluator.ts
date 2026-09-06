@@ -44,7 +44,7 @@ import {
   frameSamplingDensity,
   type RenderFrame,
 } from "./frame.js";
-import { canvasCompositeSchema } from "./output.js";
+import { canvasCompositeSchema, readCanvasPlan } from "./output.js";
 import {
   compositeMaskedPixels,
   featherMask,
@@ -65,6 +65,10 @@ import {
   projectCoverageBetweenFrames,
   supportCoverage,
   clipCoverageToFrames,
+  loadLogicalFrame,
+  readFramedMaskInput,
+  projectCoverageThroughFrames,
+  projectCanvasLayerMask,
 } from "./projection.js";
 
 export interface EvaluatedNode {
@@ -138,6 +142,69 @@ export async function evaluateGraphNode(request: EvaluateGraphNodeRequest): Prom
     return await pending;
   };
   return await evaluate(request.nodeId);
+}
+
+/** Authored photographic support; only deterministic mask caches may be materialized. */
+export async function readPhotographicSupport(
+  request: Pick<EvaluateGraphNodeRequest, "database" | "libraryPath" | "photoId" | "nodeId">,
+): Promise<{ frame: RenderFrame; mask: MaskImage }> {
+  const plan = await readCanvasPlan(request.database, request.photoId, request.nodeId);
+  const frame = plan
+    ? parseRenderFrame(plan.frame)
+    : await loadLogicalFrame(request.database, request.photoId, request.nodeId);
+  if (!plan)
+    return {
+      frame,
+      mask: { ...frame.raster, data: new Float32Array(frame.raster.w * frame.raster.h).fill(1) },
+    };
+  const inputs = (
+    await request.database.query<{ input_node_id: string }>(
+      "SELECT input_node_id FROM image_node_inputs WHERE photo_id = $1 AND node_id = $2 ORDER BY input_index",
+      [request.photoId, request.nodeId],
+    )
+  ).rows;
+  const base = await loadLogicalFrame(request.database, request.photoId, inputs[0]!.input_node_id);
+  const stages = [...plan.base_stages, ...plan.viewport_stages, plan.frame].map(parseRenderFrame);
+  const mask = clipCoverageToFrames(
+    await projectCoverageThroughFrames(
+      { ...base.raster, data: new Float32Array(base.raster.w * base.raster.h).fill(1) },
+      base,
+      stages,
+    ),
+    frame,
+    [base, ...stages],
+  );
+  let uncovered = mask.data.reduce((count, value) => count + Number(value <= 0), 0);
+  for (const [index, layer] of plan.layers.entries()) {
+    if (!uncovered) break;
+    if (layer.opacity <= 0) continue;
+    const contentFrame = layer.frame
+      ? parseRenderFrame(layer.frame)
+      : await loadLogicalFrame(
+          request.database,
+          request.photoId,
+          inputs[1 + index * 2]!.input_node_id,
+        );
+    const input = await evaluateGraphNode({
+      ...request,
+      nodeId: inputs[2 + index * 2]!.input_node_id,
+    });
+    const coverage = await projectCanvasLayerMask(
+      request,
+      input,
+      contentFrame,
+      layer,
+      plan,
+      parseRenderFrame,
+    );
+    for (let pixel = 0; pixel < mask.data.length; pixel++) {
+      if (mask.data[pixel]! <= 0 && coverage.data[pixel]! > 0) {
+        mask.data[pixel] = 1;
+        uncovered--;
+      }
+    }
+  }
+  return { frame, mask };
 }
 
 /** The full immutable output recipe fixes intent; each execution owns its realized sampling frame. */
@@ -796,23 +863,14 @@ async function evaluateCanvasComposite(
     index: number,
     realizeFrame: (saved: typeof plan.frame) => RenderFrame,
   ) => {
-    const layer = plan.layers[index]!;
-    const maskInput = inputs[2 + index * 2]!;
-    const coverage = await supportCoverage(request, maskInput);
-    const framedMask = await readFramedMaskInput(request, maskInput, coverage);
-    let frame = layer.frame ? framedMask.frame : layerFrames[index]!;
-    const stages = [...layer.stages, ...plan.viewport_stages];
-    const supportFrames = [framedMask.frame, layerFrames[index]!, ...stages.map(parseRenderFrame)];
-    let mask = layer.frame
-      ? framedMask.mask
-      : await projectCoverageBetweenFrames(framedMask.mask, framedMask.frame, frame, frame.raster);
-    for (const saved of [...stages, plan.frame]) {
-      const target = realizeFrame(saved);
-      mask = await projectCoverageBetweenFrames(mask, frame, target, target.raster);
-      frame = target;
-    }
-    if (coverage) mask = await applyEffectiveMask(mask, { operation: "support" });
-    return clipCoverageToFrames(mask, realizeFrame(plan.frame), supportFrames);
+    return projectCanvasLayerMask(
+      request,
+      inputs[2 + index * 2]!,
+      layerFrames[index]!,
+      plan.layers[index]!,
+      plan,
+      realizeFrame,
+    );
   };
   const authoredOutput = parseRenderFrame(plan.frame);
   const baseDensity = frameSamplingDensity(sourceFrame, authoredOutput);
@@ -917,15 +975,6 @@ async function readRgbInput(
     throw new Error("Composite RGB artifact dimensions do not match");
   }
   return image;
-}
-
-async function readFramedMaskInput(
-  request: EvaluateGraphNodeRequest,
-  input: EvaluatedNode,
-  coverage?: MaskImage,
-) {
-  const frame = await loadBaseProjection(request.database, request.photoId, input);
-  return { frame, mask: coverage ?? (await readMaskInput(input, frame.raster)) };
 }
 
 async function readMaskInput(

@@ -445,8 +445,9 @@ the complete synthetic capture set and the report-layout verification boundary.
 The [process lifecycle witness](../assets/outpaint-lifecycle/README.md) covers retouch inside the
 cropped-away extension, repeat generation, removal/undo, refresh and warm offline export through
 both the built CLI and an isolated prebuilt-runtime package. Masks carry their own execution frames
-through the shared evaluator; they are not assumed to use catalog-sized rasters. Full out-of-catalog
-retouch validation and fresh reduced offline rendering remain separate acceptance boundaries.
+through the shared evaluator; they are not assumed to use catalog-sized rasters. Expanded-coordinate
+retouch uses actual projected photographic support, including permanent masks, while exact authored
+retries remain idempotent. Fresh reduced offline rendering remains a separate acceptance boundary.
 
 Pure translation, rotation and shrinking do not retry failed border density. Increased scale can
 request configured upscaling; explicit retry remains available for a failed processing step.

@@ -1,11 +1,19 @@
 import { normalizeMaskArtifact, publishArtifact } from "./artifacts/publication.js";
-import { commitRevision, type GraphDatabase, type NodeDraft } from "./graph/store.js";
+import {
+  commitRevision,
+  ensurePhotoDocument,
+  loadActiveDocument,
+  RevisionConflictError,
+  type GraphDatabase,
+  type NodeDraft,
+} from "./graph/store.js";
 import type { RevisionLayerDraft } from "./layers/model.js";
 import type { JsonValue } from "./graph/types.js";
-import { loadLogicalFrame } from "./graph/projection.js";
-import { savedRenderFrame } from "./graph/frame.js";
-import { readActiveDevelopState } from "./develop/state.js";
-import { invertTransformMatrix, transformPoint, type TransformMatrix } from "./transforms.js";
+import { developFrame, savedRenderFrame, type RenderFrame } from "./graph/frame.js";
+import { markupFreeOutputNode } from "./markup/graph.js";
+import { transformPoint } from "./transforms.js";
+import { readPhotographicSupport } from "./graph/evaluator.js";
+import type { MaskImage } from "./mask-tiff.js";
 
 const NEIGHBORHOOD_RADIUS = 3;
 const REFINEMENT_ITERATIONS = 512;
@@ -32,20 +40,11 @@ export async function createRetouchLayer(
     radius: number;
   },
 ): Promise<RetouchResult> {
-  validateCircle(request.dimensions, request.at, request.radius);
-  const state = await readActiveDevelopState(database, {
-    photoId: request.photoId,
-    orientation: request.orientation,
-  });
-  const document = {
-    revisionId: state.revisionId,
-    renderHash: state.renderHash,
-    layers: state.layers,
-    roots: { base: state.baseNodeId, output: state.outputNodeId },
-  };
+  validateCircle(request.at, request.radius);
+  let document = await loadActiveDocument(database, request.photoId);
   const existing = (
     await Promise.all(
-      document.layers
+      (document?.layers ?? [])
         .filter(({ role }) => role === "retouch")
         .map(async (layer) => ({
           layer,
@@ -65,7 +64,7 @@ export async function createRetouchLayer(
       parameters?.radius === request.radius
     );
   });
-  if (existing) {
+  if (existing && document) {
     return {
       layerId: existing.layer.id,
       revisionId: document.revisionId,
@@ -77,11 +76,30 @@ export async function createRetouchLayer(
     };
   }
 
-  const frame = await loadLogicalFrame(database, request.photoId, state.pixelOutputNodeId);
-  const mask = circularMask(request.dimensions, request.at, request.radius, {
-    ...frame.raster,
-    matrix: frame.baseToRaster,
-  });
+  let pixelOutputNodeId = document
+    ? await markupFreeOutputNode(database, request.photoId, document.roots.output)
+    : undefined;
+  const support = pixelOutputNodeId
+    ? await readPhotographicSupport({
+        database,
+        libraryPath,
+        photoId: request.photoId,
+        nodeId: pixelOutputNodeId,
+      })
+    : undefined;
+  const frame = support?.frame ?? developFrame(request.dimensions, request.dimensions);
+  const mask = circularMask(frame, request.at, request.radius, support?.mask);
+  if (!document) {
+    const initialized = await ensurePhotoDocument(database, {
+      photoId: request.photoId,
+      orientation: request.orientation,
+      expectedRevisionId: null,
+    });
+    pixelOutputNodeId = initialized.outputNodeId;
+    document = await loadActiveDocument(database, request.photoId);
+    if (document?.revisionId !== initialized.revisionId) throw new RevisionConflictError();
+  }
+  if (!document || !pixelOutputNodeId) throw new Error("The active photo document is missing");
   const published = await publishArtifact(libraryPath, await normalizeMaskArtifact(mask));
   const nodes: NodeDraft[] = [
     {
@@ -110,7 +128,7 @@ export async function createRetouchLayer(
         refinement_iterations: REFINEMENT_ITERATIONS,
         refinement_pixel_budget: REFINEMENT_PIXEL_BUDGET,
       },
-      inputs: [{ nodeId: state.pixelOutputNodeId }, { localKey: "mask-placement" }],
+      inputs: [{ nodeId: pixelOutputNodeId }, { localKey: "mask-placement" }],
     },
   ];
   const layers: RevisionLayerDraft[] = [
@@ -157,62 +175,40 @@ export async function createRetouchLayer(
   };
 }
 
-export function circularMask(
-  dimensions: { w: number; h: number },
+function circularMask(
+  frame: RenderFrame,
   at: [number, number],
   radius: number,
-  geometry: { matrix: TransformMatrix; w: number; h: number } = {
-    matrix: [1, 0, 0, 1, 0, 0],
-    ...dimensions,
-  },
+  support?: MaskImage,
 ) {
-  validateCircle(dimensions, at, radius);
-  const data = new Float32Array(geometry.w * geometry.h);
+  const point = transformPoint(frame.baseToRaster, { x: at[0], y: at[1] });
+  const { w, h } = frame.raster;
+  if (point.x < 0 || point.x > w || point.y < 0 || point.y > h)
+    throw new Error("Retouch point must be inside the current photographic viewport");
+  const data = new Float32Array(w * h);
   const squared = radius * radius;
-  const inverse = invertTransformMatrix(geometry.matrix);
-  for (let y = 0; y < geometry.h; y += 1)
-    for (let x = 0; x < geometry.w; x += 1) {
-      const base = transformPoint(inverse, { x: x + 0.5, y: y + 0.5 });
+  let surrounding = 0;
+  for (let y = 0; y < h; y += 1)
+    for (let x = 0; x < w; x += 1) {
+      const base = transformPoint(frame.rasterToBase, { x: x + 0.5, y: y + 0.5 });
       const dx = base.x - at[0];
       const dy = base.y - at[1];
-      if (dx * dx + dy * dy <= squared) data[y * geometry.w + x] = 1;
+      if (support && support.data[y * w + x]! <= 0) continue;
+      if (dx * dx + dy * dy <= squared) data[y * w + x] = 1;
+      else surrounding++;
     }
   if (!data.some((value) => value > 0))
-    throw new Error("Retouch circle does not intersect the current crop");
-  if (data.every((value) => value > 0))
-    throw new Error("Retouch circle must leave surrounding pixels in the current crop");
-  return { w: geometry.w, h: geometry.h, data };
+    throw new Error("Retouch circle does not cover a current photographic pixel center");
+  if (surrounding === 0)
+    throw new Error(
+      "Retouch circle must leave surrounding pixels in the current photographic viewport",
+    );
+  return { w, h, data };
 }
 
-function validateCircle(
-  dimensions: { w: number; h: number },
-  at: [number, number],
-  radius: number,
-) {
-  if (
-    !at.every(Number.isFinite) ||
-    at[0] < 0 ||
-    at[0] > dimensions.w ||
-    at[1] < 0 ||
-    at[1] > dimensions.h
-  )
-    throw new Error("Retouch point must be inside the oriented image bounds");
+function validateCircle(at: [number, number], radius: number) {
+  if (!at.every(Number.isFinite)) throw new Error("Retouch point must be finite");
   if (!Number.isFinite(radius) || radius <= 0) throw new Error("Retouch radius must be positive");
-  const centers: Array<[number, number]> = [
-    [0.5, 0.5],
-    [dimensions.w - 0.5, 0.5],
-    [0.5, dimensions.h - 0.5],
-    [dimensions.w - 0.5, dimensions.h - 0.5],
-  ];
-  const squared = radius * radius;
-  const distance = ([x, y]: [number, number]) => (x - at[0]) ** 2 + (y - at[1]) ** 2;
-  const nearest: [number, number] = [
-    Math.min(dimensions.w - 0.5, Math.max(0.5, at[0])),
-    Math.min(dimensions.h - 0.5, Math.max(0.5, at[1])),
-  ];
-  if (distance(nearest) > squared) throw new Error("Retouch circle does not cover a pixel center");
-  if (centers.every((center) => distance(center) <= squared))
-    throw new Error("Retouch circle must leave surrounding pixels outside the mask");
 }
 function samePoint(value: unknown, point: [number, number]): boolean {
   return (

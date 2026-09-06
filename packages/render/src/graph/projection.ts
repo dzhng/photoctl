@@ -18,6 +18,9 @@ import { composeTransformMatrices, invertTransformMatrix } from "../transforms.j
 import type { EvaluateGraphNodeRequest, EvaluatedNode } from "./evaluator.js";
 import type { GraphTransaction } from "./store.js";
 import type { JsonValue } from "./types.js";
+import { applyEffectiveMask } from "../mask-operations.js";
+import type { canvasCompositeSchema } from "./output.js";
+import type { z } from "zod";
 
 /** Recipe-only inspection never borrows dimensions from an unrelated pixel execution. */
 export async function loadLogicalFrame(
@@ -217,6 +220,55 @@ export async function projectCoverageBetweenFrames(
     ...frame,
     data: await transformMaskPixels(mask.data, mask.w, mask.h, frame.w, frame.h, matrix),
   };
+}
+
+export async function readFramedMaskInput(
+  request: Pick<EvaluateGraphNodeRequest, "database" | "photoId">,
+  input: EvaluatedNode,
+  coverage?: MaskImage,
+) {
+  const frame = await loadBaseProjection(request.database, request.photoId, input);
+  const mask =
+    coverage ?? (await readArtifactMask(input.artifact.path, input.artifact.artifactHash));
+  if (mask.w !== frame.raster.w || mask.h !== frame.raster.h)
+    throw new Error("Mask artifact dimensions do not match its execution frame");
+  return { frame, mask };
+}
+
+export async function projectCoverageThroughFrames(
+  mask: MaskImage,
+  frame: RenderFrame,
+  stages: readonly RenderFrame[],
+) {
+  for (const target of stages) {
+    mask = await projectCoverageBetweenFrames(mask, frame, target, target.raster);
+    frame = target;
+  }
+  return mask;
+}
+
+export async function projectCanvasLayerMask(
+  request: EvaluateGraphNodeRequest,
+  input: EvaluatedNode,
+  layerFrame: RenderFrame,
+  layer: z.infer<typeof canvasCompositeSchema>["layers"][number],
+  plan: z.infer<typeof canvasCompositeSchema>,
+  realizeFrame: (saved: z.infer<typeof canvasCompositeSchema>["frame"]) => RenderFrame,
+) {
+  const coverage = await supportCoverage(request, input);
+  const framedMask = await readFramedMaskInput(request, input, coverage);
+  const frame = layer.frame ? framedMask.frame : layerFrame;
+  const stages = [...layer.stages, ...plan.viewport_stages];
+  let mask = layer.frame
+    ? framedMask.mask
+    : await projectCoverageBetweenFrames(framedMask.mask, framedMask.frame, frame, frame.raster);
+  mask = await projectCoverageThroughFrames(mask, frame, [...stages, plan.frame].map(realizeFrame));
+  if (coverage) mask = await applyEffectiveMask(mask, { operation: "support" });
+  return clipCoverageToFrames(mask, realizeFrame(plan.frame), [
+    framedMask.frame,
+    layerFrame,
+    ...stages.map(parseRenderFrame),
+  ]);
 }
 
 export async function projectRgbToRender(

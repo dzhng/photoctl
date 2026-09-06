@@ -26,11 +26,6 @@ export async function retouchCommand(
       ? parsePositive(parsed.options.get("--radius")!, "--radius")
       : 0.02;
     if (parsed.flags.has("--norm")) {
-      if (at.some((value) => value < 0 || value > 1) || radius > 1)
-        throw new PhotoctlError(
-          "usage",
-          "Normalized retouch coordinates and radius must be between 0 and 1",
-        );
       at[0] *= dimensions.w;
       at[1] *= dimensions.h;
       radius *= Math.max(dimensions.w, dimensions.h);
@@ -40,8 +35,6 @@ export async function retouchCommand(
     at[0] = canonicalGeometry(at[0]);
     at[1] = canonicalGeometry(at[1]);
     radius = canonicalGeometry(radius);
-    if (at[0] < 0 || at[0] > dimensions.w || at[1] < 0 || at[1] > dimensions.h)
-      throw new PhotoctlError("usage", "Retouch point must be inside the oriented image bounds");
     try {
       const result = await createRetouchLayer(lease.handle, lease.handle.path, {
         photoId: id,

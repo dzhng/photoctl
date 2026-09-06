@@ -143,6 +143,56 @@ test("retouch uses oriented bounds and rejects invalid target geometry", async (
   }
 });
 
+test("an authored retouch retry survives a hiding crop while a fresh excluded circle is rejected", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-retouch-retry-domain-"));
+  directories.push(parent);
+  const library = await initializeLibrary(join(parent, "library"));
+  const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c406";
+  try {
+    await library.handle.query(
+      "INSERT INTO photos (id,content_key,size,w,h,orientation) VALUES ($1,'ck_6234567890abcdef',1,100,50,1)",
+      [id],
+    );
+    const authored = retouchDataSchema.parse(
+      success(await command(library.handle, parent, [id, "--at", "10,10", "--radius", "2"])),
+    );
+    const cropped = await dispatch(
+      {
+        verb: "develop",
+        args: [id, "--set", 'crop={"x":50,"y":0,"w":50,"h":50}'],
+        cwd: parent,
+        env: { libraryDir: library.handle.path },
+      },
+      { version: "test", library: library.handle },
+    );
+    expect(cropped).toMatchObject({ ok: true });
+    const snapshot = async () =>
+      (
+        await library.handle.query(
+          "SELECT active_revision_id FROM photo_documents WHERE photo_id = $1",
+          [id],
+        )
+      ).rows;
+    const before = await snapshot();
+    const repeated = retouchDataSchema.parse(
+      success(await command(library.handle, parent, [id, "--at", "10,10", "--radius", "2"])),
+    );
+    expect(repeated).toMatchObject({
+      layer_id: authored.layer_id,
+      node: authored.node,
+      at: [10, 10],
+      radius: 2,
+      reused: true,
+    });
+    expect(
+      await command(library.handle, parent, [id, "--at", "11,10", "--radius", "2"]),
+    ).toMatchObject({ ok: false, code: "usage" });
+    expect(await snapshot()).toEqual(before);
+  } finally {
+    await library.handle.close();
+  }
+});
+
 async function command(
   handle: Awaited<ReturnType<typeof initializeLibrary>>["handle"],
   cwd: string,
