@@ -1,0 +1,24 @@
+{
+  "file": "DSC07668.JPG",
+  "size": 9656499,
+  "sha256": "f671863698fdedf005f87c0db79df281c83c4b83ee14d3caf192410b87a2e3c7",
+  "format": "jpeg",
+  "width": 4608,
+  "height": 3072,
+  "orientation": 1,
+  "exif": {
+    "Make": "SONY",
+    "Model": "ILCE-7CM2",
+    "DateTimeOriginal": "2026:01:20 21:49:14",
+    "OffsetTimeOriginal": "+08:00",
+    "ISO": 640,
+    "FNumber": 1.4,
+    "ColorSpace": 1
+  },
+  "provenance": {
+    "source": "DCIM/100MSDCF/DSC07668.JPG",
+    "acquired": "2026-09-06",
+    "relationship": "Original camera JPEG companion to the same-stem ARW; not a photoctl export.",
+    "license": "User-provided for permanent project development; no relicensing asserted."
+  }
+}

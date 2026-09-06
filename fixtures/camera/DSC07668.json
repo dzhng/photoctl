@@ -1,0 +1,39 @@
+{
+  "file": "DSC07668.ARW",
+  "provenance": {
+    "source": "DCIM/100MSDCF/DSC07668.ARW",
+    "acquired": "2026-09-06",
+    "license": "User-provided for permanent project development; no relicensing asserted."
+  },
+  "size": 31309824,
+  "sha256": "96f5813e542f75e66a28dc8b52412a2b2ad21279069ed0ea613b870eb31d4604",
+  "content_key": "ck_eb501e9a1823a7ac",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43910,
+      "length": 7330
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 192674,
+      "length": 190481
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:01:20 21:49:14",
+    "OffsetTimeOriginal": "+08:00"
+  },
+  "raw": {
+    "width": 4736,
+    "height": 3132,
+    "compression": 1,
+    "sonyRawFileType": 0,
+    "defaultCrop": [
+      4608,
+      3072
+    ]
+  }
+}

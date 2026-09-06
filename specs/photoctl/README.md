@@ -129,8 +129,12 @@ shared macOS floor does not imply Node or Swift-helper support on that OS.
 G3 still requires an SSH-capable Mac session. Permanent user-provided camera references now cover
 uncompressed, lossy, full-size and reduced lossless RAWs, portrait orientations and real JPEG
 companions; [fixture provenance](../../fixtures/camera/README.md) distinguishes these from public
-CC0 assets and does not guess reduced-lossless M/S labels. The real-drive acceptance journey and
-actual Classic sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
+CC0 assets and does not guess reduced-lossless M/S labels. The complete-card metadata inventory
+now maps every observed RAW format/crop/orientation group to a retained original pair. A development
+worktree passed linked import of 431 real-card pairs, rating ten, editing/exporting three and explicit
+camera-JPEG access; this is not the shared gold-exam script or packed-release gate. The camera may
+be disconnected for continued fixture-based development. The exact real-drive acceptance journey
+and actual Classic sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
 require their explicitly configured credentials and consent; an ambient key is not acceptance evidence.
 
 **Full-source gate correction:** the native image packages now use optimized development builds,

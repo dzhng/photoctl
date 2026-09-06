@@ -1,0 +1,240 @@
+{
+  "date": "2026-09-06",
+  "volumeUuid": "0051C01F-A0CE-36FC-9386-477DA323CD33",
+  "sourceRoot": "/Volumes/Untitled/DCIM",
+  "scope": "Read-only file roster and Sony TIFF metadata, not pixel decode or integrity hashes",
+  "fileCount": 5466,
+  "totalBytes": 122800930643,
+  "pairs": 2733,
+  "unpaired": [],
+  "metadataBytesRead": 4724550,
+  "errors": [],
+  "rawGroups": [
+    {
+      "raw": {
+        "width": 7040,
+        "height": 4688,
+        "compression": 1,
+        "sonyRawFileType": 0,
+        "defaultCrop": [
+          7008,
+          4672
+        ]
+      },
+      "orientation": 1,
+      "count": 42,
+      "fixtures": [
+        "DSC07633.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 4736,
+        "height": 3132,
+        "compression": 1,
+        "sonyRawFileType": 0,
+        "defaultCrop": [
+          4608,
+          3072
+        ]
+      },
+      "orientation": 1,
+      "count": 82,
+      "fixtures": [
+        "DSC07668.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 7040,
+        "height": 4688,
+        "compression": 1,
+        "sonyRawFileType": 0,
+        "defaultCrop": [
+          7008,
+          4672
+        ]
+      },
+      "orientation": 8,
+      "count": 5,
+      "fixtures": [
+        "DSC07730.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 7168,
+        "height": 5120,
+        "compression": 7,
+        "sonyRawFileType": 4,
+        "defaultCrop": [
+          7008,
+          4672
+        ]
+      },
+      "orientation": 1,
+      "count": 691,
+      "fixtures": [
+        "DSC08142.ARW",
+        "DSC00442.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 5120,
+        "height": 3584,
+        "compression": 7,
+        "sonyRawFileType": 4,
+        "defaultCrop": [
+          4608,
+          3072
+        ]
+      },
+      "orientation": 1,
+      "count": 1407,
+      "fixtures": [
+        "DSC08819.ARW",
+        "DSC09314.ARW",
+        "DSC09797.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 7168,
+        "height": 5120,
+        "compression": 7,
+        "sonyRawFileType": 4,
+        "defaultCrop": [
+          7008,
+          4672
+        ]
+      },
+      "orientation": 8,
+      "count": 111,
+      "fixtures": [
+        "DSC08362.ARW",
+        "DSC00434.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 5120,
+        "height": 3584,
+        "compression": 7,
+        "sonyRawFileType": 4,
+        "defaultCrop": [
+          4608,
+          3072
+        ]
+      },
+      "orientation": 8,
+      "count": 154,
+      "fixtures": [
+        "DSC08541.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 7168,
+        "height": 5120,
+        "compression": 7,
+        "sonyRawFileType": 4,
+        "defaultCrop": [
+          7008,
+          4672
+        ]
+      },
+      "orientation": 6,
+      "count": 82,
+      "fixtures": [
+        "DSC09148.ARW",
+        "DSC00290.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 5120,
+        "height": 3584,
+        "compression": 7,
+        "sonyRawFileType": 4,
+        "defaultCrop": [
+          4608,
+          3072
+        ]
+      },
+      "orientation": 6,
+      "count": 45,
+      "fixtures": [
+        "DSC09903.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 3584,
+        "height": 2560,
+        "compression": 7,
+        "sonyRawFileType": 4,
+        "defaultCrop": [
+          3504,
+          2336
+        ]
+      },
+      "orientation": 1,
+      "count": 1,
+      "fixtures": [
+        "DSC00103.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 7040,
+        "height": 4688,
+        "compression": 32767,
+        "sonyRawFileType": 2,
+        "defaultCrop": [
+          7008,
+          4672
+        ]
+      },
+      "orientation": 1,
+      "count": 70,
+      "fixtures": [
+        "DSC00104.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 7040,
+        "height": 4688,
+        "compression": 32767,
+        "sonyRawFileType": 2,
+        "defaultCrop": [
+          7008,
+          4672
+        ]
+      },
+      "orientation": 8,
+      "count": 16,
+      "fixtures": [
+        "DSC00107.ARW"
+      ]
+    },
+    {
+      "raw": {
+        "width": 7040,
+        "height": 4688,
+        "compression": 32767,
+        "sonyRawFileType": 2,
+        "defaultCrop": [
+          7008,
+          4672
+        ]
+      },
+      "orientation": 6,
+      "count": 27,
+      "fixtures": [
+        "DSC00122.ARW"
+      ]
+    }
+  ]
+}

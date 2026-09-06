@@ -1,0 +1,45 @@
+{
+  "file": "DSC00104.ARW",
+  "provenance": {
+    "source": "DCIM/101MSDCF/DSC00104.ARW",
+    "acquired": "2026-09-06",
+    "license": "User-provided for permanent project development; no relicensing asserted."
+  },
+  "size": 37724160,
+  "sha256": "16edf6bc0122c84e7851c2209af700fde1d24f5da83bf91eecf3b6a9f13cf461",
+  "content_key": "ck_d646724a6359ab15",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43904,
+      "length": 8798
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 192674,
+      "length": 209721
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 405504,
+      "length": 4311185
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:08:01 20:56:25",
+    "OffsetTimeOriginal": "+07:00"
+  },
+  "raw": {
+    "width": 7040,
+    "height": 4688,
+    "compression": 32767,
+    "sonyRawFileType": 2,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
+  }
+}
