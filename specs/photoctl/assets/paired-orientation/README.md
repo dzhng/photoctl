@@ -56,8 +56,13 @@ reductions differ by 0.43–0.70. These coarse diagnostics distinguish orientati
 from compression/resampling differences; native crops and full views own the
 visible landmark judgment. They do not establish subpixel registration.
 
-Independent unprimed visual review is pending recording. No final visual acceptance
-is claimed until that review and root inspection are reconciled.
+Root inspected all 27 captures. Independent unprimed review
+`01a07585-efa5-7520-ad61-ab6aa9cb7934` inspected the same PNG-only collection and
+completed without geometric findings. Both accept the bounded orientation/framing
+contract; dark regions do not establish subpixel registration or RAW quality.
+The two DSC09903 overviews were opened for a human checkpoint at 08:47:49 UTC on
+2026-09-06. With no intervening visual feedback, the evidence-based geometry verdict
+was retained after five minutes; only those two Preview documents were closed.
 
 ## Remaining boundaries
 

@@ -154,6 +154,13 @@ cutover. Existing-library verification remains C's explicit scratch-only setup, 
 an automatic reset or backfill. Photographic acceptance is still C, including A's
 documented residual highlight edges.
 
+Root integration rebuilt and packaged the Swift helper and built all TypeScript
+workspaces. The merged boundary/safety/preview selection passed 55 tests; the
+graph, retained export, preview coordinator and generated/upscale consumer selection
+passed 54. Both public G4 modes plus the real CIRAW helper passed three macOS tests
+with unchanged thresholds and exclusions. These are focused integration checks,
+not the whole-spec closeout or C's photographic verdict.
+
 The decoder owns source-specific admission and method identity; the protocol's
 [`sourceTreatmentSchema`](../../../packages/protocol/src/treatment.ts) owns the
 transported value. CIRAW reads the enabled state back from the framework; its scale

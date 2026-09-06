@@ -47,8 +47,8 @@ capture set supplied to the reviewer. No image has been accepted merely because
 it is nonblank, carries a profile, or matches a hash.
 
 The decoder-boundary experiments below isolate the failure and the native opt-in
-checkpoint now supplies a bounded correction. Next, integrate effective public
-treatment and cache identity, then repeat the complete delivery review. Do not hide a decoder defect with preset tuning,
+checkpoint now supplies a bounded correction. Effective public treatment and cache
+identity are integrated; next repeat the complete delivery review. Do not hide a decoder defect with preset tuning,
 switch every RAW to its companion JPEG, or weaken the decoder oracle. Add a
 behavioral regression before correcting the responsible owner, then rerender and
 inspect the complete set plus native details. Until that passes, the camera
@@ -114,7 +114,7 @@ Its quarter-resolution captures are not native photographic acceptance.
 
 The [portable native checkpoint](native-reconstruction/README.md) accepts opt-in
 floating-point reconstruction for false-magenta cores while retaining disabled
-output exactly. Ordinary rendering has not adopted it yet. Residual light-edge
+output exactly. Ordinary rendering now adopts the explicit treatment policy. Residual light-edge
 defects and complete delivery acceptance remain open under the
 [reconstruction plan](../../slices/07-highlight-reconstruction.md).
 

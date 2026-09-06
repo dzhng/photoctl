@@ -23,8 +23,10 @@ ten images, but photographic delivery remains **rejected**. Reduced-RGB striping
 and the unchanged public script verifies that correction with old caches retained. False magenta
 in bright lights remains in ordinary rendering. Reconstruction pass A is integrated: opt-in
 portable recovery passes bounded native visual review and preserves disabled samples.
-Next is pass B: effective decoder treatment, public diagnostics and cache identity before
-default-policy adoption. Preserve failure evidence and do not replace RAW with
+Pass B is integrated: ordinary RAW reconstruction, truthful decoder treatment,
+public diagnostics and cache identity. Next is pass C: rerun the preserved camera
+gold library and inspect all saved RAW references under the integrated policy.
+Preserve failure evidence and do not replace RAW with
 its camera JPEG, tune presets around decoder defects, or weaken the oracle.
 [Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;
 the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next native/public passes.
@@ -46,7 +48,8 @@ the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next n
   that input policy remains provisional pending the user's answer.
 - [Pairing](slices/04-paired-import.md): default one RAW-led logical photo retaining both
   originals, explicit camera-JPEG access, and raw/jpeg/both alternatives are integrated.
-  Finish presentation/orientation and real-drive acceptance. Use a clean-start development
+  Fixture source-selection/orientation review passes; finish workbench presentation
+  and real-drive acceptance. Use a clean-start development
   schema, never add migration/compatibility machinery or reset a real library.
 
 The camera may stay unplugged for development. All 18 RAW/JPEG pairs are permanent, hash-verified
