@@ -33,7 +33,8 @@ test("eight real clients append every requested tag without losing a row", async
     env: { ...env, PHOTOCTL_NO_DAEMON: "1" },
   });
   const id = (imported.json as { data: { ids: string[] } }).data.ids[0];
-  expect((await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env })).code).toBe(0);
+  const started = await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env });
+  expect(started.code, JSON.stringify(started)).toBe(0);
 
   const clients = Array.from({ length: 8 }, (_, client) => runClient(client, id, library, env));
   const results = (await Promise.all(clients)).flat();
@@ -68,7 +69,7 @@ test("queue overflow fails loudly and commits every accepted batch in full", asy
   ).toBe(0);
   const ids = await seedPhotoRows(library, 25);
   const started = await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env });
-  expect(started.code).toBe(0);
+  expect(started.code, JSON.stringify(started)).toBe(0);
   const daemon = (started.json as { data: { pid: number; socket: string } }).data;
 
   process.kill(daemon.pid, "SIGSTOP");
