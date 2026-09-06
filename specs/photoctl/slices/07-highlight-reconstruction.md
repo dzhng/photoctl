@@ -227,6 +227,20 @@ remaining preexisting edge/noise concerns at the neutral decoder/color boundary
 before proposing a distinct fidelity change. This does not certify general RAW
 fidelity or close external release gates.
 
+The [neutral-decoder comparison](../assets/camera-delivery-review/neutral-decoder-residuals/README.md)
+also preserves the broad branch contours in CIRAW and in LibRaw camera-green
+before WB/matrix. It does not identify an optical cause. Fine chroma differs,
+and equal raster sizes conceal displaced scene content. All sixteen captures
+were inspected independently and by root, with merged hashes verified.
+
+The remaining fidelity investigation starts with coordinate provenance: trace
+active area, crop and orientation through the existing decoder boundaries for
+these same two sources before comparing registered pixels. Then isolate any
+reproducible chromatic-edge defect in its actual owner. Do not rerun the broad
+reference capture, treat CIRAW as pixel truth, or change interpolation/WB order
+without an owner-specific regression and representation-preserving proposal.
+The accepted highlight correction is not reopened by artifacts that predate it.
+
 C must conclude per defect, not repeatedly reject everything because lights are
 clipped. Flat cores where channels were lost are not themselves a failed correction.
 New or exaggerated colored rims or serrated transitions require a bounded causal

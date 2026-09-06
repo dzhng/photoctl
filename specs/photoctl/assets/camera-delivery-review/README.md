@@ -11,7 +11,11 @@ remains open for classification of residual fine-detail issues. The
 all 18 pairs at native size with source integrity verified. The
 [controlled toggle comparison](residual-causal/README.md) excludes reconstruction
 for the reported branch, nose and lower-wire artifacts. Their remaining origin
-belongs to a neutral decoder/color-boundary investigation, not another breadth rerun.
+belongs to a separate decoder-fidelity investigation, not another breadth rerun.
+The [neutral-decoder comparison](neutral-decoder-residuals/README.md) finds shared
+branch structure and differing fine chroma, but also differing scene placement
+despite equal raster dimensions. Coordinate provenance must precede registered
+pixel comparisons or a proposed decoder change.
 
 ## Reproduction and evidence boundary
 

@@ -28,8 +28,10 @@ public diagnostics and cache identity. Pass C's preserved-library gold compariso
 accepts the conspicuous false-color correction; all 18 saved RAW references pass
 native view/export and source-integrity checks. Same-RAW on/off comparisons
 exclude reconstruction as the cause of the specified branch, nose and lower-wire
-artifacts; the changing sky improves. Next isolate remaining fine-edge fidelity
-at the neutral decoder/color boundary. Complete photographic acceptance remains open.
+artifacts; the changing sky improves. Neutral-decoder comparison finds shared
+branch structure but differing scene placement. Next trace native coordinate
+provenance before isolating remaining fine-edge fidelity. Complete photographic
+acceptance remains open.
 Preserve failure evidence and do not replace RAW with
 its camera JPEG, tune presets around decoder defects, or weaken the oracle.
 [Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;
@@ -93,6 +95,10 @@ a substitute for final integrated verification.
   policy remains open; automatic canonical-artifact deletion stays disabled.
 - Preserve sampled white balance's explicitly reported provisional pre-user-develop sampling
   policy. Do not silently change it to photographic-composite sampling.
+- Source-output safety protects catalog original filenames, not the full D19
+  source-folder rule. Export, decode and linear render can still create new
+  siblings. Folder boundaries and managed-library/cache placement need a settled
+  policy before shared destination enforcement; the user question remains open.
 - Run the whole-spec closeout gate once at the end, audit requirements and consolidated choices,
   then close/archive only when every required gate is proved. Slice 15 is optional and unspecified.
 
