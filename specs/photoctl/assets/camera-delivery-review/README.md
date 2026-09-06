@@ -6,7 +6,10 @@ from photographic deliverability: **the inspected delivery set is rejected**.
 
 The [integrated recovery comparison](integrated-gold/README.md) now accepts removal
 of the conspicuous magenta cores against that historical set. Complete acceptance
-remains open for all-reference review and classification of residual light edges.
+remains open for classification of residual fine-detail issues. The
+[all-reference review](integrated-reconstruction-allrefs/README.md) now covers
+all 18 pairs at native size with source integrity verified; same-RAW treatment
+comparisons are the next diagnostic step, not another breadth rerun.
 
 ## Reproduction and evidence boundary
 
@@ -52,7 +55,8 @@ it is nonblank, carries a profile, or matches a hash.
 
 The decoder-boundary experiments below isolate the failure and the native opt-in
 checkpoint now supplies a bounded correction. Effective public treatment and cache
-identity are integrated; next repeat the complete delivery review. Do not hide a decoder defect with preset tuning,
+identity and the complete reference review are integrated; next isolate remaining
+fine-edge concerns with the reconstruction toggle. Do not hide a decoder defect with preset tuning,
 switch every RAW to its companion JPEG, or weaken the decoder oracle. Add a
 behavioral regression before correcting the responsible owner, then rerender and
 inspect the complete set plus native details. Until that passes, the camera

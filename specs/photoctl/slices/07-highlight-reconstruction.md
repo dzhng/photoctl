@@ -159,7 +159,9 @@ workspaces. The merged boundary/safety/preview selection passed 55 tests; the
 graph, retained export, preview coordinator and generated/upscale consumer selection
 passed 54. Both public G4 modes plus the real CIRAW helper passed three macOS tests
 with unchanged thresholds and exclusions. These are focused integration checks,
-not the whole-spec closeout or C's photographic verdict.
+not the whole-spec closeout or C's photographic verdict. A further merged
+protocol/hash/workbench CLI selection passed 15 tests; it does not replace a
+browser presentation check.
 
 The decoder owns source-specific admission and method identity; the protocol's
 [`sourceTreatmentSchema`](../../../packages/protocol/src/treatment.ts) owns the
@@ -207,6 +209,14 @@ accepts the conspicuous highlight-color correction within its recorded scope. Ke
 the ten-delivery judgment, all-reference coverage, unchanged history and installed
 runtime gates separate. A fixture library with no paid attempts cannot prove paid
 history retention, and a local run cannot close G3 or physical-card acceptance.
+
+The [all-reference witness](../assets/camera-delivery-review/integrated-reconstruction-allrefs/README.md)
+completes native public view/export coverage for all 18 retained RAW-led pairs,
+with all 36 original hashes unchanged and all 86 captures inspected by root and
+an independent PNG-only reviewer. Seventeen sources report applied recovery;
+the unsupported reduced complete-RGB source remains RAW-led. Remaining branch
+and wire fringes and portrait-highlight chroma are now a bounded same-RAW
+enabled/disabled diagnostic pickup, not a reason to rerun the breadth capture.
 
 C must conclude per defect, not repeatedly reject everything because lights are
 clipped. Flat cores where channels were lost are not themselves a failed correction.

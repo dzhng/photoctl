@@ -77,9 +77,21 @@ coarse measurements, support the edge and texture observations above.
 The default-path, source-identity, treatment-reporting, saved-format coverage and
 original-integrity checks pass. Broad false-magenta light interiors are absent in
 the inspected current deliveries. Remaining fine-edge colors and flat highlights
-are recorded rather than waived. Independent unprimed review and root inspection
-are being reconciled separately; this note does not claim whole-C photographic
-acceptance or a completed human image checkpoint.
+are recorded rather than waived. Root directly inspected all 86 captures and
+verified their immutable checksums. Independent PNG-only review
+`01a07600-860d-7ab2-9bde-2f08d912d0e9` inspected the same complete set and agreed on
+orientation, absence of broad striping, smooth sky gradients and the visible
+fine-edge/noise concerns. Its preliminary count was corrected to 86 before its
+final report; the manifest contains 36 full views and 50 details.
+
+The reviewer singled out DSC09314's translucent branch contours, colored fine
+edges, low-light chroma noise and soft portrait/wildlife detail. Root also sees
+the branch contours in the camera context, at different contrast; their origin
+is not established by these two renderings. The next bounded comparison holds
+the RAW, native scale and display transform fixed and toggles reconstruction
+for the branch, coastal-portrait and street-wire regions. This accepts breadth
+and source correctness, not complete photographic fidelity, a human image
+checkpoint or an attribution of every JPEG/RAW difference to a decoder bug.
 
 There is no disabled/current same-RAW comparison in this folder. Any claim that
 reconstruction introduced or exaggerated branch echoes or colored fringes needs

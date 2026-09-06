@@ -24,8 +24,11 @@ and the unchanged public script verifies that correction with old caches retaine
 delivery set had false magenta in bright lights. Reconstruction pass A is integrated: opt-in
 portable recovery passes bounded native visual review and preserves disabled samples.
 Pass B is integrated: ordinary RAW reconstruction, truthful decoder treatment,
-public diagnostics and cache identity. Next is pass C: rerun the preserved camera
-gold library and inspect all saved RAW references under the integrated policy.
+public diagnostics and cache identity. Pass C's preserved-library gold comparison
+accepts the conspicuous false-color correction; all 18 saved RAW references pass
+native view/export and source-integrity checks. Next isolate remaining branch,
+wire and portrait-highlight edge/noise concerns with same-RAW reconstruction
+on/off comparisons. Complete photographic acceptance remains open.
 Preserve failure evidence and do not replace RAW with
 its camera JPEG, tune presets around decoder defects, or weaken the oracle.
 [Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;
@@ -68,7 +71,7 @@ a substitute for final integrated verification.
 | --- | --- |
 | Expanded retouch and cold outpaint | [Lifecycle](assets/outpaint-lifecycle/README.md): generated/empty corners, edge-intersecting circles, exact retry/undo, cold reduced-source/reconnect and warm retained-output witnesses. Full-resolution/fresh release gates separate. |
 | Full-frame lifecycle | [Placement](assets/full-frame-geometry/README.md) and [refresh](assets/full-frame-refresh/README.md): synthetic support, retained-only reconstruction, reconnect and installed lifecycle accepted within their recorded boundaries. |
-| RAW delivery | [Camera review](assets/camera-delivery-review/README.md): reduced-RGB fix accepted, whole delivery set still rejected. |
+| RAW delivery | [Camera review](assets/camera-delivery-review/README.md): reduced-RGB and conspicuous highlight-color corrections accepted within scope; all-reference breadth verified, residual fine-detail fidelity unresolved. |
 | Runtime resources | [Measurements](assets/sam-runtime/README.md): approved **5 GB decimal peak RSS**, encoder **≤4 s**. Preserve historical failures; raising memory does not waive retention, latency or forward progress. |
 
 **Remaining quality and external gates:**
