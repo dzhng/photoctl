@@ -5508,3 +5508,23 @@
 - **Verdict:** **Sound.** Stable selection preserves the existing automatic policy without
   inventing a decoder preference or claiming equivalence.
 - **Confidence:** Medium; a user-facing decoder-selection contract would supersede the tie policy.
+
+### Full-frame generation — Use the inspected photographic result as model input
+
+- **When:** Shared-frame full-frame planning, 2026-09-06; provisional, not implemented.
+- **The choice:** A user retouches a face or extends a border, then asks to relight the photo.
+  Send that current photographic result to the model, excluding presentation markup such
+  as arrows or labels. Sending only the developed original would omit edits the user has
+  already inspected. Existing generation currently uses that developed-original branch.
+- **The gap:** The original full-frame plan described source/develop input; extending it to
+  the current canvas exposes a product choice about preceding photographic layers. A direct
+  question is pending. Neither interpretation changes strength into a denoise control.
+- **The reach:** The generation records its input policy and predecessor membership.
+  Purchased pixels include those prior edits; removing an earlier layer does not un-bake
+  them. Explicit refresh reconstructs only the captured predecessors, never itself or later
+  layers, using the existing captured-input enablement/order policy.
+- **Verdict:** **Needs-user.** Proceed provisionally with the current photographic result
+  because it matches the inspected photo. Reverse by changing the creation/input policy
+  before this pass lands if the user chooses developed-original input; never silently
+  reinterpret already-purchased generation intent or introduce both modes speculatively.
+- **Confidence:** Medium.

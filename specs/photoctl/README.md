@@ -57,6 +57,10 @@ Public undo, the native diagnostic bridge and cheap untouched overview are integ
 Historical schema-v10–v12 and structured truncated-RAW fixture coverage are also integrated.
 Local horizon detection / `crop --auto` and the white-balance eyedropper are integrated. Full-frame generation
 consumers must then use the shared frame contract rather than retain their provisional geometry refusal.
+The [full-frame correction plan](slices/13-full-frame-geometry.md) has two passes: authored
+creation/placement, then explicit refresh and offline/packaged lifecycle. Retouch's shared mask-frame
+correction is its prerequisite. Current photographic-composite input (excluding markup) is provisional
+pending the user's answer; do not silently substitute the developed original or add a new mode flag.
 
 - **Canvas:** [12f1/12f2](slices/12-outpaint.md) share exact execution frames and one output planner.
   Equal pixel bytes do not imply equal coordinates; historical recovery never guesses the latest execution.

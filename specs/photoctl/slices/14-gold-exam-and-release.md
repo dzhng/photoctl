@@ -73,8 +73,9 @@ pre-existing files whose match to the requested render has not been verified.
 
 `--source-kind fixture|real|unverified` records the operator's classification; omission means
 unverified, and even `real` never records human acceptance. Fixture gates name themselves explicitly.
-Use `--out assets/gold-exam/<run>` to retain a real-input bundle; no source path has been supplied
-for that remaining checkpoint. The default output-folder behavior is unchanged.
+Use `--out assets/gold-exam/<run>` to retain an accepted evidence bundle. The camera supplied
+real inputs and permanent reference pairs, but the exact mounted-drive exam remains unverified.
+The default output-folder behavior is unchanged.
 
 The packed fixture gold and full-feature journey passed together with manifest verification. Focused
 tests additionally verify actual-byte hashes, encoded links, unknown-source labeling, exclusion of
@@ -83,31 +84,17 @@ the regression failed with `shasum -c`, then passed after adopting its supported
 [Report layout evidence](../assets/gold-report/README.md) records desktop/mobile inspection and the
 independent visual critique. These screenshots are fixture presentation evidence only.
 
-## External-input recheck — 2026-09-06
+## External evidence boundary
 
-The earlier read-only checks below preceded the camera connection. The camera is
-now mounted at `/Volumes/Untitled`, and the user authorized permanent originals in
-the [camera reference collection](../../../fixtures/camera/README.md). This resolves
-availability of real-drive inputs, not execution of the acceptance gate.
+The [camera reference collection](../../../fixtures/camera/README.md) retains real original pairs
+covering every observed format/crop/orientation group on the supplied card. The camera need not
+remain connected for development. [Paired-import evidence](../assets/paired-import-review.md)
+owns the partial mounted-card journey and distinguishes it from the prescribed gold exam.
+Do not list camera samples or compression coverage as missing, or assume the camera remains mounted.
 
-Earlier checks:
-
-- `diskutil list external physical` succeeded with no disks listed. `/Volumes` contained only the
-  system-volume alias and Conductor, which `diskutil info` identifies as a read-only disk image.
-  No real-drive ARW folder was available to name for the gold script.
-- That early RAW inventory check contained only `a7c2.ARW`; the native LibRaw probe confirmed
-  compression tag `1`. The [fixture inventory](../../../fixtures/README.md) distinguishes its
-  hand-authored Classic-style XMP from actual Classic exports. Filename searches in Pictures,
-  Downloads, Desktop and Documents found no additional ARWs or Classic catalogs/sidecars; the XMP
-  hits were unrelated Xilinx project files. The Photos library denied access, so this is not proof
-  that no usable originals exist there. No privacy permission was changed.
-- IPv4 and IPv6 localhost port 22 refused connections, and `launchctl print system/com.openssh.sshd`
-  found no service. The Remote Login settings query required administrator access; its setting value
-  was not obtained. `Davids-Mac-mini-7.local` did not resolve here, which does **not** establish the
-  connected remote app host's state or whether another SSH-capable Mac exists.
-
-Remaining inputs are an accessible external-drive folder with at least ten distinct A7C II originals,
-actual Classic sidecars, the missing compression-mode frames, and a usable SSH Mac session for
-[G3](../assets/gates/G3-ciraw-headless.md). The current shell also has no `photoctl` on PATH; the
-documented clean-prefix install supplies it when a real source folder is available. No source files or
-services were changed, no credentials were inspected, and no whole gate or paid request was run.
+The exact mounted-drive gold exam, actual Lightroom Classic sidecars, and an SSH-capable Mac session
+for [G3](../assets/gates/G3-ciraw-headless.md) remain separate acceptance evidence. Earlier localhost
+SSH probes were refused; that does not establish whether another suitable Mac exists. Classic-style
+authored fixtures do not prove an actual Classic export. No privacy or Remote Login settings have
+been changed to obtain these inputs. A local fixture run or clean-prefix install cannot retroactively
+establish mounted-camera or headless-SSH behavior.

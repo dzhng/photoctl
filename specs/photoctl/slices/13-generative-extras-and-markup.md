@@ -1,5 +1,9 @@
 # 13 — 13a reimagine/relight/generate · 13b auto_enhance · 13c markup · 13d retouch
 
+The remaining geometry/offline correction is scoped in
+[full-frame authored coordinates](13-full-frame-geometry.md). Its creation and
+refresh passes supersede the provisional refusals below only after their gates pass.
+
 - **13a** ✓ `reimagine <id> --prompt ... [--strength f]` runs Slice 12's shared DAG planner with `scope:"full-frame"`: current source/develop → generation →
   optional density-matching generative upscale → exact resample to oriented base dimensions → `role:"reimagine"` layer root
   (never overwrite), `drift:"full-frame"`; C3 template. Strength defaults to `1`, is bounded to `0..1`, becomes both versioned
@@ -70,8 +74,8 @@ and transport evidence, not live provider acceptance or photographic variation q
 The same input audit found the combined `fill --move … --scale` form still needs the shared
 transform/vacancy owner (separate `layer transform` is not the combined command). Slice 12 owns
 that acceptance contract. [Existing-photo path lookup](01-first-jpeg.md#existing-photo-path-lookup)
-is implemented without implicit import; Slice 08 owns the implemented filter verb and the still-open
-neutral-point white-balance command.
+is implemented without implicit import; Slice 08 owns the implemented filter and
+sampled white-balance commands.
 
 ## 13a upscaler quality spike (non-blocking)
 
