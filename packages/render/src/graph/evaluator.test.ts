@@ -455,8 +455,11 @@ test("markup and develop geometry scale from catalog space to a smaller evaluate
   const library = await mkdtemp(join(tmpdir(), "photoctl-markup-source-scale-"));
   directories.push(library);
   await db.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_markup_source_scale', 1, 8, 8, 1)`,
+    `WITH photo AS (
+       INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 8, 8, 1) RETURNING id
+     ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       SELECT id, id, 'image', 'ck_markup_source_scale', 1, 8, 8, 1 FROM photo`,
     [photoId],
   );
   const initial = await commitRevision(db, {
@@ -929,8 +932,11 @@ async function resampleGraph(
   const db = await testDatabase();
   await migrate(db);
   await db.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_1234567890abcdef', 1, $2, $3, 1)`,
+    `WITH photo AS (
+       INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, $2, $3, 1) RETURNING id
+     ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       SELECT id, id, 'image', 'ck_1234567890abcdef', 1, $2, $3, 1 FROM photo`,
     [photoId, image.w, image.h],
   );
   const revision = await commitRevision(db, {
@@ -992,8 +998,11 @@ async function sourceGraph(): Promise<{ db: PGlite; library: string; nodeId: str
   const db = await testDatabase();
   await migrate(db);
   await db.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_1234567890abcdef', 1, 1, 1, 1)`,
+    `WITH photo AS (
+       INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 1, 1, 1) RETURNING id
+     ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       SELECT id, id, 'image', 'ck_1234567890abcdef', 1, 1, 1, 1 FROM photo`,
     [photoId],
   );
   const revision = await commitRevision(db, {

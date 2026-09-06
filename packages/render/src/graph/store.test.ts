@@ -1259,9 +1259,12 @@ async function graphDatabase(): Promise<PGlite> {
   const db = await testDatabase();
   await migrate(db);
   await db.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_3dac5c943a33dcc4', 1, 1, 1, 1),
-            ($2, 'ck_aaaaaaaaaaaaaaaa', 1, 1, 1, 1)`,
+    `WITH photos AS (
+       INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 1, 1, 1), ($2, $2, 1, 1, 1)
+     ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       VALUES ($1, $1, 'image', 'ck_3dac5c943a33dcc4', 1, 1, 1, 1),
+              ($2, $2, 'image', 'ck_aaaaaaaaaaaaaaaa', 1, 1, 1, 1)`,
     [firstPhoto, secondPhoto],
   );
   await db.query(

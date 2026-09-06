@@ -12,8 +12,11 @@ test("history pagination is bounded, duplicate-free, and remains bound to its st
   const db = await testDatabase();
   await migrate(db);
   await db.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_234567890abcdef1', 1, 1, 1, 1)`,
+    `WITH photo AS (
+       INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 1, 1, 1) RETURNING id
+     ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       SELECT id, id, 'image', 'ck_234567890abcdef1', 1, 1, 1, 1 FROM photo`,
     [photoId],
   );
   try {

@@ -19,8 +19,11 @@ test("generate and upscale attempts emit distinct events and retain bounded reda
   try {
     await migrate(db);
     await db.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_34567890abcdef12', 3, 1, 1, 1)`,
+      `WITH photo AS (
+         INSERT INTO photos (id, primary_original_id, w, h, orientation)
+         VALUES ($1, $1, 1, 1, 1) RETURNING id
+       ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+         SELECT id, id, 'image', 'ck_34567890abcdef12', 3, 1, 1, 1 FROM photo`,
       [photoId],
     );
     const sourceRevision = await commitRevision(db, {

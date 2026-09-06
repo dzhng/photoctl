@@ -91,8 +91,11 @@ async function layeredDocument(): Promise<PGlite> {
   databases.push(database);
   await migrate(database);
   await database.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_delta_state', 1, 1, 1, 1)`,
+    `WITH photo AS (
+       INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 1, 1, 1) RETURNING id
+     ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       SELECT id, id, 'image', 'ck_delta_state', 1, 1, 1, 1 FROM photo`,
     [photoId],
   );
   const initial = await ensurePhotoDocument(database, { photoId, orientation: 1 });

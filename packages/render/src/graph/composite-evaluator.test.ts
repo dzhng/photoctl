@@ -218,8 +218,11 @@ async function sourceGraph(): Promise<{
   const db = await testDatabase();
   await migrate(db);
   await db.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_10b2_composite', 1, 3, 2, 1)`,
+    `WITH photo AS (
+       INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 3, 2, 1) RETURNING id
+     ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       SELECT id, id, 'image', 'ck_10b2_composite', 1, 3, 2, 1 FROM photo`,
     [photoId],
   );
   const initial = await commitRevision(db, {

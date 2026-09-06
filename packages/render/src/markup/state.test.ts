@@ -20,8 +20,11 @@ test("markup is atomic with its revision and remains the output wrapper after la
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c171";
   try {
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_markup_state', 1, 12, 9, 1)`,
+      `WITH photo AS (
+         INSERT INTO photos (id, primary_original_id, w, h, orientation)
+         VALUES ($1, $1, 12, 9, 1) RETURNING id
+       ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+         SELECT id, id, 'image', 'ck_markup_state', 1, 12, 9, 1 FROM photo`,
       [id],
     );
     const before = await readActiveDevelopState(initialized.handle, {
@@ -77,8 +80,11 @@ test("retouch consumes the markup-free pixel output", async () => {
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c181";
   try {
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_markup_retouch', 1, 12, 9, 1)`,
+      `WITH photo AS (
+         INSERT INTO photos (id, primary_original_id, w, h, orientation)
+         VALUES ($1, $1, 12, 9, 1) RETURNING id
+       ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+         SELECT id, id, 'image', 'ck_markup_retouch', 1, 12, 9, 1 FROM photo`,
       [id],
     );
     const before = await readActiveDevelopState(initialized.handle, {

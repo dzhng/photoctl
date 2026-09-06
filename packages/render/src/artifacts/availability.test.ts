@@ -134,8 +134,11 @@ test("retention follows disabled layer content and masks as immutable revision r
   const artifacts = ["4", "5", "6"].map((digit) => `a_${digit.repeat(64)}`);
   try {
     await database.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_retained_layer', 1, 1, 1, 1)`,
+      `WITH photo AS (
+         INSERT INTO photos (id, primary_original_id, w, h, orientation)
+         VALUES ($1, $1, 1, 1, 1) RETURNING id
+       ) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+         SELECT id, id, 'image', 'ck_retained_layer', 1, 1, 1, 1 FROM photo`,
       [photo],
     );
     await database.query(
