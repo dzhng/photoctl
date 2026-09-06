@@ -602,15 +602,16 @@ async function evaluateMaskComposite(
     projection,
     base,
   );
-  let mask = await projectMaskToRender(
-    await readMaskInput(inputs[2], projection.catalog),
-    projection,
-    base,
-  );
-  const feather = z
-    .object({ feather: z.number().finite().nonnegative() })
-    .strict()
-    .parse(parameters).feather;
+  const parsed = imageNodeRegistry.mask_composite.parameters.parse(parameters);
+  let mask =
+    "mask_space" in parsed
+      ? await readMaskInput(inputs[2], base)
+      : await projectMaskToRender(
+          await readMaskInput(inputs[2], projection.catalog),
+          projection,
+          base,
+        );
+  const feather = parsed.feather as number;
   if (feather > 0) mask = { ...mask, data: await featherMask(mask.data, mask.w, mask.h, feather) };
   return linearImage(
     base,

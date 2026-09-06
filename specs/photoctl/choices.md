@@ -5189,3 +5189,71 @@
 - **Verdict:** **Sound.** A release's builder version cannot implicitly choose the image
   addon's deployment floor, and explicit overrides remain visible in build provenance.
 - **Confidence:** High.
+### Outpaint refresh — Keep authored predecessors, use their current edits
+
+- **When:** 12f3 preparation, 2026-09-06.
+- **The choice:** After a crop and border A, author border B, change exposure, and add later local
+  paint. Refresh B uses current exposure and the currently enabled versions of the layers captured
+  before B, in their current order. Removing A removes its contribution. Moving later paint below B
+  does not admit that paint into B's regeneration. B's authored frames and exterior-only ring remain
+  fixed. A density-only retry instead keeps the pinned original generation.
+- **The gap:** Ordinary fill refresh adopts current source edits but does not define membership for
+  a generation input containing multiple earlier photographic layers. A current-z-prefix policy
+  would admit later paint after reorder and could feed descendants back into the border.
+- **The reach:** Membership is explicit immutable request intent, while predecessor appearance is
+  read from current state on explicit refresh. The policy can be changed before authoring; existing
+  requests must not silently change meaning. No new expansion accompanies refresh.
+- **Verdict:** Needs-user. Provisionally preserve captured membership rather than current z-prefix;
+  the parent will surface this choice while implementation proceeds.
+- **Confidence:** Medium.
+
+### Outpaint coverage — Give intrinsic masks their own persisted recipe identity
+
+- **When:** 12f3 core checkpoint, 2026-09-06.
+- **The choice:** A rotated cropped photo expanded to a larger canvas stores an exterior mask in
+  that expanded raster. The compositor reads this coverage at intrinsic dimensions; its outer
+  placement owns the physical frame. Existing catalog-space masks keep their projection behavior.
+- **The gap:** Reinterpreting the existing recipe would change old persisted nodes, while making
+  the outpaint caller separately interpret coverage would duplicate the compositor's ownership.
+- **The reach:** `mask_composite@2` distinguishes intrinsic coverage; schema 22 widens only the
+  allowed recipe-version constraint. Schema-21 migration preserves old nodes and output artifacts.
+  Invalid intrinsic dimensions are rejected instead of being rescaled as catalog coverage.
+- **Verdict:** Settled with parent review; no new table, column or second mask compositor.
+- **Confidence:** High.
+
+### Outpaint refresh preparation — Retain immutable drafts without activating them
+
+- **When:** 12f3 follow-up planning, 2026-09-06; not implemented in the core checkpoint.
+- **The choice:** Refresh can prepare a current predecessor image from deterministic graph drafts,
+  store those immutable nodes without an active revision, and evaluate through the existing cache.
+  If generation then fails, the active photo and extent remain unchanged but preparation persists.
+- **The gap:** The evaluator reads persisted nodes; a separate staged evaluator would duplicate
+  node resolution and introduce another cache contract. The current revision store already owns
+  draft canonicalization, so extract that owner rather than create a parallel evaluator.
+- **The reach:** Failed attempts can retain extra nodes and artifacts. With GC disabled, repeated
+  distinct preparations consume storage; identical preparations retain deterministic identity.
+  First-generation document creation remains atomic with successful activation. No temporary
+  active layer or revision is permitted. Captured support stages must stay with the shared planner.
+- **Verdict:** Parent-approved follow-up direction; verify retention, identity and snapshot safety
+  before removing the core checkpoint's outpaint refresh/retry refusal.
+- **Confidence:** Medium; implementation and lifecycle evidence remain open.
+
+### Outpaint core — Share paid preparation without early document activation
+
+- **When:** 12f3 core checkpoint, 2026-09-06.
+- **The choice:** An untouched source is normalized for the paid input while its canonical source
+  graph stays as drafts until successful border activation. An edited photo instead samples its
+  immutable markup-free photographic output, including earlier photographic layers. Authored frames
+  and predecessor identities distinguish that snapshot from expanded provider preprocessing.
+- **The gap:** Eager document or temporary-layer creation would mutate a failed/no-op request;
+  a second generation pipeline would drift from fill's capping, adapter and optional density rules.
+- **The reach:** Both paths consume shared paid preparation and canvas activation. The already
+  published exterior mask is reused rather than allocated/encoded twice; caller-specific limits
+  supplement the render growth owner. Post-generation publication failure finalizes the retained
+  paid attempt without losing the captured original. This does not prove full-resolution resource
+  acceptance. Retry, refresh and automatic transform-density maintenance stay explicitly open;
+  ordinary border placement remains available through its existing owner.
+- **Verdict:** Core correctness checkpoint only; the existing release resource gate and complete
+  authored-layer lifecycle journey remain required before feature completion.
+- **Confidence:** High for the tested source/activation contract; medium for full-scale resource
+  behavior and the unimplemented refresh lifecycle.

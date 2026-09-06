@@ -1,6 +1,8 @@
 import { resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import {
   fillLayer,
+  outpaintCanvas,
+  prepareCanvasExpansion,
   resolveFillFit,
   refreshFillLayer,
   resolveFillRefreshTarget,
@@ -31,6 +33,7 @@ import {
   PhotoctlError,
   type Envelope,
   type FillStrictData,
+  type OutpaintData,
 } from "@photoctl/protocol";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
@@ -45,7 +48,7 @@ export async function fillCommand(
   providedDependencies?: FillDependencies,
 ): Promise<Envelope> {
   const parsed = parseArguments(args, {
-    flags: ["--norm", "--remove", "--upscale", "--no-upscale", "--full-res"],
+    flags: ["--norm", "--remove", "--upscale", "--no-upscale", "--full-res", "--outpaint"],
     options: [
       "--move",
       "--to",
@@ -60,13 +63,34 @@ export async function fillCommand(
       "--seed",
       "--model",
       "--upscale-model",
+      "--px",
+      "--aspect",
     ],
   });
   if (parsed.positionals.length !== 1) {
     throw new PhotoctlError("usage", "fill requires exactly one photo ID or prefix");
   }
   const generatedLayer = parsed.options.get("--layer");
-  if (generatedLayer) {
+  if (
+    !parsed.flags.has("--outpaint") &&
+    (parsed.options.has("--px") || parsed.options.has("--aspect"))
+  ) {
+    throw new PhotoctlError("usage", "--px and --aspect require --outpaint");
+  }
+  if (generatedLayer || parsed.flags.has("--outpaint")) {
+    if (
+      parsed.flags.has("--outpaint") &&
+      (generatedLayer ||
+        parsed.flags.has("--remove") ||
+        parsed.options.has("--fit") ||
+        parsed.options.has("--strength") ||
+        parsed.options.has("--pad"))
+    ) {
+      throw new PhotoctlError(
+        "usage",
+        "Outpaint cannot combine layer selection, removal or mask fitting",
+      );
+    }
     if (
       parsed.flags.has("--norm") ||
       parsed.options.has("--move") ||
@@ -309,6 +333,8 @@ async function fillGenerationCommand(
 ): Promise<Envelope> {
   const idInput = parsed.positionals[0]!;
   const layer = parsed.options.get("--layer")!;
+  const outpaint = parsed.flags.has("--outpaint");
+  const expansion = outpaint ? parseOutpaintExpansion(parsed) : undefined;
   const remove = parsed.flags.has("--remove");
   const custom = parsed.options.get("--prompt");
   if (remove === Boolean(custom)) {
@@ -337,6 +363,22 @@ async function fillGenerationCommand(
     const photoId = await resolvePhotoId(lease.handle, idInput);
     const photo = await loadPhoto(lease.handle, photoId);
     const settings = await readProviderSettings(lease.handle);
+    const canvas = expansion
+      ? await prepareCanvasExpansion(lease.handle, { photoId, ...expansion })
+      : undefined;
+    if (canvas && !canvas.changed)
+      return {
+        schema: 1,
+        ok: true,
+        data: {
+          id: photoId,
+          changed: false,
+          layer_id: null,
+          revision_id: canvas.document?.revisionId ?? null,
+          render_hash: canvas.document?.renderHash ?? null,
+        } satisfies OutpaintData,
+        warnings: [],
+      };
     const model =
       providedDependencies?.model ??
       resolveModel("edit", settings.models, parsed.options.get("--model"));
@@ -371,10 +413,10 @@ async function fillGenerationCommand(
           sourceContext,
         });
         const upscaleAdapter = upscaleRegistry.get(upscalePolicy.upscale.model);
-        return await fillLayer(lease.handle, lease.handle.path, {
+        const request = {
           photoId,
           layer,
-          operation: remove ? "remove" : "prompt",
+          operation: remove ? ("remove" as const) : ("prompt" as const),
           prompt: remove ? removePrompt() : custom!,
           promptVersion: remove ? REMOVE_PROMPT_VERSION : 1,
           fit,
@@ -402,7 +444,10 @@ async function fillGenerationCommand(
                 }
               : {}),
           },
-        });
+        } satisfies Parameters<typeof fillLayer>[2];
+        return canvas
+          ? await outpaintCanvas(lease.handle, lease.handle.path, { ...request, prepared: canvas })
+          : await fillLayer(lease.handle, lease.handle.path, request);
       },
     );
     return {
@@ -479,6 +524,18 @@ function parseOptionalInteger(value: string | undefined, option: string, minimum
     throw new PhotoctlError("usage", `${option} must be an integer of at least ${minimum}`);
   }
   return parsed;
+}
+
+function parseOutpaintExpansion(parsed: ReturnType<typeof parseArguments>) {
+  const px = parsed.options.get("--px");
+  const ratio = parsed.options.get("--aspect");
+  if ((px === undefined) === (ratio === undefined))
+    throw new PhotoctlError("usage", "Outpaint requires exactly one of --px or --aspect");
+  if (px !== undefined) return { padding: parseOptionalInteger(px, "--px", 1)! };
+  const components = ratio!.split(":").map(Number);
+  if (components.length !== 2 || components.some((value) => !Number.isFinite(value) || value <= 0))
+    throw new PhotoctlError("usage", "--aspect requires a positive width:height ratio");
+  return { aspect: [components[0]!, components[1]!] as const };
 }
 
 function parsePoint(value: string, option: string): [number, number] {

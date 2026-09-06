@@ -31,6 +31,7 @@ import { resolveFillFit } from "./fit.js";
 import type { FillFit } from "../mask-operations.js";
 import { prepareFillMask } from "./mask.js";
 import { findReusableFillLineage } from "./reuse.js";
+import { describeFillBranch } from "./branch.js";
 import type { ResolvedUpscalePolicy } from "./upscale-policy.js";
 import { fillProviderInputs } from "./external-pixels.js";
 import {
@@ -88,6 +89,12 @@ export async function fillLayer(
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
+  if (
+    (await describeFillBranch(database, request.photoId, selected.contentNodeId))?.composite
+      .recipeVersion === 2
+  ) {
+    throw new PhotoctlError("usage", "Outpaint layer retry is not yet supported");
+  }
   const unfilledVacancies = await unfilledVacancyLayerIds(database, request.photoId, [selected]);
   const fillingVacancy = unfilledVacancies.has(selected.id);
   if (selected.role === "vacancy" && (!selected.enabled || !fillingVacancy)) {
@@ -139,160 +146,24 @@ export async function fillLayer(
         },
       );
   const strictBaseNodeId = reusable?.baseNodeId ?? fillBaseNodeId;
-  const sourceContext = reusable?.sourceContext ?? request.sourceContext;
-  let generation: PreparedGeneration;
-  if (reusable) {
-    generation = {
-      nodeId: reusable.nodeId,
-      reference: { nodeId: reusable.nodeId },
-      provider: reusable.provider,
-      image: reusable.image,
-      artifact: reusable.artifact,
-      returnedDimensions: { w: reusable.image.w, h: reusable.image.h },
-      warnings: [...reusable.provider.warnings],
-      nodes: [],
-      artifacts: [],
-      executions: [],
-    };
-    if (!reusable.generationRecipe.intentMatches) {
-      const executionId = newExecutionId();
-      const stored = reusable.generationRecipe.parameters;
-      const storedRequest = stored.request as Record<string, JsonValue>;
-      const parameters = {
-        ...stored,
-        request: {
-          ...storedRequest,
-          execution_id: executionId,
-          upscale: {
-            enabled: request.upscale.policy.upscale.enabled,
-            adapter: request.upscale.adapter?.id ?? null,
-            adapter_version: request.upscale.adapter?.version ?? null,
-            model: request.upscale.policy.upscale.model,
-            prompt_id: request.upscale.prompt.id,
-            prompt_version: request.upscale.prompt.version,
-            original_prompt: request.upscale.prompt.original,
-            derived_prompt: request.upscale.prompt.derived,
-          },
-        },
-      } as JsonValue;
-      const generationDraft: NodeDraft = {
-        localKey: "generation",
-        kind: "generate",
-        recipeVersion: reusable.generationRecipe.recipeVersion,
-        parameters,
-        inputs: reusable.generationRecipe.inputNodeIds.map((nodeId) => ({ nodeId })),
-      };
-      const recipe = recipeHash(
-        canonicalNodeRecipe({
-          kind: "generate",
-          recipeVersion: generationDraft.recipeVersion,
-          parameters,
-          inputNodeIds: reusable.generationRecipe.inputNodeIds,
-        }),
-      );
-      generation.nodeId = logicalNodeId(recipe) as `node_${string}`;
-      generation.reference = { localKey: "generation" };
-      generation.nodes = [generationDraft];
-      generation.artifacts = [reusable.artifact];
-      generation.executions = [
-        {
-          node: { localKey: "generation" },
-          ...(reusable.generationRecipe.providerImageAttemptId
-            ? { providerImageAttemptId: reusable.generationRecipe.providerImageAttemptId }
-            : {}),
-          executionId,
-          evaluationHash: evaluationHash({
-            nodeRecipeHash: recipe,
-            kind: "generate",
-            recipeVersion: generationDraft.recipeVersion,
-            inputArtifactHashes: reusable.generationRecipe.inputArtifactHashes,
-          }),
-          outputArtifactHash: reusable.artifact.artifactHash,
-          inputArtifactHashes: reusable.generationRecipe.inputArtifactHashes,
-          provider: reusable.provider,
-        },
-      ];
-    }
-  } else {
-    const sent = await fillProviderInputs(base, mask, crop, request.fullResolution, baseToInput);
-    generation = await executeFreshGeneration(database, libraryPath, {
+  const { generation, density, sourceContext } = await prepareFillGeneration(
+    database,
+    libraryPath,
+    request,
+    {
+      base,
+      mask,
+      crop,
+      fit,
+      baseToInput,
       inputNodeId: fillBaseNodeId,
       inputArtifactHash: baseEvaluation.artifact.artifactHash,
-      ...(reference ? { reference } : {}),
-      requestedInit: request.init,
-      sentDimensions: sent.image,
-      prompt: request.prompt,
-      promptVersion: request.promptVersion,
-      ...(request.seed === undefined ? {} : { seed: request.seed }),
-      dependencies: request.dependencies,
-      buildRequest: () =>
-        request.dependencies.adapter.buildEdit(
-          request.operation,
-          sent.image,
-          sent.mask,
-          request.prompt,
-          request.seed,
-          {
-            init: request.init,
-            ...(request.referenceImage ? { reference: request.referenceImage } : {}),
-          },
-        ),
-      validate: ({ wholeFrame }) => {
-        if (wholeFrame && fit.mode === "strict")
-          throw new PhotoctlError(
-            "provider_whole_frame",
-            "Strict fill refused a provider result that edited the whole frame",
-            { id: request.photoId, layer: layerId },
-          );
-      },
-      request: (executionId, returned) => ({
-        execution_id: executionId,
-        operation: request.operation,
-        fit,
-        crop: [crop.x, crop.y, crop.w, crop.h],
-        sent: [sent.image.w, sent.image.h],
-        full_res: request.fullResolution ?? false,
-        pad: request.pad ?? 64,
-        sampling: {
-          base_to_input: [...baseToInput],
-          input_dimensions: [base.w, base.h],
-          outside_visible: "black-protected",
-        },
-        returned: [returned.w, returned.h],
-        source_context: {
-          tier: request.sourceContext.tier,
-          pixel_scale: request.sourceContext.pixelScale,
-          resolution_limited: request.sourceContext.resolutionLimited,
-        },
-        upscale: {
-          enabled: request.upscale.policy.upscale.enabled,
-          adapter: request.upscale.adapter?.id ?? null,
-          adapter_version: request.upscale.adapter?.version ?? null,
-          model: request.upscale.policy.upscale.model,
-          prompt_id: request.upscale.prompt.id,
-          prompt_version: request.upscale.prompt.version,
-          original_prompt: request.upscale.prompt.original,
-          derived_prompt: request.upscale.prompt.derived,
-        },
-        ...(request.seed === undefined ? {} : { seed: request.seed }),
-      }),
-      targetPixels: crop.w * crop.h,
-    });
-  }
-  const { nodeId: generationNodeId, provider } = generation;
-  const cachedUpscale = reusable?.cachedUpscale;
-  const density = await executeGenerationDensity(database, libraryPath, {
-    generation,
-    target: {
-      kind: "base_space_provider_crop",
-      dimensionsIncludingPad: { w: crop.w, h: crop.h },
+      layerId,
+      reusable,
+      reference,
     },
-    targetDimensions: { w: crop.w, h: crop.h },
-    sourceContext,
-    upscale: request.upscale,
-    ...(request.seed === undefined ? {} : { seed: request.seed }),
-    ...(cachedUpscale ? { cachedUpscale } : {}),
-  });
+  );
+  const { nodeId: generationNodeId, provider } = generation;
   const { nodes, artifacts, executions, warnings } = density;
   if (effective.clippedPixels > 0)
     warnings.push({
@@ -395,4 +266,195 @@ export async function fillLayer(
     crop,
     warnings,
   };
+}
+
+/** Paid image preparation is shared by selected fills and new canvas borders. */
+export async function prepareFillGeneration(
+  database: GraphDatabase,
+  libraryPath: string,
+  request: Omit<Parameters<typeof fillLayer>[2], "layer">,
+  plan: {
+    base: import("../source-render.js").Image16;
+    mask: import("../mask-tiff.js").MaskImage;
+    crop: { x: number; y: number; w: number; h: number };
+    fit: FillFit;
+    baseToInput?: import("../transforms.js").TransformMatrix;
+    inputNodeId: string;
+    inputReference?: import("../graph/store.js").NodeReference;
+    inputArtifactHash: `a_${string}`;
+    layerId?: string;
+    reusable?: Awaited<ReturnType<typeof findReusableFillLineage>>;
+    reference?: Awaited<ReturnType<typeof prepareReferenceArtifact>>;
+    intent?: Record<string, JsonValue>;
+  },
+) {
+  const {
+    base,
+    mask,
+    crop,
+    fit,
+    baseToInput,
+    inputNodeId,
+    inputArtifactHash,
+    layerId,
+    reusable,
+    reference,
+    intent,
+  } = plan;
+  const sourceContext = reusable?.sourceContext ?? request.sourceContext;
+  let generation: PreparedGeneration;
+  if (reusable) {
+    generation = {
+      nodeId: reusable.nodeId,
+      reference: { nodeId: reusable.nodeId },
+      provider: reusable.provider,
+      image: reusable.image,
+      artifact: reusable.artifact,
+      returnedDimensions: { w: reusable.image.w, h: reusable.image.h },
+      warnings: [...reusable.provider.warnings],
+      nodes: [],
+      artifacts: [],
+      executions: [],
+    };
+    if (!reusable.generationRecipe.intentMatches) {
+      const executionId = newExecutionId();
+      const stored = reusable.generationRecipe.parameters;
+      const storedRequest = stored.request as Record<string, JsonValue>;
+      const parameters = {
+        ...stored,
+        request: {
+          ...storedRequest,
+          execution_id: executionId,
+          upscale: {
+            enabled: request.upscale.policy.upscale.enabled,
+            adapter: request.upscale.adapter?.id ?? null,
+            adapter_version: request.upscale.adapter?.version ?? null,
+            model: request.upscale.policy.upscale.model,
+            prompt_id: request.upscale.prompt.id,
+            prompt_version: request.upscale.prompt.version,
+            original_prompt: request.upscale.prompt.original,
+            derived_prompt: request.upscale.prompt.derived,
+          },
+        },
+      } as JsonValue;
+      const generationDraft: NodeDraft = {
+        localKey: "generation",
+        kind: "generate",
+        recipeVersion: reusable.generationRecipe.recipeVersion,
+        parameters,
+        inputs: reusable.generationRecipe.inputNodeIds.map((nodeId) => ({ nodeId })),
+      };
+      const recipe = recipeHash(
+        canonicalNodeRecipe({
+          kind: "generate",
+          recipeVersion: generationDraft.recipeVersion,
+          parameters,
+          inputNodeIds: reusable.generationRecipe.inputNodeIds,
+        }),
+      );
+      generation.nodeId = logicalNodeId(recipe) as `node_${string}`;
+      generation.reference = { localKey: "generation" };
+      generation.nodes = [generationDraft];
+      generation.artifacts = [reusable.artifact];
+      generation.executions = [
+        {
+          node: { localKey: "generation" },
+          ...(reusable.generationRecipe.providerImageAttemptId
+            ? { providerImageAttemptId: reusable.generationRecipe.providerImageAttemptId }
+            : {}),
+          executionId,
+          evaluationHash: evaluationHash({
+            nodeRecipeHash: recipe,
+            kind: "generate",
+            recipeVersion: generationDraft.recipeVersion,
+            inputArtifactHashes: reusable.generationRecipe.inputArtifactHashes,
+          }),
+          outputArtifactHash: reusable.artifact.artifactHash,
+          inputArtifactHashes: reusable.generationRecipe.inputArtifactHashes,
+          provider: reusable.provider,
+        },
+      ];
+    }
+  } else {
+    const sent = await fillProviderInputs(base, mask, crop, request.fullResolution, baseToInput);
+    generation = await executeFreshGeneration(database, libraryPath, {
+      inputNodeId: inputNodeId,
+      inputReference: plan.inputReference,
+      inputArtifactHash,
+      ...(reference ? { reference } : {}),
+      requestedInit: request.init,
+      sentDimensions: sent.image,
+      prompt: request.prompt,
+      promptVersion: request.promptVersion,
+      ...(request.seed === undefined ? {} : { seed: request.seed }),
+      dependencies: request.dependencies,
+      buildRequest: () =>
+        request.dependencies.adapter.buildEdit(
+          request.operation,
+          sent.image,
+          sent.mask,
+          request.prompt,
+          request.seed,
+          {
+            init: request.init,
+            ...(request.referenceImage ? { reference: request.referenceImage } : {}),
+          },
+        ),
+      validate: ({ wholeFrame }) => {
+        if (wholeFrame && fit.mode === "strict")
+          throw new PhotoctlError(
+            "provider_whole_frame",
+            "Strict fill refused a provider result that edited the whole frame",
+            { id: request.photoId, layer: layerId },
+          );
+      },
+      request: (executionId, returned) => ({
+        execution_id: executionId,
+        operation: request.operation,
+        fit,
+        crop: [crop.x, crop.y, crop.w, crop.h],
+        sent: [sent.image.w, sent.image.h],
+        full_res: request.fullResolution ?? false,
+        pad: request.pad ?? 64,
+        sampling: {
+          base_to_input: [...(baseToInput ?? [1, 0, 0, 1, 0, 0])],
+          input_dimensions: [base.w, base.h],
+          outside_visible: "black-protected",
+        },
+        returned: [returned.w, returned.h],
+        source_context: {
+          tier: request.sourceContext.tier,
+          pixel_scale: request.sourceContext.pixelScale,
+          resolution_limited: request.sourceContext.resolutionLimited,
+        },
+        upscale: {
+          enabled: request.upscale.policy.upscale.enabled,
+          adapter: request.upscale.adapter?.id ?? null,
+          adapter_version: request.upscale.adapter?.version ?? null,
+          model: request.upscale.policy.upscale.model,
+          prompt_id: request.upscale.prompt.id,
+          prompt_version: request.upscale.prompt.version,
+          original_prompt: request.upscale.prompt.original,
+          derived_prompt: request.upscale.prompt.derived,
+        },
+        ...(request.seed === undefined ? {} : { seed: request.seed }),
+        ...intent,
+      }),
+      targetPixels: crop.w * crop.h,
+    });
+  }
+  const cachedUpscale = reusable?.cachedUpscale;
+  const density = await executeGenerationDensity(database, libraryPath, {
+    generation,
+    target: {
+      kind: "base_space_provider_crop",
+      dimensionsIncludingPad: { w: crop.w, h: crop.h },
+    },
+    targetDimensions: { w: crop.w, h: crop.h },
+    sourceContext,
+    upscale: request.upscale,
+    ...(request.seed === undefined ? {} : { seed: request.seed }),
+    ...(cachedUpscale ? { cachedUpscale } : {}),
+  });
+  return { generation, density, sourceContext };
 }

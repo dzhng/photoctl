@@ -11,14 +11,18 @@ import {
 import {
   loadActiveDocument,
   commitRevision,
+  planSourceDocument,
   type CommitRevisionRequest,
   type GraphDatabase,
   type NodeReference,
-  type NodeDraft,
 } from "./store.js";
 import { loadLogicalFrame } from "./projection.js";
 import { loadGeometryAncestry } from "./geometry-intent.js";
-import { normalizeMaskArtifact, publishArtifact } from "../artifacts/publication.js";
+import {
+  normalizeMaskArtifact,
+  publishArtifact,
+  type PublishedArtifact,
+} from "../artifacts/publication.js";
 import { readBaseDevelopInput } from "./base-input.js";
 import { readCanvasInputStages } from "./output.js";
 
@@ -31,7 +35,7 @@ export interface CanvasLimits {
 /** Preparation is read-only, including an exact-aspect no-op on an untouched photo. */
 export async function prepareCanvasExpansion(
   database: GraphDatabase,
-  request: CanvasExpansion & { photoId: string; limits: CanvasLimits },
+  request: CanvasExpansion & { photoId: string; limits?: CanvasLimits },
 ) {
   const photo = (
     await database.query<{ w: number; h: number; orientation: number }>(
@@ -49,6 +53,7 @@ export async function prepareCanvasExpansion(
     orientation: photo.orientation,
     expectedRevisionId: document?.revisionId ?? null,
     document,
+    sourceDocument: document ? undefined : planSourceDocument(photo.orientation, "canvas-"),
     inputFrame,
     inputStages: document
       ? await readCanvasInputStages(database, request.photoId, document.roots)
@@ -63,6 +68,7 @@ export async function commitCanvasExpansion(
   request: Pick<CommitRevisionRequest, "nodes" | "artifacts" | "executions"> & {
     prepared: Awaited<ReturnType<typeof prepareCanvasExpansion>>;
     content: NodeReference;
+    exteriorMask?: PublishedArtifact;
   },
 ) {
   const { prepared } = request;
@@ -81,24 +87,7 @@ export async function commitCanvasExpansion(
     crop_activation: ancestry?.parameters.crop_activation ?? 0,
     aspect_activation: ancestry?.parameters.aspect_activation ?? 0,
   };
-  const baseNodes: NodeDraft[] = current
-    ? []
-    : [
-        {
-          localKey: "canvas-source",
-          kind: "source",
-          recipeVersion: 1,
-          parameters: { orientation: prepared.orientation },
-          inputs: [],
-        },
-        {
-          localKey: "canvas-source-output",
-          kind: "output",
-          recipeVersion: 1,
-          parameters: { format: "display-rgb", color_space: "srgb" },
-          inputs: [{ localKey: "canvas-source" }],
-        },
-      ];
+  const baseNodes = prepared.sourceDocument?.nodes ?? [];
   const controls = current
     ? (await readBaseDevelopInput(database, prepared.photoId, current.roots.base)).develop
     : {};
@@ -109,15 +98,9 @@ export async function commitCanvasExpansion(
     ...(rotate === undefined ? {} : { rotate }),
     ...(straighten_deg === undefined ? {} : { straighten_deg }),
   };
-  const mask = new Float32Array(prepared.frame.raster.w * prepared.frame.raster.h).fill(1);
-  for (let y = 0; y < prepared.inputFrame.raster.h; y++) {
-    const start = (y + prepared.offset.y) * prepared.frame.raster.w + prepared.offset.x;
-    mask.fill(0, start, start + prepared.inputFrame.raster.w);
-  }
-  const publishedMask = await publishArtifact(
-    libraryPath,
-    await normalizeMaskArtifact({ ...prepared.frame.raster, data: mask }),
-  );
+  const publishedMask =
+    request.exteriorMask ??
+    (await publishArtifact(libraryPath, await normalizeMaskArtifact(canvasExteriorMask(prepared))));
   const committed = await commitRevision(database, {
     photoId: prepared.photoId,
     expectedRevisionId: prepared.expectedRevisionId,
@@ -169,7 +152,9 @@ export async function commitCanvasExpansion(
       })),
     ],
     rootUpdates: [
-      ...(!current ? [{ root: "base" as const, node: { localKey: "canvas-source-output" } }] : []),
+      ...(prepared.sourceDocument
+        ? [{ root: "base" as const, node: prepared.sourceDocument.output }]
+        : []),
       { root: "geometry", node: { localKey: "canvas-intent" } },
     ],
     artifacts: [...(request.artifacts ?? []), publishedMask],
@@ -202,16 +187,31 @@ export async function commitCanvasExpansion(
     changed: true as const,
     layerId: committed.newLayers.border!,
     revisionId: committed.revisionId,
+    renderHash: committed.renderHash! as `r_${string}`,
+    outputNodeId: committed.roots.output! as `node_${string}`,
+    contentNodeId: ("nodeId" in request.content
+      ? request.content.nodeId
+      : committed.nodes[request.content.localKey]!.id) as `node_${string}`,
   };
+}
+
+/** Generation and published coverage share one exterior-only ring. */
+export function canvasExteriorMask(prepared: Awaited<ReturnType<typeof prepareCanvasExpansion>>) {
+  const data = new Float32Array(prepared.frame.raster.w * prepared.frame.raster.h).fill(1);
+  for (let y = 0; y < prepared.inputFrame.raster.h; y++) {
+    const start = (y + prepared.offset.y) * prepared.frame.raster.w + prepared.offset.x;
+    data.fill(0, start, start + prepared.inputFrame.raster.w);
+  }
+  return { ...prepared.frame.raster, data };
 }
 
 /** Expansion changes the viewport, never the catalog coordinate system or the source tier. */
 export function expandCanvasFrame(
   input: RenderFrame,
   expansion: CanvasExpansion,
-  limits: CanvasLimits,
+  limits?: CanvasLimits,
 ) {
-  for (const value of [limits.maxOutputEdge, limits.maxOutputPixels]) {
+  for (const value of limits ? [limits.maxOutputEdge, limits.maxOutputPixels] : []) {
     if (!Number.isSafeInteger(value) || value <= 0)
       throw new Error("Canvas limits must be positive safe integers");
   }
@@ -222,7 +222,8 @@ export function expandCanvasFrame(
     if (
       !Number.isSafeInteger(padding) ||
       padding < 0 ||
-      padding > Math.floor((limits.maxOutputEdge - Math.max(input.raster.w, input.raster.h)) / 2)
+      (limits &&
+        padding > Math.floor((limits.maxOutputEdge - Math.max(input.raster.w, input.raster.h)) / 2))
     ) {
       throw new PhotoctlError("usage", "Canvas padding exceeds the output dimension limit");
     }
@@ -239,13 +240,16 @@ export function expandCanvasFrame(
     p /= a;
     q /= a;
     const k = Math.ceil(Math.max(input.raster.w / p, input.raster.h / q));
-    if (k > Math.floor(limits.maxOutputEdge / p) || k > Math.floor(limits.maxOutputEdge / q)) {
+    if (
+      limits &&
+      (k > Math.floor(limits.maxOutputEdge / p) || k > Math.floor(limits.maxOutputEdge / q))
+    ) {
       throw new PhotoctlError("usage", "Canvas aspect exceeds the output dimension limit");
     }
     w = k * p;
     h = k * q;
   }
-  if (w > Math.floor(limits.maxOutputPixels / h)) {
+  if (limits && w > Math.floor(limits.maxOutputPixels / h)) {
     throw new PhotoctlError("usage", "Canvas exceeds the output pixel limit");
   }
   assertNewRasterSize({ w, h }, input.catalog);

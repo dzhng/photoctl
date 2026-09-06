@@ -35,6 +35,11 @@ const transformParametersSchema = z
   })
   .strict();
 const placementParametersSchema = transformParametersSchema.extend({ frame: savedFrameSchema });
+const catalogMaskCompositeSchema = z.object({ feather: z.number().nonnegative() }).strict();
+const intrinsicMaskCompositeSchema = catalogMaskCompositeSchema.extend({
+  mask_space: z.literal("intrinsic"),
+});
+
 const compositeParametersSchema = z
   .object({
     opacity: z.number().min(0).max(1),
@@ -243,7 +248,13 @@ export const imageNodeRegistry = {
     2,
     true,
   ),
-  mask_composite: definition(z.object({ feather: z.number().nonnegative() }).strict(), 3, 3, true),
+  mask_composite: definition(
+    z.union([catalogMaskCompositeSchema, intrinsicMaskCompositeSchema]),
+    3,
+    3,
+    true,
+    [1, 2],
+  ),
   composite: definition(
     z.union([compositeParametersSchema, layerCompositeParametersSchema, canvasCompositeSchema]),
     1,
@@ -407,6 +418,10 @@ export function canonicalParameters(
         : recipeVersion === 2
           ? layerCompositeParametersSchema
           : canvasCompositeSchema;
+    return sortJson(schema.parse(value) as JsonValue);
+  }
+  if (kind === "mask_composite") {
+    const schema = recipeVersion === 1 ? catalogMaskCompositeSchema : intrinsicMaskCompositeSchema;
     return sortJson(schema.parse(value) as JsonValue);
   }
   const schema =

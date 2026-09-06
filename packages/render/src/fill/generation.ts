@@ -195,6 +195,7 @@ export async function executeFreshGeneration(
   libraryPath: string,
   input: {
     inputNodeId: string;
+    inputReference?: import("../graph/store.js").NodeReference;
     inputArtifactHash: `a_${string}`;
     reference?: Awaited<ReturnType<typeof prepareReferenceArtifact>>;
     requestedInit?: import("@photoctl/providers").ImageInit;
@@ -323,7 +324,7 @@ export async function executeFreshGeneration(
               recipeVersion,
               parameters,
               inputs: [
-                { nodeId: input.inputNodeId },
+                input.inputReference ?? { nodeId: input.inputNodeId },
                 ...(reference ? [{ localKey: reference.node.localKey }] : []),
               ],
             },

@@ -114,6 +114,50 @@ export class RevisionConflictError extends Error {
   }
 }
 
+/** Initial source graph can join a later atomic mutation without creating a document first. */
+export function planSourceDocument(orientation: number, prefix = "") {
+  const sourceKey = `${prefix}source`;
+  const outputKey = `${prefix}output`;
+  const parameters = { format: "display-rgb", color_space: "srgb" };
+  const sourceNodeId = logicalNodeId(
+    recipeHash(
+      canonicalNodeRecipe({
+        kind: "source",
+        recipeVersion: 1,
+        parameters: { orientation },
+        inputNodeIds: [],
+      }),
+    ),
+  );
+  const outputNodeId = logicalNodeId(
+    recipeHash(
+      canonicalNodeRecipe({
+        kind: "output",
+        recipeVersion: 1,
+        parameters,
+        inputNodeIds: [sourceNodeId],
+      }),
+    ),
+  );
+  const nodes: NodeDraft[] = [
+    {
+      localKey: sourceKey,
+      kind: "source",
+      recipeVersion: 1,
+      parameters: { orientation },
+      inputs: [],
+    },
+    {
+      localKey: outputKey,
+      kind: "output",
+      recipeVersion: 1,
+      parameters,
+      inputs: [{ localKey: sourceKey }],
+    },
+  ];
+  return { nodes, output: { localKey: outputKey }, outputNodeId };
+}
+
 export async function ensurePhotoDocument(
   database: GraphDatabase,
   request: { photoId: string; orientation: number; expectedRevisionId?: string | null },
@@ -130,27 +174,13 @@ export async function ensurePhotoDocument(
     throw new RevisionConflictError();
   }
   if (existing) return existing;
+  const initial = planSourceDocument(request.orientation);
   let committed: CommitRevisionResult;
   try {
     committed = await commitRevision(database, {
       photoId: request.photoId,
       expectedRevisionId: null,
-      nodes: [
-        {
-          localKey: "source",
-          kind: "source",
-          recipeVersion: 1,
-          parameters: { orientation: request.orientation },
-          inputs: [],
-        },
-        {
-          localKey: "output",
-          kind: "output",
-          recipeVersion: 1,
-          parameters: { format: "display-rgb", color_space: "srgb" },
-          inputs: [{ localKey: "source" }],
-        },
-      ],
+      nodes: initial.nodes,
       rootUpdates: [
         { root: "base", node: { localKey: "output" } },
         { root: "output", node: { localKey: "output" } },

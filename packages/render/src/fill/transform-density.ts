@@ -54,6 +54,7 @@ export async function transformFillLayer(
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
   const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
   if (!branch) return undefined;
+  if (branch.composite.recipeVersion === 2) return undefined;
 
   const maskCenter = await maskCentroid(
     database,

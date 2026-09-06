@@ -201,6 +201,17 @@ export const layerRefreshDataSchema = fillStrictDataSchema.extend({
   }),
 });
 
+export const outpaintDataSchema = z.union([
+  fillStrictDataSchema,
+  z.object({
+    id: z.uuid(),
+    changed: z.literal(false),
+    layer_id: z.null(),
+    revision_id: z.uuid().nullable(),
+    render_hash: fullHashSchema("r").nullable(),
+  }),
+]);
+
 export type SegmentData = z.infer<typeof segmentDataSchema>;
 export type SegmentInstancesData = z.infer<typeof segmentInstancesDataSchema>;
 export type LayerListData = z.infer<typeof layerListDataSchema>;
@@ -209,3 +220,4 @@ export type LayerTransformData = z.infer<typeof layerTransformDataSchema>;
 export type LayerRefreshData = z.infer<typeof layerRefreshDataSchema>;
 export type FillMoveData = z.infer<typeof fillMoveDataSchema>;
 export type FillStrictData = z.infer<typeof fillStrictDataSchema>;
+export type OutpaintData = z.infer<typeof outpaintDataSchema>;

@@ -79,7 +79,7 @@ export async function describeFillBranch(
   );
   if (
     current.kind !== "mask_composite" ||
-    current.recipeVersion !== 1 ||
+    (current.recipeVersion !== 1 && current.recipeVersion !== 2) ||
     current.inputNodeIds.length !== 3 ||
     !compositeParameters.success ||
     compositeParameters.data.feather !== 0

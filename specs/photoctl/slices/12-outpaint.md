@@ -383,6 +383,64 @@ crop, native exterior detail, a subsequent local edit in the extension, repeat e
 removal and undo, offline show, and export identity. No later inspection or ordinary layer edit
 replays a provider.
 
+### Bounded checkpoints: paid activation, then refresh ownership
+
+The first checkpoint implements `--outpaint --px N|--aspect W:H`, shared paid preparation and
+atomic border activation. Exact-aspect no-op returns `changed:false` with no layer or new revision;
+successful generation uses the existing fill result. The recipe stores fixed frames and predecessor
+membership for the following checkpoint. Outpaint layer retry and explicit refresh are temporarily
+refused before paid calls, rather than applying ordinary fill's catalog-mask semantics. Remove these
+refusals only when the shared descriptor and refresh owner implement fixed-frame behavior below.
+The protocol exposes the success/no-op union as `outpaintDataSchema`; ordinary fill's strict result
+is unchanged. Border transforms use their existing physical placement owner, without automatic
+density-upscale maintenance in this checkpoint. [Capture evidence](../assets/outpaint-generation/verification.md)
+limits acceptance to geometry and lossless preservation, not photographic or preview-codec quality.
+
+Intrinsic coverage has a persisted identity distinct from catalog coverage: `mask_composite@2`
+requires a mask exactly matching the base raster dimensions, while placement remains in the outer
+frame owner. `mask_composite@1` continues projecting catalog coverage. Schema 22 only widens the
+recipe-version constraint; stored version-1 nodes, identities and outputs remain unchanged.
+
+The existing fill execution owner prepares generation, optional density and canonical placement;
+the canvas owner alone activates the border/checkpoint. Do not create a temporary active selection
+or expand the document before successful artifact publication. The first public RED must capture
+actual HTTP RGB and exterior-only mask bytes on a cropped/rotated input, then prove failed output
+leaves both revision and extent unchanged.
+
+Preparation must distinguish the immutable input graph identity from provider preprocessing:
+expanded black padding and input capping are part of the stored request, not a second mutable
+document. Keep authored input/output frames, intrinsic returned sampling and placement separately.
+An untouched photo has no graph yet; draft references must resolve in the same final canvas commit,
+without forcing early source-document initialization. Reuse the existing canonical recipe owner.
+
+The shared fill descriptor and refresh/retry owner need explicit outpaint intent, rather than a
+second border ancestry parser. Retry reuses pinned generation and authored context. Explicit
+generation refresh must not be renamed retry: existing fill refresh adopts current upstream edits.
+For crop/rotate → border A → border B → exposure change → refresh B, the fixed B frame and exterior
+ring should stay fixed while the input reflects current adjustments. A later local edit must not
+feed B's own generated pixels back into its request merely because it is currently visible.
+
+Provisional membership policy: capture predecessor photographic layer identities when B is authored.
+Refresh resolves those identities against current enabled layers and orders survivors by their current
+order; removed predecessors stay absent. B and later paint remain excluded even if reordered below B.
+Thus changing exposure and A's opacity affects B refresh, moving A changes its current contribution,
+and removing A removes its pixels without changing B's fixed frames or reviving excluded original
+content. The rejected current-z-prefix alternative could introduce later paint never present in B's
+input and feed B's descendants back into regeneration. This is a reversible, needs-user policy before
+authoring; stored membership must make the chosen meaning explicit, not silently reinterpret history.
+Projection consumes the existing authored stage/support owner. Verify refresh and density-only retry
+with different wire inputs and exact request counts. No model-quality claim follows from these
+synthetic mechanics.
+
+Follow-up refresh preparation may publish unreferenced immutable deterministic drafts through the
+existing graph store before a paid attempt, then use the existing evaluator. Failure leaves active
+revision and extent unchanged. This does not authorize a temporary active revision. Keep captured
+support stages and current predecessor references in the photographic planner; filtering current
+layers alone can revive previously consumed crop support. Extract draft resolution from the store
+instead of introducing a staged evaluator/cache path. Retained preparation consumes storage while
+GC remains disabled; test failure retention and repeat identity explicitly. First-generation lazy
+document creation stays inside the successful activation transaction.
+
 ## Visual and closeout gates
 
 Every visual checkpoint uses the same asymmetric scene, original landmark, and border crop at matching

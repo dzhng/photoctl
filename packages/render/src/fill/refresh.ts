@@ -293,6 +293,9 @@ export function resolveFillRefreshTarget(
   branch: FillBranchDescriptor,
   from: string | undefined,
 ): { id: string; kind: "generate" | "upscale" } {
+  if (branch.composite.recipeVersion === 2) {
+    throw new PhotoctlError("usage", "Outpaint layer refresh is not yet supported");
+  }
   const candidates = [branch.generation, ...(branch.upscale ? [branch.upscale] : [])];
   if (!from) return { id: branch.generation.id, kind: "generate" };
   const matches = candidates.filter(({ id }) => id === from || id.startsWith(from));
