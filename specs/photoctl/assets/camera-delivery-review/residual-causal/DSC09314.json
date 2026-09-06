@@ -1,0 +1,154 @@
+{
+  "name": "DSC09314",
+  "recordedAt": "2026-09-06T09:29:22.192Z",
+  "source": {
+    "path": "/Users/david/dev/photoctl/fixtures/camera/DSC09314.ARW",
+    "sha256": "5c33fefef97a2f334366660b798e675bb6dd2ceeff6c810597a5385d71c15115"
+  },
+  "rootCommit": "ff7c37e8f69aad551811a0e317023e9f18f7a114",
+  "native": {
+    "available": true,
+    "version": "0.22.2-Release",
+    "sha256": "a585553d7a53dbde6aae7a3673bf507c1521e399f74c41002925bb3d53bacc5d"
+  },
+  "decode": {
+    "scale": 1,
+    "space": "scene-linear-rec2020",
+    "width": 4608,
+    "height": 3072,
+    "a": {
+      "request": "disabled",
+      "actual": "disabled",
+      "floatSha256": "39cdabdb088483718b26c2602594bb168506eab95714ded8b102e5601501528e"
+    },
+    "b": {
+      "request": "reconstruct",
+      "actual": "applied",
+      "method": "libraw-spatial-float-v1",
+      "floatSha256": "d67e5e9a323e7ccc3e9d9c0898c4131016f1022e4be2883b73672c9d41ef5bab"
+    }
+  },
+  "display": {
+    "transform": "shared native linearRec2020ToDisplaySrgb, clamp to [0,1], round to uint8; PNG lossless",
+    "overview": "full native frame resized within 1440x1440, Lanczos3",
+    "detail": "same oriented native crop; 2x nearest-neighbor only",
+    "minus2": "native scene floats multiplied by 0.25 before identical display transform",
+    "roiChangedPixels": 0,
+    "roiMaxDelta": 0
+  },
+  "full": {
+    "rect": [
+      0,
+      0,
+      4608,
+      3072
+    ],
+    "pixels": 14155776,
+    "changedPixels": 3,
+    "changedSamples": 9,
+    "changedFraction": 2.1192762586805554e-7,
+    "maxAbsDelta": 0.07474488019943237,
+    "meanAbsDelta": 4.619553771062559e-9,
+    "changedBoundingBox": [
+      1815,
+      147,
+      511,
+      709
+    ],
+    "largestChanges": [
+      {
+        "x": 2325,
+        "y": 147,
+        "delta": 0.07474488019943237,
+        "a": [
+          1.016564965248108,
+          0.9309925436973572,
+          1.2202112674713135
+        ],
+        "b": [
+          1.0274763107299805,
+          1.0057374238967896,
+          1.2109068632125854
+        ]
+      },
+      {
+        "x": 1815,
+        "y": 852,
+        "delta": 0.0718773603439331,
+        "a": [
+          0.9831557273864746,
+          0.8742644190788269,
+          1.403452754020691
+        ],
+        "b": [
+          0.9936485290527344,
+          0.94614177942276,
+          1.394505262374878
+        ]
+      },
+      {
+        "x": 1817,
+        "y": 855,
+        "delta": 0.007793903350830078,
+        "a": [
+          0.951926589012146,
+          0.9010899066925049,
+          1.3268252611160278
+        ],
+        "b": [
+          0.9530643820762634,
+          0.908883810043335,
+          1.3258551359176636
+        ]
+      }
+    ]
+  },
+  "roi": {
+    "rect": [
+      2877,
+      435,
+      512,
+      512
+    ],
+    "pixels": 262144,
+    "changedPixels": 0,
+    "changedSamples": 0,
+    "changedFraction": 0,
+    "maxAbsDelta": 0,
+    "meanAbsDelta": 0,
+    "changedBoundingBox": null,
+    "largestChanges": []
+  },
+  "captures": [
+    {
+      "path": "a/DSC09314-overview.png",
+      "sha256": "da7db7b6077901579128fe0afb98aa58090a2ccf8e40c56504d19b23f9c40856",
+      "bytes": 3439405
+    },
+    {
+      "path": "a/DSC09314-detail.png",
+      "sha256": "d1cbec63460568ee73eeea19bf0cf8afe205ea57403038c46af3e0dfef249189",
+      "bytes": 971755
+    },
+    {
+      "path": "a/DSC09314-detail-minus2.png",
+      "sha256": "6265b278412679842771c584922a186bfb10a23949aaa7cb8063387b968ac4e2",
+      "bytes": 909812
+    },
+    {
+      "path": "b/DSC09314-overview.png",
+      "sha256": "b6e780c6a83713ae1ea8bfec2a6035610a4e49dbe1ffcc53a1166d15b4332c55",
+      "bytes": 3439405
+    },
+    {
+      "path": "b/DSC09314-detail.png",
+      "sha256": "d1cbec63460568ee73eeea19bf0cf8afe205ea57403038c46af3e0dfef249189",
+      "bytes": 971755
+    },
+    {
+      "path": "b/DSC09314-detail-minus2.png",
+      "sha256": "6265b278412679842771c584922a186bfb10a23949aaa7cb8063387b968ac4e2",
+      "bytes": 909812
+    }
+  ]
+}

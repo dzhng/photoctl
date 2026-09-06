@@ -1,0 +1,162 @@
+{
+  "name": "DSC08819",
+  "recordedAt": "2026-09-06T09:30:20.976Z",
+  "source": {
+    "path": "/Users/david/dev/photoctl/fixtures/camera/DSC08819.ARW",
+    "sha256": "a713c1a8723cff8a7db702b01a72d6367830aed792f23d6b3d366e39e3d53d55"
+  },
+  "rootCommit": "ff7c37e8f69aad551811a0e317023e9f18f7a114",
+  "native": {
+    "available": true,
+    "version": "0.22.2-Release",
+    "sha256": "a585553d7a53dbde6aae7a3673bf507c1521e399f74c41002925bb3d53bacc5d"
+  },
+  "decode": {
+    "scale": 1,
+    "space": "scene-linear-rec2020",
+    "width": 4608,
+    "height": 3072,
+    "a": {
+      "request": "disabled",
+      "actual": "disabled",
+      "floatSha256": "93b9b06a0ef7dab81398f0b5b8c7badaedd7d22907184ae8dd4c85a882c3212d"
+    },
+    "b": {
+      "request": "reconstruct",
+      "actual": "applied",
+      "method": "libraw-spatial-float-v1",
+      "floatSha256": "890dea2301076c7f5ab68a160848d72f98051700b5dc48894850277912b0bef2"
+    }
+  },
+  "display": {
+    "transform": "shared native linearRec2020ToDisplaySrgb, clamp to [0,1], round to uint8; PNG lossless",
+    "overview": "full native frame resized within 1440x1440, Lanczos3",
+    "detail": "same oriented native crop; 2x nearest-neighbor only",
+    "minus2": "native scene floats multiplied by 0.25 before identical display transform",
+    "roiChangedPixels": 1,
+    "roiMaxDelta": 29
+  },
+  "full": {
+    "rect": [
+      0,
+      0,
+      4608,
+      3072
+    ],
+    "pixels": 14155776,
+    "changedPixels": 1,
+    "changedSamples": 3,
+    "changedFraction": 7.064254195601851e-8,
+    "maxAbsDelta": 0.738364040851593,
+    "meanAbsDelta": 2.2089087300021976e-8,
+    "changedBoundingBox": [
+      2977,
+      1176,
+      1,
+      1
+    ],
+    "largestChanges": [
+      {
+        "x": 2977,
+        "y": 1176,
+        "delta": 0.738364040851593,
+        "a": [
+          1.4609392881393433,
+          0.8437144160270691,
+          1.547979474067688
+        ],
+        "b": [
+          1.568726897239685,
+          1.582078456878662,
+          1.456066608428955
+        ]
+      }
+    ]
+  },
+  "roi": {
+    "rect": [
+      2606,
+      957,
+      512,
+      512
+    ],
+    "pixels": 262144,
+    "changedPixels": 1,
+    "changedSamples": 3,
+    "changedFraction": 0.000003814697265625,
+    "maxAbsDelta": 0.738364040851593,
+    "meanAbsDelta": 0.0000011928107142011868,
+    "changedBoundingBox": [
+      2977,
+      1176,
+      1,
+      1
+    ],
+    "largestChanges": [
+      {
+        "x": 2977,
+        "y": 1176,
+        "delta": 0.738364040851593,
+        "a": [
+          1.4609392881393433,
+          0.8437144160270691,
+          1.547979474067688
+        ],
+        "b": [
+          1.568726897239685,
+          1.582078456878662,
+          1.456066608428955
+        ]
+      }
+    ]
+  },
+  "captures": [
+    {
+      "path": "a/DSC08819-overview.png",
+      "sha256": "3361273166f1d1a38d23c36856dd1106100daa2747cff9d9a6848b19df5a4511",
+      "bytes": 2440647
+    },
+    {
+      "path": "a/DSC08819-detail.png",
+      "sha256": "9252a87c4c0f32e25d4e90bb6f2d75594c3988ef523a584e243850c751ef24c2",
+      "bytes": 1003488
+    },
+    {
+      "path": "a/DSC08819-detail-minus2.png",
+      "sha256": "759bcf184fac9cbfca6ed34ce56a2832d7de91ea34256106017500f2a7c8792b",
+      "bytes": 693841
+    },
+    {
+      "path": "b/DSC08819-overview.png",
+      "sha256": "9a280ac58a26d697606ccd75f896595a1e4a14d9bbe3e59ffc8d85fbdb0c04a9",
+      "bytes": 2440647
+    },
+    {
+      "path": "b/DSC08819-detail.png",
+      "sha256": "4b85f28561b6106d2a6ac159739594589caa4e21b17e41da33f67981d135c238",
+      "bytes": 1003479
+    },
+    {
+      "path": "b/DSC08819-detail-minus2.png",
+      "sha256": "488be810fdfe9529246c0974f144a75b3024e960edf8d6be5937fd72303b7fa2",
+      "bytes": 693840
+    }
+  ],
+  "focus": {
+    "label": "nose bridge and tip",
+    "rect": [
+      2710,
+      1235,
+      150,
+      150
+    ],
+    "pixels": 22500,
+    "changedPixels": 0,
+    "changedSamples": 0,
+    "changedFraction": 0,
+    "maxAbsDelta": 0,
+    "meanAbsDelta": 0,
+    "changedBoundingBox": null,
+    "largestChanges": []
+  }
+}
