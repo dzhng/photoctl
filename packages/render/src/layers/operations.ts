@@ -6,6 +6,7 @@ import {
   commitRevision,
   ensurePhotoDocument,
   loadActiveDocument,
+  RevisionConflictError,
   type GraphDatabase,
   type NodeDraft,
 } from "../graph/store.js";
@@ -105,17 +106,22 @@ export async function commitPreparedMaskLayers(
   database: GraphDatabase,
   request: {
     photoId: string;
+    expectedRevisionId?: string | null;
     orientation: number;
     layers: Awaited<ReturnType<typeof prepareMaskLayer>>[];
   },
 ): Promise<{ revisionId: string; renderHash: `r_${string}`; layers: ManualLayerResult[] }> {
   if (request.layers.length === 0) throw new Error("At least one mask is required");
-  await ensurePhotoDocument(database, {
+  const ensured = await ensurePhotoDocument(database, {
     photoId: request.photoId,
     orientation: request.orientation,
+    expectedRevisionId: request.expectedRevisionId,
   });
   const current = await loadActiveDocument(database, request.photoId);
   if (!current) throw new Error("The active photo document is missing");
+  if (request.expectedRevisionId !== undefined && current.revisionId !== ensured.revisionId) {
+    throw new RevisionConflictError();
+  }
   const contentNodeId = current.layers.some((layer) => layer.enabled && layer.role === "border")
     ? await markupFreeOutputNode(database, request.photoId, current.roots.output)
     : current.roots.base;

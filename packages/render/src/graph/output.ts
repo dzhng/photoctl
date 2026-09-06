@@ -22,7 +22,11 @@ import { loadLogicalFrame } from "./projection.js";
 import { composeTransformMatrices } from "../transforms.js";
 import { admissibleCanvasSupport, hasUncoveredCanvas } from "./canvas-support.js";
 import { markupFreeOutputNode } from "../markup/graph.js";
-import { intersectConvexPolygons, polygonArea } from "../develop/geometry.js";
+import {
+  intersectConvexPolygons,
+  polygonArea,
+  withoutDevelopGeometry,
+} from "../develop/geometry.js";
 
 export const canvasCompositeSchema = z
   .object({
@@ -44,7 +48,11 @@ export const canvasCompositeSchema = z
   .strict();
 
 /** Read the snapped photographic plan before preview/export caches can bypass evaluation. */
-async function readCanvasPlan(database: GraphTransaction, photoId: string, outputNodeId: string) {
+export async function readCanvasPlan(
+  database: GraphTransaction,
+  photoId: string,
+  outputNodeId: string,
+) {
   const photographic = await markupFreeOutputNode(database, photoId, outputNodeId);
   const node = (
     await database.query<{ kind: string; recipe_version: number; parameters: unknown }>(
@@ -258,18 +266,13 @@ export async function planPhotographicOutput(
     }
   }
   if (canvas) {
-    const adjustments = { ...controls };
-    delete adjustments.crop;
-    delete adjustments.aspect_ratio;
-    delete adjustments.rotate;
-    delete adjustments.straighten_deg;
     return {
       nodes: [
         {
           localKey: "canvas-base",
           kind: "develop",
           recipeVersion: 1,
-          parameters: adjustments,
+          parameters: withoutDevelopGeometry(controls),
           inputs: [{ nodeId: source.developInputNodeId }],
         },
         {

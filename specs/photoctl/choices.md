@@ -4834,3 +4834,67 @@
   that cannot establish identity still needs an ID; no missing-volume guessing is added.
 - **Verdict:** **Sound.** Keep selection separate from the existing truthful fallback owner.
 - **Confidence:** High.
+
+### SAM canvas — Source exclusion does not invent a second selection rule
+
+- **When:** Source-only canvas consumer, 2026-09-06.
+- **The choice:** After outpainting a cropped photo, the model sees the permitted original image
+  surrounded by black, not the generated border. Its predicted selection may still include black
+  pixels inside that prepared image. Keep the existing clipping to the image boundary rather than
+  additionally erasing every selected pixel outside original-source support. The latter would be
+  a new rule for what the model may select, not merely a correction of its input coordinates.
+- **The gap:** The plan specifies source-only input with authored exclusions but does not specify
+  an additional hard exclusion applied to the model's output mask.
+- **The reach:** Point prompts and returned masks retain original-catalog coordinates and bounds;
+  exterior manual edits remain separate. This does not settle photographic mask-edge refinement.
+- **Verdict:** **Sound.** Correct input geometry while keeping output-selection policy explicit.
+- **Confidence:** Medium.
+
+### SAM grounding — Keep its existing JPEG boundary separate from geometric correctness
+
+- **When:** Source-only canvas visual review, 2026-09-06.
+- **The choice:** A small colored source island surrounded by black acquires faint colored halos
+  when encoded for text grounding. Keep the existing JPEG transport; verify exact placement and
+  black exclusion before encoding instead of relabeling the lossy result as exact. Changing to
+  lossless input would change the external request and its size, not just the projection code.
+- **The gap:** The geometry requirement does not select a new grounding codec. Its tiny synthetic
+  evidence makes the existing codec's color loss unusually visible.
+- **The reach:** Geometry acceptance is not photographic quality acceptance; future codec work
+  must judge actual grounding quality and request cost separately.
+- **Verdict:** **Sound.** Preserve the established transport without hiding its visible loss.
+- **Confidence:** Medium.
+
+### SAM progress — A disconnected listener is not a cancellation request
+
+- **When:** Source-only canvas resource correction, 2026-09-06.
+- **The choice:** A full-resolution command can still be preparing pixels when the client expects
+  another response. Send the existing advisory heartbeat throughout initialization, inference and
+  publication, using the same minimum idle window as other long commands. If that listener
+  disconnects, the work may still commit; the caller must inspect state, never automatically replay
+  the mutation. Original warning delivery retains its existing behavior. The alternative would
+  add cancellation semantics that cannot eliminate the disconnect race around a commit anyway.
+- **The gap:** Segmentation had no progress coverage for a command longer than its idle window,
+  while the shared transport already distinguishes lost responses from safe retries.
+- **The reach:** No new timer owner, retry, lowered input resolution or cancellation API is added.
+- **Verdict:** **Sound.** Reuse the existing long-command policy and preserve unknown-outcome safety.
+- **Confidence:** High.
+
+### SAM snapshot — Reject a mask prepared before another shared-handle edit
+
+- **When:** Source-only canvas integration review, 2026-09-06.
+- **The choice:** A caller starts segmentation and another caller edits the same document before
+  inference returns. Capture the initial revision, including the absence of a document, and require
+  it still to match before publishing the mask. The existing initialization owner accepts this
+  optional expectation; a strict initializer that loses to another writer fails rather than adopting
+  that writer's revision. Publication also checks the ensured revision and uses the ordinary final
+  compare-and-swap transaction. Merely loading the newest revision at publication would wrongly
+  attach an old-coordinate mask to a new image.
+- **The gap:** Normal CLI requests are serialized, but dispatch with a supplied library handle
+  can be reentered during an external model callback. The old publication check covered only changes
+  after its final reload, not changes since source preparation.
+- **The reach:** Dry-run and empty grounding still create no graph rows. Existing initialization
+  callers without an expectation retain winner reuse. Rejected work may leave unreferenced prepared
+  artifact bytes, but it activates no stale layer and does not retry.
+- **Verdict:** **Sound.** The initial omission is corrected through the existing revision owner,
+  without another lock or transaction lifecycle.
+- **Confidence:** High.

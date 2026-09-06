@@ -1,4 +1,9 @@
-import { clipMaskToFrame, transformMaskPixels, transformPixels } from "@photoctl/img";
+import {
+  clipMaskToFrame,
+  compositeMaskedPixels,
+  transformMaskPixels,
+  transformPixels,
+} from "@photoctl/img";
 import {
   artifactPath,
   readArtifactMask,
@@ -224,6 +229,39 @@ export async function projectRgbToRender(
       frame.h,
       matrix,
       "lanczos3",
+    ),
+  };
+}
+
+/** Preserve ordered samplers and authored exclusions for photographic and source-only canvas RGB. */
+export async function projectSupportedRgbToRender(
+  image: LinearImage,
+  from: RenderFrame,
+  stages: readonly RenderFrame[],
+  output: RenderFrame,
+  realize: (frame: RenderFrame) => RenderFrame,
+): Promise<LinearImage> {
+  const restrictions = [from, ...stages];
+  let frame = from;
+  for (const authored of [...stages, output]) {
+    const target = realize(authored);
+    image = await projectRgbToRender(image, frame, target, target.raster);
+    frame = target;
+  }
+  const support = clipCoverageToFrames(
+    { ...frame.raster, data: new Float32Array(image.w * image.h).fill(1) },
+    frame,
+    restrictions,
+  );
+  return {
+    ...image,
+    data: await compositeMaskedPixels(
+      new Float32Array(image.data.length),
+      image.data,
+      support.data,
+      image.w,
+      image.h,
+      1,
     ),
   };
 }

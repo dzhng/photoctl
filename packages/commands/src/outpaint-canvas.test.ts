@@ -7,12 +7,14 @@ import {
   artifactPath,
   undoRevision,
   readValidPreviewArtifact,
+  Sam2Segmenter,
 } from "@photoctl/render";
 import { showDataSchema, segmentDataSchema } from "@photoctl/protocol";
 import type { StructuredModelAdapter } from "@photoctl/providers";
 import { mkdir, mkdtemp, rename, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createServer } from "node:http";
 import sharp from "sharp";
 import { expect, test } from "vitest";
 import { dispatch } from "./dispatch.js";
@@ -116,6 +118,194 @@ async function createCanvasFixture(w = 16, h = 12) {
     throw error;
   }
 }
+
+test("SAM sees source-only pixels in the expanded canvas without reactivating its consumed crop", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, handle } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":2,"w":8,"h":4}', "--set", "rotate=90"]);
+    await fixture.author(2, "blue");
+    const before = (await loadActiveDocument(handle, id))!;
+    const redSamples: number[] = [];
+    const segmenter = new Sam2Segmenter(async () => ({
+      encoderInputNames: () => [],
+      decoderInputNames: () => [],
+      runEncoder: async (inputs) => {
+        const pixels = inputs[0]!.f32Data!;
+        // The 8×12 canvas is letterboxed to 683×1024 at x=170. Its border is
+        // real black input, not zero-valued model padding or generated blue RGB.
+        const offset = 298 * 1024 + 212;
+        for (const [channel, mean, deviation] of [
+          [0, 0.485, 0.229],
+          [1, 0.456, 0.224],
+          [2, 0.406, 0.225],
+        ]) {
+          expect(pixels[channel! * 1024 * 1024 + offset]).toBeCloseTo(-mean! / deviation!, 5);
+        }
+        const interior = 384 * 1024 + 554;
+        redSamples.push(pixels[interior]!);
+        expect(pixels[interior]).toBeGreaterThan(-1);
+        expect(pixels[2 * 1024 * 1024 + interior]).toBeLessThan(1);
+        return [
+          [1, 32, 256, 256],
+          [1, 64, 128, 128],
+          [1, 256, 64, 64],
+        ].map((dimensions) => ({
+          dimensions,
+          data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
+        }));
+      },
+      runDecoder: async (inputs) => {
+        // Original point (6,3) maps to canvas (5,4), then into the letterbox.
+        const coordinates = inputs.find((input) => input.name === "point_coords")!.f32Data!;
+        expect(coordinates[0]).toBeCloseTo(170 + (5 * 683) / 8, 3);
+        expect(coordinates[1]).toBeCloseTo((4 * 1024) / 12, 3);
+        return [{ dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) }];
+      },
+    }));
+    const request = {
+      verb: "segment",
+      args: [id, "--at", "6,3", "--dry-run"],
+      cwd: fixture.parent,
+      env: {
+        noDaemon: true,
+        cacheRoot: join(fixture.parent, "cache"),
+        volumeMap: `${fixture.parent}=fixture:online`,
+      },
+    };
+    const context = { version: "test", library: handle, segmenter };
+    const result = await dispatch(request, context);
+    expect(result, JSON.stringify(result)).toMatchObject({ ok: true });
+    expect(redSamples).toHaveLength(1);
+    expect((await loadActiveDocument(handle, id))!.revisionId).toBe(before.revisionId);
+    await command("develop", [id, "--set", "exposure=1"]);
+    expect(await dispatch(request, context)).toMatchObject({ ok: true });
+    expect(redSamples).toHaveLength(2);
+    expect(redSamples[1]! - redSamples[0]!).toBeGreaterThan(0.3);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("SAM retains inherited source exclusions after an earlier border is removed", async () => {
+  const fixture = await createCanvasFixture();
+  const { id, command, handle } = fixture;
+  try {
+    await command("develop", [id, "--set", 'crop={"x":4,"y":2,"w":8,"h":4}']);
+    const first = await fixture.author(2, "blue");
+    await command("develop", [id, "--set", 'crop={"x":2,"y":2,"w":8,"h":4}']);
+    await fixture.author(2, "cyan");
+    await command("layer", ["remove", id, first.layerId]);
+    const segmenter = new Sam2Segmenter(async () => ({
+      encoderInputNames: () => [],
+      decoderInputNames: () => [],
+      runEncoder: async (inputs) => {
+        const pixels = inputs[0]!.f32Data!;
+        // The final 12×8 viewport starts at original (0,0). Original (2.5,3.5)
+        // is inside it, but excluded by the first border's inherited crop.
+        expect(pixels[468 * 1024 + 213]).toBeCloseTo(-0.485 / 0.229, 5);
+        expect(pixels[468 * 1024 + 554]).toBeGreaterThan(-1);
+        return [
+          [1, 32, 256, 256],
+          [1, 64, 128, 128],
+          [1, 256, 64, 64],
+        ].map((dimensions) => ({
+          dimensions,
+          data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
+        }));
+      },
+      runDecoder: async () => [
+        { dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) },
+      ],
+    }));
+    const result = await dispatch(
+      {
+        verb: "segment",
+        args: [id, "--at", "6,3", "--dry-run"],
+        cwd: fixture.parent,
+        env: {
+          noDaemon: true,
+          cacheRoot: join(fixture.parent, "cache"),
+          volumeMap: `${fixture.parent}=fixture:online`,
+        },
+      },
+      { version: "test", library: handle, segmenter },
+    );
+    expect(result, JSON.stringify(result)).toMatchObject({ ok: true });
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("offline SAM grounding retains the canvas viewport at source-only density beside native border pixels", async () => {
+  const fixture = await createCanvasFixture();
+  const requests: Buffer[] = [];
+  const server = createServer((request, response) => {
+    const chunks: Buffer[] = [];
+    request.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    request.on("end", () => {
+      const encoded = Buffer.concat(chunks)
+        .toString()
+        .match(/data:image\/jpeg;base64,([^"\\]+)/)?.[1];
+      if (encoded) requests.push(Buffer.from(encoded, "base64"));
+      response.setHeader("content-type", "application/json");
+      response.end(JSON.stringify({ choices: [{ message: { content: '{"instances":[]}' } }] }));
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const { id, command } = fixture;
+    await command("develop", [id, "--set", 'crop={"x":4,"y":2,"w":8,"h":4}', "--set", "rotate=90"]);
+    await fixture.author(2, "blue");
+    const pinnedDirectory = join(fixture.parent, "cache", fixture.libraryId, "emb");
+    await sharp(fixture.source)
+      .resize(8, 6)
+      .jpeg()
+      .toFile(join(pinnedDirectory, `${id}.jpg`));
+    await rename(fixture.source, `${fixture.source}.offline`);
+    const shown = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(shown.preview_info.actual).toMatchObject({ w: 8, h: 12 });
+    expect(shown.preview_info.base_to_view).toEqual({ a: 0, b: 1, c: -1, d: 0, e: 8, f: -2 });
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("No fixture port");
+    const segmenter = new Sam2Segmenter(async () => ({
+      encoderInputNames: () => [],
+      decoderInputNames: () => [],
+      runEncoder: async () => {
+        throw new Error("Empty grounding must not encode");
+      },
+      runDecoder: async () => {
+        throw new Error("Empty grounding must not decode");
+      },
+    }));
+    const result = await dispatch(
+      {
+        verb: "segment",
+        args: [id, "--text", "person", "--dry-run"],
+        cwd: fixture.parent,
+        env: {
+          noDaemon: true,
+          cacheRoot: join(fixture.parent, "cache"),
+          volumeMap: `${fixture.parent}=fixture:online`,
+          gatewayApiKey: "fixture-key",
+          gatewayUrl: `http://127.0.0.1:${address.port}`,
+        },
+      },
+      { version: "test", library: fixture.handle, segmenter },
+    );
+    expect(result, JSON.stringify(result)).toMatchObject({
+      ok: true,
+      warnings: [expect.objectContaining({ code: "source_offline" })],
+    });
+    expect(requests).toHaveLength(1);
+    expect(await sharp(requests[0]).metadata()).toMatchObject({ width: 4, height: 6 });
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+    await fixture.close();
+  }
+});
 
 test("canvas publication rejects mismatched intrinsic pixels without activating a border", async () => {
   const fixture = await createCanvasFixture();

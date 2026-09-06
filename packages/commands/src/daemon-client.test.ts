@@ -96,3 +96,14 @@ test("export idle timeout permits heartbeat frames even with immediate queue adm
 
   expect(timeout).toBeGreaterThan(5_000);
 });
+
+test("segment idle timeout permits progress while immediately admitted model work is pending", () => {
+  expect(
+    requestTimeout({
+      verb: "segment",
+      args: ["photo", "--at", "3,2"],
+      cwd: "/",
+      env: { noDaemon: false, lockBudgetMs: "0" },
+    }),
+  ).toBeGreaterThan(5_000);
+});

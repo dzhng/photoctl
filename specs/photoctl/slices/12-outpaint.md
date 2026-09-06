@@ -318,8 +318,18 @@ Preview metadata keeps its existing meanings: `source_dimensions` describes the 
 source, and `pixel_scale`/`resolution_limited` describe output sampling. A native border around an
 offline-limited photograph can therefore produce native output without recovering the original's
 missing detail. The exact reduced input dimensions remain in the retained execution frame's `source`;
-`source_tier` still reports the fallback. Source-only SAM geometry and final visual lifecycle closeout
-remain required before 12f2 acceptance.
+`source_tier` still reports the fallback. Source-only SAM now reads the snapped photographic plan,
+applies current nongeometry adjustments to the oriented source, and consumes the same ordered base
+projection and authored-support clipping as the compositor. Its raster follows only actual source
+sampling; local border pixels never enter the image or increase its density. The ordinary no-canvas
+develop path remains unchanged. [Source-only input evidence](../assets/sam-canvas/README.md) covers
+the consumer contract; final visual lifecycle closeout remains required before 12f2 acceptance.
+
+SAM's mask postprocess still clips model logits to the prepared image viewport, not to a new semantic
+support mask. Black excluded-source pixels are visible model input and may be selected by the model;
+this pass does not add segmentation refinement. Public point prompts and returned mask rasters
+retain their existing original-catalog bounds. Exterior local edits use the existing manual-mask
+path rather than silently widening SAM's coordinate/output contract.
 Cache sufficiency checks the retained original sampling against requested view demand too: local
 native pixels cannot prevent a richer reconnected original from refreshing the current master.
 

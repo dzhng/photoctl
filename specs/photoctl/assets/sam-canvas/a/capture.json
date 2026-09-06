@@ -1,0 +1,352 @@
+[
+  {
+    "state": "a",
+    "grounding": {
+      "width": 4,
+      "height": 8,
+      "sha256": "356e33885c35687863b6536652eef3ada8d79716f6cfd94a3923e6f51e986806"
+    },
+    "show": {
+      "render_hash": "r_3ac6905bd7d96014fac72a6c8d274209ee111d8972a79b5c99deceda61fa445d",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          4,
+          2,
+          8,
+          4
+        ],
+        "w": 4,
+        "h": 8
+      },
+      "source_tier": "online-file",
+      "source_dimensions": {
+        "w": 4,
+        "h": 8
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 0,
+        "b": 1,
+        "c": -1,
+        "d": 0,
+        "e": 6,
+        "f": -4
+      },
+      "view_to_base": {
+        "a": 0,
+        "b": -1,
+        "c": 1,
+        "d": 0,
+        "e": 4,
+        "f": 6
+      },
+      "visible_base_polygon": [
+        [
+          4,
+          6
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          12,
+          2
+        ],
+        [
+          12,
+          6
+        ]
+      ]
+    }
+  },
+  {
+    "state": "b",
+    "grounding": {
+      "width": 4,
+      "height": 8,
+      "sha256": "356e33885c35687863b6536652eef3ada8d79716f6cfd94a3923e6f51e986806"
+    },
+    "show": {
+      "render_hash": "r_8d3f7085dddf2d7443e40172419453f65f13403288ca20a047de35030f738330",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          2,
+          0,
+          12,
+          8
+        ],
+        "w": 8,
+        "h": 12
+      },
+      "source_tier": "online-file",
+      "source_dimensions": {
+        "w": 8,
+        "h": 12
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 0,
+        "b": 1,
+        "c": -1,
+        "d": 0,
+        "e": 8,
+        "f": -2
+      },
+      "view_to_base": {
+        "a": 0,
+        "b": -1,
+        "c": 1,
+        "d": 0,
+        "e": 2,
+        "f": 8
+      },
+      "visible_base_polygon": [
+        [
+          2,
+          8
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          14,
+          0
+        ],
+        [
+          14,
+          8
+        ]
+      ]
+    }
+  },
+  {
+    "state": "c",
+    "grounding": {
+      "width": 4,
+      "height": 8,
+      "sha256": "d7399b51daa9a415edd7e61c60b9ea704004422a89856dda86de1c33d6cb3e6e"
+    },
+    "show": {
+      "render_hash": "r_5d1c4306437c01574278f5fb1933f1d0c3d798fcb9b90a57cdc6f014aac5b3f7",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          2,
+          0,
+          12,
+          8
+        ],
+        "w": 8,
+        "h": 12
+      },
+      "source_tier": "online-file",
+      "source_dimensions": {
+        "w": 8,
+        "h": 12
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 0,
+        "b": 1,
+        "c": -1,
+        "d": 0,
+        "e": 8,
+        "f": -2
+      },
+      "view_to_base": {
+        "a": 0,
+        "b": -1,
+        "c": 1,
+        "d": 0,
+        "e": 2,
+        "f": 8
+      },
+      "visible_base_polygon": [
+        [
+          2,
+          8
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          14,
+          0
+        ],
+        [
+          14,
+          8
+        ]
+      ]
+    }
+  },
+  {
+    "state": "d",
+    "grounding": {
+      "width": 8,
+      "height": 4,
+      "sha256": "5e6d0f22c8c1979194aa8db7956b2b669cbc69104a2be25f8483d26f03990ff5"
+    },
+    "show": {
+      "render_hash": "r_11dd7da5f32eaec9a270e203d8a0d949f3296ba6a051ae3d15a9d8a853d6197a",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          0,
+          0,
+          12,
+          8
+        ],
+        "w": 12,
+        "h": 8
+      },
+      "source_tier": "online-file",
+      "source_dimensions": {
+        "w": 12,
+        "h": 8
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "render_master",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "view_to_base": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "visible_base_polygon": [
+        [
+          0,
+          0
+        ],
+        [
+          12,
+          0
+        ],
+        [
+          12,
+          8
+        ],
+        [
+          0,
+          8
+        ]
+      ]
+    }
+  },
+  {
+    "state": "e",
+    "grounding": {
+      "width": 4,
+      "height": 2,
+      "sha256": "4fe4fbe6e557b64f65881b5c6c4b76d44b67ec49a5ec480307f9215819949e8e"
+    },
+    "show": {
+      "render_hash": "r_11dd7da5f32eaec9a270e203d8a0d949f3296ba6a051ae3d15a9d8a853d6197a",
+      "view_hash": "v_c2a50e40ff21cb72af889e2115bdd27345a8115bcbfd1dbcc74e9463d1449702",
+      "requested": {
+        "region": null,
+        "long_edge": "native"
+      },
+      "actual": {
+        "region": [
+          0,
+          0,
+          12,
+          8
+        ],
+        "w": 12,
+        "h": 8
+      },
+      "source_tier": "online-file",
+      "source_dimensions": {
+        "w": 12,
+        "h": 8
+      },
+      "pixel_scale": 1,
+      "resolution_limited": false,
+      "cache_source": "exact_view",
+      "color_space": "srgb",
+      "icc": "sRGB2014",
+      "base_to_view": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "view_to_base": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 0,
+        "f": 0
+      },
+      "visible_base_polygon": [
+        [
+          0,
+          0
+        ],
+        [
+          12,
+          0
+        ],
+        [
+          12,
+          8
+        ],
+        [
+          0,
+          8
+        ]
+      ]
+    }
+  }
+]

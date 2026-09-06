@@ -116,13 +116,19 @@ export class RevisionConflictError extends Error {
 
 export async function ensurePhotoDocument(
   database: GraphDatabase,
-  request: { photoId: string; orientation: number },
+  request: { photoId: string; orientation: number; expectedRevisionId?: string | null },
 ): Promise<{
   revisionId: string;
   outputNodeId: `node_${string}`;
   renderHash: `r_${string}`;
 }> {
   const existing = await loadActiveOutput(database, request.photoId);
+  if (
+    request.expectedRevisionId !== undefined &&
+    (existing?.revisionId ?? null) !== request.expectedRevisionId
+  ) {
+    throw new RevisionConflictError();
+  }
   if (existing) return existing;
   let committed: CommitRevisionResult;
   try {
@@ -151,7 +157,7 @@ export async function ensurePhotoDocument(
       ],
     });
   } catch (error) {
-    if (error instanceof RevisionConflictError) {
+    if (error instanceof RevisionConflictError && request.expectedRevisionId === undefined) {
       const winner = await loadActiveOutput(database, request.photoId);
       if (winner) return winner;
     }

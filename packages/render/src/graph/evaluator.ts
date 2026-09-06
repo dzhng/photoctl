@@ -60,6 +60,7 @@ import {
   loadBaseProjection,
   projectMaskToRender,
   projectRgbToRender,
+  projectSupportedRgbToRender,
   projectCoverageBetweenFrames,
   supportCoverage,
   clipCoverageToFrames,
@@ -684,8 +685,8 @@ async function evaluateCanvasComposite(
   inputs: EvaluatedNode[],
 ): Promise<LinearImage> {
   const plan = canvasCompositeSchema.parse(parameters);
-  let base = await readRgbInput(inputs[0]!);
-  let baseFrame = await loadBaseProjection(request.database, request.photoId, inputs[0]!);
+  const base = await readRgbInput(inputs[0]!);
+  const baseFrame = await loadBaseProjection(request.database, request.photoId, inputs[0]!);
   const layerFrames = await Promise.all(
     plan.layers.map(async (layer, index) =>
       layer.frame
@@ -743,25 +744,14 @@ async function evaluateCanvasComposite(
     realizeCanvasFrame(parseRenderFrame(saved), sourceFrame, contributingLayers);
   const output = realize(plan.frame);
   const baseStages = [...plan.base_stages, ...plan.viewport_stages];
-  const baseSupportFrames = [baseFrame, ...baseStages.map(parseRenderFrame)];
-  for (const saved of [...baseStages, plan.frame]) {
-    const frame = realize(saved);
-    base = await projectRgbToRender(base, baseFrame, frame, frame.raster);
-    baseFrame = frame;
-  }
-  const baseSupport = clipCoverageToFrames(
-    { ...output.raster, data: new Float32Array(output.raster.w * output.raster.h).fill(1) },
-    output,
-    baseSupportFrames,
+  const projectedBase = await projectSupportedRgbToRender(
+    base,
+    baseFrame,
+    baseStages.map(parseRenderFrame),
+    authoredOutput,
+    (frame) => realizeCanvasFrame(frame, sourceFrame, contributingLayers),
   );
-  let pixels = await compositeMaskedPixels(
-    new Float32Array(base.data.length),
-    base.data,
-    baseSupport.data,
-    base.w,
-    base.h,
-    1,
-  );
+  let pixels = projectedBase.data;
   for (const [index, layer] of plan.layers.entries()) {
     const contentInput = inputs[1 + index * 2]!;
     let content = await readRgbInput(contentInput);
@@ -786,7 +776,7 @@ async function evaluateCanvasComposite(
       layer.opacity,
     );
   }
-  return linearImage(base, pixels);
+  return linearImage(projectedBase, pixels);
 }
 
 async function evaluateMaskTransform(

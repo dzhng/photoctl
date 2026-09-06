@@ -21,8 +21,8 @@ below; record evidence-driven deviations in the owning slice and audit new decis
 
 **Current pickup: finish outpaint consumers and the corrected default runtime; close the audited command omissions.**
 
-Run the independent command, canvas, and runtime-build passes in parallel. Canvas sampling and
-offline-to-online cache promotion are integrated; next is source-only SAM geometry, then 12f3 generation wiring.
+Run the independent command, canvas, and runtime-build passes in parallel. Canvas sampling,
+offline-to-online cache promotion and source-only SAM geometry are integrated; next is 12f3 generation wiring.
 Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
 Historical schema-v10–v12 and structured truncated-RAW fixture coverage are also integrated.
 Next independent command work is D24 local horizon detection / `crop --auto`; full-frame generation
@@ -32,8 +32,9 @@ consumers must then use the shared frame contract rather than retain their provi
   Equal pixel bytes do not imply equal coordinates; historical recovery never guesses the latest execution.
   Composition, independent restriction activation, reversible border operations and captured input stages
   are integrated. Actual visible supply now realizes canvas sampling, and sharp border pixels cannot
-  conceal a reduced original from cache promotion after reconnect. Source-only SAM must consume
-  the same authored geometry without photographic layer RGB. Complete these consumers before 12f3.
+  conceal a reduced original from cache promotion after reconnect. Source-only SAM now consumes
+  the same authored geometry without photographic layer RGB. Keep its input/output policy and
+  [resource evidence](assets/sam-canvas/README.md) distinct from photographic mask quality.
 - **Undo:** the [public command](slices/08-develop.md#public-revision-undo) is integrated through the
   existing atomic revision owner, including first-source/generated no-ops and exact restoration.
   [Daemon recovery](slices/02-daemon-and-contention.md) already refuses
@@ -69,6 +70,7 @@ The preview-loop oracle compares lossless graph outputs at Float32 precision; JP
 | Canvas sampling / reconnect | 71 merged canvas/preview/export/undo/evaluator/SAM and built-journey checks, TS build/typecheck; independent review |
 | Historical schema fixtures | 31 merged migration checks, including version-authored v10–v12 preservation; no production schema change |
 | Existing-photo path lookup | 21 CLI/locator/show checks and typecheck; daemon client-relative, internal-copy and wrong-volume witnesses |
+| Source-only SAM canvas | 75 merged canvas/segment/revision/progress/frame checks, TS build/typecheck; all 20 captures directly reviewed |
 | [Untouched overview](assets/gates/show-overview/evidence.json) | 37 preview/daemon/develop cases across integration and focused correction; fresh visual review |
 | Paid retention / atomic removal / upscale-develop consumers | 85 / 18 / 21 checks and typecheck; no extra provider work for exposure replacement |
 
@@ -81,7 +83,10 @@ runs preserve exact masks at 2.04–2.27 GB RSS on the fixture host. After resam
 unchanged full-resolution multi-photo cache probe passes all sixteen inputs at 2.842 GB peak RSS.
 Six same-photo public commands through one persistent daemon pass at 2.221 GB peak RSS; the combined
 nine-identity public eviction/reuse witness passes eleven requests at 2.625 GB. These are recorded
-host/fixture resource passes, not arbitrary-image or all-platform guarantees. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
+host/fixture resource passes, not arbitrary-image or all-platform guarantees. The separate
+[full-resolution canvas witness](assets/sam-canvas/README.md#full-resolution-resource-witness)
+passes three same-daemon commands at 2.563 GB; advisory progress prevents the observed idle timeout
+without retrying an unknown-outcome mutation. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
 single/multi-mask references all fail detailed edges. Any extra refinement is a separate decision.
 [Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
 Docker's functional gate now consumes hash-verified models and runs the shared real-model test;
@@ -99,6 +104,12 @@ G3 still requires an SSH-capable Mac session. Public CC0 RAW fixtures now cover 
 alongside uncompressed; lossless-M/S, portrait orientation, the real-drive path, and actual Classic
 sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
 require their explicitly configured credentials and consent; an ambient key is not acceptance evidence.
+
+**Inherited gate correction:** three full-resolution `first-jpeg` checks exceed their 30-second
+budgets on both the crop candidate and matched untouched build; root reproduces the detail timeout.
+That test also still pins embedded-JPEG provenance despite the native-source preference. Diagnose
+and correct the full-source contract/default-build cost separately; do not loosen timeouts or call
+the whole gate green from the focused passes above.
 
 **Carry-forward invariants:** one daemon library handle; one atomic document/revision owner; exact
 scene-linear canonical artifacts; lazy preview materialization from immutable graph roots.

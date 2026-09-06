@@ -1,6 +1,11 @@
 import { initializeLibrary } from "@photoctl/library";
 import { segmentInstancesDataSchema } from "@photoctl/protocol";
-import { rasterizeManualMask, Sam2Segmenter, type MaskImage } from "@photoctl/render";
+import {
+  loadActiveDocument,
+  rasterizeManualMask,
+  Sam2Segmenter,
+  type MaskImage,
+} from "@photoctl/render";
 import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import sharp from "sharp";
 import type { StructuredModelAdapter } from "@photoctl/providers";
@@ -13,6 +18,115 @@ import { createHash } from "node:crypto";
 import { dispatch, type SegmentationAdapter } from "./dispatch.js";
 
 const directories: string[] = [];
+
+test.each([false, true])(
+  "segmentation rejects a revision changed during inference through a shared handle (existing=%s)",
+  async (existing) => {
+    const fixture = await fixtureLibrary("stale-inference");
+    const request = (verb: string, args: string[]) => ({
+      verb,
+      args,
+      cwd: fixture.parent,
+      env: { noDaemon: true },
+    });
+    const context = { version: "test", library: fixture.handle };
+    const expectedLayerIds: string[] = [];
+    let expectedActive: { revisionId: string; renderHash: string } | undefined;
+    const addManual = async (box: string) => {
+      const result = await dispatch(request("segment", [fixture.id, "--box", box]), context);
+      expect(result).toMatchObject({ ok: true });
+      if (!result.ok || !("data" in result)) throw new Error("manual selection failed");
+      const data = result.data as { layer_id: string; revision_id: string; render_hash: string };
+      expectedLayerIds.push(data.layer_id);
+      expectedActive = { revisionId: data.revision_id, renderHash: data.render_hash };
+    };
+    try {
+      if (existing) await addManual("0,0,2,2");
+      const response = await dispatch(request("segment", [fixture.id, "--at", "3,2"]), {
+        ...context,
+        segmentation: {
+          local: {
+            segment: async ({ dimensions }) => {
+              await addManual("4,2,2,2");
+              return { ...dimensions, data: new Float32Array(dimensions.w * dimensions.h).fill(1) };
+            },
+          },
+        },
+      });
+      expect(response).toMatchObject({
+        ok: false,
+        code: "library_locked",
+        data: { reason: "revision_conflict" },
+      });
+      const layers = await fixture.handle.query<{ id: string }>("SELECT id FROM layers");
+      expect(layers.rows.map(({ id }) => id).sort()).toEqual([...expectedLayerIds].sort());
+      const active = await loadActiveDocument(fixture.handle, fixture.id);
+      expect(active).toMatchObject(expectedActive!);
+      expect(active?.layers.map(({ id }) => id)).toEqual(expectedLayerIds);
+    } finally {
+      await fixture.handle.close();
+    }
+  },
+);
+
+test("slow SAM initialization reports progress before inference can proceed", async () => {
+  const fixture = await fixtureLibrary("slow-initialization");
+  let reports = 0;
+  let release = () => {};
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const cacheRoot = await pinFixture(fixture);
+    const result = await dispatch(
+      {
+        verb: "segment",
+        args: [fixture.id, "--at", "3,2", "--dry-run"],
+        cwd: fixture.parent,
+        env: { noDaemon: true, cacheRoot },
+      },
+      {
+        version: "test",
+        library: fixture.handle,
+        emit: (event) => {
+          if (event.event === "progress" && event.done === 0) {
+            reports++;
+            if (reports === 2) release();
+          }
+        },
+        segmenter: new Sam2Segmenter(async () => {
+          await new Promise<void>((resolve, reject) => {
+            release = resolve;
+            timer = setTimeout(
+              () => reject(new Error("No progress while model initialization was pending")),
+              6_000,
+            );
+          });
+          return {
+            encoderInputNames: () => [],
+            decoderInputNames: () => [],
+            runEncoder: async () =>
+              [
+                [1, 32, 256, 256],
+                [1, 64, 128, 128],
+                [1, 256, 64, 64],
+              ].map((dimensions) => ({
+                dimensions,
+                data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
+              })),
+            runDecoder: async () => [
+              { dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) },
+            ],
+          };
+        }),
+      },
+    );
+    expect(result, JSON.stringify(result)).toMatchObject({ ok: true });
+    expect(reports).toBeGreaterThanOrEqual(2);
+  } finally {
+    clearTimeout(timer);
+    release();
+    await fixture.handle.close();
+  }
+}, 10_000);
 
 test("failed local initialization emits runtime diagnostics through command stderr events", async () => {
   const fixture = await fixtureLibrary("runtime-diagnostic");
@@ -45,7 +159,7 @@ test("failed local initialization emits runtime diagnostics through command stde
         library: fixture.handle,
         segmenter,
         emit: (event) => {
-          events.push(event);
+          if (event.event === "warn") events.push(event);
         },
       },
     );

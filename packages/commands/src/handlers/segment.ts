@@ -4,6 +4,7 @@ import {
   prepareMaskLayer,
   commitPreparedMaskLayers,
   RevisionConflictError,
+  loadActiveDocument,
   summarizeMask,
   type ManualMaskShape,
   type MaskImage,
@@ -19,6 +20,7 @@ import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
 import { configuredSegmentation } from "../segmentation.js";
 import type { Sam2Segmenter } from "@photoctl/render";
+import { createProgressHeartbeat } from "../progress.js";
 
 /* eslint-disable no-await-in-loop -- SAM decoder prompts stay ordered and bound peak mask memory. */
 
@@ -51,6 +53,19 @@ export async function segmentCommand(
 ): Promise<Envelope> {
   const parsed = parseSegmentArguments(args);
   const lease = await openRequestLibrary(env, cwd, provided);
+  const progress = createProgressHeartbeat({
+    emit:
+      emit &&
+      (async (event) => {
+        try {
+          await emit(event);
+        } catch {
+          /* Progress must not misreport a committed mask after a client disconnects. */
+        }
+      }),
+    phase: "segment",
+    total: 1,
+  });
   try {
     const photoId = await resolvePhotoId(lease.handle, parsed.id);
     const photo = await loadPhoto(lease.handle, photoId);
@@ -74,6 +89,9 @@ export async function segmentCommand(
       const explicitBox = parsed.box
         ? parseBox(parsed.box, parsed.normalized, dimensions)
         : undefined;
+      await progress.start();
+      const expectedRevisionId =
+        (await loadActiveDocument(lease.handle, photoId))?.revisionId ?? null;
       dependencies ??= await configuredSegmentation(
         lease.handle,
         env,
@@ -131,6 +149,7 @@ export async function segmentCommand(
         }
       }
       if (masks.length === 0) {
+        await progress.advance(1);
         return instanceEnvelope(
           photoId,
           gatewayCalls,
@@ -141,6 +160,7 @@ export async function segmentCommand(
         );
       }
       if (parsed.dryRun) {
+        await progress.advance(1);
         return instanceEnvelope(
           photoId,
           gatewayCalls,
@@ -152,9 +172,11 @@ export async function segmentCommand(
       }
       const committed = await commitPreparedMaskLayers(lease.handle, {
         photoId,
+        expectedRevisionId,
         orientation: photo.orientation,
         layers: prepared,
       });
+      await progress.advance(1);
       return instanceEnvelope(
         photoId,
         gatewayCalls,
@@ -186,7 +208,11 @@ export async function segmentCommand(
       });
     }
   } finally {
-    await lease.release();
+    try {
+      await progress.stop();
+    } finally {
+      await lease.release();
+    }
   }
 }
 

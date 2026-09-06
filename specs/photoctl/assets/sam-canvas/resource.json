@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-06",
+  "baseCommit": "bf5e286",
+  "source": { "w": 7008, "h": 4672 },
+  "crop": [200, 200, 6600, 4200],
+  "rotate": 90,
+  "syntheticBorderPx": 64,
+  "raster": { "w": 4328, "h": 6728 },
+  "baseToRaster": [0, 1, -1, 0, 4464, -136],
+  "forcedGc": false,
+  "externalProviderCalls": 0,
+  "nativeSha256": "e4078584a5b6df3bd94366858032d0f17dd305453d9f4a86aa04302bc0d6df2f",
+  "limits": { "rssBytes": 3000000000, "encodeMs": 4000 },
+  "beforeHeartbeat": {
+    "daemonPid": 98613,
+    "clientExit": 69,
+    "clientDurationMs": 32605,
+    "outcome": "unknown; public inspection subsequently confirmed committed mask",
+    "automaticRetry": false,
+    "explicitScratchUndoBeforeNextWitness": true,
+    "peakRssBytes": 2311503872,
+    "encoderMs": 1431.819625,
+    "daemonStopped": true,
+    "passed": false
+  },
+  "afterHeartbeat": {
+    "daemonPid": 3416,
+    "successfulRequests": 3,
+    "identicalMaskHash": "a_e60a6c1bb2a1d212d450f128f9ff70809ee6e704e8bf6f093d18645ee68157cd",
+    "peakRssBytes": 2562588672,
+    "encoderCalls": 1,
+    "encoderMs": 1389.203958,
+    "daemonStopped": true,
+    "passed": true
+  }
+}

@@ -1,6 +1,8 @@
 import { applyDevelop } from "./develop/pixels.js";
-import { scaleDevelopGeometry } from "./develop/geometry.js";
-import { developFrame } from "./graph/frame.js";
+import { scaleDevelopGeometry, withoutDevelopGeometry } from "./develop/geometry.js";
+import { developFrame, parseRenderFrame, realizeCanvasFrame } from "./graph/frame.js";
+import { projectSupportedRgbToRender } from "./graph/projection.js";
+import type { readCanvasPlan } from "./graph/output.js";
 import type { DevelopDict } from "./develop/dict.js";
 import { linearRec2020ToDisplaySrgb } from "./color.js";
 import type { SceneLinearImage } from "./decoder.js";
@@ -28,10 +30,27 @@ export async function prepareSam2Frame(
   source: SceneLinearImage,
   develop: DevelopDict,
   base: { w: number; h: number },
+  canvas?: Awaited<ReturnType<typeof readCanvasPlan>>,
 ) {
-  const parameters = scaleDevelopGeometry(develop, base, source);
-  const matrix = developFrame(base, source, develop).baseToRaster;
-  const developed = await applyDevelop(source, parameters);
+  const sourceFrame = developFrame(base, source);
+  const realize = (frame: ReturnType<typeof developFrame>) =>
+    realizeCanvasFrame(frame, sourceFrame, []);
+  const parameters = canvas
+    ? withoutDevelopGeometry(develop)
+    : scaleDevelopGeometry(develop, base, source);
+  const graded = await applyDevelop(source, parameters);
+  const developed = canvas
+    ? await projectSupportedRgbToRender(
+        graded,
+        sourceFrame,
+        [...canvas.base_stages, ...canvas.viewport_stages].map(parseRenderFrame),
+        parseRenderFrame(canvas.frame),
+        realize,
+      )
+    : graded;
+  const matrix = (
+    canvas ? realize(parseRenderFrame(canvas.frame)) : developFrame(base, source, develop)
+  ).baseToRaster;
   const image = {
     w: developed.w,
     h: developed.h,

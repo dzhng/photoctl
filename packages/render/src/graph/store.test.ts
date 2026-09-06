@@ -21,6 +21,35 @@ import { inspectGraph } from "./inspection.js";
 const firstPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
 const secondPhoto = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
 
+test("strict initial document snapshots admit only one concurrent initializer", async () => {
+  const db = await graphDatabase();
+  try {
+    const results = await Promise.allSettled(
+      [0, 1].map(() =>
+        ensurePhotoDocument(db, {
+          photoId: firstPhoto,
+          orientation: 1,
+          expectedRevisionId: null,
+        }),
+      ),
+    );
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    const rejected = results.find((result) => result.status === "rejected");
+    expect(rejected?.status === "rejected" && rejected.reason).toBeInstanceOf(
+      RevisionConflictError,
+    );
+    const current = await loadActiveDocument(db, firstPhoto);
+    const winner = results.find((result) => result.status === "fulfilled");
+    expect(winner?.status === "fulfilled" && winner.value.revisionId).toBe(current?.revisionId);
+    expect(
+      (await ensurePhotoDocument(db, { photoId: firstPhoto, orientation: 1 })).revisionId,
+    ).toBe(current?.revisionId);
+    expect((await db.query("SELECT id FROM document_revisions")).rows).toHaveLength(1);
+  } finally {
+    await db.close();
+  }
+});
+
 test("photographic revisions derive output from the resolved layer snapshot and refuse competing output intent", async () => {
   const db = await graphDatabase();
   try {

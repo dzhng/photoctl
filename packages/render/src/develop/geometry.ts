@@ -15,6 +15,16 @@ type Rect = { x: number; y: number; w: number; h: number };
 
 export class DevelopRegionOutsideError extends Error {}
 
+/** Canvas projection owns geometry; grading must not replay consumed restrictions. */
+export function withoutDevelopGeometry(parameters: DevelopDict): DevelopDict {
+  const adjustments = { ...parameters };
+  delete adjustments.crop;
+  delete adjustments.aspect_ratio;
+  delete adjustments.rotate;
+  delete adjustments.straighten_deg;
+  return adjustments;
+}
+
 export function hasDevelopGeometry(parameters: DevelopDict): boolean {
   return Boolean(
     parameters.crop || parameters.aspect_ratio || parameters.rotate || parameters.straighten_deg,

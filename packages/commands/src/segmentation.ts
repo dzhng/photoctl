@@ -8,6 +8,7 @@ import {
   loadActiveDocument,
   readActiveDevelopState,
   prepareSam2Frame,
+  readCanvasPlan,
   sam2GroundingPixels,
   type SceneLinearImage,
   type RuntimeDiagnosticSink,
@@ -73,10 +74,11 @@ export async function configuredSegmentation(
   if (text && !env.gatewayApiKey)
     throw new PhotoctlError("provider_unconfigured", "AI_GATEWAY_API_KEY is not configured");
   const document = await loadActiveDocument(handle, photo.id);
-  const develop = document
-    ? (await readActiveDevelopState(handle, { photoId: photo.id, orientation: photo.orientation }))
-        .develop
-    : {};
+  const state = document
+    ? await readActiveDevelopState(handle, { photoId: photo.id, orientation: photo.orientation })
+    : undefined;
+  const develop = state?.develop ?? {};
+  const canvas = state ? await readCanvasPlan(handle, photo.id, state.outputNodeId) : undefined;
   const {
     prepared,
     point,
@@ -95,7 +97,7 @@ export async function configuredSegmentation(
       const { image } = await source();
       if (image.space !== "scene-linear-rec2020")
         throw new Error("SAM source is not scene-linear Rec.2020");
-      const frame = await prepareSam2Frame(image as SceneLinearImage, develop, photo);
+      const frame = await prepareSam2Frame(image as SceneLinearImage, develop, photo, canvas);
       let groundingImage;
       if (text) {
         const pixels = sam2GroundingPixels(frame.image);

@@ -1,0 +1,198 @@
+{
+  "kind": "screenshot-scene-metrics",
+  "generatedAt": "2026-09-05T23:55:14.261Z",
+  "note": "Absolute per-image telemetry, no reference involved. Low values locate flat, sparse, or empty captures; they never accept or reject an image on their own.",
+  "imageCount": 10,
+  "results": [
+    {
+      "id": "a",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/a.png",
+      "dimensions": {
+        "width": 4,
+        "height": 8
+      },
+      "sceneMetrics": {
+        "colorBuckets": 21,
+        "colorEntropyBits": 4.3125,
+        "edgeDensity": 0.14286,
+        "dominantColorShare": 0.0625,
+        "transparentShare": 0,
+        "luminanceMean": 65.76223,
+        "luminanceP5": 45.7998,
+        "luminanceP95": 85.8442,
+        "luminanceContrast": 40.0444
+      }
+    },
+    {
+      "id": "b",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/b.png",
+      "dimensions": {
+        "width": 8,
+        "height": 12
+      },
+      "sceneMetrics": {
+        "colorBuckets": 16,
+        "colorEntropyBits": 2.44467,
+        "edgeDensity": 0.44156,
+        "dominantColorShare": 0.59375,
+        "transparentShare": 0,
+        "luminanceMean": 24.45265,
+        "luminanceP5": 0.6498,
+        "luminanceP95": 85.041,
+        "luminanceContrast": 84.3912
+      }
+    },
+    {
+      "id": "c",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/c.png",
+      "dimensions": {
+        "width": 8,
+        "height": 12
+      },
+      "sceneMetrics": {
+        "colorBuckets": 25,
+        "colorEntropyBits": 3.10067,
+        "edgeDensity": 0.50649,
+        "dominantColorShare": 0.46875,
+        "transparentShare": 0,
+        "luminanceMean": 33.24613,
+        "luminanceP5": 0.6498,
+        "luminanceP95": 111.2132,
+        "luminanceContrast": 110.5634
+      }
+    },
+    {
+      "id": "d",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/d.png",
+      "dimensions": {
+        "width": 12,
+        "height": 8
+      },
+      "sceneMetrics": {
+        "colorBuckets": 14,
+        "colorEntropyBits": 1.85837,
+        "edgeDensity": 0.33766,
+        "dominantColorShare": 0.71875,
+        "transparentShare": 0,
+        "luminanceMean": 23.97821,
+        "luminanceP5": 0.1444,
+        "luminanceP95": 105.0658,
+        "luminanceContrast": 104.9214
+      }
+    },
+    {
+      "id": "e",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/e.png",
+      "dimensions": {
+        "width": 6,
+        "height": 4
+      },
+      "sceneMetrics": {
+        "colorBuckets": 5,
+        "colorEntropyBits": 1.2594,
+        "edgeDensity": 0.73333,
+        "dominantColorShare": 0.75,
+        "transparentShare": 0,
+        "luminanceMean": 24.13347,
+        "luminanceP5": 0.2888,
+        "luminanceP95": 101.5736,
+        "luminanceContrast": 101.2848
+      }
+    },
+    {
+      "id": "a-zoom",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/a-zoom.png",
+      "dimensions": {
+        "width": 96,
+        "height": 192
+      },
+      "sceneMetrics": {
+        "colorBuckets": 21,
+        "colorEntropyBits": 4.3125,
+        "edgeDensity": 0.00521,
+        "dominantColorShare": 0.0625,
+        "transparentShare": 0,
+        "luminanceMean": 65.76223,
+        "luminanceP5": 45.7998,
+        "luminanceP95": 85.8442,
+        "luminanceContrast": 40.0444
+      }
+    },
+    {
+      "id": "b-zoom",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/b-zoom.png",
+      "dimensions": {
+        "width": 192,
+        "height": 288
+      },
+      "sceneMetrics": {
+        "colorBuckets": 16,
+        "colorEntropyBits": 2.44467,
+        "edgeDensity": 0.02899,
+        "dominantColorShare": 0.59375,
+        "transparentShare": 0,
+        "luminanceMean": 24.45265,
+        "luminanceP5": 0.6498,
+        "luminanceP95": 85.041,
+        "luminanceContrast": 84.3912
+      }
+    },
+    {
+      "id": "c-zoom",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/c-zoom.png",
+      "dimensions": {
+        "width": 192,
+        "height": 288
+      },
+      "sceneMetrics": {
+        "colorBuckets": 25,
+        "colorEntropyBits": 3.10067,
+        "edgeDensity": 0.03185,
+        "dominantColorShare": 0.46875,
+        "transparentShare": 0,
+        "luminanceMean": 33.24613,
+        "luminanceP5": 0.6498,
+        "luminanceP95": 111.2132,
+        "luminanceContrast": 110.5634
+      }
+    },
+    {
+      "id": "d-zoom",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/d-zoom.png",
+      "dimensions": {
+        "width": 288,
+        "height": 192
+      },
+      "sceneMetrics": {
+        "colorBuckets": 14,
+        "colorEntropyBits": 1.85837,
+        "edgeDensity": 0.02267,
+        "dominantColorShare": 0.71875,
+        "transparentShare": 0,
+        "luminanceMean": 23.97821,
+        "luminanceP5": 0.1444,
+        "luminanceP95": 105.0658,
+        "luminanceContrast": 104.9214
+      }
+    },
+    {
+      "id": "e-zoom",
+      "image": "../../../../private/tmp/photoctl-sam-canvas/specs/photoctl/assets/sam-canvas/b/e-zoom.png",
+      "dimensions": {
+        "width": 144,
+        "height": 96
+      },
+      "sceneMetrics": {
+        "colorBuckets": 5,
+        "colorEntropyBits": 1.2594,
+        "edgeDensity": 0.0279,
+        "dominantColorShare": 0.75,
+        "transparentShare": 0,
+        "luminanceMean": 24.13347,
+        "luminanceP5": 0.2888,
+        "luminanceP95": 101.5736,
+        "luminanceContrast": 101.2848
+      }
+    }
+  ]
+}
