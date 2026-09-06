@@ -162,7 +162,7 @@ test("a persistent daemon reports the current fresh schema on repeated migrate",
   try {
     const first = await spawnPhotoctl(["migrate"], { libraryDir: library, env });
     const second = await spawnPhotoctl(["migrate"], { libraryDir: library, env });
-    expect(first.json).toMatchObject({
+    expect(first.json, JSON.stringify(first)).toMatchObject({
       ok: true,
       data: {
         library,
@@ -171,7 +171,7 @@ test("a persistent daemon reports the current fresh schema on repeated migrate",
         applied: [],
       },
     });
-    expect(second.json).toMatchObject({
+    expect(second.json, JSON.stringify(second)).toMatchObject({
       ok: true,
       data: {
         library,

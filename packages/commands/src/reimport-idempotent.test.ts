@@ -182,7 +182,10 @@ test("daemon import forwards progress before its terminal envelope without retai
     );
     settled = true;
 
-    expect(result.envelope).toMatchObject({ ok: true, data: { imported: 1 } });
+    expect(result.envelope, JSON.stringify(result)).toMatchObject({
+      ok: true,
+      data: { imported: 1 },
+    });
     expect(result.events).toEqual([
       expect.objectContaining({ event: "daemon", action: "spawned" }),
     ]);
