@@ -105,8 +105,10 @@ test("graph renders a source to develop to output structure with revision identi
   const initialized = await initializeLibrary(library);
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c051";
   await initialized.handle.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_567890abcdef1234', 1, 1, 1, 1)`,
+    `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 1, 1, 1) RETURNING id)
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+     VALUES ($1, $1, 'image', 'ck_567890abcdef1234', 1, 1, 1, 1)`,
     [photoId],
   );
   const revision = await commitRevision(initialized.handle, {
@@ -160,8 +162,10 @@ test("graph follows bounded inspection pages through the active output lineage",
   const initialized = await initializeLibrary(library);
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c052";
   await initialized.handle.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_67890abcdef12345', 1, 1, 1, 1)`,
+    `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 1, 1, 1) RETURNING id)
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+     VALUES ($1, $1, 'image', 'ck_67890abcdef12345', 1, 1, 1, 1)`,
     [photoId],
   );
   const nodes: NodeDraft[] = [
@@ -215,16 +219,18 @@ test("layers renders the immutable stack beside its DAG roots with a legible vac
   const initialized = await initializeLibrary(library);
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c053";
   await initialized.handle.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_7890abcdef123456', 1, 40, 30, 1)`,
+    `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 40, 30, 1) RETURNING id)
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+     VALUES ($1, $1, 'image', 'ck_7890abcdef123456', 1, 40, 30, 1)`,
     [photoId],
   );
   const initial = await ensurePhotoDocument(initialized.handle, { photoId, orientation: 1 });
   const maskHash = `a_${"6".repeat(64)}`;
   await initialized.handle.query(
     `INSERT INTO image_artifacts
-       (artifact_hash, media_type, bytes, w, h, artifact_available)
-     VALUES ($1, $2, 4, 40, 30, true)`,
+       (artifact_hash, media_type, validation_profile, bytes, w, h, artifact_available)
+     VALUES ($1, $2, 'mask-tiff', 4, 40, 30, true)`,
     [maskHash, MASK_ARTIFACT_MEDIA_TYPE],
   );
   const layers = [

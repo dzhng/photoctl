@@ -64,9 +64,11 @@ test("the keyless gold exam develops three people presets before exporting ten p
       ).stdout,
     ) as { data: { ids: string[] } };
     const opened = await openLibrary(library);
-    await opened.query(`UPDATE photos SET shot_at = '2000-01-01T00:00:00Z' WHERE id = $1`, [
-      existingImport.data.ids[0],
-    ]);
+    await opened.query(
+      `UPDATE originals SET shot_at = '2000-01-01T00:00:00Z'
+      WHERE id = (SELECT primary_original_id FROM photos WHERE id = $1)`,
+      [existingImport.data.ids[0]],
+    );
     await opened.close();
     await execute(
       resolve("scripts/gold-exam.sh"),

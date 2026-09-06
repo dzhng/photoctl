@@ -27,7 +27,10 @@ test.each([false, true])(
     let closed = false;
     try {
       await library.query(
-        "INSERT INTO photos (id, content_key, size, w, h, orientation) VALUES ($1, 'ck_7890abcdef123459', 1, 8, 6, 1)",
+        `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+           VALUES ($1, $1, 8, 6, 1) RETURNING id)
+         INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+         VALUES ($1, $1, 'image', 'ck_7890abcdef123459', 1, 8, 6, 1)`,
         [photoId],
       );
       const layer = (

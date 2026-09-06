@@ -727,8 +727,10 @@ test("explicit duplicate IDs finish progress for every returned item", async () 
 
 async function seedPhoto(database: LibraryHandle, id: string, suffix = "consent"): Promise<void> {
   await database.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, $2, 1, 1, 1, 1)`,
+    `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 1, 1, 1) RETURNING id)
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+     VALUES ($1, $1, 'image', $2, 1, 1, 1, 1)`,
     [id, `ck_${suffix}`],
   );
   await database.query(
@@ -736,7 +738,7 @@ async function seedPhoto(database: LibraryHandle, id: string, suffix = "consent"
      VALUES ('fixture', '/fixture', now()) ON CONFLICT DO NOTHING`,
   );
   await database.query(
-    `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+    `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
      VALUES ($1, $2, 'fixture', $3, now())`,
     [`0199a7c2-0000-7000-8001-${id.slice(-12)}`, id, `${suffix}.jpg`],
   );

@@ -90,8 +90,10 @@ test("fill renders one self-contained native crop from the immutable before, gen
   const library = (await initializeLibrary(libraryPath)).handle;
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c054";
   await library.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_7890abcdef123457', 1, 64, 48, 1)`,
+    `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 64, 48, 1) RETURNING id)
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+     VALUES ($1, $1, 'image', 'ck_7890abcdef123457', 1, 64, 48, 1)`,
     [photoId],
   );
   const layer = await createManualLayer(library, libraryPath, {
@@ -149,13 +151,13 @@ test("fill renders one self-contained native crop from the immutable before, gen
       adapter: {
         id: "fixture-image-edit",
         version: "1",
-        buildEdit: () => ({
+        buildEdit: async () => ({
           body: new FormData(),
           appliedControls: { init: "original", reference: false },
           warnings: [],
         }),
-        normalize: async (_response, _dimensions, capture) => {
-          await capture?.(replacement);
+        normalize: async (...args) => {
+          await args[2]?.(replacement);
           return {
             png: replacement,
             returnedDimensions: { w: 16, h: 16 },
@@ -187,7 +189,7 @@ test("fill renders one self-contained native crop from the immutable before, gen
         version: "1",
         supportedScales: [2],
         limits: { maxInputPixels: 1_000_000, maxOutputPixels: 1_000_000, maxOutputEdge: 1_000 },
-        execute: async (_input, capture) => {
+        execute: async (...args) => {
           upscaleCalls += 1;
           const result = {
             ok: true as const,
@@ -210,7 +212,7 @@ test("fill renders one self-contained native crop from the immutable before, gen
             densitySatisfied: true,
             warnings: [],
           };
-          await capture?.(result.value);
+          await args[1]?.(result.value);
           return result;
         },
       },
@@ -325,8 +327,10 @@ test("fill refuses an active mask layer that has no committed fill ancestry", as
   const library = (await initializeLibrary(libraryPath)).handle;
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c055";
   await library.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_7890abcdef123458', 1, 32, 24, 1)`,
+    `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 32, 24, 1) RETURNING id)
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+     VALUES ($1, $1, 'image', 'ck_7890abcdef123458', 1, 32, 24, 1)`,
     [photoId],
   );
   const layer = await createManualLayer(library, libraryPath, {

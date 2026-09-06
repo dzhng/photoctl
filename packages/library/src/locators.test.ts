@@ -173,8 +173,12 @@ test("a photo prefix cannot inject SQL wildcard matching", async () => {
 
 async function insertPhoto(db: PGlite, id: string, contentKey: string): Promise<void> {
   await db.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, $2, 1, 1, 1, 1)`,
+    `WITH inserted AS (
+       INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 1, 1, 1) RETURNING id
+     )
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+     VALUES ($1, $1, 'image', $2, 1, 1, 1, 1)`,
     [id, contentKey],
   );
 }
