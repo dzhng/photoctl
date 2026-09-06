@@ -31,6 +31,9 @@ Every imported photo can enter the same develop/render graph. A whole-file decod
   original is offline, ordinary photo verbs decode the best full-frame embedded source or pinned preview through
   `FileImageDecoder` and return a warning; only an explicit unavailable adapter request returns `decoder_unavailable` 69.
   `decode <id> --with auto|file|ciraw|libraw --scale 0.25 --to out.tif` writes linear 16-bit output (scale dims floor).
+  Diagnostic output uses the shared atomic no-replace publisher. Existing output paths,
+  originals and their hard/symbolic aliases are never overwritten; choose a new path
+  for another probe. This matches `render --linear`, without a diagnostic overwrite option.
 - `FileImageDecoder` decodes every whole-file media type accepted by the content probe registry, honors its embedded ICC profile,
   applies orientation once, and converts display-referred input through inverse transfer + gamut conversion into
   `space:"scene-linear-rec2020"`. The conversion lives beside the camera-space front end in the one color core; no format gets a
@@ -67,6 +70,13 @@ scene-linear Rec.2020 and the same result shape), `decoder-libraw.test.ts` (dims
 manifest rows), `decoder-unavailable.test.ts` (explicit adapter request fails; automatic photo rendering falls back);
 `linear-tiff-profile.test.ts` proves external readers see the same linear Rec.2020 space reported by the envelope.
 `cargo test -p libraw-sys`.
+
+The public decode publication regression independently reads the resulting TIFF and
+verifies original/occupied/alias bytes and temporary-file cleanup. All five cases fail
+with unconditional writing and pass with the shared publisher. Eight merged decode/render
+checks and the TypeScript build pass; independent review
+`01a0757e-6055-7e51-96dc-8c82cdf0aa16` found no issue. This proves no-clobber output,
+not the separate source-folder or explicit export-replacement policies.
 
 The committed manifests now cover uncompressed, lossless-L and lossy A7C II RAWs. Lossless-L is established from its original
 SonyRawFileType and full-resolution default crop, not the download label. [Fixture provenance](../../../fixtures/README.md)
