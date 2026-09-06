@@ -5821,3 +5821,22 @@
 - **The reach:** No new protocol code, migration, retry or paid replay is introduced.
 - **Verdict:** **Sound.** Reuses the established unavailable contract.
 - **Confidence:** High.
+
+### Affine sampling — Reuse filter weights without changing the numerical recipe
+
+- **When:** Expanded-export performance pass, 2026-09-06.
+- **The choice:** When an image layer grows to cover a full camera photo, many source
+  samples contribute to each output pixel. Their distance-based weights are the same
+  for red, green and blue. Calculate the horizontal and vertical weights once for
+  that output pixel, then reuse them while adding each channel's contributions in
+  the same order. Two small reusable arrays hold these weights, not another image.
+- **The gap:** The spec requires one exact resampler but does not prescribe how it
+  avoids duplicate arithmetic. Profiling identified repeated trigonometry as the
+  dominant cold-export work. A two-stage horizontal/vertical filter could also be
+  faster, but would change the order of floating-point additions and potentially pixels.
+- **The reach:** RGB and masks keep the same shared sampler, transparent edges and
+  existing kernel-work ceiling. No schema, public option, cache policy or quality
+  setting changes. Exact output means no renderer-semantic revision is warranted.
+- **Verdict:** **Sound.** Remove redundant work at its owner without substituting a
+  different filter or skipping newly edited renders.
+- **Confidence:** High.

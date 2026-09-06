@@ -27,14 +27,15 @@ its camera JPEG, tune presets around decoder defects, or weaken the oracle.
 [Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance;
 the [reconstruction plan](slices/07-highlight-reconstruction.md) owns the next native/public passes.
 
-**Parallel pickup:** reduce measured outpaint sampling work and finish remaining release gates.
+**Parallel pickup:** finish remaining outpaint and pairing release gates.
 
 - [Outpaint](slices/12-outpaint.md): framed masks, original-relative retouch and reversible
   native-density layers are integrated. Fresh cold fallback now proves reduced source quality
   and reconnect promotion without paid replay through built and prebuilt-runtime installed CLI.
-  Full-resolution resource measurements pass the RSS canary, but the cold-export
-  [profile](assets/outpaint-resources/profile.md) identifies repeated affine sampling work
-  as the next performance correction. Fresh-native-release acceptance remains separate.
+  Full-resolution resource measurements pass the RSS canary. The
+  [sampling correction](assets/outpaint-resources/README.md#isolated-optimized-runtime-verification)
+  reduces measured cold-export time with byte-identical deliveries. Fresh-native-release
+  acceptance remains separate; this is not a universal latency or memory bound.
 - [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
   and refresh pass synthetic visual review. Retained-only input, reconnect and installed
   lifecycle are integrated; whole-spec and live photographic acceptance remain separate.

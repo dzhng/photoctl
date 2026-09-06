@@ -911,6 +911,8 @@ fn transform_into(
         return Err("Lanczos3 transform kernel exceeds the safe work limit".to_owned());
     }
     output.resize(output_len, 0.0);
+    let mut x_weights = TransformWeights::default();
+    let mut y_weights = TransformWeights::default();
     for output_y in 0..output_height {
         for output_x in 0..output_width {
             let output_center_x = f64::from(output_x) + 0.5;
@@ -919,6 +921,42 @@ fn transform_into(
                 inverse[0] * output_center_x + inverse[2] * output_center_y + inverse[4] - 0.5;
             let source_y =
                 inverse[1] * output_center_x + inverse[3] * output_center_y + inverse[5] - 0.5;
+            if !exact && filter == Filter::Lanczos3 {
+                let outside = source_x <= -3.0 * filter_support.0
+                    || source_y <= -3.0 * filter_support.1
+                    || source_x >= f64::from(source_width - 1) + 3.0 * filter_support.0
+                    || source_y >= f64::from(source_height - 1) + 3.0 * filter_support.1;
+                let offset = pixel_index(output_width, channels, output_x, output_y, 0);
+                let pixel = &mut output[offset..offset + channels as usize];
+                if outside {
+                    pixel.fill(0.0);
+                } else {
+                    x_weights.prepare(source_x, filter_support.0);
+                    y_weights.prepare(source_y, filter_support.1);
+                    for (channel, value) in pixel.iter_mut().enumerate() {
+                        let mut weighted = 0.0_f64;
+                        let mut weight_sum = 0.0_f64;
+                        // Reuse axis weights, but preserve each channel's original tap order.
+                        for (yi, y_weight) in y_weights.values.iter().enumerate() {
+                            for (xi, x_weight) in x_weights.values.iter().enumerate() {
+                                let weight = x_weight * y_weight;
+                                weighted += f64::from(exact_sample(
+                                    input,
+                                    source_width,
+                                    source_height,
+                                    channels,
+                                    x_weights.start + xi as i64,
+                                    y_weights.start + yi as i64,
+                                    channel as u32,
+                                )) * weight;
+                                weight_sum += weight;
+                            }
+                        }
+                        *value = (weighted / weight_sum) as f32;
+                    }
+                }
+                continue;
+            }
             for channel in 0..channels {
                 let value = if exact {
                     exact_sample(
@@ -930,8 +968,14 @@ fn transform_into(
                         source_y.round() as i64,
                         channel,
                     )
+                } else if source_x <= -1.0
+                    || source_y <= -1.0
+                    || source_x >= f64::from(source_width)
+                    || source_y >= f64::from(source_height)
+                {
+                    0.0
                 } else {
-                    filtered_transform_sample(
+                    bilinear_transparent(
                         input,
                         source_width,
                         source_height,
@@ -939,9 +983,6 @@ fn transform_into(
                         source_x,
                         source_y,
                         channel,
-                        filter,
-                        filter_support.0,
-                        filter_support.1,
                     )
                 };
                 output[pixel_index(output_width, channels, output_x, output_y, channel)] = value;
@@ -976,40 +1017,21 @@ fn exact_sample(
     input[pixel_index(width, channels, x as u32, y as u32, channel)]
 }
 
-#[allow(clippy::too_many_arguments)]
-fn filtered_transform_sample(
-    input: &[f32],
-    width: u32,
-    height: u32,
-    channels: u32,
-    x: f64,
-    y: f64,
-    channel: u32,
-    filter: Filter,
-    x_support: f64,
-    y_support: f64,
-) -> f32 {
-    match filter {
-        Filter::Bilinear => {
-            if x <= -1.0 || y <= -1.0 || x >= f64::from(width) || y >= f64::from(height) {
-                0.0
-            } else {
-                bilinear_transparent(input, width, height, channels, x, y, channel)
-            }
-        }
-        Filter::Lanczos3 => {
-            if x <= -3.0 * x_support
-                || y <= -3.0 * y_support
-                || x >= f64::from(width - 1) + 3.0 * x_support
-                || y >= f64::from(height - 1) + 3.0 * y_support
-            {
-                0.0
-            } else {
-                lanczos3(
-                    input, width, height, channels, x, y, x_support, y_support, channel,
-                )
-            }
-        }
+#[derive(Default)]
+struct TransformWeights {
+    start: i64,
+    values: Vec<f64>,
+}
+
+impl TransformWeights {
+    fn prepare(&mut self, position: f64, support: f64) {
+        self.start = (position - 3.0 * support).floor() as i64 + 1;
+        let end = (position + 3.0 * support).floor() as i64;
+        self.values.clear();
+        self.values.extend(
+            (self.start..=end)
+                .map(|sample| lanczos((position - sample as f64) / support) / support),
+        );
     }
 }
 
@@ -1037,6 +1059,7 @@ fn bilinear_transparent(
     (top * (1.0 - y_fraction) + bottom * y_fraction) as f32
 }
 
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 fn lanczos3(
     input: &[f32],
@@ -1071,7 +1094,14 @@ fn lanczos3(
     (weighted / weight_sum) as f32
 }
 
+#[cfg(test)]
+thread_local! {
+    static LANCZOS_EVALUATIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 fn lanczos(distance: f64) -> f64 {
+    #[cfg(test)]
+    LANCZOS_EVALUATIONS.with(|count| count.set(count.get() + 1));
     if distance == 0.0 {
         return 1.0;
     }
@@ -1171,6 +1201,95 @@ mod tests {
         Filter, lanczos_contributors, resize, resize_integer_region_bilinear,
         sample_integer_affine, transform,
     };
+
+    #[test]
+    fn affine_filter_work_is_axis_bounded_and_independent_of_channels() {
+        let plane: Vec<f32> = (0..32 * 24)
+            .map(|i| ((i * 31 % 101) as f32 - 20.0) / 17.0)
+            .collect();
+        let matrix = [2.0, 0.25, -0.15, 2.0, 0.33, -0.27];
+        super::LANCZOS_EVALUATIONS.with(|count| count.set(0));
+        let mono = transform(&plane, 32, 24, 1, 5, 7, matrix, Filter::Lanczos3).unwrap();
+        let mono_work = super::LANCZOS_EVALUATIONS.with(|count| count.get());
+        let rgb: Vec<f32> = plane.iter().flat_map(|v| [*v; 3]).collect();
+        super::LANCZOS_EVALUATIONS.with(|count| count.set(0));
+        let color = transform(&rgb, 32, 24, 3, 5, 7, matrix, Filter::Lanczos3).unwrap();
+        let color_work = super::LANCZOS_EVALUATIONS.with(|count| count.get());
+        for (sample, pixel) in mono.iter().zip(color.chunks_exact(3)) {
+            assert!(pixel.iter().all(|v| v.to_bits() == sample.to_bits()));
+        }
+        assert!(mono_work > 0, "the witness must exercise filtered sampling");
+        assert!(
+            mono_work <= 12 * 5 * 7,
+            "axis weight budget exceeded: {mono_work}"
+        );
+        assert_eq!(
+            color_work, mono_work,
+            "RGB must reuse the same axis weights"
+        );
+    }
+
+    #[test]
+    fn affine_weight_reuse_preserves_float_words_across_geometry_and_channels() {
+        // The pre-optimization scalar filter is an exact arithmetic oracle, not a
+        // different quality reference: reassociation here would change canonical pixels.
+        for channels in [1, 3, 4] {
+            let input: Vec<f32> = (0..7 * 5 * channels)
+                .map(|i| ((i * 31 % 101) as f32 - 20.0) / 17.0)
+                .collect();
+            for matrix in [
+                [1.0, 0.0, 0.0, 1.0, 0.125, -0.33],
+                [2.0, 0.25, -0.15, 2.0, -2.1, 1.3],
+                [0.37, 0.1, -0.2, 0.6, 0.2, -0.8],
+                [0.8, 0.6, -0.6, 0.8, 2.2, -1.7],
+                [-1.1, 0.2, 0.1, 0.9, 4.0, 0.5],
+            ] {
+                let [a, b, c, d, tx, ty] = matrix;
+                let determinant = a * d - b * c;
+                let inverse: [f64; 6] = [
+                    d / determinant,
+                    -b / determinant,
+                    -c / determinant,
+                    a / determinant,
+                    (c * ty - d * tx) / determinant,
+                    (b * tx - a * ty) / determinant,
+                ];
+                let sx = inverse[0].hypot(inverse[2]).max(1.0);
+                let sy = inverse[1].hypot(inverse[3]).max(1.0);
+                let output =
+                    transform(&input, 7, 5, channels, 11, 9, matrix, Filter::Lanczos3).unwrap();
+                for y in 0..9 {
+                    for x in 0..11 {
+                        let px = inverse[0] * (f64::from(x) + 0.5)
+                            + inverse[2] * (f64::from(y) + 0.5)
+                            + inverse[4]
+                            - 0.5;
+                        let py = inverse[1] * (f64::from(x) + 0.5)
+                            + inverse[3] * (f64::from(y) + 0.5)
+                            + inverse[5]
+                            - 0.5;
+                        for channel in 0..channels {
+                            let expected = if px <= -3.0 * sx
+                                || py <= -3.0 * sy
+                                || px >= 6.0 + 3.0 * sx
+                                || py >= 4.0 + 3.0 * sy
+                            {
+                                0.0
+                            } else {
+                                super::lanczos3(&input, 7, 5, channels, px, py, sx, sy, channel)
+                            };
+                            let actual = output[super::pixel_index(11, channels, x, y, channel)];
+                            assert_eq!(
+                                actual.to_bits(),
+                                expected.to_bits(),
+                                "matrix={matrix:?}, pixel=({x},{y}), channel={channel}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     #[test]
     fn affine_integer_sampling_preserves_quarter_turn_coordinates() {

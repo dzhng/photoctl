@@ -4,7 +4,8 @@
 outpaint export.** A normal full-size export after an upstream edit takes about
 42 seconds on the recorded host. This is bounded computation, not a retry loop:
 the command completes, stores deterministic results, and the next identical
-export reuses them. No production fix is included here.
+export reuses them. The diagnosis below preserves the original measurements;
+implementation verification is recorded separately at the end.
 
 ## Controlled request and observed stacks
 
@@ -82,3 +83,29 @@ buckets. The runtime addon hash matches the original resource witness; profiling
 used root revision `5fa235e` without changing production code. Scratch profiling
 instrumentation is not committed. No broader experiment or speculative fix was
 needed to select the next owner.
+
+## Exact-order implementation verification
+
+The sampler now prepares each axis's weights once per output pixel and reuses
+them across channels, with reusable bounded scratch storage. It retains the
+same tap order and per-channel normalization; neither filters nor cache identity
+change. No new image-sized buffer or public control is introduced.
+
+The focused work-budget witness failed on the original loop (1,470 evaluations
+for a 35-pixel monochrome transform versus the 420 axis-weight budget). It passes
+with shared weights, including equal RGB work and identical channel samples.
+Bitwise Float32 comparisons cover fractional translation, enlargement, reduction,
+rotation, reflection and transparent boundaries for one, three and four channels.
+Perturbing a weight deliberately made that comparison fail at its first pixel;
+restoring the arithmetic passes all 17 native resampler tests. The optimized
+native build also succeeds using the documented isolated CMake/Ninja tool path.
+
+Independent code review `01a07554-303e-7cb2-b71c-49dfe50b1e09` found no actionable
+correctness issue. Its attempted test lacked CMake on PATH; the successful main
+test run above is separate evidence, not a claimed reviewer execution. The complete
+native crate passes 75 tests; the freshly packaged addon also passes 65 shared
+projection, mask, allocation-accounting and graph-evaluator consumer tests.
+The [public full-canvas recheck](README.md#isolated-optimized-runtime-verification)
+records measured elapsed-time improvement and exact before/after PNGs for both
+original formats. Operation counts alone do not establish speedup, and these
+focused checks do not establish release acceptance.
