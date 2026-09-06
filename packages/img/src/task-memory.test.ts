@@ -50,12 +50,13 @@ function measureTaskMemory(mode: string, reject = false) {
             global.gc(); global.gc();
           };
           const errors = [];
+          const errorCodes = [];
           let output;
           checkpoint("before");
           if (${reject}) {
             for (let attempt = 0; attempt < 4; attempt++) {
               try { output = await convert(input); }
-              catch (error) { errors.push(error.message); }
+              catch (error) { errors.push(error.message); errorCodes.push(error.code); }
             }
           } else {
             const pending = convert(input);
@@ -63,7 +64,7 @@ function measureTaskMemory(mode: string, reject = false) {
             output = await pending;
           }
           checkpoint("settled");
-          writeSync(1, "RESULT " + JSON.stringify({ bytes: input.byteLength, outputBytes: output?.byteLength, sample: output?.[0], warm: warm[0], errors }) + "\\n");
+          writeSync(1, "RESULT " + JSON.stringify({ bytes: input.byteLength, outputBytes: output?.byteLength, sample: output?.[0], warm: warm[0], errors, errorCodes }) + "\\n");
         `,
     ],
     { encoding: "utf8", timeout: 10_000 },
@@ -100,13 +101,9 @@ test.each(["camera", "display"])(
   "%s rejected work does not accumulate allocation charges",
   (mode) => {
     const result = measureTaskMemory(mode, true);
-    expect(result.errors).toEqual(
-      Array(4).fill(
-        mode === "camera"
-          ? "camera front expects RGB samples, a 3x3 matrix, and three WB gains"
-          : "display conversion expects interleaved RGB samples",
-      ),
-    );
+    expect(result.errorCodes).toEqual(Array(4).fill("InvalidArg"));
+    expect(result.errors).toEqual(Array(4).fill(expect.stringContaining("RGB samples")));
+    expect(result.outputBytes).toBeUndefined();
     expect(result.settled).toBe(result.before);
   },
 );
