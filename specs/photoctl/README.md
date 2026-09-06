@@ -21,7 +21,9 @@ below; record evidence-driven deviations in the owning slice and audit new decis
 **Current pickup: diagnose the failed camera-delivery quality check while finishing expanded-canvas retouch and shared-frame full-frame generation.**
 
 The local camera-reference gold script completed, but full-set and native-detail
-inspection found highlight color corruption and reduced-RAW striping. The
+inspection found highlight color corruption and reduced-RAW striping. The reduced
+RGB decoder correction now passes native-detail and integrated public-delivery
+checks; highlight rendering remains unresolved. The
 [camera delivery review](assets/camera-delivery-review/README.md) owns that failed
 quality checkpoint and reproduction evidence. Preserve the failures and correct
 the responsible decoder/render boundary before photographic acceptance.

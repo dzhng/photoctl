@@ -78,6 +78,26 @@ develop adjustments. Full views are quarter-sized; detail crops retain native
 samples enlarged twice with nearest-neighbor sampling. Mean absolute RGB delta
 is 8.324/255 in the overview and 50.371/255 in detail, proving the corrected path
 changed actual pixels. Native detail no longer shows the alternating red/dark
-columns; independent visual acceptance and rerunning the complete delivery set
-remain the integrating pass's responsibility. Highlight reconstruction is outside
+columns. Independent visual review `01a074ff-1d27-7f20-b7a4-c1b14ff2b8a1` inspected
+all four images and confirmed coherent detail was restored rather than hidden;
+moderate softness, low-light noise and slight color fringing remain. Main inspection
+agrees with this scoped improvement.
+
+The integrated unchanged gold script reran against the same library with its old
+derived artifacts still present. All ten deliveries succeeded without skips, and
+their full manifest verified. The new report is under
+`/private/tmp/photoctl-camera-reference-gold.cc9Ux2/decoder-corrected-delivery` with
+SHA-256 `5d7cba3931621018cdbaba6422d1dba9695ef1eae39ae6dcbdc80955ca53cdb7`.
+Only DSC00103's JPEG bytes changed; the other nine are byte-identical to the
+previously inspected set. Its new JPEG hash is
+`698ee568e7d9e8c6606ee3a1a2d9dbfa7c57af61807666aae515dfd1ffdefc41`.
+Main inspection confirms the public delivery now has coherent warm colors and
+detail. The shared renderer semantic identity was advanced so stale deterministic
+RAW outputs are bypassed without deleting history or replaying paid generation.
+The rebuilt macOS addon hash is
+`8b07dbac0a76ca0ff10c0a9486f56d72497444a6055779ea8bfcc9b401ed3c55`.
+Twenty-four merged render-identity and retained-export checks pass, including
+obsolete-output rejection; TypeScript build and typecheck also pass.
+
+Highlight reconstruction is outside
 this correction and the overall delivery checkpoint remains rejected.
