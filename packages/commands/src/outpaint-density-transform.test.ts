@@ -14,6 +14,90 @@ import sharp from "sharp";
 import { expect, test } from "vitest";
 import { fillUpscaleFixture, fixtureCommand, success } from "./fill-upscale-fixture.js";
 
+test("outpaint refresh introduces density work when the first generation needed none", async () => {
+  const fixture = await fillUpscaleFixture();
+  try {
+    const authored = fillStrictDataSchema.parse(
+      success(
+        await fixtureCommand(fixture, "fill", [
+          fixture.id,
+          "--outpaint",
+          "--px",
+          "2",
+          "--prompt",
+          "continue",
+          "--seed",
+          "19",
+        ]),
+      ),
+    );
+    expect(authored.upscale.node).toBeNull();
+    expect(fixture.upscaleCalls()).toBe(0);
+    fixture.replaceGenerationMode("smallerdims");
+    const refreshed = layerRefreshDataSchema.parse(
+      success(
+        await fixtureCommand(fixture, "layer", ["refresh", fixture.id, authored.graph.layer]),
+      ),
+    );
+    expect(refreshed.generation.returned).toEqual({ w: 22, h: 17 });
+    expect(refreshed.upscale).toMatchObject({
+      enabled: true,
+      executed: true,
+      target: { w: 44, h: 34 },
+      generated: { w: 44, h: 34 },
+      density_satisfied: true,
+    });
+    expect(fixture.generationCalls()).toBe(2);
+    expect(fixture.upscaleCalls()).toBe(1);
+    expect(
+      success(
+        await fixtureCommand(fixture, "graph", ["node", fixture.id, refreshed.upscale.node!]),
+      ),
+    ).toMatchObject({ parameters: { request: { seed: 19 } } });
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("new refresh density demand cannot bypass provider consent", async () => {
+  const fixture = await fillUpscaleFixture({ upscaleConfigured: false });
+  try {
+    const authored = fillStrictDataSchema.parse(
+      success(
+        await fixtureCommand(fixture, "fill", [
+          fixture.id,
+          "--outpaint",
+          "--px",
+          "2",
+          "--prompt",
+          "continue",
+        ]),
+      ),
+    );
+    fixture.replaceGenerationMode("smallerdims");
+    const result = await fixtureCommand(fixture, "layer", [
+      "refresh",
+      fixture.id,
+      authored.graph.layer,
+    ]);
+    const refreshed = layerRefreshDataSchema.parse(success(result));
+    expect(refreshed.upscale).toMatchObject({
+      enabled: true,
+      executed: false,
+      generated: { w: 22, h: 17 },
+      target: { w: 44, h: 34 },
+      density_satisfied: false,
+    });
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: "upscale_unconfigured" })]),
+    );
+    expect(fixture.generationCalls()).toBe(2);
+    expect(fixture.upscaleCalls()).toBe(0);
+  } finally {
+    await fixture.close();
+  }
+});
+
 test("outpaint refresh replans upscale density after a failed enlargement", async () => {
   const fixture = await fillUpscaleFixture({ generationMode: "smallerdims" });
   try {

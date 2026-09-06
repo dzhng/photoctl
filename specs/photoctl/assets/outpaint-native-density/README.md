@@ -63,3 +63,24 @@ camera refresh witness. The review correction then passed all 13 tests in the na
 ordinary-fill refresh files. TypeScript build, scoped formatting and diff checks passed. No native
 code, root closeout gate or live paid provider call was run in this checkpoint.
 Focused follow-up review `01a074ac-895a-7582-9b89-8267b16d7f47` returned no actionable findings.
+
+The merged review `01a074ba-a2b9-7a60-ac15-7f230cfbae2a` found a distinct first-upscale gap:
+an original generation could cover placement without any upscale node, then refresh could return
+fewer pixels. The regression reproduced a 22×17 result left undersupplied for a 44×34 border.
+Refresh now retains the stored policy independently of whether it previously needed an upscale,
+and feeds the shared generation-density owner when new work becomes necessary. The provider still
+requires current explicit configuration. A consent-bypass mutant made the public negative test fail;
+the restored path retains the smaller generation with an unconfigured warning and zero upscale calls.
+The new paid recipe also retains the requested seed for subsequent explicit refreshes; its missing
+seed assertion was RED before correction. The density owner returns its selected artifact explicitly,
+so consumers do not infer it from publication-list order.
+The correction passed fifteen refresh/density checks plus eight standalone-generation neighbors,
+TypeScript build/typecheck and scoped lint/format checks. Follow-up review
+`01a074c8-d418-71a1-a24c-5d5401c52fc5` found no actionable issue; its fixture-server tests were
+sandbox-blocked, so the runtime results here are the separately executed host checks.
+
+Root integration separately passed 164 TypeScript checks and two Rust numerical groups across
+outpaint, white balance and existing consumers, with native/TypeScript builds and typechecking.
+All sixteen native-density full images/crops were directly inspected during integration. These
+results precede the first-upscale correction and do not close the packaged lifecycle or the separately
+reproduced warm-output offline export defect.

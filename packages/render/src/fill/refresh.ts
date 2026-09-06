@@ -44,6 +44,8 @@ import { fillProviderInputs, decodeExternalImage, image16Png } from "./external-
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./pipeline.js";
 import { rebuildFillBranch } from "./rebuild.js";
 import { fillPlacementDimensions, planOutputDensity } from "./density.js";
+import { executeGenerationDensity } from "./generation.js";
+import { resolveUpscalePolicy } from "./upscale-policy.js";
 
 export interface RefreshFillRequest {
   photoId: string;
@@ -149,8 +151,61 @@ export async function refreshFillLayer(
   let upscaleNodeId: `node_${string}` | null = null;
   let upscaleProvider: ExternalExecutionProvenance | undefined;
   let upscaleReused = false;
+  const densityTarget = fillPlacementDimensions(branch);
   const shouldRefreshUpscale = target.kind === "upscale" || (generationRefreshed && branch.upscale);
-  if (shouldRefreshUpscale) {
+  const identity = branch.upscaleIdentity;
+  if (generationRefreshed && !branch.upscale && identity) {
+    const adapter = request.upscaleAdapter;
+    const storedGeneration = objectParameters(branch.generation.parameters, "generation");
+    const seed = numberOrUndefined(
+      objectParameters(storedGeneration.request, "generation request").seed,
+      "generation seed",
+    );
+    const density = await executeGenerationDensity(database, libraryPath, {
+      generation: {
+        nodeId: generationNodeId,
+        reference: generationReference,
+        provider: generationProvider,
+        image: await readArtifactImage(placementArtifact.path, placementArtifact.artifactHash),
+        artifact: placementArtifact,
+        returnedDimensions: branch.generationDimensions,
+        warnings: [],
+        nodes: [],
+        artifacts: [],
+        executions: [],
+      },
+      target: { kind: "base_space_provider_crop", dimensionsIncludingPad: densityTarget },
+      targetDimensions: densityTarget,
+      sourceContext: request.sourceContext,
+      upscale: {
+        policy: resolveUpscalePolicy({
+          releaseDefaultModel: identity.model,
+          availableAdapterIds: adapter ? [identity.model] : [],
+          flag: identity.enabled ? "upscale" : "no-upscale",
+          settings: {
+            providers: { upscale: { [identity.model]: { configured: Boolean(adapter) } } },
+          },
+          sourceContext: request.sourceContext,
+        }),
+        prompt: {
+          id: identity.promptId,
+          version: identity.promptVersion,
+          original: identity.originalPrompt,
+          derived: identity.derivedPrompt,
+        },
+        ...(adapter ? { adapter } : {}),
+      },
+      ...(seed === undefined ? {} : { seed }),
+    });
+    nodes.push(...density.nodes);
+    artifacts.push(...density.artifacts);
+    executions.push(...density.executions);
+    appendWarnings(warnings, density.warnings);
+    placementReference = density.output;
+    placementArtifact = density.outputArtifact;
+    upscaleNodeId = density.upscale.nodeId;
+    upscaleProvider = density.upscale.provider;
+  } else if (shouldRefreshUpscale) {
     if (!branch.upscale) throw new Error("Layer does not contain an upscale node");
     if (!request.upscaleAdapter) {
       if (target.kind === "upscale") throw new Error("The fill upscaler is not configured");
@@ -222,7 +277,6 @@ export async function refreshFillLayer(
     preserveCompensations: !generationRefreshed,
   });
   nodes.push(...rebuilt.nodes);
-  const densityTarget = fillPlacementDimensions(branch);
   const layers: RevisionLayerDraft[] = document.layers.map((layer) => ({
     layer: { layerId: layer.id },
     name: layer.name,
@@ -273,7 +327,7 @@ export async function refreshFillLayer(
     },
     sourceContext,
     upscale: {
-      enabled: Boolean(branch.upscale),
+      enabled: identity?.enabled ?? Boolean(branch.upscale),
       executed: upscaleNodeId !== null,
       node: upscaleNodeId,
       provider: upscaleProvider,

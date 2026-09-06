@@ -273,9 +273,7 @@ export async function executeFillRefresh(
       model: generationParameters.model,
     } satisfies FillDependencies);
   const upscaleRegistry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
-  const upscaleParameters = branch.upscale?.parameters as { model?: unknown } | null | undefined;
-  const upscaleModel =
-    typeof upscaleParameters?.model === "string" ? upscaleParameters.model : undefined;
+  const upscaleModel = branch.upscaleIdentity?.model;
   const upscaleSettings = providedDependencies?.upscaleSettings ?? settings;
   const upscaleConfigured =
     upscaleModel !== undefined &&

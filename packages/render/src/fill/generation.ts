@@ -393,6 +393,7 @@ export async function executeGenerationDensity(
     ];
     let output: NodeReference = generation.reference;
     let outputImage = generation.image;
+    let outputArtifact = generation.artifact;
     let upscaleNodeId: `node_${string}` | null = null;
     let upscaleExecuted = false;
     let densitySatisfied =
@@ -437,6 +438,7 @@ export async function executeGenerationDensity(
     ) {
       output = { nodeId: input.cachedUpscale.nodeId };
       outputImage = input.cachedUpscale.image;
+      outputArtifact = input.cachedUpscale.artifact;
       upscaleNodeId = input.cachedUpscale.nodeId;
       upscaleProvider = input.cachedUpscale.provider;
       densitySatisfied = densityPlan.upscale.densitySatisfied;
@@ -474,7 +476,10 @@ export async function executeGenerationDensity(
               original_prompt: input.upscale.prompt.original,
               derived_prompt: input.upscale.prompt.derived,
             },
-            request: { execution_id: executionId },
+            request: {
+              execution_id: executionId,
+              ...(input.seed === undefined ? {} : { seed: input.seed }),
+            },
           };
           const recipe = recipeHash(
             canonicalNodeRecipe({
@@ -525,6 +530,7 @@ export async function executeGenerationDensity(
           });
           output = { localKey: "upscale" };
           outputImage = image;
+          outputArtifact = artifact;
           upscaleExecuted = true;
           densitySatisfied =
             result.samplingDimensions.w >= input.targetDimensions.w &&
@@ -550,6 +556,7 @@ export async function executeGenerationDensity(
       warnings,
       output,
       outputImage,
+      outputArtifact,
       upscale: {
         enabled: input.upscale.policy.upscale.enabled,
         executed: upscaleNodeId !== null,
