@@ -1,9 +1,10 @@
 import { execFile } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import sharp from "sharp";
+import { sourceTreatmentSchema, type SourceTreatment } from "@photoctl/protocol";
 
 const executeFile = promisify(execFile);
 
@@ -23,19 +24,32 @@ export interface OracleVerdict {
 
 interface DecodeEnvelope {
   ok: boolean;
-  data?: { file?: string; w?: number; h?: number; space?: string };
+  data?: { file?: string; w?: number; h?: number; space?: string; treatment?: unknown };
 }
 
-export async function buildOracleReport(id: string, cwd: string): Promise<string> {
+export async function buildOracleReport(
+  id: string,
+  cwd: string,
+  requested?: "disabled" | "reconstruct",
+): Promise<string> {
   const safeId = id.replaceAll(/[^a-zA-Z0-9_-]/gu, "_");
-  const directory = join(cwd, "out", "wb", "oracle", safeId);
-  await mkdir(directory, { recursive: true });
-  const results = await decodeOracleFrames(["file", "ciraw", "libraw"], id, directory, cwd);
+  const root = join(cwd, "out", "wb", "oracle", safeId);
+  await mkdir(root, { recursive: true });
+  // Diagnostic TIFFs are immutable; repeating an oracle must retain prior evidence.
+  const directory = await mkdtemp(join(root, "run-"));
+  const results = await decodeOracleFrames(
+    ["file", "ciraw", "libraw"],
+    id,
+    directory,
+    cwd,
+    requested,
+  );
   const ciraw = results.find(({ decoder }) => decoder === "ciraw")!;
   const libraw = results.find(({ decoder }) => decoder === "libraw")!;
   const verdict = measureOracleFrames(ciraw.frame, libraw.frame);
   const evidence = {
     photoId: id,
+    runDirectory: directory,
     scale: 0.25,
     patchGrid: [64, 64],
     excluded: "either decoder Y > 0.9",
@@ -46,8 +60,10 @@ export async function buildOracleReport(id: string, cwd: string): Promise<string
       height: frame.height,
     })),
     verdict,
+    treatments: results.map(({ decoder, treatment }) => ({ decoder, treatment })),
   };
   await writeFile(join(directory, "oracle.json"), `${JSON.stringify(evidence, null, 2)}\n`);
+  await writeFile(join(root, "oracle.json"), `${JSON.stringify(evidence, null, 2)}\n`);
   const output = join(cwd, "out", "wb", `oracle-${safeId}.html`);
   await writeFile(output, renderOracleReport(results, evidence), "utf8");
   return output;
@@ -58,15 +74,21 @@ async function decodeOracleFrames(
   id: string,
   directory: string,
   cwd: string,
-): Promise<Array<{ decoder: string; frame: OracleFrame; jpeg: Buffer }>> {
+  requested?: "disabled" | "reconstruct",
+): Promise<
+  Array<{ decoder: string; frame: OracleFrame; jpeg: Buffer; treatment: SourceTreatment }>
+> {
   const [decoder, ...remaining] = decoders;
   if (!decoder) return [];
   const tiff = join(directory, `${decoder}.tif`);
-  await runDecode(id, decoder, tiff, cwd);
+  const treatment = await runDecode(id, decoder, tiff, cwd, requested);
   const frame = readLinearTiff(await readFile(tiff));
   const jpeg = await sharp(tiff).withIccProfile("srgb").jpeg({ quality: 90 }).toBuffer();
   await writeFile(join(directory, `${decoder}.jpg`), jpeg);
-  return [{ decoder, frame, jpeg }, ...(await decodeOracleFrames(remaining, id, directory, cwd))];
+  return [
+    { decoder, frame, jpeg, treatment },
+    ...(await decodeOracleFrames(remaining, id, directory, cwd, requested)),
+  ];
 }
 
 export function measureOracleFrames(reference: OracleFrame, candidate: OracleFrame): OracleVerdict {
@@ -110,13 +132,25 @@ async function runDecode(
   decoder: "file" | "ciraw" | "libraw",
   output: string,
   cwd: string,
-): Promise<void> {
+  requested?: "disabled" | "reconstruct",
+): Promise<SourceTreatment> {
   const cli = fileURLToPath(new URL("../../cli/dist/bin.js", import.meta.url));
   let stdout: string;
   try {
     ({ stdout } = await executeFile(
       process.execPath,
-      [cli, "decode", id, "--with", decoder, "--scale", "0.25", "--to", output],
+      [
+        cli,
+        "decode",
+        id,
+        "--with",
+        decoder,
+        "--scale",
+        "0.25",
+        "--to",
+        output,
+        ...(requested ? ["--highlight-reconstruction", requested] : []),
+      ],
       {
         cwd,
         encoding: "utf8",
@@ -137,6 +171,7 @@ async function runDecode(
   ) {
     throw new Error(`${decoder} oracle decode returned ${JSON.stringify(envelope)}`);
   }
+  return sourceTreatmentSchema.parse(envelope.data.treatment);
 }
 
 function readLinearTiff(tiff: Buffer): OracleFrame {

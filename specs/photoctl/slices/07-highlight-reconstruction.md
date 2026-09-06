@@ -120,6 +120,22 @@ not whole-camera acceptance; follow immediately with B.
 
 ## B — One effective policy, diagnostics and identity
 
+The decoder/diagnostic boundary is implemented: `decode` exposes an explicit
+reconstruction override, reports requested versus actual treatment, and rejects a
+probe/result disagreement before TIFF publication. Both normal and disabled public
+oracle paths retain the same G4 threshold and exclusions. Repeated oracle runs keep
+their prior TIFFs and measured evidence. Graph identity, retained-output sufficiency,
+preview provenance and ordinary render adoption remain the next B checkpoint.
+
+The decoder owns source-specific admission and method identity; the protocol's
+[`sourceTreatmentSchema`](../../../packages/protocol/src/treatment.ts) owns the
+transported value. CIRAW reads the enabled state back from the framework; its scale
+belongs to that treatment because the measured scaled operation is not equivalent
+to portable native recovery followed by resize. File decoding reports not-applicable,
+including explicitly selected files and warned offline fallback. The existing
+linear-16 TIFF output clips/quantizes scene floats for inspection; it is not evidence
+that above-one scene headroom was retained. Canonical float evidence owns that proof.
+
 Thread the settled request through the existing decoder options and results, helper
 wire shape, graph source and explicit `decode` command. Names/internal decomposition
 are delegated. The contract distinguishes applied, disabled, unsupported and

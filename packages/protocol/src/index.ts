@@ -3,6 +3,7 @@ export * from "./events.js";
 export * from "./request.js";
 export * from "./frames.js";
 export * from "./hash.js";
+export * from "./treatment.js";
 export * from "./provider.js";
 export * from "./verbs/doctor.js";
 export * from "./verbs/cache.js";

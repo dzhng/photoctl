@@ -18,11 +18,12 @@ test("the CIRAW adapter returns the shared linear-image contract from the helper
 import { writeFileSync } from "node:fs";
 const args = process.argv.slice(2);
 if (args[0] === "probe") {
-  console.log(JSON.stringify({supported:true,supportedDecoderVersions:["8"],decoderVersion:"8",nativeWidth:8,nativeHeight:4}));
+  console.log(JSON.stringify({supported:true,supportedDecoderVersions:["8"],decoderVersion:"8",nativeWidth:8,nativeHeight:4,highlightReconstructionMethod:"ciraw-highlight-v1"}));
 } else {
   const output = args[args.indexOf("--output") + 1];
   writeFileSync(output, Buffer.from(new Float32Array([0, 0.5, 1, 1, 0.5, 0]).buffer));
-  console.log(JSON.stringify({width:2,height:1,channels:3,space:"scene-linear-rec2020",orientationApplied:true,wireFormat:"rgb-f32le",decoderVersion:"8"}));
+  const requested = args[args.indexOf("--highlight-reconstruction") + 1];
+  console.log(JSON.stringify({width:2,height:1,channels:3,space:"scene-linear-rec2020",orientationApplied:true,wireFormat:"rgb-f32le",decoderVersion:"8",highlightReconstruction:requested === "reconstruct" ? "applied" : "disabled",highlightReconstructionMethod:requested === "reconstruct" ? "ciraw-highlight-v1" : undefined}));
 }
 `,
   );
@@ -40,9 +41,19 @@ if (args[0] === "probe") {
     supported: true,
     compression: undefined,
     decoderVersion: "8",
+    highlightReconstructionMethod: "ciraw-highlight-v1",
     notes: ["Core Image RAW decoder 8"],
   });
-  const image = await decoder.decode(source, { scale: 0.25 });
+  const image = await decoder.decode(source, {
+    scale: 0.25,
+    highlightReconstruction: "reconstruct",
+  });
+  expect(image.treatment).toEqual({
+    requested: "reconstruct",
+    status: "applied",
+    method: "ciraw-highlight-v1",
+    scale: 0.25,
+  });
   expect(image).toMatchObject({
     w: 2,
     h: 1,

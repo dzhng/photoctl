@@ -16,6 +16,7 @@ test("CIRAW decodes the committed camera file deterministically without presenta
     const probe = run(["probe", fixture]);
     expect(probe).toMatchObject({ supported: true, nativeWidth: 7008, nativeHeight: 4672 });
     expect(probe.supportedDecoderVersions).not.toEqual(["None"]);
+    expect(probe.highlightReconstructionMethod).toEqual(expect.any(String));
 
     const firstResult = run(["decode", fixture, "--scale", "0.25", "--output", first]);
     const source: ImageSource = {
@@ -50,6 +51,22 @@ test("CIRAW decodes the committed camera file deterministically without presenta
     );
     expect(firstBytes.byteLength).toBe(1752 * 1168 * 3 * Float32Array.BYTES_PER_ELEMENT);
     expect(hash(firstBytes)).toBe(hash(secondBytes));
+    const reconstructed = await new CirawDecoder(helper).decode(source, {
+      scale: 0.25,
+      highlightReconstruction: "reconstruct",
+    });
+    expect(reconstructed.treatment).toEqual({
+      requested: "reconstruct",
+      status: "applied",
+      method: probe.highlightReconstructionMethod,
+      scale: 0.25,
+    });
+    expect(image.treatment).toEqual({
+      requested: "disabled",
+      status: "disabled",
+      method: null,
+      scale: 0.25,
+    });
   } finally {
     await rm(first, { force: true });
   }

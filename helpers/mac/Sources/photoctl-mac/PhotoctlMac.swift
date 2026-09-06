@@ -22,6 +22,7 @@ private struct ProbeResult: Encodable {
   let decoderVersion: String?
   let nativeWidth: Int?
   let nativeHeight: Int?
+  let highlightReconstructionMethod: String?
 }
 
 private struct DecodeResult: Encodable {
@@ -32,6 +33,8 @@ private struct DecodeResult: Encodable {
   let orientationApplied = true
   let wireFormat = "rgb-f32le"
   let decoderVersion: String
+  let highlightReconstruction: String
+  let highlightReconstructionMethod: String?
 }
 
 @main
@@ -58,7 +61,7 @@ private enum PhotoctlMac {
   }
 
   private static var usage: String {
-    "usage: photoctl-mac probe <image> | decode <image> --scale <1|0.5|0.25> --output <rgb.f32>"
+    "usage: photoctl-mac probe <image> | decode <image> --scale <1|0.5|0.25> --output <rgb.f32> [--highlight-reconstruction <disabled|reconstruct>]"
   }
 
   private static func probe(_ url: URL) throws -> ProbeResult {
@@ -68,7 +71,8 @@ private enum PhotoctlMac {
         supportedDecoderVersions: [],
         decoderVersion: nil,
         nativeWidth: nil,
-        nativeHeight: nil
+        nativeHeight: nil,
+        highlightReconstructionMethod: nil
       )
     }
     let versions = filter.supportedDecoderVersions.map(\.rawValue)
@@ -78,16 +82,22 @@ private enum PhotoctlMac {
       supportedDecoderVersions: versions,
       decoderVersion: supported ? filter.decoderVersion.rawValue : nil,
       nativeWidth: supported ? Int(filter.nativeSize.width) : nil,
-      nativeHeight: supported ? Int(filter.nativeSize.height) : nil
+      nativeHeight: supported ? Int(filter.nativeSize.height) : nil,
+      highlightReconstructionMethod: supported ? recoveryMethod(filter) : nil
     )
   }
 
   private static func decode(_ arguments: [String]) throws {
-    guard arguments.count == 6,
+    guard [6, 8].contains(arguments.count),
       arguments[2] == "--scale",
       let scale = Float(arguments[3]),
       [1, 0.5, 0.25].contains(scale),
       arguments[4] == "--output"
+    else { throw HelperError.usage(usage) }
+
+    let requested = arguments.count == 8 ? arguments[7] : "disabled"
+    guard ["disabled", "reconstruct"].contains(requested),
+      arguments.count == 6 || arguments[6] == "--highlight-reconstruction"
     else { throw HelperError.usage(usage) }
 
     let input = URL(fileURLWithPath: arguments[1])
@@ -112,8 +122,12 @@ private enum PhotoctlMac {
     filter.extendedDynamicRangeAmount = 0
     filter.isGamutMappingEnabled = false
     filter.localToneMapAmount = 0
+    let method = recoveryMethod(filter)
+    let reconstruct = requested == "reconstruct" && method != nil
+    var applied = false
     if #available(macOS 16.0, *) {
-      filter.isHighlightRecoveryEnabled = false
+      filter.isHighlightRecoveryEnabled = reconstruct
+      applied = filter.isHighlightRecoveryEnabled
     }
 
     guard let image = filter.outputImage else {
@@ -162,9 +176,18 @@ private enum PhotoctlMac {
       DecodeResult(
         width: width,
         height: height,
-        decoderVersion: filter.decoderVersion.rawValue
+        decoderVersion: filter.decoderVersion.rawValue,
+        highlightReconstruction: applied ? "applied" : (requested == "disabled" ? "disabled" : "unsupported"),
+        highlightReconstructionMethod: applied ? method : nil
       )
     )
+  }
+
+  private static func recoveryMethod(_ filter: CIRAWFilter) -> String? {
+    if #available(macOS 16.0, *), filter.isHighlightRecoverySupported {
+      return "ciraw-highlight-v1"
+    }
+    return nil
   }
 
   private static func rawFilter(_ url: URL) throws -> CIRAWFilter? {

@@ -8,6 +8,8 @@ import {
   FileImageDecoder,
   LibrawDecoder,
   selectDecoder,
+  planSourceTreatment,
+  sameSourceTreatment,
   encodeLinearTiff,
   publishFile,
   toSceneLinearRec2020,
@@ -26,7 +28,9 @@ export async function decodeCommand(
   cwd: string,
   provided?: LibraryHandle,
 ): Promise<Envelope> {
-  const parsed = parseArguments(args, { options: ["--with", "--scale", "--to"] });
+  const parsed = parseArguments(args, {
+    options: ["--with", "--scale", "--to", "--highlight-reconstruction"],
+  });
   if (parsed.positionals.length !== 1) {
     throw new PhotoctlError("usage", "decode requires exactly one photo ID or prefix");
   }
@@ -35,6 +39,10 @@ export async function decodeCommand(
     throw new PhotoctlError("usage", "--with must be auto, file, ciraw, or libraw");
   }
   const scale = parseScale(parsed.options.get("--scale") ?? "1");
+  const highlightReconstruction = parsed.options.get("--highlight-reconstruction") ?? "reconstruct";
+  if (highlightReconstruction !== "disabled" && highlightReconstruction !== "reconstruct") {
+    throw new PhotoctlError("usage", "--highlight-reconstruction must be disabled or reconstruct");
+  }
   const outputValue = parsed.options.get("--to");
   if (!outputValue) throw new PhotoctlError("usage", "decode requires --to <output.tif>");
   const output = resolve(cwd, outputValue);
@@ -90,11 +98,19 @@ export async function decodeCommand(
       });
     }
     let image;
+    const planned = planSourceTreatment(selected.decoder.id, selected.probe, {
+      scale,
+      highlightReconstruction,
+    });
     try {
       image = await selected.decoder.decode(selected.source, {
         scale,
         outputSpace: "scene-linear-rec2020",
+        highlightReconstruction,
       });
+      if (!sameSourceTreatment(image.treatment, planned)) {
+        throw new DecoderUnavailableError("Decoder treatment changed after source planning");
+      }
     } catch (error) {
       if (error instanceof DecoderUnavailableError) {
         throw new PhotoctlError("decoder_unavailable", error.message, {
@@ -135,6 +151,7 @@ export async function decodeCommand(
         w: image.w,
         h: image.h,
         space: developed.space,
+        treatment: image.treatment,
       } satisfies DecodeData,
       warnings,
     };

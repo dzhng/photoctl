@@ -111,8 +111,19 @@ export async function runWorkbench(
     return output;
   }
   if (command === "oracle") {
-    if (rest.length !== 1) throw new Error("usage: wb oracle <photo-id>");
-    return await buildOracleReport(rest[0], cwd);
+    if (
+      !(
+        rest.length === 1 ||
+        (rest.length === 3 &&
+          rest[1] === "--highlight-reconstruction" &&
+          (rest[2] === "disabled" || rest[2] === "reconstruct"))
+      )
+    ) {
+      throw new Error(
+        "usage: wb oracle <photo-id> [--highlight-reconstruction disabled|reconstruct]",
+      );
+    }
+    return await buildOracleReport(rest[0], cwd, rest[2] as "disabled" | "reconstruct" | undefined);
   }
   if (command === "sheet") {
     const library = rest[0];

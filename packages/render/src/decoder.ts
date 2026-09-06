@@ -13,6 +13,7 @@ import {
 } from "@photoctl/img";
 import sharp, { type Sharp } from "sharp";
 import { displaySrgbToLinearRec2020 } from "./color.js";
+import type { SourceTreatment } from "@photoctl/protocol";
 import { orientationTransform, parseExifOrientation, type ExifOrientation } from "./coordinates.js";
 
 const executeFile = promisify(execFile);
@@ -64,15 +65,50 @@ export type SceneLinearImage = Omit<LinearImage, "space"> & {
   space: "scene-linear-rec2020";
 };
 
+export type DecodedImage = LinearImage & { treatment: SourceTreatment };
+
+/** The same source-specific probe that selects an adapter plans cache treatment. */
+export function planSourceTreatment(
+  decoder: Decoder["id"],
+  probe: DecoderProbe | undefined,
+  options: DecodeOptions,
+): SourceTreatment {
+  const requested = options.highlightReconstruction ?? "disabled";
+  const method = probe?.highlightReconstructionMethod;
+  const status =
+    decoder === "file"
+      ? "not-applicable"
+      : requested === "disabled"
+        ? "disabled"
+        : method
+          ? "applied"
+          : "unsupported";
+  return { requested, status, method: status === "applied" ? method! : null, scale: options.scale };
+}
+
+export function sameSourceTreatment(
+  left: SourceTreatment | null | undefined,
+  right: SourceTreatment | null | undefined,
+): boolean {
+  if (!left || !right) return left == null && right == null;
+  return (
+    left.requested === right.requested &&
+    left.status === right.status &&
+    left.method === right.method &&
+    left.scale === right.scale
+  );
+}
+
 export interface Decoder {
   readonly id: "file" | "ciraw" | "libraw";
   probe(source: ImageSource): Promise<DecoderProbe>;
-  decode(source: ImageSource, options: DecodeOptions): Promise<LinearImage>;
+  decode(source: ImageSource, options: DecodeOptions): Promise<DecodedImage>;
 }
 
 export interface DecodeOptions {
   scale: DecodeScale;
   outputSpace?: "scene-linear-rec2020";
+  highlightReconstruction?: "disabled" | "reconstruct";
 }
 
 export interface DecoderImageProbe {
@@ -106,7 +142,7 @@ export class FileImageDecoder implements Decoder {
     }
   }
 
-  async decode(source: ImageSource, options: DecodeOptions): Promise<LinearImage> {
+  async decode(source: ImageSource, options: DecodeOptions): Promise<DecodedImage> {
     const display = await this.decodeDisplay(source, options);
     return {
       w: display.w,
@@ -117,6 +153,7 @@ export class FileImageDecoder implements Decoder {
       whiteLevel: 1,
       blackLevel: 0,
       wbPreApplied: true,
+      treatment: planSourceTreatment(this.id, undefined, options),
     };
   }
 
@@ -173,6 +210,7 @@ interface CirawProbeResult {
   decoderVersion?: string;
   nativeWidth?: number;
   nativeHeight?: number;
+  highlightReconstructionMethod?: string;
 }
 
 interface CirawDecodeResult {
@@ -183,6 +221,8 @@ interface CirawDecodeResult {
   orientationApplied: true;
   wireFormat: "rgb-f32le";
   decoderVersion: string;
+  highlightReconstruction: "applied" | "disabled" | "unsupported";
+  highlightReconstructionMethod?: string;
 }
 
 export class CirawDecoder implements Decoder {
@@ -199,11 +239,12 @@ export class CirawDecoder implements Decoder {
       supported: result.supported,
       compression: undefined,
       decoderVersion: result.decoderVersion,
+      highlightReconstructionMethod: result.highlightReconstructionMethod,
       notes: result.decoderVersion ? [`Core Image RAW decoder ${result.decoderVersion}`] : [],
     };
   }
 
-  async decode(source: ImageSource, options: DecodeOptions): Promise<LinearImage> {
+  async decode(source: ImageSource, options: DecodeOptions): Promise<DecodedImage> {
     if (source.kind !== "online-file") {
       throw new DecoderUnavailableError("CIRAW requires an online whole-file source");
     }
@@ -218,6 +259,8 @@ export class CirawDecoder implements Decoder {
           String(options.scale),
           "--output",
           output,
+          "--highlight-reconstruction",
+          options.highlightReconstruction ?? "disabled",
         ]),
       );
       const bytes = await readFile(output);
@@ -235,6 +278,12 @@ export class CirawDecoder implements Decoder {
         whiteLevel: 1,
         blackLevel: 0,
         wbPreApplied: true,
+        treatment: {
+          requested: options.highlightReconstruction ?? "disabled",
+          status: result.highlightReconstruction,
+          method: result.highlightReconstructionMethod ?? null,
+          scale: options.scale,
+        },
       };
     } finally {
       await rm(directory, { recursive: true, force: true });
@@ -273,12 +322,17 @@ export class LibrawDecoder implements Decoder {
     }
   }
 
-  async decode(source: ImageSource, options: DecodeOptions): Promise<LinearImage> {
+  async decode(source: ImageSource, options: DecodeOptions): Promise<DecodedImage> {
     if (source.kind !== "online-file") {
       throw new DecoderUnavailableError("LibRaw requires an online whole-file source");
     }
     try {
-      const image = await decodeLibraw(source.path, options.scale, options.outputSpace);
+      const image = await decodeLibraw(
+        source.path,
+        options.scale,
+        options.outputSpace,
+        options.highlightReconstruction,
+      );
       if (
         !Number.isSafeInteger(image.width) ||
         image.width <= 0 ||
@@ -300,6 +354,12 @@ export class LibrawDecoder implements Decoder {
         blackLevel: image.blackLevel,
         ...(image.space === "camera" ? { camXyz: image.camXyz, asShotWb: image.asShotWb } : {}),
         wbPreApplied: image.wbPreApplied,
+        treatment: {
+          requested: options.highlightReconstruction ?? "disabled",
+          status: image.highlightReconstruction,
+          method: image.highlightReconstructionMethod ?? null,
+          scale: options.scale,
+        },
       };
     } catch (error) {
       if (error instanceof DecoderUnavailableError) throw error;
@@ -334,7 +394,10 @@ function parseCirawDecode(value: unknown): CirawDecodeResult {
     result.space !== "scene-linear-rec2020" ||
     result.orientationApplied !== true ||
     result.wireFormat !== "rgb-f32le" ||
-    typeof result.decoderVersion !== "string"
+    typeof result.decoderVersion !== "string" ||
+    !["applied", "disabled", "unsupported"].includes(result.highlightReconstruction) ||
+    (result.highlightReconstruction === "applied") !==
+      (typeof result.highlightReconstructionMethod === "string")
   ) {
     throw new DecoderUnavailableError("CIRAW returned an incompatible image contract");
   }

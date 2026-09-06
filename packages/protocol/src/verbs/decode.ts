@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sourceTreatmentSchema } from "../treatment.js";
 
 export const decodeDataSchema = z.object({
   id: z.uuid(),
@@ -7,6 +8,7 @@ export const decodeDataSchema = z.object({
   w: z.number().int().positive(),
   h: z.number().int().positive(),
   space: z.enum(["camera", "scene-linear-rec2020"]),
+  treatment: sourceTreatmentSchema,
 });
 
 export type DecodeData = z.infer<typeof decodeDataSchema>;
