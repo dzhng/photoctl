@@ -1,0 +1,219 @@
+{
+  "rawLedPhotos": 18,
+  "originalsUnchanged": 36,
+  "publicShowExportIdentityAgrees": true,
+  "sourceTreatmentCounts": {
+    "applied": 17,
+    "unsupported": 1
+  },
+  "observedGroups": [
+    {
+      "compression": 1,
+      "stored": [
+        7040,
+        4688
+      ],
+      "crop": [
+        7008,
+        4672
+      ],
+      "orientation": 1,
+      "stems": [
+        "DSC07633"
+      ]
+    },
+    {
+      "compression": 1,
+      "stored": [
+        4736,
+        3132
+      ],
+      "crop": [
+        4608,
+        3072
+      ],
+      "orientation": 1,
+      "stems": [
+        "DSC07668"
+      ]
+    },
+    {
+      "compression": 1,
+      "stored": [
+        7040,
+        4688
+      ],
+      "crop": [
+        7008,
+        4672
+      ],
+      "orientation": 8,
+      "stems": [
+        "DSC07730"
+      ]
+    },
+    {
+      "compression": 7,
+      "stored": [
+        7168,
+        5120
+      ],
+      "crop": [
+        7008,
+        4672
+      ],
+      "orientation": 1,
+      "stems": [
+        "DSC08142",
+        "DSC00442"
+      ]
+    },
+    {
+      "compression": 7,
+      "stored": [
+        7168,
+        5120
+      ],
+      "crop": [
+        7008,
+        4672
+      ],
+      "orientation": 8,
+      "stems": [
+        "DSC08362",
+        "DSC00434"
+      ]
+    },
+    {
+      "compression": 7,
+      "stored": [
+        5120,
+        3584
+      ],
+      "crop": [
+        4608,
+        3072
+      ],
+      "orientation": 8,
+      "stems": [
+        "DSC08541"
+      ]
+    },
+    {
+      "compression": 7,
+      "stored": [
+        5120,
+        3584
+      ],
+      "crop": [
+        4608,
+        3072
+      ],
+      "orientation": 1,
+      "stems": [
+        "DSC08819",
+        "DSC09314",
+        "DSC09797"
+      ]
+    },
+    {
+      "compression": 7,
+      "stored": [
+        7168,
+        5120
+      ],
+      "crop": [
+        7008,
+        4672
+      ],
+      "orientation": 6,
+      "stems": [
+        "DSC09148",
+        "DSC00290"
+      ]
+    },
+    {
+      "compression": 7,
+      "stored": [
+        5120,
+        3584
+      ],
+      "crop": [
+        4608,
+        3072
+      ],
+      "orientation": 6,
+      "stems": [
+        "DSC09903"
+      ]
+    },
+    {
+      "compression": 7,
+      "stored": [
+        3584,
+        2560
+      ],
+      "crop": [
+        3504,
+        2336
+      ],
+      "orientation": 1,
+      "stems": [
+        "DSC00103"
+      ]
+    },
+    {
+      "compression": 32767,
+      "stored": [
+        7040,
+        4688
+      ],
+      "crop": [
+        7008,
+        4672
+      ],
+      "orientation": 1,
+      "stems": [
+        "DSC00104"
+      ]
+    },
+    {
+      "compression": 32767,
+      "stored": [
+        7040,
+        4688
+      ],
+      "crop": [
+        7008,
+        4672
+      ],
+      "orientation": 8,
+      "stems": [
+        "DSC00107"
+      ]
+    },
+    {
+      "compression": 32767,
+      "stored": [
+        7040,
+        4688
+      ],
+      "crop": [
+        7008,
+        4672
+      ],
+      "orientation": 6,
+      "stems": [
+        "DSC00122"
+      ]
+    }
+  ],
+  "captures": 86,
+  "nativeCropPairs": 25,
+  "limitations": [
+    "No disabled/current RAW comparison in this pass",
+    "No physical camera, old catalog, installed CLI or full-suite gate",
+    "Camera JPEGs are context, not target pixels",
+    "No resource or latency benchmark"
+  ]
+}
