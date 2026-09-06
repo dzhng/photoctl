@@ -180,7 +180,7 @@ Update this handoff after each pass and continue to the next unfinished requirem
 - [ ] 13a [x] initial reimagine/relight/generate · [ ] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
 - [x] Show by existing-photo path — `slices/01-first-jpeg.md#existing-photo-path-lookup`
-- [ ] Original CLI reconciliation: generation negative/reference-strength controls and reference-only form; combined fill move/scale — `slices/13-generative-extras-and-markup.md#original-command-controls-still-open`
+- [ ] Original CLI reconciliation: generation negative/reference-strength controls; combined fill move/scale. Reference-only generation is implemented — `slices/13-generative-extras-and-markup.md#original-command-controls-still-open`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 

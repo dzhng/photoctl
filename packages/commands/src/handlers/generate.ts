@@ -13,6 +13,7 @@ import {
   GatewayClient,
   readProviderSettings,
   resolveModel,
+  REFERENCE_VARIATION_PROMPT,
   type ImageModelAdapter,
   type UpscaleRegistry,
 } from "@photoctl/providers";
@@ -45,8 +46,11 @@ export async function generateCommand(
   });
   if (parsed.positionals.length !== 0)
     throw new PhotoctlError("usage", "generate does not accept positional arguments");
-  const prompt = parsed.options.get("--prompt")?.trim();
-  if (!prompt) throw new PhotoctlError("usage", "generate requires --prompt");
+  const referenceOnly = !parsed.options.has("--prompt") && parsed.options.has("--ref");
+  const prompt = referenceOnly
+    ? REFERENCE_VARIATION_PROMPT.text
+    : parsed.options.get("--prompt")?.trim();
+  if (!prompt) throw new PhotoctlError("usage", "generate requires --prompt or --ref");
   const dimensions = parseSize(parsed.options.get("--size") ?? "1024x1024");
   const seed = parseSeed(parsed.options.get("--seed"));
   const reference = await readImageReference(parsed.options.get("--ref"), cwd);
@@ -107,10 +111,13 @@ export async function generateCommand(
       };
     }
     const preparedRequest = adapter.buildGeneration(prompt, dimensions, seed, reference);
+    if (referenceOnly && !preparedRequest.appliedControls.reference) {
+      throw new PhotoctlError("usage", `Reference-only generation is unsupported by ${model}`);
+    }
     const prepared = await prepareStandaloneGeneratedPhoto(lease.handle, lease.handle.path, {
       dimensions,
       prompt,
-      promptVersion: 1,
+      promptVersion: referenceOnly ? REFERENCE_VARIATION_PROMPT.version : 1,
       ...(seed === undefined ? {} : { seed }),
       ...(reference ? { referenceImage: reference } : {}),
       dependencies: { adapter, gateway, model },

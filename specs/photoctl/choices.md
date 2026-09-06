@@ -300,6 +300,26 @@
 
 ## Sound
 
+### Standalone generation — A reference without text requests a variation
+
+- **When:** Reference-only command completion, 2026-09-06.
+- **The choice:** When a caller supplies `generate --ref photo.jpg` without a prompt,
+  request a new variation that keeps the main subject and composition but permits detail
+  changes. Store the resolved instruction and its template version beside the retained
+  reference. This does not promise a copy or exact reconstruction. An explicitly empty
+  prompt is an error, not a request for the default. If the selected adapter cannot send
+  the reference, reject before provider work rather than buy a text-only image about an
+  unseen reference. Explicit text-plus-reference requests keep their existing warning policy.
+- **The gap:** The original command included a reference-only form but did not say what
+  to generate when no text described the desired result.
+- **The reach:** This defines the default creative intent of that shorthand, without a
+  new image model, local blend, database field or implicit reference-photo import. A future
+  template change must retain its version in request provenance.
+- **Verdict:** **Sound.** A variation is a useful generation operation; copying would not
+  justify a provider call. Refusal when its only input cannot be sent prevents unrelated work.
+- **Confidence:** Medium; the variation instruction is a reversible product default,
+  not an assertion of photographic quality or a settled numeric reference-strength policy.
+
 ### Native decoding — Request scene pixels without a second full-image snapshot
 
 - **When:** Owned LibRaw camera conversion integration, 2026-09-06.

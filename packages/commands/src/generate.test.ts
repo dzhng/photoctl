@@ -19,6 +19,105 @@ afterEach(async () => {
   await Promise.all(cleanups.splice(0).map(async (cleanup) => await cleanup()));
 });
 
+test("reference-only generation sends variation intent and retains its source without importing it", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-variation-"));
+  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  const requests: Array<{ path: string; fields: Readonly<Record<string, unknown>> }> = [];
+  const gateway = await startGatewayFixture(0, {
+    onImageRequest: ({ path, fields }) => requests.push({ path, fields }),
+  });
+  cleanups.push(
+    async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
+    async () => await handle.close(),
+    async () => await rm(parent, { recursive: true }),
+  );
+  const reference = join(parent, "reference.png");
+  const bytes = await sharp({ create: { width: 3, height: 2, channels: 3, background: "#ff0000" } })
+    .png()
+    .toBuffer();
+  await writeFile(reference, bytes);
+  const address = gateway.address();
+  if (!address || typeof address === "string") throw new Error("Fixture unavailable");
+  const envelope = await dispatch(
+    {
+      verb: "generate",
+      args: ["--ref", reference, "--size", "4x4"],
+      cwd: parent,
+      env: {
+        noDaemon: true,
+        cacheRoot: join(parent, "cache"),
+        gatewayApiKey: "fixture",
+        gatewayUrl: `http://127.0.0.1:${address.port}`,
+      },
+    },
+    { version: "test", library: handle },
+  );
+  expect(envelope, JSON.stringify(envelope)).toMatchObject({ ok: true });
+  if (!envelope.ok || !("data" in envelope)) throw new Error("Expected generation");
+  const result = generateDataSchema.parse(envelope.data);
+  expect(result.reference.used).toBe(true);
+  expect(requests).toEqual([
+    {
+      path: "/v1/images/edits",
+      fields: expect.objectContaining({
+        prompt:
+          "Create a new variation of the reference image. Preserve its main subject and composition while varying visual details.",
+      }),
+    },
+  ]);
+  const node = await inspectGraphNode(handle, {
+    photoId: result.id,
+    nodeId: result.generation.node,
+  });
+  expect(node.parameters).toMatchObject({ prompt: requests[0]!.fields.prompt, prompt_version: 1 });
+  expect(node.inputNodeIds).toHaveLength(1);
+  expect((await handle.query<{ id: string }>("SELECT id FROM photos")).rows).toEqual([
+    { id: result.id },
+  ]);
+  expect(await readFile(reference)).toEqual(bytes);
+});
+
+test("reference-only generation refuses an unsupported reference before buying an unrelated image", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-unsupported-reference-"));
+  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  const requests: string[] = [];
+  const gateway = await startGatewayFixture(0, {
+    onImageRequest: ({ path }) => requests.push(path),
+  });
+  cleanups.push(
+    async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
+    async () => await handle.close(),
+    async () => await rm(parent, { recursive: true }),
+  );
+  const reference = join(parent, "reference.png");
+  await writeFile(
+    reference,
+    await sharp({ create: { width: 2, height: 2, channels: 3, background: "red" } })
+      .png()
+      .toBuffer(),
+  );
+  const address = gateway.address();
+  if (!address || typeof address === "string") throw new Error("Fixture unavailable");
+  const result = await dispatch(
+    {
+      verb: "generate",
+      args: ["--ref", reference, "--model", "example/text-only", "--size", "4x4"],
+      cwd: parent,
+      env: {
+        noDaemon: true,
+        cacheRoot: join(parent, "cache"),
+        gatewayApiKey: "fixture",
+        gatewayUrl: `http://127.0.0.1:${address.port}`,
+      },
+    },
+    { version: "test", library: handle },
+  );
+  expect(result).toMatchObject({ ok: false, code: "usage" });
+  expect(requests).toEqual([]);
+  expect((await handle.query("SELECT id FROM photos")).rows).toEqual([]);
+  expect((await handle.query("SELECT id FROM provider_image_attempts")).rows).toEqual([]);
+});
+
 test("reference-guided generation retains an immutable reachable image without importing another photo", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-reference-"));
   const handle = (await initializeLibrary(join(parent, "library"))).handle;

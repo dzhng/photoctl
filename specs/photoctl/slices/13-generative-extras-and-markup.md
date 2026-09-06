@@ -51,7 +51,21 @@ adapter behavior before implementation: retain requested versus applied controls
 request identity, inspect actual transmitted HTTP bodies, and report unsupported behavior honestly.
 Do not pretend prompt guidance is latent denoise, infer dynamic capabilities, or introduce local
 blending without a recorded product choice. The abbreviated reference-only `generate --ref` form
-also needs an explicit interpretation; today's mandatory prompt is not evidence it was removed.
+means a new variation of the supplied image, preserving its main subject and composition while
+allowing detail changes. A versioned default instruction is used only when `--prompt` is absent;
+an explicitly empty prompt is still invalid. The pinned reference and resolved instruction remain
+inspectable, and the input file is never imported or modified. This is generation, not a byte-copy
+or an exact-reconstruction promise. A model that cannot receive the reference must refuse this
+reference-only request before buying an unrelated text-only result. Explicit prompt+reference
+requests keep their existing unsupported-reference warning policy.
+
+Reference-only command verification passes eight generation checks and command typechecking.
+The public dispatcher first failed with the old mandatory-prompt error, then passed while
+the real HTTP fixture observed the resolved instruction on the edit route. A separate RED
+proved that an unsupported adapter bought an unrelated text-only image; its correction
+leaves both catalog and provider-attempt journal empty. Existing explicit-prompt, reference
+retention, upscale and provider-failure checks remain green. This is deterministic command
+and transport evidence, not live provider acceptance or photographic variation quality.
 
 The same input audit found the combined `fill --move … --scale` form still needs the shared
 transform/vacancy owner (separate `layer transform` is not the combined command). Slice 12 owns
