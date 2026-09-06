@@ -1,4 +1,4 @@
-import { FAKE_IMAGE_EDIT_MODEL } from "@photoctl/providers";
+import { createGatewayImageModelAdapter, FAKE_IMAGE_EDIT_MODEL } from "@photoctl/providers";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 import { startGatewayFixture } from "@photoctl/test-harness/gateway-fixture";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -58,7 +58,8 @@ test("the built CLI reaches the reserved instruction-composite profile through r
         {
           provider_provenance: {
             adapter: "gateway-image-instruction-composite-v1",
-            adapter_version: "1",
+            adapter_version: createGatewayImageModelAdapter({ model: FAKE_IMAGE_EDIT_MODEL })
+              .version,
             model: FAKE_IMAGE_EDIT_MODEL,
           },
         },
@@ -116,6 +117,7 @@ async function cliFixture(options: Parameters<typeof startGatewayFixture>[1] = {
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("Fixture gateway unavailable");
   const env = {
+    PHOTOCTL_VOLUME_MAP: `${directory}=fill-runtime-volume:online`,
     AI_GATEWAY_API_KEY: "fixture-key",
     PHOTOCTL_GATEWAY_URL: `http://127.0.0.1:${address.port}`,
   };
