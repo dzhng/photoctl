@@ -19,6 +19,14 @@ different failure from premature stopping at 1,496 rows. Diagnose actual progres
 state rather than increasing the deadline. That run also predates the disconnected-socket
 and redundant-startup-probe fixes, and retained no child-log artifacts.
 
+[Run 34034506032](https://github.com/dzhng/photoctl/actions/runs/34034506032) on `9980c1f`
+has 27 failing files/54 failing tests and 171 passing files/1,021 passing tests.
+Embedding fails earlier, during warm-up, with daemon exit 1/no signal; it supplies no
+drain-completion or latency verdict. It also predates both daemon fixes and retains no
+child-log artifacts. A backup timeout is not yet a separate reproduced defect: its setup
+checks successful initialization, which can legitimately include an optional daemon-start
+warning. Read current-run child logs before attributing that failure to backup scheduling.
+
 The later Docker functional gate also has a confirmed configuration prerequisite:
 [public model distribution](ort-acquisition/README.md#public-model-distribution) is not set up.
 Fixing host tests will not supply the missing model-download URL. Keep that external
@@ -126,3 +134,13 @@ the observation boundary without changing embedding scheduling. The test checks 
 state on the same PID and still requires exactly 1,500 persisted rows and the unchanged foreground
 latency bound. The new status assertion failed against the old runtime before implementation;
 the corrected built-runtime drain passes. This does not settle the other CI failures.
+
+A bounded current-source Linux ARM64/Node 24.20 witness on `b8728d7` passes unchanged
+in 28.191 seconds under three CPUs/6 GiB with a reaping init. All 1,500 rows are persisted,
+the same daemon reports settled background work, and the foreground latency bound passes.
+The 1,508 provider responses progress continuously over 23.188 seconds, with a largest gap
+of 111 ms; the child log is empty. The existing native binary is retained, so this is not
+fresh-native or x64 CI acceptance. Scratch `drain.json` and `drain-logs.json` in the directory
+above preserve the observation. This does not explain the older shared-run timeout and
+does not justify changing scheduling, memory limits or deadlines. Await the integrated run;
+capture progress at timeout only if the drain failure repeats.
