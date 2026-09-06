@@ -26,6 +26,19 @@ UUID `0051C01F-A0CE-36FC-9386-477DA323CD33`.
 | `DSC00290.ARW` | Full-resolution lossless outdoor full-body portrait; foliage, architecture and subject boundaries. |
 | `DSC00434.ARW` | Full-resolution lossless street scene; perspective, fine structures and bright sky. |
 | `DSC00442.ARW` | Full-resolution lossless indoor portrait; glass, skin and mixed artificial light. |
+| `DSC07633.JPG` | Original camera JPEG companion: indoor portrait, EXIF orientation 1 and +08:00 capture time. |
+| `DSC07730.JPG` | Original camera JPEG companion: full-resolution night scene, EXIF orientation 8. |
+| `DSC08819.JPG` | Original camera JPEG companion: reduced-resolution coastal portrait, orientation 1. |
+| `DSC09903.JPG` | Original camera JPEG companion: reduced-resolution landscape, EXIF orientation 6. |
+| `DSC00122.JPG` | Original camera JPEG companion: high-ISO night alley, EXIF orientation 6. |
+| `DSC00442.JPG` | Original camera JPEG companion: full-resolution mixed-light portrait, orientation 1. |
+
+JPEG companions remain next to their RAWs with the original matching stems, as on
+the card. Their manifests use `.JPG.json` to avoid replacing the RAW manifests.
+They preserve the camera's encoded pixels, EXIF, orientation and color declaration;
+they are neither embedded RAW previews nor JPEGs produced by our renderer. This
+lets the same assets exercise paired import and independent non-RAW workflows.
+JPEG manifest dimensions describe stored pixels, before applying EXIF orientation.
 
 Selection uses the camera's companion JPEGs to avoid near-duplicate bursts, not as
 an independent RAW-decoding quality oracle. Small contact-sheet inspection cannot
