@@ -22,7 +22,7 @@ typedef struct photoctl_libraw_probe {
 
 typedef struct photoctl_libraw_image {
   photoctl_libraw_probe metadata;
-  uint16_t *pixels;
+  float *pixels;
   uint64_t pixel_count;
   uint32_t native_width;
   uint32_t native_height;

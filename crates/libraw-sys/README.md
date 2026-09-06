@@ -16,11 +16,20 @@ The build deliberately compiles the upstream source directly, without OpenMP, JP
 dependencies. Keep those constraints when updating LibRaw: native packages must not acquire a package
 manager path or a runtime dependency that is absent on a clean host.
 
-The wrapper stops after black subtraction and, for color-filter-array sensor data, AHD demosaicing.
+The wrapper stops after black subtraction and, for admitted three-color Bayer sensor data, AHD demosaicing.
+Its channel-difference interpolation uses a temporary gain-normalized integer representation:
+positive finite as-shot gains are divided by their maximum, then undone into floating-point
+camera samples afterward. Measured CFA sites are restored exactly. This is not output white
+balance: metadata and the common front end remain authoritative. Normalizing only downward
+avoids clipping above-white input; floating-point inverse scaling retains fractional headroom.
+Malformed/non-Bayer CFA, codec-balanced CFA, and gains whose entire ushort input range would
+round to zero are explicitly unsupported rather than silently using unbalanced interpolation.
+The private C pixel buffer is float, matching the unchanged public Rust camera-space image;
+rebuild the wrapper and its consumer together when changing that private wire.
 Formats whose codec already supplies complete RGB pixels must bypass demosaicing: treating them as
 a Bayer mosaic overwrites measured channels with fabricated detail. Codec-applied white balance
 remains explicit in the existing metadata so the common front end never applies it twice.
-Color conversion, white balance,
+Color conversion, output white balance,
 transfer curves, denoising, and crop policy belong to the shared photoctl develop pipeline; adding any
 of them here would make LibRaw pixels disagree with other camera-space decoders before that common
 pipeline sees them.

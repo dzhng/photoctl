@@ -22,7 +22,7 @@ struct NativeProbe {
 #[derive(Debug, Default)]
 struct NativeImage {
     metadata: NativeProbe,
-    pixels: *mut u16,
+    pixels: *mut f32,
     pixel_count: u64,
     native_width: u32,
     native_height: u32,
@@ -104,9 +104,9 @@ pub fn decode(path: &Path) -> Result<Image, String> {
         unsafe { photoctl_libraw_free_image(&mut native) };
         return Err("LibRaw returned an incompatible image buffer".to_owned());
     }
-    // SAFETY: the native function allocated `length` initialized u16 samples.
+    // SAFETY: the native function allocated `length` initialized f32 samples.
     let samples = unsafe { std::slice::from_raw_parts(native.pixels, length) };
-    let data = samples.iter().map(|sample| f32::from(*sample)).collect();
+    let data = samples.to_vec();
     // SAFETY: this releases the allocation exactly once after copying it.
     unsafe { photoctl_libraw_free_image(&mut native) };
     Ok(Image {
@@ -155,6 +155,9 @@ pub fn version() -> &'static str {
         .to_str()
         .expect("LibRaw version is UTF-8")
 }
+
+#[cfg(test)]
+mod interpolation_tests;
 
 #[cfg(test)]
 mod tests {

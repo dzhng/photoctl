@@ -2,10 +2,16 @@
 
 #include "libraw/libraw.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 class PhotoctlLibRaw final : public LibRaw {
+  std::vector<ushort> measured_cfa;
+  double interpolation_scale[3] = {1., 1., 1.};
+
 public:
   unsigned compression() const {
     const auto &metadata = libraw_internal_data.unpacker_data;
@@ -16,6 +22,14 @@ public:
 
   int oriented_index(int row, int column) { return flip_index(row, column); }
 
+  float camera_sample(size_t index, int channel) {
+    if (!measured_cfa.empty() &&
+        channel == FC(index / imgdata.sizes.width, index % imgdata.sizes.width))
+      return measured_cfa[index];
+    return static_cast<float>(imgdata.image[index][channel] /
+                              interpolation_scale[channel]);
+  }
+
   int decode_camera() {
     try {
       const int result = raw2image();
@@ -23,11 +37,50 @@ public:
         return result;
       adjust_bl();
       subtract_black_internal();
+      if (imgdata.idata.filters &&
+          (imgdata.idata.filters <= 1000 || imgdata.idata.colors != 3 ||
+           imgdata.color.as_shot_wb_applied))
+        return LIBRAW_FILE_UNSUPPORTED;
       pre_interpolate();
       // Non-CFA formats (including Sony reduced YCbCr RAW) already contain
       // complete RGB pixels; Bayer interpolation would overwrite real channels.
-      if (imgdata.idata.filters)
+      if (imgdata.idata.filters) {
+        const int a = FC(0, 0), b = FC(0, 1), c = FC(1, 0), d = FC(1, 1);
+        if (!((a == 1 && d == 1 && b + c == 2 && b != c) ||
+              (b == 1 && c == 1 && a + d == 2 && a != d)))
+          return LIBRAW_FILE_UNSUPPORTED;
+        for (int row = 0; row < 8; ++row)
+          for (int col = 0; col < 2; ++col)
+            if (FC(row, col) != FC(row % 2, col))
+              return LIBRAW_FILE_UNSUPPORTED;
+        double maximum_gain = 0.;
+        for (int channel = 0; channel < 3; ++channel) {
+          const double gain = imgdata.color.cam_mul[channel];
+          if (!std::isfinite(gain) || gain <= 0.)
+            return LIBRAW_FILE_UNSUPPORTED;
+          maximum_gain = std::max(maximum_gain, gain);
+        }
+        for (int channel = 0; channel < 3; ++channel) {
+          interpolation_scale[channel] =
+              imgdata.color.cam_mul[channel] / maximum_gain;
+          // Reject a representation that rounds its entire input range to zero.
+          // This lower bound also keeps the inverse endpoint below 2^33, so f32
+          // can carry it without overflow; there is no photographic gain cap.
+          if (65535. * interpolation_scale[channel] < 0.5)
+            return LIBRAW_FILE_UNSUPPORTED;
+        }
+        const size_t count = size_t(imgdata.sizes.width) * imgdata.sizes.height;
+        measured_cfa.resize(count);
+        for (size_t index = 0; index < count; ++index) {
+          const int channel =
+              FC(index / imgdata.sizes.width, index % imgdata.sizes.width);
+          measured_cfa[index] = imgdata.image[index][channel];
+          // Scales <= 1 preserve above-white sensor input without ushort clipping.
+          imgdata.image[index][channel] = static_cast<ushort>(
+              std::lround(measured_cfa[index] * interpolation_scale[channel]));
+        }
         ahd_interpolate();
+      }
       return LIBRAW_SUCCESS;
     } catch (const std::bad_alloc &) {
       return LIBRAW_UNSUFFICIENT_MEMORY;
@@ -97,10 +150,10 @@ extern "C" int photoctl_libraw_decode_file(const char *path,
   const uint32_t output_height = swaps_axes ? source_width : source_height;
   const uint64_t sample_count = static_cast<uint64_t>(output_width) *
                                 static_cast<uint64_t>(output_height) * 3;
-  if (sample_count > SIZE_MAX / sizeof(uint16_t))
+  if (sample_count > SIZE_MAX / sizeof(float))
     return LIBRAW_TOO_BIG;
-  auto *pixels = static_cast<uint16_t *>(
-      std::malloc(static_cast<size_t>(sample_count) * sizeof(uint16_t)));
+  auto *pixels = static_cast<float *>(
+      std::malloc(static_cast<size_t>(sample_count) * sizeof(float)));
   if (!pixels)
     return LIBRAW_UNSUFFICIENT_MEMORY;
 
@@ -113,10 +166,8 @@ extern "C" int photoctl_libraw_decode_file(const char *path,
       if (index == 0) image->native_origin = output / 3;
       if (index == 1) image->native_x_step = output / 3;
       if (index == source_width) image->native_y_step = output / 3;
-      const auto *source = raw.imgdata.image[index];
-      pixels[output++] = source[0];
-      pixels[output++] = source[1];
-      pixels[output++] = source[2];
+      for (int channel = 0; channel < 3; ++channel)
+        pixels[output++] = raw.camera_sample(index, channel);
     }
   }
 
