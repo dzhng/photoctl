@@ -134,6 +134,8 @@ export class DaemonServer {
   }
 
   private accept(socket: Socket): void {
+    // A timed-out client can disconnect before its response is written.
+    socket.on("error", () => socket.destroy());
     const decoder = new FrameDecoder();
     socket.on("data", (chunk) => {
       try {

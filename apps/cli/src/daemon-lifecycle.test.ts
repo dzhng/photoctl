@@ -10,6 +10,46 @@ import { encodeFrame, FrameDecoder, type DaemonClientFrame } from "@photoctl/pro
 
 const directories: string[] = [];
 
+test("a disconnected control client does not kill the daemon", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-disconnected-control-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+  const options = { libraryDir: library, env: { PHOTOCTL_NO_DAEMON: "0" } };
+  const initialized = await spawnPhotoctl(["init", "--path", library], options);
+  expect(initialized.code, JSON.stringify(initialized)).toBe(0);
+  const started = await spawnPhotoctl(["daemon", "status"], options);
+  expect(started.code, JSON.stringify(started)).toBe(0);
+  const { pid, socket } = started.json?.data as { pid: number; socket: string };
+  expect(pid).toBeGreaterThan(0);
+  let completed = false;
+  try {
+    process.kill(pid, "SIGSTOP");
+    await new Promise<void>((resolve, reject) => {
+      const client = createConnection(socket);
+      client.once("error", reject);
+      client.once("connect", () => {
+        client.write(encodeFrame({ type: "control", action: "status" }), () => client.destroy());
+      });
+      client.once("close", () => resolve());
+    });
+    process.kill(pid, "SIGCONT");
+    const status = await spawnPhotoctl(["daemon", "status"], options);
+    expect(status.code, JSON.stringify(status)).toBe(0);
+    expect(status.json?.data).toMatchObject({ pid });
+    const doctor = await spawnPhotoctl(["doctor"], options);
+    expect(doctor.code, JSON.stringify(doctor)).toBe(0);
+    completed = true;
+  } finally {
+    try {
+      process.kill(pid, "SIGCONT");
+    } catch {
+      // A regression can leave the daemon already exited.
+    }
+    const stopped = await spawnPhotoctl(["daemon", "stop"], options);
+    if (completed) expect(stopped.code, JSON.stringify(stopped)).toBe(0);
+  }
+}, 30_000);
+
 test("a lost response does not replay a committed command", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-lost-response-"));
   directories.push(parent);
