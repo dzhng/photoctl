@@ -5207,18 +5207,18 @@
   the parent will surface this choice while implementation proceeds.
 - **Confidence:** Medium.
 
-### Outpaint coverage — Give intrinsic masks their own persisted recipe identity
+### Outpaint coverage — One exterior owner at independent native density
 
-- **When:** 12f3 core checkpoint, 2026-09-06.
-- **The choice:** A rotated cropped photo expanded to a larger canvas stores an exterior mask in
-  that expanded raster. The compositor reads this coverage at intrinsic dimensions; its outer
-  placement owns the physical frame. Existing catalog-space masks keep their projection behavior.
-- **The gap:** Intrinsic and catalog-space coverage have different coordinate meaning; making
-  the outpaint caller separately interpret coverage would duplicate the compositor's ownership.
-- **The reach:** `mask_composite@2` distinguishes intrinsic coverage. The existing fresh border
-  schema admits it directly; no additional migration or old-catalog compatibility is required.
-  Invalid intrinsic dimensions are rejected instead of being rescaled as catalog coverage.
-- **Verdict:** Settled with parent review; no new table, column or second mask compositor.
+- **When:** Native-density clean cutover, 2026-09-06.
+- **The choice:** Generated/upscaled RGB is physically placed at its native raster; the exterior
+  layer mask alone owns coverage. Its authored raster need not match richer paid content.
+- **The gap:** The earlier intrinsic masked composite retained a hidden historical interior and
+  resampled purchased detail back to authored size, duplicating coverage without user benefit.
+- **The reach:** The shared descriptor consumes content and mask roots; canvas projection reads
+  each frame independently. Ordinary masked fills retain their existing composite contract.
+  Border `composite.node` identifies the final photographic output. The redundant recipe and
+  fresh-schema allowance are removed; no migration or compatibility reader is introduced.
+- **Verdict:** Parent-approved clean cut. Public pixel tests distinguish native detail from size.
 - **Confidence:** High.
 
 ### Outpaint refresh preparation — Retain immutable drafts without activating them
@@ -5243,29 +5243,26 @@
 - **When:** 12f3 refresh/retry follow-up, 2026-09-06.
 - **The choice:** A border's image was generated successfully but its upscaler failed. After the
   user moves the border and edits exposure, `fill --layer` with the same generation intent keeps
-  that purchased image and retries density for its original authored size. Placement and the outer
+  that purchased image and retries density for its current physical placement. Placement and the outer
   exterior mask stay unchanged. A different prompt is refused rather than silently buying a new
   image; explicit refresh remains the operation that regenerates from current context.
 - **The gap:** Ordinary fill can replace generation on a changed request, but applying that fallback
   to a border would conflate its permanent expansion intent with a new canvas operation.
 - **The reach:** The existing immediate-branch lineage owner may look through outpaint placement
   descendants, because those move the already authored border and do not alter its generation input.
-  Ordinary fill retains its existing stricter ancestry rule. This recovers authored density, not
-  density needed by an arbitrary later scale; transform-driven density maintenance remains separate.
+  Ordinary fill retains its existing stricter ancestry rule. Transform, explicit retry and refresh
+  share the required density calculation. Pure movement cannot silently retry a failed paid step.
 - **Verdict:** Sound. Retrying a failed processing step does not authorize replaying generation or
   expanding the document twice.
 - **Confidence:** High.
 
-### Outpaint refreshed border — Keep its protected intrinsic interior hidden
+### Outpaint refreshed border — Do not retain a second historical interior
 
 - **When:** 12f3 refresh/retry follow-up, 2026-09-06.
-- **The choice:** After exposure changes, refreshing a border replaces its generated exterior but
-  retains the protected interior image stored inside that border's intrinsic composite. This is
-  not the displayed photograph's interior: the unchanged exterior-only outer mask hides it, and
-  the current photographic output underneath supplies the visible source and earlier layers.
-- **The gap:** Rebuilding a generated branch needs a protected base input even though that base
-  is not allowed to replace the live interior. Replacing it during refresh would duplicate current
-  context inside a border whose visible ownership is restricted to its exterior ring.
+- **The choice:** Refresh replaces the paid RGB while the sole exterior mask and physical placement
+  remain authored. The live photographic output beneath supplies source and earlier layers.
+- **The gap:** The initial implementation kept a hidden historical interior to satisfy the ordinary
+  fill descriptor. The native-density cutover removes that unnecessary representation instead.
 - **The reach:** The shared branch rebuild preserves the same exterior mask and placement for
   retry and refresh. A future operation that permits editing a border's interior mask would need
   to revisit this invariant; current retry rejects fitting and feathering changes.
@@ -5276,8 +5273,8 @@
 ### Outpaint core — Share paid preparation without early document activation
 
 - **When:** 12f3 core checkpoint, 2026-09-06.
-- **The choice:** An untouched source is normalized for the paid input while its canonical source
-  graph stays as drafts until successful border activation. An edited photo instead samples its
+- **The choice:** An untouched source's deterministic graph is published and evaluated through the
+  normal source execution owner without activating a document. An edited photo instead samples its
   immutable markup-free photographic output, including earlier photographic layers. Authored frames
   and predecessor identities distinguish that snapshot from expanded provider preprocessing.
 - **The gap:** Eager document or temporary-layer creation would mutate a failed/no-op request;
@@ -5286,9 +5283,9 @@
   published exterior mask is reused rather than allocated/encoded twice; caller-specific limits
   supplement the render growth owner. Post-generation publication failure finalizes the retained
   paid attempt without losing the captured original. This does not prove full-resolution resource
-  acceptance. Retry, refresh and automatic transform-density maintenance stay explicitly open;
+  acceptance. Retry, refresh and automatic transform-density maintenance use the same fill lineage;
   ordinary border placement remains available through its existing owner.
 - **Verdict:** Core correctness checkpoint only; the existing release resource gate and complete
   authored-layer lifecycle journey remain required before feature completion.
 - **Confidence:** High for the tested source/activation contract; medium for full-scale resource
-  behavior and the unimplemented refresh lifecycle.
+  behavior.

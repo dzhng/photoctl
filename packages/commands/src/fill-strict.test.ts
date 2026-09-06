@@ -431,7 +431,7 @@ test("expanded fill changes the final document outside the selection and preserv
     const currentMask = async () => {
       const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
       const layer = document.layers.find(({ id }) => id === segmented.layer_id)!;
-      const branch = (await describeFillBranch(fixture.handle, fixture.id, layer.contentNodeId))!;
+      const branch = (await describeFillBranch(fixture.handle, fixture.id, layer))!;
       const evaluatedMask = await evaluateGraphNode({
         database: fixture.handle,
         libraryPath: fixture.handle.path,
@@ -523,7 +523,7 @@ test("feather coverage is applied once through fill, fractional transforms, and 
     const assertCoverage = async () => {
       const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
       const layer = document.layers.find(({ id }) => id === segmented.layer_id)!;
-      const branch = (await describeFillBranch(fixture.handle, fixture.id, layer.contentNodeId))!;
+      const branch = (await describeFillBranch(fixture.handle, fixture.id, layer))!;
       expect(branch.fit).toEqual({ operation: "fit", mode: "strict", expand_px: 0, feather_px: 2 });
       const evaluate = async (nodeId: string) =>
         (
@@ -753,7 +753,7 @@ test("free fit softens selection and explicit zero strength removes feather with
     const coverage = async () => {
       const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
       const layer = document.layers.find(({ id }) => id === segmented.layer_id)!;
-      const branch = (await describeFillBranch(fixture.handle, fixture.id, layer.contentNodeId))!;
+      const branch = (await describeFillBranch(fixture.handle, fixture.id, layer))!;
       const artifact = await evaluateGraphNode({
         database: fixture.handle,
         libraryPath: fixture.handle.path,

@@ -44,7 +44,9 @@ export async function loadLogicalFrame(
      SELECT node.kind, node.parameters, photo.w, photo.h, artifact.w AS artifact_w, artifact.h AS artifact_h FROM lineage
      JOIN image_nodes AS node ON node.photo_id = $1 AND node.id = lineage.node_id
      JOIN photos AS photo ON photo.id = $1
-     LEFT JOIN image_artifacts artifact ON artifact.artifact_hash = node.parameters->>'artifact_hash'
+     LEFT JOIN node_executions execution ON execution.photo_id = node.photo_id AND execution.node_id = node.id
+       AND execution.execution_id = node.parameters->'request'->>'execution_id'
+     LEFT JOIN image_artifacts artifact ON artifact.artifact_hash = COALESCE(node.parameters->>'artifact_hash', execution.output_artifact_hash)
      ORDER BY lineage.depth`,
     [photoId, nodeId],
   );

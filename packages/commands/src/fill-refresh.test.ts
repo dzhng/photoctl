@@ -370,11 +370,7 @@ describe.sequential("fill branch refresh", () => {
       );
       const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
       const selected = document.layers.find(({ id }) => id === segmented.layer_id)!;
-      const before = (await describeFillBranch(
-        fixture.handle,
-        fixture.id,
-        selected.contentNodeId,
-      ))!;
+      const before = (await describeFillBranch(fixture.handle, fixture.id, selected))!;
       fixture.replaceGenerationMode("smallerdims");
 
       const refreshed = layerRefreshDataSchema.parse(
@@ -421,11 +417,7 @@ describe.sequential("fill branch refresh", () => {
       ]);
       const document = (await loadActiveDocument(fixture.handle, fixture.id))!;
       const selected = document.layers.find(({ id }) => id === segmented.layer_id)!;
-      const branch = (await describeFillBranch(
-        fixture.handle,
-        fixture.id,
-        selected.contentNodeId,
-      ))!;
+      const branch = (await describeFillBranch(fixture.handle, fixture.id, selected))!;
       const layers = document.layers.map((layer) => ({
         layer: { layerId: layer.id },
         name: layer.name,

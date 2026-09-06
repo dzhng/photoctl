@@ -7,6 +7,7 @@ import {
   savedRenderFrame,
   assertNewRasterSize,
   type RenderFrame,
+  frameAtRaster,
 } from "./frame.js";
 import {
   loadActiveDocument,
@@ -68,6 +69,7 @@ export async function commitCanvasExpansion(
   request: Pick<CommitRevisionRequest, "nodes" | "artifacts" | "executions"> & {
     prepared: Awaited<ReturnType<typeof prepareCanvasExpansion>>;
     content: NodeReference;
+    contentRaster?: RenderFrame["raster"];
     exteriorMask?: PublishedArtifact;
   },
 ) {
@@ -140,14 +142,21 @@ export async function commitCanvasExpansion(
       },
       ...(
         [
-          ["border-content-placement", request.content],
-          ["border-mask-placement", { localKey: "border-mask" }],
+          [
+            "border-content-placement",
+            request.content,
+            request.contentRaster ?? prepared.frame.raster,
+          ],
+          ["border-mask-placement", { localKey: "border-mask" }, prepared.frame.raster],
         ] as const
-      ).map(([localKey, input]) => ({
+      ).map(([localKey, input, raster]) => ({
         localKey,
         kind: "transform" as const,
         recipeVersion: 2,
-        parameters: { matrix: [1, 0, 0, 1, 0, 0], frame: savedRenderFrame(prepared.frame) },
+        parameters: {
+          matrix: [1, 0, 0, 1, 0, 0],
+          frame: savedRenderFrame(frameAtRaster(prepared.frame, raster)),
+        },
         inputs: [input],
       })),
     ],

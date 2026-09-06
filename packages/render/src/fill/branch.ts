@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop -- Graph ancestry must be inspected in dependency order. */
 import { warningCodes, type Warning } from "@photoctl/protocol";
 import { z } from "zod";
-import { savedFrameSchema } from "../graph/frame.js";
+import { savedFrameSchema, parseRenderFrame } from "../graph/frame.js";
 import { inspectGraphNode, type GraphNodeRecord } from "../graph/inspection.js";
 import {
   imageNodeRegistry,
@@ -37,14 +37,12 @@ export const outpaintIntentSchema = z
   })
   .strict();
 
-export interface FillBranchDescriptor {
+interface FillBranchState {
   contentRootId: string;
-  /** Ordered from the layer root toward the strict composite. */
+  /** Ordered from the layer root toward its replacement content. */
   descendants: GraphNodeRecord[];
   compensations: GraphNodeRecord[];
   transforms: GraphNodeRecord[];
-  composite: GraphNodeRecord;
-  resample: GraphNodeRecord;
   upscale?: GraphNodeRecord;
   generation: GraphNodeRecord;
   generationExecution: GraphNodeRecord["executions"][number];
@@ -67,54 +65,48 @@ export interface FillBranchDescriptor {
   selectionNodeId?: string;
   upscaleIdentity?: FillUpscaleIdentity;
   sourceContext: { tier: string; pixelScale: number; resolutionLimited: boolean };
-  outpaint?: z.infer<typeof outpaintIntentSchema>;
   upscaleExecution?: GraphNodeRecord["executions"][number];
   upscaleProvider?: ExternalExecutionProvenance;
 }
 
+export type FillBranchDescriptor = FillBranchState &
+  (
+    | { outpaint: z.infer<typeof outpaintIntentSchema>; composite?: never; resample?: never }
+    | { outpaint?: never; composite: GraphNodeRecord; resample: GraphNodeRecord }
+  );
+
 /**
  * Describes the one canonical fill ancestry shared by retry, refresh, and later
  * transform-density maintenance. Descendants run from the layer root down toward
- * the strict composite; paid nodes remain named explicitly.
+ * the replacement content; paid nodes remain named explicitly.
  */
 export async function describeFillBranch(
   database: GraphDatabase,
   photoId: string,
-  contentRootId: string,
+  selected: { contentNodeId: string; maskNodeId: string },
 ): Promise<FillBranchDescriptor | undefined> {
+  const contentRootId = selected.contentNodeId;
   const outer = await inspectModifierPrefix(database, photoId, contentRootId);
   if (!outer) return undefined;
   const descendants = outer.nodes;
   const current = outer.terminal;
-  const compositeParameters = imageNodeRegistry.mask_composite.parameters.safeParse(
-    current.parameters,
-  );
-  if (
-    current.kind !== "mask_composite" ||
-    (current.recipeVersion !== 1 && current.recipeVersion !== 2) ||
-    current.inputNodeIds.length !== 3 ||
-    !compositeParameters.success ||
-    compositeParameters.data.feather !== 0
-  )
-    return undefined;
-  const composite = current;
-  const baseNodeId = composite.inputNodeIds[0]!;
-  const base = await inspectModifierPrefix(database, photoId, baseNodeId);
-  if (!base) return undefined;
-  const resample = await inspectGraphNode(database, {
-    photoId,
-    nodeId: composite.inputNodeIds[1]!,
-  });
-  if (resample.kind !== "resample" || resample.inputNodeIds.length !== 1) return undefined;
-  const generationRequestCandidate = await generationRequestBelow(database, photoId, resample);
-  if (!generationRequestCandidate) return undefined;
-  const crop = generationRequestCandidate.crop;
-  const frame = resampleFrame(resample);
-  if (!frame) return undefined;
-  let placement = await inspectGraphNode(database, {
-    photoId,
-    nodeId: resample.inputNodeIds[0]!,
-  });
+  let composite: GraphNodeRecord | undefined;
+  let resample: GraphNodeRecord | undefined;
+  let placement = current;
+  if (current.kind === "mask_composite") {
+    const parsed = imageNodeRegistry.mask_composite.parameters.safeParse(current.parameters);
+    if (
+      current.recipeVersion !== 1 ||
+      current.inputNodeIds.length !== 3 ||
+      !parsed.success ||
+      parsed.data.feather !== 0
+    )
+      return undefined;
+    composite = current;
+    resample = await inspectGraphNode(database, { photoId, nodeId: composite.inputNodeIds[1]! });
+    if (resample.kind !== "resample" || resample.inputNodeIds.length !== 1) return undefined;
+    placement = await inspectGraphNode(database, { photoId, nodeId: resample.inputNodeIds[0]! });
+  }
   let upscale: GraphNodeRecord | undefined;
   if (placement.kind === "upscale") {
     if (
@@ -136,17 +128,15 @@ export async function describeFillBranch(
     !validPaidNode(placement, "generate")
   )
     return undefined;
-  const generationRequest = asRecord(asRecord(placement.parameters)?.request);
+  const generationRequest = asRecord(asRecord(placement.parameters)?.request)!;
   const outpaint =
     generationRequest?.outpaint === undefined
       ? undefined
       : outpaintIntentSchema.parse(generationRequest.outpaint);
-  if (
-    !Array.isArray(generationRequest?.crop) ||
-    generationRequest.crop.length !== 4 ||
-    generationRequest.crop.some((value, index) => value !== [crop.x, crop.y, crop.w, crop.h][index])
-  )
-    return undefined;
+  const [x, y, w, h] = generationRequest.crop as number[];
+  const crop = { x: x!, y: y!, w: w!, h: h! };
+  const [returnedW, returnedH] = generationRequest.returned as number[];
+  const generationDimensions = { w: returnedW!, h: returnedH! };
   const generationExecution = pinnedExecution(placement);
   const upscaleExecution = upscale ? pinnedExecution(upscale) : undefined;
   if (!generationExecution || (upscale && !upscaleExecution)) return undefined;
@@ -158,6 +148,58 @@ export async function describeFillBranch(
   const generationProvider = providerFromExecution(generationExecution);
   const upscaleProvider = upscaleExecution ? providerFromExecution(upscaleExecution) : undefined;
   const sourceContext = asSourceContext(generationRequest?.source_context);
+  const upscaleIdentity = asUpscaleIdentity(generationRequest?.upscale, upscale);
+  if (!generationProvider || !sourceContext || (upscaleExecution && !upscaleProvider))
+    return undefined;
+  const shared = {
+    contentRootId,
+    descendants,
+    compensations: descendants.filter(({ kind }) => kind === "delta"),
+    transforms: descendants.filter(({ kind }) => kind === "transform"),
+    ...(upscale ? { upscale } : {}),
+    generation: placement,
+    generationExecution,
+    generationProvider,
+    densityInput: upscale ?? placement,
+    densityInputDimensions,
+    crop,
+    generationDimensions,
+    ...(upscaleIdentity ? { upscaleIdentity } : {}),
+    sourceContext,
+    ...(upscaleExecution ? { upscaleExecution } : {}),
+    ...(upscaleProvider ? { upscaleProvider } : {}),
+  };
+  if (outpaint) {
+    if (composite) return undefined;
+    const mask = await inspectModifierPrefix(database, photoId, selected.maskNodeId);
+    if (!mask || mask.terminal.kind !== "mask" || mask.terminal.recipeVersion !== 1)
+      return undefined;
+    const frame = parseRenderFrame(outpaint.output_frame);
+    return {
+      ...shared,
+      outpaint,
+      frame: frame.raster,
+      baseNodeId: placement.inputNodeIds[0]!,
+      baseAncestry: [],
+      maskNodeId: mask.terminal.id,
+      permanentMaskNodeId: mask.terminal.id,
+      currentMatrix: combinedTransform(descendants),
+      generationInputMatrix: [1, 0, 0, 1, 0, 0],
+      generationPlacementMatrix: composeTransformMatrices(frame.rasterToBase, [
+        frame.raster.w / generationDimensions.w,
+        0,
+        0,
+        frame.raster.h / generationDimensions.h,
+        0,
+        0,
+      ]),
+    };
+  }
+  if (!composite || !resample) return undefined;
+  const baseNodeId = composite.inputNodeIds[0]!;
+  const base = await inspectModifierPrefix(database, photoId, baseNodeId);
+  const frame = resampleFrame(resample);
+  if (!base || !frame) return undefined;
   const storedInputMatrix = asMatrix(generationRequest?.input_matrix);
   const generationInput = await inspectModifierPrefix(
     database,
@@ -180,12 +222,7 @@ export async function describeFillBranch(
     outerMatrix,
     composeTransformMatrices(maskMatrix, fit ? generationInputMatrix : [1, 0, 0, 1, 0, 0]),
   );
-  const resampleMatrix = await placementMatrix(
-    database,
-    resample,
-    crop,
-    generationRequestCandidate.returned,
-  );
+  const resampleMatrix = await placementMatrix(database, resample, crop, generationDimensions);
   if (
     !resampleMatrix ||
     (resample.recipeVersion === 1 && !fit && !sameMatrix(baseMatrix, maskMatrix))
@@ -196,39 +233,19 @@ export async function describeFillBranch(
     invertTransformMatrix(currentMatrix),
     currentPlacement,
   );
-  const upscaleIdentity = asUpscaleIdentity(generationRequest?.upscale, upscale);
-  if (!generationProvider || !sourceContext || (upscaleExecution && !upscaleProvider)) {
-    return undefined;
-  }
   return {
-    contentRootId,
-    ...(outpaint ? { outpaint } : {}),
-    descendants,
-    compensations: descendants.filter(({ kind }) => kind === "delta"),
-    transforms: descendants.filter(({ kind }) => kind === "transform"),
+    ...shared,
     composite,
     resample,
-    ...(upscale ? { upscale } : {}),
-    generation: placement,
-    generationExecution,
-    generationProvider,
-    densityInput: upscale ?? placement,
-    densityInputDimensions,
     baseNodeId,
     baseAncestry: base.nodes,
     maskNodeId: composite.inputNodeIds[2]!,
-    crop,
     frame,
     currentMatrix,
     generationInputMatrix,
-    generationDimensions: generationRequestCandidate.returned,
     generationPlacementMatrix,
     permanentMaskNodeId: mask.terminal.id,
     ...(fit ? { fit, selectionNodeId: mask.terminal.inputNodeIds[0]! } : {}),
-    ...(upscaleIdentity ? { upscaleIdentity } : {}),
-    sourceContext,
-    ...(upscaleExecution ? { upscaleExecution } : {}),
-    ...(upscaleProvider ? { upscaleProvider } : {}),
   };
 }
 
@@ -249,36 +266,6 @@ function resampleFrame(resample: GraphNodeRecord): { w: number; h: number } | un
     resample.recipeVersion === 1 ? resampleV1ParametersSchema : resampleParametersSchema
   ).safeParse(resample.parameters);
   return parsed.success ? { w: parsed.data.w, h: parsed.data.h } : undefined;
-}
-
-async function generationRequestBelow(
-  database: GraphDatabase,
-  photoId: string,
-  resample: GraphNodeRecord,
-): Promise<
-  | { crop: { x: number; y: number; w: number; h: number }; returned: { w: number; h: number } }
-  | undefined
-> {
-  let node = await inspectGraphNode(database, { photoId, nodeId: resample.inputNodeIds[0]! });
-  if (node.kind === "upscale") {
-    if (node.inputNodeIds.length !== 1) return undefined;
-    node = await inspectGraphNode(database, { photoId, nodeId: node.inputNodeIds[0]! });
-  }
-  const request = asRecord(asRecord(node.parameters)?.request);
-  if (
-    node.kind !== "generate" ||
-    !Array.isArray(request?.crop) ||
-    request.crop.length !== 4 ||
-    !request.crop.every(Number.isSafeInteger) ||
-    !Array.isArray(request.returned) ||
-    request.returned.length !== 2 ||
-    !request.returned.every(positiveInteger)
-  )
-    return undefined;
-  return {
-    crop: { x: request.crop[0]!, y: request.crop[1]!, w: request.crop[2]!, h: request.crop[3]! },
-    returned: { w: request.returned[0]!, h: request.returned[1]! },
-  };
 }
 
 async function placementMatrix(

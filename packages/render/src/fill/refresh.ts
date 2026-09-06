@@ -43,6 +43,7 @@ import { describeFillBranch, type FillBranchDescriptor } from "./branch.js";
 import { fillProviderInputs, decodeExternalImage, image16Png } from "./external-pixels.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./pipeline.js";
 import { rebuildFillBranch } from "./rebuild.js";
+import { fillPlacementDimensions, planOutputDensity } from "./density.js";
 
 export interface RefreshFillRequest {
   photoId: string;
@@ -65,7 +66,7 @@ export async function refreshFillLayer(
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  let branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  let branch = await describeFillBranch(database, request.photoId, selected);
   if (!branch) throw new Error("Layer does not contain a refreshable fill branch");
   const target = resolveFillRefreshTarget(branch, request.from);
   const nodes: NodeDraft[] = [];
@@ -162,7 +163,7 @@ export async function refreshFillLayer(
         database,
         libraryPath,
         request,
-        branch.upscale,
+        branch,
         generationNodeId,
         generationReference,
         generationArtifact.artifact,
@@ -221,13 +222,13 @@ export async function refreshFillLayer(
     preserveCompensations: !generationRefreshed,
   });
   nodes.push(...rebuilt.nodes);
+  const densityTarget = fillPlacementDimensions(branch);
   const layers: RevisionLayerDraft[] = document.layers.map((layer) => ({
     layer: { layerId: layer.id },
     name: layer.name,
     z: layer.z,
     contentNode: layer.id === layerId ? rebuilt.content : { nodeId: layer.contentNodeId },
-    maskNode:
-      layer.id === layerId && !branch.outpaint ? rebuilt.mask : { nodeId: layer.maskNodeId },
+    maskNode: layer.id === layerId ? rebuilt.mask : { nodeId: layer.maskNodeId },
     opacity: layer.opacity,
     blend: layer.blend,
     enabled: layer.enabled,
@@ -278,15 +279,17 @@ export async function refreshFillLayer(
       provider: upscaleProvider,
       model: upscaleProvider?.model ?? request.upscaleModel,
       input: { w: generationArtifact.artifact.w, h: generationArtifact.artifact.h },
-      target: { w: branch.crop.w, h: branch.crop.h },
+      target: densityTarget,
       generated: { w: placementArtifact.w, h: placementArtifact.h },
-      final: { w: branch.crop.w, h: branch.crop.h },
+      final: densityTarget,
       densitySatisfied:
-        placementArtifact.w >= branch.crop.w && placementArtifact.h >= branch.crop.h,
+        placementArtifact.w >= densityTarget.w && placementArtifact.h >= densityTarget.h,
       warnings: warnings.filter(({ code }) => code.startsWith("upscale_")),
       reused: upscaleReused,
     },
-    compositeNode: committed.nodes[rebuilt.compositeKey]!.id as `node_${string}`,
+    compositeNode: (rebuilt.compositeKey
+      ? committed.nodes[rebuilt.compositeKey]!.id
+      : committed.roots.output!) as `node_${string}`,
     executions: [
       {
         kind: "generate" as const,
@@ -313,9 +316,6 @@ export function resolveFillRefreshTarget(
   branch: FillBranchDescriptor,
   from: string | undefined,
 ): { id: string; kind: "generate" | "upscale" } {
-  if (branch.composite.recipeVersion === 2 && !branch.outpaint) {
-    throw new PhotoctlError("usage", "Outpaint layer refresh is not yet supported");
-  }
   const candidates = [branch.generation, ...(branch.upscale ? [branch.upscale] : [])];
   if (!from) return { id: branch.generation.id, kind: "generate" };
   const matches = candidates.filter(({ id }) => id === from || id.startsWith(from));
@@ -386,11 +386,7 @@ async function executeGenerationRefresh(
   );
   const projection = await loadBaseProjection(database, request.photoId, baseEvaluation);
   if (branch.outpaint)
-    base = prepareOutpaintPixels(
-      base,
-      projection,
-      parseRenderFrame(branch.outpaint.output_frame),
-    ).base;
+    base = prepareOutpaintPixels(base, projection, parseRenderFrame(branch.outpaint.output_frame));
   const baseToInput = branch.outpaint
     ? ([1, 0, 0, 1, 0, 0] as const)
     : composeTransformMatrices(
@@ -600,11 +596,13 @@ async function executeUpscaleRefresh(
   database: GraphDatabase,
   libraryPath: string,
   request: RefreshFillRequest,
-  upscale: NonNullable<FillBranchDescriptor["upscale"]>,
+  branch: FillBranchDescriptor,
   generationNodeId: string,
   generationReference: NodeReference,
   generationArtifact: Awaited<ReturnType<typeof publishArtifact>>,
 ) {
+  const upscale = branch.upscale;
+  if (!upscale) throw new Error("Layer does not contain an upscale node");
   const parameters = objectParameters(upscale.parameters, "upscale");
   const adapter = request.upscaleAdapter!;
   if (parameters.adapter !== adapter.id) {
@@ -612,13 +610,30 @@ async function executeUpscaleRefresh(
   }
   const controls = objectParameters(parameters.controls, "upscale controls");
   const prompt = stringValue(controls.derived_prompt, "upscale derived prompt");
-  const scale = numberValue(parameters.scale, "upscale scale");
+  const storedScale = numberValue(parameters.scale, "upscale scale");
   const storedRequest = objectParameters(parameters.request, "upscale request");
   const seed = numberOrUndefined(storedRequest.seed, "upscale seed");
   const generationImage = await readArtifactImage(
     generationArtifact.path,
     generationArtifact.artifactHash,
   );
+  const target = fillPlacementDimensions(branch);
+  const density = planOutputDensity({
+    target: { kind: "base_space_provider_crop", dimensionsIncludingPad: target },
+    generated: {
+      id: generationArtifact.artifactHash,
+      dimensions: { w: generationImage.w, h: generationImage.h },
+    },
+    cachedUpscales: [],
+    supportedScales: adapter.supportedScales,
+    limits: adapter.limits,
+    sourceContext: branch.sourceContext,
+  });
+  const operation = density.upscale.operations.find((candidate) => candidate.kind === "upscale");
+  if (!operation && !density.upscale.densitySatisfied)
+    return { ok: false as const, warnings: density.upscale.warnings };
+  // Explicit refresh still reruns an existing upscale when generation already covers placement.
+  const scale = operation?.scale ?? storedScale;
   const result = await executeRetainedUpscale(database, libraryPath, adapter, {
     artifact: {
       bytes: await image16Png(generationImage),
@@ -636,6 +651,7 @@ async function executeUpscaleRefresh(
   const provenance = result.value.provenance;
   const nextParameters = {
     ...parameters,
+    scale,
     adapter_version: adapter.version,
     model_version: provenance.modelVersion,
     request: { ...storedRequest, execution_id: executionId },
@@ -668,8 +684,8 @@ async function executeUpscaleRefresh(
     inputPx: generationImage.w * generationImage.h,
     targetPx: result.samplingDimensions.w * result.samplingDimensions.h,
     attempt: 1,
-    densityVerdict: result.densitySatisfied ? "satisfied" : "limited",
-    warnings: result.warnings,
+    densityVerdict: artifact.w >= target.w && artifact.h >= target.h ? "satisfied" : "limited",
+    warnings: [...density.upscale.warnings, ...result.warnings],
   };
   const execution: PreparedNodeExecution = {
     providerImageAttemptId: result.attemptId,
@@ -692,7 +708,7 @@ async function executeUpscaleRefresh(
     artifact,
     execution,
     provider,
-    warnings: result.warnings,
+    warnings: provider.warnings,
   };
 }
 

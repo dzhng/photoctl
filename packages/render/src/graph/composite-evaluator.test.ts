@@ -1,7 +1,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import { testDatabase } from "../../../library/src/migrations/test-database.js";
 import { migrate } from "../../../library/src/migrations/runner.js";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
@@ -17,131 +17,6 @@ import { commitRevision } from "./store.js";
 
 const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c022";
 const directories: string[] = [];
-
-test.each([4, 3])(
-  "intrinsic mask composition uses exact raster coverage independently of catalog dimensions (mask width=%s)",
-  async (maskWidth) => {
-    const { db, library, sourceId, revisionId } = await sourceGraph();
-    try {
-      const data = new Float32Array(maskWidth * 2);
-      data[maskWidth - 1] = 1;
-      data[maskWidth * 2 - 1] = 1;
-      const pinned = await publishArtifact(
-        library,
-        await normalizeMaskArtifact({ w: maskWidth, h: 2, data }),
-      );
-      const committed = await commitRevision(db, {
-        photoId,
-        expectedRevisionId: revisionId,
-        artifacts: [pinned],
-        nodes: [
-          {
-            localKey: "base",
-            kind: "resample",
-            recipeVersion: 2,
-            parameters: { w: 4, h: 2, kernel: "lanczos3", matrix: [1, 0, 0, 1, 0, 0] },
-            inputs: [{ nodeId: sourceId }],
-          },
-          {
-            localKey: "content",
-            kind: "solid",
-            recipeVersion: 1,
-            parameters: { w: 4, h: 2, space: "scene-linear-rec2020", rgb: [1, 0.5, 0.25] },
-            inputs: [],
-          },
-          mask("coverage", pinned.artifactHash),
-          {
-            localKey: "composite",
-            kind: "mask_composite",
-            recipeVersion: 2,
-            parameters: { feather: 0, mask_space: "intrinsic" },
-            inputs: [{ localKey: "base" }, { localKey: "content" }, { localKey: "coverage" }],
-          },
-        ],
-        rootUpdates: [{ root: "output", node: { localKey: "composite" } }],
-      });
-      const base = new Float32Array(Array.from({ length: 18 }, (_, index) => index / 32));
-      const result = evaluateGraphNode({
-        database: db,
-        libraryPath: library,
-        photoId,
-        nodeId: committed.roots.output!,
-        source: async () => sourceEvaluation(base),
-      });
-      if (maskWidth !== 4) {
-        await expect(result).rejects.toThrow("Composite mask artifact dimensions do not match");
-      } else {
-        const evaluated = await result;
-        const output = await readArtifactLinear(evaluated.artifact.path);
-        expect([output.w, output.h]).toEqual([4, 2]);
-        expect(output.data).toEqual(
-          new Float32Array([...base.slice(0, 9), 1, 0.5, 0.25, ...base.slice(9), 1, 0.5, 0.25]),
-        );
-      }
-    } finally {
-      await db.close();
-    }
-  },
-);
-
-test("schema 21 upgrades without changing a stored catalog-mask composite or its output", async () => {
-  const { db, library, sourceId, revisionId } = await sourceGraph(21);
-  try {
-    const pinned = await publishMask(db, library, new Float32Array([0, 1, 0, 0, 0, 0]));
-    const committed = await commitRevision(db, {
-      photoId,
-      expectedRevisionId: revisionId,
-      nodes: [
-        {
-          localKey: "content",
-          kind: "solid",
-          recipeVersion: 1,
-          parameters: { w: 3, h: 2, space: "scene-linear-rec2020", rgb: [1, 0.5, 0.25] },
-          inputs: [],
-        },
-        mask("coverage", pinned.artifactHash),
-        {
-          localKey: "composite",
-          kind: "mask_composite",
-          recipeVersion: 1,
-          parameters: { feather: 0 },
-          inputs: [{ nodeId: sourceId }, { localKey: "content" }, { localKey: "coverage" }],
-        },
-      ],
-      rootUpdates: [{ root: "output", node: { localKey: "composite" } }],
-    });
-    const request = {
-      database: db,
-      libraryPath: library,
-      photoId,
-      nodeId: committed.roots.output!,
-      source: async () => sourceEvaluation(new Float32Array(18).fill(0.125)),
-    };
-    const before = await evaluateGraphNode(request);
-    const nodeBefore = (
-      await db.query("SELECT * FROM image_nodes WHERE id = $1", [committed.roots.output])
-    ).rows;
-    expect(await migrate(db)).toMatchObject({ fromVersion: 21, applied: [22] });
-    expect(
-      (await db.query("SELECT * FROM image_nodes WHERE id = $1", [committed.roots.output])).rows,
-    ).toEqual(nodeBefore);
-    const after = await evaluateGraphNode(request);
-    expect(after.artifact.artifactHash).toBe(before.artifact.artifactHash);
-    expect((await readArtifactLinear(after.artifact.path)).data).toEqual(
-      new Float32Array([
-        0.125,
-        0.125,
-        0.125,
-        1,
-        0.5,
-        0.25,
-        ...Array.from({ length: 12 }, () => 0.125),
-      ]),
-    );
-  } finally {
-    await db.close();
-  }
-});
 
 afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
@@ -334,22 +209,14 @@ test("a corrupt permanent mask is marked unavailable on its first evaluation", a
   }
 });
 
-async function sourceGraph(schema?: 21): Promise<{
+async function sourceGraph(): Promise<{
   db: PGlite;
   library: string;
   sourceId: string;
   revisionId: string;
 }> {
   const db = await testDatabase();
-  if (schema === 21) {
-    await db.exec(
-      await readFile(
-        new URL("../../../../fixtures/libraries/schema-v21.pgsql", import.meta.url),
-        "utf8",
-      ),
-    );
-    await db.exec("SET search_path TO public");
-  } else await migrate(db);
+  await migrate(db);
   await db.query(
     `INSERT INTO photos (id, content_key, size, w, h, orientation)
      VALUES ($1, 'ck_10b2_composite', 1, 3, 2, 1)`,

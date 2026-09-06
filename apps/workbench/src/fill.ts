@@ -34,9 +34,10 @@ export async function buildFillReport(
     const layerId = await resolveLayerId(library, photoId, layer);
     const selected = document.layers.find(({ id }) => id === layerId);
     if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-    const branch = await describeFillBranch(library, photoId, selected.contentNodeId);
+    const branch = await describeFillBranch(library, photoId, selected);
     if (!branch) throw new Error("Layer does not contain a refreshable fill branch");
     if (
+      !branch.outpaint &&
       branch.currentMatrix.some(
         (value, index) => Math.abs(value - [1, 0, 0, 1, 0, 0][index]!) > 1e-9,
       )
@@ -71,7 +72,7 @@ export async function buildFillReport(
       database: library,
       libraryPath,
       photoId,
-      nodeId: branch.resample.id,
+      nodeId: branch.outpaint ? (branch.upscale ?? branch.generation).id : branch.resample.id,
       source,
     });
     const mask = await evaluateGraphNode({
@@ -87,13 +88,28 @@ export async function buildFillReport(
       readArtifactImage(current.artifact.path, current.artifact.artifactHash),
       readArtifactMask(mask.artifact.path, mask.artifact.artifactHash),
     ]);
-    assertComparable(beforeImage, generatedImage, currentImage, maskImage, branch.crop);
+    if (!branch.outpaint)
+      assertComparable(beforeImage, generatedImage, currentImage, maskImage, branch.crop);
 
+    const crops = branch.outpaint
+      ? [beforeImage, generatedImage, currentImage, maskImage].map(({ w, h }) => ({
+          x: 0,
+          y: 0,
+          w,
+          h,
+        }))
+      : [branch.crop, branch.crop, branch.crop, branch.crop];
     const [beforePng, generatedPng, currentPng, boundaryPng] = await Promise.all([
-      cropPng(beforeImage, branch.crop),
-      cropPng(generatedImage, branch.crop),
-      cropPng(currentImage, branch.crop),
-      boundaryPngFor(currentImage, maskImage, branch.crop),
+      cropPng(beforeImage, crops[0]!),
+      cropPng(generatedImage, crops[1]!),
+      cropPng(currentImage, crops[2]!),
+      branch.outpaint
+        ? sharp(Buffer.from(Uint8Array.from(maskImage.data, (value) => Math.round(value * 255))), {
+            raw: { width: maskImage.w, height: maskImage.h, channels: 1 },
+          })
+            .png()
+            .toBuffer()
+        : boundaryPngFor(currentImage, maskImage, branch.crop),
     ]);
     const generationParameters = asRecord(branch.generation.parameters);
     const prompt =
@@ -106,12 +122,16 @@ export async function buildFillReport(
     const cards = [
       {
         title: "Before fill",
-        note: "The immutable base input beneath the strict composite.",
+        note: branch.outpaint
+          ? "The photographic input captured when this border was generated."
+          : "The immutable base input beneath the strict composite.",
         bytes: beforePng,
       },
       {
         title: "After fill · generated replacement",
-        note: "The accepted generated pixels after their one exact placement resample, before the strict mask composite.",
+        note: branch.outpaint
+          ? "The pinned generated or upscaled artifact at its full native density. Only exterior coverage contributes to the photograph."
+          : "The accepted generated pixels after their one exact placement resample, before the strict mask composite.",
         bytes: generatedPng,
       },
       {
@@ -120,15 +140,17 @@ export async function buildFillReport(
         bytes: currentPng,
       },
       {
-        title: "Current + mask boundary",
-        note: "The same current pixels with the canonical mask edge marked in cyan.",
+        title: branch.outpaint ? "Authored exterior coverage" : "Current + mask boundary",
+        note: branch.outpaint
+          ? "White contributes border pixels; black leaves the live photograph visible. This mask retains its authored raster independently of content density."
+          : "The same current pixels with the canonical mask edge marked in cyan.",
         bytes: boundaryPng,
       },
     ]
       .map(
-        ({ title, note, bytes }) => `<article class="frame">
-          <header><h2>${escapeHtml(title)}</h2><span>${escapeHtml(cropLabel)}</span></header>
-          <div class="image"><img alt="${escapeHtml(title)} at the shared native crop" src="data:image/png;base64,${bytes.toString("base64")}" width="${branch.crop.w}" height="${branch.crop.h}"></div>
+        ({ title, note, bytes }, index) => `<article class="frame">
+          <header><h2>${escapeHtml(title)}</h2><span>${escapeHtml(branch.outpaint ? `${crops[index]!.w} × ${crops[index]!.h} native px` : cropLabel)}</span></header>
+          <div class="image"><img alt="${escapeHtml(title)}" src="data:image/png;base64,${bytes.toString("base64")}" width="${crops[index]!.w}" height="${crops[index]!.h}"></div>
           <p>${escapeHtml(note)}</p>
         </article>`,
       )
@@ -166,14 +188,14 @@ export async function buildFillReport(
     <main>
       <p class="kicker">photoctl / immutable fill inspection</p>
       <h1>Native-detail fill boundary</h1>
-      <p class="intro">Every panel is the same base-space crop at one source pixel per output pixel. Compare texture and sharpness at the marked mask edge; this report reads the active graph and its pinned paid artifacts without sending pixels to a provider.</p>
+      <p class="intro">${branch.outpaint ? "Each panel retains its own native raster; these are not aligned comparison crops. The placed border and its independently framed exterior mask compose over the live photograph." : "Every panel is the same base-space crop at one source pixel per output pixel. Compare texture and sharpness at the marked mask edge;"} this report reads the active graph and its pinned paid artifacts without sending pixels to a provider.</p>
       <section class="facts" aria-label="Fill provenance">
         <div class="fact"><span>Photo · layer</span><strong>${escapeHtml(photoId)} · ${escapeHtml(layerId)}</strong></div>
         <div class="fact"><span>Revision · render</span><strong>${escapeHtml(document.revisionId)} · ${escapeHtml(document.renderHash)}</strong></div>
         <div class="fact"><span>Generation</span><strong>${escapeHtml(branch.generationProvider.adapter)} · ${escapeHtml(branch.generationProvider.model)}</strong></div>
         <div class="fact"><span>Prompt</span><strong>${escapeHtml(prompt)}</strong></div>
         <div class="fact"><span>Generate node</span><strong>${escapeHtml(branch.generation.id)}</strong></div>
-        <div class="fact"><span>Composite node</span><strong>${escapeHtml(branch.composite.id)}</strong></div>
+        <div class="fact"><span>${branch.outpaint ? "Photographic output node" : "Composite node"}</span><strong>${escapeHtml(branch.outpaint ? document.roots.output : branch.composite.id)}</strong></div>
         ${upscaleFacts}
       </section>
       <section class="grid" aria-label="Shared native-detail comparison">${cards}</section>

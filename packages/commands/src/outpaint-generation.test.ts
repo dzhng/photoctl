@@ -237,6 +237,7 @@ test.each([true, false])(
         expect(await loadActiveDocument(handle, id)).toEqual(before);
         expect(captured).toEqual([]);
       }
+      let preparedNodes: Array<{ id: string; kind: string }> | undefined;
       for (const invalid of ["corrupt", "aspect"] as const) {
         outputMode = invalid;
         expect(
@@ -251,10 +252,15 @@ test.each([true, false])(
           ]),
         ).toMatchObject({ ok: false });
         expect(await loadActiveDocument(handle, id)).toEqual(before);
-        expect(
-          (await handle.query("SELECT id FROM image_nodes WHERE photo_id = $1 ORDER BY id", [id]))
-            .rows,
-        ).toEqual(nodesBefore);
+        const retained = (
+          await handle.query<{ id: string; kind: string }>(
+            "SELECT id, kind FROM image_nodes WHERE photo_id = $1 ORDER BY id",
+            [id],
+          )
+        ).rows;
+        expect(retained.every(({ kind }) => kind !== "generate" && kind !== "upscale")).toBe(true);
+        if (preparedNodes) expect(retained).toEqual(preparedNodes);
+        preparedNodes = retained;
       }
       outputMode = "normal";
       await command("fill", [
@@ -330,7 +336,7 @@ test.each([true, false])(
               Math.abs(delivered.data[offset + channel]! - expected[channel]!),
             ).toBeLessThanOrEqual(2);
         }
-      expect(await describeFillBranch(handle, id, after!.layers[0]!.contentNodeId)).toMatchObject({
+      expect(await describeFillBranch(handle, id, after!.layers[0]!)).toMatchObject({
         frame: { w: width, h: height },
       });
       expect(captured).toHaveLength(3);

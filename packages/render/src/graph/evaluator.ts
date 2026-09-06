@@ -603,14 +603,11 @@ async function evaluateMaskComposite(
     base,
   );
   const parsed = imageNodeRegistry.mask_composite.parameters.parse(parameters);
-  let mask =
-    "mask_space" in parsed
-      ? await readMaskInput(inputs[2], base)
-      : await projectMaskToRender(
-          await readMaskInput(inputs[2], projection.catalog),
-          projection,
-          base,
-        );
+  let mask = await projectMaskToRender(
+    await readMaskInput(inputs[2], projection.catalog),
+    projection,
+    base,
+  );
   const feather = parsed.feather as number;
   if (feather > 0) mask = { ...mask, data: await featherMask(mask.data, mask.w, mask.h, feather) };
   return linearImage(
@@ -702,7 +699,9 @@ async function evaluateCanvasComposite(
   ) => {
     const layer = plan.layers[index]!;
     const maskInput = inputs[2 + index * 2]!;
-    let frame = layerFrames[index]!;
+    let frame = layer.frame
+      ? await loadBaseProjection(request.database, request.photoId, maskInput)
+      : layerFrames[index]!;
     const stages = [...layer.stages, ...plan.viewport_stages];
     const supportFrames = [frame, ...stages.map(parseRenderFrame)];
     const coverage = await supportCoverage(request, maskInput);

@@ -209,7 +209,7 @@ export async function executeFillTransform(
   const layerId = await resolveLayerId(handle, photoId, layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  const branch = await describeFillBranch(handle, photoId, selected.contentNodeId);
+  const branch = await describeFillBranch(handle, photoId, selected);
   if (!branch) return undefined;
   const registry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
   const settings = providedDependencies?.upscaleSettings ?? (await readProviderSettings(handle));
@@ -258,7 +258,7 @@ export async function executeFillRefresh(
   const layerId = await resolveLayerId(handle, photoId, layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  const branch = await describeFillBranch(handle, photoId, selected.contentNodeId);
+  const branch = await describeFillBranch(handle, photoId, selected);
   if (!branch) throw new Error("Layer does not contain a refreshable fill branch");
   const generationParameters = branch.generation.parameters as { model?: unknown } | null;
   if (typeof generationParameters?.model !== "string") {

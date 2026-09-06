@@ -1,4 +1,20 @@
 import type { Warning } from "@photoctl/protocol";
+import type { FillBranchDescriptor } from "./branch.js";
+import type { TransformMatrix } from "../transforms.js";
+
+/** Physical placement, not the currently retained artifact, sets the required density. */
+export function fillPlacementDimensions(
+  branch: Pick<FillBranchDescriptor, "crop" | "generationInputMatrix" | "currentMatrix">,
+  matrix: TransformMatrix = branch.currentMatrix,
+) {
+  const scale =
+    Math.hypot(matrix[0], matrix[1]) /
+    Math.hypot(branch.generationInputMatrix[0], branch.generationInputMatrix[1]);
+  return {
+    w: Math.max(1, Math.ceil(branch.crop.w * scale)),
+    h: Math.max(1, Math.ceil(branch.crop.h * scale)),
+  };
+}
 
 export interface PixelDimensions {
   w: number;

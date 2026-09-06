@@ -3,6 +3,7 @@ import type { NodeDraft, NodeReference } from "../graph/store.js";
 import type { TransformMatrix } from "../transforms.js";
 import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
 import type { FillBranchDescriptor } from "./branch.js";
+import { frameAtRaster, parseRenderFrame, placedFrame, savedRenderFrame } from "../graph/frame.js";
 
 export function rebuildFillBranch(input: {
   branch: FillBranchDescriptor;
@@ -19,38 +20,42 @@ export function rebuildFillBranch(input: {
   nodes: NodeDraft[];
   content: NodeReference;
   mask: NodeReference;
-  compositeKey: string;
+  compositeKey?: string;
 } {
   const resampleKey = `${input.key}-resample`;
   const maskKey = `${input.key}-mask-transform`;
   const compositeKey = `${input.key}-mask-composite`;
   const supportKey = `${input.key}-mask-support`;
   if (input.branch.outpaint) {
-    const mask = { nodeId: input.branch.permanentMaskNodeId };
+    const placementKey = `${input.key}-placement`;
+    const frame = parseRenderFrame(input.branch.outpaint.output_frame);
     const nodes: NodeDraft[] = [
       {
-        localKey: resampleKey,
-        kind: "resample",
-        recipeVersion: 1,
+        localKey: placementKey,
+        kind: "transform",
+        recipeVersion: 2,
         parameters: {
-          w: input.frame.w,
-          h: input.frame.h,
-          kernel: "lanczos3",
-          target: { x: 0, y: 0, w: input.frame.w, h: input.frame.h },
+          matrix: [...input.matrix],
+          frame: savedRenderFrame(
+            placedFrame(frameAtRaster(frame, input.placementDimensions), input.matrix),
+          ),
         },
         inputs: [input.placement],
       },
       {
-        localKey: compositeKey,
-        kind: "mask_composite",
-        recipeVersion: input.branch.composite.recipeVersion,
-        parameters: input.branch.composite.parameters as JsonValue,
-        inputs: [{ nodeId: input.baseNodeId }, { localKey: resampleKey }, mask],
+        localKey: maskKey,
+        kind: "transform",
+        recipeVersion: 2,
+        parameters: {
+          matrix: [...input.matrix],
+          frame: savedRenderFrame(placedFrame(frame, input.matrix)),
+        },
+        inputs: [{ nodeId: input.branch.permanentMaskNodeId }],
       },
     ];
-    let content: NodeReference = { localKey: compositeKey };
+    let content: NodeReference = { localKey: placementKey };
     for (const [index, descendant] of input.branch.descendants.toReversed().entries()) {
-      if (descendant.kind === "delta" && !input.preserveCompensations) continue;
+      if (descendant.kind !== "delta" || !input.preserveCompensations) continue;
       const localKey = `${input.key}-placement-${index}`;
       nodes.push({
         localKey,
@@ -61,7 +66,7 @@ export function rebuildFillBranch(input: {
       });
       content = { localKey };
     }
-    return { nodes, content, mask, compositeKey };
+    return { nodes, content, mask: { localKey: maskKey } };
   }
   const fromGeneration: TransformMatrix = [
     input.generationDimensions.w / input.placementDimensions.w,

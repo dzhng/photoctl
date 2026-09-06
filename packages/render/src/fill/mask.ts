@@ -18,7 +18,7 @@ export async function prepareFillMask(
   fit: FillFit,
   visible?: NonNullable<FillFit["visible"]>,
 ) {
-  const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  const branch = await describeFillBranch(database, request.photoId, selected);
   const layerMask = await inspectGraphNode(database, {
     photoId: request.photoId,
     nodeId: selected.maskNodeId,

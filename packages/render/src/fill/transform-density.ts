@@ -27,10 +27,11 @@ import {
   type Transform,
 } from "../transforms.js";
 import { describeFillBranch, directUpscaleChildren } from "./branch.js";
-import { planOutputDensity } from "./density.js";
+import { planOutputDensity, fillPlacementDimensions } from "./density.js";
 import { image16Png } from "./external-pixels.js";
 import type { FillUpscaleDependencies } from "./pipeline.js";
 import { rebuildFillBranch } from "./rebuild.js";
+import { parseRenderFrame } from "../graph/frame.js";
 
 export interface TransformFillRequest {
   photoId: string;
@@ -52,9 +53,8 @@ export async function transformFillLayer(
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  const branch = await describeFillBranch(database, request.photoId, selected);
   if (!branch) return undefined;
-  if (branch.composite.recipeVersion === 2) return undefined;
 
   const maskCenter = await maskCentroid(
     database,
@@ -62,9 +62,11 @@ export async function transformFillLayer(
     request.photoId,
     branch.selectionNodeId ?? branch.permanentMaskNodeId,
   );
-  const centroid = branch.fit
-    ? transformPoint(invertTransformMatrix(branch.generationInputMatrix), maskCenter)
-    : maskCenter;
+  const centroid = branch.outpaint
+    ? transformPoint(parseRenderFrame(branch.outpaint.output_frame).rasterToBase, maskCenter)
+    : branch.fit
+      ? transformPoint(invertTransformMatrix(branch.generationInputMatrix), maskCenter)
+      : maskCenter;
   const anchor =
     request.relative && request.transform.anchor === "centroid"
       ? transformPoint(branch.currentMatrix, centroid)
@@ -76,14 +78,7 @@ export async function transformFillLayer(
     anchor,
   );
   const scale = Math.hypot(matrix[0], matrix[1]);
-  const generationInputScale = Math.hypot(
-    branch.generationInputMatrix[0],
-    branch.generationInputMatrix[1],
-  );
-  const target = {
-    w: Math.max(1, Math.ceil((branch.crop.w * scale) / generationInputScale)),
-    h: Math.max(1, Math.ceil((branch.crop.h * scale) / generationInputScale)),
-  };
+  const target = fillPlacementDimensions(branch, matrix);
   const generationEvaluation = await evaluateGraphNode({
     database,
     libraryPath,
@@ -211,7 +206,9 @@ export async function transformFillLayer(
     (item): item is Extract<(typeof density.upscale.operations)[number], { kind: "upscale" }> =>
       item.kind === "upscale",
   );
-  if (adapter && identity && operation) {
+  const demandIncreased =
+    scale > Math.hypot(branch.currentMatrix[0], branch.currentMatrix[1]) + 1e-9;
+  if (adapter && identity && operation && (!branch.outpaint || demandIncreased)) {
     const result = await executeRetainedUpscale(database, libraryPath, adapter, {
       artifact: {
         bytes: await image16Png(generationImage),

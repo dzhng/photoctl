@@ -26,7 +26,7 @@ import type { JsonValue } from "../graph/types.js";
 import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { unfilledVacancyLayerIds } from "../layers/status.js";
 import { planFillCrop } from "./crop.js";
-import type { SourceContextDensity } from "./density.js";
+import { fillPlacementDimensions, type SourceContextDensity } from "./density.js";
 import { resolveFillFit } from "./fit.js";
 import type { FillFit } from "../mask-operations.js";
 import { prepareFillMask } from "./mask.js";
@@ -90,7 +90,7 @@ export async function fillLayer(
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  const branch = await describeFillBranch(database, request.photoId, selected);
   const outpaint = branch?.outpaint ? branch : undefined;
   if (outpaint && request.fit && (request.fit.mode !== "strict" || request.fit.feather_px !== 0))
     throw new PhotoctlError(
@@ -105,20 +105,23 @@ export async function fillLayer(
   const fillBaseNodeId =
     outpaint?.baseNodeId ?? (fillingVacancy ? document.roots.base : selected.contentNodeId);
 
-  const baseEvaluation = await evaluateGraphNode({
-    database,
-    libraryPath,
-    photoId: request.photoId,
-    nodeId: fillBaseNodeId,
-    source: request.source,
-  });
-  const base = await readArtifactImage(
-    baseEvaluation.artifact.path,
-    baseEvaluation.artifact.artifactHash,
-  );
+  const baseEvaluation = outpaint
+    ? undefined
+    : await evaluateGraphNode({
+        database,
+        libraryPath,
+        photoId: request.photoId,
+        nodeId: fillBaseNodeId,
+        source: request.source,
+      });
+  const base = baseEvaluation
+    ? await readArtifactImage(baseEvaluation.artifact.path, baseEvaluation.artifact.artifactHash)
+    : undefined;
   const fit = request.fit ?? resolveFillFit(request.operation);
-  const projection = await loadBaseProjection(database, request.photoId, baseEvaluation);
-  const baseToInput = projection.baseToRaster;
+  const projection = baseEvaluation
+    ? await loadBaseProjection(database, request.photoId, baseEvaluation)
+    : undefined;
+  const baseToInput = projection?.baseToRaster;
   const effective = outpaint
     ? await (async () => {
         const evaluated = await evaluateGraphNode({
@@ -135,11 +138,14 @@ export async function fillLayer(
           clippedPixels: 0,
         };
       })()
-    : await prepareFillMask(database, libraryPath, request, selected, fit, {
-        matrix: [...baseToInput],
-        w: base.w,
-        h: base.h,
-      });
+    : await (async () => {
+        if (!base || !baseToInput) throw new Error("Fresh fill requires its photographic input");
+        return await prepareFillMask(database, libraryPath, request, selected, fit, {
+          matrix: [...baseToInput],
+          w: base.w,
+          h: base.h,
+        });
+      })();
   const mask = effective.mask;
   if (!mask.data.some((value) => value > 0))
     throw new PhotoctlError("usage", "The effective selection is not visible in the current frame");
@@ -174,18 +180,27 @@ export async function fillLayer(
     database,
     libraryPath,
     request,
-    {
-      base,
-      mask,
-      crop,
-      fit,
-      baseToInput,
-      inputNodeId: fillBaseNodeId,
-      inputArtifactHash: baseEvaluation.artifact.artifactHash,
-      layerId,
-      reusable,
-      reference,
-    },
+    reusable
+      ? {
+          crop,
+          reusable,
+          ...(outpaint ? { targetDimensions: fillPlacementDimensions(outpaint) } : {}),
+        }
+      : (() => {
+          if (!base || !baseEvaluation)
+            throw new Error("Fresh fill requires its photographic input");
+          return {
+            base,
+            mask,
+            crop,
+            fit,
+            baseToInput,
+            inputNodeId: fillBaseNodeId,
+            inputArtifactHash: baseEvaluation.artifact.artifactHash,
+            layerId,
+            reference,
+          };
+        })(),
   );
   const { nodeId: generationNodeId, provider } = generation;
   const { nodes, artifacts, executions, warnings } = density;
@@ -253,8 +268,8 @@ export async function fillLayer(
         ? (rebuilt?.content ?? { localKey: "strict-composite" })
         : { nodeId: layer.contentNodeId },
     maskNode:
-      layer.id === selected.id && !outpaint
-        ? { localKey: "fill-support" }
+      layer.id === selected.id
+        ? (rebuilt?.mask ?? { localKey: "fill-support" })
         : { nodeId: layer.maskNodeId },
     opacity: layer.opacity,
     blend: layer.blend,
@@ -277,8 +292,9 @@ export async function fillLayer(
     outputNodeId: committed.roots.output! as `node_${string}`,
     renderHash: committed.renderHash as `r_${string}`,
     generationNodeId: generationNodeId as `node_${string}`,
-    compositeNodeId: committed.nodes[rebuilt?.compositeKey ?? "strict-composite"]!
-      .id as `node_${string}`,
+    compositeNodeId: (outpaint
+      ? committed.roots.output!
+      : committed.nodes["strict-composite"]!.id) as `node_${string}`,
     returnedDimensions: generation.returnedDimensions,
     sourceContext,
     upscale: {
@@ -318,33 +334,26 @@ export async function prepareFillGeneration(
   libraryPath: string,
   request: Omit<Parameters<typeof fillLayer>[2], "layer">,
   plan: {
-    base: import("../source-render.js").Image16;
-    mask: import("../mask-tiff.js").MaskImage;
     crop: { x: number; y: number; w: number; h: number };
-    fit: FillFit;
-    baseToInput?: import("../transforms.js").TransformMatrix;
-    inputNodeId: string;
-    inputReference?: import("../graph/store.js").NodeReference;
-    inputArtifactHash: `a_${string}`;
-    layerId?: string;
-    reusable?: Awaited<ReturnType<typeof findReusableFillLineage>>;
-    reference?: Awaited<ReturnType<typeof prepareReferenceArtifact>>;
-    intent?: Record<string, JsonValue>;
-  },
+    targetDimensions?: { w: number; h: number };
+  } & (
+    | { reusable: NonNullable<Awaited<ReturnType<typeof findReusableFillLineage>>> }
+    | {
+        base: import("../source-render.js").Image16;
+        mask: import("../mask-tiff.js").MaskImage;
+        fit: FillFit;
+        baseToInput?: import("../transforms.js").TransformMatrix;
+        inputNodeId: string;
+        inputReference?: import("../graph/store.js").NodeReference;
+        inputArtifactHash: `a_${string}`;
+        layerId?: string;
+        reusable?: undefined;
+        reference?: Awaited<ReturnType<typeof prepareReferenceArtifact>>;
+        intent?: Record<string, JsonValue>;
+      }
+  ),
 ) {
-  const {
-    base,
-    mask,
-    crop,
-    fit,
-    baseToInput,
-    inputNodeId,
-    inputArtifactHash,
-    layerId,
-    reusable,
-    reference,
-    intent,
-  } = plan;
+  const { crop, reusable } = plan;
   const sourceContext = reusable?.sourceContext ?? request.sourceContext;
   let generation: PreparedGeneration;
   if (reusable) {
@@ -420,6 +429,17 @@ export async function prepareFillGeneration(
       ];
     }
   } else {
+    const {
+      base,
+      mask,
+      fit,
+      baseToInput,
+      inputNodeId,
+      inputArtifactHash,
+      layerId,
+      reference,
+      intent,
+    } = plan;
     const sent = await fillProviderInputs(base, mask, crop, request.fullResolution, baseToInput);
     generation = await executeFreshGeneration(database, libraryPath, {
       inputNodeId: inputNodeId,
@@ -492,9 +512,9 @@ export async function prepareFillGeneration(
     generation,
     target: {
       kind: "base_space_provider_crop",
-      dimensionsIncludingPad: { w: crop.w, h: crop.h },
+      dimensionsIncludingPad: plan.targetDimensions ?? { w: crop.w, h: crop.h },
     },
-    targetDimensions: { w: crop.w, h: crop.h },
+    targetDimensions: plan.targetDimensions ?? { w: crop.w, h: crop.h },
     sourceContext,
     upscale: request.upscale,
     ...(request.seed === undefined ? {} : { seed: request.seed }),

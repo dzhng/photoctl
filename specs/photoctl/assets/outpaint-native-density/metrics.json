@@ -1,0 +1,9 @@
+{
+  "w": 88,
+  "h": 68,
+  "mae": 24.746323529411764,
+  "maxChannelDifference": 180,
+  "channelShareOver16": 0.2657085561497326,
+  "degradedStripeContrast": 0,
+  "candidateStripeContrast": 224
+}

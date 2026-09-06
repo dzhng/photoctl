@@ -50,26 +50,28 @@ export async function findReusableFillLineage(
   crop: { x: number; y: number; w: number; h: number },
   frame: { w: number; h: number },
 ): Promise<ReusableFillLineage | undefined> {
-  const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  const branch = await describeFillBranch(database, request.photoId, selected);
   if (!branch || (!branch.outpaint && branch.descendants.length > 0)) return undefined;
-  const { resample } = branch;
   if (branch.maskNodeId !== (request.effectiveMaskNodeId ?? selected.maskNodeId)) return undefined;
-  const parameters = resample.parameters as {
-    w?: unknown;
-    h?: unknown;
-    kernel?: unknown;
-    target?: { x?: unknown; y?: unknown; w?: unknown; h?: unknown };
-  };
-  if (
-    parameters.w !== frame.w ||
-    parameters.h !== frame.h ||
-    parameters.kernel !== "lanczos3" ||
-    parameters.target?.x !== crop.x ||
-    parameters.target.y !== crop.y ||
-    parameters.target.w !== crop.w ||
-    parameters.target.h !== crop.h
-  )
-    return undefined;
+  if (!branch.outpaint) {
+    const { resample } = branch;
+    const parameters = resample.parameters as {
+      w?: unknown;
+      h?: unknown;
+      kernel?: unknown;
+      target?: { x?: unknown; y?: unknown; w?: unknown; h?: unknown };
+    };
+    if (
+      parameters.w !== frame.w ||
+      parameters.h !== frame.h ||
+      parameters.kernel !== "lanczos3" ||
+      parameters.target?.x !== crop.x ||
+      parameters.target.y !== crop.y ||
+      parameters.target.w !== crop.w ||
+      parameters.target.h !== crop.h
+    )
+      return undefined;
+  }
   let cachedUpscale: ReusableExternalNode | undefined;
   const generation = branch.generation;
   if (branch.upscale) {

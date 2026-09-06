@@ -407,7 +407,7 @@ preparation can remain after failure, but the active document changes only on su
 publication with the original revision conflict check.
 
 `fill --layer` is a pinned retry for an outpaint border: it requires matching generation intent
-and retained pixels, and may recover failed authored density without another generation request.
+and retained pixels, and may recover density required by its current placement without another generation request.
 It preserves border placement, exterior mask and extent. Changed generation intent requires an
 explicit regeneration operation; fitting or feathering cannot change the exterior-only mask.
 `layer refresh --from <upscale-node>` likewise keeps generation pinned while explicitly replacing
@@ -416,15 +416,36 @@ these operations; there is no outpaint-specific provider or cache owner.
 
 The command regressions include an actual camera JPEG with full-source decoding before a bounded
 crop, then fixed-frame regeneration after an exposure edit. Synthetic provider pixels prove
-geometry and request lifecycle, not photographic completion quality. Automatic transform-density
-maintenance, full-resolution resource acceptance and the complete built/packed lifecycle journey
+geometry and request lifecycle, not photographic completion quality. Full-resolution resource
+acceptance and the complete built/packed lifecycle journey
 remain the next outpaint work; no migration or compatibility layer is required for this development
 cutover.
 
-Intrinsic coverage has a persisted identity distinct from catalog coverage: `mask_composite@2`
-requires a mask exactly matching the base raster dimensions, while placement remains in the outer
-frame owner. `mask_composite@1` continues projecting catalog coverage. Schema 22 only widens the
-recipe-version constraint; stored version-1 nodes, identities and outputs remain unchanged.
+### Native-density border cutover
+
+The exterior layer mask is the sole coverage owner. A generated border retains native-resolution
+generation/upscale RGB through physical placement, not a second masked composite containing an
+old protected interior. Content and coverage may have different intrinsic raster sizes but describe
+the same physical border frame; the canvas evaluator projects each from its own frame. Changing
+sampling must not change the border's extent, source exclusion, or authored predecessor membership.
+
+The shared fill descriptor consumes layer content and mask roots, with distinct masked-fill and
+border-placement branches sharing paid lineage/provenance discovery. A border's reported composite
+is the final photographic composite, where its coverage is actually applied. Ordinary masked fills
+keep their existing composite meaning. No compatibility reader or redundant intrinsic-mask recipe
+survives this development cutover.
+
+The vertical check enlarges a border with a deliberately high-frequency upscaler result.
+Delivered pixels must retain that new detail; a larger output size or a successful paid call alone
+is insufficient. Existing refresh/retry, opacity, placement, removal and undo behavior must survive
+through public commands, with generation count unchanged during density maintenance.
+[The native-density witness](../assets/outpaint-native-density/README.md) records pixel falsification,
+the complete synthetic capture set and the report-layout verification boundary.
+
+Pure translation, rotation and shrinking do not retry failed border density. Increased scale can
+request configured upscaling; explicit retry remains available for a failed processing step.
+Transform, retry and refresh share the placement-density calculation. Pinned retry does not decode
+the historical photographic input, and current edits do not change its generation intent.
 
 The existing fill execution owner prepares generation, optional density and canonical placement;
 the canvas owner alone activates the border/checkpoint. Do not create a temporary active selection
@@ -435,8 +456,9 @@ leaves both revision and extent unchanged.
 Preparation must distinguish the immutable input graph identity from provider preprocessing:
 expanded black padding and input capping are part of the stored request, not a second mutable
 document. Keep authored input/output frames, intrinsic returned sampling and placement separately.
-An untouched photo has no graph yet; draft references must resolve in the same final canvas commit,
-without forcing early source-document initialization. Reuse the existing canonical recipe owner.
+An untouched photo has no active graph yet; deterministic source drafts may be published and
+evaluated through the existing source-execution owner without activating a document. This retains
+the provenance needed by offline inspection, while successful canvas activation remains atomic.
 
 The shared fill descriptor and refresh/retry owner need explicit outpaint intent, rather than a
 second border ancestry parser. Retry reuses pinned generation and authored context. Explicit

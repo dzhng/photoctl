@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { initializeLibrary, openLibrary } from "@photoctl/library";
@@ -12,8 +12,69 @@ import {
 import sharp from "sharp";
 import { afterEach, expect, test, vi } from "vitest";
 import { runWorkbench } from "./run.js";
+import {
+  fillUpscaleFixture,
+  fixtureCommand,
+  success,
+} from "../../../packages/commands/src/fill-upscale-fixture.js";
+import { fillStrictDataSchema } from "@photoctl/protocol";
+import { buildFillReport } from "./fill.js";
 
 const temporaryDirectories: string[] = [];
+
+test("outpaint report exposes native border detail and authored exterior coverage without paid calls", async () => {
+  const fixture = await fillUpscaleFixture();
+  try {
+    const filled = fillStrictDataSchema.parse(
+      success(
+        await fixtureCommand(fixture, "fill", [
+          fixture.id,
+          "--outpaint",
+          "--px",
+          "2",
+          "--prompt",
+          "continue",
+        ]),
+      ),
+    );
+    success(
+      await fixtureCommand(fixture, "layer", [
+        "transform",
+        fixture.id,
+        filled.graph.layer,
+        "--scale",
+        "2",
+      ]),
+    );
+    await fixture.handle.close();
+    vi.spyOn(fixture.handle, "close").mockResolvedValue();
+    const html = await buildFillReport(
+      join(fixture.parent, "library"),
+      fixture.id,
+      filled.graph.layer,
+    );
+    if (process.env.PHOTOCTL_OUTPAINT_CAPTURE) {
+      await mkdir(process.env.PHOTOCTL_OUTPAINT_CAPTURE, { recursive: true });
+      await writeFile(join(process.env.PHOTOCTL_OUTPAINT_CAPTURE, "report.html"), html);
+    }
+    const images = [...html.matchAll(/src="data:image\/png;base64,([^"]+)"/gu)].map((match) =>
+      Buffer.from(match[1]!, "base64"),
+    );
+    const metadata = await Promise.all(images.map(async (bytes) => await sharp(bytes).metadata()));
+    expect(metadata.map(({ width, height }) => [width, height])).toEqual([
+      [40, 30],
+      [88, 68],
+      [88, 68],
+      [44, 34],
+    ]);
+    expect(html).toContain("Authored exterior coverage");
+    expect(html).toContain("Each panel retains its own native raster");
+    expect(fixture.generationCalls()).toBe(1);
+    expect(fixture.upscaleCalls()).toBe(1);
+  } finally {
+    await fixture.close();
+  }
+});
 
 afterEach(async () => {
   vi.unstubAllGlobals();
@@ -88,13 +149,20 @@ test("fill renders one self-contained native crop from the immutable before, gen
       adapter: {
         id: "fixture-image-edit",
         version: "1",
-        buildEdit: () => new FormData(),
-        normalize: async () => ({
-          png: replacement,
-          returnedDimensions: { w: 16, h: 16 },
-          wholeFrame: false,
+        buildEdit: () => ({
+          body: new FormData(),
+          appliedControls: { init: "original", reference: false },
           warnings: [],
         }),
+        normalize: async (_response, _dimensions, capture) => {
+          await capture?.(replacement);
+          return {
+            png: replacement,
+            returnedDimensions: { w: 16, h: 16 },
+            wholeFrame: false,
+            warnings: [],
+          };
+        },
       },
       gateway: {
         imageEdits: async () => {
@@ -119,10 +187,10 @@ test("fill renders one self-contained native crop from the immutable before, gen
         version: "1",
         supportedScales: [2],
         limits: { maxInputPixels: 1_000_000, maxOutputPixels: 1_000_000, maxOutputEdge: 1_000 },
-        execute: async () => {
+        execute: async (_input, capture) => {
           upscaleCalls += 1;
-          return {
-            ok: true,
+          const result = {
+            ok: true as const,
             value: {
               artifact: { bytes: upscaled, dimensions: { w: 32, h: 32 } },
               dimensions: { w: 32, h: 32 },
@@ -142,6 +210,8 @@ test("fill renders one self-contained native crop from the immutable before, gen
             densitySatisfied: true,
             warnings: [],
           };
+          await capture?.(result.value);
+          return result;
         },
       },
     },

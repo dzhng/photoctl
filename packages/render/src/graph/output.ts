@@ -12,6 +12,7 @@ import {
   placedFrame,
   assertNewRasterSize,
   canvasGeometryPlan,
+  frameAtRaster,
 } from "./frame.js";
 import { loadGeometryAncestry, geometryNodeParametersSchema } from "./geometry-intent.js";
 import type { DevelopDict } from "../develop/dict.js";
@@ -208,7 +209,10 @@ export async function planPhotographicOutput(
           const checkpoint = checkpoints.get(layer.authoredCheckpointNodeId!)!;
           const authored = parseRenderFrame(checkpoint.outer_frame);
           const outer = await loadLogicalFrame(transaction, request.photoId, layer.contentNodeId);
-          const matrix = composeTransformMatrices(outer.rasterToBase, authored.baseToRaster);
+          const matrix = composeTransformMatrices(
+            frameAtRaster(outer, authored.raster).rasterToBase,
+            authored.baseToRaster,
+          );
           return [
             layer.id,
             {

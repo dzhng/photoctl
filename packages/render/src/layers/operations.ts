@@ -29,10 +29,12 @@ import { describeFillBranch } from "../fill/branch.js";
 import { rebuildFillBranch } from "../fill/rebuild.js";
 import { markupFreeOutputNode } from "../markup/graph.js";
 import { loadGeometryAncestry } from "../graph/geometry-intent.js";
+import { loadLogicalFrame } from "../graph/projection.js";
 import {
   parseRenderFrame,
   savedRenderFrame,
   placedFrame,
+  frameAtRaster,
   type RenderFrame,
 } from "../graph/frame.js";
 
@@ -252,7 +254,19 @@ export async function transformLayer(
     request.relative,
     anchor,
   );
-  const transformed = transformBranches("layer", content, mask, matrix, authored);
+  const frames = authored
+    ? {
+        content: frameAtRaster(
+          authored,
+          (await loadLogicalFrame(database, request.photoId, content.baseNodeId)).raster,
+        ),
+        mask: frameAtRaster(
+          authored,
+          (await loadLogicalFrame(database, request.photoId, mask.baseNodeId)).raster,
+        ),
+      }
+    : undefined;
+  const transformed = transformBranches("layer", content, mask, matrix, frames);
   const layers = document.layers.map((layer) =>
     layer.id === layerId
       ? layerDraft(layer, layer.z, transformed.contentNode, transformed.maskNode)
@@ -280,7 +294,7 @@ export async function moveLayer(
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const selected = requiredLayer(document.layers, layerId);
   if (selected.role !== "subject") throw new Error("fill --move requires a subject layer");
-  const fillBranch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  const fillBranch = await describeFillBranch(database, request.photoId, selected);
   const content = fillBranch
     ? undefined
     : await splitTransformLineage(database, request.photoId, selected.contentNodeId);
@@ -680,13 +694,13 @@ function transformBranches(
   content: TransformLineage,
   mask: TransformLineage,
   matrix: TransformMatrix,
-  authored?: RenderFrame,
+  frames?: { content: RenderFrame; mask: RenderFrame },
 ) {
   const contentTransform = `${key}-content-transform`;
   const maskTransform = `${key}-mask-transform`;
   const nodes: NodeDraft[] = [
-    transformDraft(contentTransform, content.baseNodeId, matrix, authored),
-    transformDraft(maskTransform, mask.baseNodeId, matrix, authored),
+    transformDraft(contentTransform, content.baseNodeId, matrix, frames?.content),
+    transformDraft(maskTransform, mask.baseNodeId, matrix, frames?.mask),
   ];
   let contentNode: { localKey: string } = { localKey: contentTransform };
   for (const [index, node] of content.prefix.toReversed().entries()) {
