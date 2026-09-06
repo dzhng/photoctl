@@ -1,10 +1,10 @@
-import { initializeLibrary, newLibraryEntityId } from "@photoctl/library";
+import { EnvVolumeResolver, initializeLibrary, newLibraryEntityId } from "@photoctl/library";
 import type { CommandRequest } from "@photoctl/protocol";
 import { ensurePhotoDocument } from "@photoctl/render";
-import { access, mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { dispatch } from "./dispatch.js";
 import { rollbackReceiptsOrThrow } from "./handlers/cull.js";
 
@@ -103,6 +103,124 @@ test("list filters and orders catalog rows while resolving current online state"
   }
 });
 
+test("limited list checks only returned originals and refreshes volume availability", async () => {
+  const root = await mkdtemp(join(tmpdir(), "photoctl-list-work-"));
+  const mount = join(root, "drive");
+  const library = await initializeLibrary(join(root, "library"));
+  const ids = Array.from({ length: 3 }, () => newLibraryEntityId());
+  const resolveOriginal = EnvVolumeResolver.prototype.resolve;
+  const resolve = vi.spyOn(EnvVolumeResolver.prototype, "resolve");
+  try {
+    await mkdir(mount);
+    for (const [index, id] of ids.entries()) {
+      await seedPhoto(
+        library.handle,
+        id,
+        `ck_220000000000000${index}`,
+        `2025-01-01T1${index}:00:00Z`,
+      );
+      if (index === 0) continue;
+      await seedLocator(library.handle, id, `${index}.jpg`);
+      await writeFile(join(mount, `${index}.jpg`), "original");
+    }
+    for (const [volume, online] of [
+      ["test-volume:online", true],
+      ["test-volume:offline", false],
+      ["other-volume:online", false],
+      ["test-volume:online", true],
+    ] as const) {
+      resolve.mockClear();
+      const result = await dispatch(request("list", ["--limit", "1"], `${mount}=${volume}`), {
+        version: "test",
+        library: library.handle,
+      });
+      expect(result).toMatchObject({
+        ok: true,
+        data: { total: 2, rows: [{ id: ids[1], file: "1.jpg", online }] },
+      });
+      expect(resolve.mock.calls).toEqual([["test-volume", "1.jpg"]]);
+    }
+    let active = 0;
+    let highWater = 0;
+    resolve.mockImplementation(async function (this: EnvVolumeResolver, volume, path) {
+      active += 1;
+      highWater = Math.max(highWater, active);
+      try {
+        return await resolveOriginal.call(this, volume, path);
+      } finally {
+        active -= 1;
+      }
+    });
+    const complete = await dispatch(request("list", [], `${mount}=test-volume:online`), {
+      version: "test",
+      library: library.handle,
+    });
+    expect(complete).toMatchObject({
+      ok: true,
+      data: {
+        total: 2,
+        rows: [
+          { id: ids[1], online: true },
+          { id: ids[2], online: true },
+        ],
+      },
+    });
+    expect(highWater).toBe(2);
+  } finally {
+    resolve.mockRestore();
+    await library.handle.close();
+    await rm(root, { recursive: true });
+  }
+});
+
+test("limited stale-XMP list counts every match before materializing availability", async () => {
+  const root = await mkdtemp(join(tmpdir(), "photoctl-list-stale-work-"));
+  const library = await initializeLibrary(join(root, "library"));
+  const ids = Array.from({ length: 3 }, () => newLibraryEntityId());
+  const resolve = vi.spyOn(EnvVolumeResolver.prototype, "resolve");
+  try {
+    for (const [index, id] of ids.entries()) {
+      await seedPhoto(
+        library.handle,
+        id,
+        `ck_230000000000000${index}`,
+        `2025-01-01T1${index}:00:00Z`,
+      );
+      await seedLocator(library.handle, id, `${index}.jpg`);
+      await writeFile(join(root, `${index}.jpg`), "original");
+      const sidecar = join(root, `${index}.xmp`);
+      await writeFile(sidecar, "sidecar");
+      await library.handle.query(
+        "INSERT INTO xmp_state (photo_id, sidecar_path, read_at, sidecar_mtime) VALUES ($1, $2, now(), $3)",
+        [
+          id,
+          sidecar,
+          index === 0 ? (await stat(sidecar)).mtime.toISOString() : new Date(0).toISOString(),
+        ],
+      );
+    }
+    const query = request("list", ["--xmp-stale", "--limit", "1"], `${root}=test-volume:online`);
+    const result = await dispatch(query, { version: "test", library: library.handle });
+    expect(result).toMatchObject({
+      ok: true,
+      data: { total: 2, rows: [{ id: ids[1], online: true }] },
+    });
+    expect(resolve.mock.calls).toEqual([["test-volume", "1.jpg"]]);
+    await rm(join(root, "0.xmp"));
+    resolve.mockClear();
+    const changed = await dispatch(query, { version: "test", library: library.handle });
+    expect(changed).toMatchObject({
+      ok: true,
+      data: { total: 3, rows: [{ id: ids[0], online: true }] },
+    });
+    expect(resolve.mock.calls).toEqual([["test-volume", "0.jpg"]]);
+  } finally {
+    resolve.mockRestore();
+    await library.handle.close();
+    await rm(root, { recursive: true });
+  }
+});
+
 test("next keeps an independent ordered cursor per filter and reset rewinds it", async () => {
   const root = await mkdtemp(join(tmpdir(), "photoctl-next-"));
   const mount = join(root, "drive");
@@ -111,14 +229,15 @@ test("next keeps an independent ordered cursor per filter and reset rewinds it",
   const first = newLibraryEntityId();
   const second = newLibraryEntityId();
   const third = newLibraryEntityId();
+  const resolve = vi.spyOn(EnvVolumeResolver.prototype, "resolve");
   try {
     await mkdir(mount);
     await writeFile(join(mount, "first.jpg"), "one");
     await writeFile(join(mount, "second.jpg"), "two");
     await writeFile(join(mount, "third.jpg"), "three");
     await seedPhoto(library.handle, first, "ck_3000000000000001", "2025-01-01T10:00:00Z");
-    await seedPhoto(library.handle, second, "ck_3000000000000002", "2025-01-01T11:00:00Z");
-    await seedPhoto(library.handle, third, "ck_3000000000000003", "2025-01-01T12:00:00Z");
+    await seedPhoto(library.handle, second, "ck_3000000000000002", "2025-01-01T10:00:00Z");
+    await seedPhoto(library.handle, third, "ck_3000000000000003", null);
     await seedLocator(library.handle, first, "first.jpg");
     await seedLocator(library.handle, second, "second.jpg");
     await seedLocator(library.handle, third, "third.jpg");
@@ -140,6 +259,7 @@ test("next keeps an independent ordered cursor per filter and reset rewinds it",
     const two = await dispatch(nextRequest(), { version: "test", library: library.handle });
     await library.handle.query("UPDATE photos SET rating = 5 WHERE id = $1", [second]);
     const three = await dispatch(nextRequest(), { version: "test", library: library.handle });
+    const exhausted = await dispatch(nextRequest(), { version: "test", library: library.handle });
     const reset = await dispatch(nextRequest(["--reset"]), {
       version: "test",
       library: library.handle,
@@ -148,8 +268,16 @@ test("next keeps an independent ordered cursor per filter and reset rewinds it",
     expect(one).toMatchObject({ ok: true, data: { id: first, remaining: 2 } });
     expect(two).toMatchObject({ ok: true, data: { id: second, remaining: 1 } });
     expect(three).toMatchObject({ ok: true, data: { id: third, remaining: 0 } });
+    expect(exhausted).toMatchObject({ ok: false, code: "not_found" });
     expect(reset).toMatchObject({ ok: true, data: { id: first, remaining: 1 } });
+    expect(resolve.mock.calls).toEqual([
+      ["test-volume", "first.jpg"],
+      ["test-volume", "second.jpg"],
+      ["test-volume", "third.jpg"],
+      ["test-volume", "first.jpg"],
+    ]);
   } finally {
+    resolve.mockRestore();
     await library.handle.close();
     await rm(root, { recursive: true });
   }
@@ -198,6 +326,7 @@ test("streamed list pages rows in order and waits for each consumer", async () =
   const root = await mkdtemp(join(tmpdir(), "photoctl-list-stream-pages-"));
   const library = await initializeLibrary(join(root, "library"));
   const ids = Array.from({ length: 70 }, () => newLibraryEntityId());
+  const resolve = vi.spyOn(EnvVolumeResolver.prototype, "resolve");
   try {
     await library.handle.query(
       "INSERT INTO volumes (uuid, last_mount, last_seen) VALUES ('page-volume', $1, now())",
@@ -234,9 +363,11 @@ test("streamed list pages rows in order and waits for each consumer", async () =
       version: "test",
       library: library.handle,
       stream: async (row) => {
+        expect(resolve.mock.calls).toHaveLength(streamed.length + 1);
         active += 1;
         highWater = Math.max(highWater, active);
         await new Promise((resolve) => setTimeout(resolve, 1));
+        expect(resolve.mock.calls).toHaveLength(streamed.length + 1);
         streamed.push((row as { id: string }).id);
         active -= 1;
       },
@@ -245,7 +376,26 @@ test("streamed list pages rows in order and waits for each consumer", async () =
     expect(highWater).toBe(1);
     expect(streamed).toEqual(ids);
     expect(result).toMatchObject({ ok: true, data: { rows: [], total: 70 } });
+    resolve.mockClear();
+    const limited: string[] = [];
+    const page = await dispatch(
+      request("list", ["--stream", "--limit", "2"], `${root}=page-volume:online`),
+      {
+        version: "test",
+        library: library.handle,
+        stream: (row) => {
+          limited.push((row as { id: string }).id);
+        },
+      },
+    );
+    expect(limited).toEqual(ids.slice(0, 2));
+    expect(page).toMatchObject({ ok: true, data: { rows: [], total: 70 } });
+    expect(resolve.mock.calls).toEqual([
+      ["page-volume", "00.jpg"],
+      ["page-volume", "01.jpg"],
+    ]);
   } finally {
+    resolve.mockRestore();
     await library.handle.close();
     await rm(root, { recursive: true });
   }
@@ -416,7 +566,7 @@ async function seedPhoto(
   handle: Awaited<ReturnType<typeof initializeLibrary>>["handle"],
   id: string,
   contentKey: string,
-  shotAt: string,
+  shotAt: string | null,
 ): Promise<void> {
   await handle.query(
     `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)

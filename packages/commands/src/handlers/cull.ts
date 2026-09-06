@@ -198,6 +198,11 @@ export async function nextCommand(
     if (parsed.flags.has("--reset")) {
       await lease.handle.query("DELETE FROM settings WHERE key = $1", [cursorKey]);
     }
+    const cursor = await lease.handle.query<{ value: unknown }>(
+      "SELECT value FROM settings WHERE key = $1",
+      [cursorKey],
+    );
+    const previous = parseNextCursor(cursor.rows[0]?.value);
     const { rows, order } = await loadListRows(
       lease.handle,
       env,
@@ -207,19 +212,14 @@ export async function nextCommand(
         ...(filters.folder ? { folder: filters.folder } : {}),
         xmpStale: false,
       },
-      { captureOrder: true },
+      { captureOrder: true, maxRows: 1, after: previous },
     );
-    if (rows.length === 0) throw new PhotoctlError("not_found", "No photos match the next filter");
-    const cursor = await lease.handle.query<{ value: unknown }>(
-      "SELECT value FROM settings WHERE key = $1",
-      [cursorKey],
-    );
-    const previous = parseNextCursor(cursor.rows[0]?.value);
+    if (order.length === 0) throw new PhotoctlError("not_found", "No photos match the next filter");
     const index = previous ? order.findIndex((candidate) => orderAfter(candidate, previous)) : 0;
-    if (index < 0 || index >= rows.length) {
+    if (index < 0) {
       throw new PhotoctlError("not_found", "No photos remain for this next cursor");
     }
-    const row = rows[index];
+    const row = rows[0];
     const cacheRoot = cacheRootForLibrary(await readLibraryId(lease.handle), cacheBase(env, cwd));
     const preview = pinnedEmbeddedJpegPath(cacheRoot, row.id);
     try {
@@ -235,7 +235,7 @@ export async function nextCommand(
     return {
       schema: 1,
       ok: true,
-      data: { ...row, preview, remaining: rows.length - index - 1 },
+      data: { ...row, preview, remaining: order.length - index - 1 },
       warnings: [],
     };
   } finally {
@@ -394,6 +394,7 @@ async function loadListRows(
     visit?: (row: ListRow) => void | Promise<void>;
     visitLimit?: number;
     captureOrder?: boolean;
+    after?: ListOrder | null;
   } = {},
 ): Promise<{ rows: ListRow[]; total: number; order: ListOrder[] }> {
   const values: unknown[] = [];
@@ -456,25 +457,16 @@ async function loadListRows(
        FROM files JOIN originals ON originals.id = files.original_id WHERE photo_id = ANY($1::uuid[]) ORDER BY photo_id, rel_path`,
       [photoIds],
     );
-    const located = await Promise.all(
-      locators.rows.map(async (row) => ({
-        source: row,
-        online: (await resolver.resolve(row.volume_uuid, row.rel_path)).online,
-      })),
-    );
-    const byPhoto = new Map<string, typeof located>();
-    for (const item of located) {
-      const group = byPhoto.get(item.source.photo_id) ?? [];
+    const byPhoto = new Map<string, RawLocatorRow[]>();
+    for (const item of locators.rows) {
+      const group = byPhoto.get(item.photo_id) ?? [];
       group.push(item);
-      byPhoto.set(item.source.photo_id, group);
+      byPhoto.set(item.photo_id, group);
     }
+    const retained: Array<() => Promise<ListRow>> = [];
     for (const photo of photos.rows) {
-      const group = byPhoto.get(photo.id);
-      if (!group || group.length === 0) continue;
-      const primaryLocations = group.filter(
-        (item) => item.source.original_id === photo.primary_original_id,
-      );
-      const selected = primaryLocations.find((item) => item.online) ?? primaryLocations[0];
+      const sources = byPhoto.get(photo.id);
+      if (!sources || sources.length === 0) continue;
       if (
         filters.xmpStale &&
         photo.sidecar_path &&
@@ -483,31 +475,53 @@ async function loadListRows(
       ) {
         continue;
       }
-      const row: ListRow = {
-        id: photo.id,
-        primary_original_id: photo.primary_original_id,
-        originals: photo.originals.map((original) => ({
-          ...original,
-          online: group.some((item) => item.source.original_id === original.id && item.online),
-        })),
-        file: selected ? basename(selected.source.rel_path) : "",
-        rating: photo.rating,
-        flag: photo.flag,
-        label: photo.label,
-        shot:
-          photo.shot_at && photo.shot_offset_min !== null
-            ? formatShotInstant(new Date(photo.shot_at), photo.shot_offset_min)
-            : null,
-        online: primaryLocations.some((item) => item.online),
-      };
       total += 1;
-      if (rows.length < (output.maxRows ?? Number.POSITIVE_INFINITY)) rows.push(row);
       if (output.captureOrder) order.push({ shotAt: photo.shot_order, id: photo.id });
-      if (output.visit && visited < (output.visitLimit ?? Number.POSITIVE_INFINITY)) {
-        await output.visit(row);
+      if (output.after && !orderAfter({ shotAt: photo.shot_order, id: photo.id }, output.after))
+        continue;
+      const retain = rows.length + retained.length < (output.maxRows ?? Number.POSITIVE_INFINITY);
+      const visit =
+        visited < (output.visitLimit ?? Number.POSITIVE_INFINITY) ? output.visit : undefined;
+      if (!retain && !visit) continue;
+      const materialize = async (): Promise<ListRow> => {
+        const group = await Promise.all(
+          sources.map(async (source) => ({
+            source,
+            online: (await resolver.resolve(source.volume_uuid, source.rel_path)).online,
+          })),
+        );
+        const primaryLocations = group.filter(
+          (item) => item.source.original_id === photo.primary_original_id,
+        );
+        const selected = primaryLocations.find((item) => item.online) ?? primaryLocations[0];
+        return {
+          id: photo.id,
+          primary_original_id: photo.primary_original_id,
+          originals: photo.originals.map((original) => ({
+            ...original,
+            online: group.some((item) => item.source.original_id === original.id && item.online),
+          })),
+          file: selected ? basename(selected.source.rel_path) : "",
+          rating: photo.rating,
+          flag: photo.flag,
+          label: photo.label,
+          shot:
+            photo.shot_at && photo.shot_offset_min !== null
+              ? formatShotInstant(new Date(photo.shot_at), photo.shot_offset_min)
+              : null,
+          online: primaryLocations.some((item) => item.online),
+        };
+      };
+      if (visit) {
+        const row = await materialize();
+        if (retain) rows.push(row);
+        await visit(row);
         visited += 1;
+      } else if (retain) {
+        retained.push(materialize);
       }
     }
+    rows.push(...(await Promise.all(retained.map((materialize) => materialize()))));
     offset += photos.rows.length;
     if (photos.rows.length < pageSize) break;
   }

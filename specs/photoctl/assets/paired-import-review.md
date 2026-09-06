@@ -42,6 +42,8 @@ The three exports took 13.80 seconds together. These are measurements from that
 development build, not release performance guarantees. They exposed inspection
 progress and unnecessary list work; changing the source validation policy or
 relaxing timeouts is not justified by these timings.
+The bounded availability correction and its work-count proof are recorded in
+[the culling performance review](list-availability-performance.md).
 
 Scratch evidence is retained at `/private/tmp/photoctl-paired-camera.D2ev5A`.
 The original script stopped on an incorrect positional rating argument; the saved

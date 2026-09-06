@@ -5452,3 +5452,23 @@
 - **Verdict:** **Sound.** The check protects obvious mismatches without conflating the
   JPEG's processing choices with the RAW's original geometry.
 - **Confidence:** Medium; future camera evidence may justify more shared capture fields.
+
+### Culling performance — Separate result membership from current availability
+
+- **When:** Bounded list materialization, 2026-09-06.
+- **The choice:** A catalog contains hundreds of photos but the caller asks for ten.
+  Count every eligible photo and retain the same ordering, while checking drive/file
+  availability only for the ten returned rows. XMP staleness still checks all candidate
+  sidecars because it changes membership. A streamed caller must accept one row before
+  the next row's availability work starts; an ordinary non-stream page retains concurrent
+  checks for the rows it will return. `next` resolves only its selected photo.
+- **The gap:** The existing SQL page bounded catalog memory, but did not define where
+  expensive availability work belonged relative to output limits and stream backpressure.
+- **The reach:** Counts and cursors do not become availability caches. Every returned row
+  still consults the ordinary resolver, preserving offline, wrong-volume and reconnect
+  behavior. Unlimited non-stream lists retain the existing page concurrency rather than
+  trading away throughput to improve small lists.
+- **Verdict:** **Sound.** The output demand bounds external work without changing the
+  catalog's meaning or introducing another count/volume owner.
+- **Confidence:** High; deterministic work-count, concurrency and recovery regressions
+  cover the scheduling distinction. The original camera duration is not a new benchmark.
