@@ -48,6 +48,30 @@ survives re-import; unknown label → warning); `identity-collision.test.ts` bui
 and different middles, proves stable distinct ids, then reimports both without duplication; `migrate-upgrade` extended.
 
 ## Delegated: scan concurrency.
+
+## Open performance correction — bounded list materialization
+
+Priority: high for real-camera organization. The camera development witness took
+41.02 seconds for `list --limit 10` with 431 matching photos, versus 1.38 seconds
+when the rating filter reduced the match set to ten. These are observed durations,
+not a controlled benchmark. Source inspection establishes the amplification:
+`loadListRows` resolves every locator in every matching page before applying the
+output limit. The paired catalog therefore performs up to 862 volume/path checks
+to return ten photos. `MacVolumeResolver.resolve` invokes `diskutil` for each check.
+The 64-row SQL page bounds retained rows, not total external work.
+
+The commands culling owner must separate counting/cursor order from row
+materialization: only returned or streamed photos need current locator availability.
+Preserve exact totals, ordering, missing-locator behavior, XMP-stale filtering,
+stream backpressure, and next-cursor behavior. Do not hide this work with larger
+timeouts or a stale volume cache; a different drive at the same mount path must
+never be mistaken for the original. Prove bounded external checks through limited
+public list/stream commands and continued offline/reconnect recovery. Implement
+after the paired-original consumer cutover to avoid competing culling rewrites.
+
+Disposition: confirmed, not yet fixed. Cheap paged catalog reads are not themselves
+a performance defect; avoid an alternate count index or projection without evidence.
+
 ## Checkpoint: `wb sheet` — badge legibility only.
 ## Must stay green: 01–03. Deps: 03. Firewall: no XMP write; no develop; no `.lrcat` parsing.
 
