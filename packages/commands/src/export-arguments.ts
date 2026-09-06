@@ -8,6 +8,7 @@ import type {
 
 export interface ExportOverrides extends ExportPreset {
   preset?: string;
+  source?: "camera-jpeg";
 }
 
 export function parseExportArguments(args: string[]): {
@@ -31,7 +32,10 @@ export function parseExportArguments(args: string[]): {
     seen.add(argument);
     index += 1;
     if (argument === "--to") overrides.to = value;
-    else if (argument === "--format") overrides.format = parseFormat(value);
+    else if (argument === "--source") {
+      if (value !== "camera-jpeg") throw new PhotoctlError("usage", "--source must be camera-jpeg");
+      overrides.source = value;
+    } else if (argument === "--format") overrides.format = parseFormat(value);
     else if (argument === "--quality") overrides.quality = parseQuality(value);
     else if (argument === "--resize") overrides.resize = parseResize(value);
     else if (argument === "--template") overrides.template = value;

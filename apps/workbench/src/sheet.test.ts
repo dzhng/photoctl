@@ -9,6 +9,11 @@ test("the sheet keeps rating, flag, label, and online badges legible beside each
       {
         row: {
           id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001",
+          primary_original_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002",
+          originals: [
+            { id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002", kind: "raw", online: true },
+            { id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003", kind: "jpeg", online: false },
+          ],
           file: "DSC00001.ARW",
           rating: 5,
           flag: "pick",
@@ -27,4 +32,6 @@ test("the sheet keeps rating, flag, label, and online badges legible beside each
   expect(html).toContain("Green");
   expect(html).toContain("Online");
   expect(html).toContain("Show JSON");
+  expect(html).toContain("RAW · Primary · Online");
+  expect(html).toContain("JPEG · Offline");
 });

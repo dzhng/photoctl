@@ -34,7 +34,7 @@ test("rate reports a missing item without starving valid photos", async () => {
       ],
     });
     const rows = await library.handle.query<{ id: string; rating: number }>(
-      "SELECT id::text, rating FROM photos ORDER BY shot_at, id",
+      "SELECT p.id::text, p.rating FROM photos p JOIN originals o ON o.id = p.primary_original_id ORDER BY o.shot_at, p.id",
     );
     expect(rows.rows).toEqual([
       { id: first, rating: 5 },
@@ -204,8 +204,10 @@ test("streamed list pages rows in order and waits for each consumer", async () =
       [root],
     );
     await library.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation, shot_at)
-       SELECT id, content_key, 1, 1, 1, 1, shot_at
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+         SELECT id, id, 1, 1, 1 FROM unnest($1::uuid[]) AS input(id) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation, shot_at)
+       SELECT id, id, 'jpeg', content_key, 1, 1, 1, 1, shot_at
        FROM unnest($1::uuid[], $2::text[], $3::timestamptz[])
          AS input(id, content_key, shot_at)`,
       [
@@ -215,7 +217,7 @@ test("streamed list pages rows in order and waits for each consumer", async () =
       ],
     );
     await library.handle.query(
-      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+      `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
        SELECT file_id, photo_id, 'page-volume', rel_path, now()
        FROM unnest($1::uuid[], $2::uuid[], $3::text[])
          AS input(file_id, photo_id, rel_path)`,
@@ -404,7 +406,7 @@ async function seedLocator(
      VALUES ('test-volume', 'drive', '/unused', now()) ON CONFLICT DO NOTHING`,
   );
   await handle.query(
-    `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+    `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
      VALUES ($1, $2, 'test-volume', $3, now())`,
     [newLibraryEntityId(), photoId, relPath],
   );
@@ -417,8 +419,10 @@ async function seedPhoto(
   shotAt: string,
 ): Promise<void> {
   await handle.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation, shot_at)
-     VALUES ($1, $2, 1, 1, 1, 1, $3)`,
+    `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       VALUES ($1, $1, 1, 1, 1) RETURNING id)
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation, shot_at)
+     VALUES ($1, $1, 'jpeg', $2, 1, 1, 1, 1, $3)`,
     [id, contentKey, shotAt],
   );
 }

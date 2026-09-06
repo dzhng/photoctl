@@ -21,8 +21,9 @@ test("sample-key collisions promote both files and preserve distinct stable IDs"
     await migrate(db);
     const identity = await identifyFile(firstPath);
     await db.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, $2, $3, 1, 1, 1)`,
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) VALUES ($1, $1, 1, 1, 1) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       VALUES ($1, $1, 'image', $2, $3, 1, 1, 1)`,
       [firstId, identity.contentKey, identity.size],
     );
     await db.query(
@@ -31,7 +32,7 @@ test("sample-key collisions promote both files and preserve distinct stable IDs"
       [root],
     );
     await db.query(
-      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+      `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
        VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c010', $1, 'volume', 'first.bin', now())`,
       [firstId],
     );
@@ -55,14 +56,15 @@ test("sample-key collisions promote both files and preserve distinct stable IDs"
       resolver,
     );
     await db.query(
-      `INSERT INTO photos (id, content_key, content_hash, size, w, h, orientation)
-       VALUES ($1, $2, $3, $4, 1, 1, 1)`,
-      [second.photoId, identity.contentKey, second.contentHash, identity.size],
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) VALUES ($1, $1, 1, 1, 1) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, content_hash, size, w, h, orientation)
+       VALUES ($1, $1, 'image', $2, $3, $4, 1, 1, 1)`,
+      [second.originalId, identity.contentKey, second.contentHash, identity.size],
     );
     await db.query(
-      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+      `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
        VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c011', $1, 'volume', 'second.bin', now())`,
-      [second.photoId],
+      [second.originalId],
     );
     const again = await resolveContentIdentity(
       db,
@@ -73,16 +75,16 @@ test("sample-key collisions promote both files and preserve distinct stable IDs"
       resolver,
     );
 
-    expect(second.photoId).not.toBe(firstId);
+    expect(second.originalId).not.toBe(firstId);
     expect(second.contentHash).toMatch(/^sha256_[0-9a-f]{64}$/);
     expect(again).toEqual(second);
     const promoted = await db.query<{ id: string; content_hash: string }>(
-      "SELECT id::text, content_hash FROM photos WHERE content_key = $1 ORDER BY id",
+      "SELECT id::text, content_hash FROM originals WHERE content_key = $1 ORDER BY id",
       [identity.contentKey],
     );
     expect(promoted.rows).toEqual([
       { id: firstId, content_hash: expect.stringMatching(/^sha256_[0-9a-f]{64}$/) },
-      { id: second.photoId, content_hash: second.contentHash },
+      { id: second.originalId, content_hash: second.contentHash },
     ]);
   } finally {
     await db.close();
@@ -100,15 +102,16 @@ test("an offline unpromoted candidate never absorbs a sampled-key collision", as
     await migrate(db);
     const identity = await identifyFile(candidate);
     await db.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, $2, $3, 1, 1, 1)`,
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) VALUES ($1, $1, 1, 1, 1) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       VALUES ($1, $1, 'image', $2, $3, 1, 1, 1)`,
       [id, identity.contentKey, identity.size],
     );
     await db.query(
       "INSERT INTO volumes (uuid, last_mount, last_seen) VALUES ('offline', '/gone', now())",
     );
     await db.query(
-      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+      `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
        VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c021', $1, 'offline', 'old.bin', now())`,
       [id],
     );
@@ -122,7 +125,7 @@ test("an offline unpromoted candidate never absorbs a sampled-key collision", as
       }),
     ).rejects.toMatchObject({ code: "file_offline" });
     const stored = await db.query<{ content_hash: string | null }>(
-      "SELECT content_hash FROM photos WHERE id = $1",
+      "SELECT content_hash FROM originals WHERE id = $1",
       [id],
     );
     expect(stored.rows).toEqual([{ content_hash: null }]);
@@ -142,8 +145,9 @@ test("a missing locator is relocation only on its confirmed-online volume", asyn
     await migrate(db);
     const identity = await identifyFile(candidate);
     await db.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, $2, $3, 1, 1, 1)`,
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) VALUES ($1, $1, 1, 1, 1) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       VALUES ($1, $1, 'image', $2, $3, 1, 1, 1)`,
       [id, identity.contentKey, identity.size],
     );
     await db.query(
@@ -151,7 +155,7 @@ test("a missing locator is relocation only on its confirmed-online volume", asyn
       [root],
     );
     await db.query(
-      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+      `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
        VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c031', $1, 'volume', 'old.bin', now())`,
       [id],
     );
@@ -164,7 +168,7 @@ test("a missing locator is relocation only on its confirmed-online volume", asyn
 
     await expect(
       resolveContentIdentity(db, candidate, identity, "volume", "renamed.bin", onlineMissing),
-    ).resolves.toEqual({ photoId: id, contentHash: null });
+    ).resolves.toEqual({ originalId: id, contentHash: null });
     await expect(
       resolveContentIdentity(db, candidate, identity, "other", "renamed.bin", onlineMissing),
     ).rejects.toMatchObject({ code: "file_offline" });
@@ -187,8 +191,9 @@ test("an exact unpromoted locator accepts stable mtime and refuses replacement i
     const firstIdentity = await identifyFile(candidate);
     await migrate(db);
     await db.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, $2, $3, 1, 1, 1)`,
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) VALUES ($1, $1, 1, 1, 1) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       VALUES ($1, $1, 'image', $2, $3, 1, 1, 1)`,
       [id, firstIdentity.contentKey, firstIdentity.size],
     );
     await db.query(
@@ -196,7 +201,7 @@ test("an exact unpromoted locator accepts stable mtime and refuses replacement i
       [root],
     );
     await db.query(
-      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+      `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
        VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c041', $1, 'volume', 'frame.bin', $2)`,
       [id, firstIdentity.mtime.toISOString()],
     );
@@ -208,7 +213,7 @@ test("an exact unpromoted locator accepts stable mtime and refuses replacement i
     };
     await expect(
       resolveContentIdentity(db, candidate, firstIdentity, "volume", "frame.bin", resolver),
-    ).resolves.toEqual({ photoId: id, contentHash: null });
+    ).resolves.toEqual({ originalId: id, contentHash: null });
 
     await writeFile(candidate, secondBytes);
     const changedTime = new Date(firstIdentity.mtime.getTime() + 2_000);

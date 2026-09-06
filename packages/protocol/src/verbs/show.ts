@@ -14,6 +14,23 @@ const pointSchema = z.tuple([z.number(), z.number()]);
 
 export const showDataSchema = z.object({
   id: z.uuid(),
+  primary_original_id: z.uuid(),
+  source_original_id: z.uuid(),
+  originals: z.array(
+    z.object({
+      id: z.uuid(),
+      kind: z.enum(["raw", "jpeg", "image"]),
+      content_key: z.string(),
+      content_hash: z.string().nullable(),
+      bytes: z.number().int().nonnegative(),
+      dims: z.object({
+        w: z.number().int().positive(),
+        h: z.number().int().positive(),
+        orientation: z.number().int().min(1).max(8),
+      }),
+      locators: z.array(z.object({ volume: z.string(), path: z.string(), online: z.boolean() })),
+    }),
+  ),
   dims: z.object({
     w: z.number().int().positive(),
     h: z.number().int().positive(),

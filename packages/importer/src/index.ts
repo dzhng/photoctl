@@ -5,3 +5,4 @@ export * from "./exif.js";
 export * from "./formats.js";
 export * from "./scan.js";
 export * from "./pipeline.js";
+export * from "./companions.js";

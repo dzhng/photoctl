@@ -9,27 +9,7 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `a7c2-lossless-l.ARW` | known-good, CC0 | Full-resolution Sony lossless-L RAW decodes; its stored Compression=7 survives LibRaw's internal dispatch normalization. |
 | `a7c2-lossy.ARW` | known-good, CC0 | Sony lossy compressed RAW (Compression=32767) preserves the same camera-space decoder contract. |
 | `corrupt/a7c2-truncated.ARW` | known-bad | A genuine TIFF header and truncated first directory are skipped by public import without a crash or catalog photo. Its adjacent JSON records the exact source prefix and hash. |
-| `libraries/schema-v1.pgsql` | known-good | A real pgDump of the settings-only schema upgrades without losing library `0199a7c2-0000-7000-8000-000000000001` or its cache/daemon settings. |
-| `libraries/schema-v2.pgsql` | known-good | The current photo, volume, locator, and pinned-cache schema preserves the `a7c2` fixture facts. |
-| `libraries/schema-v3.pgsql` | known-good | The daemon settings and exact tag identity survive later schema upgrades. |
-| `libraries/schema-v4.pgsql` | known-good | Promoted sampled identity, cull state, tags, and XMP read state survive the graph migration. |
-| `libraries/schema-v5.pgsql` | known-good | The immutable graph schema preserves a pinned active source revision without requiring an execution artifact. |
-| `libraries/schema-v6.pgsql` | known-good | Export history preserves delivered paths, immutable render identities, timestamps, and byte counts. |
-| `libraries/schema-v7.pgsql` | known-good | Provider executions extend immutable graph provenance without replacing the graph owner. |
-| `libraries/schema-v8.pgsql` | known-good | Search documents, half-vector embeddings, and provider-consent settings survive the layer-schema upgrade. |
-| `libraries/schema-v9.pgsql` | known-good | Stable layer identities, immutable layer snapshots, and typed base/output revision roots survive the solid/vacancy upgrade. |
-| `libraries/schema-v10.pgsql` | known-good | A moved subject keeps its paired magenta vacancy, original selection, ordered layer snapshots and immutable graph through upgrade. |
-| `libraries/schema-v11.pgsql` | known-good | An affine resample retains its version-2 matrix, ordered RGB input and layer placement through upgrade. |
-| `libraries/schema-v12.pgsql` | known-good | A local retouch retains its heal recipe, prior-image input, selection and removable layer identity through upgrade. |
-| `libraries/schema-v13.pgsql` | known-good | Versioned auto-enhance undo metadata on an immutable document revision survives later schema upgrades. |
-| `libraries/schema-v14.pgsql` | known-good | A tagged standalone generated photo retains its zero-input generation recipe and provider provenance. |
-| `libraries/schema-v15.pgsql` | known-good | Stable vector markup items and their photo ownership survive later schema upgrades. |
-| `libraries/schema-v16.pgsql` | known-good | Derived mask fit parameters retain their original selection ancestry across schema upgrades. |
-| `libraries/schema-v17.pgsql` | known-good | A realized execution frame keeps its source-tier coordinates even when its pixel artifact is unavailable. |
-| `libraries/schema-v18.pgsql` | known-good | A pinned reference retains working RGB and encoded PNG artifacts before any source execution exists. |
-| `libraries/schema-v19.pgsql` | known-good | Immutable geometry intent and per-layer authoring checkpoints survive a dump/restore; duplicating an earlier layer does not make it newly authored. |
-| `libraries/schema-v20.pgsql` | known-good | Accepted and policy-rejected paid image attempts retain original artifacts, while only the accepted attempt links a render execution and photo. |
-| `libraries/schema-v21.pgsql` | known-good | A translated border retains intrinsic pixel placement, immutable canvas bounds and support status, and authored geometry ancestry. |
+| `libraries/` | historical evidence | Frozen pre-pairing catalogs document historical writer behavior; they are not supported input to the clean-start catalog model. |
 | `models.json` | release contract | Pins the SAM 2.1 source revision, real CPU-parity-verified ONNX hashes, and opsets. Distribution location is configured separately; hashes do not assert model quality or runtime performance. |
 | `xmp/classic.xmp` | known-good | A Classic-style sidecar exercises rating, label, flat and hierarchical keywords, and photoctl's namespaced flag. |
 | `tools/drive.mjs` | generator | `fixtures:drive -- --count N --out DIR` creates deterministic tail-distinct ARW copies and matching Classic-style sidecars. |
@@ -63,20 +43,12 @@ the RAW codecs. SonyRawFileType=4 identifies lossless compressed RAW 2 according
 the 7008×4672 default crop matches [Sony's full-frame L specification](https://www.sony.com/electronics/support/e-mount-body-ilce-7-series/ilce-7cm2/specifications).
 The repository's 4:3 label is not proof of the developed aspect ratio or M/S coverage; the crop is read from the file.
 
-Historical SQL fixtures freeze schema and writer contracts, not old PostgreSQL binaries. The v10–v12
-dumps were produced by running the migration runner and graph/layer writers from `bf93625`, `693c526`,
-and `e3d2b38` respectively against fresh PGlite databases, then using real `pgDump`. They were not
-made by relabeling a current database or removing newer migrations from one. The schema-version ledger
-is the historical runner's output. UUIDs and timestamps are original writer output retained in the dump.
-
-Their small source photo is a metadata fixture: each historical writer creates a box selection at
-`[2,3,4,5]` in a 16×12 frame and moves it by `[3,-2]`. The v11 writer additionally commits an affine
-resample on the subject's RGB branch, retaining the selection and rebuilding the composite through
-its layer projection owner. The v12 retouch writer adds a radius-2 circle at `[8,6]`. Exact recipes and
-upgrade assertions live in [`migrate-upgrade.test.ts`](../packages/library/src/migrations/migrate-upgrade.test.ts).
-Mask artifacts were published during authorship but are not included in these metadata-only dumps;
-this coverage proves retained graph records, not recoverable pixel files or photographic correctness.
-As with production restore, tests reset the session search path after loading a real pgDump.
+Historical SQL dumps remain untouched evidence of earlier writers, not a compatibility promise.
+The paired-originals model uses fresh catalogs: tests seed logical photos and their independent
+originals directly. Current bootstrap, relational ownership, collision promotion, metadata-only
+backup and restore remain tested; upgrading these pre-cutover dumps is intentionally outside
+the development contract. The graph removal tests author fresh historical revisions rather than
+using an old catalog as an implicit adapter.
 
 The `sam_probes` annotations in `a7c2.json` are authored from visible subjects, not model outputs.
 Remeasurement preserves them only while the image SHA-256 is unchanged. Their area bands test coarse

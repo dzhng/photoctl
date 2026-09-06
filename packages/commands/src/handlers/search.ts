@@ -86,9 +86,10 @@ export async function searchCommand(
         ? []
         : (
             await lease.handle.query<{ photo_id: string; rel_path: string }>(
-              `SELECT DISTINCT ON (photo_id) photo_id::text, rel_path
-               FROM files WHERE photo_id = ANY($1::uuid[])
-               ORDER BY photo_id, rel_path`,
+              `SELECT DISTINCT ON (p.id) p.id::text AS photo_id, f.rel_path
+               FROM photos p JOIN files f ON f.original_id = p.primary_original_id
+               WHERE p.id = ANY($1::uuid[])
+               ORDER BY p.id, f.rel_path`,
               [fused.map((hit) => hit.id)],
             )
           ).rows;

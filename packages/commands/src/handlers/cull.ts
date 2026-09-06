@@ -272,7 +272,7 @@ export async function removeCommand(
         rel_path: string;
       }>(
         `SELECT photo_id::text, volume_uuid, rel_path
-         FROM files WHERE photo_id = ANY($1::uuid[]) ORDER BY photo_id, rel_path`,
+         FROM files JOIN originals ON originals.id = files.original_id WHERE photo_id = ANY($1::uuid[]) ORDER BY photo_id, rel_path`,
         [ids],
       );
       for (const file of files.rows) {
@@ -354,6 +354,8 @@ export async function rollbackReceiptsOrThrow(
 
 interface RawListRow {
   id: string;
+  primary_original_id: string;
+  originals: Array<Pick<ListRow["originals"][number], "id" | "kind">>;
   rating: number;
   flag: CullFlag;
   label: CullLabel | null;
@@ -371,6 +373,7 @@ interface ListOrder {
 
 interface RawLocatorRow {
   photo_id: string;
+  original_id: string;
   volume_uuid: string;
   rel_path: string;
 }
@@ -417,7 +420,7 @@ async function loadListRows(
         .replace(/([%_])/g, "\\$1"),
     );
     where.push(
-      `EXISTS (SELECT 1 FROM files ff WHERE ff.photo_id = p.id
+      `EXISTS (SELECT 1 FROM files ff JOIN originals oo ON oo.id = ff.original_id WHERE oo.photo_id = p.id
                AND (ff.rel_path LIKE ${folder} || '/%' ESCAPE E'\\\\'
                     OR ff.rel_path LIKE '%/' || ${folder} || '/%' ESCAPE E'\\\\'))`,
     );
@@ -432,21 +435,25 @@ async function loadListRows(
   const pageSize = 64;
   while (true) {
     const photos = await handle.query<RawListRow>(
-      `SELECT p.id::text, p.rating, p.flag, p.label, p.shot_at::text,
-              extract(epoch FROM p.shot_at)::double precision AS shot_order, p.shot_offset_min,
+      `SELECT p.id::text, p.primary_original_id::text,
+              (SELECT jsonb_agg(jsonb_build_object('id', member.id::text, 'kind', member.kind)
+                 ORDER BY (member.id = p.primary_original_id) DESC, member.id)
+               FROM originals member WHERE member.photo_id = p.id) AS originals,
+              p.rating, p.flag, p.label, o.shot_at::text,
+              extract(epoch FROM o.shot_at)::double precision AS shot_order, o.shot_offset_min,
               xs.sidecar_path, xs.sidecar_mtime::text
-       FROM photos p
+       FROM photos p JOIN originals o ON o.id = p.primary_original_id
        LEFT JOIN xmp_state xs ON xs.photo_id = p.id
        ${where.length > 0 ? `WHERE ${where.join(" AND ")}` : ""}
-       ORDER BY p.shot_at NULLS LAST, p.id
+       ORDER BY o.shot_at NULLS LAST, p.id
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       [...values, pageSize, offset],
     );
     if (photos.rows.length === 0) break;
     const photoIds = photos.rows.map((row) => row.id);
     const locators = await handle.query<RawLocatorRow>(
-      `SELECT photo_id::text, volume_uuid, rel_path
-       FROM files WHERE photo_id = ANY($1::uuid[]) ORDER BY photo_id, rel_path`,
+      `SELECT photo_id::text, original_id::text, volume_uuid, rel_path
+       FROM files JOIN originals ON originals.id = files.original_id WHERE photo_id = ANY($1::uuid[]) ORDER BY photo_id, rel_path`,
       [photoIds],
     );
     const located = await Promise.all(
@@ -464,7 +471,10 @@ async function loadListRows(
     for (const photo of photos.rows) {
       const group = byPhoto.get(photo.id);
       if (!group || group.length === 0) continue;
-      const selected = group.find((item) => item.online) ?? group[0];
+      const primaryLocations = group.filter(
+        (item) => item.source.original_id === photo.primary_original_id,
+      );
+      const selected = primaryLocations.find((item) => item.online) ?? primaryLocations[0];
       if (
         filters.xmpStale &&
         photo.sidecar_path &&
@@ -475,7 +485,12 @@ async function loadListRows(
       }
       const row: ListRow = {
         id: photo.id,
-        file: basename(selected.source.rel_path),
+        primary_original_id: photo.primary_original_id,
+        originals: photo.originals.map((original) => ({
+          ...original,
+          online: group.some((item) => item.source.original_id === original.id && item.online),
+        })),
+        file: selected ? basename(selected.source.rel_path) : "",
         rating: photo.rating,
         flag: photo.flag,
         label: photo.label,
@@ -483,7 +498,7 @@ async function loadListRows(
           photo.shot_at && photo.shot_offset_min !== null
             ? formatShotInstant(new Date(photo.shot_at), photo.shot_offset_min)
             : null,
-        online: group.some((item) => item.online),
+        online: primaryLocations.some((item) => item.online),
       };
       total += 1;
       if (rows.length < (output.maxRows ?? Number.POSITIVE_INFINITY)) rows.push(row);

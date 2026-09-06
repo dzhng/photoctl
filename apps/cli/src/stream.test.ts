@@ -30,12 +30,11 @@ test.each([
         const name = `${index + 1}.jpg`;
         await writeFile(join(mount, name), `file ${index}`);
         await initialized.handle.query(
-          `INSERT INTO photos (id, content_key, size, w, h, orientation, shot_at)
-         VALUES ($1, $2, 1, 1, 1, 1, $3)`,
+          `WITH seed (id, content_key, size, w, h, orientation, shot_at) AS (VALUES ($1, $2, 1, 1, 1, 1, $3)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation, shot_at) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer, shot_at::timestamptz FROM seed`,
           [id, `ck_400000000000000${index}`, `2025-01-01T1${index}:00:00Z`],
         );
         await initialized.handle.query(
-          `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+          `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
          VALUES ($1, $2, 'stream-volume', $3, now())`,
           [newLibraryEntityId(), id, name],
         );

@@ -206,7 +206,7 @@ test("a read-only whole-file sidecar failure does not starve an embedded-contain
     expect(imported).toMatchObject({ ok: true, data: { imported: 2 } });
     const files = await library.handle.query<{ id: string; rel_path: string }>(
       `SELECT p.id::text AS id, f.rel_path
-       FROM photos p JOIN files f ON f.photo_id = p.id ORDER BY f.rel_path`,
+       FROM photos p JOIN originals o ON o.photo_id = p.id JOIN files f ON f.original_id = o.id ORDER BY f.rel_path`,
     );
     const pngId = files.rows.find((row) => row.rel_path.endsWith("frame.png"))?.id;
     const rawId = files.rows.find((row) => row.rel_path.endsWith("frame.ARW"))?.id;
@@ -258,7 +258,7 @@ test("an item-local filesystem shape error does not abort later writes", async (
     });
     const ids = (imported as { data: { ids: string[] } }).data.ids;
     const files = await library.handle.query<{ id: string; rel_path: string }>(
-      `SELECT p.id::text AS id, f.rel_path FROM photos p JOIN files f ON f.photo_id = p.id`,
+      `SELECT p.id::text AS id, f.rel_path FROM photos p JOIN originals o ON o.photo_id = p.id JOIN files f ON f.original_id = o.id`,
     );
     const firstId = files.rows.find((row) => row.rel_path.endsWith("first.png"))?.id;
     const secondId = files.rows.find((row) => row.rel_path.endsWith("second.ARW"))?.id;
@@ -310,7 +310,7 @@ test("a post-verification sidecar conflict fails one item without starving the b
       library: library.handle,
     });
     const files = await library.handle.query<{ id: string; rel_path: string }>(
-      `SELECT p.id::text AS id, f.rel_path FROM photos p JOIN files f ON f.photo_id = p.id`,
+      `SELECT p.id::text AS id, f.rel_path FROM photos p JOIN originals o ON o.photo_id = p.id JOIN files f ON f.original_id = o.id`,
     );
     const firstId = files.rows.find((row) => row.rel_path.endsWith("first.png"))?.id;
     const secondId = files.rows.find((row) => row.rel_path.endsWith("second.ARW"))?.id;

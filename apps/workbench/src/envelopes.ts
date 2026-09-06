@@ -14,6 +14,19 @@ const successfulShow = {
   ok: true,
   data: {
     id: photoId,
+    primary_original_id: photoId,
+    source_original_id: photoId,
+    originals: [
+      {
+        id: photoId,
+        kind: "raw",
+        content_key: "ck_0123456789abcdef",
+        content_hash: null,
+        bytes: 73400320,
+        dims: { w: 7008, h: 4672, orientation: 1 },
+        locators: [{ volume: "fixture-volume", path: "a7c2.ARW", online: true }],
+      },
+    ],
     dims: { w: 7008, h: 4672, orientation: 1, note: "oriented base pixels" },
     crop: null,
     camera: { make: "SONY", model: "ILCE-7M4", lens: "FE 35mm F1.4 GM" },
@@ -66,6 +79,7 @@ const lockedLibrary = {
 
 const successfulExport = {
   id: photoId,
+  source_original_id: photoId,
   ok: true,
   file: "/tmp/out/a7c2.jpg",
   w: 7008,

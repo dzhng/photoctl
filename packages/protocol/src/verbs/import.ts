@@ -4,6 +4,8 @@ export const importDataSchema = z.object({
   imported: z.number().int().nonnegative(),
   already_present: z.number().int().nonnegative(),
   skipped_unsupported: z.number().int().nonnegative(),
+  skipped_conflicts: z.number().int().nonnegative(),
+  conflicts: z.array(z.object({ paths: z.array(z.string()), reason: z.string() })),
   ids: z.array(z.uuid()),
   volume: z.object({ uuid: z.string(), mount: z.string(), online: z.boolean() }).nullable(),
   xmp_read: z.object({

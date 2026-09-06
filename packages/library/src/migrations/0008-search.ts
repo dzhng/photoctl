@@ -23,8 +23,8 @@ export const migration0008 = `
       ' ',
       COALESCE((
         SELECT string_agg(regexp_replace(rel_path, '[^[:alnum:]]+', ' ', 'g'), ' ' ORDER BY rel_path)
-        FROM files
-        WHERE photo_id = target_photo_id
+        FROM files JOIN originals ON originals.id = files.original_id
+        WHERE originals.photo_id = target_photo_id
       ), ''),
       COALESCE((
         SELECT string_agg(regexp_replace(tag, '[^[:alnum:]]+', ' ', 'g'), ' ' ORDER BY tag)
@@ -39,10 +39,10 @@ export const migration0008 = `
   LANGUAGE plpgsql AS $$
   BEGIN
     IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
-      PERFORM refresh_photo_search_text(OLD.photo_id);
+      PERFORM refresh_photo_search_text((SELECT photo_id FROM originals WHERE id = OLD.original_id));
     END IF;
     IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-      PERFORM refresh_photo_search_text(NEW.photo_id);
+      PERFORM refresh_photo_search_text((SELECT photo_id FROM originals WHERE id = NEW.original_id));
     END IF;
     RETURN NULL;
   END

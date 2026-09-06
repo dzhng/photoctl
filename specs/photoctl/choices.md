@@ -5335,3 +5335,120 @@
   not double-count boundary centers. Another footprint policy would require an explicit API decision.
 - **Verdict:** **Sound.** It preserves the existing coordinate/source owners and avoids false precision.
 - **Confidence:** Medium.
+### Paired import — Failed groups remain visible without starving their neighbors
+
+- **When:** Paired-originals checkpoint, 2026-09-06.
+- **The choice:** A folder contains an ambiguous RAW/JPEG group and an unrelated valid photo.
+  Import the valid photo, report why the group was not admitted, and return the existing partial
+  failure result. That result uses a nonzero exit status so an agent notices the incomplete work.
+  Warning-only success would make a folder with missing photos look fully processed; aborting
+  the whole roster would prevent safe independent work.
+- **The gap:** The pairing contract required independent group handling but did not choose its
+  terminal error envelope.
+- **The reach:** Counts describe logical photos, while conflict details describe the affected
+  source paths. Explicit separate import needs no pairing decision and bypasses this ambiguity.
+- **Verdict:** **Sound.** It follows the existing batch failure convention without inventing retries.
+- **Confidence:** High.
+
+### Paired import — An established pair is not a collection of alternate JPEGs
+
+- **When:** Paired-originals review, 2026-09-06.
+- **The choice:** A RAW already has its camera JPEG. Importing another folder containing the same
+  RAW bytes and a different JPEG must not append a third original or replace the old JPEG.
+  There is at most one original of each kind per photo. Another location of the same JPEG remains
+  valid because it is another copy of one original, not a new member. An occupied path whose bytes
+  changed also cannot be silently transferred to a new original.
+- **The gap:** Late attachment needed an explicit multiplicity boundary; generic original rows
+  alone would also permit several alternative JPEG renditions.
+- **The reach:** Explicit camera-JPEG access remains unambiguous. A future alternate-rendition
+  product would need an explicit selection and ownership contract, not accidental extra rows.
+- **Verdict:** **Sound.** The fresh schema and importer enforce the user's one-RAW/one-JPEG model.
+- **Confidence:** High.
+
+### Paired inspection — Online means the primary is available
+
+- **When:** Paired-originals presentation checkpoint, 2026-09-06.
+- **The choice:** The RAW disappears while its JPEG is still reachable. The photo remains one
+  entry, displaying the RAW filename and an offline primary state; its member list separately says
+  that the JPEG is online. Calling the whole photo online merely because a JPEG exists would imply
+  that ordinary RAW-led processing still has its original source. Hiding the JPEG's availability
+  would discard useful information.
+- **The gap:** The former single online flag described equivalent file locations, not different
+  originals with different editing roles.
+- **The reach:** List, next and the workbench use the same primary/member distinction. Normal
+  pinned-preview fallback remains available with its existing warning and is not JPEG substitution.
+- **Verdict:** **Sound.** Availability now describes the source the ordinary command actually uses.
+- **Confidence:** High.
+
+### Camera JPEG — Reuse the renderer's cache invalidation owner
+
+- **When:** Paired-originals source review, 2026-09-06.
+- **The choice:** A native color or sampling correction changes rendered pixels. Both document
+  views and camera-JPEG views must stop reusing images produced by the old renderer. The JPEG
+  rendition hashes its original identity and geometry through the same renderer-revision owner
+  as document hashes. A separate JPEG version would require somebody to remember two updates.
+- **The gap:** A source-specific cache key distinguished JPEG from RAW but did not itself account
+  for later changes to pixel processing.
+- **The reach:** No synthetic render node, document mutation or second version setting is needed.
+  Promoting a sampled identity to a verified full hash does not change the original's pixels and
+  therefore does not invalidate its views.
+- **Verdict:** **Sound.** One pixel-semantics revision invalidates both families; a controlled
+  revision-change probe changed both hashes and restored both exactly afterward.
+- **Confidence:** High.
+
+### Camera JPEG — Offline derived views do not expand this checkpoint's source contract
+
+- **When:** Paired-originals scope review, 2026-09-06.
+- **The choice:** A user has viewed the camera JPEG, then that original becomes unavailable.
+  Explicit camera-JPEG show/export reports it unavailable even if a prior derived view remains
+  cached. Ordinary RAW viewing may still use its separately pinned preview. Serving the cached
+  JPEG with a warning could be useful, but would need a defined JPEG cache-availability ladder;
+  substituting the RAW preview would be incorrect.
+- **The gap:** The contract required honest unavailability but did not promise offline camera-JPEG
+  delivery or pinning of its derived views.
+- **The reach:** This is a documented limitation, not general offline JPEG support. A future
+  extension must preserve original-specific cache provenance and cannot reuse the RAW fallback.
+- **Verdict:** **Sound.** Keep the requested source boundary explicit without widening this pass.
+- **Confidence:** Medium; cached offline JPEG viewing remains a potentially useful follow-up.
+
+### Paired sidecars — Treat case-only target differences as possible aliases
+
+- **When:** Independent paired-originals review, 2026-09-06.
+- **The choice:** Separate photos named `frame.ARW` and `FRAME.JPG` can both write the
+  same sidecar on a camera or Mac volume. Compare their existing sidecar targets
+  without letter case and refuse both writes or reads before changing anything.
+  On a case-sensitive disk this can also refuse two genuinely distinct sidecars;
+  the alternative would require filesystem-specific identity probing before every write.
+- **The gap:** Shared-target protection needed a case policy across different volume formats.
+- **The reach:** XMP write and sync share the conservative check. No alternate sidecar
+  filenames, volume capability cache or automatic metadata reconciliation is introduced.
+- **Verdict:** **Sound.** A reversible refusal is safer than overwriting another photo's metadata.
+- **Confidence:** Medium; explicitly accepted as conservative across case-sensitive volumes.
+
+### Companion selection — Excluded originals cannot create selection ambiguity
+
+- **When:** Independent paired-originals review, 2026-09-06.
+- **The choice:** A folder has one RAW and two possible JPEG companions. Default paired
+  import refuses to guess the JPEG, but explicit RAW-only import admits the one RAW.
+  Reversing the policy still refuses the two JPEG choices. Treating every mode like
+  paired import would reject a source the caller selected unambiguously.
+- **The gap:** Ambiguity rules did not distinguish selected from excluded original kinds.
+- **The reach:** Pair construction and explicit single-kind selection use the same roster;
+  unmatched valid files are still retained and separate import remains independent.
+- **Verdict:** **Sound.** Refusal is tied to the decision the command actually needs to make.
+- **Confidence:** High.
+
+### Pair identity — Capture facts are a contradiction check, not a matching heuristic
+
+- **When:** Paired-originals admission checkpoint, 2026-09-06.
+- **The choice:** Same-directory, same-stem RAW/JPEG candidates are rejected when both
+  supply different capture times or camera make/model. Missing values do not prove a
+  mismatch. Resolution and orientation are not equality requirements: a real retained
+  pair has a reduced RAW and a full-resolution JPEG. Each original keeps its own facts.
+- **The gap:** The plan required content-aware pairing and contradiction protection but
+  did not specify which shared capture facts could safely rule out a proposed pair.
+- **The reach:** Metadata never pairs files across folders or overrides name ambiguity.
+  This is a conservative veto, not evidence that two different byte streams are equal.
+- **Verdict:** **Sound.** The check protects obvious mismatches without conflating the
+  JPEG's processing choices with the RAW's original geometry.
+- **Confidence:** Medium; future camera evidence may justify more shared capture fields.

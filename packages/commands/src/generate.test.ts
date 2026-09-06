@@ -289,7 +289,7 @@ test("generate imports the canonical provider artifact with durable provenance a
   expect(
     (
       await handle.query<{ volume_uuid: string; rel_path: string }>(
-        "SELECT volume_uuid, rel_path FROM files WHERE photo_id = $1",
+        "SELECT volume_uuid, rel_path FROM files JOIN originals ON originals.id = files.original_id WHERE originals.photo_id = $1",
         [generated.id],
       )
     ).rows,

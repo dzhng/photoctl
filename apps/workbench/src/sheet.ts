@@ -41,10 +41,16 @@ export function renderSheetReport(evidence: SheetEvidence): string {
       const stars = row.rating > 0 ? "★".repeat(row.rating) : "Unrated";
       const flag = row.flag === "none" ? "Unflagged" : title(row.flag);
       const label = row.label ? title(row.label) : "No label";
+      const originals = row.originals
+        .map(
+          (original) =>
+            `<span title="${escapeHtml(original.id)}">${original.kind.toUpperCase()}${original.id === row.primary_original_id ? " · Primary" : ""} · ${original.online ? "Online" : "Offline"}</span>`,
+        )
+        .join("");
       return `<article class="photo" data-online="${row.online}">
         <img src="${escapeHtml(pathToFileURL(preview).href)}" alt="Preview of ${escapeHtml(row.file)}">
         <div class="meta"><h2>${escapeHtml(row.file)}</h2><p class="id">${escapeHtml(row.id)}</p>
-          <div class="badges"><span class="rating">${stars}</span><span class="flag ${row.flag}">${flag}</span><span class="label ${row.label ?? "none"}">${label}</span><span class="online"><i></i>${row.online ? "Online" : "Offline"}</span></div>
+          <div class="badges"><span class="rating">${stars}</span><span class="flag ${row.flag}">${flag}</span><span class="label ${row.label ?? "none"}">${label}</span><span class="online"><i></i>${row.online ? "Online" : "Offline"}</span>${originals}</div>
           <details><summary>Show JSON</summary><pre>${escapeHtml(JSON.stringify(show, null, 2))}</pre></details>
         </div></article>`;
     })

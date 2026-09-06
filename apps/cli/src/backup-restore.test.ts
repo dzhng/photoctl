@@ -6,7 +6,6 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import sharp from "sharp";
-import { PGlite } from "@electric-sql/pglite";
 import { afterEach, expect, test } from "vitest";
 
 const directories: string[] = [];
@@ -75,12 +74,12 @@ test("the real CLI restores imported photo identities and content keys", async (
 
 async function photoIdentities(
   library: string,
-): Promise<Array<{ id: string; content_key: string }>> {
+): Promise<Array<{ id: string; original_id: string; content_key: string }>> {
   const handle = await openLibrary(library);
   try {
     return (
-      await handle.query<{ id: string; content_key: string }>(
-        "SELECT id::text, content_key FROM photos ORDER BY id",
+      await handle.query<{ id: string; original_id: string; content_key: string }>(
+        "SELECT p.id::text, o.id::text AS original_id, o.content_key FROM photos p JOIN originals o ON o.photo_id = p.id ORDER BY p.id, o.id",
       )
     ).rows;
   } finally {
@@ -154,17 +153,11 @@ test("the daemon creates one automatic backup and deduplicates successful opens"
   }
 }, 15_000);
 
-test("a persistent daemon reports an upgrade once and current schema on repeated migrate", async () => {
+test("a persistent daemon reports the current fresh schema on repeated migrate", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-cli-migrate-"));
   directories.push(parent);
   const library = join(parent, "library");
-  const fixture = await readFile(
-    new URL("../../../fixtures/libraries/schema-v1.pgsql", import.meta.url),
-    "utf8",
-  );
-  const db = await PGlite.create({ dataDir: library });
-  await db.exec(fixture);
-  await db.close();
+  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
   const env = { PHOTOCTL_NO_DAEMON: "0" };
   try {
     const first = await spawnPhotoctl(["migrate"], { libraryDir: library, env });
@@ -173,9 +166,9 @@ test("a persistent daemon reports an upgrade once and current schema on repeated
       ok: true,
       data: {
         library,
-        from_version: 1,
+        from_version: LATEST_SCHEMA_VERSION,
         to_version: LATEST_SCHEMA_VERSION,
-        applied: Array.from({ length: LATEST_SCHEMA_VERSION - 1 }, (_, index) => index + 2),
+        applied: [],
       },
     });
     expect(second.json).toMatchObject({

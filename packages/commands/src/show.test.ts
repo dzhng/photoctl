@@ -108,8 +108,7 @@ test.each([
     const initialized = await initializeLibrary(libraryPath);
     try {
       await initialized.handle.query(
-        `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_0000000000000001', 1, 63, 47, 1)`,
+        `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_0000000000000001', 1, 63, 47, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
         [id],
       );
       const pinnedDirectory = join(cacheRoot, initialized.libraryId, "emb");
@@ -219,8 +218,7 @@ test("show normalizes empty stored metadata to the public nullable shape", async
   try {
     const initialized = await initializeLibrary(libraryPath);
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation, camera, exposure)
-       VALUES ($1, 'ck_0000000000000001', 1, 1, 1, 1, '{}'::jsonb, '{}'::jsonb)`,
+      `WITH seed (id, content_key, size, w, h, orientation, camera, exposure) AS (VALUES ($1, 'ck_0000000000000001', 1, 1, 1, 1, '{}'::jsonb, '{}'::jsonb)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation, camera, exposure) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer, camera::jsonb, exposure::jsonb FROM seed`,
       [id],
     );
     await writePinnedPreview(cacheRoot, initialized.libraryId, id);
@@ -285,8 +283,7 @@ test("show warns when an online locator cannot provide the catalogued source", a
     await writeFile(join(mount, "DCIM", "a7c2.ARW"), "changed source");
     const initialized = await initializeLibrary(libraryPath);
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_0000000000000001', 1, 1, 1, 1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_0000000000000001', 1, 1, 1, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [id],
     );
     await writePinnedPreview(cacheRoot, initialized.libraryId, id);
@@ -296,7 +293,7 @@ test("show warns when an online locator cannot provide the catalogued source", a
       [mount],
     );
     await initialized.handle.query(
-      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+      `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
        VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91f001', $1, 'fixture-volume',
                'DCIM/a7c2.ARW', now())`,
       [id],
@@ -340,8 +337,7 @@ test("show preserves a preview-cache destination failure", async () => {
   try {
     const initialized = await initializeLibrary(libraryPath);
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_0000000000000001', 1, 1, 1, 1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_0000000000000001', 1, 1, 1, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [id],
     );
     await writePinnedPreview(cacheRoot, initialized.libraryId, id);
@@ -373,8 +369,7 @@ test("show indexes a derived preview only after returning a readable artifact", 
   const coordinator = new PreviewCoordinator();
   try {
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_0000000000000001', 1, 1, 1, 1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_0000000000000001', 1, 1, 1, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [id],
     );
     await writePinnedPreview(cacheRoot, initialized.libraryId, id);

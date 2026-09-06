@@ -48,6 +48,10 @@ JPEGs; the committed camera references, not that draft, establish availability.
   its primary original. Do not duplicate authoritative byte facts on `photos`.
 - `files` owns physical locations of one original. Two RAW copies are locations of
   the same original; the camera JPEG is a different original of the same photo.
+- A photo has at most one original of each detected kind. Another location of the
+  same JPEG is allowed; a different JPEG cannot silently become a third member of
+  an established pair. Import also refuses to reassign an occupied location whose
+  bytes now identify a different original.
 - Move the existing sampled-content-key/full-hash-promotion owner to originals.
   Pairing is not evidence of byte equality. Preserve collision verification and
   offline refusal when equality cannot be established; do not introduce an
@@ -73,6 +77,11 @@ decodability or suppress otherwise valid unknown-extension files. Contradictory
 capture metadata or multiple possible counterparts must not trigger an arbitrary
 pair. Ambiguous or contradictory groups are reported as conflicts without starving
 unrelated valid groups; `both` imports independently and needs no pairing decision.
+Explicit `raw` or `jpeg` requires an unambiguous selected original, not an
+unambiguous excluded counterpart.
+Conflicts use the existing partial-failure result, not warning-only success, so a
+caller cannot mistake unadmitted photos for a completed import. Content inspection
+reports progress before catalog admission; total elapsed time includes both phases.
 A corrupt counterpart must not hide a valid survivor. An explicit single-file
 import remains scoped to that file; directory import discovers companions.
 
@@ -103,7 +112,9 @@ can address the same sidecar. If independent photos created by `both` would addr
 that same volume-relative sidecar, write/sync reports ambiguity for the affected
 items before changing either metadata or sidecar bytes. Same-photo companions are
 not competing owners. Reuse the existing sidecar path owner; do not invent alternate
-filenames or silently choose one photo's ratings.
+filenames or silently choose one photo's ratings. Compare targets case-insensitively
+within a volume: this deliberately favors refusing a possible alias over overwriting
+metadata, even if a case-sensitive volume could distinguish the two names.
 
 ### C — Explicit JPEG access and all presentation consumers
 
@@ -113,10 +124,16 @@ orientation, dimensions, metadata and pixel source; it never replays RAW edits o
 changes the active document. Existing export format/resize/metadata controls retain
 their documented meaning. If that JPEG is unavailable, report it—do not substitute
 RAW pixels and call them the camera JPEG.
+This checkpoint requires the selected JPEG original online even when a prior derived
+view remains cached. Normal RAW pinned-preview fallback is not camera-JPEG offline
+support. Source-rendition cache identity shares the renderer's semantic revision,
+so a pixel-processing correction invalidates both document and JPEG-derived views.
 
 List/show and the CLI-driven workbench must agree on one photo and its RAW+JPEG
 membership. Public tests bind RAW/default and explicit JPEG results to different
-originals, preserve document state, check offline behavior and ensure source-specific
+originals. The displayed filename and top-level online state describe the primary;
+membership separately reports each original's availability. Public tests preserve
+document state, check offline behavior and ensure source-specific
 cache entries cannot collide. Visual checkpoints use the real companion fixtures:
 compare full images and orientation crops with `compare-screenshots`, then run an
 unprimed `screenshot-critique` before declaring presentation verified.
@@ -143,3 +160,6 @@ No choice permits duplicate identity owners, a second renderer, implicit source
 switching, deleting real originals, or weakening existing non-compatibility contracts.
 Record any newly discovered product decision here and in the choices ledger before
 building past it.
+
+Implementation evidence and remaining verification limits live in
+[the paired-import review](../assets/paired-import-review.md).

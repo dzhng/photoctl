@@ -21,8 +21,7 @@ test("a structured-provider failure leaves the active revision and develop state
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c160";
   try {
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_auto_enhance_01', 1, 8, 6, 1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_auto_enhance_01', 1, 8, 6, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [id],
     );
     expect(await command(initialized.handle, parent, [id, "--set", "contrast=9"])).toMatchObject({
@@ -85,8 +84,7 @@ test("undo consumes a no-op auto-enhance marker in a new immutable revision", as
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c161";
   try {
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_auto_enhance_02', 1, 8, 6, 1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_auto_enhance_02', 1, 8, 6, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [id],
     );
     await command(initialized.handle, parent, [id, "--set", "contrast=9"]);

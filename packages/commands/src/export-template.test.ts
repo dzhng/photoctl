@@ -35,13 +35,13 @@ test("export applies a library preset, lets CLI options override it, resolves co
       [join(directory, "offline")],
     );
     await initialized.handle.query(
-      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
-       VALUES ('00000000-0000-0000-0000-000000000001', $1, 'offline-volume',
-               'DCIM/offline-first.jpg', now())`,
+      `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
+       SELECT '00000000-0000-0000-0000-000000000001', primary_original_id, 'offline-volume',
+               'DCIM/offline-first.jpg', now() FROM photos WHERE id = $1`,
       [id],
     );
     await initialized.handle.query(
-      "UPDATE photos SET shot_at = '2023-10-02T16:18:37Z', shot_offset_min = 120, rating = 5 WHERE id = $1",
+      "WITH updated AS (UPDATE photos SET rating = 5 WHERE id = $1 RETURNING primary_original_id) UPDATE originals SET shot_at = '2023-10-02T16:18:37Z', shot_offset_min = 120 WHERE id IN (SELECT primary_original_id FROM updated)",
       [id],
     );
     await mkdir(join(libraryPath, "presets", "export"), { recursive: true });

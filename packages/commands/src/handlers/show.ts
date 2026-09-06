@@ -46,6 +46,7 @@ import {
 import { loadPhoto, type StoredPhoto } from "../photo.js";
 import { createProgressHeartbeat } from "../progress.js";
 import { resolveOnlineOriginalSource } from "../image-source.js";
+import { cameraJpegRendition } from "../original-rendition.js";
 
 export async function showCommand(
   args: string[],
@@ -57,8 +58,11 @@ export async function showCommand(
 ): Promise<Envelope> {
   const parsed = parseArguments(args, {
     flags: ["--norm"],
-    options: ["--preview-size", "--region"],
+    options: ["--preview-size", "--region", "--source"],
   });
+  const sourceChoice = parsed.options.get("--source");
+  if (sourceChoice !== undefined && sourceChoice !== "camera-jpeg")
+    throw new PhotoctlError("usage", "--source must be camera-jpeg");
   if (parsed.positionals.length !== 1) {
     throw new PhotoctlError("usage", "show requires exactly one photo ID, prefix or path");
   }
@@ -87,27 +91,35 @@ export async function showCommand(
       handle.path,
     );
     await progress.start();
-    const photo = await loadPhoto(handle, id);
+    const catalogPhoto = await loadPhoto(handle, id);
+    const rendition = sourceChoice ? cameraJpegRendition(catalogPhoto) : undefined;
+    const photo = rendition?.photo ?? catalogPhoto;
     const libraryId = await readLibraryId(handle);
     const cacheRoot = cacheRootForLibrary(libraryId, cacheBase(env, cwd));
     const index = new CacheIndex(handle, cacheRoot);
     const coordinator = providedCoordinator ?? new PreviewCoordinator();
     const locators = await Promise.all(
-      photo.files.map(async (file) => ({
-        volume: file.volumeUuid,
-        path: file.relPath,
-        online: (await resolver.resolve(file.volumeUuid, file.relPath)).online,
-      })),
+      photo.originals
+        .flatMap((original) => original.files)
+        .map(async (file) => ({
+          volume: file.volumeUuid,
+          path: file.relPath,
+          online: (await resolver.resolve(file.volumeUuid, file.relPath)).online,
+        })),
     );
     const warnings: Warning[] = locators.some((locator) => !locator.online)
       ? [{ code: "source_offline", id, message: "One or more source files are offline" }]
       : [];
-    const document = await readActiveDevelopState(handle, {
-      photoId: id,
-      orientation: photo.orientation,
-    });
-    const layerStatus = await activeLayerStatus(handle, document);
-    if ((await readCanvasStatus(handle, id, document.outputNodeId)).uncovered) {
+    const document = rendition
+      ? undefined
+      : await readActiveDevelopState(handle, {
+          photoId: id,
+          orientation: photo.orientation,
+        });
+    const layerStatus = document
+      ? await activeLayerStatus(handle, document)
+      : { count: 0, staleIds: [], unfilledVacancyIds: [] };
+    if (document && (await readCanvasStatus(handle, id, document.outputNodeId)).uncovered) {
       warnings.push({
         code: "canvas_uncovered",
         id,
@@ -128,9 +140,11 @@ export async function showCommand(
         message: `${layerStatus.unfilledVacancyIds.length} ${layerStatus.unfilledVacancyIds.length === 1 ? "vacancy is" : "vacancies are"} unfilled`,
       });
     }
-    const renderHash = document.renderHash;
+    const renderHash = rendition?.renderHash ?? document!.renderHash;
     const view = parseViewSpec(parsed.options, parsed.flags.has("--norm"), photo.w, photo.h);
-    const frame = await loadLogicalFrame(handle, id, document.outputNodeId);
+    const frame = document
+      ? await loadLogicalFrame(handle, id, document.outputNodeId)
+      : developFrame(photo, photo);
     const pinned: ImageSource = {
       kind: "pinned-preview",
       path: pinnedEmbeddedJpegPath(cacheRoot, id),
@@ -145,6 +159,7 @@ export async function showCommand(
       env,
     };
     const sourceOverview =
+      document !== undefined &&
       view.region === null &&
       view.longEdge === 1616 &&
       !document.geometryNodeId &&
@@ -173,6 +188,20 @@ export async function showCommand(
         index,
       },
       async function* () {
+        if (rendition) {
+          const original = await resolveOnlineOriginalSource(photo, resolver);
+          if (!original)
+            throw new PhotoctlError("file_offline", "Camera JPEG original is unavailable", { id });
+          yield {
+            source: original.source,
+            fallback: null,
+            render: async () => {
+              const image = await renderSource(photo.orientation, original.source);
+              return { image, frame: developFrame(photo, image) };
+            },
+          };
+          return;
+        }
         if (sourceOverview) {
           const original = await resolveOnlineOriginalSource(photo, resolver);
           yield {
@@ -198,7 +227,7 @@ export async function showCommand(
                   photo,
                   developBaseDimensions: { w: photo.w, h: photo.h },
                   handle,
-                  outputNodeId: document.outputNodeId,
+                  outputNodeId: document!.outputNodeId,
                 },
                 candidate,
               ),
@@ -244,13 +273,28 @@ export async function showCommand(
     );
     const data: ShowData = {
       id,
+      primary_original_id: catalogPhoto.primaryOriginalId,
+      source_original_id: photo.primaryOriginalId,
+      originals: photo.originals.map((original) => ({
+        id: original.id,
+        kind: original.kind,
+        content_key: original.contentKey,
+        content_hash: original.contentHash,
+        bytes: original.size,
+        dims: { w: original.w, h: original.h, orientation: original.orientation },
+        locators: locators.filter((locator) =>
+          original.files.some(
+            (file) => file.volumeUuid === locator.volume && file.relPath === locator.path,
+          ),
+        ),
+      })),
       dims: {
         w: photo.w,
         h: photo.h,
         orientation: photo.orientation,
         note: "oriented, uncropped — the coordinate space",
       },
-      crop: developGeometrySummary(document.develop),
+      crop: developGeometrySummary(document?.develop ?? {}),
       camera: photo.camera,
       exposure: photo.exposure,
       shot:
@@ -281,9 +325,10 @@ export async function showCommand(
         ...projection,
       },
       locators,
-      content_key: photo.contentKey,
-      develop: document.develop,
-      develop_hash: document.hasDevelopNode ? developHash(document.develop) : null,
+      content_key: photo.originals.find((original) => original.id === photo.primaryOriginalId)!
+        .contentKey,
+      develop: document?.develop ?? {},
+      develop_hash: document?.hasDevelopNode ? developHash(document.develop) : null,
       render_hash: renderHash,
       layers: { count: layerStatus.count, stale: layerStatus.staleIds.length },
       xmp: xmpRow

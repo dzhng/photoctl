@@ -19,9 +19,8 @@ test("retouch resolves normalized geometry and exact retries without eager pixel
   const wideId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c404";
   try {
     await library.handle.query(
-      `INSERT INTO photos (id,content_key,size,w,h,orientation) VALUES
-       ($1,'ck_1234567890abcdef',1,100,50,1),
-       ($2,'ck_4234567890abcdef',1,4032,10,1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1,'ck_1234567890abcdef',1,100,50,1),
+       ($2,'ck_4234567890abcdef',1,4032,10,1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [id, wideId],
     );
     const first = retouchDataSchema.parse(
@@ -98,10 +97,9 @@ test("retouch uses oriented bounds and rejects invalid target geometry", async (
   const invalidId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c405";
   try {
     await library.handle.query(
-      `INSERT INTO photos (id,content_key,size,w,h,orientation) VALUES
-       ($1,'ck_2234567890abcdef',1,50,100,6),
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1,'ck_2234567890abcdef',1,50,100,6),
        ($2,'ck_3234567890abcdef',1,100,50,1),
-       ($3,'ck_5234567890abcdef',1,100,50,1)`,
+       ($3,'ck_5234567890abcdef',1,100,50,1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [id, defaultId, invalidId],
     );
     const result = retouchDataSchema.parse(

@@ -9,6 +9,7 @@ export const exportResultSchema = z.object({
   h: z.number().int().positive(),
   bytes: z.number().int().positive(),
   render_hash: fullHashSchema("r"),
+  source_original_id: z.uuid(),
   skipped: z.boolean(),
 });
 

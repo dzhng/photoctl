@@ -221,7 +221,7 @@ export async function resolvePhotoReference(
 
 async function photoAtLocator(db: Pick<PGlite, "query">, volumeUuid: string, relPath: string) {
   const matches = await db.query<{ id: string }>(
-    "SELECT photo_id::text AS id FROM files WHERE volume_uuid = $1 AND rel_path = $2",
+    "SELECT o.photo_id::text AS id FROM files f JOIN originals o ON o.id = f.original_id WHERE f.volume_uuid = $1 AND f.rel_path = $2",
     [volumeUuid, relPath],
   );
   return matches.rows[0]?.id;

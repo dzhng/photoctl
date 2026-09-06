@@ -250,7 +250,7 @@ test("empty production grounding preserves JPEG bytes without encoding or evicti
     expect(encodes).toBe(1);
     const otherId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c156";
     await fixture.handle.query(
-      "INSERT INTO photos (id,content_key,size,w,h,orientation) VALUES ($1,'ck_empty_second',1,8,6,1)",
+      "WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1,'ck_empty_second',1,8,6,1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed",
       [otherId],
     );
     await pinFixture({ ...fixture, id: otherId });
@@ -773,8 +773,7 @@ async function fixtureLibrary(suffix: string) {
             ? "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c154"
             : "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c155";
   await initialized.handle.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, $2, 1, 8, 6, 1)`,
+    `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, $2, 1, 8, 6, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
     [id, `ck_${suffix.padEnd(16, "0")}`],
   );
   return { parent, handle: initialized.handle, id };

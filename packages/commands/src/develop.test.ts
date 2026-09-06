@@ -106,8 +106,7 @@ test("unset, reset, and copy-from replace state without accumulating edit histor
     async ({ openLibrary }) => await openLibrary(libraryPath, { noDaemon: true }),
   );
   await opened.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_develop_target', 1, 100, 80, 1)`,
+    `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_develop_target', 1, 100, 80, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
     [target],
   );
   await opened.close();
@@ -201,10 +200,8 @@ test("per-photo graph read and commit failures do not starve the develop batch",
     async ({ openLibrary }) => await openLibrary(libraryPath, { noDaemon: true }),
   );
   await opened.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES
-       ($1, 'ck_develop_invalid_recipe', 1, 100, 80, 1),
-       ($2, 'ck_develop_valid', 1, 100, 80, 1)`,
+    `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_develop_invalid_recipe', 1, 100, 80, 1),
+       ($2, 'ck_develop_valid', 1, 100, 80, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
     [invalidRecipe, valid],
   );
   const broken = await ensurePhotoDocument(opened, { photoId: id, orientation: 1 });
@@ -311,8 +308,7 @@ async function libraryWithPhoto(): Promise<{ libraryPath: string; id: string }> 
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
   const initialized = await initializeLibrary(libraryPath);
   await initialized.handle.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_develop_test', 1, 100, 80, 1)`,
+    `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_develop_test', 1, 100, 80, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
     [id],
   );
   await initialized.handle.close();

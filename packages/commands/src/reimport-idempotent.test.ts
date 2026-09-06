@@ -56,6 +56,8 @@ test("recursive import admits content-probed unknown extensions and relocates id
     });
     expect(events).toMatchObject([
       { event: "progress", phase: "scan", done: 1, total: 1 },
+      { event: "progress", phase: "inspect", done: 0, total: 1 },
+      { event: "progress", phase: "inspect", done: 1, total: 1 },
       { event: "progress", phase: "import", done: 1, total: 1 },
     ]);
     const locators = await library.handle.query<{ rel_path: string }>(
@@ -186,6 +188,8 @@ test("daemon import forwards progress before its terminal envelope without retai
     ]);
     expect(events).toMatchObject([
       { event: "progress", phase: "scan", done: 1, total: 1 },
+      { event: "progress", phase: "inspect", done: 0, total: 1 },
+      { event: "progress", phase: "inspect", done: 1, total: 1 },
       { event: "progress", phase: "import", done: 1, total: 1 },
     ]);
     await execute(

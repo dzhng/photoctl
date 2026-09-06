@@ -5,6 +5,14 @@ export const cullFlagSchema = z.enum(["pick", "reject", "none"]);
 
 export const listRowSchema = z.object({
   id: z.uuid(),
+  primary_original_id: z.uuid(),
+  originals: z.array(
+    z.object({
+      id: z.uuid(),
+      kind: z.enum(["raw", "jpeg", "image"]),
+      online: z.boolean(),
+    }),
+  ),
   file: z.string(),
   rating: z.number().int().min(0).max(5),
   flag: cullFlagSchema,

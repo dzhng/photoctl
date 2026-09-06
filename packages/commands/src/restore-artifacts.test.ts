@@ -20,8 +20,7 @@ test("restore marks a referenced canonical artifact unavailable when its file is
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c041";
   const artifactHash = `a_${"4".repeat(64)}`;
   await initialized.handle.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, 'ck_4567890abcdef123', 1, 1, 1, 1)`,
+    `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_4567890abcdef123', 1, 1, 1, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
     [photoId],
   );
   const document = await ensurePhotoDocument(initialized.handle, { photoId, orientation: 1 });

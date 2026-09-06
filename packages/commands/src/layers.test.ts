@@ -33,8 +33,7 @@ test("manual box segmentation creates a permanent layer without eagerly evaluati
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c041";
   try {
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_4567890abcdef123', 1, 4, 3, 1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_4567890abcdef123', 1, 4, 3, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [photoId],
     );
 
@@ -103,8 +102,7 @@ test("manual layer commands create immutable revisions and retain stable identit
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c042";
   try {
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_567890abcdef1234', 1, 4, 3, 1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_567890abcdef1234', 1, 4, 3, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [photoId],
     );
     const first = segmentDataSchema.parse(
@@ -462,8 +460,7 @@ test("manual layer commands reject ambiguous or invalid command values", async (
   const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c043";
   try {
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_67890abcdef12345', 1, 4, 3, 1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_67890abcdef12345', 1, 4, 3, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [photoId],
     );
     for (const [verb, args] of [

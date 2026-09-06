@@ -8,9 +8,10 @@ export async function seedPhotoRows(libraryPath: string, count: number): Promise
     try {
       for (const [index, id] of ids.entries()) {
         await handle.query(
-          `INSERT INTO photos
-             (id, content_key, size, w, h, orientation, camera, exposure)
-           VALUES ($1, $2, 1, 1, 1, 1, '{}'::jsonb, '{}'::jsonb)`,
+          `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+             VALUES ($1, $1, 1, 1, 1) RETURNING id)
+           INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+           VALUES ($1, $1, 'image', $2, 1, 1, 1, 1)`,
           [id, `test_${index}_${id}`],
         );
       }

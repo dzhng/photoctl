@@ -28,10 +28,12 @@ test("migrations are repeatable and record each version once", async () => {
     );
 
     await db.query(
-      `INSERT INTO photos
-        (id, content_key, size, w, h, orientation, camera, exposure, shot_at, shot_offset_min)
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+        VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', 7008, 4672, 1) RETURNING id)
+       INSERT INTO originals
+        (id, photo_id, kind, content_key, size, w, h, orientation, camera, exposure, shot_at, shot_offset_min)
        VALUES
-        ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', 'ck_3dac5c943a33dcc4', 73400320,
+        ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', 'raw', 'ck_3dac5c943a33dcc4', 73400320,
          7008, 4672, 1, '{"make":"SONY"}', '{"iso":100}',
          '2023-10-02T16:18:37Z', 120)`,
     );
@@ -40,7 +42,7 @@ test("migrations are repeatable and record each version once", async () => {
        VALUES ('6A1F-0C3B', 'A7C2', '/Volumes/A7C2', '2023-10-02T16:18:37Z')`,
     );
     await db.query(
-      `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime, embedded)
+      `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime, embedded)
        VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002',
                '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', '6A1F-0C3B', 'DCIM/a7c2.ARW',
                '2023-10-02T16:18:37Z', '[{"width":7008,"height":4672,"offset":659456,"length":6730200}]')`,
@@ -53,7 +55,7 @@ test("migrations are repeatable and record each version once", async () => {
 
     const locator = await db.query<{ content_key: string; volume_uuid: string; rel_path: string }>(
       `SELECT p.content_key, f.volume_uuid, f.rel_path
-       FROM photos p JOIN files f ON f.photo_id = p.id`,
+       FROM originals p JOIN files f ON f.original_id = p.id`,
     );
     expect(locator.rows).toEqual([
       {
@@ -81,10 +83,11 @@ test("the latest schema supports promoted sampled-key collisions and cull state"
     const first = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001";
     const second = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002";
     await db.query(
-      `INSERT INTO photos
-         (id, content_key, content_hash, size, w, h, orientation, rating, flag, label)
-       VALUES ($1, 'ck_collision', 'sha256_a', 1, 1, 1, 1, 5, 'pick', 'green'),
-              ($2, 'ck_collision', 'sha256_b', 1, 1, 1, 1, 0, 'none', NULL)`,
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation, rating, flag, label)
+         VALUES ($1, $1, 1, 1, 1, 5, 'pick', 'green'), ($2, $2, 1, 1, 1, 0, 'none', NULL) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, content_hash, size, w, h, orientation)
+       VALUES ($1, $1, 'image', 'ck_collision', 'sha256_a', 1, 1, 1, 1),
+              ($2, $2, 'image', 'ck_collision', 'sha256_b', 1, 1, 1, 1)`,
       [first, second],
     );
     await db.query(
@@ -98,7 +101,9 @@ test("the latest schema supports promoted sampled-key collisions and cull state"
       rating: number;
       flag: string;
       label: string | null;
-    }>("SELECT content_hash, rating, flag, label FROM photos ORDER BY content_hash");
+    }>(
+      "SELECT o.content_hash, p.rating, p.flag, p.label FROM photos p JOIN originals o ON o.id = p.primary_original_id ORDER BY o.content_hash",
+    );
     expect(photos.rows).toEqual([
       { content_hash: "sha256_a", rating: 5, flag: "pick", label: "green" },
       { content_hash: "sha256_b", rating: 0, flag: "none", label: null },
@@ -113,8 +118,10 @@ test("the latest schema permits affine resample recipes while rejecting unknown 
   try {
     await migrate(db);
     await db.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', 'ck_3dac5c943a33dcc4', 1, 1, 1, 1)`,
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+         VALUES ('0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', '0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001', 1, 1, 1) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       SELECT id, id, 'image', 'ck_3dac5c943a33dcc4', 1, 1, 1, 1 FROM inserted`,
     );
     await expect(
       db.query(
@@ -159,7 +166,7 @@ test.each([
 
 test.each([
   ["constraint", "ALTER TABLE photos DROP CONSTRAINT photos_rating_check"],
-  ["index", "DROP INDEX files_photo_id_idx"],
+  ["index", "DROP INDEX files_original_id_idx"],
 ])("latest-schema verification rejects a missing required %s", async (_kind, statement) => {
   const db = await testDatabase();
   try {
@@ -183,9 +190,10 @@ test("the graph schema separates logical nodes from reusable and attempted execu
   try {
     await migrate(db);
     await db.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_3dac5c943a33dcc4', 1, 1, 1, 1),
-              ($2, 'ck_aaaaaaaaaaaaaaaa', 1, 1, 1, 1)`,
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+         VALUES ($1, $1, 1, 1, 1), ($2, $2, 1, 1, 1) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       SELECT id, id, 'image', id::text, 1, 1, 1, 1 FROM inserted`,
       [photoId, secondPhotoId],
     );
     await db.query(
@@ -290,8 +298,10 @@ test("the layer schema keeps identities, snapshots, graph roots, and photos in o
   try {
     await migrate(db);
     await db.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_layer_first', 1, 1, 1, 1), ($2, 'ck_layer_second', 1, 1, 1, 1)`,
+      `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+         VALUES ($1, $1, 1, 1, 1), ($2, $2, 1, 1, 1) RETURNING id)
+       INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+       SELECT id, id, 'image', id::text, 1, 1, 1, 1 FROM inserted`,
       [first, second],
     );
     await db.query(

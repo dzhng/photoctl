@@ -52,13 +52,14 @@ test("rate p95 stays within 2x warm show p50 while thirty embedding batches drai
   const extraIds = Array.from({ length: 1_499 }, () => newLibraryEntityId());
   const fileIds = extraIds.map(() => newLibraryEntityId());
   await initialized.handle.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     SELECT id, 'drain_' || id::text, 1, 1, 1, 1
-     FROM unnest($1::uuid[]) AS item(id)`,
+    `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       SELECT id, id, 1, 1, 1 FROM unnest($1::uuid[]) AS item(id) RETURNING id)
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+     SELECT id, id, 'image', 'drain_' || id::text, 1, 1, 1, 1 FROM inserted`,
     [extraIds],
   );
   await initialized.handle.query(
-    `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+    `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
      SELECT file_id, photo_id, 'fixture', 'drain/' || photo_id::text || '.jpg', now()
      FROM unnest($1::uuid[], $2::uuid[]) AS item(file_id, photo_id)`,
     [fileIds, extraIds],

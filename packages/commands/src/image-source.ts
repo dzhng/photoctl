@@ -1,9 +1,9 @@
 import { probeImage, type EmbeddedJpeg, type ImageProbe } from "@photoctl/importer";
 import { fullFileHash, identifyFile, type VolumeResolver } from "@photoctl/library";
 import type { ImageSource, SourceExecutionProvenance } from "@photoctl/render";
-import type { StoredPhoto } from "./photo.js";
+import type { StoredOriginal, StoredPhoto } from "./photo.js";
 
-export type StoredFile = StoredPhoto["files"][number];
+export type StoredFile = StoredOriginal["files"][number];
 
 export interface SelectedSource {
   file: StoredFile;
@@ -34,9 +34,10 @@ export async function resolveOnlineImageSource(
   resolver: VolumeResolver,
   index = 0,
 ): Promise<SelectedSource | undefined> {
-  const file = photo.files[index];
+  const original = photo.originals.find((original) => original.id === photo.primaryOriginalId)!;
+  const file = original.files[index];
   if (!file) return undefined;
-  const selected = await selectFileSource(photo, file, resolver);
+  const selected = await selectFileSource(photo, original, file, resolver);
   return selected ?? (await resolveOnlineImageSource(photo, resolver, index + 1));
 }
 
@@ -45,14 +46,20 @@ export async function resolveOnlineOriginalSource(
   resolver: VolumeResolver,
   index = 0,
 ): Promise<SelectedSource | undefined> {
-  const file = photo.files[index];
+  const original = photo.originals.find((original) => original.id === photo.primaryOriginalId)!;
+  const file = original.files[index];
   if (!file) return undefined;
   try {
     const resolved = await resolver.resolve(file.volumeUuid, file.relPath);
     const path = resolved.online ? resolved.path : undefined;
     if (
       path &&
-      (await matchesCataloguedIdentity(path, photo.contentKey, photo.contentHash, photo.size))
+      (await matchesCataloguedIdentity(
+        path,
+        original.contentKey,
+        original.contentHash,
+        original.size,
+      ))
     ) {
       const probe = await probeImage(path);
       if (probe) {
@@ -100,6 +107,7 @@ export function fileDecodeSource(
 
 async function selectFileSource(
   photo: StoredPhoto,
+  original: StoredOriginal,
   file: StoredFile,
   resolver: VolumeResolver,
 ): Promise<SelectedSource | undefined> {
@@ -112,7 +120,12 @@ async function selectFileSource(
   }
   if (
     !path ||
-    !(await matchesCataloguedIdentity(path, photo.contentKey, photo.contentHash, photo.size))
+    !(await matchesCataloguedIdentity(
+      path,
+      original.contentKey,
+      original.contentHash,
+      original.size,
+    ))
   ) {
     return undefined;
   }

@@ -243,10 +243,12 @@ test("vector ranking returns every current-model hit despite many closer old-mod
   const initialized = await initializeLibrary(join(directory, "library"));
   handle = initialized.handle;
   await handle.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     SELECT ('0199a7c2-0000-7000-8000-' || lpad(value::text, 12, '0'))::uuid,
-            'ck_model_' || value::text, 1, 1, 1, 1
-     FROM generate_series(1, 123) AS value`,
+    `WITH seed AS (SELECT ('0199a7c2-0000-7000-8000-' || lpad(value::text, 12, '0'))::uuid AS id,
+       'ck_model_' || value::text AS content_key FROM generate_series(1, 123) AS value),
+     inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+       SELECT id, id, 1, 1, 1 FROM seed RETURNING id)
+     INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+     SELECT id, id, 'image', content_key, 1, 1, 1, 1 FROM seed`,
   );
   const queryVector = [1, ...Array(3_071).fill(0)];
   const currentVector = [0, 1, ...Array(3_070).fill(0)];
@@ -292,8 +294,7 @@ test("vector ranking returns every current-model hit despite many closer old-mod
 
 async function seedPhoto(database: LibraryHandle, id: string, file: string): Promise<void> {
   await database.query(
-    `INSERT INTO photos (id, content_key, size, w, h, orientation)
-     VALUES ($1, $2, 1, 1, 1, 1)`,
+    `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, $2, 1, 1, 1, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
     [id, `ck_${id.slice(-8)}`],
   );
   await database.query(
@@ -301,7 +302,7 @@ async function seedPhoto(database: LibraryHandle, id: string, file: string): Pro
      VALUES ('fixture', '/fixture', now()) ON CONFLICT DO NOTHING`,
   );
   await database.query(
-    `INSERT INTO files (id, photo_id, volume_uuid, rel_path, mtime)
+    `INSERT INTO files (id, original_id, volume_uuid, rel_path, mtime)
      VALUES ($1, $2, 'fixture', $3, now())`,
     [`0199a7c2-0000-7000-8001-${id.slice(-12)}`, id, file],
   );

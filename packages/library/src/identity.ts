@@ -66,7 +66,7 @@ export async function fullFileHash(path: string): Promise<string> {
 }
 
 export interface ResolvedContentIdentity {
-  photoId: string;
+  originalId: string;
   contentHash: string | null;
 }
 
@@ -80,7 +80,7 @@ export async function resolveContentIdentity(
 ): Promise<ResolvedContentIdentity> {
   const exact = await db.query<{ id: string; content_hash: string | null; mtime: string }>(
     `SELECT p.id::text, p.content_hash, f.mtime::text
-     FROM photos p JOIN files f ON f.photo_id = p.id
+     FROM originals p JOIN files f ON f.original_id = p.id
      WHERE p.content_key = $1 AND f.volume_uuid = $2 AND f.rel_path = $3`,
     [identity.contentKey, volumeUuid, relPath],
   );
@@ -101,24 +101,24 @@ export async function resolveContentIdentity(
     ) {
       throw new PhotoctlError(
         "unsupported_file",
-        "The file at this locator no longer matches its photo",
+        "The file at this locator no longer matches its original",
         {
           id: exact.rows[0].id,
           path: candidatePath,
         },
       );
     }
-    return { photoId: exact.rows[0].id, contentHash: exact.rows[0].content_hash };
+    return { originalId: exact.rows[0].id, contentHash: exact.rows[0].content_hash };
   }
   const matches = await db.query<{ id: string; content_hash: string | null }>(
-    "SELECT id::text, content_hash FROM photos WHERE content_key = $1 ORDER BY id",
+    "SELECT id::text, content_hash FROM originals WHERE content_key = $1 ORDER BY id",
     [identity.contentKey],
   );
-  if (matches.rows.length === 0) return { photoId: newLibraryEntityId(), contentHash: null };
+  if (matches.rows.length === 0) return { originalId: newLibraryEntityId(), contentHash: null };
 
   for (const match of matches.rows.filter((row) => row.content_hash === null)) {
     const locators = await db.query<{ volume_uuid: string; rel_path: string }>(
-      "SELECT volume_uuid, rel_path FROM files WHERE photo_id = $1 ORDER BY id",
+      "SELECT volume_uuid, rel_path FROM files WHERE original_id = $1 ORDER BY id",
       [match.id],
     );
     let readable: string | undefined;
@@ -134,7 +134,7 @@ export async function resolveContentIdentity(
       }
     }
     if (!readable) {
-      if (missingOnCandidateVolume) return { photoId: match.id, contentHash: null };
+      if (missingOnCandidateVolume) return { originalId: match.id, contentHash: null };
       throw new PhotoctlError(
         "file_offline",
         "A sampled identity collision cannot be resolved while its existing source is offline",
@@ -142,18 +142,18 @@ export async function resolveContentIdentity(
       );
     }
     const existingHash = await fullFileHash(readable);
-    await db.query("UPDATE photos SET content_hash = $2 WHERE id = $1 AND content_hash IS NULL", [
-      match.id,
-      existingHash,
-    ]);
+    await db.query(
+      "UPDATE originals SET content_hash = $2 WHERE id = $1 AND content_hash IS NULL",
+      [match.id, existingHash],
+    );
     match.content_hash = existingHash;
   }
 
   const candidateHash = await fullFileHash(candidatePath);
   const duplicate = matches.rows.find((row) => row.content_hash === candidateHash);
   return duplicate
-    ? { photoId: duplicate.id, contentHash: candidateHash }
-    : { photoId: newLibraryEntityId(), contentHash: candidateHash };
+    ? { originalId: duplicate.id, contentHash: candidateHash }
+    : { originalId: newLibraryEntityId(), contentHash: candidateHash };
 }
 
 async function readExactly(

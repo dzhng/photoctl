@@ -263,17 +263,21 @@ test("restore rejects a dump with a future migration ledger and preserves the or
   directories.push(parent);
   const libraryPath = join(parent, "library");
   const initialized = await initializeLibrary(libraryPath);
+  const backup = await createBackup(initialized.handle);
   await initialized.handle.close();
-  const fixture = await readFile(
-    new URL("../../../fixtures/libraries/schema-v1.pgsql", import.meta.url),
-    "utf8",
-  );
+  const fixture = await readFile(backup.path, "utf8");
   const future = join(parent, "future.sql");
-  await writeFile(future, fixture.replace("VALUES (1,", "VALUES (4,"));
+  await writeFile(
+    future,
+    fixture +
+      `\nINSERT INTO public.schema_version(version) VALUES (${LATEST_SCHEMA_VERSION + 2});\n`,
+  );
 
   await expect(restoreLibrary(libraryPath, future)).rejects.toMatchObject({
     code: "catalog_unreadable",
-    data: { message: "Invalid schema migration ledger: 4" },
+    data: {
+      message: `Invalid schema migration ledger: ${Array.from({ length: LATEST_SCHEMA_VERSION }, (_, index) => index + 1).join(",")},${LATEST_SCHEMA_VERSION + 2}`,
+    },
   });
   const verified = await openLibrary(libraryPath);
   await verified.close();

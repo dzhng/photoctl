@@ -17,8 +17,7 @@ test("markup add/list/update/remove/clear round-trips strict vector items", asyn
   const id = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c173";
   try {
     await initialized.handle.query(
-      `INSERT INTO photos (id, content_key, size, w, h, orientation)
-       VALUES ($1, 'ck_markup_command', 1, 12, 9, 1)`,
+      `WITH seed (id, content_key, size, w, h, orientation) AS (VALUES ($1, 'ck_markup_command', 1, 12, 9, 1)), inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation) SELECT id::uuid, id::uuid, w::integer, h::integer, orientation::integer FROM seed RETURNING id) INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation) SELECT id::uuid, id::uuid, 'image', content_key, size::bigint, w::integer, h::integer, orientation::integer FROM seed`,
       [id],
     );
     const rect = { type: "rect", bbox: [3, 2, 5, 4], width: 1, color: "#ff0000", fill: "#ff0000" };

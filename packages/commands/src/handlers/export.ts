@@ -32,6 +32,7 @@ import {
   type ExportCollisionPolicy,
   type ExportFormat,
   type ExportPreset,
+  renderSource,
 } from "@photoctl/render";
 import { mkdir, stat } from "node:fs/promises";
 import { basename, extname, join, resolve } from "node:path";
@@ -46,6 +47,8 @@ import {
 import { loadPhoto, type StoredPhoto } from "../photo.js";
 import { runSerially } from "../serial.js";
 import { createProgressHeartbeat } from "../progress.js";
+import { cameraJpegRendition } from "../original-rendition.js";
+import { resolveOnlineOriginalSource } from "../image-source.js";
 
 interface EffectiveExportOptions {
   to: string;
@@ -57,14 +60,15 @@ interface EffectiveExportOptions {
   metadata: DeliveryMetadata;
 }
 
-interface ExportSnapshot {
+interface ExportSnapshotBase {
   input: string;
   id: string;
   photo: StoredPhoto;
-  outputNodeId: `node_${string}`;
   renderHash: `r_${string}`;
   warnings: Warning[];
 }
+type ExportSnapshot = ExportSnapshotBase &
+  ({ source: "document"; outputNodeId: `node_${string}` } | { source: "camera-jpeg" });
 
 interface ExportFailure {
   id: string;
@@ -110,7 +114,7 @@ export async function exportCommand(
       });
     }
     await progress.start();
-    const snapshots = await snapshotBatch(handle, parsed.inputs);
+    const snapshots = await snapshotBatch(handle, parsed.inputs, parsed.overrides.source);
     const libraryId = await readLibraryId(handle);
     const resolver = createVolumeResolver(env.volumeMap, handle.path);
     const cacheRoot = cacheRootForLibrary(libraryId, cacheBase(env, cwd));
@@ -180,12 +184,24 @@ export async function exportCommand(
 async function snapshotBatch(
   database: LibraryHandle,
   inputs: string[],
+  source?: "camera-jpeg",
 ): Promise<Array<ExportSnapshot | { failure: ExportFailure }>> {
   return await Promise.all(
     inputs.map(async (input) => {
       try {
         const id = await resolvePhotoId(database, input);
         const photo = await loadPhoto(database, id);
+        if (source) {
+          const rendition = cameraJpegRendition(photo);
+          return {
+            input,
+            id,
+            photo: rendition.photo,
+            renderHash: rendition.renderHash,
+            warnings: [],
+            source,
+          };
+        }
         await ensurePhotoDocument(database, {
           photoId: id,
           orientation: photo.orientation,
@@ -203,6 +219,7 @@ async function snapshotBatch(
               )
             : { staleIds: [], unfilledVacancyIds: [] };
         return {
+          source: "document" as const,
           input,
           id,
           photo,
@@ -258,25 +275,42 @@ async function exportOne(
   sequence: number,
   env: RequestEnv,
 ): Promise<{ result: ExportResult; warnings: Warning[] }> {
-  const fallbackFile = snapshot.photo.files[0];
+  const fallbackFile = snapshot.photo.originals.find(
+    (original) => original.id === snapshot.photo.primaryOriginalId,
+  )?.files[0];
   if (!fallbackFile)
     throw new PhotoctlError("file_offline", `Photo has no source: ${snapshot.id}`, {
       id: snapshot.id,
     });
-  const pinnedPath = join(cacheRoot, "emb", `${snapshot.id}.jpg`);
-  const candidates = await resolveGraphSources({
-    photo: snapshot.photo,
-    resolver,
-    pinned: {
-      kind: "pinned-preview",
-      path: pinnedPath,
-      mediaType: "image/jpeg",
-      orientation: 1,
-    },
-    pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${snapshot.id}.jpg` },
-    env,
-  });
-  const outputFile = candidates.find((candidate) => candidate.file)?.file ?? fallbackFile;
+  let outputFile = fallbackFile;
+  let evaluate: () => ReturnType<typeof evaluateExportImage>;
+  if (snapshot.source === "camera-jpeg") {
+    const camera = await resolveOnlineOriginalSource(snapshot.photo, resolver);
+    if (!camera)
+      throw new PhotoctlError("file_offline", "Camera JPEG original is unavailable", {
+        id: snapshot.id,
+      });
+    outputFile = camera.file;
+    evaluate = async () => ({
+      image: await renderSource(snapshot.photo.orientation, camera.source),
+      warnings: [],
+    });
+  } else {
+    const candidates = await resolveGraphSources({
+      photo: snapshot.photo,
+      resolver,
+      pinned: {
+        kind: "pinned-preview",
+        path: join(cacheRoot, "emb", `${snapshot.id}.jpg`),
+        mediaType: "image/jpeg",
+        orientation: 1,
+      },
+      pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${snapshot.id}.jpg` },
+      env,
+    });
+    outputFile = candidates.find((candidate) => candidate.file)?.file ?? fallbackFile;
+    evaluate = () => evaluateExportImage(handle, snapshot, candidates);
+  }
   const stem = basename(outputFile.relPath, extname(outputFile.relPath));
   let name: string;
   try {
@@ -326,6 +360,7 @@ async function exportOne(
         h: existing.h,
         bytes: existing.bytes,
         render_hash: snapshot.renderHash,
+        source_original_id: snapshot.photo.primaryOriginalId,
         skipped: true,
       },
       warnings: [],
@@ -333,7 +368,7 @@ async function exportOne(
   }
 
   try {
-    const evaluated = await evaluateExportImage(handle, snapshot, candidates);
+    const evaluated = await evaluate();
     const exported = await exportImage({
       id: snapshot.id,
       image: evaluated.image,
@@ -354,6 +389,7 @@ async function exportOne(
         ok: true,
         ...exported,
         render_hash: snapshot.renderHash,
+        source_original_id: snapshot.photo.primaryOriginalId,
         skipped: false,
       },
       warnings: evaluated.warnings,
@@ -392,7 +428,7 @@ async function inspectExisting(path: string): Promise<{ w: number; h: number; by
 
 async function evaluateExportImage(
   handle: LibraryHandle,
-  snapshot: ExportSnapshot,
+  snapshot: Extract<ExportSnapshot, { source: "document" }>,
   candidates: GraphSourceCandidate[],
 ): Promise<{
   image: Awaited<ReturnType<typeof readArtifactImage>>;

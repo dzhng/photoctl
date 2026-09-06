@@ -339,6 +339,26 @@ export function renderHashForNode(nodeId: string, geometryNodeId?: string): `r_$
   );
 }
 
+export function renderHashForOriginal(original: {
+  id: string;
+  contentKey: string;
+  w: number;
+  h: number;
+  orientation: number;
+}): `r_${string}` {
+  return hashIdentity(
+    "r",
+    canonicalJson({
+      original_id: original.id,
+      content_key: original.contentKey,
+      w: original.w,
+      h: original.h,
+      orientation: original.orientation,
+      renderer_semantic_revision: rendererSemanticRevision,
+    }),
+  );
+}
+
 export function evaluationHash(input: {
   nodeRecipeHash: string;
   kind: ImageNodeKind;

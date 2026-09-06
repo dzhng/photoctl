@@ -64,6 +64,23 @@ export async function xmpCommand(
           });
         }
         const imagePath = source.source.path;
+        const otherLocators = await lease.handle.query<{ rel_path: string }>(
+          `SELECT f.rel_path FROM files f JOIN originals o ON o.id = f.original_id
+           WHERE f.volume_uuid = $1 AND o.photo_id <> $2`,
+          [source.file.volumeUuid, item.id],
+        );
+        // Camera volumes commonly fold case; refuse uncertain aliases even on case-sensitive disks.
+        const sidecar = sidecarPathForImage(source.file.relPath).toLowerCase();
+        if (
+          otherLocators.rows.some(
+            (file) => sidecarPathForImage(file.rel_path).toLowerCase() === sidecar,
+          )
+        ) {
+          throw new PhotoctlError("usage", "This sidecar is shared by different logical photos", {
+            id: item.id,
+            path: sidecarPathForImage(imagePath),
+          });
+        }
         if (subcommand === "write") {
           const metadata = await readCatalogMetadata(lease.handle, photo);
           const written = await writeXmpSidecar(imagePath, metadata, hooks.writeHooks?.(item.id));
