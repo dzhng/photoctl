@@ -26,11 +26,12 @@ recovery still needs a measured design. Preserve failure evidence and do not rep
 its camera JPEG, tune presets around decoder defects, or weaken the oracle.
 [Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance.
 
-**Parallel pickup, then integration:** finish cold reduced-source outpaint and full-frame pass B.
+**Parallel pickup, then integration:** finish full-frame pass B and remaining outpaint release gates.
 
 - [Outpaint](slices/12-outpaint.md): framed masks, original-relative retouch and reversible
-  native-density layers are integrated. Fresh cold fallback must prove reduced source quality
-  and reconnect promotion without paid replay; warm retained-output reuse is not that proof.
+  native-density layers are integrated. Fresh cold fallback now proves reduced source quality
+  and reconnect promotion without paid replay through built and prebuilt-runtime installed CLI.
+  Full-resolution resource and fresh-native-release acceptance remain separate.
 - [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
   pass synthetic visual review. Explicit refresh, retained-only input, reconnect and installed
   lifecycle remain in pass B. Use captured photographic predecessors excluding markup;
@@ -54,7 +55,7 @@ a substitute for final integrated verification.
 
 | Current contract | Evidence boundary |
 | --- | --- |
-| Expanded retouch support | [Lifecycle](assets/outpaint-lifecycle/README.md): generated/empty corners, edge-intersecting circles, exact retry/undo, built and prebuilt-runtime package witnesses. Cold/full-resolution/fresh release gates separate. |
+| Expanded retouch and cold outpaint | [Lifecycle](assets/outpaint-lifecycle/README.md): generated/empty corners, edge-intersecting circles, exact retry/undo, cold reduced-source/reconnect and warm retained-output witnesses. Full-resolution/fresh release gates separate. |
 | Full-frame creation | [Placement](assets/full-frame-geometry/README.md): synthetic authored support accepted; refresh/source lifecycle remains open. |
 | RAW delivery | [Camera review](assets/camera-delivery-review/README.md): reduced-RGB fix accepted, whole delivery set still rejected. |
 | Runtime resources | [Measurements](assets/sam-runtime/README.md): approved **5 GB decimal peak RSS**, encoder **≤4 s**. Preserve historical failures; raising memory does not waive retention, latency or forward progress. |

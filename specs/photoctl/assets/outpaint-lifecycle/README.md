@@ -142,13 +142,15 @@ between built and installed runs. Reconnect changes 4,212 of 6,256 pixels (maxim
 122); the exact exterior comparison remains unchanged. These differences locate source promotion,
 not a photographic quality score.
 
-No fresh visual-agent slot was available. Adversarial inspection asked whether the soft diagonal
-interior hid misalignment, whether reconnect's finer stripes were noise, and whether disabling the
-border silently changed sampling. All full states and four-times enlargements show stable border
-placement, a visibly reduced interior before reconnect, finer original detail afterward, and a
-smaller border-free output. Exact undo and exterior checks support that reading. The images are
-accepted for sampling/provenance evidence only: their synthetic gradients are not photographic
-generation quality, and no Workbench HTML layout was checked.
+Fresh unprimed review `cold_visual_review` inspected all ten full and enlarged images. It found
+stable framing and border placement, a smaller border-free output, and a pronounced interior
+texture change on reconnect: soft diagonal streaks become sharper horizontal/vertical patterns.
+Main inspection agrees. The synthetic original deliberately contains alternating one-pixel stripes;
+the source-quality negative control and decoded-source measurements establish the cause that
+images alone cannot prove. The apparent grid is not accepted as natural photographic texture.
+Exact undo and exterior checks corroborate the unchanged placement. The images are accepted for
+sampling/provenance evidence only; photographic generation quality and Workbench layout remain
+unverified. All three warm/cold journeys pass on the merged tree in 31.31 seconds.
 
 Packed SHA-256 identities for this bounded witness:
 
