@@ -416,10 +416,10 @@ these operations; there is no outpaint-specific provider or cache owner.
 
 The command regressions include an actual camera JPEG with full-source decoding before a bounded
 crop, then fixed-frame regeneration after an exposure edit. Synthetic provider pixels prove
-geometry and request lifecycle, not photographic completion quality. Full-resolution resource
-acceptance and the complete built/packed lifecycle journey
-remain the next outpaint work; no migration or compatibility layer is required for this development
-cutover.
+geometry and request lifecycle, not photographic completion quality. That bounded-crop
+test does not establish full-resolution resources; the separate process lifecycle and
+uncropped resource witnesses below own those checks. No migration or compatibility
+layer is required for this development cutover.
 
 ### Native-density border cutover
 
@@ -451,6 +451,13 @@ retries remain idempotent. Its separate cold journey uses a normal import-produc
 with no current output execution before preview or direct export; refresh, disable/undo and reconnect
 preserve honest source quality without implicit provider replay. This is bounded prebuilt-runtime
 evidence, not full-resolution resource acceptance or a fresh native packaged-release gate.
+
+The [uncropped camera resource witness](../assets/outpaint-resources/README.md)
+separately completes native 7008×4672 JPEG/RAW expansion with exact retained
+interiors and removal, peaking at 4.587 GB under the 5 GB investigation canary.
+Expanded PNG exports take about 41 seconds; no outpaint latency threshold or
+cause is inferred. Persistent-daemon retention and fresh-native packaged-release
+acceptance remain separate from this prebuilt-runtime measurement.
 
 Pure translation, rotation and shrinking do not retry failed border density. Increased scale can
 request configured upscaling; explicit retry remains available for a failed processing step.
