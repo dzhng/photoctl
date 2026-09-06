@@ -1,0 +1,103 @@
+{
+  "name": "DSC08819",
+  "decoder": "libraw",
+  "label": "a",
+  "recordedAt": "2026-09-06T09:43:04.713Z",
+  "source": {
+    "path": "/Users/david/dev/photoctl/fixtures/camera/DSC08819.ARW",
+    "sha256": "a713c1a8723cff8a7db702b01a72d6367830aed792f23d6b3d366e39e3d53d55"
+  },
+  "rootCommit": "2cfdb936985641c8be1e1fe39aa2a1616ae405dd",
+  "nativeSha256": "a585553d7a53dbde6aae7a3673bf507c1521e399f74c41002925bb3d53bacc5d",
+  "helperSha256": "4e3dd084338697389b9a770ada0a6dd8c650cb400faffe5eec7d086250a17ec4",
+  "decode": {
+    "request": "disabled",
+    "scale": 1,
+    "width": 4608,
+    "height": 3072,
+    "actual": {
+      "status": "disabled",
+      "version": "0.22.2-Release"
+    },
+    "floatSha256": "93b9b06a0ef7dab81398f0b5b8c7badaedd7d22907184ae8dd4c85a882c3212d",
+    "roiFloatSha256": "378b2b056484046ecda5faa5c167aa1c21d87541ca84798429959e4da96245e0",
+    "decodeAndReadMs": 493.27158399999996
+  },
+  "roi": [
+    2606,
+    957,
+    512,
+    512
+  ],
+  "camera": {
+    "space": "camera",
+    "whiteLevel": 15871,
+    "blackLevel": 0,
+    "wbPreApplied": false,
+    "asShotWb": [
+      2.5263671875,
+      1,
+      1.5712890625
+    ],
+    "camXyz": [
+      0.7459999918937683,
+      -0.23649999499320984,
+      -0.058800000697374344,
+      -0.5687000155448914,
+      1.3442000150680542,
+      0.24740000069141388,
+      -0.06239999830722809,
+      0.11559999734163284,
+      0.6583999991416931
+    ],
+    "floatSha256": "c45651b52aa68aa04ace2ce25a97bc20e6a63f83ed5e1460cfecf40cdd84c4fa",
+    "roiFloatSha256": "a21e5a418c6aafb045a48c8d6a66f43aae8400a2bab05e4b96fbeb01bce5a7f6",
+    "visualization": "Level normalization only, no white balance or camera matrix; per-channel sRGB transfer; green view replicates G. Not colorimetric scene output.",
+    "sceneFloatMatchesPreviousDisabled": true
+  },
+  "captures": [
+    {
+      "path": "a/DSC08819-overview.png",
+      "sha256": "3361273166f1d1a38d23c36856dd1106100daa2747cff9d9a6848b19df5a4511",
+      "bytes": 2440647
+    },
+    {
+      "path": "a/DSC08819-detail.png",
+      "sha256": "9252a87c4c0f32e25d4e90bb6f2d75594c3988ef523a584e243850c751ef24c2",
+      "bytes": 1003488
+    },
+    {
+      "path": "a/DSC08819-detail-minus2.png",
+      "sha256": "759bcf184fac9cbfca6ed34ce56a2832d7de91ea34256106017500f2a7c8792b",
+      "bytes": 693841
+    },
+    {
+      "path": "a/DSC08819-camera-unbalanced.png",
+      "sha256": "ad547349890daa8cdec21f5e9dad78c0d265084070b4e873f5f93be4f223ea6e",
+      "bytes": 779198
+    },
+    {
+      "path": "a/DSC08819-camera-green.png",
+      "sha256": "02c06b5480ac53f8e82726dcca76f8bd08c1d35a3aff6238cb5060bdf6d28734",
+      "bytes": 243231
+    }
+  ],
+  "resource": {
+    "userCPUTime": 1400292,
+    "systemCPUTime": 98850,
+    "maxRSS": 1093248,
+    "sharedMemorySize": 0,
+    "unsharedDataSize": 0,
+    "unsharedStackSize": 0,
+    "minorPageFault": 69403,
+    "majorPageFault": 83,
+    "swappedOut": 0,
+    "fsRead": 0,
+    "fsWrite": 0,
+    "ipcSent": 0,
+    "ipcReceived": 1,
+    "signalsCount": 0,
+    "voluntaryContextSwitches": 46,
+    "involuntaryContextSwitches": 1875
+  }
+}

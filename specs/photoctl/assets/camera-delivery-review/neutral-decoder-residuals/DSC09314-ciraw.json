@@ -1,0 +1,74 @@
+{
+  "name": "DSC09314",
+  "decoder": "ciraw",
+  "label": "b",
+  "recordedAt": "2026-09-06T09:42:53.493Z",
+  "source": {
+    "path": "/Users/david/dev/photoctl/fixtures/camera/DSC09314.ARW",
+    "sha256": "5c33fefef97a2f334366660b798e675bb6dd2ceeff6c810597a5385d71c15115"
+  },
+  "rootCommit": "2cfdb936985641c8be1e1fe39aa2a1616ae405dd",
+  "nativeSha256": "a585553d7a53dbde6aae7a3673bf507c1521e399f74c41002925bb3d53bacc5d",
+  "helperSha256": "4e3dd084338697389b9a770ada0a6dd8c650cb400faffe5eec7d086250a17ec4",
+  "decode": {
+    "request": "disabled",
+    "scale": 1,
+    "width": 4608,
+    "height": 3072,
+    "actual": {
+      "orientationApplied": true,
+      "space": "scene-linear-rec2020",
+      "wireFormat": "rgb-f32le",
+      "channels": 3,
+      "width": 4608,
+      "highlightReconstruction": "disabled",
+      "decoderVersion": "8",
+      "height": 3072
+    },
+    "floatSha256": "ad00414bfdf525af693c0955150b6043247e474f0476c4d0ef799c5aa364f0c2",
+    "roiFloatSha256": "243751260d5dee6a518411521dab0db76f50ef330446b40fdb50de6cfdaa0d81",
+    "decodeAndReadMs": 2471.311167
+  },
+  "roi": [
+    2877,
+    435,
+    512,
+    512
+  ],
+  "captures": [
+    {
+      "path": "b/DSC09314-overview.png",
+      "sha256": "2053de8d158f2dd2d922d59b28eaea5c52d4fb57056d1705d140f43ff025999d",
+      "bytes": 3462627
+    },
+    {
+      "path": "b/DSC09314-detail.png",
+      "sha256": "2e466710f617163d557ef05835498ee7ad4e8b24533bb56552607e0e14f33d25",
+      "bytes": 994087
+    },
+    {
+      "path": "b/DSC09314-detail-minus2.png",
+      "sha256": "3d61197e057d31170e863ec1bad1d96f6e44c17b0e392fb5c3e41fc897e65b24",
+      "bytes": 909668
+    }
+  ],
+  "resource": {
+    "userCPUTime": 857386,
+    "systemCPUTime": 81194,
+    "maxRSS": 832848,
+    "sharedMemorySize": 0,
+    "unsharedDataSize": 0,
+    "unsharedStackSize": 0,
+    "minorPageFault": 53123,
+    "majorPageFault": 82,
+    "swappedOut": 0,
+    "fsRead": 0,
+    "fsWrite": 0,
+    "ipcSent": 0,
+    "ipcReceived": 3,
+    "signalsCount": 0,
+    "voluntaryContextSwitches": 1,
+    "involuntaryContextSwitches": 1091
+  },
+  "helperTimeReport": "        2.43 real         1.51 user         0.08 sys\n           434241536  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               33915  page reclaims\n                  66  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   2  messages sent\n                   0  messages received\n                   0  signals received\n                  74  voluntary context switches\n                 661  involuntary context switches\n         47964681807  instructions retired\n          6984469452  cycles elapsed\n           588137480  peak memory footprint\n"
+}
