@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { rasterFrame } from "../graph/frame.js";
 import { drawMarkup } from "./flatten.js";
 
 test("an opaque rectangle changes covered pixels and preserves every outside sample bit-exactly", async () => {
@@ -17,7 +18,7 @@ test("an opaque rectangle changes covered pixels and preserves every outside sam
         fill: "#ff0000",
       },
     ],
-    { baseW: w, baseH: h, matrix: [1, 0, 0, 1, 0, 0] },
+    rasterFrame({ w, h }, { w, h }, { w, h }, [1, 0, 0, 1, 0, 0]),
   );
 
   let changedInside = 0;
@@ -49,11 +50,12 @@ test("base-space markup follows crop geometry into output space", async () => {
         fill: "#ffffff",
       },
     ],
-    { baseW: 8, baseH: 8, matrix: [1, 0, 0, 1, -2, -2] },
+    rasterFrame({ w: 8, h: 8 }, { w: 8, h: 8 }, { w: 4, h: 4 }, [1, 0, 0, 1, -2, -2]),
   );
 
   expect(Math.max(...output.data)).toBeGreaterThan(0.5);
   for (let channel = 0; channel < 3; channel += 1) {
     expect(output.data[channel]).toBe(0);
+    expect(output.data[(1 * 4 + 1) * 3 + channel]).toBeGreaterThan(0.5);
   }
 });

@@ -18,7 +18,17 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
 
-**First priority: repair camera highlight rendering.** The public fixture gold exam exports all
+**First priority: resolve the failing CI gate.** Run
+[34023344394](https://github.com/dzhng/photoctl/actions/runs/34023344394)
+at `dbe550a77eed97775bb41ee403a69819d3684031` built Linux native successfully and passed lint,
+then failed TypeScript tests (51 files failed, 147 passed). Portable provider-fixture volume
+wiring, stale markup frame inputs, cross-platform float-hash assumptions and native rejection
+assertions now have focused fixes: the combined four files pass 32 tests locally, and the
+provider fixture passes four tests on Linux too. This is not a green full CI gate.
+Read every remaining failure before grouping causes: daemon startup, fixture manifest refusal
+and numerous runner timeouts remain unresolved. Do not blindly increase timeouts or repin hashes.
+
+**Camera photographic acceptance remains open.** The public fixture gold exam exports all
 ten images, but photographic delivery remains **rejected**. Reduced-RGB striping is corrected
 and the unchanged public script verifies that correction with old caches retained. The previous
 delivery set had false magenta in bright lights. Reconstruction pass A is integrated: opt-in
@@ -29,8 +39,10 @@ accepts the conspicuous false-color correction; all 18 saved RAW references pass
 native view/export and source-integrity checks. Same-RAW on/off comparisons
 exclude reconstruction as the cause of the specified branch, nose and lower-wire
 artifacts; the changing sky improves. Neutral-decoder comparison finds shared
-branch structure but differing scene placement. Next trace native coordinate
-provenance before isolating remaining fine-edge fidelity. Complete photographic
+branch structure but differing scene placement. The compiled metadata witness confirms
+LibRaw applies the recorded inset (44,30; 4608×3072); no crop bug is demonstrated.
+[Coordinate evidence](assets/camera-delivery-review/coordinate-metadata/README.md)
+records that boundary; CIRAW's internal mapping remains opaque. Complete photographic
 acceptance remains open.
 Preserve failure evidence and do not replace RAW with
 its camera JPEG, tune presets around decoder defects, or weaken the oracle.
