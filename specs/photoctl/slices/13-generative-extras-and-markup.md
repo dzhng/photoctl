@@ -71,11 +71,10 @@ leaves both catalog and provider-attempt journal empty. Existing explicit-prompt
 retention, upscale and provider-failure checks remain green. This is deterministic command
 and transport evidence, not live provider acceptance or photographic variation quality.
 
-The same input audit found the combined `fill --move … --scale` form still needs the shared
-transform/vacancy owner (separate `layer transform` is not the combined command). Slice 12 owns
-that acceptance contract. [Existing-photo path lookup](01-first-jpeg.md#existing-photo-path-lookup)
-is implemented without implicit import; Slice 08 owns the implemented filter and
-sampled white-balance commands.
+The combined `fill --move … --scale` form uses the shared density preparation and one vacancy
+revision; [Slice 12](12-fill.md#combined-movement-and-scale) owns its coordinate and failure contract.
+[Existing-photo path lookup](01-first-jpeg.md#existing-photo-path-lookup) is implemented without
+implicit import; Slice 08 owns the implemented filter and sampled white-balance commands.
 
 ## 13a upscaler quality spike (non-blocking)
 

@@ -116,13 +116,6 @@ export const layerClearDataSchema = z.object({
   removed: z.number().int().nonnegative(),
 });
 
-export const fillMoveDataSchema = z.object({
-  ...revisionFields,
-  layer_id: z.uuid(),
-  vacancy_layer_id: z.uuid(),
-  matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
-});
-
 const fillGraphSchema = z.object({
   revision: z.uuid(),
   layer: z.uuid(),
@@ -170,6 +163,13 @@ export const layerTransformDataSchema = z.object({
   layer_id: z.uuid(),
   matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
   layer: layerSummarySchema,
+  upscale: fillUpscaleSchema.nullable(),
+});
+export const fillMoveDataSchema = z.object({
+  ...revisionFields,
+  layer_id: z.uuid(),
+  vacancy_layer_id: z.uuid(),
+  matrix: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number(), z.number()]),
   upscale: fillUpscaleSchema.nullable(),
 });
 const fillCompositeSchema = z.object({ node: nodeId, unmasked_bit_exact: z.literal(true) });

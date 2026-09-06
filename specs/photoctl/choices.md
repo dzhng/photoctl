@@ -5528,3 +5528,51 @@
   before this pass lands if the user chooses developed-original input; never silently
   reinterpret already-purchased generation intent or introduce both modes speculatively.
 - **Confidence:** Medium.
+
+### Slice 12 — Combined movement multiplies the subject's current scale
+
+- **When:** Combined move/scale pass, 2026-09-06.
+- **The choice:** A subject already enlarged twice becomes four times its original size when moved
+  with `--scale 2`; its rotation and flips remain. Scaling happens around the selection's currently
+  visible center, then that center reaches the requested destination. Normalized coordinates change
+  only the destination units, not the scale. Omitting scale preserves current geometry.
+- **The gap:** The original optional scale flag did not distinguish an absolute scale from a multiplier.
+  The parent explicitly selected the relative multiplier; the existing `--move <layer>` grammar remains.
+- **The reach:** Repeating the same multiplier deliberately scales again. Clients wanting an absolute
+  transform retain the separate layer-transform contract; no compatibility alias or stored shape is added.
+- **Verdict:** **Sound.** Movement preserves current geometry and composes with the established transform owner.
+- **Confidence:** Medium.
+
+### Slice 12 — A vacancy's first retained snapshot owns its original hole
+
+- **When:** Combined move/scale lifecycle correction, 2026-09-06.
+- **The choice:** Move a person, generate replacement pixels at the new position, fill the old hole,
+  then move again: restore the hole recorded when that vacancy identity first appeared. The same
+  rule applies after removing and reactivating the vacancy. A later subject generation's selection
+  instead describes its new position and cannot redefine the original hole. The existing vacancy
+  identity links a narrow retained-snapshot lookup; there is no second history store or schema field.
+- **The gap:** The original-hole requirement was explicit, but its provenance owner after replacement
+  and reactivation was not. Active vacancy content alone can be filled or absent.
+- **The reach:** Future history collection must preserve this first-snapshot provenance while a vacancy
+  can be reactivated. Automatic canonical/history collection remains disabled; this pass does not
+  invent a retention duration or purge policy.
+- **Verdict:** **Sound.** Original vacancy identity, rather than current subject pixels, owns the hole.
+- **Confidence:** Medium.
+
+### Slice 12 — Density preparation does not publish a partial move
+
+- **When:** Combined move/scale pass, 2026-09-06.
+- **The choice:** Enlarging generated pixels may finish an external upscale before the graph changes.
+  Both transform commands share that preparation, but the move writer activates its pixels, subject
+  geometry and vacancy together against one expected parent revision. If another edit wins, keep
+  the returned original bytes in the existing attempt journal and reject activation. Running a
+  layer-transform command followed by movement would expose two edits and leave half a move on failure.
+- **The gap:** Existing density and movement operations each committed their own revision; composition
+  needed an ownership boundary. Move results also needed to disclose density fallback.
+- **The reach:** Move responses use the existing nullable upscale record and warnings. Preparation
+  resolves the configured adapter using its actual snapped branch model, never a separate earlier
+  branch read. Pure move/shrink selects pinned compatible pixels without inspecting provider
+  configuration or silently retrying a failed upscale; its density verdict does not invent a
+  configuration warning. Explicit refresh owns retries, and no ambient credentials become consent.
+- **Verdict:** **Sound.** One preparation owner and one atomic revision preserve existing failure semantics.
+- **Confidence:** High.

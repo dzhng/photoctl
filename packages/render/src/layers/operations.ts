@@ -9,6 +9,7 @@ import {
   RevisionConflictError,
   type GraphDatabase,
   type NodeDraft,
+  type PreparedNodeExecution,
 } from "../graph/store.js";
 import { readArtifactMask } from "../artifacts/publication.js";
 import {
@@ -26,7 +27,8 @@ import {
 } from "./model.js";
 import type { ImageNodeKind, JsonValue } from "../graph/types.js";
 import { describeFillBranch } from "../fill/branch.js";
-import { rebuildFillBranch } from "../fill/rebuild.js";
+import { prepareFillDensity, type FillDensityRequest } from "../fill/prepare-density.js";
+import type { PublishedArtifact } from "../artifacts/publication.js";
 import { markupFreeOutputNode } from "../markup/graph.js";
 import { loadGeometryAncestry } from "../graph/geometry-intent.js";
 import { loadLogicalFrame } from "../graph/projection.js";
@@ -287,6 +289,9 @@ export async function moveLayer(
     dimensions: { w: number; h: number };
     layer: string;
     destination: { mode: "to" | "by"; x: number; y: number };
+    scale?: number;
+    source?: FillDensityRequest["source"];
+    resolveUpscaleAdapter?: FillDensityRequest["resolveUpscaleAdapter"];
   },
 ) {
   await ensurePhotoDocument(database, request);
@@ -326,34 +331,49 @@ export async function moveLayer(
     request.destination.mode === "to"
       ? request.destination.y - currentCentroid.y
       : request.destination.y;
-  const matrix: TransformMatrix = [
-    currentMatrix[0],
-    currentMatrix[1],
-    currentMatrix[2],
-    currentMatrix[3],
-    currentMatrix[4] + dx,
-    currentMatrix[5] + dy,
-  ];
-  const vacancyIdentities = await database.query<{ id: string }>(
-    "SELECT id::text FROM layers WHERE photo_id = $1 AND role = 'vacancy' AND of_layer = $2",
+  const matrix = resolveTransformMatrix(
+    currentMatrix,
+    {
+      dx,
+      dy,
+      scale: request.scale ?? 1,
+      rotate: 0,
+      flip: null,
+      anchor: "centroid",
+    },
+    true,
+    currentCentroid,
+  );
+  const vacancyIdentities = await database.query<{ id: string; mask_node_id: string }>(
+    `SELECT identity.id::text, original.mask_node_id
+     FROM layers identity
+     JOIN LATERAL (
+       SELECT snapshot.mask_node_id FROM document_revision_layers snapshot
+       JOIN document_revisions revision ON revision.photo_id = snapshot.photo_id AND revision.id = snapshot.revision_id
+       WHERE snapshot.photo_id = identity.photo_id AND snapshot.layer_id = identity.id
+       ORDER BY revision.created_at, revision.id LIMIT 1
+     ) original ON true
+     WHERE identity.photo_id = $1 AND identity.role = 'vacancy' AND identity.of_layer = $2`,
     [request.photoId, layerId],
   );
   const vacancyId = vacancyIdentities.rows[0]?.id;
-  const rebuilt = fillBranch
-    ? rebuildFillBranch({
+  const prepared = fillBranch
+    ? await prepareFillDensity(database, libraryPath, {
+        photoId: request.photoId,
         branch: fillBranch,
-        key: "move-fill",
         frame: request.dimensions,
         baseNodeId: document.roots.base,
-        placement: { nodeId: fillBranch.densityInput.id },
-        placementDimensions: fillBranch.densityInputDimensions,
-        generationDimensions: fillBranch.generationDimensions,
         matrix,
-        preserveCompensations: true,
+        source:
+          request.source ??
+          (async () => {
+            throw new Error("Generated move unexpectedly evaluated the current source");
+          }),
+        resolveUpscaleAdapter: request.resolveUpscaleAdapter,
       })
     : undefined;
-  const transformed = rebuilt
-    ? { nodes: rebuilt.nodes, contentNode: rebuilt.content, maskNode: rebuilt.mask }
+  const transformed = prepared
+    ? { nodes: prepared.nodes, contentNode: prepared.content, maskNode: prepared.mask }
     : transformBranches("move", content!, mask!, matrix);
   const nodes: NodeDraft[] = [
     ...transformed.nodes,
@@ -381,7 +401,8 @@ export async function moveLayer(
         name: `${selected.name.slice(0, 248)} vacancy`,
         z: layers.length,
         contentNode: { localKey: "vacancy-solid" },
-        maskNode: { nodeId: selectionMaskNodeId },
+        // The hole belongs to the vacancy's first snapshot, not a later generated subject selection.
+        maskNode: { nodeId: vacancyIdentities.rows[0]?.mask_node_id ?? selectionMaskNodeId },
         opacity: 1,
         blend: "normal",
         enabled: true,
@@ -395,6 +416,8 @@ export async function moveLayer(
   }
   const committed = await commitLayerSnapshot(database, document, layers, {
     nodes,
+    artifacts: prepared?.artifacts,
+    executions: prepared?.executions,
     newLayers: vacancyId
       ? undefined
       : [
@@ -410,6 +433,8 @@ export async function moveLayer(
     layerId,
     vacancyLayerId: vacancyId ?? committed.newLayers["vacancy-layer"],
     matrix,
+    warnings: prepared?.warnings ?? [],
+    upscale: prepared?.upscale ?? null,
   };
 }
 
@@ -565,13 +590,20 @@ async function commitLayerSnapshot(
   database: GraphDatabase,
   document: Awaited<ReturnType<typeof activeDocument>>,
   layers: RevisionLayerDraft[],
-  additions: { nodes?: NodeDraft[]; newLayers?: NewLayerIdentity[] } = {},
+  additions: {
+    nodes?: NodeDraft[];
+    newLayers?: NewLayerIdentity[];
+    artifacts?: PublishedArtifact[];
+    executions?: PreparedNodeExecution[];
+  } = {},
 ) {
   const committed = await commitRevision(database, {
     outputPlan: "photographic",
     photoId: document.photoId,
     expectedRevisionId: document.revisionId,
     nodes: additions.nodes ?? [],
+    artifacts: additions.artifacts,
+    executions: additions.executions,
     rootUpdates: [],
     newLayers: additions.newLayers,
     layers,

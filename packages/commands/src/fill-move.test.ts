@@ -17,6 +17,149 @@ import { dispatch } from "./dispatch.js";
 
 const directories: string[] = [];
 
+test("combined move and scale multiplies current geometry in one vacancy revision", async () => {
+  const fixture = await movingSubjectFixture();
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "0,0,10,30"]),
+    ) as { layer_id: string };
+    const before = await loadActiveDocument(fixture.handle, fixture.id);
+    const moved = fillMoveDataSchema.parse(
+      success(
+        await command(fixture, "fill", [
+          fixture.id,
+          "--move",
+          segmented.layer_id,
+          "--to",
+          "25,15",
+          "--scale",
+          "0.5",
+        ]),
+      ),
+    );
+    expect(moved.matrix).toEqual([0.5, 0, 0, 0.5, 22.5, 7.5]);
+    const after = await loadActiveDocument(fixture.handle, fixture.id);
+    const revision = await fixture.handle.query(
+      "SELECT parent_revision_id FROM document_revisions WHERE id = $1",
+      [after!.revisionId],
+    );
+    expect(revision.rows).toEqual([{ parent_revision_id: before!.revisionId }]);
+    expect(after!.layers.map(({ id }) => id)).toEqual([moved.vacancy_layer_id, segmented.layer_id]);
+    const vacancyMask = after!.layers[0]!.maskNodeId;
+    const shown = showDataSchema.parse(
+      success(await command(fixture, "show", [fixture.id, "--preview-size", "native"])),
+    );
+    const pixels = await sharp(shown.preview).raw().toBuffer({ resolveWithObject: true });
+    expect(sample(pixels, 25, 15)[0]).toBeGreaterThan(sample(pixels, 25, 15)[2] + 100);
+    expect(sample(pixels, 15, 15)[2]).toBeGreaterThan(sample(pixels, 15, 15)[0] + 100);
+    // JPEG inspection is lossy; exact magenta is pinned on the canonical solid below.
+    expect(
+      Math.max(
+        ...sample(pixels, 5, 15).map((value, channel) => Math.abs(value - [255, 0, 255][channel]!)),
+      ),
+    ).toBeLessThanOrEqual(2);
+    const repeated = fillMoveDataSchema.parse(
+      success(
+        await command(fixture, "fill", [
+          fixture.id,
+          "--move",
+          segmented.layer_id,
+          "--by",
+          "-0.25,0",
+          "--norm",
+          "--scale",
+          "2",
+        ]),
+      ),
+    );
+    expect(repeated.matrix).toEqual([1, 0, 0, 1, 10, 0]);
+    expect(repeated.vacancy_layer_id).toBe(moved.vacancy_layer_id);
+    expect((await loadActiveDocument(fixture.handle, fixture.id))!.layers[0]!.maskNodeId).toBe(
+      vacancyMask,
+    );
+    success(await command(fixture, "undo", [fixture.id]));
+    expect((await loadActiveDocument(fixture.handle, fixture.id))!.layers).toEqual(after!.layers);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("combined scale preserves rotation and uses oriented normalized target coordinates", async () => {
+  const fixture = await movingSubjectFixture(6);
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "0,0,10,30"]),
+    ) as { layer_id: string };
+    success(
+      await command(fixture, "layer", [
+        "transform",
+        fixture.id,
+        segmented.layer_id,
+        "--rotate",
+        "90",
+      ]),
+    );
+    const moved = fillMoveDataSchema.parse(
+      success(
+        await command(fixture, "fill", [
+          fixture.id,
+          "--move",
+          segmented.layer_id,
+          "--to",
+          "0.5,0.5",
+          "--norm",
+          "--scale",
+          "2",
+        ]),
+      ),
+    );
+    expect(moved.matrix).toEqual([0, 2, -2, 0, 45, 10]);
+    expect(moved.upscale).toBeNull();
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("manual movement and transforms do not depend on provider configuration", async () => {
+  const fixture = await movingSubjectFixture();
+  try {
+    const segmented = success(
+      await command(fixture, "segment", [fixture.id, "--box", "0,0,10,30"]),
+    ) as { layer_id: string };
+    await fixture.handle.query(
+      "INSERT INTO settings (key,value) VALUES ('providers', $1::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+      [JSON.stringify({ upscale: false })],
+    );
+    success(
+      await command(fixture, "layer", [
+        "transform",
+        fixture.id,
+        segmented.layer_id,
+        "--scale",
+        "2",
+      ]),
+    );
+    const moved = fillMoveDataSchema.parse(
+      success(
+        await command(fixture, "fill", [
+          fixture.id,
+          "--move",
+          segmented.layer_id,
+          "--to",
+          "25,15",
+          "--scale",
+          "0.5",
+        ]),
+      ),
+    );
+    expect(moved.matrix).toEqual([1, 0, 0, 1, 20, 0]);
+    expect(moved.upscale).toBeNull();
+    expect(await executionCount(fixture)).toBe(0);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
 afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
 });
@@ -281,6 +424,18 @@ test("fill --move validates its exclusive coordinate modes and subject role", as
       [fixture.id, "--move", segmented.layer_id, "--to", "1,2", "--by", "3,4"],
       [fixture.id, "--move", segmented.layer_id, "--by", "2"],
       [fixture.id, "--move", segmented.layer_id, "--to", "2,0", "--norm"],
+      ...["0", "-1", "NaN", "Infinity", ""].map((scale) => [
+        fixture.id,
+        "--move",
+        segmented.layer_id,
+        "--by",
+        "1,0",
+        "--scale",
+        scale,
+      ]),
+      [fixture.id, "--scale", "2"],
+      [fixture.id, "--layer", segmented.layer_id, "--remove", "--scale", "2"],
+      [fixture.id, "--outpaint", "--px", "2", "--scale", "2"],
     ]) {
       expect(await command(fixture, "fill", args)).toMatchObject({ ok: false, code: "usage" });
     }
@@ -306,7 +461,7 @@ test("fill --move validates its exclusive coordinate modes and subject role", as
   }
 });
 
-async function movingSubjectFixture() {
+async function movingSubjectFixture(orientation = 1) {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-fill-move-"));
   directories.push(parent);
   const source = join(parent, "source.png");
@@ -318,6 +473,7 @@ async function movingSubjectFixture() {
     pixels[pixel * 3 + 2] = x < 10 ? 10 : 240;
   }
   await sharp(pixels, { raw: { width: 40, height: 30, channels: 3 } })
+    .withMetadata({ orientation })
     .png()
     .toFile(source);
   const handle = (await initializeLibrary(join(parent, "library"))).handle;

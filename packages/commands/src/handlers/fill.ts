@@ -10,7 +10,6 @@ import {
   loadActiveDocument,
   resolveLayerId,
   moveLayer,
-  orientedDimensions,
   resolveUpscalePolicy,
   RevisionConflictError,
   transformFillLayer,
@@ -53,6 +52,7 @@ export async function fillCommand(
       "--move",
       "--to",
       "--by",
+      "--scale",
       "--layer",
       "--prompt",
       "--pad",
@@ -95,6 +95,7 @@ export async function fillCommand(
       parsed.flags.has("--norm") ||
       parsed.options.has("--move") ||
       parsed.options.has("--to") ||
+      parsed.options.has("--scale") ||
       parsed.options.has("--by")
     ) {
       throw new PhotoctlError("usage", "fill generation cannot be combined with fill --move");
@@ -123,11 +124,15 @@ export async function fillCommand(
   if (!layer || modes.length !== 1) {
     throw new PhotoctlError("usage", "fill --move requires exactly one of --to x,y or --by dx,dy");
   }
+  const scale = Number(parsed.options.get("--scale") ?? 1);
+  if (!Number.isFinite(scale) || scale <= 0) {
+    throw new PhotoctlError("usage", "--scale must be positive and finite");
+  }
   const lease = await openRequestLibrary(env, cwd, provided);
   try {
     const photoId = await resolvePhotoId(lease.handle, parsed.positionals[0]);
     const photo = await loadPhoto(lease.handle, photoId);
-    const dimensions = orientedDimensions({ w: photo.w, h: photo.h }, photo.orientation);
+    const dimensions = { w: photo.w, h: photo.h };
     const mode = modes[0] === "--to" ? "to" : "by";
     const point = parsePoint(parsed.options.get(modes[0])!, modes[0]);
     if (parsed.flags.has("--norm")) {
@@ -153,6 +158,8 @@ export async function fillCommand(
         dimensions,
         layer,
         destination: { mode, x: point[0], y: point[1] },
+        scale,
+        ...fillTransformDependencies(lease.handle, providedDependencies),
       });
       return {
         schema: 1,
@@ -164,8 +171,9 @@ export async function fillCommand(
           revision_id: moved.revisionId,
           render_hash: moved.renderHash,
           matrix: moved.matrix,
+          upscale: fillTransformUpscaleData(moved.upscale),
         },
-        warnings: [],
+        warnings: moved.warnings,
       };
     } catch (error) {
       if (error instanceof PhotoctlError) throw error;
@@ -204,43 +212,63 @@ export async function executeFillTransform(
   frame: { w: number; h: number },
   providedDependencies?: FillDependencies,
 ) {
-  const document = await loadActiveDocument(handle, photoId);
-  if (!document) throw new Error("The active photo document is missing");
-  const layerId = await resolveLayerId(handle, photoId, layer);
-  const selected = document.layers.find(({ id }) => id === layerId);
-  if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  const branch = await describeFillBranch(handle, photoId, selected);
-  if (!branch) return undefined;
-  const registry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
-  const settings = providedDependencies?.upscaleSettings ?? (await readProviderSettings(handle));
-  const identity = branch.upscaleIdentity;
-  const configured =
-    identity !== undefined && settings.providers?.upscale?.[identity.model]?.configured === true;
-  const selectedAdapter = identity && configured ? registry.get(identity.model) : undefined;
   return await transformFillLayer(handle, handle.path, {
     photoId,
     layer,
     transform,
     relative,
     frame,
+    ...fillTransformDependencies(handle, providedDependencies),
+  });
+}
+
+function fillTransformDependencies(
+  handle: LibraryHandle,
+  providedDependencies?: FillDependencies,
+): Pick<Parameters<typeof transformFillLayer>[2], "source" | "resolveUpscaleAdapter"> {
+  return {
     source:
       providedDependencies?.source ??
       (async () => {
         throw new Error("Generated transform unexpectedly evaluated the current source");
       }),
-    ...(selectedAdapter
-      ? {
-          upscaleAdapter: {
-            id: selectedAdapter.id,
-            version: selectedAdapter.version,
-            supportedScales: selectedAdapter.supportedScales,
-            limits: selectedAdapter.limits,
-            execute: async (input, capture) =>
-              await registry.execute(selectedAdapter, input, capture),
-          },
-        }
-      : {}),
-  });
+    resolveUpscaleAdapter: async (model) => {
+      const registry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
+      const settings =
+        providedDependencies?.upscaleSettings ?? (await readProviderSettings(handle));
+      const adapter = settings.providers?.upscale?.[model]?.configured
+        ? registry.get(model)
+        : undefined;
+      return adapter
+        ? {
+            id: adapter.id,
+            version: adapter.version,
+            supportedScales: adapter.supportedScales,
+            limits: adapter.limits,
+            execute: async (input, capture) => await registry.execute(adapter, input, capture),
+          }
+        : undefined;
+    },
+  };
+}
+
+export function fillTransformUpscaleData(
+  upscale: NonNullable<Awaited<ReturnType<typeof transformFillLayer>>>["upscale"],
+) {
+  if (!upscale) return null;
+  return {
+    enabled: upscale.enabled,
+    executed: upscale.executed,
+    node: upscale.nodeId,
+    adapter: upscale.adapter,
+    model: upscale.model,
+    input: upscale.input,
+    target: upscale.target,
+    generated: upscale.generated,
+    final: upscale.final,
+    density_satisfied: upscale.densitySatisfied,
+    warnings: upscale.warnings,
+  };
 }
 
 export async function executeFillRefresh(

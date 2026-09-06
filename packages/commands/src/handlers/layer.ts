@@ -4,7 +4,6 @@ import {
   duplicateLayer,
   ensurePhotoDocument,
   loadActiveDocument,
-  orientedDimensions,
   readLayerSummary,
   removeLayer,
   reorderLayer,
@@ -17,7 +16,12 @@ import { PhotoctlError, type Envelope } from "@photoctl/protocol";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
-import { executeFillRefresh, executeFillTransform, type FillDependencies } from "./fill.js";
+import {
+  executeFillRefresh,
+  executeFillTransform,
+  fillTransformUpscaleData,
+  type FillDependencies,
+} from "./fill.js";
 
 export async function layerCommand(
   args: string[],
@@ -91,7 +95,7 @@ export async function layerCommand(
         if (parsed.positionals.length > 0) unexpected(parsed.positionals[0]);
         if (parsed.options.size === 0)
           throw new PhotoctlError("usage", "layer transform requires a transform option");
-        const dimensions = orientedDimensions({ w: photo.w, h: photo.h }, photo.orientation);
+        const dimensions = { w: photo.w, h: photo.h };
         const transform = parseTransform(parsed.options, parsed.flags.has("--norm"), dimensions);
         const transformed =
           (await executeFillTransform(
@@ -121,22 +125,7 @@ export async function layerCommand(
             render_hash: transformed.renderHash,
             matrix: transformed.matrix,
             layer: layerData(transformed.layer),
-            upscale:
-              generated && transformed.upscale
-                ? {
-                    enabled: transformed.upscale.enabled,
-                    executed: transformed.upscale.executed,
-                    node: transformed.upscale.nodeId,
-                    adapter: transformed.upscale.adapter,
-                    model: transformed.upscale.model,
-                    input: transformed.upscale.input,
-                    target: transformed.upscale.target,
-                    generated: transformed.upscale.generated,
-                    final: transformed.upscale.final,
-                    density_satisfied: transformed.upscale.densitySatisfied,
-                    warnings: transformed.upscale.warnings,
-                  }
-                : null,
+            upscale: generated ? fillTransformUpscaleData(transformed.upscale) : null,
           },
           warnings: generated ? transformed.warnings : [],
         };

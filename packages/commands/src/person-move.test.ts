@@ -5,6 +5,7 @@ import {
   loadActiveDocument,
   readArtifactLinear,
   readArtifactMask,
+  describeFillBranch,
 } from "@photoctl/render";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -80,7 +81,6 @@ test("person move keeps one vacancy until strict fill and carries both photograp
       role: "vacancy",
       ofLayer: originalVacancy.ofLayer,
       z: originalVacancy.z,
-      maskNodeId: originalVacancy.maskNodeId,
     });
     expect(afterVacancyFill.layers[0]!.contentNodeId).not.toBe(originalVacancy.contentNodeId);
 
@@ -92,7 +92,24 @@ test("person move keeps one vacancy until strict fill and carries both photograp
     expect(generation?.input_node_ids).toEqual([beforeMove.roots.base]);
     expect(composite?.input_node_ids[0]).toBe(beforeMove.roots.base);
     expect(composite?.input_node_ids[0]).not.toBe(originalVacancy.contentNodeId);
-    expect(composite?.input_node_ids[2]).toBe(originalVacancy.maskNodeId);
+    const branch = await describeFillBranch(
+      fixture.handle,
+      fixture.id,
+      afterVacancyFill.layers[0]!,
+    );
+    expect(branch?.selectionNodeId).toBe(originalVacancy.maskNodeId);
+    const masks = await Promise.all(
+      [originalVacancy.maskNodeId, afterVacancyFill.layers[0]!.maskNodeId].map(async (nodeId) => {
+        const evaluated = await evaluateGraphNode({
+          database: fixture.handle,
+          libraryPath: fixture.handle.path,
+          photoId: fixture.id,
+          nodeId,
+        });
+        return await readArtifactMask(evaluated.artifact.path, evaluated.artifact.artifactHash);
+      }),
+    );
+    expect(masks[1]).toEqual(masks[0]);
     await expectUnmaskedPixelsExact(fixture, filledVacancy.composite.node);
     expect(await fixtureCommand(fixture, "show", [fixture.id])).toMatchObject({
       ok: true,
@@ -115,7 +132,10 @@ test("person move keeps one vacancy until strict fill and carries both photograp
     ) as { chain: { content: Array<{ kind: string; parameters: unknown }> } };
     expect(subject.chain.content).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kind: "transform", parameters: { matrix: moved.matrix } }),
+        expect.objectContaining({
+          kind: "transform",
+          parameters: expect.objectContaining({ matrix: moved.matrix }),
+        }),
       ]),
     );
 
@@ -178,6 +198,40 @@ test("person move keeps one vacancy until strict fill and carries both photograp
       maskNodeId: originalVacancy.maskNodeId,
     });
     expect(reset.layers[0]!.contentNodeId).toBe(originalVacancy.contentNodeId);
+    success(
+      await fixtureCommand(fixture, "fill", [
+        fixture.id,
+        "--layer",
+        moved.vacancy_layer_id,
+        "--remove",
+        "--pad",
+        "0",
+        "--no-upscale",
+      ]),
+    );
+    success(await fixtureCommand(fixture, "layer", ["remove", fixture.id, moved.vacancy_layer_id]));
+    expect(
+      (await loadActiveDocument(fixture.handle, fixture.id))!.layers.map(({ id }) => id),
+    ).toEqual([segmented.layer_id]);
+    const reactivated = success(
+      await fixtureCommand(fixture, "fill", [
+        fixture.id,
+        "--move",
+        segmented.layer_id,
+        "--by",
+        "1,0",
+        "--scale",
+        "0.5",
+      ]),
+    ) as { vacancy_layer_id: string };
+    expect(reactivated.vacancy_layer_id).toBe(originalVacancy.id);
+    expect((await loadActiveDocument(fixture.handle, fixture.id))!.layers[0]).toMatchObject({
+      id: originalVacancy.id,
+      maskNodeId: originalVacancy.maskNodeId,
+      contentNodeId: originalVacancy.contentNodeId,
+    });
+    expect(fixture.generationCalls()).toBe(3);
+    expect(fixture.upscaleCalls()).toBe(0);
     expect(await fixtureCommand(fixture, "show", [fixture.id])).toMatchObject({
       ok: true,
       warnings: expect.arrayContaining([

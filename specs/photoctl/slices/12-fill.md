@@ -185,7 +185,7 @@ the adapter's reversible frame mapping; an unexplained aspect change invalidates
   lands with the previous artifact plus `density_satisfied:false` and `upscale_failed`.
   `--strength f` remains `feather_px = round(f×64)` (documented: not denoise).
 Flags: `--remove|--prompt [--ref] [--fit] [--full-res] [--pad] [--strength] [--init original|fill|noise|empty] [--seed] [--model]
-| --move --to|--by | --outpaint [--aspect|--px] | --upscale|--no-upscale|--upscale-model`. Defaults: remove→strict,
+| --move L --to|--by [--scale n] | --outpaint [--aspect|--px] | --upscale|--no-upscale|--upscale-model`. Defaults: remove→strict,
 prompt→expand=24. Results include `graph:{revision,layer,output_node,render_hash}`, `source_context`, `upscale:{enabled,executed,
 adapter,model,input,target,generated,final,density_satisfied,node?,warnings}`, `composite:{node,unmasked_bit_exact}`, and ordered
 `executions[]` with cost/time. `wb fill <id> --layer L`.
@@ -193,6 +193,38 @@ Successful fill/refresh publishes canonical artifacts then atomically commits no
 review preview; the next `show` materializes it from the committed graph.
 
 ## Verification
+
+### Combined movement and scale
+
+`fill --move` keeps the subject's existing geometry and multiplies its current scale around
+the current original-selection centroid; omission means multiplier one. `--to` places that
+centroid at the target and `--by` adds a displacement. Normalization affects coordinates only.
+Catalog dimensions already describe oriented base pixels and must not be oriented again.
+Border and vacancy layers remain ineligible for this subject/vacancy operation.
+
+Density preparation is shared with layer transforms in
+[`prepare-density.ts`](../../../packages/render/src/fill/prepare-density.ts), but it does not
+activate a document. The move owner publishes prepared density executions, subject geometry and
+the original vacancy in one revision against one snapped parent. Configured adapter selection uses
+that same branch, so a concurrent replacement cannot inherit the previous branch's paid model.
+A failed upscaler preserves
+usable pixels and reports the existing density/warning record; a revision conflict retains paid
+bytes without replacing the concurrent edit. Pure movement and shrinking do not retry a failed
+upscale or inspect provider configuration; they select only pinned compatible pixels and report
+their density without claiming an uninspected provider is unconfigured. Explicit density refresh
+remains the retry owner.
+
+The vacancy's first retained snapshot owns its hole even after the subject is generated in a
+different position, the vacancy is filled, or its active layer is removed and later reactivated.
+Effective coverage may have a different node identity after filling; original selection lineage
+and exact strict coverage, not incidental node topology, define preservation. Future history
+collection must retain this vacancy provenance while the identity can be reactivated.
+
+The focused command tests cover relative transforms, portrait coordinates, cached density,
+provider failure and concurrent revision rejection. The built CLI journey verifies delivered PNG
+placement, protected pixels, source immutability and single-undo restoration. These are controlled
+geometry checks, not photographic continuity or live-provider acceptance.
+
 `fill-strict.test.ts` asserts exactness at the mask-composite node against that node's base input (including wrong same-ratio dims;
 `wholeframe` + strict → 65); `fill-upscale-policy.test.ts` covers setting/flag/model precedence, configured consent, no-call when
 sufficient, fixed-scale cover+exact resize, adapter limit, cached-upscale reuse, and separate source/output density;
