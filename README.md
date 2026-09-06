@@ -17,6 +17,19 @@ Principles that shape everything here:
 - **Unmasked pixels are exact by construction.** Fidelity outside a mask comes from the
   compositor, never from trusting a model.
 
+## Verification policy
+
+GitHub CI is a fast feedback gate: lint, typechecking and a small, explicit smoke-test
+subset. It does not run the entire suite on every push. The full suite belongs in local
+development and deliberate release verification; a green GitHub check is not full-feature
+or release acceptance. Keep the full local checks intact when changing the CI subset.
+
+Use focused tests while iterating, then run the full local gate at implementation closeout.
+Do not optimize product code or relax product performance requirements merely to fit a
+hosted runner. Root `package.json` owns the commands and explicit `test:ci` subset;
+`.github/workflows/ci.yml` owns the hosted gates. This policy is explicit user direction,
+not a temporary CI workaround.
+
 ## Where things live
 
 - [`specs/photoctl/`](specs/photoctl/README.md) — the plan and its decision ledger. Its "Next

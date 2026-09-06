@@ -6161,3 +6161,16 @@
   interval; future diagnosis must respect that distinction and preserve historical failures.
 - **Verdict:** **Sound.** Collect proportionate aggregate evidence before changing execution policy.
 - **Confidence:** High.
+
+### Hosted smoke selection — Keep fast public-boundary checks
+
+- **When:** Explicit user CI-policy cutover, 2026-09-06; supersedes the host-load sampler above.
+- **The choice:** A push checks command exit classifications, socket framing, human-readable
+  output and image-provider request controls. It builds TypeScript but does not compile the
+  photo runtime, download models or run camera journeys. Local full-suite commands are unchanged.
+- **The gap:** The user chose a small hosted subset, leaving its exact membership to implementation.
+- **The reach:** `test:ci` owns the explicit selection. Green smoke means these boundaries passed,
+  not that photographic quality or a release has been accepted. The full local gate still owns that.
+- **Verdict:** **Sound.** A small deterministic boundary sample follows the user's policy without
+  deleting broader coverage. Native-cache and host-load machinery are unnecessary for this gate.
+- **Confidence:** High.

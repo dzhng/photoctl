@@ -25,34 +25,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Provision native runtime build tools
-        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 cmake ninja-build python3
-
-      - name: Build
-        run: bun run build
-
       - name: Lint
         run: bun run lint
 
-      - name: Test
-        id: tests
-        env:
-          TMPDIR: ${{ runner.temp }}
-          PHOTOCTL_MODELS_BASE_URL: ${{ vars.PHOTOCTL_MODELS_BASE_URL }}
-        run: |
-          { printf 'CPUs: '; nproc; free -m; } > "$RUNNER_TEMP/host-load.log"
-          vmstat -t 5 >> "$RUNNER_TEMP/host-load.log" 2>&1 &
-          host_load_pid=$!
-          trap 'kill "$host_load_pid" 2>/dev/null || true; wait "$host_load_pid" 2>/dev/null || true' EXIT
-          bun run test
+      - name: Typecheck
+        run: bun run typecheck
 
-      - name: Preserve failed-test diagnostics
-        if: failure() && steps.tests.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: daemon-startup-logs
-          path: |
-            ${{ runner.temp }}/photoctl-????????.log
-            ${{ runner.temp }}/host-load.log
-          retention-days: 3
-          if-no-files-found: ignore
+      - name: Smoke tests
+        run: bun run test:ci

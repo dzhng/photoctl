@@ -1,5 +1,13 @@
 # CI failure triage
 
+## Current policy
+
+The user's [root verification policy](../../../README.md#verification-policy) supersedes
+the full-suite-on-push workflow described below. GitHub runs lint, typecheck and the
+explicit `test:ci` smoke subset; native, Docker and full photographic journeys remain
+local/release gates. Host-load collection is removed from the smoke workflow. Historical
+timeout counts are not new product defects or reasons to resume that diagnostic loop.
+
 ## Current integrated result
 
 [Run 34036649789](https://github.com/dzhng/photoctl/actions/runs/34036649789), on
@@ -11,7 +19,7 @@ socket EPIPE crash. Missing-database logs are consistent with timed-out tests
 removing catalogs while child work continues, not evidence of a new database defect.
 These targeted passes do not make the whole gate green or establish host saturation.
 
-The existing Test step now records processor count, initial memory totals and
+The superseded full-suite Test step recorded processor count, initial memory totals and
 five-second `vmstat` samples alongside failed-test daemon logs. The first vmstat row
 is a since-boot average; subsequent rows describe intervals. Use timestamps to
 compare runnable/blocked work, free memory, swapping, CPU busy/idle and I/O wait

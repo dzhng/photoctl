@@ -27,13 +27,17 @@ Do not spend time or tokens on speculative memory overengineering. Preserve hist
 measurements; changing the canary does not rewrite their results. SAM's separate encoder
 latency requirement is unchanged.
 
-**First priority: resolve the failing CI gate.** The latest integrated run passes all
-daemon lifecycle cases and embedding drain, with no retained socket EPIPE crash. It
-still fails 97 tests: 96 test deadlines and one startup-deadline assertion. The
-[failure triage](assets/ci-triage.md) owns details and the next evidence: aggregate
-host-load samples retained alongside failed-test daemon logs. Read those samples
-before attributing failures to host saturation or changing scheduling. No green
-full CI gate is claimed; do not blindly increase timeouts or repin hashes.
+**Verification policy:** follow the [root README](../../README.md#verification-policy).
+The user explicitly requires a small GitHub smoke subset plus lint/typecheck, with
+the full suite reserved for local development and deliberate release verification.
+Hosted full-suite failures are historical diagnostic evidence, not a reason to keep
+running that suite on every push. Do not resume CI load profiling or native-cache work
+for the smoke gate. Preserve all local checks and separate product performance bars.
+The [failure triage](assets/ci-triage.md) retains the real daemon fixes and their evidence.
+
+**First priority:** verify the small hosted gate, then resume camera photographic
+acceptance and the remaining release requirements below. A smoke pass cannot close
+the full spec or replace the local closeout gate.
 
 **Camera photographic acceptance remains open.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and
