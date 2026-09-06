@@ -13,185 +13,81 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last reconciled: 2026-09-06. The spec remains in implementation; Git owns commit and push status.*
+*Last reconciled: 2026-09-06. Implementation is unfinished; Git owns commit/push state.*
 
-Read this README, the next slice, and the decision ledger before editing. Preserve the contracts
-below; record evidence-driven deviations in the owning slice and audit new decisions in `choices.md`.
+Read the next owning slice and its evidence before editing. Use reviewed committed passes,
+update this handoff, and continue until every requirement is verified—not merely every test green.
 
-**Current pickup: correct camera highlight rendering while finishing cold offline canvas and full-frame refresh lifecycles.**
+**First priority: repair camera highlight rendering.** The public fixture gold exam exports all
+ten images, but photographic delivery remains **rejected**. Reduced-RGB striping is corrected
+and the unchanged public script verifies that correction with old caches retained. False magenta
+in bright lights remains. Native CIRAW recovery experiments are promising; portable LibRaw
+recovery still needs a measured design. Preserve failure evidence and do not replace RAW with
+its camera JPEG, tune presets around decoder defects, or weaken the oracle.
+[Camera delivery review](assets/camera-delivery-review/README.md) owns reproduction and acceptance.
 
-The local camera-reference gold script completed, but full-set and native-detail
-inspection found highlight color corruption and reduced-RAW striping. The reduced
-RGB decoder correction now passes native-detail and integrated public-delivery
-checks; highlight rendering remains unresolved. The
-[camera delivery review](assets/camera-delivery-review/README.md) owns that failed
-quality checkpoint and reproduction evidence. Preserve the failures and correct
-the responsible decoder/render boundary before photographic acceptance.
+**Parallel pickup, then integration:** finish cold reduced-source outpaint and full-frame pass B.
 
-**User-added import requirement:** permanent real camera JPEG fixtures and public
-non-RAW pipeline coverage; default RAW/JPEG companions to one RAW-led logical photo,
-retain both originals, and provide explicit camera-JPEG access and raw/jpeg/both
-import alternatives. The user requires a direct development-schema cutover, not
-migrations or compatibility layers. [Paired import](slices/04-paired-import.md) owns
-the model, remaining lifecycle consumers and real-camera verification.
+- [Outpaint](slices/12-outpaint.md): framed masks, original-relative retouch and reversible
+  native-density layers are integrated. Fresh cold fallback must prove reduced source quality
+  and reconnect promotion without paid replay; warm retained-output reuse is not that proof.
+- [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
+  pass synthetic visual review. Explicit refresh, retained-only input, reconnect and installed
+  lifecycle remain in pass B. Use captured photographic predecessors excluding markup;
+  that input policy remains provisional pending the user's answer.
+- [Pairing](slices/04-paired-import.md): default one RAW-led logical photo retaining both
+  originals, explicit camera-JPEG access, and raw/jpeg/both alternatives are integrated.
+  Finish presentation/orientation and real-drive acceptance. Use a clean-start development
+  schema, never add migration/compatibility machinery or reset a real library.
 
-**Current resource gate:** David approved a 5 GB peak-RSS regression budget on 2026-09-06.
-The [integrated full-resolution G6 run](assets/sam-runtime/merged-scene-resource.json) passes
-all three same-daemon requests at 3.477 GB peak RSS with the exact mask and one 1.264-second
-encoder run; clean shutdown is verified. Historical 3 GB
-failures stay recorded: the root acquisition checkpoint peaked at 4.407 GB and the isolated
-owned-projection checkpoint at 3.747 GB, preserving the exact mask. These are different
-builds, not a controlled memory comparison or a completed three-request acceptance run.
-[Resource evidence](assets/sam-runtime/README.md) owns the measurements and remaining buffer-lifetime
-work. The additional sixteen-input full-resolution cache check stays within 2.660 GB
-but records a timing-only failure at 4.124 seconds. Its single coordinated recheck passes
-all sixteen at 3.057 GB and 1.678 seconds maximum encode; substantial remaining browser
-activity prevents a causal explanation of the earlier outlier. A higher memory budget
-does not waive retention or latency checks. Native acquisition and
-ownership corrections are committed in `f42530e`. The user explicitly authorized permanent camera reference
-originals in Git; acquisition and provenance live under `fixtures/camera/`.
+The camera may stay unplugged for development. All 18 RAW/JPEG pairs are permanent, hash-verified
+references, covering the card's observed format/crop/orientation groups.
+[Fixture provenance](../../fixtures/camera/README.md) owns this claim; the 431-pair mounted
+development run was not the exact gold/packed acceptance journey.
 
-Pairing's original identity, fresh-schema consumers and source-specific presentation are integrated
-with a clean independent merged code review; visual/real-drive acceptance remains open. Limited
-listing now bounds availability checks to returned rows without changing totals, filters, cursor
-order or stream backpressure. Retained offline export is integrated and verified:
-its execution identity, exact frame and source quality remain coupled, and live originals still
-take precedence. Native-density outpaint is integrated: generation, refresh and retry retain native RGB
-sampling with the layer's exterior mask as the single coverage owner. Its shared lifecycle now passes
-the built CLI and an isolated prebuilt-runtime install; fresh release-build and full-resolution
-resource acceptance remain open. Sampled white balance (8g) is integrated through
-ordinary develop controls; the response names its provisional pre-user-develop sampling stage.
-Canvas sampling, offline-to-online cache promotion and source-only SAM geometry are integrated.
-Public undo, the native diagnostic bridge and cheap untouched overview are integrated; do not redo them.
-Historical schema-v10–v12 and structured truncated-RAW fixture coverage are also integrated.
-Local horizon detection / `crop --auto` and the white-balance eyedropper are integrated. Full-frame creation
-now consumes the shared frame contract and passes independent synthetic placement review; pass B remains open.
-The [full-frame correction plan](slices/13-full-frame-geometry.md) has two passes: authored
-creation/placement, then explicit refresh and offline/packaged lifecycle. Retouch's shared mask-frame
-correction is its prerequisite. Current photographic-composite input (excluding markup) is provisional
-pending the user's answer; do not silently substitute the developed original or add a new mode flag.
+**Do not reimplement completed owners:** source-specific import/locators, bounded culling,
+retained offline export, canvas sampling/source promotion, source-only SAM geometry, public undo,
+daemon no-replay, native diagnostics, optimized full-source builds, cheap untouched overview,
+auto-straighten, sampled white balance, paid-response retention and historical fixture coverage.
+The [checkpoint ledger](assets/integration-checkpoints.md) indexes focused evidence; it is not
+a substitute for final integrated verification.
 
-Expanded-coordinate retouch is integrated: original-relative positions may address generated
-extensions, but validation follows actual photographic masks rather than the rectangular canvas.
-The generated-corner integration test distinguishes an opaque full-frame layer from zero opacity
-or removal, with exact undo and no extra provider requests. Cold reduced-source lifecycle and
-full-resolution resource checks remain separate from the warm retained-output package witness.
-
-- **Canvas:** [12f1/12f2](slices/12-outpaint.md) share exact execution frames and one output planner.
-  Equal pixel bytes do not imply equal coordinates; historical recovery never guesses the latest execution.
-  Composition, independent restriction activation, reversible border operations and captured input stages
-  are integrated. Actual visible supply now realizes canvas sampling, and sharp border pixels cannot
-  conceal a reduced original from cache promotion after reconnect. Source-only SAM now consumes
-  the same authored geometry without photographic layer RGB. Keep its input/output policy and
-  [resource evidence](assets/sam-canvas/README.md) distinct from photographic mask quality.
-- **Undo:** the [public command](slices/08-develop.md#public-revision-undo) is integrated through the
-  existing atomic revision owner, including first-source/generated no-ops and exact restoration.
-  [Daemon recovery](slices/02-daemon-and-contention.md) already refuses
-  to replay a sent mutation after a lost response; explicit `daemon start` repairs a broken endpoint.
-- **Generation and release:** [Slice 12 controls](slices/12-fill.md) and deterministic
-  [Slice 13 commands](slices/13-generative-extras-and-markup.md) are integrated. Conduct live
-  photographic/upscaler comparisons only when explicitly configured; the experiment runner separates
-  prompt/control/category evidence and reuses identical requests. [Slice 14](slices/14-gold-exam-and-release.md)
-  has packaging, a shared journey and report artifacts; the clean-prefix fixture exam is not real-drive acceptance.
-- [Paid-image attempt retention](slices/13-generative-extras-and-markup.md#paid-response-retention--shared-artifact-and-attempt-ownership)
-  captures originals before acceptance checks through the existing artifact owner. Attempts remain
-  inspectable after rejection or photo removal. The base develop reader preserves purchased upscale
-  and exact resample branches through later edits and delivery. A [full-resolution local history](assets/artifact-storage/README.md#full-resolution-local-history)
-  now measures real canonical growth and reuse. Representative paid-history/storage policy remains
-  unfinished; automatic canonical-artifact deletion stays disabled.
-- Before release, run the full integrated closeout gate once, audit the full requirements and choices
-  ledger, and close/archive the spec only when required evidence is present. Slice 15 remains explicitly
-  optional and unspecified, rather than an implied requirement to invent an MCP product.
-
-**Integrated evidence ledger:** these are focused pass results, not a root full-suite release gate.
-Slices 00–10 and deterministic editing checkpoints are committed; slice files/assets own acceptance details.
-The preview-loop oracle compares lossless graph outputs at Float32 precision; JPEGs separately prove freshness.
-
-| Pass | Merged evidence |
+| Current contract | Evidence boundary |
 | --- | --- |
-| Geometry / convex support / canvas core | 77 / 78 / 156 checks, typecheck |
-| Restriction activation / captured canvas and fixture integration | 72 / 44 checks, build/typecheck |
-| Color/resampler accounting / prepared inference handles | 26 / 19 checks, native build/typecheck; resource witnesses below |
-| Daemon no-replay and preview progress | 22 lifecycle/client + 11 preview/progress checks |
-| RAW compression boundary | Rebuilt addon, 9 adapter/public-CLI + 2 Rust checks across three modes |
-| Native diagnostics | 21 TypeScript + 5 Rust checks, native/TS build/typecheck; override model gate below |
-| Public undo | 46 merged CLI/command/revision/markup/canvas/develop checks, TS build/typecheck |
-| Canvas sampling / reconnect | 71 merged canvas/preview/export/undo/evaluator/SAM and built-journey checks, TS build/typecheck; independent review |
-| Historical schema fixtures | 31 merged migration checks, including version-authored v10–v12 preservation; no production schema change |
-| Existing-photo path lookup | 21 CLI/locator/show checks and typecheck; daemon client-relative, internal-copy and wrong-volume witnesses |
-| Source-only SAM canvas | 75 merged canvas/segment/revision/progress/frame checks, TS build/typecheck; all 20 captures directly reviewed |
-| Local auto-straighten | 20 crop/public/client checks, 16 develop/state/undo/canvas neighbors and 3 native groups; independent review and all 8 captures directly inspected |
-| Full-source default-build performance | All 13 merged first-JPEG checks pass unchanged deadlines; matched dev/release/optimized-dev pixel hashes are identical |
-| [Untouched overview](assets/gates/show-overview/evidence.json) | 37 preview/daemon/develop cases across integration and focused correction; fresh visual review |
-| Paid retention / atomic removal / upscale-develop consumers | 85 / 18 / 21 checks and typecheck; no extra provider work for exposure replacement |
-| Native-density outpaint integration | 52 merged outpaint/ordinary-fill/workbench checks; TS build/typecheck; all 16 native-density captures directly inspected. Packaged and resource gates remain open. |
-| Sampled white balance integration | 21 merged command/built-CLI/native-boundary/develop/undo checks, 2 Rust numerical groups, native and TS builds/typecheck. No gray-card photographic acceptance claim. |
-| Paired-originals integration | 96 merged checks across paired import, outpaint refresh density, white balance, generation, workbench, keyless fixture gold exam, identity/location, XMP/search and backup/restore; TS build and clean independent merged review. Presentation/real-drive gates remain open. |
-| Bounded culling availability | 19 merged cull/XMP/real-CLI streaming checks, TS build; independent pass review. Work-count proof, not a new camera timing claim. |
-| Retained offline export | 57 merged retained-export/paired-import/preview-export/evaluator/schema checks, TS build/typecheck. Current semantics, source-quality promotion and corrupt/missing fallback covered; warm-output installed journey below. |
-| Combined move and relative scale | 33 merged command/density/person-move/built-CLI checks, TS build/typecheck; one atomic revision and exact undo. |
-| Authored mask frames | 54 merged retouch/outpaint/canvas/fill-refresh/move/built-journey checks, TS build/typecheck and scoped lint. [Lifecycle evidence](assets/outpaint-lifecycle/README.md) distinguishes warm retained-output packaging from cold fallback and photographic quality. |
-| Expanded-coordinate retouch | 67 merged support/full-frame/density/built-journey checks; independent review identified and corrected an extra center constraint, then all 43 affected checks passed. [Lifecycle evidence](assets/outpaint-lifecycle/README.md) records the eighteen-image review and exact support measurements. |
-| Full-frame creation / generic placement | 38 merged creation/retouch-transform/manual-layer/density/built-CLI checks, TS build/typecheck and scoped lint; independent static and eight-image visual reviews. Explicit refresh and retained-only input remain open. |
+| Expanded retouch support | [Lifecycle](assets/outpaint-lifecycle/README.md): generated/empty corners, edge-intersecting circles, exact retry/undo, built and prebuilt-runtime package witnesses. Cold/full-resolution/fresh release gates separate. |
+| Full-frame creation | [Placement](assets/full-frame-geometry/README.md): synthetic authored support accepted; refresh/source lifecycle remains open. |
+| RAW delivery | [Camera review](assets/camera-delivery-review/README.md): reduced-RGB fix accepted, whole delivery set still rejected. |
+| Runtime resources | [Measurements](assets/sam-runtime/README.md): approved **5 GB decimal peak RSS**, encoder **≤4 s**. Preserve historical failures; raising memory does not waive retention, latency or forward progress. |
 
-**SAM pickup:** the release manifest now pins real export hashes with composed CPU parity checks.
-[Photographic evidence](assets/sam-photographic/) distinguishes passing coarse subject checks from
-failed detailed edges and historical full-command memory breaches. Pointwise buffer reuse and
-pixel-free cached dimensions and prepared inference handles are integrated (19 merged tests and
-typecheck). Native color snapshots now report their actual capacity to Node; six no-forced-GC CLI
-runs preserve exact masks at 2.04–2.27 GB RSS on the fixture host. After resampler accounting, the
-unchanged full-resolution multi-photo cache probe passes all sixteen inputs at 2.842 GB peak RSS.
-Six same-photo public commands through one persistent daemon pass at 2.221 GB peak RSS; the combined
-nine-identity public eviction/reuse witness passes eleven requests at 2.625 GB. These are recorded
-host/fixture resource passes, not arbitrary-image or all-platform guarantees. The separate
-[full-resolution canvas witness](assets/sam-canvas/README.md#full-resolution-resource-witness)
-passes three same-daemon commands at 2.563 GB; advisory progress prevents the observed idle timeout
-without retrying an unknown-outcome mutation. Photographic ONNX/PyTorch parity passes, but square geometry and the full upstream
-single/multi-mask references all fail detailed edges. Any extra refinement is a separate decision.
-[Resource evidence](assets/sam-runtime/) separates inference-only from whole-command results;
-Docker's functional gate now consumes hash-verified models and runs the shared real-model test;
-the Mac default gate runs the same test and fails visibly without its documented weights.
-Public model hosting remains unfinished. Cargo now owns one pinned corrected ORT source/patch
-recipe for native host, Docker and release builds, with no competing archive download or runtime
-override. The [default-acquisition evidence](assets/ort-acquisition/README.md) records passing
-ARM64 Mac/Linux native-load, packed-load and unchanged model/CLI gates; diagnostics remain NDJSON.
-The merged Mac default build also passes all 3 runtime/model checks and 71 native tests. Other
-target builds and older Linux compatibility remain open: workflow wiring is not acceptance, and
-release tags must not be used merely to test because they publish packages. The image addon's
-shared macOS floor does not imply Node or Swift-helper support on that OS.
+**Remaining quality and external gates:**
 
-**External evidence still outstanding:**
-G3 still requires an SSH-capable Mac session. Permanent user-provided camera references now cover
-uncompressed, lossy, full-size and reduced lossless RAWs, portrait orientations and real JPEG
-companions; [fixture provenance](../../fixtures/camera/README.md) distinguishes these from public
-CC0 assets and does not guess reduced-lossless M/S labels. The complete-card metadata inventory
-now maps every observed RAW format/crop/orientation group to a retained original pair. A development
-worktree passed linked import of 431 real-card pairs, rating ten, editing/exporting three and explicit
-camera-JPEG access; this is not the shared gold-exam script or packed-release gate. The camera may
-be disconnected for continued fixture-based development. The exact real-drive acceptance journey
-and actual Classic sidecars remain unconfirmed. Live embedding/mask smoke and upscaler comparisons
-require their explicitly configured credentials and consent; an ambient key is not acceptance evidence.
+- [SAM](slices/11-segment.md): coarse photographic checks and ONNX/PyTorch parity pass;
+  detailed edges fail even against full upstream references. Additional refinement needs a
+  separate decision. Do not call coarse masks detailed acceptance.
+- [Runtime acquisition](assets/ort-acquisition/README.md): one pinned Cargo-owned ORT recipe;
+  ARM64 Mac/Linux evidence exists. Other targets, older Linux, public model hosting and full
+  release acceptance remain open. Release tags publish packages—never use them as experiments.
+- [Release](slices/14-gold-exam-and-release.md): exact mounted gold/packed journey, actual
+  Classic sidecars and G3 SSH-capable Mac proof remain unconfirmed. Do not require reconnection
+  merely to continue fixture development.
+- [Generation controls](slices/13-generative-extras-and-markup.md#original-command-controls-still-open):
+  negative/reference-strength semantics remain open. Live embedding, mask polarity and upscaler
+  comparisons need purpose-specific configuration and consent; an ambient key is not authority.
+- [Artifact storage](assets/artifact-storage/README.md): representative paid-history storage
+  policy remains open; automatic canonical-artifact deletion stays disabled.
+- Preserve sampled white balance's explicitly reported provisional pre-user-develop sampling
+  policy. Do not silently change it to photographic-composite sampling.
+- Run the whole-spec closeout gate once at the end, audit requirements and consolidated choices,
+  then close/archive only when every required gate is proved. Slice 15 is optional and unspecified.
 
-**Full-source gate correction:** the native image packages now use optimized development builds,
-retaining assertions and debug information. All 13 merged `first-jpeg` checks pass their original
-deadlines and full-resolution input; source provenance matches actual native whole-file decoding.
-The [matched performance audit](assets/full-source-performance.md) owns the evidence and debugger
-tradeoff. This focused correction is not the whole-spec release gate.
-
-**Carry-forward invariants:** one daemon library handle; one atomic document/revision owner; exact
-scene-linear canonical artifacts; lazy preview materialization from immutable graph roots.
-Generation owns migration 14 and markup migration 15. Full-frame reimagine/relight creation records
-the exact photographic input execution and authored footprint, placing RGB and strength coverage
-through the shared frame owner. Explicit refresh and retained-only offline source selection remain
-in the [next pass](slices/13-full-frame-geometry.md). Markup stays a final,
-removable presentation node, with editable vectors and the revision updated in the same transaction.
-Migration 16 owns derived effective-mask recipes: the original selection controls positioning/vacancy,
-the effective mask controls fractional coverage, and derived binary support prevents double coverage.
-RGB and effective coverage follow the same projection stages before support is derived. Renderer
-semantic revision participates in deterministic execution and render identities, so corrected math
-bypasses old derived caches without deleting history or replaying paid generation.
-
-Update this handoff after each pass and continue to the next unfinished requirement.
+**Carry-forward invariants:** one daemon library handle and one atomic document/revision owner;
+exact scene-linear canonical artifacts; lazy previews from immutable roots. An execution's
+artifact, frame and source quality stay coupled—equal bytes do not imply equal coordinates.
+RGB and mask coverage share projection stages, with binary support derived afterward to avoid
+double coverage. Markup remains a final removable presentation node. Source reconnect promotes
+deterministic work, never purchased pixels; explicit refresh owns new paid attempts. Semantic
+revision participates in render/execution identity so corrected math bypasses derived caches
+without deleting history.
 
 ### Global TODO
 - [ ] Real camera JPEG pipeline and paired-by-default RAW/JPEG logical photos — `slices/04-paired-import.md`
