@@ -262,7 +262,12 @@ retains WB/matrix ownership. Real decoder-input red/green regressions now cover
 color/detail and above-white preservation. The rebuilt decoder matches the reviewed
 experimental camera pixels; focused normal-rendering, derived-cache separation and
 both unchanged G4 modes pass. Current ordinary photographic delivery and installed
-package verification remain open; scratch visual acceptance does not close C.
+package verification are recorded in the [integrated delivery review](../assets/camera-delivery-review/balanced-delivery/README.md):
+all 18 saved references have current RAW-led exports and native details, with retained
+history/source integrity and focused installed pairing checks. The bounded false-color
+improvement is accepted; remaining broad fringes, clipped-light edges and release
+boundaries are explicit. Scratch visual acceptance alone does not close C, nor does
+the selected installed pairing journey replace the full installed release gate.
 This distinct decoder-fidelity revision changes interpolated samples in both recovery
 modes. Earlier disabled-output hashes remain historical evidence for the recovery
 toggle, not a requirement to retain defective interpolation forever.

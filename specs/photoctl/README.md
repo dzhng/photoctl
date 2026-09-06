@@ -56,8 +56,13 @@ is now integrated: temporary channel balancing is undone before the shared color
 measured sensor samples stay exact, and derived-cache identities advance without changing
 paid execution identity. The rebuilt decoder matches the accepted experimental camera
 pixels; focused native/integration and both unchanged color-oracle modes pass.
-Next verify current ordinary photographic delivery and the installed package, not another
-diagnostic comparison. Earlier breadth evidence used the preceding native runtime.
+The [current delivery review](assets/camera-delivery-review/balanced-delivery/README.md)
+now verifies all 18 saved RAW deliveries, retained historical data and native details;
+the fresh packed link/copy pairing journey passes too. It accepts reduced fine false
+color without claiming all remaining clipped-light or broad branch fringes are solved.
+Do not repeat the completed breadth captures. Next reconcile each remaining photographic
+requirement against that evidence and complete release/safety gates below; the selected
+installed pairing test is not the full installed release gate.
 
 **Parallel pickup:** finish remaining outpaint and pairing release gates.
 

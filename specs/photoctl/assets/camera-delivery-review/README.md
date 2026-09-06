@@ -19,7 +19,10 @@ does not establish a crop bug. The [interpolation experiment](interpolation-owne
 isolates a fine-chroma/detail tradeoff and rejects bilinear. The
 [balanced interpolation correction](normalized-interpolation/README.md) now passes
 native and focused integration checks, with the rebuilt decoder matching its reviewed
-experimental camera pixels. Complete current-runtime photographic delivery remains open.
+experimental camera pixels. The [current delivery review](balanced-delivery/README.md)
+covers the ten-image gold run, remaining eight references and native portrait details.
+It accepts the bounded interpolation improvement and preserves residual uncertainties;
+it is not the complete installed, physical-card or whole-spec release gate.
 
 ## Reproduction and evidence boundary
 

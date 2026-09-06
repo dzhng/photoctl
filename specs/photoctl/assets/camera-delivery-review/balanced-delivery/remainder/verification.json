@@ -1,0 +1,46 @@
+{
+  "completed": "2026-09-06T16:07:04.503Z",
+  "captureCount": 54,
+  "gold": [
+    {
+      "stem": "DSC00290",
+      "id": "01a074e2-6269-71d2-a5cb-e96a283ead38",
+      "sourceOriginalId": "01a074e2-6268-7361-91c5-e3ef9255624f",
+      "hashes": [
+        "809356846494e42e33ca010f3a18c10d754061d0934392306c116db803a65620",
+        "1f22b8f5c7932e95a078f4d73711ac1826af2d0e9e1989994d1e4e1a79eb5266"
+      ]
+    },
+    {
+      "stem": "DSC07633",
+      "id": "01a074e2-64de-7107-8634-ceab5e197ca3",
+      "sourceOriginalId": "01a074e2-64dd-7614-9e65-1426be714453",
+      "hashes": [
+        "8f1c15c9bbd145d139b60973cf836673c83853f23b188fd4dfe39de128e70877",
+        "86eae53b9e6a4b9dac0526c824da8566b70796a21c13c835e31b8bdedbd0af91"
+      ]
+    },
+    {
+      "stem": "DSC07668",
+      "id": "01a074e2-6549-74e6-b258-cbe8bae67422",
+      "sourceOriginalId": "01a074e2-6548-73e1-9432-f6659183a4e1",
+      "hashes": [
+        "d5f3cbe1c0450acd08f390c53a8db796d8fce1a26fb85b37a1a8c9778e5fe325",
+        "94af966af2c573b88f13b87b5055cad3d284e0b7f6a38ed3e7953d3e428494b3"
+      ]
+    }
+  ],
+  "priorAndCurrentGoldDevelopHashesEqual": true,
+  "goldReports": [
+    {
+      "path": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/reconstruction-delivery/gold-exam-report.json",
+      "sha256": "d2b7cee0460b34ce7edc54ff035cb155a3bc18ddb68d6a4e10433026fea055eb"
+    },
+    {
+      "path": "/private/tmp/photoctl-balanced-gold.e3Pd4C/delivery/gold-exam-report.json",
+      "sha256": "9f8d3fc3c9f4c69caeabcb3032ee8d3deedf92defeb7d90a74f73618e61cb39d"
+    }
+  ],
+  "inheritedGoldPreservation": "/private/tmp/photoctl-balanced-gold.e3Pd4C/preservation.json",
+  "evidenceSha256": "7d83f2ffdd57ab6d8630427117877bc497b46902ebb77b4b5b895302a1e814f5"
+}

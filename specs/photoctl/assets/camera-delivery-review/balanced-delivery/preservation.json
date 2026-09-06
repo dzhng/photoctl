@@ -1,0 +1,48 @@
+{
+  "tables": {
+    "originals": {
+      "prior": 36,
+      "current": 36
+    },
+    "files": {
+      "prior": 36,
+      "current": 36
+    },
+    "document_revisions": {
+      "prior": 13,
+      "current": 13
+    },
+    "document_revision_roots": {
+      "prior": 26,
+      "current": 26
+    },
+    "document_revision_layers": {
+      "prior": 0,
+      "current": 0
+    },
+    "layers": {
+      "prior": 0,
+      "current": 0
+    },
+    "image_nodes": {
+      "prior": 26,
+      "current": 26
+    },
+    "image_artifacts": {
+      "prior": 15,
+      "current": 37
+    },
+    "node_executions": {
+      "prior": 46,
+      "current": 92
+    },
+    "provider_image_attempts": {
+      "prior": 0,
+      "current": 0
+    }
+  },
+  "priorArtifacts": 15,
+  "priorCacheFiles": 19,
+  "originals": 36,
+  "reportSha256": "9f8d3fc3c9f4c69caeabcb3032ee8d3deedf92defeb7d90a74f73618e61cb39d"
+}

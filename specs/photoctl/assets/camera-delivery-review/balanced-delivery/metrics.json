@@ -1,0 +1,290 @@
+{
+  "target": "Preserve real detail, scene geometry and genuine colored lights without invented chroma. Camera processing is not an exact target.",
+  "A": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/reconstruction-delivery",
+  "B": "/private/tmp/photoctl-balanced-gold.e3Pd4C/delivery",
+  "metrics": [
+    {
+      "name": "DSC00103",
+      "sha256": [
+        "698ee568e7d9e8c6606ee3a1a2d9dbfa7c57af61807666aae515dfd1ffdefc41",
+        "698ee568e7d9e8c6606ee3a1a2d9dbfa7c57af61807666aae515dfd1ffdefc41"
+      ],
+      "sameBytes": true,
+      "detail": [
+        2160,
+        850,
+        240,
+        160
+      ],
+      "overviewRgbMae": 0,
+      "changedOverviewSamples": 0
+    },
+    {
+      "name": "DSC00104",
+      "sha256": [
+        "04804eba8505c3a9d90618c2fa1cdb9ef32381f1fb3373a073adb0f7900895a5",
+        "25cfbb0b367a868dc373be0610abc447d7ad4e8265d97fc095461c571647313f"
+      ],
+      "sameBytes": false,
+      "detail": [
+        2500,
+        540,
+        1000,
+        520
+      ],
+      "overviewRgbMae": 1.7562658670664668,
+      "changedOverviewSamples": 1542134
+    },
+    {
+      "name": "DSC00107",
+      "sha256": [
+        "4767b8462cab603d934ab26988553a32235284bed2759ebb666308fb5f961d1b",
+        "c1b8aa2a21700c58f4de272496cedd3df9a8818d8f13607e8452846e0a395c40"
+      ],
+      "sameBytes": false,
+      "detail": [
+        2000,
+        3280,
+        460,
+        960
+      ],
+      "overviewRgbMae": 1.1525707146426787,
+      "changedOverviewSamples": 1321878
+    },
+    {
+      "name": "DSC00122",
+      "sha256": [
+        "5c1d083c8cc8d79be7e4e1c4b04c99253bff1f193d00aeb74a6cb96c5cb0fd04",
+        "d398793b6ad1bc828e203c465416ecca411e35fb2ed4de710efd594e3db515b2"
+      ],
+      "sameBytes": false,
+      "detail": [
+        2240,
+        1260,
+        460,
+        360
+      ],
+      "overviewRgbMae": 0.8291739130434782,
+      "changedOverviewSamples": 1206751
+    },
+    {
+      "name": "DSC00290",
+      "sha256": [
+        "809356846494e42e33ca010f3a18c10d754061d0934392306c116db803a65620",
+        "1f22b8f5c7932e95a078f4d73711ac1826af2d0e9e1989994d1e4e1a79eb5266"
+      ],
+      "sameBytes": false,
+      "detail": null,
+      "overviewRgbMae": 0.4344647676161919,
+      "changedOverviewSamples": 784527
+    },
+    {
+      "name": "DSC00434",
+      "sha256": [
+        "be7941c320d269c4a1ffe32261ccffcfe9b561e606fb07cfc9ea1e68ad59c99a",
+        "7c5e3dfc760bc2ee38521bff8a9d1f62e1df82fdf7359da69f4f1a54ef625dde"
+      ],
+      "sameBytes": false,
+      "detail": [
+        1700,
+        0,
+        1100,
+        800
+      ],
+      "overviewRgbMae": 0.6198585707146427,
+      "changedOverviewSamples": 846163
+    },
+    {
+      "name": "DSC00442",
+      "sha256": [
+        "baa0fe7e9de962b04fa595e98de3fdad91332b364ad6d34addc222af54895a65",
+        "6eb89db12f15070dd207ff2378738b182d0748044cb3bfe1740e8ffa546e5f9d"
+      ],
+      "sameBytes": false,
+      "detail": [
+        200,
+        700,
+        1200,
+        650
+      ],
+      "overviewRgbMae": 0.6651309345327336,
+      "changedOverviewSamples": 1034249
+    },
+    {
+      "name": "DSC07633",
+      "sha256": [
+        "8f1c15c9bbd145d139b60973cf836673c83853f23b188fd4dfe39de128e70877",
+        "86eae53b9e6a4b9dac0526c824da8566b70796a21c13c835e31b8bdedbd0af91"
+      ],
+      "sameBytes": false,
+      "detail": null,
+      "overviewRgbMae": 0.46350924537731136,
+      "changedOverviewSamples": 859706
+    },
+    {
+      "name": "DSC07668",
+      "sha256": [
+        "d5f3cbe1c0450acd08f390c53a8db796d8fce1a26fb85b37a1a8c9778e5fe325",
+        "94af966af2c573b88f13b87b5055cad3d284e0b7f6a38ed3e7953d3e428494b3"
+      ],
+      "sameBytes": false,
+      "detail": null,
+      "overviewRgbMae": 0.6887296351824088,
+      "changedOverviewSamples": 1118471
+    },
+    {
+      "name": "DSC07730",
+      "sha256": [
+        "540ea10994528943fa3de79f04a1122db08a709bbb038ef4b7b69e9486e7b0cd",
+        "7cc1775f001f3fea3454fc3c6c7cdd682cb93c174003b06dcd67b709e549f3f5"
+      ],
+      "sameBytes": false,
+      "detail": [
+        2900,
+        4000,
+        1200,
+        650
+      ],
+      "overviewRgbMae": 0.6995902048975512,
+      "changedOverviewSamples": 1105991
+    }
+  ],
+  "captures": [
+    {
+      "path": "DSC00103-A-detail.png",
+      "sha256": "65f44a6f2bc5c9e115d53d66c8a65bfa23ba2bf6a123c50778d0aa147df37f25"
+    },
+    {
+      "path": "DSC00103-A-overview.png",
+      "sha256": "b450e42255e73562900519932962220d3c7ce63b30f68443749349318962e42d"
+    },
+    {
+      "path": "DSC00103-B-detail.png",
+      "sha256": "65f44a6f2bc5c9e115d53d66c8a65bfa23ba2bf6a123c50778d0aa147df37f25"
+    },
+    {
+      "path": "DSC00103-B-overview.png",
+      "sha256": "b450e42255e73562900519932962220d3c7ce63b30f68443749349318962e42d"
+    },
+    {
+      "path": "DSC00104-A-detail.png",
+      "sha256": "efc47bcc8154787aaa1af1a6a4a3ea9124d6be22ac704e0de3e7d90b9eeaa6c8"
+    },
+    {
+      "path": "DSC00104-A-overview.png",
+      "sha256": "95d739916458875f6745202adb40f9465506440aefe042fc1920d03eabb952b6"
+    },
+    {
+      "path": "DSC00104-B-detail.png",
+      "sha256": "ef964f851d0de464503c8d73ac8e87cf93e0bc22e8c6cd2129545a1b5ddb4cb7"
+    },
+    {
+      "path": "DSC00104-B-overview.png",
+      "sha256": "6c36cfe8c8ed63a526f39889d7b14123ca4767351f1513ff22ee455555e611b6"
+    },
+    {
+      "path": "DSC00107-A-detail.png",
+      "sha256": "966f10c225af671d43f418b8a2f116fefa9a444df2c0f9356121987c17ccba54"
+    },
+    {
+      "path": "DSC00107-A-overview.png",
+      "sha256": "aaedfbd14b012910e3f982b46650da1fac8b2cd47443ffb3f9d586ef002e8f3f"
+    },
+    {
+      "path": "DSC00107-B-detail.png",
+      "sha256": "1a3eba348981d8c4d77cd1f75a01c464e95d2e01fc94d317d24e0202cc03de87"
+    },
+    {
+      "path": "DSC00107-B-overview.png",
+      "sha256": "6457dd4af554cdde579e3d1a0819569283403471e2dddef777b81b85bec3411e"
+    },
+    {
+      "path": "DSC00122-A-detail.png",
+      "sha256": "d2bdff9027b2d9cc7cb8fd886d159baf12551c6f0cfff34d8d1f3de6005d262d"
+    },
+    {
+      "path": "DSC00122-A-overview.png",
+      "sha256": "28bb430765f4065d99577788a5b7a33e78a717701b2a2eba630ae7840e861849"
+    },
+    {
+      "path": "DSC00122-B-detail.png",
+      "sha256": "2bbc0f4e22c333de84a10dc9da74dfb1e204fd899c938672bedc73c1b8b272c7"
+    },
+    {
+      "path": "DSC00122-B-overview.png",
+      "sha256": "b495b419715a8be0718a63af28f8408711ced4078a6747b1662cd529839c0e07"
+    },
+    {
+      "path": "DSC00290-A-overview.png",
+      "sha256": "dc0d31ae5294700e1dc388327c45d45a5c60906b56c92acb0a95785e7443b5bc"
+    },
+    {
+      "path": "DSC00290-B-overview.png",
+      "sha256": "297635c5ded80a3564e44b35755c077eac572f2b32c92ac1a81de1ce1f9f0717"
+    },
+    {
+      "path": "DSC00434-A-detail.png",
+      "sha256": "008a61fa257b812ee0ff43cd58a938ba1fb5a22c801a0c4b49d62bd9dc054831"
+    },
+    {
+      "path": "DSC00434-A-overview.png",
+      "sha256": "1f3e3b49b5a898e3ec916e95133cdf7a71a7197315609a0330e5d4bed6b36aa8"
+    },
+    {
+      "path": "DSC00434-B-detail.png",
+      "sha256": "58b1034c50ec07e5fd289c8bf51d0f53374a739404ac9dc6c1ceca42af25e6c0"
+    },
+    {
+      "path": "DSC00434-B-overview.png",
+      "sha256": "89d28bfee762561bb7978b39b898e7aa76879d670c0e9455c879788beed92d39"
+    },
+    {
+      "path": "DSC00442-A-detail.png",
+      "sha256": "d4627dfe85d58a1ad30cfb5202d4e1c4a2b74b2e2299625f1507f75666052ff2"
+    },
+    {
+      "path": "DSC00442-A-overview.png",
+      "sha256": "fdcb8bd7418e6649a1510ccff4d0ee8bdbaeb78809b5b1744932367a1177b783"
+    },
+    {
+      "path": "DSC00442-B-detail.png",
+      "sha256": "1b0522c3ead1e752e4d7854b8712d0157e6eb7814d0eb0b01a0bb12f81246e45"
+    },
+    {
+      "path": "DSC00442-B-overview.png",
+      "sha256": "f0eb2e339cedc502e02d61b064780c1771ccc41f050e988e72bae8c24d99583e"
+    },
+    {
+      "path": "DSC07633-A-overview.png",
+      "sha256": "b76fefe59fd3c32da85cfcbece043141a681a4aff1cd80ea47bdf7daf835f6b9"
+    },
+    {
+      "path": "DSC07633-B-overview.png",
+      "sha256": "a7f4af9b02f307f30c98e3d29030e1bc83e1fa2e112e6ebb39a31a194d5c6646"
+    },
+    {
+      "path": "DSC07668-A-overview.png",
+      "sha256": "09ba2f3f1d2b9d73632193f2e1dbe84ee3c6ace61465db3d0a29535307a9943f"
+    },
+    {
+      "path": "DSC07668-B-overview.png",
+      "sha256": "c2c98912a70850468d5bcd007bd489508d18d2e7d89475e15304f67cce3eeb5d"
+    },
+    {
+      "path": "DSC07730-A-detail.png",
+      "sha256": "eda5c83c9c467a7988aaf1f1510730d77bc16e7642adbe8fc11ef53ee64566d5"
+    },
+    {
+      "path": "DSC07730-A-overview.png",
+      "sha256": "68c3bb639a8135a3c17cd7dc50908889de3bbedd66ca92aa23dfe87ce5b05584"
+    },
+    {
+      "path": "DSC07730-B-detail.png",
+      "sha256": "d52f79bcd9656bd33bb236247b3227f6ab262818937e5f7060dfc2670905ddd0"
+    },
+    {
+      "path": "DSC07730-B-overview.png",
+      "sha256": "03e54109e740f5bfe248c8877f4c512510b1e31f32ad5bd465dddbf8b0e1c7f6"
+    }
+  ]
+}
