@@ -25,6 +25,44 @@ export function rebuildFillBranch(input: {
   const maskKey = `${input.key}-mask-transform`;
   const compositeKey = `${input.key}-mask-composite`;
   const supportKey = `${input.key}-mask-support`;
+  if (input.branch.outpaint) {
+    const mask = { nodeId: input.branch.permanentMaskNodeId };
+    const nodes: NodeDraft[] = [
+      {
+        localKey: resampleKey,
+        kind: "resample",
+        recipeVersion: 1,
+        parameters: {
+          w: input.frame.w,
+          h: input.frame.h,
+          kernel: "lanczos3",
+          target: { x: 0, y: 0, w: input.frame.w, h: input.frame.h },
+        },
+        inputs: [input.placement],
+      },
+      {
+        localKey: compositeKey,
+        kind: "mask_composite",
+        recipeVersion: input.branch.composite.recipeVersion,
+        parameters: input.branch.composite.parameters as JsonValue,
+        inputs: [{ nodeId: input.baseNodeId }, { localKey: resampleKey }, mask],
+      },
+    ];
+    let content: NodeReference = { localKey: compositeKey };
+    for (const [index, descendant] of input.branch.descendants.toReversed().entries()) {
+      if (descendant.kind === "delta" && !input.preserveCompensations) continue;
+      const localKey = `${input.key}-placement-${index}`;
+      nodes.push({
+        localKey,
+        kind: descendant.kind,
+        recipeVersion: descendant.recipeVersion,
+        parameters: descendant.parameters as JsonValue,
+        inputs: [content],
+      });
+      content = { localKey };
+    }
+    return { nodes, content, mask, compositeKey };
+  }
   const fromGeneration: TransformMatrix = [
     input.generationDimensions.w / input.placementDimensions.w,
     0,

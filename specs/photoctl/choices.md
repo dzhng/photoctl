@@ -5223,7 +5223,7 @@
 
 ### Outpaint refresh preparation — Retain immutable drafts without activating them
 
-- **When:** 12f3 follow-up planning, 2026-09-06; not implemented in the core checkpoint.
+- **When:** 12f3 refresh/retry follow-up, 2026-09-06.
 - **The choice:** Refresh can prepare a current predecessor image from deterministic graph drafts,
   store those immutable nodes without an active revision, and evaluate through the existing cache.
   If generation then fails, the active photo and extent remain unchanged but preparation persists.
@@ -5234,9 +5234,44 @@
   distinct preparations consume storage; identical preparations retain deterministic identity.
   First-generation document creation remains atomic with successful activation. No temporary
   active layer or revision is permitted. Captured support stages must stay with the shared planner.
-- **Verdict:** Parent-approved follow-up direction; verify retention, identity and snapshot safety
-  before removing the core checkpoint's outpaint refresh/retry refusal.
-- **Confidence:** Medium; implementation and lifecycle evidence remain open.
+- **Verdict:** Sound. One deterministic publication owner preserves reusable preparation without
+  exposing an intermediate edit; failed attempts and concurrent source edits retain the active snapshot.
+- **Confidence:** High.
+
+### Outpaint retry — Restore authored density without another generation
+
+- **When:** 12f3 refresh/retry follow-up, 2026-09-06.
+- **The choice:** A border's image was generated successfully but its upscaler failed. After the
+  user moves the border and edits exposure, `fill --layer` with the same generation intent keeps
+  that purchased image and retries density for its original authored size. Placement and the outer
+  exterior mask stay unchanged. A different prompt is refused rather than silently buying a new
+  image; explicit refresh remains the operation that regenerates from current context.
+- **The gap:** Ordinary fill can replace generation on a changed request, but applying that fallback
+  to a border would conflate its permanent expansion intent with a new canvas operation.
+- **The reach:** The existing immediate-branch lineage owner may look through outpaint placement
+  descendants, because those move the already authored border and do not alter its generation input.
+  Ordinary fill retains its existing stricter ancestry rule. This recovers authored density, not
+  density needed by an arbitrary later scale; transform-driven density maintenance remains separate.
+- **Verdict:** Sound. Retrying a failed processing step does not authorize replaying generation or
+  expanding the document twice.
+- **Confidence:** High.
+
+### Outpaint refreshed border — Keep its protected intrinsic interior hidden
+
+- **When:** 12f3 refresh/retry follow-up, 2026-09-06.
+- **The choice:** After exposure changes, refreshing a border replaces its generated exterior but
+  retains the protected interior image stored inside that border's intrinsic composite. This is
+  not the displayed photograph's interior: the unchanged exterior-only outer mask hides it, and
+  the current photographic output underneath supplies the visible source and earlier layers.
+- **The gap:** Rebuilding a generated branch needs a protected base input even though that base
+  is not allowed to replace the live interior. Replacing it during refresh would duplicate current
+  context inside a border whose visible ownership is restricted to its exterior ring.
+- **The reach:** The shared branch rebuild preserves the same exterior mask and placement for
+  retry and refresh. A future operation that permits editing a border's interior mask would need
+  to revisit this invariant; current retry rejects fitting and feathering changes.
+- **Verdict:** Sound. Border pixels remain separate from current editable interior pixels; no
+  flattened historical interior is substituted into the final photographic output.
+- **Confidence:** Medium.
 
 ### Outpaint core — Share paid preparation without early document activation
 

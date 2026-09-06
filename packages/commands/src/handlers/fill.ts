@@ -348,11 +348,14 @@ async function fillGenerationCommand(
   if (!["original", "fill", "noise", "empty"].includes(init))
     throw new PhotoctlError("usage", "--init must be original, fill, noise, or empty");
   const reference = await readImageReference(parsed.options.get("--ref"), cwd);
-  const fit = resolveFillFit(
-    remove ? "remove" : "prompt",
-    parsed.options.get("--fit"),
-    parsed.options.get("--strength"),
-  );
+  const fit =
+    parsed.options.has("--fit") || parsed.options.has("--strength")
+      ? resolveFillFit(
+          remove ? "remove" : "prompt",
+          parsed.options.get("--fit"),
+          parsed.options.get("--strength"),
+        )
+      : undefined;
   const seed = parseOptionalInteger(
     parsed.options.get("--seed"),
     "--seed",

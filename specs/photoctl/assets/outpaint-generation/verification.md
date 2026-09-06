@@ -45,8 +45,9 @@ bytes: source `(1,0)=[32,0,64]` and `(0,1)=[0,32,64]`; that claim is rejected on
 All 24 native/zoom captures were supplied, including these disputed states.
 
 The acceptance is therefore limited to geometry, wire coverage, lossless preservation and atomic
-activation. General photographic quality, full-resolution outpaint resource acceptance, refresh,
-density-only retry and the complete packed CLI journey remain outside this checkpoint.
+activation. General photographic quality, full-resolution outpaint resource acceptance and the
+complete packed CLI journey remain outside this checkpoint. The refresh/retry follow-up below
+adds behavior evidence without extending the original visual-quality claim.
 
 ## Code and failure checks
 
@@ -62,3 +63,32 @@ refresh/sampling, existing canvas, clean migration and schema-21 fixture checks 
 sampling cases first exceeded their existing five-second limit during a parallel run, then passed
 alone without changing that limit. Typecheck, formatting and lint pass; sequential-flow lint warnings
 remain unsuppressed. The root release/resource gate is separate and is not certified by this pass.
+
+## Refresh and pinned retry follow-up
+
+Public command tests exercise current exposure, fixed crop/rotation, moved placement, removed
+predecessor support, current predecessor opacity/enabled state, exclusion of later reordered paint,
+failed preparation reuse and a revision conflict during a provider request. Density-only refresh
+and retry retain the same generation; retry recovers a failed upscaler without growing the canvas.
+Mismatched prompt or exterior-mask fitting leaves the active snapshot unchanged.
+
+The real `DSC08819.JPG` witness copies the permanent camera file into a disposable test volume,
+decodes its actual 4608×3072 source and then crops/rotates a 160×120 region. Both generation requests
+use a 136×176 expanded raster and identical masks. An exposure reduction changes photographic
+input while the protected exterior padding remains black. Deliberately substituting the original
+pinned generation input for the current photographic plan makes this regression fail: both input
+means remain 92.671493, instead of the refreshed input becoming darker. The production path is then
+restored. This is an actual JPEG-source pipeline witness, not a full-frame resource or model-quality
+claim. Its timeout is local to the full-source camera test; tiny lifecycle tests retain their normal
+timeout.
+
+The initial pinned-retry tracer was red at the explicit unsupported guard before implementation.
+The free-fit rejection also went red on the silently ignored option before the contract was fixed.
+The earlier refresh-only independent review reported no actionable issues; its sandbox could not
+bind the HTTP fixture, so local scoped checks provide the execution evidence.
+
+The restored final run passed 54 checks across the outpaint generation/refresh, ordinary fill
+refresh/upscale and graph-store suites. TypeScript build, targeted formatting, lint and diff checks
+passed (lint warnings remain). Independent review `01a0747b-8814-7093-88fe-a33b43e10a10` returned no
+actionable findings on the complete refresh/retry diff. No root full-suite or release-resource gate
+was run for this focused checkpoint.

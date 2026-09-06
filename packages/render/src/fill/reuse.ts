@@ -51,7 +51,7 @@ export async function findReusableFillLineage(
   frame: { w: number; h: number },
 ): Promise<ReusableFillLineage | undefined> {
   const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
-  if (!branch || branch.descendants.length > 0) return undefined;
+  if (!branch || (!branch.outpaint && branch.descendants.length > 0)) return undefined;
   const { resample } = branch;
   if (branch.maskNodeId !== (request.effectiveMaskNodeId ?? selected.maskNodeId)) return undefined;
   const parameters = resample.parameters as {

@@ -302,6 +302,65 @@ export async function commitRevision(
   }
 }
 
+/** Preparation nodes are immutable cache inputs, not an active document mutation. */
+export async function publishDeterministicGraph(
+  database: GraphDatabase,
+  request: { photoId: string; nodes: NodeDraft[]; output: NodeReference },
+) {
+  return await database.transaction(async (transaction) => {
+    if (request.nodes.some((node) => !imageNodeRegistry[node.kind].deterministic))
+      throw new Error("Preparation cannot publish new paid image nodes");
+    const drafts = new Map(request.nodes.map((node) => [node.localKey, node]));
+    if (drafts.size !== request.nodes.length) throw new Error("Duplicate local preparation node");
+    const { resolveReference, resolved } = graphDraftResolver(transaction, request.photoId, drafts);
+    const output = await resolveReference(request.output);
+    if (resolved.size !== drafts.size)
+      throw new Error("Every preparation node must reach its output");
+    return output.id;
+  });
+}
+
+function graphDraftResolver(
+  transaction: GraphTransaction,
+  photoId: string,
+  drafts: Map<string, NodeDraft>,
+) {
+  const resolved = new Map<string, StoredImageNode>();
+  const resolving = new Set<string>();
+  const resolveReference = async (reference: NodeReference): Promise<StoredImageNode> => {
+    if ("nodeId" in reference) return await loadNode(transaction, photoId, reference.nodeId);
+    const cached = resolved.get(reference.localKey);
+    if (cached) return cached;
+    const draft = drafts.get(reference.localKey);
+    if (!draft) throw new Error(`Unknown local graph node: ${reference.localKey}`);
+    if (resolving.has(reference.localKey)) throw new Error("Image graph cycle refused");
+    resolving.add(reference.localKey);
+    const inputs = await mapInOrder(draft.inputs, resolveReference);
+    const parameters = canonicalParameters(draft.kind, draft.recipeVersion, draft.parameters);
+    const recipe = recipeHash(
+      canonicalNodeRecipe({
+        kind: draft.kind,
+        recipeVersion: draft.recipeVersion,
+        parameters,
+        inputNodeIds: inputs.map((input) => input.id),
+      }),
+    );
+    const node: StoredImageNode = {
+      id: logicalNodeId(recipe),
+      photoId,
+      kind: draft.kind,
+      recipeVersion: draft.recipeVersion,
+      parameters,
+      recipeHash: recipe,
+    };
+    await storeNode(transaction, node, inputs);
+    resolving.delete(reference.localKey);
+    resolved.set(reference.localKey, node);
+    return node;
+  };
+  return { resolved, resolveReference };
+}
+
 /** Commits a revision inside a caller-owned transaction, for atomic catalog creation. */
 export async function commitRevisionInTransaction(
   transaction: GraphTransaction,
@@ -327,41 +386,7 @@ export async function commitRevisionInTransaction(
   });
 
   const drafts = new Map(markupProjection.nodes.map((node) => [node.localKey, node]));
-  const resolved = new Map<string, StoredImageNode>();
-  const resolving = new Set<string>();
-  const resolveReference = async (reference: NodeReference): Promise<StoredImageNode> => {
-    if ("nodeId" in reference) {
-      return await loadNode(transaction, request.photoId, reference.nodeId);
-    }
-    const cached = resolved.get(reference.localKey);
-    if (cached) return cached;
-    const draft = drafts.get(reference.localKey);
-    if (!draft) throw new Error(`Unknown local graph node: ${reference.localKey}`);
-    if (resolving.has(reference.localKey)) throw new Error("Image graph cycle refused");
-    resolving.add(reference.localKey);
-    const inputs = await mapInOrder(draft.inputs, resolveReference);
-    const parameters = canonicalParameters(draft.kind, draft.recipeVersion, draft.parameters);
-    const recipe = recipeHash(
-      canonicalNodeRecipe({
-        kind: draft.kind,
-        recipeVersion: draft.recipeVersion,
-        parameters,
-        inputNodeIds: inputs.map((input) => input.id),
-      }),
-    );
-    const node: StoredImageNode = {
-      id: logicalNodeId(recipe),
-      photoId: request.photoId,
-      kind: draft.kind,
-      recipeVersion: draft.recipeVersion,
-      parameters,
-      recipeHash: recipe,
-    };
-    await storeNode(transaction, node, inputs);
-    resolving.delete(reference.localKey);
-    resolved.set(reference.localKey, node);
-    return node;
-  };
+  const { resolved, resolveReference } = graphDraftResolver(transaction, request.photoId, drafts);
 
   const rootUpdates = new Map<CommitRevisionRequest["rootUpdates"][number]["root"], string>(
     await mapInOrder(markupProjection.rootUpdates, async (update) => {

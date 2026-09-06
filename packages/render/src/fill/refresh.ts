@@ -14,6 +14,9 @@ import {
 } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
 import { loadBaseProjection } from "../graph/projection.js";
+import { planPhotographicOutput } from "../graph/output.js";
+import { parseRenderFrame } from "../graph/frame.js";
+import { prepareOutpaintPixels } from "./outpaint.js";
 import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
 import { prepareFillMask } from "./mask.js";
 import { readReferenceArtifact } from "./reference.js";
@@ -30,6 +33,7 @@ import {
   loadActiveDocument,
   type GraphDatabase,
   type NodeDraft,
+  publishDeterministicGraph,
   type NodeReference,
   type PreparedNodeExecution,
 } from "../graph/store.js";
@@ -76,13 +80,28 @@ export async function refreshFillLayer(
   let generationRefreshed = false;
   let refreshedMask: Awaited<ReturnType<typeof prepareFillMask>> | undefined;
   if (target.kind === "generate") {
+    let inputNodeId = document.roots.base;
+    if (branch.outpaint) {
+      const membership = new Set(branch.outpaint.predecessor_layer_ids);
+      const plan = await planPhotographicOutput(database, {
+        photoId: request.photoId,
+        baseNodeId: document.roots.base,
+        layers: document.layers.filter((layer) => membership.has(layer.id)),
+        fixedInputCheckpointNodeId: selected.authoredCheckpointNodeId!,
+      });
+      inputNodeId = await publishDeterministicGraph(database, {
+        photoId: request.photoId,
+        nodes: plan.nodes,
+        output: plan.rootUpdates.find((root) => root.root === "output")!.node,
+      });
+    }
     const refreshed = await executeGenerationRefresh(
       database,
       libraryPath,
       request,
       branch,
       branch.crop,
-      document.roots.base,
+      inputNodeId,
       branch.permanentMaskNodeId,
     );
     nodes.push(refreshed.node);
@@ -194,7 +213,7 @@ export async function refreshFillLayer(
     ...(refreshedMask ? { effectiveMask: { localKey: "effective-mask" } } : {}),
     key: "refresh",
     frame: branch.frame,
-    baseNodeId: generationRefreshed ? document.roots.base : branch.baseNodeId,
+    baseNodeId: generationRefreshed && !branch.outpaint ? document.roots.base : branch.baseNodeId,
     placement: placementReference,
     placementDimensions: { w: placementArtifact.w, h: placementArtifact.h },
     generationDimensions: branch.generationDimensions,
@@ -207,7 +226,8 @@ export async function refreshFillLayer(
     name: layer.name,
     z: layer.z,
     contentNode: layer.id === layerId ? rebuilt.content : { nodeId: layer.contentNodeId },
-    maskNode: layer.id === layerId ? rebuilt.mask : { nodeId: layer.maskNodeId },
+    maskNode:
+      layer.id === layerId && !branch.outpaint ? rebuilt.mask : { nodeId: layer.maskNodeId },
     opacity: layer.opacity,
     blend: layer.blend,
     enabled: layer.enabled,
@@ -293,7 +313,7 @@ export function resolveFillRefreshTarget(
   branch: FillBranchDescriptor,
   from: string | undefined,
 ): { id: string; kind: "generate" | "upscale" } {
-  if (branch.composite.recipeVersion === 2) {
+  if (branch.composite.recipeVersion === 2 && !branch.outpaint) {
     throw new PhotoctlError("usage", "Outpaint layer refresh is not yet supported");
   }
   const candidates = [branch.generation, ...(branch.upscale ? [branch.upscale] : [])];
@@ -356,7 +376,7 @@ async function executeGenerationRefresh(
       source: request.source,
     }),
   ]);
-  const base = await readArtifactImage(
+  let base = await readArtifactImage(
     baseEvaluation.artifact.path,
     baseEvaluation.artifact.artifactHash,
   );
@@ -365,10 +385,18 @@ async function executeGenerationRefresh(
     maskEvaluation.artifact.artifactHash,
   );
   const projection = await loadBaseProjection(database, request.photoId, baseEvaluation);
-  const baseToInput = composeTransformMatrices(
-    projection.baseToRaster,
-    invertTransformMatrix(branch.generationInputMatrix),
-  );
+  if (branch.outpaint)
+    base = prepareOutpaintPixels(
+      base,
+      projection,
+      parseRenderFrame(branch.outpaint.output_frame),
+    ).base;
+  const baseToInput = branch.outpaint
+    ? ([1, 0, 0, 1, 0, 0] as const)
+    : composeTransformMatrices(
+        projection.baseToRaster,
+        invertTransformMatrix(branch.generationInputMatrix),
+      );
   let effectiveMask: Awaited<ReturnType<typeof prepareFillMask>> | undefined;
   if (branch.fit && branch.selectionNodeId) {
     const { visible: _previousVisible, ...fit } = branch.fit;
@@ -396,17 +424,15 @@ async function executeGenerationRefresh(
   }
   if (!mask.data.some((value) => value > 0))
     throw new PhotoctlError("usage", "The effective selection is not visible in the current frame");
-  cropRect = planRefreshedFillCrop(
-    mask,
-    cropRect,
-    numberOrUndefined(storedRequest.pad, "generate pad"),
-  );
+  cropRect = branch.outpaint
+    ? branch.crop
+    : planRefreshedFillCrop(mask, cropRect, numberOrUndefined(storedRequest.pad, "generate pad"));
   const sent = await fillProviderInputs(
     base,
     mask,
     cropRect,
     storedRequest.full_res !== false,
-    baseToInput,
+    branch.outpaint ? undefined : baseToInput,
   );
   const prepared = await request.dependencies.adapter.buildEdit(
     operation,

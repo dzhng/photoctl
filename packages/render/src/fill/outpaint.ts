@@ -2,7 +2,7 @@ import { PhotoctlError } from "@photoctl/protocol";
 import { resampleDisplaySrgbRegion } from "@photoctl/img";
 import { evaluateGraphNode } from "../graph/evaluator.js";
 import { loadBaseProjection } from "../graph/projection.js";
-import { developFrame, savedRenderFrame } from "../graph/frame.js";
+import { developFrame, savedRenderFrame, type RenderFrame } from "../graph/frame.js";
 import {
   canvasExteriorMask,
   commitCanvasExpansion,
@@ -20,7 +20,7 @@ import { prepareFillGeneration } from "./pipeline.js";
 import type { GraphDatabase, NodeDraft } from "../graph/store.js";
 import { prepareReferenceArtifact } from "./reference.js";
 import { resolveFillFit } from "./fit.js";
-import { renderSourceExecution } from "../source-render.js";
+import { renderSourceExecution, type Image16 } from "../source-render.js";
 import { failProviderImageAttempts } from "../provider-images/attempts.js";
 
 export async function outpaintCanvas(
@@ -64,17 +64,8 @@ export async function outpaintCanvas(
   const inputFrame = evaluated
     ? await loadBaseProjection(database, request.photoId, evaluated)
     : developFrame(prepared.inputFrame.catalog, input);
-  const outputToInput = composeTransformMatrices(
-    inputFrame.baseToRaster,
-    prepared.frame.rasterToBase,
-  );
+  const { base, outputToInput } = prepareOutpaintPixels(input, inputFrame, prepared.frame);
   const { w, h } = prepared.frame.raster;
-  const base = {
-    ...input,
-    w,
-    h,
-    data: resampleDisplaySrgbRegion(input.data, input.w, input.h, 0, 0, w, h, w, h, outputToInput),
-  };
   const mask = canvasExteriorMask(prepared);
   const crop = { x: 0, y: 0, w, h };
   const reference = request.referenceImage
@@ -194,4 +185,33 @@ export async function outpaintCanvas(
     }
     throw error;
   }
+}
+
+export function prepareOutpaintPixels(
+  input: Image16,
+  inputFrame: RenderFrame,
+  outputFrame: RenderFrame,
+) {
+  const outputToInput = composeTransformMatrices(inputFrame.baseToRaster, outputFrame.rasterToBase);
+  const { w, h } = outputFrame.raster;
+  return {
+    outputToInput,
+    base: {
+      ...input,
+      w,
+      h,
+      data: resampleDisplaySrgbRegion(
+        input.data,
+        input.w,
+        input.h,
+        0,
+        0,
+        w,
+        h,
+        w,
+        h,
+        outputToInput,
+      ),
+    },
+  };
 }

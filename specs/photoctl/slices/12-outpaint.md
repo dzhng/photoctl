@@ -388,13 +388,37 @@ replays a provider.
 The first checkpoint implements `--outpaint --px N|--aspect W:H`, shared paid preparation and
 atomic border activation. Exact-aspect no-op returns `changed:false` with no layer or new revision;
 successful generation uses the existing fill result. The recipe stores fixed frames and predecessor
-membership for the following checkpoint. Outpaint layer retry and explicit refresh are temporarily
-refused before paid calls, rather than applying ordinary fill's catalog-mask semantics. Remove these
-refusals only when the shared descriptor and refresh owner implement fixed-frame behavior below.
+membership for explicit refresh. The shared descriptor distinguishes the intrinsic exterior mask
+from an ordinary fill's catalog-space selection; refresh and retry preserve that distinction.
 The protocol exposes the success/no-op union as `outpaintDataSchema`; ordinary fill's strict result
 is unchanged. Border transforms use their existing physical placement owner, without automatic
 density-upscale maintenance in this checkpoint. [Capture evidence](../assets/outpaint-generation/verification.md)
 limits acceptance to geometry and lossless preservation, not photographic or preview-codec quality.
+
+### Refresh and pinned retry ownership
+
+`layer refresh` samples current source edits and current enabled versions of originally captured
+predecessors, within the border's fixed authored input frame and inherited support. Later layers
+do not enter regeneration merely because they are reordered below the border. Removed predecessor
+pixels remain absent; their old exclusion of hidden source remains part of the authored frame.
+The output planner owns this bounded input view as well as ordinary final output. Immutable
+preparation can remain after failure, but the active document changes only on successful revision
+publication with the original revision conflict check.
+
+`fill --layer` is a pinned retry for an outpaint border: it requires matching generation intent
+and retained pixels, and may recover failed authored density without another generation request.
+It preserves border placement, exterior mask and extent. Changed generation intent requires an
+explicit regeneration operation; fitting or feathering cannot change the exterior-only mask.
+`layer refresh --from <upscale-node>` likewise keeps generation pinned while explicitly replacing
+the upscaler execution. Shared lineage recognition, density preparation and branch rebuilding own
+these operations; there is no outpaint-specific provider or cache owner.
+
+The command regressions include an actual camera JPEG with full-source decoding before a bounded
+crop, then fixed-frame regeneration after an exposure edit. Synthetic provider pixels prove
+geometry and request lifecycle, not photographic completion quality. Automatic transform-density
+maintenance, full-resolution resource acceptance and the complete built/packed lifecycle journey
+remain the next outpaint work; no migration or compatibility layer is required for this development
+cutover.
 
 Intrinsic coverage has a persisted identity distinct from catalog coverage: `mask_composite@2`
 requires a mask exactly matching the base raster dimensions, while placement remains in the outer

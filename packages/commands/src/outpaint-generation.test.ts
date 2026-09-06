@@ -334,17 +334,21 @@ test.each([true, false])(
         frame: { w: width, h: height },
       });
       expect(captured).toHaveLength(3);
-      for (const [verb, args] of [
-        [
-          "fill",
-          [id, "--layer", after!.layers[0]!.id, "--prompt", "continue the scene", "--no-upscale"],
-        ],
-        ["layer", ["refresh", id, after!.layers[0]!.id]],
-      ] as const) {
-        expect(await response(verb, [...args])).toMatchObject({ ok: false, code: "usage" });
-        expect((await loadActiveDocument(handle, id))?.renderHash).toBe(after?.renderHash);
-        expect(captured).toHaveLength(3);
-      }
+      expect(
+        await response("fill", [
+          id,
+          "--layer",
+          after!.layers[0]!.id,
+          "--prompt",
+          "continue the scene",
+          "--no-upscale",
+        ]),
+      ).toMatchObject({ ok: true });
+      expect((await loadActiveDocument(handle, id))?.renderHash).toBe(after?.renderHash);
+      expect((await loadActiveDocument(handle, id))?.layers[0]?.maskNodeId).toBe(
+        after?.layers[0]?.maskNodeId,
+      );
+      expect(captured).toHaveLength(3);
       expect(
         await response("fill", [
           id,

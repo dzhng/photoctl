@@ -6,7 +6,7 @@ import type {
   UpscaleExecutionAdapter,
 } from "@photoctl/providers";
 import { prepareReferenceArtifact } from "./reference.js";
-import { readArtifactImage } from "../artifacts/publication.js";
+import { readArtifactImage, readArtifactMask } from "../artifacts/publication.js";
 import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evaluator.js";
 import { loadBaseProjection } from "../graph/projection.js";
 import {
@@ -32,6 +32,7 @@ import type { FillFit } from "../mask-operations.js";
 import { prepareFillMask } from "./mask.js";
 import { findReusableFillLineage } from "./reuse.js";
 import { describeFillBranch } from "./branch.js";
+import { rebuildFillBranch } from "./rebuild.js";
 import type { ResolvedUpscalePolicy } from "./upscale-policy.js";
 import { fillProviderInputs } from "./external-pixels.js";
 import {
@@ -89,18 +90,20 @@ export async function fillLayer(
   const layerId = await resolveLayerId(database, request.photoId, request.layer);
   const selected = document.layers.find(({ id }) => id === layerId);
   if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
-  if (
-    (await describeFillBranch(database, request.photoId, selected.contentNodeId))?.composite
-      .recipeVersion === 2
-  ) {
-    throw new PhotoctlError("usage", "Outpaint layer retry is not yet supported");
-  }
+  const branch = await describeFillBranch(database, request.photoId, selected.contentNodeId);
+  const outpaint = branch?.outpaint ? branch : undefined;
+  if (outpaint && request.fit && (request.fit.mode !== "strict" || request.fit.feather_px !== 0))
+    throw new PhotoctlError(
+      "usage",
+      "Outpaint retry preserves its exterior-only mask; fitting and feathering cannot change it",
+    );
   const unfilledVacancies = await unfilledVacancyLayerIds(database, request.photoId, [selected]);
   const fillingVacancy = unfilledVacancies.has(selected.id);
   if (selected.role === "vacancy" && (!selected.enabled || !fillingVacancy)) {
     throw new Error("Only an enabled unfilled vacancy layer can be filled directly");
   }
-  const fillBaseNodeId = fillingVacancy ? document.roots.base : selected.contentNodeId;
+  const fillBaseNodeId =
+    outpaint?.baseNodeId ?? (fillingVacancy ? document.roots.base : selected.contentNodeId);
 
   const baseEvaluation = await evaluateGraphNode({
     database,
@@ -116,15 +119,31 @@ export async function fillLayer(
   const fit = request.fit ?? resolveFillFit(request.operation);
   const projection = await loadBaseProjection(database, request.photoId, baseEvaluation);
   const baseToInput = projection.baseToRaster;
-  const effective = await prepareFillMask(database, libraryPath, request, selected, fit, {
-    matrix: [...baseToInput],
-    w: base.w,
-    h: base.h,
-  });
+  const effective = outpaint
+    ? await (async () => {
+        const evaluated = await evaluateGraphNode({
+          database,
+          libraryPath,
+          photoId: request.photoId,
+          nodeId: outpaint.permanentMaskNodeId,
+          source: request.source,
+        });
+        return {
+          mask: await readArtifactMask(evaluated.artifact.path, evaluated.artifact.artifactHash),
+          nodes: [] as NodeDraft[],
+          effectiveNodeId: outpaint.permanentMaskNodeId,
+          clippedPixels: 0,
+        };
+      })()
+    : await prepareFillMask(database, libraryPath, request, selected, fit, {
+        matrix: [...baseToInput],
+        w: base.w,
+        h: base.h,
+      });
   const mask = effective.mask;
   if (!mask.data.some((value) => value > 0))
     throw new PhotoctlError("usage", "The effective selection is not visible in the current frame");
-  const crop = planFillCrop(mask, request.pad);
+  const crop = outpaint?.crop ?? planFillCrop(mask, request.pad);
   const reference = request.referenceImage
     ? await prepareReferenceArtifact(libraryPath, request.referenceImage)
     : undefined;
@@ -145,6 +164,11 @@ export async function fillLayer(
           h: mask.h,
         },
       );
+  if (outpaint && !reusable)
+    throw new PhotoctlError(
+      "usage",
+      "Outpaint retry requires its original generation intent and retained pixels; use layer refresh to generate again",
+    );
   const strictBaseNodeId = reusable?.baseNodeId ?? fillBaseNodeId;
   const { generation, density, sourceContext } = await prepareFillGeneration(
     database,
@@ -172,47 +196,66 @@ export async function fillLayer(
         "Fill coverage was clipped to the current visible frame; the original selection is unchanged",
     });
   const placementInput = density.output;
-  nodes.push(
-    ...effective.nodes,
-    {
-      localKey: "fill-support",
-      kind: "mask",
-      recipeVersion: 2,
-      parameters: { operation: "support" },
-      inputs: [{ localKey: "effective-mask" }],
-    },
-    {
-      localKey: "resample",
-      kind: "resample",
-      recipeVersion: 1,
-      parameters: {
-        w: mask.w,
-        h: mask.h,
-        kernel: "lanczos3",
-        target: { x: crop.x, y: crop.y, w: crop.w, h: crop.h },
+  const rebuilt = outpaint
+    ? rebuildFillBranch({
+        branch: outpaint,
+        key: "fill",
+        frame: outpaint.frame,
+        baseNodeId: outpaint.baseNodeId,
+        placement: placementInput,
+        placementDimensions: density.upscale.generated,
+        generationDimensions: outpaint.generationDimensions,
+        matrix: outpaint.currentMatrix,
+        preserveCompensations: true,
+      })
+    : undefined;
+  if (rebuilt) nodes.push(...rebuilt.nodes);
+  else
+    nodes.push(
+      ...effective.nodes,
+      {
+        localKey: "fill-support",
+        kind: "mask",
+        recipeVersion: 2,
+        parameters: { operation: "support" },
+        inputs: [{ localKey: "effective-mask" }],
       },
-      inputs: [placementInput],
-    },
-    {
-      localKey: "strict-composite",
-      kind: "mask_composite",
-      recipeVersion: 1,
-      parameters: { feather: 0 },
-      inputs: [
-        { nodeId: strictBaseNodeId },
-        { localKey: "resample" },
-        { localKey: "effective-mask" },
-      ],
-    },
-  );
+      {
+        localKey: "resample",
+        kind: "resample",
+        recipeVersion: 1,
+        parameters: {
+          w: mask.w,
+          h: mask.h,
+          kernel: "lanczos3",
+          target: { x: crop.x, y: crop.y, w: crop.w, h: crop.h },
+        },
+        inputs: [placementInput],
+      },
+      {
+        localKey: "strict-composite",
+        kind: "mask_composite",
+        recipeVersion: 1,
+        parameters: { feather: 0 },
+        inputs: [
+          { nodeId: strictBaseNodeId },
+          { localKey: "resample" },
+          { localKey: "effective-mask" },
+        ],
+      },
+    );
   const layers: RevisionLayerDraft[] = document.layers.map((layer) => ({
     layer: { layerId: layer.id },
     name: layer.name,
     z: layer.z,
     contentNode:
-      layer.id === selected.id ? { localKey: "strict-composite" } : { nodeId: layer.contentNodeId },
+      layer.id === selected.id
+        ? (rebuilt?.content ?? { localKey: "strict-composite" })
+        : { nodeId: layer.contentNodeId },
     maskNode:
-      layer.id === selected.id ? { localKey: "fill-support" } : { nodeId: layer.maskNodeId },
+      layer.id === selected.id && !outpaint
+        ? { localKey: "fill-support" }
+        : { nodeId: layer.maskNodeId },
     opacity: layer.opacity,
     blend: layer.blend,
     enabled: layer.enabled,
@@ -234,7 +277,8 @@ export async function fillLayer(
     outputNodeId: committed.roots.output! as `node_${string}`,
     renderHash: committed.renderHash as `r_${string}`,
     generationNodeId: generationNodeId as `node_${string}`,
-    compositeNodeId: committed.nodes["strict-composite"]!.id as `node_${string}`,
+    compositeNodeId: committed.nodes[rebuilt?.compositeKey ?? "strict-composite"]!
+      .id as `node_${string}`,
     returnedDimensions: generation.returnedDimensions,
     sourceContext,
     upscale: {

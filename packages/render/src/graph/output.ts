@@ -157,6 +157,7 @@ export async function planPhotographicOutput(
     baseNodeId: string;
     geometryNodeId?: string;
     layers: readonly RevisionLayer[];
+    fixedInputCheckpointNodeId?: string;
   },
 ): Promise<Pick<CommitRevisionRequest, "nodes" | "rootUpdates">> {
   const base = { nodeId: request.baseNodeId };
@@ -170,11 +171,11 @@ export async function planPhotographicOutput(
   const source = await readBaseDevelopInput(transaction, request.photoId, request.baseNodeId);
   const controls = source.develop;
   let canvas: z.infer<typeof canvasCompositeSchema> | undefined;
-  if (borders.length && request.geometryNodeId) {
+  if ((borders.length && request.geometryNodeId) || request.fixedInputCheckpointNodeId) {
     const ancestry = await loadGeometryAncestry(
       transaction,
       request.photoId,
-      request.geometryNodeId,
+      request.fixedInputCheckpointNodeId ?? request.geometryNodeId!,
     );
     const checkpoints = new Map<
       string,
@@ -189,9 +190,14 @@ export async function planPhotographicOutput(
       node.inputs.slice(0, node.parameters.support_input_count).forEach(retainSupport);
     };
     borders.forEach((layer) => retainSupport(layer.authoredCheckpointNodeId!));
+    if (request.fixedInputCheckpointNodeId) retainSupport(request.fixedInputCheckpointNodeId);
     const ordered = [...checkpoints.entries()].sort((a, b) => a[1].sequence - b[1].sequence);
-    const latest = latestBorderCheckpoint(borders, ancestry)!;
-    let outer = parseRenderFrame(latest.outer_frame);
+    const latest = request.fixedInputCheckpointNodeId
+      ? checkpoints.get(request.fixedInputCheckpointNodeId)!
+      : latestBorderCheckpoint(borders, ancestry)!;
+    let outer = parseRenderFrame(
+      request.fixedInputCheckpointNodeId ? latest.input_frame : latest.outer_frame,
+    );
     const stagesAfter = (sequence: number) =>
       ordered
         .filter(([, checkpoint]) => checkpoint.sequence > sequence)
@@ -214,15 +220,18 @@ export async function planPhotographicOutput(
         }),
       ),
     );
-    outer = containingFrame(outer, [
-      ...parseRenderFrame(latest.input_frame).visibleBasePolygon.map(([x, y]) => ({ x, y })),
-      ...admissibleCanvasSupport([], [...borderFrames.values()]).flat(),
-    ]);
-    const tail = canvasViewportStages(outer, latest, {
-      geometry: controls,
-      crop_activation: ancestry.parameters.crop_activation,
-      aspect_activation: ancestry.parameters.aspect_activation,
-    }).map(savedRenderFrame);
+    if (!request.fixedInputCheckpointNodeId)
+      outer = containingFrame(outer, [
+        ...parseRenderFrame(latest.input_frame).visibleBasePolygon.map(([x, y]) => ({ x, y })),
+        ...admissibleCanvasSupport([], [...borderFrames.values()]).flat(),
+      ]);
+    const tail = request.fixedInputCheckpointNodeId
+      ? [savedRenderFrame(outer)]
+      : canvasViewportStages(outer, latest, {
+          geometry: controls,
+          crop_activation: ancestry.parameters.crop_activation,
+          aspect_activation: ancestry.parameters.aspect_activation,
+        }).map(savedRenderFrame);
     outer = parseRenderFrame(tail.at(-1)!);
     canvas = {
       frame: savedRenderFrame(outer),

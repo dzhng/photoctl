@@ -1,5 +1,7 @@
 /* eslint-disable no-await-in-loop -- Graph ancestry must be inspected in dependency order. */
 import { warningCodes, type Warning } from "@photoctl/protocol";
+import { z } from "zod";
+import { savedFrameSchema } from "../graph/frame.js";
 import { inspectGraphNode, type GraphNodeRecord } from "../graph/inspection.js";
 import {
   imageNodeRegistry,
@@ -25,6 +27,15 @@ export interface FillUpscaleIdentity {
   originalPrompt: string;
   derivedPrompt: string;
 }
+
+export const outpaintIntentSchema = z
+  .object({
+    input_frame: savedFrameSchema,
+    output_frame: savedFrameSchema,
+    input_stages: z.array(savedFrameSchema),
+    predecessor_layer_ids: z.array(z.uuid()),
+  })
+  .strict();
 
 export interface FillBranchDescriptor {
   contentRootId: string;
@@ -56,6 +67,7 @@ export interface FillBranchDescriptor {
   selectionNodeId?: string;
   upscaleIdentity?: FillUpscaleIdentity;
   sourceContext: { tier: string; pixelScale: number; resolutionLimited: boolean };
+  outpaint?: z.infer<typeof outpaintIntentSchema>;
   upscaleExecution?: GraphNodeRecord["executions"][number];
   upscaleProvider?: ExternalExecutionProvenance;
 }
@@ -125,6 +137,10 @@ export async function describeFillBranch(
   )
     return undefined;
   const generationRequest = asRecord(asRecord(placement.parameters)?.request);
+  const outpaint =
+    generationRequest?.outpaint === undefined
+      ? undefined
+      : outpaintIntentSchema.parse(generationRequest.outpaint);
   if (
     !Array.isArray(generationRequest?.crop) ||
     generationRequest.crop.length !== 4 ||
@@ -186,6 +202,7 @@ export async function describeFillBranch(
   }
   return {
     contentRootId,
+    ...(outpaint ? { outpaint } : {}),
     descendants,
     compensations: descendants.filter(({ kind }) => kind === "delta"),
     transforms: descendants.filter(({ kind }) => kind === "transform"),
