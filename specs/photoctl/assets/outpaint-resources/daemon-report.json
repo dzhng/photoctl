@@ -1,0 +1,589 @@
+{
+  "revision": "31d84a6",
+  "node": "v24.14.0",
+  "canaryBytes": 5000000000,
+  "sampleIntervalTargetMs": 100,
+  "idleObservationMs": 2000,
+  "commands": [
+    {
+      "args": [
+        "init",
+        "--path",
+        "/private/tmp/photoctl-outpaint-daemon-measurement/library"
+      ],
+      "elapsedMs": 1349.792,
+      "cliPeakRssBytes": 1734541312,
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "library": "/private/tmp/photoctl-outpaint-daemon-measurement/library",
+          "db": "pglite 0.5.8 / pg 18.3",
+          "cache_max_bytes": 21474836480,
+          "embed": "manual"
+        },
+        "warnings": []
+      },
+      "measurement": {
+        "sampleCount": 0,
+        "peakDaemonRssBytes": null,
+        "maxObservedSampleGapMs": null,
+        "childSamples": []
+      }
+    },
+    {
+      "args": [
+        "daemon",
+        "start"
+      ],
+      "elapsedMs": 126.80833299999995,
+      "cliPeakRssBytes": 110428160,
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "pid": 63901,
+          "socket": "/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-92cb95bb.sock",
+          "uptime_s": 0.372,
+          "queue": 0,
+          "version": "0.1.0"
+        },
+        "warnings": []
+      },
+      "measurement": {
+        "sampleCount": 0,
+        "peakDaemonRssBytes": null,
+        "maxObservedSampleGapMs": null,
+        "childSamples": []
+      }
+    },
+    {
+      "args": [
+        "import",
+        "/private/tmp/photoctl-outpaint-daemon-resources/fixtures/camera/DSC08142.JPG",
+        "--link",
+        "--companions",
+        "jpeg"
+      ],
+      "elapsedMs": 1153.7777500000002,
+      "cliPeakRssBytes": 110968832,
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "imported": 1,
+          "already_present": 0,
+          "skipped_unsupported": 0,
+          "skipped_conflicts": 0,
+          "conflicts": [],
+          "ids": [
+            "01a07652-e1e6-7662-85af-598c4e8db92a"
+          ],
+          "volume": {
+            "uuid": "fixture-volume",
+            "mount": "/private/tmp/photoctl-outpaint-daemon-resources/fixtures/camera",
+            "online": true
+          },
+          "xmp_read": {
+            "sidecars_found": 0,
+            "ratings": 0,
+            "keywords": 0,
+            "labels": 0
+          },
+          "previews": {
+            "embedded_extracted": 1,
+            "bytes": 238921
+          },
+          "embeddings": {
+            "queued": 0,
+            "est_usd": 0,
+            "note": "manual embedding mode"
+          },
+          "elapsed_s": 1.025438834
+        },
+        "warnings": []
+      },
+      "idleSamples": [
+        {
+          "atMs": 1788691538789,
+          "rssBytes": 1089044480,
+          "children": []
+        },
+        {
+          "atMs": 1788691539015,
+          "rssBytes": 1089044480,
+          "children": []
+        },
+        {
+          "atMs": 1788691539246,
+          "rssBytes": 1089044480,
+          "children": []
+        },
+        {
+          "atMs": 1788691539482,
+          "rssBytes": 1089044480,
+          "children": []
+        },
+        {
+          "atMs": 1788691539718,
+          "rssBytes": 1089044480,
+          "children": []
+        },
+        {
+          "atMs": 1788691539955,
+          "rssBytes": 1089044480,
+          "children": []
+        },
+        {
+          "atMs": 1788691540193,
+          "rssBytes": 1089044480,
+          "children": []
+        },
+        {
+          "atMs": 1788691540428,
+          "rssBytes": 1089044480,
+          "children": []
+        },
+        {
+          "atMs": 1788691540670,
+          "rssBytes": 1089044480,
+          "children": []
+        },
+        {
+          "atMs": 1788691540909,
+          "rssBytes": 1089044480,
+          "children": []
+        }
+      ],
+      "measurement": {
+        "sampleCount": 10,
+        "firstSampleAtMs": 1788691537310,
+        "lastSampleAtMs": 1788691538462,
+        "peakDaemonRssBytes": 1098678272,
+        "maxObservedSampleGapMs": 131,
+        "childSamples": []
+      }
+    },
+    {
+      "args": [
+        "develop",
+        "01a07652-e1e6-7662-85af-598c4e8db92a",
+        "--set",
+        "exposure=0.125"
+      ],
+      "elapsedMs": 153.47541699999965,
+      "cliPeakRssBytes": 110559232,
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07652-e1e6-7662-85af-598c4e8db92a",
+            "ok": true,
+            "develop_hash": "h_1efa5c7e619e95b6caa0c3a3b76e2770285cd6b4dbadb63f29a10ab759185d4e",
+            "render_hash": "r_8589760827ee799dfff68edba705248683b2e336bb366eff6ac506fe436bd7f9",
+            "layers": {
+              "delta_applied": [],
+              "stale": []
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "idleSamples": [
+        {
+          "atMs": 1788691541406,
+          "rssBytes": 1095680000,
+          "children": []
+        },
+        {
+          "atMs": 1788691541644,
+          "rssBytes": 1095680000,
+          "children": []
+        },
+        {
+          "atMs": 1788691541882,
+          "rssBytes": 1095680000,
+          "children": []
+        },
+        {
+          "atMs": 1788691542121,
+          "rssBytes": 1095680000,
+          "children": []
+        },
+        {
+          "atMs": 1788691542360,
+          "rssBytes": 1095680000,
+          "children": []
+        },
+        {
+          "atMs": 1788691542598,
+          "rssBytes": 1095680000,
+          "children": []
+        },
+        {
+          "atMs": 1788691542837,
+          "rssBytes": 1095680000,
+          "children": []
+        },
+        {
+          "atMs": 1788691543073,
+          "rssBytes": 1095680000,
+          "children": []
+        },
+        {
+          "atMs": 1788691543299,
+          "rssBytes": 1095680000,
+          "children": []
+        },
+        {
+          "atMs": 1788691543533,
+          "rssBytes": 1095680000,
+          "children": []
+        }
+      ],
+      "measurement": {
+        "sampleCount": 2,
+        "firstSampleAtMs": 1788691540937,
+        "lastSampleAtMs": 1788691541065,
+        "peakDaemonRssBytes": 1089323008,
+        "maxObservedSampleGapMs": 128,
+        "childSamples": []
+      }
+    },
+    {
+      "args": [
+        "export",
+        "01a07652-e1e6-7662-85af-598c4e8db92a",
+        "--to",
+        "/private/tmp/photoctl-outpaint-daemon-measurement/JPG-1-baseline",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 6012.938417,
+      "cliPeakRssBytes": 110346240,
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07652-e1e6-7662-85af-598c4e8db92a",
+            "ok": true,
+            "file": "/private/tmp/photoctl-outpaint-daemon-measurement/JPG-1-baseline/DSC08142.png",
+            "w": 7008,
+            "h": 4672,
+            "bytes": 39576062,
+            "render_hash": "r_8589760827ee799dfff68edba705248683b2e336bb366eff6ac506fe436bd7f9",
+            "source_original_id": "01a07652-e1e5-777c-8205-3c743ef9f93f",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      },
+      "idleSamples": [
+        {
+          "atMs": 1788691549875,
+          "rssBytes": 3027550208,
+          "children": []
+        },
+        {
+          "atMs": 1788691550112,
+          "rssBytes": 3027550208,
+          "children": []
+        },
+        {
+          "atMs": 1788691550350,
+          "rssBytes": 3027550208,
+          "children": []
+        },
+        {
+          "atMs": 1788691550587,
+          "rssBytes": 3027550208,
+          "children": []
+        },
+        {
+          "atMs": 1788691550814,
+          "rssBytes": 3027550208,
+          "children": []
+        },
+        {
+          "atMs": 1788691551049,
+          "rssBytes": 3027550208,
+          "children": []
+        },
+        {
+          "atMs": 1788691551286,
+          "rssBytes": 3027550208,
+          "children": []
+        },
+        {
+          "atMs": 1788691551523,
+          "rssBytes": 3027550208,
+          "children": []
+        },
+        {
+          "atMs": 1788691551760,
+          "rssBytes": 3027550208,
+          "children": []
+        },
+        {
+          "atMs": 1788691551999,
+          "rssBytes": 3027550208,
+          "children": []
+        }
+      ],
+      "measurement": {
+        "sampleCount": 47,
+        "firstSampleAtMs": 1788691543561,
+        "lastSampleAtMs": 1788691549536,
+        "peakDaemonRssBytes": 3027156992,
+        "maxObservedSampleGapMs": 185,
+        "childSamples": []
+      }
+    },
+    {
+      "args": [
+        "fill",
+        "01a07652-e1e6-7662-85af-598c4e8db92a",
+        "--outpaint",
+        "--px",
+        "128",
+        "--prompt",
+        "continue the scene",
+        "--model",
+        "photoctl/fake-image-edit-v1",
+        "--no-upscale"
+      ],
+      "elapsedMs": 4686.045875,
+      "cliPeakRssBytes": 110723072,
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "data": {
+          "id": "01a07652-e1e6-7662-85af-598c4e8db92a",
+          "graph": {
+            "revision": "315ff11f-585b-4c62-85f2-b4cfae5c7121",
+            "layer": "5d7ce5d4-7b39-4f56-829e-5704c6802e52",
+            "output_node": "node_89f28712cfa555ab12cbf33b151428b0122f0847085d345a65dbbb1e7d0a289e",
+            "render_hash": "r_c8423fbb4f7ec6c71b1fb6204843dfc03a116b47b2c0cec3207d1a848ce7978b"
+          },
+          "generation": {
+            "node": "node_06bc55fdb75cd79bedbbe8b9f2a770a1fdec59ec06632b221f63243a98337bdd",
+            "adapter": "gateway-image-instruction-composite-v1",
+            "model": "photoctl/fake-image-edit-v1",
+            "returned": {
+              "w": 1536,
+              "h": 1042
+            }
+          },
+          "source_context": {
+            "tier": "online-file",
+            "pixel_scale": 1,
+            "resolution_limited": false
+          },
+          "upscale": {
+            "enabled": false,
+            "executed": false,
+            "node": null,
+            "adapter": null,
+            "model": "photoctl/fake-upscale-v1",
+            "input": {
+              "w": 1536,
+              "h": 1042
+            },
+            "target": {
+              "w": 7264,
+              "h": 4928
+            },
+            "generated": {
+              "w": 1536,
+              "h": 1042
+            },
+            "final": {
+              "w": 7264,
+              "h": 4928
+            },
+            "density_satisfied": false,
+            "warnings": []
+          },
+          "composite": {
+            "node": "node_89f28712cfa555ab12cbf33b151428b0122f0847085d345a65dbbb1e7d0a289e",
+            "unmasked_bit_exact": true
+          },
+          "executions": [
+            {
+              "kind": "generate",
+              "node": "node_06bc55fdb75cd79bedbbe8b9f2a770a1fdec59ec06632b221f63243a98337bdd",
+              "adapter": "gateway-image-instruction-composite-v1",
+              "model": "photoctl/fake-image-edit-v1",
+              "duration_ms": 172,
+              "cost_usd": 0,
+              "reused": false
+            }
+          ]
+        },
+        "warnings": []
+      },
+      "idleSamples": [
+        {
+          "atMs": 1788691557168,
+          "rssBytes": 2961522688,
+          "children": []
+        },
+        {
+          "atMs": 1788691557405,
+          "rssBytes": 2961522688,
+          "children": []
+        },
+        {
+          "atMs": 1788691557642,
+          "rssBytes": 2961522688,
+          "children": []
+        },
+        {
+          "atMs": 1788691557878,
+          "rssBytes": 2961522688,
+          "children": []
+        },
+        {
+          "atMs": 1788691558116,
+          "rssBytes": 2961522688,
+          "children": []
+        },
+        {
+          "atMs": 1788691558355,
+          "rssBytes": 2961522688,
+          "children": []
+        },
+        {
+          "atMs": 1788691558594,
+          "rssBytes": 2961522688,
+          "children": []
+        },
+        {
+          "atMs": 1788691558829,
+          "rssBytes": 2961522688,
+          "children": []
+        },
+        {
+          "atMs": 1788691559066,
+          "rssBytes": 2961522688,
+          "children": []
+        },
+        {
+          "atMs": 1788691559303,
+          "rssBytes": 2961735680,
+          "children": []
+        }
+      ],
+      "measurement": {
+        "sampleCount": 36,
+        "firstSampleAtMs": 1788691552245,
+        "lastSampleAtMs": 1788691556829,
+        "peakDaemonRssBytes": 3024830464,
+        "maxObservedSampleGapMs": 172,
+        "childSamples": []
+      }
+    },
+    {
+      "args": [
+        "export",
+        "01a07652-e1e6-7662-85af-598c4e8db92a",
+        "--to",
+        "/private/tmp/photoctl-outpaint-daemon-measurement/JPG-1-expanded",
+        "--format",
+        "png"
+      ],
+      "elapsedMs": 15337.126958999997,
+      "cliPeakRssBytes": 110641152,
+      "result": {
+        "schema": 1,
+        "ok": true,
+        "summary": {
+          "ok": 1,
+          "failed": 0
+        },
+        "results": [
+          {
+            "id": "01a07652-e1e6-7662-85af-598c4e8db92a",
+            "ok": true,
+            "file": "/private/tmp/photoctl-outpaint-daemon-measurement/JPG-1-expanded/DSC08142.png",
+            "w": 7264,
+            "h": 4928,
+            "bytes": 40602770,
+            "render_hash": "r_c8423fbb4f7ec6c71b1fb6204843dfc03a116b47b2c0cec3207d1a848ce7978b",
+            "source_original_id": "01a07652-e1e5-777c-8205-3c743ef9f93f",
+            "skipped": false
+          }
+        ],
+        "warnings": []
+      },
+      "idleSamples": [
+        {
+          "atMs": 1788691574967,
+          "rssBytes": 5005983744,
+          "children": []
+        }
+      ],
+      "measurement": {
+        "sampleCount": 119,
+        "firstSampleAtMs": 1788691559332,
+        "lastSampleAtMs": 1788691574628,
+        "peakDaemonRssBytes": 4998119424,
+        "maxObservedSampleGapMs": 217,
+        "childSamples": []
+      }
+    }
+  ],
+  "cases": [
+    {
+      "source": "/private/tmp/photoctl-outpaint-daemon-resources/fixtures/camera/DSC08142.JPG",
+      "sourceHash": "8e4b383dcddad62dff5b3a1b7fa3eb6ff3f9673962aff8bb1b907575cfab459b",
+      "cycles": [
+        {
+          "exposure": 0.125
+        }
+      ],
+      "id": "01a07652-e1e6-7662-85af-598c4e8db92a",
+      "sourceHashAfter": "8e4b383dcddad62dff5b3a1b7fa3eb6ff3f9673962aff8bb1b907575cfab459b",
+      "sourceUnchanged": true
+    }
+  ],
+  "completed": false,
+  "addonSha256": "a585553d7a53dbde6aae7a3673bf507c1521e399f74c41002925bb3d53bacc5d",
+  "helperSha256": "4e3dd084338697389b9a770ada0a6dd8c650cb400faffe5eec7d086250a17ec4",
+  "runnerSha256": "eb834e2046bbd4d292b63b214765d1bb353a2db9a2f735299ae8936e2a7524ea",
+  "daemonPid": 63901,
+  "canaryExceeded": {
+    "atMs": 1788691574967,
+    "rssBytes": 5005983744,
+    "children": []
+  },
+  "failure": "Stopped at memory canary",
+  "providerCalls": 1,
+  "rawReportSha256": "eca7d20fe2825e3a85bb481ea14350fd5e8926a349daafc8ff1b030aecbdc84c",
+  "postStopPixelCheck": {
+    "baselineDimensions": [
+      7008,
+      4672
+    ],
+    "expandedDimensions": [
+      7264,
+      4928
+    ],
+    "baselineSha256": "486a833c24fb6dde5e0534a401ff70337a7da9aac6758584ff7d545e48a9dbe3",
+    "expandedSha256": "18f70fa090ff1a1c95b3e626b7d53e3040928aa26fad36cb3424e6f21502296a",
+    "interiorSha256": "dc812a5f9362d68a9e10872ad5f94136f759cedd50cd24031b6cc9976bfae619",
+    "interiorExact": true,
+    "shiftedComparisonRejected": true,
+    "scope": "PNG RGB, measured after daemon exit in observer; not canonical float proof"
+  }
+}

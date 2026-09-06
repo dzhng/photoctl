@@ -1,5 +1,9 @@
 # Full-resolution outpaint resources
 
+The separate [persistent-daemon attempt](daemon.md) stopped at the 5 GB canary
+after its first expanded JPEG export. Repeated-cycle retention remains unaccepted;
+the earlier no-daemon witnesses below do not answer that failure.
+
 This recorded-host witness exercises the actual uncropped camera JPEG and Bayer
 RAW through the public CLI. Both complete under the approved 5 GB decimal RSS
 investigation canary, with exact protected pixels. This is not a universal memory
