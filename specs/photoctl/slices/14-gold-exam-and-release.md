@@ -87,10 +87,12 @@ independent visual critique. These screenshots are fixture presentation evidence
 ## External evidence boundary
 
 [Camera-reference delivery review](../assets/camera-delivery-review/README.md)
-records a successful local gold-script run whose photographic output **failed**
-inspection: highlight color corruption and reduced-RAW striping require decoder
-boundary diagnosis and regression coverage. Successful command exits do not close
-this quality gate.
+preserves the historical gold-script run whose photographic output **failed** inspection.
+Reduced-RAW striping and conspicuous highlight-color corrections now have integrated
+evidence; remaining fine-edge fidelity and the explicit complete-delivery verdict are
+owned by [RAW delivery acceptance](07-highlight-reconstruction.md#c--complete-raw-led-delivery-acceptance).
+Successful command exits do not close that photographic gate, and historical corrected
+defects must not keep triggering the same diagnosis.
 
 The [camera reference collection](../../../fixtures/camera/README.md) retains real original pairs
 covering every observed format/crop/orientation group on the supplied card. The camera need not

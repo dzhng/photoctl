@@ -24,7 +24,8 @@ do not add a competing float file format solely to make the tests convenient.
 [Native CIRAW evidence](../assets/camera-delivery-review/highlight-recovery/README.md)
 records the sole-toggle comparison, all native crops and independent visual review.
 Recovery removes the candle's false magenta and preserves the orange panel, but its
-flame core remains flat at reduced exposure. The overall delivery set is still rejected.
+flame core remains flat at reduced exposure. That historical delivery set was rejected;
+the integrated correction and remaining acceptance boundary are recorded in C below.
 
 The [exact upstream LibRaw spatial experiment](../assets/camera-delivery-review/libraw-spatial-recovery/README.md)
 isolates recovery from common
@@ -214,9 +215,9 @@ The [all-reference witness](../assets/camera-delivery-review/integrated-reconstr
 completes native public view/export coverage for all 18 retained RAW-led pairs,
 with all 36 original hashes unchanged and all 86 captures inspected by root and
 an independent PNG-only reviewer. Seventeen sources report applied recovery;
-the unsupported reduced complete-RGB source remains RAW-led. Remaining branch
-and wire fringes and portrait-highlight chroma are now a bounded same-RAW
-enabled/disabled diagnostic pickup, not a reason to rerun the breadth capture.
+the unsupported reduced complete-RGB source remains RAW-led. The bounded same-RAW
+comparison below isolates remaining branch/wire fringes and portrait-highlight chroma;
+do not rerun the breadth capture to answer the same question.
 
 That [causal comparison](../assets/camera-delivery-review/residual-causal/README.md)
 is now complete: the branch, nose and lower-wire regions have exactly unchanged
@@ -233,20 +234,17 @@ before WB/matrix. It does not identify an optical cause. Fine chroma differs,
 and equal raster sizes conceal displaced scene content. All sixteen captures
 were inspected independently and by root, with merged hashes verified.
 
-The remaining fidelity investigation starts with coordinate provenance: trace
-active area, crop and orientation through the existing decoder boundaries for
-these same two sources before comparing registered pixels. Then isolate any
+The [compiled coordinate witness](../assets/camera-delivery-review/coordinate-metadata/README.md)
+confirms the recorded inset origin (44,30) and 4608×3072 extent, including both live
+and saved LibRaw margins. CIRAW exposes that output extent too, but its internal
+scene mapping remains opaque. No crop defect is established. Isolate any
 reproducible chromatic-edge defect in its actual owner. Do not rerun the broad
 reference capture, treat CIRAW as pixel truth, or change interpolation/WB order
 without an owner-specific regression and representation-preserving proposal.
 The accepted highlight correction is not reopened by artifacts that predate it.
 
-The read-only mapping trace found no proven code defect: LibRaw's inset-crop
-operation updates both live and saved margins, and the helper renders from
-CIRAW's actual extent origin. Current evidence omits the selected inset origin
-and framework extent mapping. Next collect those metadata facts for the same
-two originals without another image sweep or a product API change. Existing G4
-dimension equality and patch means do not establish registration; inventing
+Metadata collection is complete within that boundary; do not repeat it as the
+next task. Existing G4 dimension equality and patch means do not establish registration; inventing
 expected coordinates from either decoder would not be an honest regression.
 
 C must conclude per defect, not repeatedly reject everything because lights are
