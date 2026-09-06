@@ -63,7 +63,32 @@ lights, flat highlight interiors and remaining stepped edges. Main inspection
 agrees. Enabled is less wrong for false highlight color on these samples; these
 PNGs cannot establish the original light spectra or recoverable sensor detail.
 
-## Portable recovery remains unresolved
+## Scaled output is a distinct decoder operation
+
+The [scaled comparison](scaled-comparison.json) uses the same verified scratch
+helper and the retained native RGB-f32 outputs above. Each original was decoded
+again at half and quarter scale, with recovery disabled and enabled separately.
+All eight helper calls completed successfully, reported supported recovery and
+the requested enabled state, and returned the expected oriented dimensions.
+Each was compared with the corresponding native output reduced by photoctl's
+shared bilinear resampler. Both sides contained finite samples.
+
+Neither treatment is bit-equivalent to native-then-bilinear processing. Maximum
+absolute scene-linear channel differences range from 0.00165 to 0.947; mean
+absolute differences range from 0.0000238 to 0.00198. These are numerical
+comparisons, not visual quality thresholds, and do not locate the responsible
+internal CIRAW stage. They rule out claiming that CIRAW's scale control has the
+portable kernel's native-then-resample semantics. Preserve decoder method and
+requested scale in diagnostic provenance; do not change its established scaling
+route merely to match a different algorithm.
+
+Scratch commands and RGB buffers remain beside the earlier experiment under
+`scaled-comparison.mjs` and `*-scaled-check-*.f32`. The permanent JSON retains
+native/scaled/reference hashes and the exact helper/addon identities. No camera
+access, production helper change, provider call or new visual acceptance claim
+is part of this comparison.
+
+## Portable recovery boundary
 
 Earlier floating analogues of LibRaw highlight blending removed candle magenta but
 desaturated genuine unclipped colored lights. A hard sensor-clipping gate preserved
