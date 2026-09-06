@@ -106,3 +106,7 @@ The [native recovery experiment](highlight-recovery/README.md) preserves the
 complete CIRAW comparison and independent review. It removes false highlight
 color on two saved originals without visibly whitening genuine orange/red lights;
 it does not restore lost texture or establish a portable production correction.
+
+The [upstream LibRaw spatial comparison](libraw-spatial-recovery/README.md)
+preserves the portable-algorithm experiment, including its integer-staging losses.
+Its quarter-resolution captures are not native photographic acceptance.

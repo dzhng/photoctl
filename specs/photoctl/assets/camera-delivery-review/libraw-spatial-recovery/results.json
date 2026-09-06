@@ -1,0 +1,634 @@
+[
+  {
+    "name": "DSC00107",
+    "mode": 1,
+    "meta": {
+      "width": 1168,
+      "height": 1752,
+      "nativeWidth": 4672,
+      "nativeHeight": 7008,
+      "white": 15871,
+      "maxGain": 2.67578125,
+      "scaledClippedSamples": 3122,
+      "camXyz": [
+        0.7459999919,
+        -0.236499995,
+        -0.0588000007,
+        -0.5687000155,
+        1.344200015,
+        0.2474000007,
+        -0.06239999831,
+        0.1155999973,
+        0.6583999991
+      ],
+      "gains": [
+        1.533203125,
+        1,
+        2.67578125
+      ],
+      "modes": [
+        {
+          "mode": 1,
+          "nativeChanged": 0,
+          "nativeChangedUnclipped999": 0
+        },
+        {
+          "mode": 3,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        },
+        {
+          "mode": 5,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        },
+        {
+          "mode": 9,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        }
+      ]
+    },
+    "changes": 0,
+    "maximumDelta": 0,
+    "meanMaxChannelDelta": 0,
+    "maximumDeltaVsCurrent": 0.032090187072753906,
+    "meanDeltaVsCurrent": 0.000027322527107113027,
+    "magenta": 5245,
+    "bins": [
+      {
+        "count": 1625789,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 361230,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 41250,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 18067,
+        "changed": 0,
+        "maxDelta": 0
+      }
+    ]
+  },
+  {
+    "name": "DSC00107",
+    "mode": 3,
+    "meta": {
+      "width": 1168,
+      "height": 1752,
+      "nativeWidth": 4672,
+      "nativeHeight": 7008,
+      "white": 15871,
+      "maxGain": 2.67578125,
+      "scaledClippedSamples": 3122,
+      "camXyz": [
+        0.7459999919,
+        -0.236499995,
+        -0.0588000007,
+        -0.5687000155,
+        1.344200015,
+        0.2474000007,
+        -0.06239999831,
+        0.1155999973,
+        0.6583999991
+      ],
+      "gains": [
+        1.533203125,
+        1,
+        2.67578125
+      ],
+      "modes": [
+        {
+          "mode": 1,
+          "nativeChanged": 0,
+          "nativeChangedUnclipped999": 0
+        },
+        {
+          "mode": 3,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        },
+        {
+          "mode": 5,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        },
+        {
+          "mode": 9,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        }
+      ]
+    },
+    "changes": 11204,
+    "maximumDelta": 2.2494361102581024,
+    "meanMaxChannelDelta": 0.007337815814350428,
+    "maximumDeltaVsCurrent": 2.257606267929077,
+    "meanDeltaVsCurrent": 0.007364213706599825,
+    "magenta": 0,
+    "bins": [
+      {
+        "count": 1625789,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 361230,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 41250,
+        "changed": 6725,
+        "maxDelta": 2.2494361102581024
+      },
+      {
+        "count": 18067,
+        "changed": 4479,
+        "maxDelta": 0.8884921669960022
+      }
+    ]
+  },
+  {
+    "name": "DSC00107",
+    "mode": 5,
+    "meta": {
+      "width": 1168,
+      "height": 1752,
+      "nativeWidth": 4672,
+      "nativeHeight": 7008,
+      "white": 15871,
+      "maxGain": 2.67578125,
+      "scaledClippedSamples": 3122,
+      "camXyz": [
+        0.7459999919,
+        -0.236499995,
+        -0.0588000007,
+        -0.5687000155,
+        1.344200015,
+        0.2474000007,
+        -0.06239999831,
+        0.1155999973,
+        0.6583999991
+      ],
+      "gains": [
+        1.533203125,
+        1,
+        2.67578125
+      ],
+      "modes": [
+        {
+          "mode": 1,
+          "nativeChanged": 0,
+          "nativeChangedUnclipped999": 0
+        },
+        {
+          "mode": 3,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        },
+        {
+          "mode": 5,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        },
+        {
+          "mode": 9,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        }
+      ]
+    },
+    "changes": 11204,
+    "maximumDelta": 2.2494361102581024,
+    "meanMaxChannelDelta": 0.007337815814350428,
+    "maximumDeltaVsCurrent": 2.257606267929077,
+    "meanDeltaVsCurrent": 0.007364213706599825,
+    "magenta": 0,
+    "bins": [
+      {
+        "count": 1625789,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 361230,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 41250,
+        "changed": 6725,
+        "maxDelta": 2.2494361102581024
+      },
+      {
+        "count": 18067,
+        "changed": 4479,
+        "maxDelta": 0.8884921669960022
+      }
+    ]
+  },
+  {
+    "name": "DSC00107",
+    "mode": 9,
+    "meta": {
+      "width": 1168,
+      "height": 1752,
+      "nativeWidth": 4672,
+      "nativeHeight": 7008,
+      "white": 15871,
+      "maxGain": 2.67578125,
+      "scaledClippedSamples": 3122,
+      "camXyz": [
+        0.7459999919,
+        -0.236499995,
+        -0.0588000007,
+        -0.5687000155,
+        1.344200015,
+        0.2474000007,
+        -0.06239999831,
+        0.1155999973,
+        0.6583999991
+      ],
+      "gains": [
+        1.533203125,
+        1,
+        2.67578125
+      ],
+      "modes": [
+        {
+          "mode": 1,
+          "nativeChanged": 0,
+          "nativeChangedUnclipped999": 0
+        },
+        {
+          "mode": 3,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        },
+        {
+          "mode": 5,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        },
+        {
+          "mode": 9,
+          "nativeChanged": 173543,
+          "nativeChangedUnclipped999": 811
+        }
+      ]
+    },
+    "changes": 11204,
+    "maximumDelta": 2.2494361102581024,
+    "meanMaxChannelDelta": 0.007337815814350428,
+    "maximumDeltaVsCurrent": 2.257606267929077,
+    "meanDeltaVsCurrent": 0.007364213706599825,
+    "magenta": 0,
+    "bins": [
+      {
+        "count": 1625789,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 361230,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 41250,
+        "changed": 6725,
+        "maxDelta": 2.2494361102581024
+      },
+      {
+        "count": 18067,
+        "changed": 4479,
+        "maxDelta": 0.8884921669960022
+      }
+    ]
+  },
+  {
+    "name": "DSC08142",
+    "mode": 1,
+    "meta": {
+      "width": 1752,
+      "height": 1168,
+      "nativeWidth": 7008,
+      "nativeHeight": 4672,
+      "white": 15871,
+      "maxGain": 1.958007812,
+      "scaledClippedSamples": 1400,
+      "camXyz": [
+        0.7459999919,
+        -0.236499995,
+        -0.0588000007,
+        -0.5687000155,
+        1.344200015,
+        0.2474000007,
+        -0.06239999831,
+        0.1155999973,
+        0.6583999991
+      ],
+      "gains": [
+        1.908203125,
+        1,
+        1.958007812
+      ],
+      "modes": [
+        {
+          "mode": 1,
+          "nativeChanged": 0,
+          "nativeChangedUnclipped999": 0
+        },
+        {
+          "mode": 3,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        },
+        {
+          "mode": 5,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        },
+        {
+          "mode": 9,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        }
+      ]
+    },
+    "changes": 0,
+    "maximumDelta": 0,
+    "meanMaxChannelDelta": 0,
+    "maximumDeltaVsCurrent": 0.23939812183380127,
+    "meanDeltaVsCurrent": 0.00002231900791410814,
+    "magenta": 0,
+    "bins": [
+      {
+        "count": 1436480,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 608316,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 1311,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 229,
+        "changed": 0,
+        "maxDelta": 0
+      }
+    ]
+  },
+  {
+    "name": "DSC08142",
+    "mode": 3,
+    "meta": {
+      "width": 1752,
+      "height": 1168,
+      "nativeWidth": 7008,
+      "nativeHeight": 4672,
+      "white": 15871,
+      "maxGain": 1.958007812,
+      "scaledClippedSamples": 1400,
+      "camXyz": [
+        0.7459999919,
+        -0.236499995,
+        -0.0588000007,
+        -0.5687000155,
+        1.344200015,
+        0.2474000007,
+        -0.06239999831,
+        0.1155999973,
+        0.6583999991
+      ],
+      "gains": [
+        1.908203125,
+        1,
+        1.958007812
+      ],
+      "modes": [
+        {
+          "mode": 1,
+          "nativeChanged": 0,
+          "nativeChangedUnclipped999": 0
+        },
+        {
+          "mode": 3,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        },
+        {
+          "mode": 5,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        },
+        {
+          "mode": 9,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        }
+      ]
+    },
+    "changes": 216,
+    "maximumDelta": 1.2788183689117432,
+    "meanMaxChannelDelta": 0.0001063654417407541,
+    "maximumDeltaVsCurrent": 1.2788085341453552,
+    "meanDeltaVsCurrent": 0.0001283801118518812,
+    "magenta": 0,
+    "bins": [
+      {
+        "count": 1436480,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 608316,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 1311,
+        "changed": 8,
+        "maxDelta": 0.7734881639480591
+      },
+      {
+        "count": 229,
+        "changed": 208,
+        "maxDelta": 1.2788183689117432
+      }
+    ]
+  },
+  {
+    "name": "DSC08142",
+    "mode": 5,
+    "meta": {
+      "width": 1752,
+      "height": 1168,
+      "nativeWidth": 7008,
+      "nativeHeight": 4672,
+      "white": 15871,
+      "maxGain": 1.958007812,
+      "scaledClippedSamples": 1400,
+      "camXyz": [
+        0.7459999919,
+        -0.236499995,
+        -0.0588000007,
+        -0.5687000155,
+        1.344200015,
+        0.2474000007,
+        -0.06239999831,
+        0.1155999973,
+        0.6583999991
+      ],
+      "gains": [
+        1.908203125,
+        1,
+        1.958007812
+      ],
+      "modes": [
+        {
+          "mode": 1,
+          "nativeChanged": 0,
+          "nativeChangedUnclipped999": 0
+        },
+        {
+          "mode": 3,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        },
+        {
+          "mode": 5,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        },
+        {
+          "mode": 9,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        }
+      ]
+    },
+    "changes": 216,
+    "maximumDelta": 1.2788183689117432,
+    "meanMaxChannelDelta": 0.0001063654417407541,
+    "maximumDeltaVsCurrent": 1.2788085341453552,
+    "meanDeltaVsCurrent": 0.0001283801118518812,
+    "magenta": 0,
+    "bins": [
+      {
+        "count": 1436480,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 608316,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 1311,
+        "changed": 8,
+        "maxDelta": 0.7734881639480591
+      },
+      {
+        "count": 229,
+        "changed": 208,
+        "maxDelta": 1.2788183689117432
+      }
+    ]
+  },
+  {
+    "name": "DSC08142",
+    "mode": 9,
+    "meta": {
+      "width": 1752,
+      "height": 1168,
+      "nativeWidth": 7008,
+      "nativeHeight": 4672,
+      "white": 15871,
+      "maxGain": 1.958007812,
+      "scaledClippedSamples": 1400,
+      "camXyz": [
+        0.7459999919,
+        -0.236499995,
+        -0.0588000007,
+        -0.5687000155,
+        1.344200015,
+        0.2474000007,
+        -0.06239999831,
+        0.1155999973,
+        0.6583999991
+      ],
+      "gains": [
+        1.908203125,
+        1,
+        1.958007812
+      ],
+      "modes": [
+        {
+          "mode": 1,
+          "nativeChanged": 0,
+          "nativeChangedUnclipped999": 0
+        },
+        {
+          "mode": 3,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        },
+        {
+          "mode": 5,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        },
+        {
+          "mode": 9,
+          "nativeChanged": 3267,
+          "nativeChangedUnclipped999": 4
+        }
+      ]
+    },
+    "changes": 216,
+    "maximumDelta": 1.2788183689117432,
+    "meanMaxChannelDelta": 0.0001063654417407541,
+    "maximumDeltaVsCurrent": 1.2788085341453552,
+    "meanDeltaVsCurrent": 0.0001283801118518812,
+    "magenta": 0,
+    "bins": [
+      {
+        "count": 1436480,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 608316,
+        "changed": 0,
+        "maxDelta": 0
+      },
+      {
+        "count": 1311,
+        "changed": 8,
+        "maxDelta": 0.7734881639480591
+      },
+      {
+        "count": 229,
+        "changed": 208,
+        "maxDelta": 1.2788183689117432
+      }
+    ]
+  }
+]
