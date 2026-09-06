@@ -1,0 +1,367 @@
+[
+  {
+    "name": "DSC00107",
+    "metas": [
+      {
+        "height": 7008,
+        "recoverySupported": true,
+        "decoderVersion": "8",
+        "channels": 3,
+        "width": 4672,
+        "wireFormat": "rgb-f32le",
+        "space": "scene-linear-rec2020",
+        "recoveryEnabled": false,
+        "orientationApplied": true
+      },
+      {
+        "wireFormat": "rgb-f32le",
+        "height": 7008,
+        "decoderVersion": "8",
+        "space": "scene-linear-rec2020",
+        "channels": 3,
+        "recoverySupported": true,
+        "recoveryEnabled": true,
+        "orientationApplied": true,
+        "width": 4672
+      }
+    ],
+    "overview": "every fourth native pixel; detail crops are native pixels without resizing",
+    "exactChanged": 24848878,
+    "changedEpsilon1e6": 475649,
+    "significantDelta005": 446778,
+    "maxLinearDelta": 2.3075342774391174,
+    "maxima": [
+      3.3214571475982666,
+      2.6747896671295166
+    ],
+    "bins": [
+      {
+        "pixels": 26040456,
+        "changed": 0,
+        "significant": 0,
+        "maxDelta": 8.940696716308594e-8
+      },
+      {
+        "pixels": 5756814,
+        "changed": 0,
+        "significant": 0,
+        "maxDelta": 3.5762786865234375e-7
+      },
+      {
+        "pixels": 563873,
+        "changed": 105780,
+        "significant": 89122,
+        "maxDelta": 2.3075342774391174
+      },
+      {
+        "pixels": 88828,
+        "changed": 81008,
+        "significant": 71412,
+        "maxDelta": 1.8907410204410553
+      },
+      {
+        "pixels": 291405,
+        "changed": 288861,
+        "significant": 286244,
+        "maxDelta": 1.0855702757835388
+      }
+    ],
+    "roiResults": [
+      {
+        "label": "flame",
+        "roi": [
+          2000,
+          3280,
+          460,
+          960
+        ],
+        "significant": 198366,
+        "maxDelta": 2.303762435913086,
+        "summaries": [
+          {
+            "minScene": -0.009041983634233475,
+            "maxScene": 3.3192336559295654,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 272042,
+                "magenta": 85191
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          },
+          {
+            "minScene": -0.009041983634233475,
+            "maxScene": 2.6729319095611572,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 272042,
+                "magenta": 0
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "flame-core",
+        "roi": [
+          2164,
+          3500,
+          80,
+          240
+        ],
+        "significant": 19200,
+        "maxDelta": 2.302653729915619,
+        "summaries": [
+          {
+            "minScene": 0.3691430687904358,
+            "maxScene": 3.31913161277771,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 19200,
+                "magenta": 19073
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          },
+          {
+            "minScene": 1.0104713439941406,
+            "maxScene": 2.671797037124634,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 19200,
+                "magenta": 0
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "DSC08142",
+    "metas": [
+      {
+        "recoveryEnabled": false,
+        "wireFormat": "rgb-f32le",
+        "width": 7008,
+        "space": "scene-linear-rec2020",
+        "recoverySupported": true,
+        "decoderVersion": "8",
+        "orientationApplied": true,
+        "height": 4672,
+        "channels": 3
+      },
+      {
+        "decoderVersion": "8",
+        "orientationApplied": true,
+        "recoverySupported": true,
+        "recoveryEnabled": true,
+        "space": "scene-linear-rec2020",
+        "channels": 3,
+        "height": 4672,
+        "wireFormat": "rgb-f32le",
+        "width": 7008
+      }
+    ],
+    "overview": "every fourth native pixel; detail crops are native pixels without resizing",
+    "exactChanged": 29401918,
+    "changedEpsilon1e6": 3707,
+    "significantDelta005": 3704,
+    "maxLinearDelta": 1.4130720496177673,
+    "maxima": [
+      2.3012855052948,
+      2.3012852668762207
+    ],
+    "bins": [
+      {
+        "pixels": 22945747,
+        "changed": 0,
+        "significant": 0,
+        "maxDelta": 7.450580596923828e-8
+      },
+      {
+        "pixels": 9767661,
+        "changed": 0,
+        "significant": 0,
+        "maxDelta": 4.76837158203125e-7
+      },
+      {
+        "pixels": 16385,
+        "changed": 12,
+        "significant": 12,
+        "maxDelta": 0.6511116027832031
+      },
+      {
+        "pixels": 7669,
+        "changed": 18,
+        "significant": 18,
+        "maxDelta": 1.413058876991272
+      },
+      {
+        "pixels": 3914,
+        "changed": 3677,
+        "significant": 3674,
+        "maxDelta": 1.4130720496177673
+      }
+    ],
+    "roiResults": [
+      {
+        "label": "lights",
+        "roi": [
+          6540,
+          1340,
+          460,
+          700
+        ],
+        "significant": 3704,
+        "maxDelta": 1.4130720496177673,
+        "summaries": [
+          {
+            "minScene": -0.1483357548713684,
+            "maxScene": 2.3012855052948,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 15062,
+                "magenta": 2024
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          },
+          {
+            "minScene": -0.1483357548713684,
+            "maxScene": 2.3012852668762207,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 15062,
+                "magenta": 11
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "orange-panel",
+        "roi": [
+          6820,
+          1680,
+          144,
+          80
+        ],
+        "significant": 0,
+        "maxDelta": 7.152557373046875e-7,
+        "summaries": [
+          {
+            "minScene": -0.051922667771577835,
+            "maxScene": 2.2910141944885254,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 9669,
+                "magenta": 0
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          },
+          {
+            "minScene": -0.051922667771577835,
+            "maxScene": 2.2910144329071045,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 9669,
+                "magenta": 0
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "red-point",
+        "roi": [
+          6560,
+          1368,
+          56,
+          68
+        ],
+        "significant": 154,
+        "maxDelta": 0.30857884883880615,
+        "summaries": [
+          {
+            "minScene": -0.1483357548713684,
+            "maxScene": 2.3012855052948,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 632,
+                "magenta": 0
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          },
+          {
+            "minScene": -0.1483357548713684,
+            "maxScene": 2.3012852668762207,
+            "exposure": [
+              {
+                "gain": 1,
+                "displayClipped": 632,
+                "magenta": 0
+              },
+              {
+                "gain": 0.25,
+                "displayClipped": 0,
+                "magenta": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

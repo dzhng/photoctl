@@ -101,3 +101,8 @@ obsolete-output rejection; TypeScript build and typecheck also pass.
 
 Highlight reconstruction is outside
 this correction and the overall delivery checkpoint remains rejected.
+
+The [native recovery experiment](highlight-recovery/README.md) preserves the
+complete CIRAW comparison and independent review. It removes false highlight
+color on two saved originals without visibly whitening genuine orange/red lights;
+it does not restore lost texture or establish a portable production correction.
