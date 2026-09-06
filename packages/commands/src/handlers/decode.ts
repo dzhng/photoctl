@@ -9,12 +9,12 @@ import {
   LibrawDecoder,
   selectDecoder,
   encodeLinearTiff,
+  publishFile,
   toSceneLinearRec2020,
   type DecodeScale,
   type ImageSource,
 } from "@photoctl/render";
 import { resolve } from "node:path";
-import { writeFile } from "node:fs/promises";
 import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
 import { fileDecodeSource, resolveOnlineOriginalSource } from "../image-source.js";
@@ -119,7 +119,7 @@ export async function decodeCommand(
       );
     }
     try {
-      await writeFile(output, encoded);
+      await publishFile(output, encoded);
     } catch {
       throw new PhotoctlError("volume_readonly", `Could not write decoded TIFF: ${output}`, {
         path: output,

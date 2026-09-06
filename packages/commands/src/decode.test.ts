@@ -1,10 +1,73 @@
-import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, link, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import sharp from "sharp";
 import { expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
 import { dispatch } from "./dispatch.js";
+
+test.each(["output", "occupied", "hardAlias", "symbolicAlias", "source"] as const)(
+  "decode publishes a new TIFF without replacing %s",
+  async (target) => {
+    const directory = await mkdtemp(join(tmpdir(), "photoctl-decode-no-clobber-"));
+    const libraryPath = join(directory, "library");
+    const source = join(directory, "source.png");
+    const hardAlias = join(directory, "hard-alias.png");
+    const symbolicAlias = join(directory, "symbolic-alias.png");
+    const output = join(directory, "decoded.tif");
+    const occupied = join(directory, "occupied.tif");
+    const initialized = await initializeLibrary(libraryPath);
+    try {
+      await sharp({ create: { width: 4, height: 3, channels: 3, background: "#456" } })
+        .png()
+        .toFile(source);
+      const originalBytes = await readFile(source);
+      await link(source, hardAlias);
+      await symlink(source, symbolicAlias);
+      await writeFile(occupied, "keep me");
+      const env = {
+        noDaemon: true,
+        libraryPath,
+        cacheRoot: join(directory, "cache"),
+        volumeMap: `${directory}=fixture-volume:online`,
+      };
+      const context = { version: "test", library: initialized.handle };
+      const imported = await dispatch(
+        { verb: "import", args: [source, "--link"], cwd: directory, env },
+        context,
+      );
+      if (!imported.ok || !("data" in imported)) throw new Error("import failed");
+      const id = (imported.data as { ids: string[] }).ids[0];
+      const decode = (destination: string) =>
+        dispatch(
+          {
+            verb: "decode",
+            args: [id, "--with", "file", "--to", destination],
+            cwd: directory,
+            env,
+          },
+          context,
+        );
+      expect(await decode(output)).toMatchObject({ ok: true, data: { file: output, w: 4, h: 3 } });
+      expect(await sharp(output).metadata()).toMatchObject({
+        format: "tiff",
+        width: 4,
+        height: 3,
+        depth: "ushort",
+      });
+      const files = (await readdir(directory)).toSorted();
+      const destination = { output, occupied, hardAlias, symbolicAlias, source }[target];
+      const before = await readFile(destination);
+      expect.soft(await decode(destination)).toMatchObject({ ok: false, code: "volume_readonly" });
+      expect.soft(await readFile(destination)).toEqual(before);
+      expect.soft(await readFile(source)).toEqual(originalBytes);
+      expect.soft((await readdir(directory)).toSorted()).toEqual(files);
+    } finally {
+      await initialized.handle.close();
+      await rm(directory, { recursive: true });
+    }
+  },
+);
 
 test("decode writes native decoder output through the shared 16-bit TIFF boundary", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-decode-command-"));
