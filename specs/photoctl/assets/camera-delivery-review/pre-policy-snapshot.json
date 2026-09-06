@@ -1,0 +1,64 @@
+{
+  "scope": "Pre-policy snapshot of the existing disposable camera gold library; no schema or rows changed",
+  "snapshotPath": "/private/tmp/photoctl-camera-reference-gold.cc9Ux2/before-reconstruction-complete.json",
+  "snapshotSha256": "71a3bf0f4506025b8b2a9eed045f7aa17078073d9201dfba3da4ecf7f90bd209",
+  "libraryId": "01a074e2-48c6-7629-9a88-c066ed3ab0bc",
+  "priorReportSha256": "5d7cba3931621018cdbaba6422d1dba9695ef1eae39ae6dcbdc80955ca53cdb7",
+  "tables": {
+    "photos": {
+      "count": 18,
+      "sha256": "04f6796d7bd5170890ca6d75b98ba43d4201b199021dc1cfaa1011b9701d1f16"
+    },
+    "originals": {
+      "count": 36,
+      "sha256": "713b6876cc43e30cd9f7d4060fc76b66fc9fec24e85ee8038390ac9e267c3464"
+    },
+    "files": {
+      "count": 36,
+      "sha256": "a871c8c76df6c04bc81cafd943934dc0e1d809266a9a12a97b4580795f0894f5"
+    },
+    "photo_documents": {
+      "count": 10,
+      "sha256": "e274c4c54361ee8e1b419ae34ce10fc8eb14ad0cc2f07974f0f2ea7cee9a7d61"
+    },
+    "document_revisions": {
+      "count": 13,
+      "sha256": "7829f51cdce64d66876567647fb6effd16873206c96515c6a1fbe5ed8c03cd69"
+    },
+    "document_revision_roots": {
+      "count": 26,
+      "sha256": "c8e4f2db5ce3f41e7b63153a68fe1aea57797d4d23359a96f15fcd8c820eb157"
+    },
+    "document_revision_layers": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "layers": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "image_nodes": {
+      "count": 26,
+      "sha256": "9e35dff2f557aced4d5f0babdaf0c82e8763100e834e7b115a354223ff98a54a"
+    },
+    "image_artifacts": {
+      "count": 15,
+      "sha256": "b1f60d1fb33d4d2f26d3afaa80f91a9daf48d62eececd0b4cd509f9b0956d6a9"
+    },
+    "node_executions": {
+      "count": 46,
+      "sha256": "506d5ecc998b56047d6edcf0631427ad8861227ebb4c18f8b62131b45189452b"
+    },
+    "provider_image_attempts": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "cache_index": {
+      "count": 19,
+      "sha256": "b8c48931c9708b14d9a8fa36055b7cf96114480277d05fa1f3e82a743337286b"
+    }
+  },
+  "verifiedCanonicalArtifacts": 15,
+  "verifiedCacheFiles": 19,
+  "paidHistoryPresent": false
+}

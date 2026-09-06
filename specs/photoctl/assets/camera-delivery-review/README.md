@@ -117,3 +117,18 @@ floating-point reconstruction for false-magenta cores while retaining disabled
 output exactly. Ordinary rendering has not adopted it yet. Residual light-edge
 defects and complete delivery acceptance remain open under the
 [reconstruction plan](../../slices/07-highlight-reconstruction.md).
+
+## Preserved pre-policy library
+
+The [pre-policy snapshot](pre-policy-snapshot.json) pins the existing disposable gold
+library before default reconstruction and treatment provenance change. Its complete
+local snapshot retains original identities, ratings, edits, revisions and execution
+rows. All 15 canonical artifacts and 19 cache files were read and rehashed; none was
+deleted to prepare the next run. This library contains no provider attempts, so it
+cannot prove paid-history retention; that needs a separate paid-fixture witness.
+
+If the next fresh schema adds treatment provenance, the acceptance setup may add that
+nullable field only to this identified disposable library, leaving historical values
+unknown. This is explicit test preparation, not a shipped migration, inferred backfill
+or permission to reset a real library. The unchanged gold script must then exercise
+new rendering while historical rows and bytes remain available for comparison.
