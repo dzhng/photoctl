@@ -16,7 +16,13 @@
   reads its verified RGB16 artifact, and only then encodes delivery pixels. The snapped `render_hash` appears in every successful
   item; a concurrently committed edit gets a new output node and cannot partially enter the export. Node kinds whose pixel
   operation has not landed return `decoder_unavailable` rather than falling back to raw source pixels.
-- Offline precedence per README. `scripts/gold-exam.sh <dir> [--out]`: import --link → list → rate the first 10 IDs returned by
+- Offline export prefers a verified retained execution of the exact snapped output recipe over lower-quality source fallback.
+  Executions retain the renderer's opaque identity and base-source tier beside their own realized frame. Current identity is
+  mandatory; source density, then full-file/embedded/pinned provenance, then raster supply determine preference—not recency.
+  Native decode still runs first when available, so reconnect can promote reduced results. The retained frame is not rebuilt
+  from native dimensions: ordered reduced-stage rounding is part of the execution. Integrity failures fall through without
+  claiming old pixels belong to a new renderer. [Retained-export evidence](../assets/export-retained/README.md).
+- `scripts/gold-exam.sh <dir> [--out]`: import --link → list → rate the first 10 IDs returned by
   that import → export; writes a report; 08 adds the develop step.
 - `wb export <dir>`.
 

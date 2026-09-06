@@ -21,6 +21,7 @@ import {
   evaluationHash,
   imageNodeRegistry,
   newExecutionId,
+  renderHashForNode,
   resampleParametersSchema,
   resampleV1ParametersSchema,
 } from "./recipes.js";
@@ -137,6 +138,81 @@ export async function evaluateGraphNode(request: EvaluateGraphNodeRequest): Prom
     return await pending;
   };
   return await evaluate(request.nodeId);
+}
+
+/** The full immutable output recipe fixes intent; each execution owns its realized sampling frame. */
+export async function readRetainedGraphOutput(
+  request: Pick<EvaluateGraphNodeRequest, "database" | "libraryPath" | "photoId" | "nodeId"> & {
+    minimumSource?: { dimensions: RenderFrame["source"]; tier: ImageSource["kind"] };
+  },
+): Promise<(Omit<EvaluatedNode, "reused"> & { frame: RenderFrame }) | undefined> {
+  let cursor: string | null = null;
+  for (;;) {
+    type RetainedOutput = {
+      execution_id: string;
+      render_frame: JsonValue;
+      catalog_w: number;
+      catalog_h: number;
+    };
+    const rows: RetainedOutput[] = (
+      await request.database.query<RetainedOutput>(
+        `WITH policy AS (
+           SELECT ARRAY['pinned-preview', 'online-jpeg-range', 'online-file']::text[] AS tiers
+         ), ranked AS (
+         SELECT execution.execution_id, execution.render_frame, artifact.artifact_available,
+           photo.w AS catalog_w, photo.h AS catalog_h,
+           COALESCE(array_position(policy.tiers, execution.render_source_tier), 0) AS source_priority,
+           LEAST($5::numeric / photo.w, $6::numeric / photo.h) AS minimum_density,
+           array_position(policy.tiers, $7::text) AS minimum_priority,
+           LEAST((execution.render_frame->'source'->>'w')::numeric / photo.w,
+                 (execution.render_frame->'source'->>'h')::numeric / photo.h) AS source_density,
+           artifact.w::bigint * artifact.h AS raster_pixels
+         FROM node_executions execution
+         JOIN image_artifacts artifact ON artifact.artifact_hash = execution.output_artifact_hash
+         JOIN photos photo ON photo.id = execution.photo_id
+         CROSS JOIN policy
+         WHERE execution.photo_id = $1 AND execution.node_id = $2
+           AND execution.render_frame IS NOT NULL AND artifact.media_type = 'image/tiff'
+           AND execution.render_identity = $4
+       )
+       SELECT execution_id, render_frame, catalog_w, catalog_h FROM ranked
+       WHERE artifact_available
+         AND ($5::numeric IS NULL OR (source_density, source_priority) >= (minimum_density, minimum_priority))
+         AND ($3::text IS NULL OR
+         (source_density, source_priority, raster_pixels, execution_id) <
+         (SELECT source_density, source_priority, raster_pixels, execution_id FROM ranked WHERE execution_id = $3))
+       ORDER BY source_density DESC, source_priority DESC, raster_pixels DESC, execution_id DESC LIMIT 16`,
+        [
+          request.photoId,
+          request.nodeId,
+          cursor,
+          renderHashForNode(request.nodeId),
+          request.minimumSource?.dimensions.w ?? null,
+          request.minimumSource?.dimensions.h ?? null,
+          request.minimumSource?.tier ?? null,
+        ],
+      )
+    ).rows;
+    if (rows.length === 0) return undefined;
+    for (const row of rows) {
+      cursor = row.execution_id;
+      const frame = parseRenderFrame(row.render_frame);
+      if (frame.catalog.w !== row.catalog_w || frame.catalog.h !== row.catalog_h) continue;
+      const retained = await loadByExecutionId(
+        request.database,
+        request.libraryPath,
+        request.photoId,
+        row.execution_id,
+        request.nodeId,
+      );
+      if (
+        retained &&
+        frame.raster.w === retained.artifact.w &&
+        frame.raster.h === retained.artifact.h
+      )
+        return { ...retained, frame };
+    }
+  }
 }
 
 async function evaluateOne(
@@ -301,14 +377,22 @@ async function evaluateOne(
     [request.photoId],
   );
   const frame = frameForNode(node.kind, node.parameters, photo.rows[0]!, artifact, inputFrames[0]);
+  const inputTier = inputs[0]
+    ? (
+        await request.database.query<{ render_source_tier: string | null }>(
+          "SELECT render_source_tier FROM node_executions WHERE photo_id = $1 AND execution_id = $2",
+          [request.photoId, inputs[0].executionId],
+        )
+      ).rows[0]?.render_source_tier
+    : null;
   const stored = await request.database.transaction(async (transaction) => {
     await registerPublishedArtifact(transaction, artifact);
     await transaction.query(
       `INSERT INTO node_executions (
          photo_id, execution_id, node_id, evaluation_hash, deterministic,
          output_artifact_hash, source_locator, source_tier, source_w, source_h,
-         decoder_id, decoder_version, provider_execution, render_frame
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb)
+         decoder_id, decoder_version, provider_execution, render_frame, render_identity, render_source_tier
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb, $15, $16)
        ON CONFLICT (photo_id, execution_id) DO NOTHING`,
       [
         request.photoId,
@@ -325,6 +409,8 @@ async function evaluateOne(
         source?.provenance.decoderVersion ?? null,
         externalExecution ? JSON.stringify(storeExternalExecution(externalExecution)) : null,
         JSON.stringify(savedRenderFrame(frame)),
+        renderHashForNode(nodeId),
+        source?.provenance.tier ?? inputTier ?? null,
       ],
     );
     for (const [index, input] of inputs.entries()) {

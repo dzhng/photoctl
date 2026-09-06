@@ -19,6 +19,8 @@ import {
   readCanvasStatus,
   ensurePhotoDocument,
   evaluateGraphNode,
+  readRetainedGraphOutput,
+  orientedDimensions,
   exportImage,
   ExportPresetError,
   loadExportPreset,
@@ -447,6 +449,42 @@ async function evaluateExportImage(
   };
 
   for (const candidate of candidates) {
+    if (candidate.fallback) {
+      const dimensions =
+        candidate.source.kind === "pinned-preview"
+          ? await import("sharp").then(async ({ default: sharp }) => {
+              try {
+                const metadata = await sharp(candidate.source.path).metadata();
+                return metadata.width && metadata.height
+                  ? orientedDimensions(
+                      { w: metadata.width, h: metadata.height },
+                      candidate.source.orientation ?? 1,
+                    )
+                  : undefined;
+              } catch {
+                return undefined;
+              }
+            })
+          : orientedDimensions(candidate.source, candidate.source.orientation ?? 1);
+      const retained = await readRetainedGraphOutput({
+        database: handle,
+        libraryPath: handle.path,
+        photoId: snapshot.id,
+        nodeId: snapshot.outputNodeId,
+        minimumSource: dimensions ? { dimensions, tier: candidate.source.kind } : undefined,
+      });
+      if (retained)
+        return {
+          image: await readArtifactImage(retained.artifact.path, retained.artifact.artifactHash),
+          warnings: [
+            {
+              code: candidate.fallback,
+              id: snapshot.id,
+              message: "Used a retained current render because the original source is unavailable",
+            },
+          ],
+        };
+    }
     try {
       const warning = graphSourceWarning(snapshot.id, candidate.fallback);
       return {

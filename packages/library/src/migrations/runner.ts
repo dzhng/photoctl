@@ -145,6 +145,8 @@ const latestConstraints = [
   "node_executions_source_w_check",
   "node_executions_provider_execution_check",
   "node_executions_render_frame_check",
+  "node_executions_render_identity_check",
+  "node_executions_render_source_tier_check",
   "node_executions_provider_image_attempt_id_fkey",
   "provider_image_attempts_pkey",
   "provider_image_attempts_request_check",
