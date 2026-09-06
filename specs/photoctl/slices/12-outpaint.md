@@ -4,7 +4,16 @@ Outpaint extends the current photograph without changing its original file, phot
 catalog source dimensions. It is not a new photo or a larger provider response masquerading as a
 canvas. This subplan owns the remaining geometry decisions before generation is wired.
 
-## Current planning verdict
+## Current pickup
+
+Frame ownership, deterministic canvas, paid border creation and refresh are implemented
+through the shared graph owners. Warm/cold public lifecycles and fresh-native installed
+journeys pass within their synthetic pixel/coordinate boundaries. Full-resolution camera
+resource observations are recorded below. Remaining acceptance concerns photographic
+generation, persistent-daemon resource retention and the final integrated release policy;
+do not restart the historical frame/canvas checkpoints below.
+
+## Plan rationale
 
 Three blind drafts independently identified the same first dependency: one graph-derived frame
 must replace caller-specific reconstruction from source width and height. The fewest-slices draft
@@ -14,8 +23,8 @@ frame ownership with existing consumers; deterministic canvas with reversible li
 with the complete CLI journey. Do not accept a canvas checkpoint that defers its preview or removal
 behavior to a later slice.
 
-The next frame-ownership pass is specified below; canvas authoring must pass its explicit decision
-checkpoint before its implementation begins. This is not a claim that the whole outpaint plan is settled.
+The frame/canvas checkpoints below retain the intended invariants and their evidence.
+Passing them does not establish live photographic generation quality.
 
 ## Invariants and provisional product choices
 
@@ -36,8 +45,9 @@ checkpoint before its implementation begins. This is not a claim that the whole 
 - Pixel placement and geometry use the existing native kernels. No generic provider tiling, full-raster
   Float32 transport copies for bounded uploads, parallel preview geometry owner, or source-dimension
   mutation is permitted. Check dimension and total-pixel limits before allocation or external work.
-- Keep existing reimagine/relight restrictions explicit; outpaint does not imply lifting their accepted
-  uncropped-base limitation. Missing live weights/credentials never become invented quality evidence.
+- Reimagine/relight share authored frames through the separate
+  [full-frame generation owner](13-full-frame-geometry.md); outpaint does not own their input policy.
+  Missing live weights/credentials never become invented quality evidence.
 
 ## 12f1 — One frame owner for existing graph behavior
 
@@ -449,15 +459,18 @@ through the shared evaluator; they are not assumed to use catalog-sized rasters.
 retouch uses actual projected photographic support, including permanent masks, while exact authored
 retries remain idempotent. Its separate cold journey uses a normal import-produced reduced source,
 with no current output execution before preview or direct export; refresh, disable/undo and reconnect
-preserve honest source quality without implicit provider replay. This is bounded prebuilt-runtime
-evidence, not full-resolution resource acceptance or a fresh native packaged-release gate.
+preserve honest source quality without implicit provider replay. The subsequent normal
+fresh-native packed-install hook passes all three journeys; the linked evidence separates
+that current synthetic acceptance from the earlier prebuilt-only witnesses.
 
 The [uncropped camera resource witness](../assets/outpaint-resources/README.md)
 separately completes native 7008×4672 JPEG/RAW expansion with exact retained
-interiors and removal, peaking at 4.587 GB under the 5 GB investigation canary.
-Expanded PNG exports take about 41 seconds; no outpaint latency threshold or
-cause is inferred. Persistent-daemon retention and fresh-native packaged-release
-acceptance remain separate from this prebuilt-runtime measurement.
+interiors and removal. Its original roughly 41-second exports peak at 4.587 GB under
+the 5 GB investigation canary. Profiling then identified repeated native filter-weight
+calculation; exact-order reuse reduces measured exports to roughly 18 seconds, with
+all six baseline/expanded/removed outputs byte-identical. The evidence retains both
+runs and their resource limits. Persistent-daemon retention, photographic quality and
+the final RAW-policy release gate remain separate; no export latency guarantee is inferred.
 
 Pure translation, rotation and shrinking do not retry failed border density. Increased scale can
 request configured upscaling; explicit retry remains available for a failed processing step.
