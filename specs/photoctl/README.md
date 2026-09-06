@@ -18,15 +18,11 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
 
-**First priority: resolve the failing CI gate.** Run
-[34023344394](https://github.com/dzhng/photoctl/actions/runs/34023344394)
-at `dbe550a77eed97775bb41ee403a69819d3684031` built Linux native successfully and passed lint,
-then failed TypeScript tests (51 files failed, 147 passed). Portable provider-fixture volume
-wiring, stale markup frame inputs, cross-platform float-hash assumptions and native rejection
-assertions now have focused fixes: the combined four files pass 32 tests locally, and the
-provider fixture passes four tests on Linux too. This is not a green full CI gate.
-Read every remaining failure before grouping causes: daemon startup, fixture manifest refusal
-and numerous runner timeouts remain unresolved. Do not blindly increase timeouts or repin hashes.
+**First priority: resolve the failing CI gate.** The [failure triage](assets/ci-triage.md)
+separates reproduced contract defects, stale fixtures and unresolved timing failures.
+Portable fixture wiring and stale assertions have focused fixes; offline export hints,
+daemon startup and runner resource behavior are the next concrete work. No green full CI
+gate is claimed. Do not blindly increase timeouts or repin hashes.
 
 **Camera photographic acceptance remains open.** The public fixture gold exam exports all
 ten images, but photographic delivery remains **rejected**. Reduced-RGB striping is corrected

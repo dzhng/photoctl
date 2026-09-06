@@ -6024,3 +6024,19 @@
 - **Verdict:** **Sound.** Uncertain replacement may be refused without turning historical
   location hints into source identity or treating ordinary absence as an error.
 - **Confidence:** Medium; permission/I/O uncertainty favors preserving originals over delivery availability.
+
+### Verification — Give the source-checkout gold exam disposable command launchers
+
+- **When:** CI repair pass, 2026-09-06.
+- **The choice:** On a fresh checkout, dependencies are installed before the CLI is compiled.
+  The gold-exam test therefore creates temporary `photoctl` and `wb` commands that load the
+  actual compiled entry points, then runs the unchanged public exam script. It does not
+  depend on installation having created links to files that did not yet exist.
+- **The gap:** The plan requires both built-code and packed-install verification but does not
+  prescribe how the built-code test places commands on its temporary search path.
+- **The reach:** These launchers exist only inside the test's disposable directory. They do
+  not certify npm executable links, published packages or installed dependency resolution;
+  the separate packed-install gate still owns those requirements.
+- **Verdict:** **Sound.** The source test drives the real CLI without depending on a warmed
+  development environment or introducing a production fallback.
+- **Confidence:** High.

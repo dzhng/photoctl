@@ -1,9 +1,10 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
+import { pathToFileURL } from "node:url";
 import sharp from "sharp";
 import { expect, test } from "vitest";
 import { openLibrary } from "@photoctl/library";
@@ -17,8 +18,23 @@ test("the keyless gold exam develops three people presets before exporting ten p
   const output = join(directory, "delivery");
   const library = join(directory, "library");
   const cache = join(directory, "cache");
+  const bin = join(directory, "bin");
   await Promise.all([mkdir(source), mkdir(existing)]);
   try {
+    // A clean install precedes compilation, so workspace .bin links need not exist.
+    await mkdir(bin);
+    await Promise.all(
+      Object.entries({
+        photoctl: "apps/cli/dist/bin.js",
+        wb: "apps/workbench/dist/cli.js",
+      }).map(([name, entry]) =>
+        writeFile(
+          join(bin, name),
+          `#!/usr/bin/env node\nimport ${JSON.stringify(pathToFileURL(resolve(entry)).href)};\n`,
+          { mode: 0o755 },
+        ),
+      ),
+    );
     await Promise.all(
       Array.from({ length: 10 }, async (_, index) => {
         const width = 120 + index;
@@ -41,13 +57,13 @@ test("the keyless gold exam develops three people presets before exporting ten p
 
     const env = {
       ...process.env,
-      PATH: `${resolve("node_modules/.bin")}:${process.env.PATH ?? ""}`,
+      PATH: `${bin}:${process.env.PATH ?? ""}`,
       PHOTOCTL_NO_DAEMON: "1",
       PHOTOCTL_LIBRARY: library,
       PHOTOCTL_CACHE: cache,
       PHOTOCTL_VOLUME_MAP: `${directory}=fixture-volume:online`,
     };
-    await execute(resolve("node_modules/.bin/photoctl"), ["init", "--path", library], {
+    await execute(join(bin, "photoctl"), ["init", "--path", library], {
       cwd: directory,
       env,
     });
@@ -57,7 +73,7 @@ test("the keyless gold exam develops three people presets before exporting ten p
       .toFile(existingFile);
     const existingImport = JSON.parse(
       (
-        await execute(resolve("node_modules/.bin/photoctl"), ["import", existingFile, "--link"], {
+        await execute(join(bin, "photoctl"), ["import", existingFile, "--link"], {
           cwd: directory,
           env,
         })
