@@ -31,7 +31,9 @@ latency requirement is unchanged.
 separates reproduced contract defects, stale fixtures and unresolved timing failures.
 Portable fixture wiring, stale assertions and offline export hints have focused fixes;
 daemon startup diagnostics are integrated, and the embedding drain now observes worker completion
-instead of counting provider responses. Runner resource behavior remains unresolved. No green full CI
+instead of counting provider responses. A reproduced disconnected control client no longer crashes
+the daemon with an unhandled socket error; residual unresponsive recovery still needs evidence.
+Runner timing behavior remains unresolved. No green full CI
 gate is claimed. Do not blindly increase timeouts or repin hashes.
 
 **Camera photographic acceptance remains open.** The public fixture gold exam exports all

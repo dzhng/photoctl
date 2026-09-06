@@ -10,6 +10,25 @@ images or environment dumps are uploaded. Docker-container logs are outside this
 Read the retained host logs before changing startup behavior.
 This run predates the embedding drain fix; its 1,496-row failure does not test that correction.
 
+## Reproduced disconnected-client crash
+
+A bounded Linux ARM64/Node 24.20 comparison reproduced startup child exit 1 with an
+actual stack trace: unhandled socket `EPIPE` in `DaemonServer.respond` while routing a
+control response. A caller had disconnected before the reply. The isolated startup subset
+passed, while the concurrent comparison exposed the crash; this is not evidence of OOM.
+Scratch logs and runner results are retained at `/private/tmp/photoctl-startup-repro.nq8bTw`.
+
+The regression pauses a real daemon, sends and closes a control client, then resumes it
+and requires the same daemon PID to answer status and an ordinary command. It fails
+against the old server. Handling errors on each accepted socket closes only that socket;
+the deterministic regression passes on Mac and Linux, alongside the existing no-replay check.
+The subsequent concurrent Linux comparison no longer records an EPIPE crash, but one
+impostor-recovery case still reports an unresponsive daemon. That run overlapped the new
+regression, so it is not a controlled performance comparison or a full CI pass. No timeout,
+queue policy, process-wide exception handler or command retry is added.
+
+## Earlier CI evidence
+
 The completed [Linux run 34023344394](https://github.com/dzhng/photoctl/actions/runs/34023344394)
 tested `dbe550a77eed97775bb41ee403a69819d3684031`: native build and lint passed;
 TypeScript tests failed (103 failed, 961 passed; 51 failing files). The later root gates

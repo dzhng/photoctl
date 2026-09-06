@@ -75,6 +75,10 @@ are never copied into public JSON. A signalled child is terminal immediately rat
 waiting for the remaining startup budget; the inherited lock can be acquired afterward.
 This improves diagnosis and recovery without replaying the interrupted request.
 
+Client transport failure is local to that socket. A control caller may time out and close
+before the daemon writes its reply; the resulting socket error must not terminate the daemon
+or affect another client. The daemon closes the failed socket without replaying any request.
+
 Command recovery distinguishes connection failure from lost acknowledgement. Before any request
 can be sent, a failed connection may recover the daemon and try once. After sending starts, a lost
 response returns `daemon_unavailable` with an unknown-outcome message; the CLI must not replay a
