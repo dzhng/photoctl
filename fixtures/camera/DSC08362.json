@@ -1,0 +1,40 @@
+{
+  "file": "DSC08362.ARW",
+  "size": 38936576,
+  "sha256": "080ad8a7f196e87a4ac471b8c275f558004de2e61908358bbae0ff46ab822daa",
+  "content_key": "ck_1736074ec71aeeff",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43910,
+      "length": 7327
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 196770,
+      "length": 132182
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 331776,
+      "length": 1815536
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:02:12 18:22:55",
+    "OffsetTimeOriginal": "+07:00"
+  },
+  "raw": {
+    "width": 7168,
+    "height": 5120,
+    "compression": 7,
+    "sonyRawFileType": 4,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
+  }
+}

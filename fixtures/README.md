@@ -35,7 +35,11 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `tools/drive.mjs` | generator | `fixtures:drive -- --count N --out DIR` creates deterministic tail-distinct ARW copies and matching Classic-style sidecars. |
 | `tools/volume.mjs` | host generator | `fixtures:volume -- --path FILE --mount DIR` creates and attaches a macOS APFS disk image for real offline-volume checks. |
 
-Wanted (see [the photoctl spec](../specs/photoctl/README.md#known-unknowns-open-on-the-map-and-where-they-land)): A7C II Lossless M / S frames and a portrait-orientation frame. Compression coverage does not substitute for real-drive acceptance.
+The permanent [camera reference collection](camera/README.md) adds user-provided
+originals with varied scenes, compression, reduced resolution and portrait rotation.
+Its adjacent manifests own exact measured dimensions; M/S mode coverage must be
+established from those facts rather than assumed from file size. Compression coverage
+and committed references do not substitute for real-drive acceptance.
 
 The truncated fixture is the first 64 bytes of the uncompressed source, ending inside its declared
 TIFF directory before any usable preview. This proves structured truncation rejection, not rejection

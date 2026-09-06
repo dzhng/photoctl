@@ -85,12 +85,17 @@ independent visual critique. These screenshots are fixture presentation evidence
 
 ## External-input recheck — 2026-09-06
 
-Read-only checks on the local Mac found no newly runnable real-input acceptance gate:
+The earlier read-only checks below preceded the camera connection. The camera is
+now mounted at `/Volumes/Untitled`, and the user authorized permanent originals in
+the [camera reference collection](../../../fixtures/camera/README.md). This resolves
+availability of real-drive inputs, not execution of the acceptance gate.
+
+Earlier checks:
 
 - `diskutil list external physical` succeeded with no disks listed. `/Volumes` contained only the
   system-volume alias and Conductor, which `diskutil info` identifies as a read-only disk image.
   No real-drive ARW folder was available to name for the gold script.
-- The committed RAW inventory still contains only `a7c2.ARW`; the native LibRaw probe confirmed
+- That early RAW inventory check contained only `a7c2.ARW`; the native LibRaw probe confirmed
   compression tag `1`. The [fixture inventory](../../../fixtures/README.md) distinguishes its
   hand-authored Classic-style XMP from actual Classic exports. Filename searches in Pictures,
   Downloads, Desktop and Documents found no additional ARWs or Classic catalogs/sidecars; the XMP

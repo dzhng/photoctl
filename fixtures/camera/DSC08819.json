@@ -1,0 +1,34 @@
+{
+  "file": "DSC08819.ARW",
+  "size": 19324928,
+  "sha256": "a713c1a8723cff8a7db702b01a72d6367830aed792f23d6b3d366e39e3d53d55",
+  "content_key": "ck_8d6f42b006787f44",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43910,
+      "length": 8871
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 196770,
+      "length": 221983
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:06:13 17:16:27",
+    "OffsetTimeOriginal": "+07:00"
+  },
+  "raw": {
+    "width": 5120,
+    "height": 3584,
+    "compression": 7,
+    "sonyRawFileType": 4,
+    "defaultCrop": [
+      4608,
+      3072
+    ]
+  }
+}

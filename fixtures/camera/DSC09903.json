@@ -1,0 +1,34 @@
+{
+  "file": "DSC09903.ARW",
+  "size": 21106688,
+  "sha256": "ddba9d19c788b79b6058b34b4a63b6663e361087e1e34197596c347812945b41",
+  "content_key": "ck_f379cf2b48d8b339",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43910,
+      "length": 8279
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 196770,
+      "length": 406114
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:06:22 12:32:24",
+    "OffsetTimeOriginal": "+07:00"
+  },
+  "raw": {
+    "width": 5120,
+    "height": 3584,
+    "compression": 7,
+    "sonyRawFileType": 4,
+    "defaultCrop": [
+      4608,
+      3072
+    ]
+  }
+}

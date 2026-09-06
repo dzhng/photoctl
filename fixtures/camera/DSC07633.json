@@ -1,0 +1,40 @@
+{
+  "file": "DSC07633.ARW",
+  "size": 68669440,
+  "sha256": "13c408f518371c07bc3bddd833163715bc55ccabd6f312859c0d44cda35ec3fd",
+  "content_key": "ck_161a3b3aec4e4bad",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43910,
+      "length": 6169
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 192674,
+      "length": 150343
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 344064,
+      "length": 2316847
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:01:20 21:02:17",
+    "OffsetTimeOriginal": "+08:00"
+  },
+  "raw": {
+    "width": 7040,
+    "height": 4688,
+    "compression": 1,
+    "sonyRawFileType": 0,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
+  }
+}

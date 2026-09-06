@@ -1,0 +1,40 @@
+{
+  "file": "DSC09148.ARW",
+  "size": 49262592,
+  "sha256": "f4cf027da521116af1f38b4e4c5f52b59a3a11a82d7bb8e9d04eae695ef5fd95",
+  "content_key": "ck_5d81c5a34d356947",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43910,
+      "length": 8906
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 196770,
+      "length": 560623
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 757760,
+      "length": 7737531
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:06:17 22:14:24",
+    "OffsetTimeOriginal": "+07:00"
+  },
+  "raw": {
+    "width": 7168,
+    "height": 5120,
+    "compression": 7,
+    "sonyRawFileType": 4,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
+  }
+}

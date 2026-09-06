@@ -1,0 +1,40 @@
+{
+  "file": "DSC08142.ARW",
+  "size": 38424576,
+  "sha256": "b66ef078858f3dec8bce4eb736602f70d7df7292eeeb4a811d83bd909847250f",
+  "content_key": "ck_5b82391c63613459",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43910,
+      "length": 8549
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 196770,
+      "length": 239376
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 438272,
+      "length": 2074612
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:01:28 18:26:45",
+    "OffsetTimeOriginal": "+07:00"
+  },
+  "raw": {
+    "width": 7168,
+    "height": 5120,
+    "compression": 7,
+    "sonyRawFileType": 4,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "file": "DSC00290.ARW",
+  "size": 39587840,
+  "sha256": "c3b5e4b9f7ba761967a1b8445201479d61bddeea92d9f76cf0ddf6e122be2e18",
+  "content_key": "ck_9f96becdffacc912",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43904,
+      "length": 10614
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 196770,
+      "length": 283905
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 483328,
+      "length": 2234942
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:08:26 06:47:38",
+    "OffsetTimeOriginal": "+07:00"
+  },
+  "raw": {
+    "width": 7168,
+    "height": 5120,
+    "compression": 7,
+    "sonyRawFileType": 4,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
+  }
+}
