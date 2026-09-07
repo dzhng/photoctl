@@ -6306,3 +6306,24 @@
   without changing source pixels, editing semantics, or offline cache validity.
 - **Confidence:** High for full-resolution color sampling; medium for leaving
   existing caches unchanged, whose older appearance remains until regenerated.
+
+### Library configuration — Replace one validated setting at a time
+
+- **When:** Public-settings completion pass, 2026-09-07.
+- **The choice:** A developer can save a model mirror through `settings set`
+  instead of editing the database. The command accepts a setting name and JSON
+  value, replaces that whole value, and offers read/reset operations. Setting
+  `models` to one override removes previous overrides rather than silently
+  merging them; reset restores the normal defaults. Library identity and
+  internal navigation state are not user settings. No credentials are stored.
+- **The gap:** The original plan promised saved preferences but left their
+  public editing interface for a later slice, which never supplied it. A
+  dotted-path patch language or per-preference flags were possible alternatives.
+- **The reach:** One typed registry must govern validation and defaults for the
+  existing readers and new writer. Saving configuration does not itself fetch
+  models or call providers; explicitly enabling automatic embedding grants the
+  already-defined background consent. There is no database schema change.
+- **Verdict:** **Sound.** Whole-setting replacement is small, explicit and
+  retry-safe; it closes the CLI-only workflow without exposing arbitrary SQL.
+- **Confidence:** Medium for whole-object JSON ergonomics; high for shared
+  validation, reset semantics and keeping identity/private state outside the API.

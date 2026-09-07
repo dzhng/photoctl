@@ -18,7 +18,9 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
 
-**Current pickup:** remaining pairing and external release evidence.
+**Current pickup:** implement [public library settings](slices/09-settings.md),
+then finish remaining pairing and external release evidence. The completion audit
+found documented saved settings had readers but no public writer.
 [Selection refinement and redo](slices/10-selection-refinement-and-redo.md) are
 implemented and verified through built and fresh installed CLI journeys, with a
 reviewed photographic correction witness. Rendering is user-approved; do not reopen it.
@@ -41,8 +43,8 @@ running that suite on every push. Do not resume CI load profiling or native-cach
 for the smoke gate. Preserve all local checks and separate product performance bars.
 The [failure triage](assets/ci-triage.md) retains the real daemon fixes and their evidence.
 
-**First priority:** finish pairing's remaining evidence and the external release
-requirements. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
+**First priority:** close the public settings writer, then pairing's remaining
+evidence and external release requirements. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
 records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
 **Current local closeout — 2026-09-07:** the
@@ -68,7 +70,8 @@ Further fidelity work needs new causal evidence, not another request for renderi
 Keep both LibRaw and Core Image behind the shared API, as the user agreed; LibRaw
 remains the portable default and Core Image an explicit alternative.
 
-**Parallel pickup:** finish remaining outpaint and pairing release gates.
+**Parallel pickup:** verify Linux x64 locally without publication, and preserve
+the completed outpaint evidence while finishing pairing's remaining gates.
 
 - [Outpaint](slices/12-outpaint.md): geometry, reversible layers, reduced-source fallback
   and reconnect without paid replay are integrated; fresh-native installed synthetic journeys
@@ -179,6 +182,7 @@ without deleting history.
 - [x] RAW highlight reconstruction: native float preservation → effective policy/identity → user-approved photographic delivery — `slices/07-highlight-reconstruction.md`
 - [x] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 manual geometry · [x] 8d4 filters/B&W/selective color · [x] keyless fixture gold exam · [x] 8e local auto-straighten / `crop --auto` (D24) · [x] 8f public filter · [x] 8g white-balance eyedropper — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
+- [ ] 09d public library settings — [validated read/write/reset](slices/09-settings.md)
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
 - [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
