@@ -20,7 +20,12 @@ update this handoff, and continue until every requirement is verified—not mere
 Delegate straightforward tasks to Claude Code with the user-approved `opus` alias;
 the integrating agent must review its changes and verification before accepting them.
 
-**Current pickup:** remaining pairing and external release evidence.
+**Current pickup:** remaining pairing and native-platform release evidence. The
+[emulated checkpoint](assets/ort-acquisition/README.md#linux-x64-emulated-checkpoint--2026-09-07)
+passes package loading but fails model inference under Docker's default x64 emulator.
+The same optimized arithmetic binary and unchanged addon pass their reduced probes
+under QEMU. Do not patch product code or weaken CPU flags to fit the faulty emulator;
+the full native x64 model/CLI gate remains unverified.
 [Public library settings](slices/09-settings.md) now close the deferred writer,
 with focused and fresh installed verification.
 [Selection refinement and redo](slices/10-selection-refinement-and-redo.md) are
@@ -72,7 +77,7 @@ Further fidelity work needs new causal evidence, not another request for renderi
 Keep both LibRaw and Core Image behind the shared API, as the user agreed; LibRaw
 remains the portable default and Core Image an explicit alternative.
 
-**Parallel pickup:** verify Linux x64 locally without publication, and preserve
+**Parallel pickup:** verify remaining native targets without publication, and preserve
 the completed outpaint evidence while finishing pairing's remaining gates.
 
 - [Outpaint](slices/12-outpaint.md): geometry, reversible layers, reduced-source fallback
@@ -186,8 +191,8 @@ without deleting history.
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 09d public library settings — [validated read/write/reset](slices/09-settings.md)
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
-- [ ] 11 segment: 11a SAM runtime, 11b verbs — `slices/11-segment.md`
-- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [ ] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
+- [ ] 11 segment: [x] 11a SAM runtime · [x] 11b verbs · [x] recorded-host G6 latency/retention · [ ] automatic fine-edge quality — `slices/11-segment.md`
+- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [x] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
 - [ ] 13a [x] initial reimagine/relight/generate · [x] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike (conditional, non-blocking) · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
 - [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
 - [x] Show by existing-photo path — `slices/01-first-jpeg.md#existing-photo-path-lookup`

@@ -36,7 +36,7 @@ edge-quality limitations recorded below.
 ## Must stay green: 01–10. Deps: 09a, 10. Firewall: no SAM 3; no macOS 27 API; CPU EP only.
 
 ## 11a keyless checkpoint (2026-09-05)
-The pinned export, manifest, hash-fetch/cache, CPU ONNX session, 1024 letterbox, base-mask logit, and daemon encoder-cache contracts are implemented. The real CPU export now supplies both hashes; a configured local HTTP base can supply those files without credentials or public hosting. Public release distribution remains unconfigured. G6 and the `wb masks` visual checkpoint are separate from export parity and remain open here.
+The pinned export, manifest, hash-fetch/cache, CPU ONNX session, 1024 letterbox, base-mask logit, and daemon encoder-cache contracts are implemented. The real CPU export supplies both hashes; a configured local HTTP base can supply those files without credentials or public hosting. Tag-triggered distribution is implemented but public publication remains unverified. The later photographic checkpoint below records passing public-command G6 measurements and failed automatic fine-edge quality; neither follows from export parity alone.
 
 ## 11b keyless command checkpoint (2026-09-05)
 
@@ -73,7 +73,8 @@ existing test coverage. Docker's functional image inherits the hash-verified mod
 fixture stops at the built application stage. [Model provisioning](../../../fixtures/README.md)
 requires an explicit base URL for Docker or an existing host model directory. No public release host
 is invented, and missing prerequisites cannot silently select an empty or skipped model suite.
-Detailed edge acceptance and full-command G6 remain open independently.
+Detailed edge acceptance remains open independently. The public-command G6 witnesses
+below pass on their recorded host and fixtures, not every platform or arbitrary image.
 [Export evidence](../assets/sam-export/README.md) records the real Hydra resolution regression, raw-logit ranking normalization,
 unchanged parity tolerances, and fail-closed publication boundary. Export-process RSS is not inference-process RSS.
 
@@ -143,7 +144,10 @@ fractional mask coverage.
 
 Each layer exposes one bounded native-detail crop at its first covered edge, with context, coverage, and an edge overlay.
 The fixed crop is an inspection starting point, not an automatic hair/foliage selection or quality verdict. Synthetic report
-tests verify pixel alignment and identity only; the real-weight hair/foliage checkpoint remains open.
+tests verify pixel alignment and identity only. The real-weight detail review
+[ran and failed](../assets/sam-photographic/README.md): foliage, wires and the distant
+path are not accepted automatic boundaries. Local refinement supplies correction
+controls, not proof that the automatic result is accurate.
 [Synthetic capture evidence](../assets/segment-masks/README.md) records the report-only visual review.
 
 ## Photographic checkpoint

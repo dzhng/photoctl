@@ -75,6 +75,47 @@ Read-only ELF inspection of this Linux ARM64 debug addon found required symbol v
 that binary. These are observed requirements of this artifact, not the requirements of unbuilt
 release or x64 artifacts. No release workflow run was available to substitute for those gates.
 
+## Linux x64 emulated checkpoint — 2026-09-07
+
+The standard Docker build completed on source `9565bcb` under Docker Desktop's
+x64 emulation on the ARM64 Mac. The same Cargo-owned recipe built ORT in 2,579.4 s;
+the subsequent optimized addon build took 2m55s. No runtime override or CPU-floor
+change was used. The retained local image is `photoctl-release-linux-x64:optimized`.
+
+Both native-load tests passed, including npm pack/install and actual addon loading
+outside the checkout. The real-model CLI test **failed**, returning integer overflow
+from `/prompt_encoder/Expand_3`; the three-test run ended with two passes and one
+failure in 26.71 s. The existing debug addon reproduces the same failure (22.68 s).
+An initial test launch could not find `bunx`; invoking the existing script through
+`bun run test:models --maxWorkers=1 --minWorkers=1` reached the tests unchanged.
+
+A tiny ONNX Expand graph reproduces the problem without photographs or SAM:
+rank-one input `[1]` expands to `[2]`, but fails when expanded to rank two.
+Equal-rank expansion passes. The same graphs all pass on the current Mac ARM64
+addon. A standalone C++ SafeInt loop also fails under optimized x86-64-v3 code,
+and passes at `-O0`, with the baseline x64 target, or with BMI2 disabled. Disabling
+strict aliasing does not fix it. These are diagnostic controls, not shipping changes.
+
+The exact optimized arithmetic binary (SHA-256
+`a380ee64dfae99f95ec7e0ab0fa6ff1e549bd65c54ffa2a1eb070d22b389daf3`)
+passes under QEMU 10.0.11 and fails under Docker's default x64 emulator, in the same
+container filesystem. All six tiny Expand graphs also pass through the unchanged
+release addon when Node runs under QEMU. The unchanged real SAM decoder also
+returns a finite `[1,1,256,256]` tensor from zero feature arrays and a center point;
+this is runtime execution evidence, not photographic selection quality.
+This isolates the reproduced failure to
+the default emulator, not source-image size or Rust release optimization. QEMU was
+installed in a disposable ARM64 container; no global emulator setting or system
+tool was changed. Keep the failed full-model run: reduced probes do not replace
+native x64 model/CLI acceptance.
+
+The optimized addon SHA-256 is
+`8a9126a3f326fa5c252bc0d6fdca76837b922a2c8c5d09beacebf9596a85afe9`.
+Its dynamic dependencies resolve to system libstdc++, libgcc_s, libm, libc and the
+loader. Required symbol versions reach `GLIBC_2.38`, `GLIBCXX_3.4.31` and
+`CXXABI_1.3.15`; this is not an older-Linux compatibility claim. Neither successful
+compilation nor these partial checks establish native Intel or public-release acceptance.
+
 ## Public model distribution
 
 Read-only repository verification on 2026-09-06 found no repository variables, releases
