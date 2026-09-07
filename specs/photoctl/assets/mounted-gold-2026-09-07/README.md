@@ -56,9 +56,8 @@ report's `photographic_acceptance: "not_recorded"` remains unchanged.
 
 ## Remaining boundary
 
-This run did not perform explicit camera-JPEG view/export from this same catalog,
-the additional witness required by pairing slice D. Earlier mounted and installed
-fixture tests prove that behavior only within their own scopes. The camera was
-released before that gap was reconciled; do not claim this evidence closes it or
-silently read the camera again. It also does not prove Lightroom Classic interop,
-headless SSH, other platforms, live providers or a clean full-repository gate.
+This original run did not perform explicit camera-JPEG view/export from the same
+catalog. The subsequent [same-catalog witness](../paired-import-review.md#same-catalog-camera-jpeg-witness--2026-09-08)
+closes that gap after renewed user authorization, with source writes sandbox-denied
+and unchanged original hashes. It does not broaden this gold run's photographic
+verdict or prove other platforms, live providers or a clean full-repository gate.

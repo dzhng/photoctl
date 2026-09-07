@@ -91,7 +91,7 @@ This is **not** the shared gold exam: it used an exposure adjustment and three
 exports, not the prescribed people preset and ten exports. The subsequent
 [mounted gold run](mounted-gold-2026-09-07/README.md) now proves that exact mechanical
 journey through a fresh installed CLI. It does not repeat explicit camera-JPEG access
-in the same catalog, so pairing slice D's combined witness remains incomplete.
+in the same catalog, so pairing slice D's combined witness was incomplete at that checkpoint.
 A rerunnable fixture journey cannot retroactively replace that missing evidence.
 
 A 2026-09-07 read-only recheck found permanent JPEG candidates with matching
@@ -102,6 +102,32 @@ proof. Inspection stopped before import/show/export, without accessing the card,
 changing locators, migrating or resetting the catalog. Before/after catalog and
 fixture-hash comparisons were unchanged. Only this exact-catalog witness needs
 an authorized readable original; fixture development does not need reconnection.
+
+## Same-catalog camera-JPEG witness — 2026-09-08
+
+With renewed user authorization, the retained mounted-gold installation and catalog
+successfully ran `show --source camera-jpeg` and `export --source camera-jpeg` for
+photo `01a07aa2-d112-75bd-a28d-66ca8b120747`. Both selected JPEG original
+`01a07aa2-d112-75bd-a28d-6202b69ca3af`, not its RAW primary. Show reported the JPEG's
+7008×4672 source dimensions; export produced a local 320×213 JPEG without warnings.
+This closes the missing same-catalog access witness above, not workbench layout or
+photographic quality. It used the existing installed CLI with `PHOTOCTL_NO_DAEMON=1`;
+the earlier gold exam separately established the persistent-daemon journey.
+
+The camera volume UUID matched the retained locators. Both commands ran under a
+macOS sandbox denying all `file-write*` operations beneath `/Volumes`. No import,
+source removal, rename or XMP write/sync command ran. Before/after SHA-256 values
+were identical for both accessed originals:
+
+- RAW: `95d78941e0503eafa760e4e6ffde4ce6ae4b22e73a642ccb3b815debbcd6ee39`
+- JPEG: `e1c2c961a23e917ffb2006dc017d087185cc6a9042e040ffa4cf84860aeb8241`
+
+The delivery's independently checked dimensions are 320×213 and SHA-256 is
+`16d69fd180926ae6b05b70f8e3e3db21a609475ccd538b76347b5aef6eee6e5a`.
+It remains under `/private/tmp/photoctl-camera-jpeg-verified.mBfRp9`;
+preview/cache and export history belong to the local test catalog. The card was
+not remounted, and no whole-card or macOS mount-metadata invariance is claimed.
+Further camera access is unnecessary for this witness.
 
 ## Presentation evidence remains incomplete
 

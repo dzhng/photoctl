@@ -95,8 +95,8 @@ the completed outpaint evidence while finishing pairing's remaining gates.
 - [Pairing](slices/04-paired-import.md): default one RAW-led logical photo retaining both
   originals, explicit camera-JPEG access, and raw/jpeg/both alternatives are integrated.
   Fixture source-selection/orientation review and shared built/installed pairing journeys pass;
-  [pairing evidence](assets/paired-import-review.md) records their boundaries. Verify the implemented workbench presentation
-  and the remaining same-catalog camera-JPEG witness. Use a clean-start development
+  [pairing evidence](assets/paired-import-review.md) now also proves camera-JPEG access
+  from the mounted-gold catalog. Verify the remaining workbench presentation. Use a clean-start development
   schema, never add migration/compatibility machinery or reset a real library.
 
 The camera may stay unplugged for development. All 18 RAW/JPEG pairs are permanent, hash-verified
@@ -104,8 +104,10 @@ references, covering the card's observed format/crop/orientation groups.
 [Fixture provenance](../../fixtures/camera/README.md) owns this claim. The
 [mounted gold evidence](assets/mounted-gold-2026-09-07/README.md) now proves the prescribed
 mechanical journey through a fresh packed install. Its ten same-scene deliveries do
-not establish broad photographic acceptance; explicit camera-JPEG access from that
-exact catalog remains unverified. The test daemon is stopped; do not access the camera
+not establish broad photographic acceptance. The subsequent
+[same-catalog JPEG witness](assets/paired-import-review.md#same-catalog-camera-jpeg-witness--2026-09-08)
+passed with unchanged original hashes and source writes sandbox-denied.
+The test daemon is stopped; do not access the camera
 again after telling the user it can be unplugged.
 
 **Do not reimplement completed owners:** source-specific import/locators, bounded culling,
