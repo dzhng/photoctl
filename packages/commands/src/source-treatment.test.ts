@@ -71,7 +71,9 @@ test("ordinary RAW rendering uses the measured native treatment while an untouch
         .digest("hex"),
     ).toBe(
       createHash("sha256")
-        .update(Buffer.from(expected.data.buffer, expected.data.byteOffset, expected.data.byteLength))
+        .update(
+          Buffer.from(expected.data.buffer, expected.data.byteOffset, expected.data.byteLength),
+        )
         .digest("hex"),
     );
     expect(shown.render_hash).toBe(graph.render_hash);
