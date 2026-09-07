@@ -4,9 +4,8 @@
 
 - [x] **7a CIRAW seam:** `photoctl-mac` performs the neutral Core Image/ImageIO decode, the TypeScript
   decoder boundary consumes its RGB-f32 wire format, `decode --with ciraw` writes linear 16-bit TIFF,
-  and `doctor` exposes availability. The normal macOS host test is deterministic. G3 itself remains
-  blocked because Remote Login is disabled; the evidence and rerunnable command live in
-  [`../assets/gates/G3-ciraw-headless.md`](../assets/gates/G3-ciraw-headless.md). File decoding uses Sharp for codec/profile
+  and `doctor` exposes availability. The normal macOS host test is deterministic.
+  File decoding uses Sharp for codec/profile
   handling; scaled pixels pass through the shared Rust resampler, not Sharp resizing.
 - [x] **7b LibRaw:** vendored 0.22.2 builds into the optional per-platform napi package; decode runs
   AHD for mosaiced sensor data into oriented, black-subtracted camera space on a native worker;
@@ -20,7 +19,9 @@
 ## Contract unlocked
 Every imported photo can enter the same develop/render graph. A whole-file decoder handles every format admitted through
 `previewProducer:"decoded-file"`; CIRAW and LibRaw are specialized adapters behind the same seam. Verdict files G2
-(LibRaw build), G3 (CIRAW headless), G4 (oracle tolerance) remain the RAW-adapter gates, not restrictions on library behavior.
+(LibRaw build) and G4 (oracle tolerance) remain the RAW-adapter gates, not restrictions on library behavior.
+SSH/headless acceptance, its probe and the unused `requires_window_server` diagnostic
+field are removed by explicit user direction. Decoder selection is unchanged.
 
 ## API seam
 - `packages/render/src/decoder.ts`: `Decoder{ id; probe(source:ImageSource)→{supported,compression?,decoderVersion?,notes[]};
@@ -42,7 +43,7 @@ Every imported photo can enter the same develop/render graph. A whole-file decod
   luminanceNoiseReductionAmount 0, colorNoiseReductionAmount 0, sharpnessAmount 0, contrastAmount 0, detailAmount 0,
   moireReductionAmount 0, isLensCorrectionEnabled false, extendedDynamicRangeAmount 0, isGamutMappingEnabled false`, working
   space linear Rec.2020 → `space:"scene-linear-rec2020"`; validity `supportedDecoderVersions != ["None"]`; `identifierHint`
-  required. `probe:headless-ciraw` (ssh, no window server; md5 of two runs) → G3. FAIL ⇒ `doctor` marks `requires_window_server`.
+  required. Ordinary macOS decoder tests verify the helper.
 - **7b** `crates/libraw-sys` (vendored 0.22.2, CDDL, `build.rs` glob `src/**/*.cpp`, `--disable-openmp`, libc++ dynamic, pinned
   deployment target); `photoctl-image::decode` = unpack + metadata + AHD for mosaiced sensor data only → `space:"camera"`;
   `packages/img` per-platform packages. G2: `otool -L` free of `/opt/homebrew`/libomp; `|camXyz[0] − 0.7460| < 5e-4`; Docker builds it.
@@ -85,7 +86,7 @@ LibRaw normalizes its mutable compression field while selecting a decoder. The e
 tag separately and carries it with the selected RAW frame; decoder dispatch and pixel output stay unchanged. This small
 vendored patch must survive upstream source updates and requires a full native rebuild. Per-manifest adapter tests pin
 compression, dimensions, matrix, white balance and finite nonflat camera pixels; the public CLI suite
-imports and writes linear TIFFs for the same inventory. This is compression coverage, not M/S, headless CIRAW, real-drive or
+imports and writes linear TIFFs for the same inventory. This is compression coverage, not M/S, real-drive or
 photographic-quality acceptance.
 
 [Exact pixel evidence](../assets/gates/libraw-compression.json) preserves same-host pre/post equality. The existing Linux

@@ -81,7 +81,6 @@ test("doctor resolves a relative cache root from the request working directory",
       id: "ciraw",
       available: true,
       version: "9.1",
-      requires_window_server: null,
     });
   } finally {
     await rm(directory, { recursive: true });

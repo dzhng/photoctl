@@ -209,7 +209,7 @@ The [preserved-library comparison](../assets/camera-delivery-review/integrated-g
 accepts the conspicuous highlight-color correction within its recorded scope. Keep
 the ten-delivery judgment, all-reference coverage, unchanged history and installed
 runtime gates separate. A fixture library with no paid attempts cannot prove paid
-history retention, and a local run cannot close G3 or physical-card acceptance.
+history retention, and a fixture run cannot close physical-card acceptance.
 
 The [all-reference witness](../assets/camera-delivery-review/integrated-reconstruction-allrefs/README.md)
 completes native public view/export coverage for all 18 retained RAW-led pairs,
@@ -299,7 +299,7 @@ all 18 saved RAW references across observed format/crop/orientation groups, incl
 skin, shadows, fine edges and genuine colored lights. Camera JPEGs provide scene
 context, not exact RAW pixel targets.
 
-Keep G2, G3's unresolved headless-host boundary, G4, reduced-RGB correctness, pairing,
+Keep G2, G4, reduced-RGB correctness, pairing,
 source promotion and retained-history behavior honest. Exercise the integrated native
 build and installed package; workflow wiring is not acceptance. Resource measurements
 must report full-source reconstruction cost, not only resized output buffers.

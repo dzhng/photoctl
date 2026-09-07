@@ -27,7 +27,6 @@
     "wb": "node apps/workbench/dist/cli.js",
     "fixtures:drive": "node fixtures/tools/drive.mjs",
     "fixtures:volume": "node fixtures/tools/volume.mjs",
-    "probe:headless-ciraw": "scripts/probe-headless-ciraw.sh",
     "probe:race": "bun run build:ts && node scripts/probe-race.mjs",
     "probe:toast": "node scripts/probe-toast.mjs",
     "probe:sam2": "node scripts/probe-sam2.mjs",

@@ -386,14 +386,11 @@ export async function dispatch(
                 id: "ciraw",
                 available: ciraw.available,
                 version: ciraw.version,
-                // G3 remains unknown until the SSH/headless probe can run on this host.
-                requires_window_server: null,
               },
               {
                 id: "libraw",
                 available: libraw.available,
                 version: libraw.version,
-                requires_window_server: false,
               },
             ],
             providers,

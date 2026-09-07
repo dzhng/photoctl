@@ -18,7 +18,6 @@ export const doctorDataSchema = z.object({
       id: z.enum(["ciraw", "libraw"]),
       available: z.boolean(),
       version: z.string().nullable(),
-      requires_window_server: z.boolean().nullable(),
     }),
   ),
   providers: z.object({

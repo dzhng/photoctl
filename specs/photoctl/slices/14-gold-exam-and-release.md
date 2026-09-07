@@ -140,10 +140,7 @@ owns the earlier partial mounted-card journey; the mounted gold evidence above n
 records the prescribed exam separately.
 Do not list camera samples or compression coverage as missing, or assume the camera remains mounted.
 
-An SSH-capable Mac session for [G3](../assets/gates/G3-ciraw-headless.md) remains
-missing acceptance evidence. Actual Classic sidecars are optional under the
-Lightroom interoperability policy above. Earlier localhost
-SSH probes were refused; that does not establish whether another suitable Mac exists. Classic-style
-authored fixtures do not prove an actual Classic export. No privacy or Remote Login settings have
-been changed to obtain these inputs. A local fixture run or clean-prefix install cannot retroactively
-establish mounted-camera or headless-SSH behavior.
+SSH/headless acceptance is removed by explicit user direction. Ordinary macOS decoder
+tests and portable LibRaw verification remain required. Actual Classic sidecars are
+optional under the Lightroom interoperability policy above; authored fixtures do not
+prove an actual Classic export.

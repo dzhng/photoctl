@@ -143,8 +143,9 @@ a substitute for final integrated verification.
   ARM64 Mac/Linux evidence exists. Other targets, older Linux, public model hosting and full
   release acceptance remain open. Release tags publish packages—never use them as experiments.
 - [Release](slices/14-gold-exam-and-release.md): mounted gold execution is proved;
-  photographic delivery and G3 SSH-capable Mac proof remain
-  open. Do not require reconnection merely to continue fixture development.
+  photographic delivery remains open. SSH/headless verification is removed by user
+  direction; ordinary macOS decoder and portable LibRaw tests remain required.
+  Do not require reconnection merely to continue fixture development.
   [Lightroom interoperability verification is non-blocking](slices/14-gold-exam-and-release.md#lightroom-interoperability-policy)
   by explicit user direction; retain the implemented XMP behavior and regression tests.
 - [Generation controls](slices/13-generative-extras-and-markup.md#original-command-controls-still-open):
@@ -323,7 +324,7 @@ lint / typecheck / fmt / fmt:check
 verify           fmt:check && lint && typecheck && build && test
 wb               node apps/workbench/dist/cli.js
 fixtures:drive   N padded copies of a7c2.ARW + Classic-style sidecars       fixtures:volume  hdiutil image (Mac)
-probe:*          keyless, machine-specific: race, headless-ciraw, toast     smoke:*  with-key: mask-polarity, embed-shape
+probe:*          keyless, machine-specific: race, toast     smoke:*  with-key: mask-polarity, embed-shape
 pack             tarballs for apps/cli, packages/img-*, packages/mac-helper-*
 publish:npm      used by .github/workflows/publish.yml on v* tags; release = `npm version <bump> && git push --follow-tags`
 ```
@@ -658,12 +659,6 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
   a batch with no admitted image has no source volume to summarize. Call: add `ids:string[]` and use `volume:null` when skipped;
   both are additive fields in the typed result. Needs David: no; the result now exposes the catalog
   identity it created without weakening existing fields.
-- **2026-09-04 — slice 07a G3 host gate.** Plan said: prove CIRAW under SSH with no window server and
-  record a two-run checksum. Code revealed: the helper produces byte-identical output in the normal
-  host test, but this Mac refuses connections to `localhost:22` because Remote Login is disabled.
-  Call: keep the rerunnable SSH probe, record the local evidence separately, and report
-  `requires_window_server:null` rather than guessing pass or fail. Needs David: enable Remote Login or
-  provide another SSH-capable Mac session to settle G3; 07b remains unblocked.
 - **2026-09-04 — slice 02 daemon bootstrap.** Plan said: every command reaches an auto-started daemon.
   Code revealed: `init` must create and migrate the library before a daemon can acquire its lock or open
   its PGlite directory. Call: `init` alone dispatches in-process, closes its bootstrap handle, then starts
