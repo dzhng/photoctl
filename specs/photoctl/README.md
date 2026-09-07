@@ -80,8 +80,11 @@ The [current-set verdict](assets/camera-delivery-review/balanced-delivery/final-
 completes the separate photographic review but does not accept the whole delivery set.
 The current edge probe excludes reconstruction at sampled pink bridge pixels; the
 candle's canonical/output controls isolate the additional sampled delivery chroma
-to the JPEG quality-88 round trip, not a new recovery defect. Next investigate upstream
-bridge chroma without changing default encoding quality on pixel samples alone.
+to the JPEG quality-88 round trip, not a new recovery defect. The bridge's
+[measured-sample trace](assets/camera-delivery-review/balanced-delivery/final-verdict.md#bridge-measured-sample-boundary)
+preserves all sampled CFA values and reproduces its scene output. No new defect is
+established; further fidelity changes need an independently known input or capture
+reference, not another recovery toggle or a default-quality change based on samples.
 Do not repeat completed breadth captures or the branch-origin
 comparison. Continue the remaining release/safety gates below;
 the local fixture package gate does not establish real-drive or photographic acceptance.

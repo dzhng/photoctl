@@ -281,7 +281,10 @@ highlight boundaries are the next causal target; the review is complete, but C
 remains open. The linked current edge samples exclude recovery at sampled bridge
 pixels. The candle's matched canonical/output control isolates its additional sampled
 delivery chroma to the JPEG quality-88 round trip. Do not patch recovery for that compression
-effect; the upstream bridge color remains the next distinct causal target. Default
+effect. The subsequent measured-sample trace preserves all sampled bridge CFA values
+and reproduces the retained scene floats without finding a new contract violation.
+Further correction needs an independently known input or capture reference that
+establishes the wrong color/detail; do not repeat the completed stage traces. Default
 quality is unchanged, and a numeric sample comparison does not accept a new setting.
 New or exaggerated colored rims or serrated transitions require a bounded causal
 comparison followed by a separately verifiable fidelity pass. Uncertain optical

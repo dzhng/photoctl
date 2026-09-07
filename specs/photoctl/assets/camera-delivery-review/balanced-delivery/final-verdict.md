@@ -102,8 +102,39 @@ The candle and bridge detail PNGs opened in Preview at 04:23:44 UTC. After about
 five minutes without feedback, the evidence-based not-accepted verdict was retained
 and close commands targeted those two documents. Silence is not photographic sign-off.
 
-The next fidelity target is upstream bridge chroma, not another candle recovery
-patch. Any quality/file-size policy change needs an explicit photographic comparison;
+## Bridge measured-sample boundary
+
+The [CFA provenance trace](bridge-cfa-provenance.json) checks four previously retained
+pink-edge coordinates against the sensor's color-filter array: each sensor location
+measures only one channel, while interpolation estimates the other two. It uses a
+full-frame unpack with the current vendored LibRaw preparation and orientation owner,
+then samples four 9×9 neighborhoods. All 324 measured channels equal the current
+production camera output exactly. Applying the unchanged pointwise camera front to
+the four center RGB triples reproduces the saved scene floats exactly. Source and
+addon hashes match the earlier edge evidence. Independent numerical review checked
+all sites were unique, verified the flip-5 mapping and CFA channel labels, and
+confirmed the saved ROI indexing.
+
+This narrows the unresolved boundary without establishing a fix. At `(3787,4072)`,
+the measured blue is 3914; green is estimated as 2883.92578125. The four adjacent
+measured greens are 999, 2830, 2884 and 13691. Nearby measured reds range from
+1755/1850 above the transition to the white level, 15871, below it. Thus a small
+neighborhood crosses a steep, partly clipped edge; averaging different sensor
+locations cannot supply the missing same-location RGB truth. Balanced camera
+channels already differ before the matrix, which does not alone prove false color.
+
+No changed measured sample or failure to reproduce the current color-front output
+was found. This does not trace AHD candidate selection or independently validate
+each estimated channel's inverse scaling, certify every interpolation estimate,
+prove matrix correctness, or identify an optical cause. The probe and reproduction remain
+at `/private/tmp/photoctl-bridge-cfa.wqwjam`; no production code or settings changed.
+Further correction needs an independently known input that exposes a violated
+interpolation contract, or capture/reference evidence that identifies which light
+color/detail is wrong. Repeating the recovery toggle, comparing another demosaicer
+as if it were truth, or desaturating these pixels would not supply that evidence.
+Complete photographic acceptance remains open.
+
+Any quality/file-size policy change needs an explicit photographic comparison;
 the existing quality control already permits higher-quality or lossless delivery.
 
 No API, schema, runtime policy or acceptance threshold changed. This evidence review
