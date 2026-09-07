@@ -131,7 +131,7 @@ Further camera access is unnecessary for this witness.
 
 ## Presentation evidence remains incomplete
 
-`/private/tmp/photoctl-paired-visual.EiW3Lt` contains public CLI evidence and matched
+The historical `/private/tmp/photoctl-paired-visual.EiW3Lt` contained public CLI evidence and matched
 baseline/candidate contact-sheet HTML for three distinct retained camera pairs.
 The states include an unavailable RAW with an available JPEG, an available RAW
 with an unavailable JPEG, and both available. Only scratch copies were renamed.
@@ -142,6 +142,16 @@ workarounds. A direct in-app-browser attempt on 2026-09-07 is also policy-blocke
 no alternate route was attempted afterward. No UI screenshot or fresh layout
 acceptance is claimed. Workbench membership-badge layout still needs a user-supplied
 capture or an independently permitted capture route, followed by visual review.
+
+The old temporary directory was absent on 2026-09-08. Fresh reports now live at
+`/private/tmp/photoctl-pairing-review.4jmsNK/both-online.html` and
+`/private/tmp/photoctl-pairing-review.4jmsNK/mixed-availability.html`, with public
+command results in `commands.json`. They use three local copies of permanent camera
+pairs through the current built CLI and the production sheet owner. The mixed state
+has one missing RAW, one missing JPEG and one fully available pair. Only temporary
+copies were moved. The user has been asked for a screenshot; no browser route was
+attempted and no visual acceptance is claimed. These remain disposable reports,
+not replacement fixtures or durable screenshot evidence.
 
 The separate [fixture orientation evidence](paired-orientation/README.md) exercises
 public image artifacts directly without opening HTML. Its image-geometry verdict

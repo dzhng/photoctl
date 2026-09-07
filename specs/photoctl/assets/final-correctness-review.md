@@ -2,6 +2,29 @@
 
 This is a scoped review ledger, not whole-spec acceptance.
 
+## Fill, generative extras and release requirement reconciliation
+
+A read-only Claude `opus` audit traced slices 12, 13 and 14 into their linked owners
+and evidence. It reported no missing implementation in that scope. Root checked the
+remaining checkpoint clauses, the retained agent-preview evidence, the upscaler
+non-blocking policy, mask-smoke implementation and the current mounted/packed evidence
+boundaries before accepting the following dispositions:
+
+- Flat fake fills prove state, placement and protected pixels, not photographic
+  texture. The texture variable remains unverified in the conditional live repeat.
+- The dedicated mask-smoke key and model were absent. The actual smoke command
+  recorded `not_run:unconfigured`, with no verified polarity and no provider call.
+- Upscaler quality remains explicitly conditional and unverified, not a missing
+  deterministic implementation. Completed original command controls no longer carry
+  a misleading “still open” heading.
+- The last broad gate predates the final import/removal fixes. A current final local
+  closeout remains required at the end; focused regressions do not replace it.
+- Actual public publication remains unverified and needs user authority. No tag or
+  publish action was taken for verification.
+
+The audit did not prove every earlier slice or consolidate the choices ledger. Pairing
+layout and automatic selection quality remain separate, unresolved acceptance items.
+
 ## Pairing and source ownership
 
 Claude `opus` performed a read-only review of pairing, source selection, show/export,

@@ -262,6 +262,15 @@ input (warn); exact wording inside the settled guarded-prompt constraints.
 using the same native-detail crop and mask before/after. Run `compare-screenshots`, then an unprimed `screenshot-critique` last.
 Open with `preview-shots`; after about five minutes of silence decide from evidence, record the verdict, close shots, and continue.
 Repeat after the live smoke only when configured credentials exist; its absence never blocks.
+
+Checkpoint disposition: the [keyless captures](../assets/agent-preview-loop/README.md)
+prove placement, protected pixels and preview/export continuity. Their deliberately flat
+fake fill cannot establish photographic sharpness or texture continuity. That variable
+remains unverified and belongs to the conditional live repeat, not an additional keyless
+implementation gate. The [mask-polarity probe](../assets/gates/mask-polarity/report.json)
+records an actual unconfigured invocation; it does not verify polarity or authorize
+live native-mask requests. The production refusal remains required.
+
 ## Must stay green: 01–11. Deps: 10, 11 (or `--box`), 9a. Firewall: no local generative inference.
 
 ## 12a keyless checkpoint — 2026-09-05

@@ -15,172 +15,84 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 *Last reconciled: 2026-09-08. Implementation is unfinished; Git owns commit/push state.*
 
-Read the next owning slice and its evidence before editing. Use reviewed committed passes,
-update this handoff, and continue until every requirement is verified—not merely every test green.
-Delegate straightforward tasks to Claude Code with the user-approved `opus` alias;
-the integrating agent must review its changes and verification before accepting them.
+Read the owning slice and its evidence before editing. Use reviewed, committed passes
+and Claude Code's user-approved `opus` alias for straightforward independent work;
+the integrating agent verifies every delegated result.
 
-**Current pickup:** finish pairing presentation and whole-spec review. The pairing
-review's lost partial-import results and unsafe stale-locator removal are corrected
-with red/green regressions; an unused source selector is removed.
-[Review evidence](assets/final-correctness-review.md) records scope and reviewer
-findings, including the root's verification and dispositions. The
-[emulated checkpoint](assets/ort-acquisition/README.md#linux-x64-emulated-checkpoint--2026-09-07)
-passes package loading but fails model inference under Docker's default x64 emulator.
-The same optimized arithmetic binary and unchanged addon pass their reduced probes
-under QEMU. Do not patch product code or weaken CPU flags to fit the faulty emulator;
-the full native x64 model/CLI gate remains unverified and is not required under the
-[platform verification policy](../../README.md#verification-policy). Do not resume it
-as spec closeout or release-preparation work.
-[Public library settings](slices/09-settings.md) now close the deferred writer,
-with focused and fresh installed verification.
-[Selection refinement and redo](slices/10-selection-refinement-and-redo.md) are
-implemented and verified through built and fresh installed CLI journeys, with a
-reviewed photographic correction witness. Rendering is user-approved; do not reopen it.
-Generation input and reference-strength rules are user-approved in their owning slices.
+**Current pickup:** finish the whole-spec correctness/requirements audit and pairing
+presentation. [Final review evidence](assets/final-correctness-review.md) records the
+corrected partial-import and stale-locator removal defects. Do not treat this focused
+review as the completed whole-spec review.
 
-**Memory policy — explicit user direction, 2026-09-06:** 5 GB is an arbitrary investigation
-canary, not a hard release limit or an optimization target. A crossing alone must not block
-delivery or trigger extended accounting/profiling work. The implementer may raise it when
-normal workloads justify that, without asking again. Prioritize correctness and the camera
-workflow; investigate concrete growth, crashes, memory pressure or poor responsiveness.
-Do not spend time or tokens on speculative memory overengineering. Preserve historical
-measurements; changing the canary does not rewrite their results. SAM's separate encoder
-latency requirement is unchanged.
+**Priority order:**
 
-**Verification policy:** follow the [root README](../../README.md#verification-policy).
-The user explicitly requires a small GitHub smoke subset plus lint/typecheck, with
-the full suite reserved for local development and deliberate release verification.
-Hosted full-suite failures are historical diagnostic evidence, not a reason to keep
-running that suite on every push. Do not resume CI load profiling or native-cache work
-for the smoke gate. Preserve all local checks and separate product performance bars.
-The [failure triage](assets/ci-triage.md) retains the real daemon fixes and their evidence.
+1. Resolve any concrete correctness findings before collecting more acceptance evidence.
+2. Complete pairing's workbench membership review through a permitted capture route.
+   [The existing browser denial](assets/paired-import-review.md#presentation-evidence-remains-incomplete)
+   prohibits indirect workarounds; source-level tests are not layout evidence.
+3. Resolve [SAM's automatic fine-edge quality](slices/11-segment.md) honestly.
+   Upstream parity and coarse probes pass, but detailed edges fail. Manual correction
+   is implemented and verified, not an automatic-quality fix. The user has been asked
+   whether initial selection plus manual correction is the intended v1 acceptance.
+4. Reconcile every requirement and decision against shipped code, consolidate
+   `choices.md`, and close/archive only after the required gates are proved.
+   Slice 15 is optional and unspecified.
 
-**First priority:** finish pairing's remaining evidence and whole-spec review.
-The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
-records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
+### User policies
 
-**Current local closeout — 2026-09-07:** the
-[selection/redo evidence](assets/selection-redo-closeout-2026-09-07.md) records the
-full host pass, two corrected Linux test-contract failures, passing real-model and
-fresh installed journeys, and a warm-show timing failure followed by an unchanged
-pass after host conditions changed. All local contracts have passing evidence;
-this is **not a clean single integrated run**. Preserve the failures and do not
-restart the full suite as a diagnostic loop. The temporary model server and
-fixture service are stopped. Public release execution remains unverified.
-Earlier [preview closeout](assets/preview-closeout-2026-09-07.md) and
-[clean-gate evidence](assets/local-closeout-2026-09-07.md) remain historical records.
+- Follow the [root verification policy](../../README.md#verification-policy).
+  Intel Mac/Linux verification is removed, not deferred to release preparation.
+  Do not resume emulator debugging, hosted full-suite runs or CI load/cache tuning.
+  Existing tests and portable code remain; unverified targets are not claimed as passed.
+- **Memory — explicit direction, 2026-09-06:** 5 GB is an arbitrary investigation
+  canary, not a hard limit or optimization target. Raise it when normal workloads
+  justify that, without asking again. A crossing alone must not block delivery or
+  trigger extended profiling. Investigate concrete growth, crashes, memory pressure
+  or poor responsiveness. Preserve historical measurements. SAM's encoder latency
+  requirement remains separate; do not spend tokens on speculative memory tuning.
+- Rendering is [user-approved](assets/camera-delivery-review/balanced-delivery/final-verdict.md).
+  Do not repeat breadth captures or request the same approval again. Retain LibRaw
+  as portable default and Core Image as an explicit alternative behind the shared API.
+- The camera is released. [Permanent references](../../fixtures/camera/README.md),
+  [mounted gold](assets/mounted-gold-2026-09-07/README.md) and the
+  [same-catalog JPEG witness](assets/paired-import-review.md#same-catalog-camera-jpeg-witness--2026-09-08)
+  establish the recorded camera contracts. Do not access the camera again without
+  renewed authorization.
+- Use clean-start development schemas, never compatibility migrations or automatic
+  real-library resets. Edited images may live beside originals and import as separate
+  photos. Prevent destructive collisions, not valid folder arrangements; an already
+  in-place copy import must not duplicate its file.
+- SSH/headless acceptance is removed. [Actual Lightroom verification](slices/14-gold-exam-and-release.md#lightroom-interoperability-policy)
+  is non-blocking. Preserve ordinary Mac decoder tests and implemented XMP behavior.
+- [Live provider evidence](slices/09-providers-embed-search.md) requires purpose-specific
+  configuration and consent; ambient keys are not authority. Unconfigured upscaler,
+  embedding and mask probes are not keyless closeout blockers. Never call fake-provider
+  checks live quality or send native masks with unverified polarity.
+- [Model publication](slices/14-gold-exam-and-release.md#model-distribution) is automated
+  with CLI tags. Actual public publication is unverified; tags publish packages and
+  must never be pushed as diagnostic experiments.
+- Canonical and purchased artifacts remain retained. [Storage measurements](assets/artifact-storage/README.md)
+  do not authorize automatic deletion or a new retention cap. Preserve the
+  [white-balance sampling policy](slices/08-develop.md), and the user-approved generation
+  input and reference-strength rules in their owning slices.
 
-**User photographic approval is recorded** in the
-[current-set verdict](assets/camera-delivery-review/balanced-delivery/final-verdict.md).
-The following technical findings are historical evidence, not a request to obtain
-the same approval again; unresolved causes are not automatically release blockers.
-Selection refinement and public redo are implemented and verified in their owning slice.
-[Camera delivery evidence](assets/camera-delivery-review/balanced-delivery/README.md)
-retains the all-reference breadth, preservation and residual-fidelity findings.
-Do not repeat completed breadth captures, recovery toggles or branch-origin comparisons.
-Further fidelity work needs new causal evidence, not another request for rendering approval.
-Keep both LibRaw and Core Image behind the shared API, as the user agreed; LibRaw
-remains the portable default and Core Image an explicit alternative.
+### Evidence boundaries
 
-**Parallel pickup:** review remaining correctness boundaries, and preserve
-the completed outpaint evidence while finishing pairing's remaining gates.
-
-- [Outpaint](slices/12-outpaint.md): geometry, reversible layers, reduced-source fallback
-  and reconnect without paid replay are integrated; fresh-native installed synthetic journeys
-  pass. The [six-cycle JPEG/RAW witness](assets/outpaint-resources/daemon-corrected.md)
-  preserves exact delivered interiors and restoration. Live generation quality remains
-  separate; there is no additional undefined RAW-policy gate or memory-tuning prerequisite.
-  The [complete layer-state review](assets/outpaint-state-review.md) closes the missing
-  geometry/restoration and new-preview color-separation checks. Existing cached pixels
-  remain usable and unchanged. Do not recapture these states or call this photographic acceptance.
-- [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
-  and refresh pass synthetic visual review. Retained-only input, reconnect and fresh-native
-  installed lifecycle pass; whole-spec and live photographic acceptance remain separate.
-  Use the user-approved captured photographic predecessors excluding markup.
-- [Pairing](slices/04-paired-import.md): default one RAW-led logical photo retaining both
-  originals, explicit camera-JPEG access, and raw/jpeg/both alternatives are integrated.
-  Fixture source-selection/orientation review and shared built/installed pairing journeys pass;
-  [pairing evidence](assets/paired-import-review.md) now also proves camera-JPEG access
-  from the mounted-gold catalog. Verify the remaining workbench presentation. Use a clean-start development
-  schema, never add migration/compatibility machinery or reset a real library.
-
-The camera may stay unplugged for development. All 18 RAW/JPEG pairs are permanent, hash-verified
-references, covering the card's observed format/crop/orientation groups.
-[Fixture provenance](../../fixtures/camera/README.md) owns this claim. The
-[mounted gold evidence](assets/mounted-gold-2026-09-07/README.md) now proves the prescribed
-mechanical journey through a fresh packed install. Its ten same-scene deliveries do
-not establish broad photographic acceptance. The subsequent
-[same-catalog JPEG witness](assets/paired-import-review.md#same-catalog-camera-jpeg-witness--2026-09-08)
-passed with unchanged original hashes and source writes sandbox-denied.
-The test daemon is stopped; do not access the camera
-again after telling the user it can be unplugged.
-
-**Do not reimplement completed owners:** source-specific import/locators, bounded culling,
-retained offline export, canvas sampling/source promotion, source-only SAM geometry, public undo,
-daemon no-replay, native diagnostics, optimized full-source builds, cheap untouched overview,
-auto-straighten, sampled white balance, paid-response retention and historical fixture coverage.
-The [checkpoint ledger](assets/integration-checkpoints.md) indexes focused evidence; it is not
-a substitute for final integrated verification.
-
-| Current contract | Evidence boundary |
+| Contract | Current evidence |
 | --- | --- |
-| Expanded retouch and cold outpaint | [Lifecycle](assets/outpaint-lifecycle/README.md): generated/empty corners, edge-intersecting circles, exact retry/undo, cold reduced-source/reconnect and warm retained-output witnesses. Full-resolution/fresh release gates separate. |
-| Full-frame lifecycle | [Placement](assets/full-frame-geometry/README.md) and [refresh](assets/full-frame-refresh/README.md): synthetic support, retained-only reconstruction, reconnect and installed lifecycle accepted within their recorded boundaries. |
-| RAW delivery | [Camera review](assets/camera-delivery-review/README.md): reduced-RGB and conspicuous highlight-color corrections accepted within scope; all-reference breadth verified, residual fine-detail fidelity unresolved. |
-| Runtime resources | [Measurements](assets/sam-runtime/README.md): **5 GB decimal RSS canary**, adjustable under the user policy above; not a release ceiling. SAM encoder **≤4 s** remains separate. |
+| Pairing | [Review](assets/paired-import-review.md): built/installed source selection, orientation, lifecycle and same-catalog camera JPEG pass; workbench layout remains unverified. |
+| Selection, redo and settings | [Refinement/redo](slices/10-selection-refinement-and-redo.md) and [settings](slices/09-settings.md): public and installed checks pass within their recorded scopes. |
+| Outpaint and full-frame generation | [Layer-state review](assets/outpaint-state-review.md), [six-cycle witness](assets/outpaint-resources/daemon-corrected.md), [placement](assets/full-frame-geometry/README.md) and [refresh](assets/full-frame-refresh/README.md): geometry, retained-only/reconnect and installed lifecycle evidence; not live-provider photographic acceptance. |
+| Local closeout | [Selection/redo gate](assets/selection-redo-closeout-2026-09-07.md): passing scoped results after recorded test/environment failures, **not one clean integrated run**. Do not restart the full suite as a diagnostic loop. |
+| Earlier integration | [Checkpoint index](assets/integration-checkpoints.md), [preview closeout](assets/preview-closeout-2026-09-07.md), [earlier gate](assets/local-closeout-2026-09-07.md), [CI triage](assets/ci-triage.md) and [runtime acquisition](assets/ort-acquisition/README.md) retain historical scope and failures; do not reimplement completed owners. |
 
-**Remaining quality and external gates:**
-
-- [SAM](slices/11-segment.md): coarse photographic checks and ONNX/PyTorch parity pass;
-  detailed edges fail even against full upstream references. The user-requested
-  local refinement workflow is implemented; do not call it an automatic edge-quality fix.
-- [Runtime acquisition](assets/ort-acquisition/README.md): one pinned Cargo-owned ORT recipe;
-  ARM64 Mac/Linux evidence exists. Other targets and older Linux remain unverified,
-  not pending acceptance work under the root verification policy. Actual public release
-  execution remains unverified. [Model publication](slices/14-gold-exam-and-release.md#model-distribution)
-  is automated with CLI tags; no external hosting destination is needed. Release tags
-  publish packages—never use them as experiments.
-- [Release](slices/14-gold-exam-and-release.md): mounted gold execution is proved;
-  current rendering is user-approved. SSH/headless verification is removed by user
-  direction; ordinary macOS decoder and portable LibRaw tests remain required.
-  Do not require reconnection merely to continue fixture development.
-  [Lightroom interoperability verification is non-blocking](slices/14-gold-exam-and-release.md#lightroom-interoperability-policy)
-  by explicit user direction; retain the implemented XMP behavior and regression tests.
-- [Generation controls](slices/13-generative-extras-and-markup.md#original-command-controls-still-open):
-  negative and reference-strength guidance are implemented and honestly reported; higher-strength
-  means more variation, as approved by the user.
-  Live provider comparisons are conditional evidence, not prerequisites for the
-  keyless release gates; see the boundary below.
-- [Artifact storage](assets/artifact-storage/README.md): representative paid-history storage
-  measurement remains open. Retain canonical artifacts and purchased originals;
-  automatic deletion stays disabled. A future pruning policy is not a missing v1
-  subsystem or authority to add a retention cap.
-- Preserve sampled white balance's explicitly reported provisional pre-user-develop sampling
-  policy. Do not silently change it to photographic-composite sampling.
-- **Source placement policy — user direction, 2026-09-07:** edited images may live
-  beside originals and be imported as separate photos. Do not impose source-folder
-  restrictions or track protected folder trees. Preserve original bytes and prevent
-  destructive collisions; an already-in-place copy import must not duplicate its file.
-- Run the whole-spec closeout gate once at the end, audit requirements and consolidated choices,
-  then close/archive only when every required gate is proved. Slice 15 is optional and unspecified.
-
-**Conditional provider evidence:** [slice 09](slices/09-providers-embed-search.md)
-and [slice 14](slices/14-gold-exam-and-release.md) explicitly keep an unconfigured
-live upscaler spike non-blocking, including at closeout. Live embedding and mask
-checks likewise require purpose-specific configuration and consent; an ambient key
-is not authority. Preserve their unverified status and the refusal to send real
-native-mask fills with unverified polarity. Do not turn missing paid experiments
-into a reason to defer keyless acceptance, or call fake-provider proof live quality.
-
-**Carry-forward invariants:** one daemon library handle and one atomic document/revision owner;
-exact scene-linear canonical artifacts; lazy previews from immutable roots. An execution's
-artifact, frame and source quality stay coupled—equal bytes do not imply equal coordinates.
-RGB and mask coverage share projection stages, with binary support derived afterward to avoid
-double coverage. Markup remains a final removable presentation node. Source reconnect promotes
-deterministic work, never purchased pixels; explicit refresh owns new paid attempts. Semantic
-revision participates in render/execution identity so corrected math bypasses derived caches
-without deleting history.
+**Carry-forward invariants:** one daemon library handle and one atomic document/revision
+owner; exact scene-linear canonical artifacts and lazy previews from immutable roots.
+An execution's artifact, frame and source quality stay coupled. RGB and mask coverage
+share projection stages; binary support is derived afterward. Markup is a removable
+final presentation node. Reconnect promotes deterministic work, never purchased pixels;
+explicit refresh owns new paid attempts. Renderer semantics participate in cache
+identity without deleting history.
 
 ### Global TODO
 - [x] Local selection add/subtract/replace and public saved-state redo — `slices/10-selection-refinement-and-redo.md`
@@ -201,11 +113,11 @@ without deleting history.
 - [x] 09d public library settings — [validated read/write/reset](slices/09-settings.md)
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
 - [ ] 11 segment: [x] 11a SAM runtime · [x] 11b verbs · [x] recorded-host G6 latency/retention · [ ] automatic fine-edge quality — `slices/11-segment.md`
-- [ ] 12 fill DAG: [x] 12a strict generation/composite · [x] 12b density · [x] 12c1 upscale policy/prompt · [x] 12c2 execution/failure · [x] 12d1 refresh · [x] 12d2 transform density · [x] 12d3 person move · [x] 12e fit/reference/input controls · [x] 12f outpaint canvas · [ ] photographic/live evidence — `slices/12-fill.md`
-- [ ] 13a [x] initial reimagine/relight/generate · [x] reimagine/relight shared-frame and offline consumers · [ ] upscaler quality spike (conditional, non-blocking) · [x] original paid-response retention · [x] 13b auto_enhance · [x] 13c markup · [x] 13d retouch — `slices/13-generative-extras-and-markup.md`
+- [x] 12 keyless fill DAG: strict generation/composite, density, upscale policy/failure, refresh, transform density, person move, fit/reference/input controls and outpaint canvas. Photographic/live evidence remains conditional and unverified — `slices/12-fill.md`
+- [x] 13 keyless reimagine/relight/generate, shared-frame/offline consumers, original paid-response retention, auto_enhance, markup and retouch. Live upscaler quality remains conditional and unverified — `slices/13-generative-extras-and-markup.md`
 - [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
 - [x] Show by existing-photo path — `slices/01-first-jpeg.md#existing-photo-path-lookup`
-- [x] Original CLI reconciliation: negative guidance, provisional reference-strength guidance, reference-only generation and combined fill move/scale — `slices/13-generative-extras-and-markup.md#original-command-controls-still-open`
+- [x] Original CLI reconciliation: negative guidance, provisional reference-strength guidance, reference-only generation and combined fill move/scale — `slices/13-generative-extras-and-markup.md#original-command-controls`
 - [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 

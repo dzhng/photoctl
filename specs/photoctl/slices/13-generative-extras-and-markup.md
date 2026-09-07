@@ -47,7 +47,7 @@ Every 13a/13c/13d pixel mutation creates typed nodes whose full input artifact h
 root/render hash, returns a new document revision without eager preview work, and extends `agent-preview-loop.test.ts` with at
 least one representative mutation. The next `show` remains the only required preview-materialization step.
 
-## Original command controls still open
+## Original command controls
 
 `generate --neg` is versioned exclusion guidance appended to the provider prompt, not a native
 negative-conditioning parameter or a guarantee that the model obeys it. The optional public
