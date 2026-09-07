@@ -13,12 +13,12 @@ resource observations are recorded below. The first persistent-daemon attempt
 [crossed the 5 GB canary](../assets/outpaint-resources/daemon.md) after expanded JPEG export;
 the corrected runtime completes the [six-cycle JPEG/RAW workload](../assets/outpaint-resources/daemon-corrected.md).
 Further memory work is off the critical path under the [user policy](../README.md#next-agent-prompt).
-Remaining acceptance includes the 12f2 visual states listed below, photographic generation
-and the final integrated release policy. Duplicate/clear, overlapping reorder, arbitrary border
+Remaining acceptance includes photographic generation and the final integrated
+release policy. Duplicate/clear, overlapping reorder, arbitrary border
 rotation and moving earlier support after a later border exists now have a
-[retained witness](../assets/outpaint-state-review.md). Geometry/restoration agree;
-public-preview color bleed remains under review. Their public pixel tests alone
-do not close the image review. Do not restart the completed
+[retained witness](../assets/outpaint-state-review.md). Geometry/restoration agree,
+and the matched new-preview color correction passes bounded visual review.
+Photographic generation and full release acceptance remain separate. Do not restart the completed
 historical frame/canvas checkpoints below.
 
 ## Plan rationale
@@ -179,7 +179,8 @@ Keep public pixel coverage and visual acceptance separate for these core require
   retouch and cold reconnect. It does not establish visual acceptance of duplicate/clear,
   overlapping order, arbitrary rotation or later-border placement after earlier support moves.
   The [missing-state witness](../assets/outpaint-state-review.md) supplies those captures
-  and isolates public color bleed to preview encoding; visual acceptance remains open.
+  and its matched preview correction. The bounded geometry/color-separation review
+  passes; photographic generation remains outside this synthetic witness.
 - Shared consumers: SAM sees source-only pixels with the same geometry/support plan, without
   photographic layers; native exterior detail and offline density use that plan too. The
   [cold lifecycle](../assets/outpaint-lifecycle/README.md#cold-reduced-source-lifecycle) and
@@ -203,7 +204,7 @@ the matching public previews, native corner crops, and fresh independent visual 
 
 Public activation, copy/reset/preset and auto-undo regressions are green; ordinary revision undo
 uses the existing graph API with subsequent public show/export. The linked consumer/lifecycle
-evidence supplies later bounded acceptance. The remaining visual states above, photographic
+evidence supplies later bounded acceptance. Photographic
 generation and external release gates remain separate.
 
 Crop and aspect activate independently. An aspect-only edit restricts the stable authored canvas;

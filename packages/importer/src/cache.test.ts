@@ -13,6 +13,29 @@ import {
 } from "./cache.js";
 import { indexEmbeddedJpegs } from "./embedded.js";
 
+test("pinned previews keep neighboring red and blue details distinct", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-pinned-colors-"));
+  try {
+    const source = join(directory, "colors.png");
+    const pixels = Buffer.alloc(16 * 16 * 3);
+    for (let pixel = 0; pixel < 16 * 16; pixel += 1) {
+      pixels[pixel * 3 + (pixel % 2 === 0 ? 0 : 2)] = 255;
+    }
+    await sharp(pixels, { raw: { width: 16, height: 16, channels: 3 } })
+      .png()
+      .toFile(source);
+    const jpeg = await createDecodedPreviewJpeg(source);
+    const decoded = await sharp(jpeg).raw().toBuffer();
+    for (let pixel = 0; pixel < 16 * 16; pixel += 1) {
+      const primary = decoded[pixel * 3 + (pixel % 2 === 0 ? 0 : 2)]!;
+      const other = decoded[pixel * 3 + (pixel % 2 === 0 ? 2 : 0)]!;
+      expect(primary).toBeGreaterThan(other * 2);
+    }
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
 describe("pinEmbeddedJpeg", () => {
   test("atomically pins only the selected source range", async () => {
     const directory = await mkdtemp(join(tmpdir(), "photoctl-cache-test-"));
@@ -154,7 +177,7 @@ test("decoded preview pixels use the native bilinear route before JPEG encoding"
     const expected = await sharp(resized, {
       raw: { width: outputWidth, height: outputHeight, channels: 3 },
     })
-      .jpeg({ quality: 88 })
+      .jpeg({ quality: 88, chromaSubsampling: "4:4:4" })
       .withIccProfile(srgb2014ProfilePath)
       .toBuffer();
 

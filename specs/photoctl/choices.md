@@ -6217,3 +6217,25 @@
   this representation correction, with exact measured-site preservation and no
   need for a new setting, decoder or color-processing owner.
 - **Confidence:** High.
+
+### Preview color detail — Keep color samples at image resolution
+
+- **When:** Preview fidelity correction, 2026-09-07.
+- **The choice:** A thin blue detail next to red could look purple in a newly
+  generated preview even though the stored render still contained distinct colors.
+  New preview JPEGs retain a color sample for each pixel (4:4:4), instead of sharing
+  color across neighboring pixels (4:2:0). JPEG quality stays 88, so compression
+  still introduces small errors. This applies to pinned import previews, native
+  masters and derived views; export settings and original image bytes do not change.
+- **The gap:** The preview contract required faithful tagged sRGB inspection but
+  did not specify color sampling. Raising JPEG quality alone would retain the
+  spatial color averaging; changing to PNG would change the public JPEG contract.
+- **The reach:** New previews may be larger. Existing cached previews remain usable
+  until ordinary regeneration; there is no cache purge, graph identity change or
+  catalog migration. Rejecting old high-resolution previews could reduce offline
+  availability when only a smaller pinned source remains, so this pass does not
+  force an upgrade of previously stored pixels.
+- **Verdict:** **Sound.** Preserve fine color information at the encoding boundary
+  without changing source pixels, editing semantics, or offline cache validity.
+- **Confidence:** High for full-resolution color sampling; medium for leaving
+  existing caches unchanged, whose older appearance remains until regenerated.

@@ -245,7 +245,7 @@ async function derive(
     .toBuffer({ resolveWithObject: true });
   const pixels = Buffer.from(resampleDisplaySrgb8(data, info.width, info.height, plan.w, plan.h));
   const bytes = await sharp(pixels, { raw: { width: plan.w, height: plan.h, channels: 3 } })
-    .jpeg({ quality: 88 })
+    .jpeg({ quality: 88, chromaSubsampling: "4:4:4" })
     .withIccProfile(srgb2014ProfilePath)
     .toBuffer();
   const provenance = {
@@ -290,7 +290,7 @@ async function encodeJpeg(image: Image16): Promise<Buffer> {
   })
     .flatten({ background: "white" })
     .toColourspace("srgb")
-    .jpeg({ quality: 88 })
+    .jpeg({ quality: 88, chromaSubsampling: "4:4:4" })
     .withIccProfile(srgb2014ProfilePath)
     .toBuffer();
 }

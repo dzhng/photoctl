@@ -48,6 +48,10 @@ is unavailable. Local pinned-model downloads do not settle public hosting, and
 the temporary download server is stopped. Continue the remaining quality and
 external requirements below; the full spec is not complete.
 
+The later [preview color correction](assets/outpaint-state-review.md#preview-correction)
+passes its focused 34-test gate, typecheck and lint. The full integrated result above
+predates that encoder change; it is not a current whole-release verification claim.
+
 **Camera photographic acceptance remains open.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and
 conspicuous highlight false color are corrected; all 18 saved RAW references pass native
@@ -87,12 +91,9 @@ the local fixture package gate does not establish real-drive or photographic acc
   pass. The [six-cycle JPEG/RAW witness](assets/outpaint-resources/daemon-corrected.md)
   preserves exact delivered interiors and restoration. Photographic and final RAW-policy
   acceptance remain open; further memory tuning is not a prerequisite under the policy above.
-  The 12f2 visual checklist also retains duplicate/clear, overlapping order, arbitrary border
-  rotation and later-border placement after earlier support moves: pixel tests and the narrower
-  lifecycle review do not establish those visual states. The
-  [missing-state review](assets/outpaint-state-review.md) now retains all four families:
-  geometry/restoration agree, but public-preview color bleed needs a matched correction
-  review. Do not recapture the baseline or call this photographic acceptance.
+  The [complete layer-state review](assets/outpaint-state-review.md) closes the missing
+  geometry/restoration and new-preview color-separation checks. Existing cached pixels
+  remain usable and unchanged. Do not recapture these states or call this photographic acceptance.
 - [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
   and refresh pass synthetic visual review. Retained-only input, reconnect and fresh-native
   installed lifecycle pass; whole-spec and live photographic acceptance remain separate.

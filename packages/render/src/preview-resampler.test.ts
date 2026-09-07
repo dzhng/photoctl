@@ -9,6 +9,66 @@ import { materializePreview } from "./preview.js";
 import { PreviewCoordinator } from "./preview-coordinator.js";
 import { developFrame } from "./graph/frame.js";
 
+test("native preview preserves the color identity of adjacent red and blue details", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-color-"));
+  const sourcePath = join(directory, "source.png");
+  const width = 16;
+  const height = 16;
+  const pixels = Buffer.alloc(width * height * 3);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      pixels[(y * width + x) * 3 + (x % 2 === 0 ? 0 : 2)] = 255;
+    }
+  }
+  try {
+    await sharp(pixels, { raw: { width, height, channels: 3 } })
+      .png()
+      .toFile(sourcePath);
+    const request = {
+      coordinator: new PreviewCoordinator(),
+      index: { recordCompleted: async () => {}, touch: async () => {} },
+      cacheRoot: directory,
+      photoId: "color-detail",
+      renderHash: `r_${"c".repeat(64)}`,
+      photo: { orientation: 1 as const, w: width, h: height },
+      source: {
+        kind: "online-file" as const,
+        path: sourcePath,
+        mediaType: "image/png",
+        w: width,
+        h: height,
+      },
+    };
+    const preview = await materializePreview({
+      ...request,
+      view: { region: null, longEdge: "native" },
+    });
+    const detail = await materializePreview({
+      ...request,
+      view: { region: [0, 0, 8, 8], longEdge: "native" },
+    });
+    const decodedViews = await Promise.all(
+      [preview, detail].map(async (view) => ({
+        view,
+        decoded: await sharp(view.path).raw().toBuffer(),
+      })),
+    );
+    for (const { view, decoded } of decodedViews) {
+      for (let y = 0; y < view.h; y += 1) {
+        for (let x = 0; x < view.w; x += 1) {
+          const index = (y * view.w + x) * 3;
+          const primary = decoded[index + (x % 2 === 0 ? 0 : 2)]!;
+          const other = decoded[index + (x % 2 === 0 ? 2 : 0)]!;
+          // Red and blue details must remain their own color, not merge into purple.
+          expect(primary).toBeGreaterThan(other * 2);
+        }
+      }
+    }
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
 test("preview pixels use Rust bilinear while Sharp performs no intermediate resize", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-preview-resampler-"));
   const sourcePath = join(directory, "source.png");
@@ -72,7 +132,7 @@ test("preview pixels use Rust bilinear while Sharp performs no intermediate resi
     const expected = await sharp(expectedPixels, { raw: { width: 3, height: 2, channels: 3 } })
       .flatten({ background: "white" })
       .toColourspace("srgb")
-      .jpeg({ quality: 88 })
+      .jpeg({ quality: 88, chromaSubsampling: "4:4:4" })
       .withIccProfile(srgb2014ProfilePath)
       .toBuffer();
 
@@ -134,7 +194,7 @@ test("a rendered U16 view crops and resamples before 8-bit encoding", async () =
     )
       .flatten({ background: "white" })
       .toColourspace("srgb")
-      .jpeg({ quality: 88 })
+      .jpeg({ quality: 88, chromaSubsampling: "4:4:4" })
       .withIccProfile(srgb2014ProfilePath)
       .toBuffer();
     expect(await readFile(preview.path)).toEqual(expected);

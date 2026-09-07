@@ -2,8 +2,9 @@
 
 The missing duplicate/clear, overlap-order, arbitrary-rotation and post-authoring
 movement states now have retained captures. Geometry and exact restoration agree
-with the authored-support contract, but this is not a clean preview-quality pass:
-the public JPEGs visibly bleed saturated border colors into neighboring pixels.
+with the authored-support contract. The initial public JPEGs visibly bleed border
+colors; the correction below preserves their color separation without claiming
+lossless previews or photographic-generation acceptance.
 
 ## Evidence boundary
 
@@ -49,8 +50,42 @@ therefore in that encoding path, not a second compositing result. A same-quality
 4:4:4 control reduces numeric color error but has not received visual acceptance.
 No production default, quality threshold or photographic acceptance changed.
 
-Next: assess the preview color-sampling correction through the public preview
-contract and matched visual controls. Keep the complete current capture set as
-the failing baseline; do not substitute lossless images for public previews.
-The human Preview checkpoint is not claimed: Preview was occupied by unrelated
-project documents, which were left untouched.
+## Preview correction
+
+New pinned import previews, rendered masters and derived detail views retain
+full-resolution color samples. JPEG quality, dimensions, profiles, canonical
+pixels and public response shapes are unchanged. Existing caches remain readable;
+this is not a forced cache upgrade or purge. Older cached images keep their
+appearance until ordinary regeneration.
+
+[Corrected public captures](outpaint-states-corrected/) and
+[matched evidence](outpaint-preview-correction.json) retain B for all 18 states.
+A and target map to the public and canonical images in the original capture set.
+The complete scratch set, including duplicate A/target renditions, remains at
+`/private/tmp/photoctl-outpaint-preview-candidate.DjDbb1/`.
+The candidate exercises production native preview materialization from each saved
+canonical image and exact frame, with fresh caches. It does not replay CLI/layer
+mutations or establish new importer photographic quality.
+
+All 18 candidates differ from A while retaining the same canonical float hashes
+and frames. RGB mean absolute error against the lossless target decreases in
+every state; for blue-front it changes from 58.17 to 5.11 code values, and for
+red-front from 51.95 to 4.14. Total JPEG bytes increase from 61,404 to 62,581
+(1.92%); tiny synthetic fixtures cannot predict photographic file-size cost.
+All original 238 images remain unchanged.
+
+Main review inspected all 18 B full-frame 20× images against the previously viewed
+A/target set. The fresh reviewer inspected all 324 supplied PNGs, including every
+A/B/target native frame, enlargement and corner crop, and judged B closer in every
+state. Geometry, clipping, source placement, reorder and restoration remain
+consistent with the target. Residual fill mottling and colored cells near black
+boundaries remain visible at 20×. This is an accepted color-separation improvement,
+not a claim that lossy encoding preserves every color exactly.
+
+The new behavior tests failed before correction at each of the master, derived
+detail and pinned-preview encoders, then passed after correction. The five focused
+preview/import/show files pass all 34 tests; typechecking and focused lint pass.
+Existing exact-encoding checks use the corrected sampling while preserving their
+geometry/resampling assertions. No full-suite repeat was used as a feedback loop.
+The human checkpoint was shown inline; unrelated Preview documents were untouched.
+Whole-spec release and photographic acceptance remain separate.

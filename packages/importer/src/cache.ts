@@ -151,7 +151,7 @@ async function encodePinnedPreview(image: Sharp): Promise<Buffer> {
       ? data
       : resampleDisplaySrgb8(data, info.width, info.height, width, height);
   return await sharp(pixels, { raw: { width, height, channels: 3 } })
-    .jpeg({ quality: 88 })
+    .jpeg({ quality: 88, chromaSubsampling: "4:4:4" })
     .withIccProfile(srgb2014ProfilePath)
     .toBuffer();
 }

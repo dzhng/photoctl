@@ -195,7 +195,7 @@ test.each([
       expect(detailData.preview_info.cache_source).toBe("sufficient_full_frame");
       const expectedJpeg = await sharp(data.preview)
         .extract({ left, top, width, height })
-        .jpeg({ quality: 88 })
+        .jpeg({ quality: 88, chromaSubsampling: "4:4:4" })
         .withIccProfile(srgb2014ProfilePath)
         .toBuffer();
       expect(await readFile(detailData.preview)).toEqual(expectedJpeg);
