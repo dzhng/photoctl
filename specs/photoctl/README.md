@@ -63,62 +63,32 @@ public hosting.
 [current-set verdict](assets/camera-delivery-review/balanced-delivery/final-verdict.md).
 The following technical findings are historical evidence, not a request to obtain
 the same approval again; unresolved causes are not automatically release blockers.
-Selection refinement and public redo remain separate capability gaps to scope.
-
-**Historical camera photographic status.** The gold exam exports all ten images,
-but complete photographic delivery is not yet accepted. Reduced-RGB striping and
-conspicuous highlight false color are corrected; all 18 saved RAW references pass native
-view/export and integrity checks. Residual fine-detail fidelity remains unresolved.
-[Camera delivery review](assets/camera-delivery-review/README.md) owns the evidence and
-the [reconstruction plan](slices/07-highlight-reconstruction.md) owns acceptance.
-Do not repeat the disproved reconstruction diagnosis for branch/nose/wire artifacts:
-[coordinate evidence](assets/camera-delivery-review/coordinate-metadata/README.md) records
-the remaining mapping uncertainty, not a demonstrated crop bug. Preserve failed deliveries;
-never substitute camera JPEGs, tune presets around decoder defects, or weaken the oracle.
-The [interpolation witness](assets/camera-delivery-review/interpolation-owner/README.md)
-isolates fine false color but rejects bilinear because it softens detail. The
-[balanced interpolation correction](assets/camera-delivery-review/normalized-interpolation/README.md)
-is now integrated: temporary channel balancing is undone before the shared color front,
-measured sensor samples stay exact, and derived-cache identities advance without changing
-paid execution identity. The rebuilt decoder matches the accepted experimental camera
-pixels; focused native/integration and both unchanged color-oracle modes pass.
-The [current delivery review](assets/camera-delivery-review/balanced-delivery/README.md)
-now verifies all 18 saved RAW deliveries, retained historical data and native details;
-the [complete macOS packed-install gate](slices/14-gold-exam-and-release.md#portable-gold-evidence)
-passes all nine cases with the current decoder. The delivery review accepts reduced fine false
-color without claiming all remaining clipped-light or broad branch fringes are solved.
-The [current-set verdict](assets/camera-delivery-review/balanced-delivery/final-verdict.md)
-completes the separate photographic review but does not accept the whole delivery set.
-The current edge probe excludes reconstruction at sampled pink bridge pixels; the
-candle's canonical/output controls isolate the additional sampled delivery chroma
-to the JPEG quality-88 round trip, not a new recovery defect. The bridge's
-[measured-sample trace](assets/camera-delivery-review/balanced-delivery/final-verdict.md#bridge-measured-sample-boundary)
-preserves all sampled CFA values and reproduces its scene output. No new defect is
-established; further fidelity changes need an independently known input or capture
-reference, not another recovery toggle or a default-quality change based on samples.
-Do not repeat completed breadth captures or the branch-origin
-comparison. Continue the remaining release/safety gates below;
-the local fixture package gate does not establish real-drive or photographic acceptance.
+Selection refinement and public redo are scoped in the next implementation slice.
+[Camera delivery evidence](assets/camera-delivery-review/balanced-delivery/README.md)
+retains the all-reference breadth, preservation and residual-fidelity findings.
+Do not repeat completed breadth captures, recovery toggles or branch-origin comparisons.
+Further fidelity work needs new causal evidence, not another request for rendering approval.
+Keep both LibRaw and Core Image behind the shared API, as the user agreed; LibRaw
+remains the portable default and Core Image an explicit alternative.
 
 **Parallel pickup:** finish remaining outpaint and pairing release gates.
 
 - [Outpaint](slices/12-outpaint.md): geometry, reversible layers, reduced-source fallback
   and reconnect without paid replay are integrated; fresh-native installed synthetic journeys
   pass. The [six-cycle JPEG/RAW witness](assets/outpaint-resources/daemon-corrected.md)
-  preserves exact delivered interiors and restoration. Photographic and final RAW-policy
-  acceptance remain open; further memory tuning is not a prerequisite under the policy above.
+  preserves exact delivered interiors and restoration. Live generation quality remains
+  separate; there is no additional undefined RAW-policy gate or memory-tuning prerequisite.
   The [complete layer-state review](assets/outpaint-state-review.md) closes the missing
   geometry/restoration and new-preview color-separation checks. Existing cached pixels
   remain usable and unchanged. Do not recapture these states or call this photographic acceptance.
 - [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
   and refresh pass synthetic visual review. Retained-only input, reconnect and fresh-native
   installed lifecycle pass; whole-spec and live photographic acceptance remain separate.
-  Use captured photographic predecessors excluding markup;
-  that input policy remains provisional pending the user's answer.
+  Use the user-approved captured photographic predecessors excluding markup.
 - [Pairing](slices/04-paired-import.md): default one RAW-led logical photo retaining both
   originals, explicit camera-JPEG access, and raw/jpeg/both alternatives are integrated.
   Fixture source-selection/orientation review and shared built/installed pairing journeys pass;
-  [pairing evidence](assets/paired-import-review.md) records their boundaries. Finish workbench presentation
+  [pairing evidence](assets/paired-import-review.md) records their boundaries. Verify the implemented workbench presentation
   and the remaining same-catalog camera-JPEG witness. Use a clean-start development
   schema, never add migration/compatibility machinery or reset a real library.
 
@@ -148,22 +118,22 @@ a substitute for final integrated verification.
 **Remaining quality and external gates:**
 
 - [SAM](slices/11-segment.md): coarse photographic checks and ONNX/PyTorch parity pass;
-  detailed edges fail even against full upstream references. Additional refinement needs a
-  separate decision. Do not call coarse masks detailed acceptance.
+  detailed edges fail even against full upstream references. Implement the user-requested
+  local refinement workflow; do not call it an automatic edge-quality fix.
 - [Runtime acquisition](assets/ort-acquisition/README.md): one pinned Cargo-owned ORT recipe;
   ARM64 Mac/Linux evidence exists. Other targets, older Linux and actual public release
   acceptance remain open. [Model publication](slices/14-gold-exam-and-release.md#model-distribution)
   is automated with CLI tags; no external hosting destination is needed. Release tags
   publish packages—never use them as experiments.
 - [Release](slices/14-gold-exam-and-release.md): mounted gold execution is proved;
-  photographic delivery remains open. SSH/headless verification is removed by user
+  current rendering is user-approved. SSH/headless verification is removed by user
   direction; ordinary macOS decoder and portable LibRaw tests remain required.
   Do not require reconnection merely to continue fixture development.
   [Lightroom interoperability verification is non-blocking](slices/14-gold-exam-and-release.md#lightroom-interoperability-policy)
   by explicit user direction; retain the implemented XMP behavior and regression tests.
 - [Generation controls](slices/13-generative-extras-and-markup.md#original-command-controls-still-open):
   negative and reference-strength guidance are implemented and honestly reported; higher-strength
-  means more variation provisionally, pending the user's product choice.
+  means more variation, as approved by the user.
   Live provider comparisons are conditional evidence, not prerequisites for the
   keyless release gates; see the boundary below.
 - [Artifact storage](assets/artifact-storage/README.md): representative paid-history storage

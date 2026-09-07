@@ -490,7 +490,7 @@ calculation; exact-order reuse reduces measured exports to roughly 18 seconds, w
 all six baseline/expanded/removed outputs byte-identical. The evidence retains both
 runs and their resource limits. The [six-cycle daemon witness](../assets/outpaint-resources/daemon-corrected.md)
 supplies the later persistent-process measurement. Photographic quality and the final
-RAW-policy release gate remain separate; no export latency guarantee is inferred.
+integrated release verification remain separate; no export latency guarantee is inferred.
 
 Pure translation, rotation and shrinking do not retry failed border density. Increased scale can
 request configured upscaling; explicit retry remains available for a failed processing step.
