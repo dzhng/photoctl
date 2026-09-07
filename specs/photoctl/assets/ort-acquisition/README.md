@@ -109,6 +109,13 @@ installed in a disposable ARM64 container; no global emulator setting or system
 tool was changed. Keep the failed full-model run: reduced probes do not replace
 native x64 model/CLI acceptance.
 
+A separate QEMU public-CLI photographic probe retained the existing area, click,
+excluded-point and zero-provider assertions. Initialization and linked fixture import
+completed, but the first selection exceeded its 180-second command budget and did
+not exit on timeout's SIGTERM. The task-owned child was killed, the disposable
+library/container cleaned up, and no photographic pass is claimed. Do not extend
+product timing budgets or repeat the full suite to accommodate this emulator.
+
 The optimized addon SHA-256 is
 `8a9126a3f326fa5c252bc0d6fdca76837b922a2c8c5d09beacebf9596a85afe9`.
 Its dynamic dependencies resolve to system libstdc++, libgcc_s, libm, libc and the
