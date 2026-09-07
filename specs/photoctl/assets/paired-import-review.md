@@ -94,6 +94,15 @@ journey through a fresh installed CLI. It does not repeat explicit camera-JPEG a
 in the same catalog, so pairing slice D's combined witness remains incomplete.
 A rerunnable fixture journey cannot retroactively replace that missing evidence.
 
+A 2026-09-07 read-only recheck found permanent JPEG candidates with matching
+sampled identities and sizes, but the gold catalog has no full content hashes or
+local locators for them. The ordinary identity owner must read an existing
+original before promoting that match; a filename or sampled key is insufficient
+proof. Inspection stopped before import/show/export, without accessing the card,
+changing locators, migrating or resetting the catalog. Before/after catalog and
+fixture-hash comparisons were unchanged. Only this exact-catalog witness needs
+an authorized readable original; fixture development does not need reconnection.
+
 ## Presentation evidence remains incomplete
 
 `/private/tmp/photoctl-paired-visual.EiW3Lt` contains public CLI evidence and matched
