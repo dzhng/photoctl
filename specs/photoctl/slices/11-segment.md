@@ -2,7 +2,8 @@
 
 ## API seam
 - **11a** `scripts/export-sam2.py` (pinned `facebook/sam2.1-hiera-small` commit) → `encoder.onnx`, `decoder.onnx`; sha256 + opset in
-  `fixtures/models.json`; download base `settings.models_base_url` (public distribution OPEN; local HTTP supported) with hash verification; cache
+  `fixtures/models.json`; [version-matched release distribution](14-gold-exam-and-release.md#model-distribution),
+  with an explicit `settings.models_base_url` mirror override and hash verification; cache
   `models/` pinned. `photoctl-image::sam2` via `ort` CPU EP (D40); encoder once per `(id, tier)` cached in the daemon; decoder per
   prompt. Input = develop render (offline: 1616 tier) letterboxed to 1024 (mapping in `coordinates.ts`); 256² logits → bilinear
   upsample → threshold 0 → base-res mask. Docker: weights fetched in the Dockerfile with hash check (missing → loud failure).

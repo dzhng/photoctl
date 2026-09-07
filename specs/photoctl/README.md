@@ -140,8 +140,10 @@ a substitute for final integrated verification.
   detailed edges fail even against full upstream references. Additional refinement needs a
   separate decision. Do not call coarse masks detailed acceptance.
 - [Runtime acquisition](assets/ort-acquisition/README.md): one pinned Cargo-owned ORT recipe;
-  ARM64 Mac/Linux evidence exists. Other targets, older Linux, public model hosting and full
-  release acceptance remain open. Release tags publish packages—never use them as experiments.
+  ARM64 Mac/Linux evidence exists. Other targets, older Linux and actual public release
+  acceptance remain open. [Model publication](slices/14-gold-exam-and-release.md#model-distribution)
+  is automated with CLI tags; no external hosting destination is needed. Release tags
+  publish packages—never use them as experiments.
 - [Release](slices/14-gold-exam-and-release.md): mounted gold execution is proved;
   photographic delivery remains open. SSH/headless verification is removed by user
   direction; ordinary macOS decoder and portable LibRaw tests remain required.
@@ -539,7 +541,7 @@ migrate daemon(start|stop|status) embed decode render presets(show) search graph
 | Smoke 1 mask polarity | 12 pre-gate | adapters `maskPolarity:"unverified"` → live native-mask fill refused (`provider_unverified_mask` 69) |
 | Live multimodal embedding dialect | post-09c purpose-key smoke | named one-photo candidate may run only after explicit command or saved auto consent; remains provisional until accepted |
 | Lossless M/S pseudo-RAW and portrait orientation | 07b probe; 14 fixtures | committed uncompressed, lossless-L (original tag 7), and lossy fixtures |
-| SAM 2.1 ONNX hosting URL | 11a | export script committed; download URL `settings.models_base_url` |
+| SAM 2.1 distribution | 11a/14 | version-matched GitHub release assets; explicit `settings.models_base_url` mirror override |
 | Classic interoperability evidence (optional) | 04/14 | authored fixtures remain; [actual Classic verification is non-blocking](slices/14-gold-exam-and-release.md#lightroom-interoperability-policy) |
 
 ## Human review checkpoints (non-blocking)

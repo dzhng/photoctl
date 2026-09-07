@@ -32,3 +32,11 @@ and run the appropriate checks; [project commands](package.json) and the
 - [Development plan](specs/photoctl/README.md) — current status, requirements and decisions.
 - [Reference fixtures](fixtures/README.md) — retained inputs and the facts they establish.
 - [Native build guide](crates/photoctl-image/ort/README.md) — runtime acquisition and platform constraints.
+
+## Releases
+
+Version tags drive package and model publication together. A CLI release downloads
+its own verified model files, never a moving “latest” model. Libraries can explicitly
+use a mirror. [Release ownership](specs/photoctl/slices/14-gold-exam-and-release.md#model-distribution)
+describes the publication boundary; the full local suite remains a release-preparation
+responsibility, separate from the hosted release checks.

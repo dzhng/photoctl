@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { expect, test } from "vitest";
 import { dispatch } from "./dispatch.js";
 
-test("doctor reports the ready SAM manifest and fetch refuses without a base URL", async () => {
+test("doctor defaults to this CLI release's models and honors an explicit mirror", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-model-doctor-"));
   const libraryPath = join(parent, "library");
   const initialized = await initializeLibrary(libraryPath);
@@ -15,14 +15,14 @@ test("doctor reports the ready SAM manifest and fetch refuses without a base URL
       "SELECT value FROM settings WHERE key = 'models_base_url'",
     );
     expect(setting.rows).toEqual([{ value: null }]);
-    const context = { version: "test", library: initialized.handle };
+    const context = { version: "1.2.3", library: initialized.handle };
     const env = { noDaemon: true, libraryPath };
     const reported = await dispatch({ verb: "doctor", args: [], cwd: parent, env }, context);
     expect(reported).toMatchObject({
       ok: true,
       data: {
         models: {
-          base_url: null,
+          base_url: "https://github.com/dzhng/photoctl/releases/download/v1.2.3/",
           manifest_ready: true,
           directory: join(libraryPath, "models"),
           artifacts: PINNED_MODEL_RELEASE.artifacts.map(({ file, sha256, opset }) => ({
@@ -37,14 +37,14 @@ test("doctor reports the ready SAM manifest and fetch refuses without a base URL
     if (reported.ok && "data" in reported)
       expect(() => doctorDataSchema.parse(reported.data)).not.toThrow();
 
-    const fetched = await dispatch(
-      { verb: "doctor", args: ["--fetch-models"], cwd: parent, env },
-      context,
+    await initialized.handle.query(
+      "UPDATE settings SET value = $1::jsonb WHERE key = 'models_base_url'",
+      [JSON.stringify("https://models.example.test/pinned/")],
     );
-    expect(fetched).toMatchObject({
-      ok: false,
-      code: "provider_unconfigured",
-      data: { reason: "models_base_url_missing" },
+    const mirrored = await dispatch({ verb: "doctor", args: [], cwd: parent, env }, context);
+    expect(mirrored).toMatchObject({
+      ok: true,
+      data: { models: { base_url: "https://models.example.test/pinned/" } },
     });
   } finally {
     await initialized.handle.close();

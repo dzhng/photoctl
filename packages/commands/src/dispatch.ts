@@ -334,15 +334,12 @@ export async function dispatch(
             reason: "models_base_url_invalid",
           });
         }
-        const configuredModelBaseUrl = storedModelBaseUrl as string | null;
+        const configuredModelBaseUrl =
+          (storedModelBaseUrl as string | null) ??
+          `https://github.com/dzhng/photoctl/releases/download/v${encodeURIComponent(context.version)}/`;
         const modelDirectory = join(handle.path, "models");
         const completeManifest = completeModelManifest(modelManifest);
         if (parsed.flags.has("--fetch-models")) {
-          if (configuredModelBaseUrl === null) {
-            throw new PhotoctlError("provider_unconfigured", "models_base_url is not configured", {
-              reason: "models_base_url_missing",
-            });
-          }
           if (completeManifest === null) {
             throw new PhotoctlError(
               "provider_unconfigured",

@@ -36,6 +36,38 @@ so an installed command has no checkout-relative executable paths. The CLI manif
 installed external dependencies: npm also treats dependencies of a bundled package as bundled, so
 retaining those edges on embedded manifests would mark absent external files as already shipped.
 Platform image addons and Swift helpers remain separate optional packages.
+
+## Model distribution
+
+The tag-triggered [release workflow](../../../.github/workflows/publish.yml) owns
+CLI packages and their matching SAM model assets. The tag must equal the root
+package version. Export uses pinned upstream revisions and CPU parity checks;
+generated candidates must match the committed model hashes, never silently replace
+them during publication. Model changes are reviewed and pinned before tagging.
+
+Native jobs consume the prepared model artifact directly. This avoids requiring a
+public model URL for a release that does not exist yet. Hosted release verification
+checks actual native/model loading, macOS packaging, lint, types and smoke behavior;
+the complete suite remains a local release-preparation gate under the root policy.
+
+All packages, model files, provenance, hashes and the SAM license are attached to
+one draft release before it is published. Public model downloads are hash-verified
+before npm publication, so a newly installable CLI does not point at missing assets.
+GitHub and npm publication are not an atomic transaction: an npm failure can leave
+a complete GitHub release available without every npm package published.
+
+`doctor --fetch-models` uses the installed CLI version's GitHub release by default.
+The existing `models_base_url` setting remains an explicit mirror override; null
+means use the release default, not an unconfigured installation. Files are still
+verified against the packaged manifest and reused from the local model directory.
+There is no database migration, automatic download at install/import, moving-latest
+lookup, new hosting service or Git LFS dependency. Unpublished development versions
+need a mirror to fetch models until their release exists.
+
+Workflow wiring and local checks do not prove a public release has run successfully.
+Do not push a publication tag merely to test the workflow.
+
+## Packed package boundary
 `bun run pack` builds optimized native artifacts; development's debug build must not determine the
 shipping binary. The release matrix likewise builds optimized binaries before its packed-install gate.
 

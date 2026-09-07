@@ -9,7 +9,68 @@ permissions:
   id-token: write
 
 jobs:
+  models:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Validate release tag
+        run: node -e 'const p=require("./package.json"); if(process.env.GITHUB_REF_NAME !== `v${p.version}`) throw Error("Release tag must match package.json version")'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read pinned exporter revisions
+        id: contract
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, subprocess
+          contract = json.loads(subprocess.check_output(["python", "scripts/export-sam2.py", "--print-contract"]))
+          print("sam2=" + contract["sam2_revision"])
+          print("ort=" + contract["onnxruntime_revision"])
+          PY
+      - uses: actions/checkout@v4
+        with:
+          repository: facebookresearch/sam2
+          ref: ${{ steps.contract.outputs.sam2 }}
+          path: out/upstream/sam2
+      - uses: actions/checkout@v4
+        with:
+          repository: microsoft/onnxruntime
+          ref: ${{ steps.contract.outputs.ort }}
+          path: out/upstream/onnxruntime
+      - name: Install CPU exporter
+        env:
+          SAM2_BUILD_CUDA: '0'
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu --constraint scripts/sam2-export-requirements.txt torch torchvision
+          python -m pip install -r scripts/sam2-export-requirements.txt
+          python -m pip install --no-build-isolation --no-deps ./out/upstream/sam2
+      - name: Export and verify upstream parity
+        env:
+          HF_HUB_DISABLE_IMPLICIT_TOKEN: '1'
+          MPLBACKEND: Agg
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python scripts/export-sam2.py --sam2-dir out/upstream/sam2 --onnxruntime-dir out/upstream/onnxruntime --output-dir out/models --manifest "$RUNNER_TEMP/candidate-models.json" --runtime-manifest "$RUNNER_TEMP/candidate-models.ts"
+      - name: Verify committed model hashes and retain license
+        run: |
+          bun install --frozen-lockfile
+          bun run build:ts
+          node scripts/verify-release-models.mjs out/models
+          cp out/upstream/sam2/LICENSE out/models/SAM2-LICENSE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-models
+          path: out/models/
+          if-no-files-found: error
+
   native:
+    needs: models
     strategy:
       matrix:
         include:
@@ -62,8 +123,19 @@ jobs:
       - name: Build native image runtime
         run: bun run build:rust:release
 
-      - name: Verify packaged native image runtime
-        run: bun run build:ts && node node_modules/vitest/vitest.mjs run --config vitest.models.config.ts test/model-runtime/native-load.test.ts
+      - name: Build TypeScript
+        run: bun run build:ts
+
+      - name: Download release models
+        uses: actions/download-artifact@v4
+        with:
+          name: release-models
+          path: out/models
+
+      - name: Verify native runtime with release models
+        env:
+          PHOTOCTL_SAM_MODELS_DIR: ${{ github.workspace }}/out/models
+        run: bun run test:models
 
       - name: Build macOS helper
         if: runner.os == 'macOS'
@@ -110,19 +182,26 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Provision native runtime build tools
-        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 cmake ninja-build python3
-
       - name: Build
-        run: bun run build
+        run: bun run build:ts
 
       - name: Lint
         run: bun run lint
 
-      - name: Test
-        env:
-          PHOTOCTL_MODELS_BASE_URL: ${{ vars.PHOTOCTL_MODELS_BASE_URL }}
-        run: bun run test
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Smoke tests
+        run: bun run test:ci
+
+      - name: Download release models
+        uses: actions/download-artifact@v4
+        with:
+          name: release-models
+          path: out/models
+
+      - name: Verify release model bytes
+        run: node scripts/verify-release-models.mjs out/models
 
       - name: Download Linux x64 runtime
         uses: actions/download-artifact@v4
@@ -148,11 +227,6 @@ jobs:
           name: native-img-darwin-x64
           path: packages/img-darwin-x64
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-
       - name: Download Darwin ARM64 helper
         uses: actions/download-artifact@v4
         with:
@@ -171,10 +245,31 @@ jobs:
       - name: Pack release artifacts
         run: node scripts/pack.mjs --all
 
-      - name: Attach release artifacts
+      - name: Assemble draft release
         uses: softprops/action-gh-release@v2
         with:
-          files: out/packages/*.tgz
+          draft: true
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            out/packages/*.tgz
+            out/models/encoder.onnx
+            out/models/decoder.onnx
+            out/models/models.json
+            out/models/SHA256SUMS
+            out/models/verification.json
+            out/models/SAM2-LICENSE
+
+      - name: Publish complete release before npm
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release edit "$RELEASE_TAG" --draft=false
+
+      - name: Verify public model downloads
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/fetch-models.mjs "https://github.com/dzhng/photoctl/releases/download/$RELEASE_TAG/" out/public-models
 
       - name: Publish to npm
         run: node scripts/publish-npm.mjs

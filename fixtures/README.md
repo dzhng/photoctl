@@ -60,10 +60,11 @@ not a replacement for those defaults.
 
 Docker takes an explicit `PHOTOCTL_MODELS_BASE_URL`, fetches and verifies the manifest's files during
 the functional image build, and exposes that directory to the tests. The gateway fixture uses the
-built application image without fetching models. Public distribution is not configured: a real
-release host or a reachable local HTTP server serving the frozen exports is still required.
-CI and release tests read that URL from the GitHub repository variable of the same name; an unset
-variable remains a prerequisite failure, not a request to skip model coverage.
+built application image without fetching models. Use a published release's model URL
+or a reachable local HTTP server serving the frozen exports. Tag-triggered releases
+prepare models before testing and pass them directly to native-runtime jobs; they do
+not depend on a pre-existing public URL or repository variable. Ordinary smoke CI
+does not run the full model suite. See [release ownership](../specs/photoctl/slices/14-gold-exam-and-release.md#model-distribution).
 
 On a host, set `PHOTOCTL_SAM_MODELS_DIR` to an existing exported directory. To provision from a
 configured base URL, build the TypeScript packages and use the same fetch owner as Docker:
