@@ -1,5 +1,32 @@
 # Local closeout verification
 
+## Corrected integrated gate — passed
+
+The integrated sequence exited **0** with all four stages of the root test script,
+in its existing order. Vitest used one worker on the host and in Docker; Docker
+received the same worker limits explicitly through Compose. Coverage and timeouts
+were unchanged. [The complete retained log](local-closeout-corrected-2026-09-07.log)
+records every test and stage result.
+
+| Stage | Result |
+| --- | --- |
+| Host TypeScript | 201 files, 1,095 tests passed; 976.64 s |
+| Rust workspace | 9 LibRaw and 78 image tests passed |
+| Docker TypeScript | 201 files, 1,095 tests passed; 1130.79 s |
+| Docker real-model runtime | 3 tests passed; 42.21 s |
+| macOS, including fresh release packages | 17 tests passed; 227.02 s |
+
+The run began on `8d3f739`; `43b5c09` only corrected pairing documentation during
+the run. Production code, tests and container configuration did not change.
+Both previously failing XMP files passed within the complete Docker suite.
+The temporary model server was stopped after the pinned model downloads.
+
+The [GitHub smoke gate](https://github.com/dzhng/photoctl/actions/runs/34080025323)
+also passed on `43b5c09`. Neither gate claims photographic quality, mounted-camera
+acceptance, actual Classic interoperability, headless SSH operation or other platforms.
+
+## Earlier attempts and corrections
+
 The host TypeScript run used all 201 test files with one worker and unchanged
 timeouts. It completed in 1071.25 seconds: 1,093 passed, two failed. Unlike the
 [disk-exhausted attempt](local-closeout-2026-09-07.log), this run reached a terminal
@@ -57,9 +84,7 @@ daemon performance and model-runtime checks. The packed-install file passed in
 
 ## Remaining acceptance
 
-All named local stages have now executed, but the complete TypeScript runs
-preceded their respective test/harness corrections. Preserve the distinction
-between those full-run results and the focused correction checks; do not report
-a fully green closeout from their combination alone. The final integrated gate
-must use the corrected source and container configuration. Photographic and
-external release acceptance remain in the owning slice plans.
+The corrected integrated run above supersedes the earlier incomplete local-test
+verdicts without rewriting their results. Photographic, visual and external release
+acceptance remain in the owning slice plans. Do not rerun the full suite merely
+because one of those external requirements is still unavailable.

@@ -39,15 +39,14 @@ The [failure triage](assets/ci-triage.md) retains the real daemon fixes and thei
 requirements below. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
 records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
-**Local closeout — 2026-09-07:** disk cleanup is complete. The full single-worker
-TypeScript run finished with two test-contract failures; their corrected files
-pass focused verification, including deliberate defect checks. The
-[closeout evidence](assets/local-closeout-2026-09-07.md) records the exact boundary.
-Rust, Docker model-runtime and the complete macOS gate pass. Both complete
-TypeScript runs exposed test/harness mismatches with focused corrected proofs;
-the final integrated gate must use those corrections. Do not call it green yet.
-Pinned local model files enable Docker verification through a temporary loopback
-server without settling public model hosting.
+**Local closeout — 2026-09-07:** the corrected integrated test sequence passes all
+root test stages: host TypeScript, Rust, Docker TypeScript/real models, and macOS
+including fresh release packages. The [closeout evidence](assets/local-closeout-2026-09-07.md)
+retains the complete log and the earlier failures separately. GitHub's small smoke
+gate also passes. Do not repeat these gates merely because external acceptance
+is unavailable. Local pinned-model downloads do not settle public hosting, and
+the temporary download server is stopped. Continue the remaining quality and
+external requirements below; the full spec is not complete.
 
 **Camera photographic acceptance remains open.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and
