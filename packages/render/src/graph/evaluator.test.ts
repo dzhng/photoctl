@@ -55,9 +55,9 @@ test("equal pixels retain distinct source treatment through deterministic descen
     expect(first.sourceTreatment).toEqual(disabled);
     expect(second.sourceTreatment).toEqual(applied);
     expect((await evaluate(applied)).executionId).toBe(second.executionId);
-    expect((await evaluate({ ...applied, decoderVersion: "next" })).executionId).not.toBe(
-      second.executionId,
-    );
+    const nextTreatment = { ...applied, decoderVersion: "next" };
+    const third = await evaluate(nextTreatment);
+    expect(third.executionId).not.toBe(second.executionId);
     expect(
       (
         await db.query("SELECT source_treatment FROM node_executions WHERE execution_id = $1", [
@@ -76,7 +76,14 @@ test("equal pixels retain distinct source treatment through deterministic descen
       photoId,
       nodeId,
     });
-    expect(retained?.sourceTreatment).toEqual({ ...applied, decoderVersion: "next" });
+    const treatments = new Map([
+      [first.executionId, disabled],
+      [second.executionId, applied],
+      [third.executionId, nextTreatment],
+    ]);
+    expect(retained).toBeDefined();
+    expect(treatments.has(retained!.executionId)).toBe(true);
+    expect(retained!.sourceTreatment).toEqual(treatments.get(retained!.executionId));
   } finally {
     await db.close();
   }

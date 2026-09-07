@@ -13,7 +13,7 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last reconciled: 2026-09-06. Implementation is unfinished; Git owns commit/push state.*
+*Last reconciled: 2026-09-07. Implementation is unfinished; Git owns commit/push state.*
 
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
@@ -39,16 +39,13 @@ The [failure triage](assets/ci-triage.md) retains the real daemon fixes and thei
 requirements below. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
 records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
-**Local closeout attempt — 2026-09-07:** the full root test command reached the
-TypeScript suite, then exhausted host disk space (`ENOSPC`). It was interrupted;
-the subsequent Rust-test, Docker and macOS stages did not run. The
-[retained log](assets/local-closeout-2026-09-07.log) includes earlier timeouts and
-command failures whose causes are not established independently of the exhausted
-host. Do not classify this as a passing gate or patch product behavior from these
-failures without a focused reproduction. Free disk space before further heavy work.
-Both locally retained model files match the pinned manifest, and Docker can fetch
-them through a temporary loopback server; that server is now stopped. This enables
-local verification without settling public model hosting.
+**Local closeout — 2026-09-07:** disk cleanup is complete. The full single-worker
+TypeScript run finished with two test-contract failures; their corrected files
+pass focused verification, including deliberate defect checks. The
+[closeout evidence](assets/local-closeout-2026-09-07.md) records the exact boundary.
+Rust passes; continue Docker and macOS stages. Do not call the full gate green yet.
+Pinned local model files enable Docker verification through a temporary loopback
+server without settling public model hosting.
 
 **Camera photographic acceptance remains open.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and

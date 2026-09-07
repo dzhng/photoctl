@@ -865,8 +865,9 @@ test("zero noise reduction is an exact canonical no-op", async () => {
 });
 
 test("noise reduction leaves the JavaScript event loop responsive", async () => {
-  const width = 128;
-  const height = 96;
+  // Sustain native work long enough to observe repeated event-loop turns.
+  const width = 768;
+  const height = 512;
   const bytes = await encodeArtifactLinearTiff({
     w: width,
     h: height,
