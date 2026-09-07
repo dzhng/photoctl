@@ -35,8 +35,8 @@ running that suite on every push. Do not resume CI load profiling or native-cach
 for the smoke gate. Preserve all local checks and separate product performance bars.
 The [failure triage](assets/ci-triage.md) retains the real daemon fixes and their evidence.
 
-**First priority:** resolve the local host-test timing uncertainty below, then resume
-camera photographic acceptance and the remaining release requirements. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
+**First priority:** resume camera photographic acceptance and the remaining release
+requirements. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
 records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
 **Current local closeout — 2026-09-07:** verification on the preview-corrected code
@@ -44,8 +44,10 @@ is complete but is **not a clean integrated pass**. The
 [current evidence](assets/preview-closeout-2026-09-07.md) records one host timeout,
 successful unchanged focused/Docker checks of that test, passing Rust and Docker
 stages, and macOS results with a corrected model-directory invocation. Fresh
-installed packages pass. Next resolve the host timing uncertainty narrowly; do not
-restart the full suite as a diagnostic loop or alter product behavior to fit it.
+installed packages pass. Narrow triage did not reproduce the host timeout, including
+the unchanged neighboring tests; no product defect or latency-contract failure is
+established. Preserve the failed run, but do not repeat this diagnosis without new
+evidence or restart the full suite as a diagnostic loop.
 The [earlier clean gate](assets/local-closeout-2026-09-07.md) predates the
 [preview color correction](assets/outpaint-state-review.md#preview-correction).
 Neither result settles photographic or external release acceptance. The temporary

@@ -29,9 +29,20 @@ not a retained standalone log). The same test passed within the complete Docker
 suite in 1,433 ms. These results establish successful behavior in those runs,
 not the cause of the host timeout or a clean host-suite result.
 
-Next investigate this test narrowly before changing its budget or assertions.
-Do not attribute it to machine load without evidence, rerun the entire gate as a
-feedback loop, or optimize production code around an unexplained timing sample.
+Narrow follow-up on documentation-only successor `93823a7` ran this file with
+`reimagine-upscale-fallback.test.ts` and `relight.test.ts`, using the same config
+and one worker. All 11 tests passed unchanged; this journey took 2,038 ms and the
+three-file runner took 16.01 s (terminal tool output). The owning full-frame spec
+requires correct pixels, lazy materialization and restoration, not completion of
+this multi-command test within five seconds. That cutoff is the runner default,
+not an elapsed-time assertion.
+
+Disposition: not reproduced; no product defect or violated latency contract is
+established. Independent read-only review recommended no code, timeout or assertion
+change. The failed integrated result remains failed, and its cause remains unknown.
+Continue other acceptance work; revisit only if new evidence reproduces the issue.
+Do not attribute it to machine load, rerun the entire gate as a feedback loop, or
+optimize production code around this unexplained timing sample.
 
 ## Corrected macOS prerequisite
 
