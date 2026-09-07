@@ -20,6 +20,10 @@ export function pinnedEmbeddedJpegPath(cacheRoot: string, photoId: string): stri
   return join(cacheRoot, "emb", `${photoId}.jpg`);
 }
 
+export async function preparePinnedPreviewCache(cacheRoot: string): Promise<void> {
+  await mkdir(join(cacheRoot, "emb"), { recursive: true });
+}
+
 export class PinnedPreviewSourceError extends Error {
   constructor(readonly reason: unknown) {
     super("Could not read the pinned-preview source");
@@ -161,11 +165,10 @@ async function writePinnedPreview(
   photoId: string,
   bytes: Uint8Array,
 ): Promise<{ path: string; bytes: number }> {
-  const directory = join(cacheRoot, "emb");
   const destination = pinnedEmbeddedJpegPath(cacheRoot, photoId);
   const temporary = `${destination}.${process.pid}.${randomUUID()}.tmp`;
   try {
-    await mkdir(directory, { recursive: true });
+    await preparePinnedPreviewCache(cacheRoot);
     const output = await open(temporary, "wx");
     try {
       await output.writeFile(bytes);

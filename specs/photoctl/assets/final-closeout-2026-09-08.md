@@ -1,7 +1,8 @@
 # Current local closeout — in progress
 
-The tested production source is `ea76aed`. Documentation-only updates during this
-run do not change its code, tests, assertions or timeouts. This is the remaining
+The full host suite tested production source `ea76aed`. The later stages use that
+source plus the shared-cache correction described below. Documentation-only updates
+do not change code, tests, assertions or timeouts. This is the remaining
 integrated local gate, not a GitHub run or Intel/Linux support-verification effort.
 
 Formatting, lint and typechecking passed. The initial root invocation stopped at
@@ -9,10 +10,24 @@ the native build because this shell lacked CMake on its path; no tests ran in th
 attempt. The already-approved isolated CMake/Ninja environment remains intact.
 The continuation uses it and resumes at the build stage, which passed.
 
-The host TypeScript suite is running. Rust, the existing Docker functional/model
-seam and macOS/packed checks follow in the same fail-fast script. None is claimed
-as passed until its terminal result is collected. The existing single-worker
-Vitest flags are explicit, preserving coverage without saturating the host.
+The host TypeScript suite terminated with 205 files passed and one failed:
+1,127 tests passed and one failed in 983.59 seconds. The failing CLI test expected
+an unusable shared cache destination to return `volume_readonly` (exit 69), but
+per-photo error collection converted it to `partial` (exit 65).
+
+The correction prepares the shared cache directory before photo admission while
+leaving individual failures isolated. An unsupported-only scan does not require
+cache setup. The focused import/cache suite passes all 40 tests across four files.
+Making setup unconditional falsified the unsupported-only assertion (exit 69
+instead of 0); restoring the condition and rebuilding passed the focused test again.
+These are narrow correction checks, not a clean rerun of the full host suite.
+Logs are `cache-focused.log`, `cache-falsification.log` and `cache-restored.log` below.
+
+The remaining-stage continuation passed Rust (9 + 78 tests) and is building the
+existing Docker functional/model seam; macOS/packed checks follow. Collect terminal results before
+claiming success; do not restart the full host suite as a feedback loop.
+Single-worker Vitest flags remain explicit. `remaining.sh` and `remaining.log`
+retain this continuation separately from the failed host run.
 
 Logs and the exact continuation invocation are in
 `/private/tmp/photoctl-final-closeout.j54Do5/`. `verify.log` retains the prerequisite

@@ -5,6 +5,11 @@ Import a drive's worth of files idempotently; cull on three axes plus tags with 
 reading originals works with the drive unplugged (D1/D17/D18). The slice-01 invariant applies to the entire scan:
 every id counted as imported or already present has a valid pinned offline preview, regardless of source format.
 
+Prepare the shared preview-cache directory before admitting photos: a broken shared
+destination is a destination error, not a list of per-photo conflicts. A scan with no
+admissible image does not need that directory. Failures specific to one photo remain
+visible in the partial result without starving independent photos.
+
 ## API seam
 - `packages/importer/src/{scan.ts,pipeline.ts}`: top-level candidate scan (`--recursive` descends) → content probe registry → identity → EXIF → preview
   producer → rows. Scanning must not discard a candidate solely because its extension is absent, unknown, or incorrect;

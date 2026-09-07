@@ -216,13 +216,22 @@ test("a PNG with a JPEG extension is rendered instead of copied into a false JPE
   expect(outputBytes).not.toEqual(sourceBytes);
 }, 30_000);
 
-test("an unusable cache root returns a stable JSON destination error", async () => {
+test("only photo imports require cache setup and return stable JSON destination errors", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-cache-destination-"));
   temporaryDirectories.push(parent);
   const library = join(parent, "library");
   const cacheFile = join(parent, "not-a-directory");
   await writeFile(cacheFile, "occupied");
   expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+
+  const notes = join(parent, "notes.txt");
+  await writeFile(notes, "not an image");
+  const skipped = await spawnPhotoctl(["import", notes, "--link"], {
+    libraryDir: library,
+    env: { PHOTOCTL_CACHE: cacheFile, PHOTOCTL_VOLUME_MAP: `${parent}=fixture-volume:online` },
+  });
+  expect(skipped.code, JSON.stringify(skipped.json)).toBe(0);
+  expect(skipped.json).toMatchObject({ data: { imported: 0, skipped_unsupported: 1 } });
 
   const imported = await spawnPhotoctl(["import", resolve("fixtures/a7c2.ARW"), "--link"], {
     libraryDir: library,
@@ -232,11 +241,12 @@ test("an unusable cache root returns a stable JSON destination error", async () 
     },
   });
 
-  expect(imported.code).toBe(69);
+  expect(imported.code, JSON.stringify(imported.json)).toBe(69);
   expect(imported.json).toMatchObject({
     schema: 1,
     ok: false,
     code: "volume_readonly",
     data: { path: expect.stringContaining(cacheFile) },
   });
+  expect(await readFile(cacheFile, "utf8")).toBe("occupied");
 }, 30_000);

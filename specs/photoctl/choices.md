@@ -5512,6 +5512,9 @@
   failure result. That result uses a nonzero exit status so an agent notices the incomplete work.
   Warning-only success would make a folder with missing photos look fully processed; aborting
   the whole roster would prevent safe independent work.
+  A shared preview-cache directory that cannot be created is different: report the
+  destination error before admitting photos, rather than repeating it for each one.
+  An unsupported-only scan skips directory preparation because it has no photos to admit.
 - **The gap:** The pairing contract required independent group handling but did not choose its
   terminal error envelope.
 - **The reach:** Counts describe logical photos, while conflict details describe the affected

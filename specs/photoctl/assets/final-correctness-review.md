@@ -2,6 +2,35 @@
 
 This is a scoped review ledger, not whole-spec acceptance.
 
+## Shared import destination correction
+
+The full host gate exposed a regression in per-photo failure isolation: a cache
+base occupied by a regular file became `partial` instead of the existing
+`volume_readonly` destination error. Shared directory preparation now occurs
+before admission, while photo-specific failures still collect and continue.
+Unsupported-only scans do not require that directory. The cache module remains
+the sole owner of its directory layout; no schema, option or dependency was added.
+
+The original contract failed before the correction. All 40 focused CLI/import/cache
+tests pass. Making setup unconditional then failed the unsupported-only assertion
+for the expected reason; restoration, emitted-TypeScript rebuild and the focused
+test passed. Typechecking and formatting pass; scoped lint reports existing
+warnings outside the changed lines, with no errors. Shape review found the shared
+helper justified by its two consumers: batch setup and atomic preview publication.
+The full-host result and later-stage status live in the
+[current closeout record](final-closeout-2026-09-08.md).
+
+Independent Claude review caught the deliberate unconditional-setup mutation while
+it was being falsified. That finding is resolved by the restored condition and
+observed green test, not dismissed as a false alarm. Its test-label finding was
+accepted: the name now describes both sides of the shared setup boundary. The
+two arms retain one disposable library and invalid destination rather than duplicate
+setup. Review confirmed item isolation, error propagation and the separate writer's
+need to prepare its own directory for generated-image imports. This was static
+review, not another test execution. Cache preparation applies to admissible source
+groups, including non-primary companion reimports; it does not precompute catalog
+ownership merely to avoid an idempotent directory creation.
+
 ## Choices consolidation dispositions
 
 The catalog and deterministic-render proposals contain useful grouping suggestions,

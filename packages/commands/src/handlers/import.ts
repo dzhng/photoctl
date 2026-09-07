@@ -22,6 +22,7 @@ import {
   pinPreviewBytes,
   pinnedEmbeddedJpegPath,
   pinnedPreviewMatches,
+  preparePinnedPreviewCache,
   probeImage,
   readExif,
   scanCandidates,
@@ -130,6 +131,13 @@ export async function importCommand(
   let previewBytes = 0;
   const startedAt = performance.now();
   try {
+    if (units.some((unit) => !unit.conflict && unit.sources.some((source) => source.probe))) {
+      try {
+        await preparePinnedPreviewCache(cacheRoot);
+      } catch {
+        throw cacheWriteError(cacheRoot);
+      }
+    }
     await consumeBoundedOrdered(
       units,
       IMPORT_CONCURRENCY,

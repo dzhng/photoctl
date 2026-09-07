@@ -24,8 +24,8 @@ presentation. [Final review evidence](assets/final-correctness-review.md) record
 corrected partial-import and stale-locator removal defects. Do not treat this focused
 review as the completed whole-spec review.
 
-The three domain choices audits have returned; their proposed text still needs
-root verification and consolidation. Scratch drafts are at
+The five domain choices audits have returned; their proposed text is being
+consolidated in a dedicated worktree and still needs root acceptance. Scratch drafts are at
 `/private/tmp/photoctl-final-audits.ciVNd7/`. The full-frame/generate CLI override
 gap found during that review is corrected; the review evidence records rejected
 stale findings as well as the focused red/green checks.
@@ -89,7 +89,7 @@ stale findings as well as the focused red/green checks.
 | Pairing | [Review](assets/paired-import-review.md): built/installed source selection, orientation, lifecycle and same-catalog camera JPEG pass; workbench layout remains unverified. |
 | Selection, redo and settings | [Refinement/redo](slices/10-selection-refinement-and-redo.md) and [settings](slices/09-settings.md): public and installed checks pass within their recorded scopes. |
 | Outpaint and full-frame generation | [Layer-state review](assets/outpaint-state-review.md), [six-cycle witness](assets/outpaint-resources/daemon-corrected.md), [placement](assets/full-frame-geometry/README.md) and [refresh](assets/full-frame-refresh/README.md): geometry, retained-only/reconnect and installed lifecycle evidence; not live-provider photographic acceptance. |
-| Local closeout | [Current gate](assets/final-closeout-2026-09-08.md) is running on the corrected code. [Selection/redo gate](assets/selection-redo-closeout-2026-09-07.md) retains the earlier scoped results and failures. Do not restart the full suite as a diagnostic loop. |
+| Local closeout | [Current gate](assets/final-closeout-2026-09-08.md): host suite found one shared-cache error regression; focused correction passes. Resume remaining stages, not the full host suite. [Selection/redo gate](assets/selection-redo-closeout-2026-09-07.md) retains earlier scoped results and failures. |
 | Earlier integration | [Checkpoint index](assets/integration-checkpoints.md), [preview closeout](assets/preview-closeout-2026-09-07.md), [earlier gate](assets/local-closeout-2026-09-07.md), [CI triage](assets/ci-triage.md) and [runtime acquisition](assets/ort-acquisition/README.md) retain historical scope and failures; do not reimplement completed owners. |
 
 **Carry-forward invariants:** one daemon library handle and one atomic document/revision
