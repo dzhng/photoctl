@@ -27,8 +27,8 @@ export const segmentDataSchema = z.object({
   layer_id: z.uuid(),
   mask: z.object({
     artifact_hash: fullHashSchema("a"),
-    bbox: z.tuple([z.number(), z.number(), z.number().positive(), z.number().positive()]),
-    pixels: z.number().int().positive(),
+    bbox: z.tuple([z.number(), z.number(), z.number().nonnegative(), z.number().nonnegative()]),
+    pixels: z.number().int().nonnegative(),
   }),
 });
 

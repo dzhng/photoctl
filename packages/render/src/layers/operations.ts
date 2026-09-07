@@ -12,6 +12,7 @@ import {
   type PreparedNodeExecution,
 } from "../graph/store.js";
 import { readArtifactMask } from "../artifacts/publication.js";
+import { PhotoctlError } from "@photoctl/protocol";
 import {
   resolveTransformMatrix,
   invertTransformMatrix,
@@ -30,7 +31,11 @@ import { describeFillBranch } from "../fill/branch.js";
 import { prepareFillDensity, type FillDensityRequest } from "../fill/prepare-density.js";
 import type { PublishedArtifact } from "../artifacts/publication.js";
 import { markupFreeOutputNode } from "../markup/graph.js";
-import { loadLogicalFrame } from "../graph/projection.js";
+import {
+  loadLogicalFrame,
+  readFramedMaskInput,
+  clipCoverageToFrames,
+} from "../graph/projection.js";
 import { savedRenderFrame, placedFrame, type RenderFrame } from "../graph/frame.js";
 
 export type ManualMaskShape =
@@ -49,6 +54,93 @@ export interface ManualLayerResult {
 export interface MaskLayerInput {
   mask: MaskImage;
   name?: string;
+}
+
+/** Correct retained coverage in its own frame, keeping content and placement independent. */
+export async function refineMaskLayer(
+  database: GraphDatabase,
+  libraryPath: string,
+  request: {
+    photoId: string;
+    layer: string;
+    shape: ManualMaskShape;
+    operation: "add" | "subtract" | "replace";
+  },
+): Promise<ManualLayerResult> {
+  const loaded = await loadActiveDocument(database, request.photoId);
+  const layerId = await resolveLayerId(database, request.photoId, request.layer);
+  const selected = loaded?.layers.find((layer) => layer.id === layerId);
+  if (!loaded || !selected)
+    throw new PhotoctlError("not_found", "Layer is not present in the active revision", {
+      layer_id: layerId,
+    });
+  if (selected.role !== "subject")
+    throw new PhotoctlError("usage", "Selection refinement requires a subject layer");
+  const document = { ...loaded, photoId: request.photoId };
+  const evaluated = await evaluateGraphNode({
+    database,
+    libraryPath,
+    photoId: request.photoId,
+    nodeId: selected.maskNodeId,
+    source: async () => {
+      throw new Error("Selection refinement cannot evaluate source pixels");
+    },
+  });
+  const { mask, frame } = await readFramedMaskInput(
+    { database, photoId: request.photoId },
+    evaluated,
+  );
+  const manual = manualMaskCoverage(frame.raster, request.shape, frame.rasterToBase);
+  const contentFrame = await loadLogicalFrame(database, request.photoId, selected.contentNodeId);
+  const operand =
+    request.operation === "subtract" ? manual : clipCoverageToFrames(manual, frame, [contentFrame]);
+  const data = mask.data.map((coverage, index) => {
+    const correction = operand.data[index];
+    if (request.operation === "replace") return correction;
+    return request.operation === "add"
+      ? Math.max(coverage, correction)
+      : coverage * (1 - correction);
+  });
+  const corrected = { ...mask, data };
+  const summary = summarizeMask(corrected, { rasterToBase: frame.rasterToBase, allowEmpty: true });
+  const published = await publishArtifact(libraryPath, await normalizeMaskArtifact(corrected));
+  const content = await splitTransformLineage(database, request.photoId, selected.contentNodeId);
+  const maskNode = { localKey: "refined-placement" };
+  const committed = await commitLayerSnapshot(
+    database,
+    document,
+    document.layers.map((layer) =>
+      layer.id === layerId
+        ? layerDraft(layer, layer.z, undefined, maskNode)
+        : layerDraft(layer, layer.z),
+    ),
+    {
+      artifacts: [published],
+      nodes: [
+        {
+          localKey: "refined-mask",
+          kind: "mask",
+          recipeVersion: 1,
+          parameters: { artifact_hash: published.artifactHash },
+          inputs: [],
+        },
+        {
+          localKey: maskNode.localKey,
+          kind: "transform",
+          recipeVersion: 2,
+          parameters: { matrix: [...content.matrix], frame: savedRenderFrame(frame) },
+          inputs: [{ localKey: "refined-mask" }],
+        },
+      ],
+    },
+  );
+  return {
+    layerId,
+    revisionId: committed.revisionId,
+    renderHash: committed.renderHash,
+    artifactHash: published.artifactHash,
+    ...summary,
+  };
 }
 
 export async function createManualLayer(
@@ -231,19 +323,19 @@ export async function transformLayer(
           mask: mask.frame ?? (await loadLogicalFrame(database, request.photoId, mask.baseNodeId)),
         }
       : undefined;
-  const intrinsicCentroid = await maskCentroid(
-    database,
-    libraryPath,
-    request.photoId,
-    mask.baseNodeId,
-  );
-  const centroid = frames
-    ? transformPoint(frames.mask.rasterToBase, intrinsicCentroid)
-    : intrinsicCentroid;
-  const anchor =
-    request.relative && request.transform.anchor === "centroid"
-      ? transformPoint(content.matrix, centroid)
-      : centroid;
+  let anchor = request.transform.anchor;
+  if (anchor === "centroid") {
+    const intrinsicCentroid = await maskCentroid(
+      database,
+      libraryPath,
+      request.photoId,
+      mask.baseNodeId,
+    );
+    const centroid = frames
+      ? transformPoint(frames.mask.rasterToBase, intrinsicCentroid)
+      : intrinsicCentroid;
+    anchor = request.relative ? transformPoint(content.matrix, centroid) : centroid;
+  }
   const matrix = resolveTransformMatrix(
     content.matrix,
     request.transform,
@@ -832,46 +924,63 @@ export function rasterizeManualMask(
   dimensions: { w: number; h: number },
   shape: ManualMaskShape,
 ): { mask: MaskImage; bbox: [number, number, number, number]; pixels: number } {
+  const mask = manualMaskCoverage(dimensions, shape);
+  const { pixels } = summarizeMask(mask);
+  return { mask, bbox: shape.kind === "box" ? shape.bbox : polygonBounds(shape.points), pixels };
+}
+
+function manualMaskCoverage(
+  dimensions: { w: number; h: number },
+  shape: ManualMaskShape,
+  rasterToBase?: TransformMatrix,
+): MaskImage {
   const data = new Float32Array(dimensions.w * dimensions.h);
   const contains =
     shape.kind === "box" ? boxContains(shape.bbox) : polygonContains(assertPolygon(shape.points));
-  let pixels = 0;
   for (let y = 0; y < dimensions.h; y += 1) {
     for (let x = 0; x < dimensions.w; x += 1) {
-      if (!contains(x + 0.5, y + 0.5)) continue;
+      const point = rasterToBase
+        ? transformPoint(rasterToBase, { x: x + 0.5, y: y + 0.5 })
+        : { x: x + 0.5, y: y + 0.5 };
+      if (!contains(point.x, point.y)) continue;
       data[y * dimensions.w + x] = 1;
-      pixels += 1;
     }
   }
-  if (pixels === 0) throw new Error("Manual mask does not cover any pixel centers");
-  return {
-    mask: { w: dimensions.w, h: dimensions.h, data },
-    bbox: shape.kind === "box" ? shape.bbox : polygonBounds(shape.points),
-    pixels,
-  };
+  return { ...dimensions, data };
 }
 
-export function summarizeMask(mask: MaskImage): {
+export function summarizeMask(
+  mask: MaskImage,
+  {
+    rasterToBase,
+    allowEmpty = false,
+  }: { rasterToBase?: TransformMatrix; allowEmpty?: boolean } = {},
+): {
   bbox: [number, number, number, number];
   pixels: number;
 } {
   if (mask.data.length !== mask.w * mask.h) throw new Error("Mask dimensions do not match samples");
-  let left = mask.w;
-  let top = mask.h;
-  let right = 0;
-  let bottom = 0;
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  const [a, b, c, d] = rasterToBase ?? [1, 0, 0, 1];
   let pixels = 0;
   for (let index = 0; index < mask.data.length; index += 1) {
     if (mask.data[index] <= 0) continue;
     const x = index % mask.w;
     const y = Math.floor(index / mask.w);
-    left = Math.min(left, x);
-    top = Math.min(top, y);
-    right = Math.max(right, x + 1);
-    bottom = Math.max(bottom, y + 1);
+    const point = rasterToBase ? transformPoint(rasterToBase, { x, y }) : { x, y };
+    left = Math.min(left, point.x + Math.min(0, a) + Math.min(0, c));
+    top = Math.min(top, point.y + Math.min(0, b) + Math.min(0, d));
+    right = Math.max(right, point.x + Math.max(0, a) + Math.max(0, c));
+    bottom = Math.max(bottom, point.y + Math.max(0, b) + Math.max(0, d));
     pixels += 1;
   }
-  if (pixels === 0) throw new Error("Segment mask does not cover any pixels");
+  if (pixels === 0) {
+    if (!allowEmpty) throw new Error("Segment mask does not cover any pixels");
+    return { bbox: [0, 0, 0, 0], pixels: 0 };
+  }
   return { bbox: [left, top, right - left, bottom - top], pixels };
 }
 

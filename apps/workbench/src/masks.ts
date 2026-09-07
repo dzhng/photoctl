@@ -6,7 +6,7 @@ import {
   evaluateGraphNode,
   loadActiveDocument,
   loadBaseProjection,
-  projectMaskToRender,
+  projectCoverageBetweenFrames,
   readActiveDevelopState,
   readArtifactImage,
   readArtifactMask,
@@ -70,7 +70,8 @@ export async function buildMasksReport(libraryPath: string, photo: string): Prom
         evaluated.artifact.path,
         evaluated.artifact.artifactHash,
       );
-      const mask = await projectMaskToRender(stored, projection, image);
+      const maskFrame = await loadBaseProjection(library, photoId, evaluated);
+      const mask = await projectCoverageBetweenFrames(stored, maskFrame, projection, image);
       const edge = mask.data.findIndex((value) => value > 0);
       if (edge < 0) {
         cards.push(

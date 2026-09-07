@@ -14,7 +14,12 @@ export * from "./graph/removal.js";
 export * from "./graph/base-input.js";
 export * from "./graph/output.js";
 export * from "./graph/evaluator.js";
-export { loadBaseProjection, loadLogicalFrame, projectMaskToRender } from "./graph/projection.js";
+export {
+  loadBaseProjection,
+  loadLogicalFrame,
+  projectMaskToRender,
+  projectCoverageBetweenFrames,
+} from "./graph/projection.js";
 export { developFrame, type RenderFrame } from "./graph/frame.js";
 export { prepareCanvasExpansion, commitCanvasExpansion } from "./graph/canvas.js";
 export { outpaintCanvas } from "./fill/outpaint.js";

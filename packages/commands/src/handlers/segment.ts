@@ -1,6 +1,7 @@
 import { resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import {
   createManualLayer,
+  refineMaskLayer,
   prepareMaskLayer,
   commitPreparedMaskLayers,
   RevisionConflictError,
@@ -76,12 +77,19 @@ export async function segmentCommand(
         if (parsed.dryRun) {
           throw new PhotoctlError("usage", "--dry-run requires --at or --text");
         }
-        const result = await createManualLayer(lease.handle, lease.handle.path, {
+        const request = {
           photoId,
           orientation: photo.orientation,
           dimensions,
           shape,
-        });
+        };
+        const result = parsed.layer
+          ? await refineMaskLayer(lease.handle, lease.handle.path, {
+              ...request,
+              layer: parsed.layer,
+              operation: parsed.operation!,
+            })
+          : await createManualLayer(lease.handle, lease.handle.path, request);
         return manualEnvelope(photoId, result);
       }
 
@@ -225,12 +233,14 @@ interface ParsedSegment {
   text?: string;
   normalized: boolean;
   dryRun: boolean;
+  layer?: string;
+  operation?: "add" | "subtract" | "replace";
 }
 
 function parseSegmentArguments(args: string[]): ParsedSegment {
   const parsed = parseArguments(args, {
     flags: ["--norm", "--dry-run"],
-    options: ["--box", "--brush", "--text"],
+    options: ["--box", "--brush", "--text", "--layer", "--operation"],
     repeatableOptions: ["--at"],
   });
   if (parsed.positionals.length !== 1) {
@@ -240,6 +250,23 @@ function parseSegmentArguments(args: string[]): ParsedSegment {
   const box = parsed.options.get("--box");
   const brush = parsed.options.get("--brush");
   const text = parsed.options.get("--text");
+  const layer = parsed.options.get("--layer");
+  const operation = parsed.options.get("--operation");
+  if ((layer === undefined) !== (operation === undefined)) {
+    throw new PhotoctlError("usage", "--layer and --operation are required together");
+  }
+  if (operation !== undefined && !["add", "subtract", "replace"].includes(operation)) {
+    throw new PhotoctlError("usage", "--operation must be add, subtract, or replace");
+  }
+  if (
+    layer !== undefined &&
+    (at.length > 0 || text !== undefined || (!box && !brush) || (box && brush))
+  ) {
+    throw new PhotoctlError(
+      "usage",
+      "Selection refinement requires exactly one manual --box or --brush and no SAM prompts",
+    );
+  }
   if (brush && (box || at.length > 0 || text !== undefined)) {
     throw new PhotoctlError("usage", "--brush cannot be combined with SAM prompts");
   }
@@ -258,6 +285,9 @@ function parseSegmentArguments(args: string[]): ParsedSegment {
     ...(text !== undefined ? { text } : {}),
     normalized: parsed.flags.has("--norm"),
     dryRun: parsed.flags.has("--dry-run"),
+    ...(layer !== undefined
+      ? { layer, operation: operation as "add" | "subtract" | "replace" }
+      : {}),
   };
 }
 

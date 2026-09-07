@@ -12,6 +12,8 @@ import {
   loadActiveDocument,
   readActiveDevelopState,
   commitDevelopState,
+  refineMaskLayer,
+  transformLayer,
 } from "@photoctl/render";
 import sharp from "sharp";
 import { expect, test } from "vitest";
@@ -148,6 +150,96 @@ test.each([false, true])(
     } finally {
       if (!closed) await library.close();
       await rm(cwd, { recursive: true });
+    }
+  },
+);
+
+test.each([false, true])(
+  "mask inspection respects refined placement and empty coverage (empty=%s)",
+  async (empty) => {
+    const cwd = await mkdtemp(join(tmpdir(), "photoctl-wb-refined-mask-"));
+    const libraryPath = join(cwd, "library");
+    const library = (await initializeLibrary(libraryPath)).handle;
+    const photoId = "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c079";
+    let closed = false;
+    try {
+      await library.query(
+        `WITH inserted AS (INSERT INTO photos (id, primary_original_id, w, h, orientation)
+      VALUES ($1, $1, 8, 6, 1) RETURNING id)
+      INSERT INTO originals (id, photo_id, kind, content_key, size, w, h, orientation)
+      VALUES ($1, $1, 'image', 'ck_refinementinspect', 1, 8, 6, 1)`,
+        [photoId],
+      );
+      const created = await createMaskLayers(library, libraryPath, {
+        photoId,
+        orientation: 1,
+        layers: [
+          {
+            name: "Corrected selection",
+            mask: rasterizeManualMask({ w: 8, h: 6 }, { kind: "box", bbox: [2, 2, 2, 2] }).mask,
+          },
+        ],
+      });
+      await refineMaskLayer(library, libraryPath, {
+        photoId,
+        layer: created.layers[0].layerId,
+        operation: empty ? "subtract" : "replace",
+        shape: { kind: "box", bbox: [2, 2, 2, 2] },
+      });
+      if (!empty)
+        await transformLayer(library, libraryPath, {
+          photoId,
+          orientation: 1,
+          layer: created.layers[0].layerId,
+          relative: true,
+          transform: { dx: 2, dy: 0, scale: 1, rotate: 0, flip: null, anchor: { x: 0, y: 0 } },
+        });
+      const document = (await loadActiveDocument(library, photoId))!;
+      await evaluateGraphNode({
+        database: library,
+        libraryPath,
+        photoId,
+        nodeId: document.roots.base,
+        source: async () => ({
+          image: {
+            w: 8,
+            h: 6,
+            data: new Float32Array(8 * 6 * 3).fill(0.2),
+            space: "scene-linear-rec2020",
+            orientationApplied: true,
+            whiteLevel: 1,
+            blackLevel: 0,
+            wbPreApplied: true,
+          },
+          provenance: {
+            locator: { kind: "online-file", volume_uuid: "synthetic", rel_path: "source.jpg" },
+            tier: "online-file",
+            w: 8,
+            h: 6,
+            decoderId: "synthetic",
+            decoderVersion: "1",
+          },
+        }),
+      });
+      await library.close();
+      closed = true;
+      const path = await runWorkbench(["masks", photoId], cwd, { PHOTOCTL_LIBRARY: libraryPath });
+      const html = await readFile(path, "utf8");
+      const images = [...html.matchAll(/src="data:image\/png;base64,([^"]+)"/gu)];
+      if (empty) {
+        expect(html).toContain("No covered pixels in the current develop crop.");
+        expect(images).toEqual([]);
+      } else {
+        const mask = await sharp(Buffer.from(images[1]![1]!, "base64"))
+          .removeAlpha()
+          .raw()
+          .toBuffer();
+        expect([...mask.subarray((2 * 8 + 4) * 3, (2 * 8 + 4) * 3 + 3)]).toEqual([255, 255, 255]);
+        expect([...mask.subarray((2 * 8 + 2) * 3, (2 * 8 + 2) * 3 + 3)]).toEqual([0, 0, 0]);
+      }
+    } finally {
+      if (!closed) await library.close();
+      await rm(cwd, { recursive: true, force: true });
     }
   },
 );
