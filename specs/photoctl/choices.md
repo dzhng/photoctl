@@ -6163,21 +6163,6 @@
   from provider responses, which can arrive before a canceled database write.
 - **Confidence:** High.
 
-### CI diagnostics — Retain only failed-test daemon logs briefly
-
-- **When:** Startup failure triage, 2026-09-06.
-- **The choice:** When a test daemon exits before it can answer, the caller reports its
-  private log path. A disposable CI machine otherwise disappears with that explanation.
-  Host test processes now use the job's temporary directory, and a failed test step saves only the
-  daemon's eight-character-named log files as a three-day GitHub artifact. It does not
-  save catalogs, photographs, environment dumps or logs from a developer's computer.
-- **The gap:** The plan required actionable failure evidence but did not specify CI log retention.
-- **The reach:** People with artifact access can read fixture paths and internal error details.
-  Public CLI responses still do not embed log contents; the upload does not change test outcomes.
-- **Verdict:** **Sound.** Preserve the missing explanation within existing CI instead of
-  guessing at failures or adding production diagnostics machinery.
-- **Confidence:** High.
-
 ### Generation exclusions — Report guidance rather than pretend native conditioning
 
 - **When:** Generate negative-guidance pass, 2026-09-06.
@@ -6235,32 +6220,20 @@
   wording for new requests under a new guidance version and retain old records unchanged.
 - **Confidence:** Medium.
 
-### CI pressure — Observe the host without collecting test data
-
-- **When:** CI host-load diagnostic pass, 2026-09-06.
-- **The choice:** When many CI tests exceed their deadlines, the test step records a CPU-count
-  and memory snapshot, then one small host-load sample every five seconds. A failed run retains
-  that text beside its existing daemon logs for three days. The sampler stops when the test shell
-  exits without replacing the test's exit code. It records no process arguments, environment,
-  images or catalogs. This can show a busy or swapping host, but cannot identify which process
-  owns memory or prove why a specific test failed.
-- **The gap:** Existing failures had no host-pressure observation, so increasing deadlines or
-  changing worker scheduling would be based on symptoms rather than measured contention.
-- **The reach:** Existing Linux runner tools provide the observation without a new dependency,
-  telemetry service or production setting. The first sample is a since-boot average, not an
-  interval; future diagnosis must respect that distinction and preserve historical failures.
-- **Verdict:** **Sound.** Collect proportionate aggregate evidence before changing execution policy.
-- **Confidence:** High.
-
 ### Hosted smoke selection — Keep fast public-boundary checks
 
-- **When:** Explicit user CI-policy cutover, 2026-09-06; supersedes the host-load sampler above.
+- **When:** Explicit user CI-policy cutover, 2026-09-06; final-ledger reconciliation, 2026-09-08.
 - **The choice:** A push checks command exit classifications, socket framing, human-readable
   output and image-provider request controls. It builds TypeScript but does not compile the
   photo runtime, download models or run camera journeys. Local full-suite commands are unchanged.
 - **The gap:** The user chose a small hosted subset, leaving its exact membership to implementation.
 - **The reach:** `test:ci` owns the explicit selection. Green smoke means these boundaries passed,
   not that photographic quality or a release has been accepted. The full local gate still owns that.
+  Hosted failures retain their ordinary job output, not a separate daemon-log artifact.
+  This subset launches no daemon, so it needs neither host-load sampling nor daemon-log
+  uploads. If future smoke coverage launches background processes, choose diagnostics
+  for that actual workload. The CLI still reports a dead daemon's private local log path;
+  dropping hosted uploads does not remove that product diagnostic.
 - **Verdict:** **Sound.** A small deterministic boundary sample follows the user's policy without
   deleting broader coverage. Native-cache and host-load machinery are unnecessary for this gate.
 - **Confidence:** High.

@@ -23,6 +23,13 @@ generation parser, markup schema and fake adapter. These are corrections to audi
 text, not newly identified product defects. The final ledger still needs the
 cross-domain and build/verification coverage audits before replacement.
 
+The build/verification audit has returned. Its only alleged missing behavior was
+the former hosted daemon-log upload, which the smoke cutover removed. Root checked
+the actual workflow, smoke selection and CLI diagnostic path: the hosted subset
+starts no daemon, and the CLI still names a failed daemon's local log. Do not restore
+unused CI machinery or require a new user decision. The choices ledger now merges
+both obsolete hosted-log and host-pressure entries into the surviving smoke policy.
+
 ## Full-frame request controls
 
 The later choices audit exposed a missed contract in the earlier slice-level review:
