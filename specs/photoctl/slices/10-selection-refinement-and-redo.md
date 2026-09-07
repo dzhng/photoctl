@@ -80,7 +80,7 @@ and audit choices before committing, then the whole-spec gate once at final clos
 
 - [x] A: public durable redo
 - [x] B: local mask refinement
-- [ ] Integrated built/installed and photographic correction witness
+- [x] Integrated built/installed and photographic correction witness
 
 Redo's public command, daemon-restart and graph tests pass, including exact generated
 preview restoration with an unavailable provider and failed-edit/branch behavior.
@@ -92,7 +92,9 @@ Refinement's exact-grid and workbench-frame checks pass, including empty refill,
 soft coverage, content support, crop/straighten and later absolute/relative moves.
 Independent review found no actionable correctness defect. The integrated built
 CLI journey also passes correction, undo and paid-result redo without a new request;
-the installed journey remains part of final local closeout.
+the fresh installed journey also passes in the
+[local closeout](../assets/selection-redo-closeout-2026-09-07.md). That report
+separates corrected test failures and timing rechecks from the original full run.
 
 The [photographic witness](../assets/selection-refinement/README.md) passes bounded
 manual correction and exact revision restoration. Independent visual review keeps

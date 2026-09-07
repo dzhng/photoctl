@@ -18,11 +18,10 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
 
-**Current pickup:** complete integrated local verification of
-[selection refinement and redo](slices/10-selection-refinement-and-redo.md).
-Both features are implemented and pass focused/built-CLI checks; the photographic
-manual-correction witness is reviewed. Pairing presentation and external release
-evidence remain separate. Rendering is user-approved; do not reopen that approval.
+**Current pickup:** remaining pairing and external release evidence.
+[Selection refinement and redo](slices/10-selection-refinement-and-redo.md) are
+implemented and verified through built and fresh installed CLI journeys, with a
+reviewed photographic correction witness. Rendering is user-approved; do not reopen it.
 Generation input and reference-strength rules are user-approved in their owning slices.
 
 **Memory policy — explicit user direction, 2026-09-06:** 5 GB is an arbitrary investigation
@@ -42,30 +41,26 @@ running that suite on every push. Do not resume CI load profiling or native-cach
 for the smoke gate. Preserve all local checks and separate product performance bars.
 The [failure triage](assets/ci-triage.md) retains the real daemon fixes and their evidence.
 
-**First priority:** finish the current integrated gate and the remaining release
+**First priority:** finish pairing's remaining evidence and the external release
 requirements. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
 records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
-**Current local closeout — 2026-09-07:** verification on the preview-corrected code
-is complete but is **not a clean integrated pass**. The
-[current evidence](assets/preview-closeout-2026-09-07.md) records one host timeout,
-successful unchanged focused/Docker checks of that test, passing Rust and Docker
-stages, and macOS results with a corrected model-directory invocation. Fresh
-installed packages pass. Narrow triage did not reproduce the host timeout, including
-the unchanged neighboring tests; no product defect or latency-contract failure is
-established. Preserve the failed run, but do not repeat this diagnosis without new
-evidence or restart the full suite as a diagnostic loop.
-The [earlier clean gate](assets/local-closeout-2026-09-07.md) predates the
-[preview color correction](assets/outpaint-state-review.md#preview-correction).
-Neither result settles photographic or external release acceptance. The temporary
-model server and fixture service are stopped; local model serving does not prove
-public hosting.
+**Current local closeout — 2026-09-07:** the
+[selection/redo evidence](assets/selection-redo-closeout-2026-09-07.md) records the
+full host pass, two corrected Linux test-contract failures, passing real-model and
+fresh installed journeys, and a warm-show timing failure followed by an unchanged
+pass after host conditions changed. All local contracts have passing evidence;
+this is **not a clean single integrated run**. Preserve the failures and do not
+restart the full suite as a diagnostic loop. The temporary model server and
+fixture service are stopped. Public release execution remains unverified.
+Earlier [preview closeout](assets/preview-closeout-2026-09-07.md) and
+[clean-gate evidence](assets/local-closeout-2026-09-07.md) remain historical records.
 
 **User photographic approval is recorded** in the
 [current-set verdict](assets/camera-delivery-review/balanced-delivery/final-verdict.md).
 The following technical findings are historical evidence, not a request to obtain
 the same approval again; unresolved causes are not automatically release blockers.
-Selection refinement and public redo are scoped in the next implementation slice.
+Selection refinement and public redo are implemented and verified in their owning slice.
 [Camera delivery evidence](assets/camera-delivery-review/balanced-delivery/README.md)
 retains the all-reference breadth, preservation and residual-fidelity findings.
 Do not repeat completed breadth captures, recovery toggles or branch-origin comparisons.
@@ -120,8 +115,8 @@ a substitute for final integrated verification.
 **Remaining quality and external gates:**
 
 - [SAM](slices/11-segment.md): coarse photographic checks and ONNX/PyTorch parity pass;
-  detailed edges fail even against full upstream references. Implement the user-requested
-  local refinement workflow; do not call it an automatic edge-quality fix.
+  detailed edges fail even against full upstream references. The user-requested
+  local refinement workflow is implemented; do not call it an automatic edge-quality fix.
 - [Runtime acquisition](assets/ort-acquisition/README.md): one pinned Cargo-owned ORT recipe;
   ARM64 Mac/Linux evidence exists. Other targets, older Linux and actual public release
   acceptance remain open. [Model publication](slices/14-gold-exam-and-release.md#model-distribution)
@@ -169,7 +164,7 @@ revision participates in render/execution identity so corrected math bypasses de
 without deleting history.
 
 ### Global TODO
-- [ ] Local selection add/subtract/replace and public saved-state redo — `slices/10-selection-refinement-and-redo.md`
+- [x] Local selection add/subtract/replace and public saved-state redo — `slices/10-selection-refinement-and-redo.md`
 - [ ] Real camera JPEG pipeline and paired-by-default RAW/JPEG logical photos — `slices/04-paired-import.md`
 - [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
 - [x] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
