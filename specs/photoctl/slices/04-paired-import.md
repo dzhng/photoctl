@@ -98,7 +98,10 @@ separately from original-file membership so RAW/JPEG pairs do not inflate photo 
 Copy both selected originals byte-for-byte, with pair-atomic catalog publication and
 cleanup of failed copies. Relocation removes stale locators only for the corresponding
 original. Logical removal covers both originals using the established recoverable
-trash/rollback owner. Never silently merge edited photos, split an established pair,
+trash/rollback owner. A locator is not ownership proof: before moving each source,
+verify its stored content identity using the same check as source reads. If it cannot
+be verified, leave that file untouched and report catalog-only removal with a warning.
+Never silently merge edited photos, split an established pair,
 or transfer an original already owned by a different photo during reimport.
 
 Tests cover paired/default and each explicit policy, RAW-only/JPEG-only inputs,

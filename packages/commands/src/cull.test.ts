@@ -1,7 +1,12 @@
-import { EnvVolumeResolver, initializeLibrary, newLibraryEntityId } from "@photoctl/library";
+import {
+  EnvVolumeResolver,
+  identifyFile,
+  initializeLibrary,
+  newLibraryEntityId,
+} from "@photoctl/library";
 import type { CommandRequest } from "@photoctl/protocol";
 import { ensurePhotoDocument } from "@photoctl/render";
-import { access, mkdir, mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test, vi } from "vitest";
@@ -446,6 +451,12 @@ test.each([false, true])(
       await mkdir(mount);
       await writeFile(source, "source");
       await seedPhoto(library.handle, id, "ck_6000000000000001", "2025-01-01T10:00:00Z");
+      const identity = await identifyFile(source);
+      await library.handle.query("UPDATE originals SET content_key = $2, size = $3 WHERE id = $1", [
+        id,
+        identity.contentKey,
+        identity.size,
+      ]);
       await seedLocator(library.handle, id, "frame.jpg");
       const graph = await ensurePhotoDocument(library.handle, { photoId: id, orientation: 1 });
       if (failDelete) {
@@ -517,6 +528,50 @@ test.each([false, true])(
     }
   },
 );
+
+test("remove from disk preserves a replacement at the original locator", async () => {
+  const root = await mkdtemp(join(tmpdir(), "photoctl-remove-replaced-"));
+  const library = await initializeLibrary(join(root, "library"));
+  const mount = join(root, "drive");
+  const source = join(mount, "frame.jpg");
+  const id = newLibraryEntityId();
+  try {
+    await mkdir(mount);
+    await writeFile(source, "original");
+    const identity = await identifyFile(source);
+    await seedPhoto(library.handle, id, identity.contentKey, null);
+    await library.handle.query("UPDATE originals SET size = $2 WHERE id = $1", [id, identity.size]);
+    await seedLocator(library.handle, id, "frame.jpg");
+    await writeFile(source, "replaced");
+    const result = await dispatch(
+      {
+        ...request("remove", [id, "--from-disk"]),
+        env: {
+          noDaemon: true,
+          volumeMap: `${mount}=test-volume:online`,
+          cacheRoot: join(root, "cache"),
+        },
+      },
+      { version: "test", library: library.handle },
+    );
+    expect(await readFile(source, "utf8")).toBe("replaced");
+    expect(result).toMatchObject({
+      ok: true,
+      warnings: [
+        {
+          code: "source_offline",
+          id,
+          message:
+            "The catalogued original could not be verified; the file at its locator was left untouched",
+        },
+      ],
+    });
+    expect((await library.handle.query("SELECT id FROM photos")).rows).toEqual([]);
+  } finally {
+    await library.handle.close();
+    await rm(root, { recursive: true });
+  }
+});
 
 test("rollback failure is surfaced with every path that could not be restored", async () => {
   await expect(

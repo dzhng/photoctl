@@ -25,6 +25,7 @@ import { basename, join } from "node:path";
 import { parseArguments } from "../arguments.js";
 import { batchEnvelope, resolveBatchInputs } from "../batch.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
+import { matchesCataloguedIdentity } from "../image-source.js";
 
 export async function rateCommand(
   args: string[],
@@ -270,8 +271,11 @@ export async function removeCommand(
         photo_id: string;
         volume_uuid: string;
         rel_path: string;
+        content_key: string;
+        content_hash: string | null;
+        size: number;
       }>(
-        `SELECT photo_id::text, volume_uuid, rel_path
+        `SELECT photo_id::text, volume_uuid, rel_path, content_key, content_hash, size::float8 AS size
          FROM files JOIN originals ON originals.id = files.original_id WHERE photo_id = ANY($1::uuid[]) ORDER BY photo_id, rel_path`,
         [ids],
       );
@@ -282,6 +286,22 @@ export async function removeCommand(
             code: "source_offline",
             id: file.photo_id,
             message: "The offline source was removed from the catalog but not from disk",
+          });
+          continue;
+        }
+        if (
+          !(await matchesCataloguedIdentity(
+            located.path,
+            file.content_key,
+            file.content_hash,
+            file.size,
+          ))
+        ) {
+          warnings.push({
+            code: "source_offline",
+            id: file.photo_id,
+            message:
+              "The catalogued original could not be verified; the file at its locator was left untouched",
           });
           continue;
         }

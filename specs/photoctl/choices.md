@@ -6307,6 +6307,26 @@
 - **Confidence:** High for full-resolution color sampling; medium for leaving
   existing caches unchanged, whose older appearance remains until regenerated.
 
+### Removal — Leave an unverifiable file at a reused locator untouched
+
+- **When:** Final pairing correctness review, 2026-09-08.
+- **The choice:** A user removes an old catalog photo whose filename now holds
+  another image. Remove the requested catalog entry, but leave the current file
+  untouched and explain that through the existing `source_offline` warning. As in
+  source reads, this means the catalogued original is unavailable, even when some
+  other bytes exist at its old address. The alternative is to refuse catalog
+  removal entirely until the old original returns.
+- **The gap:** Removal already allowed catalog-only progress for offline sources,
+  but did not specify how to treat a reused filename. A filename alone cannot
+  authorize moving unrelated bytes.
+- **The reach:** Reads and disk removal share the existing stored-identity check:
+  sampled content and size, plus full hash when available. This does not add a
+  full-hash-at-import requirement or protection against concurrent external writes.
+- **Verdict:** **Sound.** Preserve the unrelated file while allowing the explicit
+  catalog cleanup, with the partial disk effect visible in the result.
+- **Confidence:** High for preserving the file; medium for reusing the offline
+  warning rather than adding a new public warning code.
+
 ### Library configuration — Replace one validated setting at a time
 
 - **When:** Public-settings completion pass, 2026-09-07.

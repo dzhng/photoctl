@@ -29,18 +29,6 @@ export function selectedSourceLocator(
       };
 }
 
-export async function resolveOnlineImageSource(
-  photo: StoredPhoto,
-  resolver: VolumeResolver,
-  index = 0,
-): Promise<SelectedSource | undefined> {
-  const original = photo.originals.find((original) => original.id === photo.primaryOriginalId)!;
-  const file = original.files[index];
-  if (!file) return undefined;
-  const selected = await selectFileSource(photo, original, file, resolver);
-  return selected ?? (await resolveOnlineImageSource(photo, resolver, index + 1));
-}
-
 export async function resolveOnlineOriginalSource(
   photo: StoredPhoto,
   resolver: VolumeResolver,
@@ -105,68 +93,7 @@ export function fileDecodeSource(
     : undefined;
 }
 
-async function selectFileSource(
-  photo: StoredPhoto,
-  original: StoredOriginal,
-  file: StoredFile,
-  resolver: VolumeResolver,
-): Promise<SelectedSource | undefined> {
-  let path: string | undefined;
-  try {
-    const resolved = await resolver.resolve(file.volumeUuid, file.relPath);
-    path = resolved.online ? (resolved.path ?? undefined) : undefined;
-  } catch {
-    return undefined;
-  }
-  if (
-    !path ||
-    !(await matchesCataloguedIdentity(
-      path,
-      original.contentKey,
-      original.contentHash,
-      original.size,
-    ))
-  ) {
-    return undefined;
-  }
-  const probe = await probeImage(path);
-  if (!probe) return undefined;
-  if (probe.kind === "image") {
-    return {
-      file,
-      probe,
-      source: {
-        kind: "online-file",
-        path,
-        mediaType: probe.mediaType,
-        w: photo.w,
-        h: photo.h,
-        orientation: photo.orientation,
-        copyExact: probe.copyExact,
-      },
-    };
-  }
-  const full = chooseFullTier(file.embedded);
-  return full
-    ? {
-        file,
-        probe,
-        source: {
-          kind: "online-jpeg-range",
-          path,
-          mediaType: "image/jpeg",
-          offset: full.offset,
-          length: full.length,
-          w: full.width,
-          h: full.height,
-          orientation: photo.orientation,
-          copyExact: true,
-        },
-      }
-    : undefined;
-}
-
-async function matchesCataloguedIdentity(
+export async function matchesCataloguedIdentity(
   path: string,
   contentKey: string,
   contentHash: string | null,
