@@ -1,5 +1,6 @@
 import {
   PhotoctlError,
+  userSettingsSchema,
   type CommandRequest,
   type DoctorData,
   type Envelope,
@@ -58,6 +59,7 @@ import { reimagineCommand } from "./handlers/reimagine.js";
 import { relightCommand } from "./handlers/relight.js";
 import { generateCommand, type GenerateDependencies } from "./handlers/generate.js";
 import { markupCommand } from "./handlers/markup.js";
+import { settingsCommand } from "./handlers/settings.js";
 import {
   flagCommand,
   labelCommand,
@@ -86,6 +88,8 @@ export async function dispatch(
     if (request.verb === "version") {
       return { schema: 1, ok: true, data: { version: context.version }, warnings: [] };
     }
+    if (request.verb === "settings")
+      return await settingsCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "white_balance")
       return await whiteBalanceCommand(
         request.args,
@@ -328,20 +332,14 @@ export async function dispatch(
         );
         const storedModelBaseUrl = modelSettings.rows[0]?.value ?? null;
         const parsedModelBaseUrl =
-          typeof storedModelBaseUrl === "string" && URL.canParse(storedModelBaseUrl)
-            ? new URL(storedModelBaseUrl)
-            : null;
-        if (
-          storedModelBaseUrl !== null &&
-          (parsedModelBaseUrl === null ||
-            (parsedModelBaseUrl.protocol !== "http:" && parsedModelBaseUrl.protocol !== "https:"))
-        ) {
+          userSettingsSchema.shape.models_base_url.safeParse(storedModelBaseUrl);
+        if (!parsedModelBaseUrl.success) {
           throw new PhotoctlError("provider_unconfigured", "Invalid models_base_url setting", {
             reason: "models_base_url_invalid",
           });
         }
         const configuredModelBaseUrl =
-          (storedModelBaseUrl as string | null) ??
+          parsedModelBaseUrl.data ??
           `https://github.com/dzhng/photoctl/releases/download/v${encodeURIComponent(context.version)}/`;
         const modelDirectory = join(handle.path, "models");
         const completeManifest = completeModelManifest(modelManifest);

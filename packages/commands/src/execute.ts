@@ -29,7 +29,10 @@ export async function execute(
   context: DispatchContext,
 ): Promise<CommandExecution> {
   try {
-    if (request.verb === "version") {
+    if (
+      request.verb === "version" ||
+      (request.verb === "settings" && request.args.length === 1 && request.args[0] === "--help")
+    ) {
       return { envelope: await dispatch(request, context), events: [], stream: [] };
     }
     const path = commandLibraryPath(request);

@@ -1,4 +1,4 @@
-import { providerModelIdSchema } from "@photoctl/protocol";
+import { concreteModelIdSchema, type UserSettings } from "@photoctl/protocol";
 
 export const DEFAULT_MODELS = {
   edit: "openai/gpt-image-2",
@@ -6,14 +6,14 @@ export const DEFAULT_MODELS = {
   structured: "google/gemini-3.1-flash",
   embed: "google/gemini-embedding-2",
   upscale: "photoctl/fake-upscale-v1",
-} as const;
+} as const satisfies Required<UserSettings["models"]>;
 
 export type ModelPurpose = keyof typeof DEFAULT_MODELS;
 export type ResolvedModels = Record<ModelPurpose, string>;
 
 export function resolveModels(overrides: Partial<ResolvedModels> = {}): ResolvedModels {
   const resolved = { ...DEFAULT_MODELS, ...overrides };
-  for (const model of Object.values(resolved)) assertConcreteModel(model);
+  for (const model of Object.values(resolved)) concreteModelIdSchema.parse(model);
   return resolved;
 }
 
@@ -23,13 +23,5 @@ export function resolveModel(
   commandOverride?: string,
 ): string {
   const model = commandOverride ?? overrides[purpose] ?? DEFAULT_MODELS[purpose];
-  assertConcreteModel(model);
-  return model;
-}
-
-function assertConcreteModel(model: string): void {
-  providerModelIdSchema.parse(model);
-  if (model === "auto" || model === "latest" || model.endsWith("/latest")) {
-    throw new Error("Provider selection requires a concrete model id");
-  }
+  return concreteModelIdSchema.parse(model);
 }

@@ -3,7 +3,7 @@ import { pgDump } from "@electric-sql/pglite-tools/pg_dump";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
-import { PhotoctlError } from "@photoctl/protocol";
+import { PhotoctlError, userSettingsSchema } from "@photoctl/protocol";
 import { newLibraryEntityId } from "./identity.js";
 import { installLibraryExtensions, startDatabase } from "./database.js";
 import {
@@ -15,7 +15,7 @@ import {
 import { migrate, verifyLatestSchema, type MigrationResult } from "./migrations/runner.js";
 import { assertNoRestoreJournal } from "./restore-journal.js";
 
-export const DEFAULT_CACHE_MAX_BYTES = 20 * 1024 ** 3;
+export const DEFAULT_CACHE_MAX_BYTES = userSettingsSchema.shape.cache_max_bytes.parse(undefined);
 
 const { version: pgliteVersion } = JSON.parse(
   await readFile(
@@ -68,7 +68,7 @@ export async function readLibraryDiagnostics(handle: LibraryHandle): Promise<Lib
 export async function initializeLibrary(
   path: string,
   cacheMaxBytes = DEFAULT_CACHE_MAX_BYTES,
-  embedMode: "auto" | "manual" = "manual",
+  embedMode: "auto" | "manual" = userSettingsSchema.shape.embed_mode.parse(undefined),
 ): Promise<{ handle: LibraryHandle; libraryId: string; cacheMaxBytes: number }> {
   const libraryPath = resolve(path);
   try {
@@ -96,7 +96,7 @@ export async function initializeLibrary(
         "daemon_idle_ms",
         JSON.stringify(900_000),
         "models_base_url",
-        "null",
+        JSON.stringify(userSettingsSchema.shape.models_base_url.parse(undefined)),
       ],
     );
     await handle.query("UPDATE settings SET value = $2::jsonb WHERE key = $1", [

@@ -1,17 +1,12 @@
-import { providerModelIdSchema } from "@photoctl/protocol";
-import { z } from "zod";
+import { userSettingsSchema, type UserSettings } from "@photoctl/protocol";
 import { DEFAULT_GATEWAY_URL } from "./gateway.js";
-import { DEFAULT_MODELS, resolveModels, type ResolvedModels } from "./table.js";
+import { DEFAULT_MODELS, resolveModels } from "./table.js";
 
 interface SettingsDatabase {
   query<Row>(sql: string, parameters?: unknown[]): Promise<{ rows: Row[] }>;
 }
 
-export interface ProviderSettings {
-  models: Partial<ResolvedModels>;
-  generation: { upscale: "auto" | "off" };
-  providers: { upscale: Record<string, { configured: boolean }> };
-}
+export type ProviderSettings = Pick<UserSettings, "models" | "generation" | "providers">;
 
 export async function readProviderSettings(database: SettingsDatabase): Promise<ProviderSettings> {
   const result = await database.query<{ key: string; value: unknown }>(
@@ -19,9 +14,9 @@ export async function readProviderSettings(database: SettingsDatabase): Promise<
   );
   const values = Object.fromEntries(result.rows.map((row) => [row.key, row.value]));
   return {
-    models: modelOverridesSchema.parse(values.models ?? {}),
-    generation: generationSchema.parse(values.generation ?? {}),
-    providers: providersSchema.parse(values.providers ?? {}),
+    models: userSettingsSchema.shape.models.parse(values.models),
+    generation: userSettingsSchema.shape.generation.parse(values.generation),
+    providers: userSettingsSchema.shape.providers.parse(values.providers),
   };
 }
 
@@ -50,19 +45,3 @@ export function providerDiagnostics(
     },
   };
 }
-
-const modelOverridesSchema = z
-  .object({
-    edit: providerModelIdSchema.optional(),
-    generate: providerModelIdSchema.optional(),
-    structured: providerModelIdSchema.optional(),
-    embed: providerModelIdSchema.optional(),
-    upscale: providerModelIdSchema.optional(),
-  })
-  .strip();
-const generationSchema = z.object({ upscale: z.enum(["auto", "off"]).default("auto") }).strip();
-const providersSchema = z
-  .object({
-    upscale: z.record(z.string(), z.object({ configured: z.boolean() }).strip()).default({}),
-  })
-  .strip();

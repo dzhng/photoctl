@@ -15,3 +15,4 @@ export * from "./xmp/sync.js";
 export * from "./trash.js";
 export * from "./models.js";
 export * from "./generated-model-manifest.js";
+export * from "./settings.js";
