@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createConnection, createServer, type Socket } from "node:net";
@@ -579,9 +579,20 @@ test("removing the library mount causes a graceful daemon stop", async () => {
   });
   const pid = (started.json as { data: { pid: number } }).data.pid;
 
-  await rm(library, { recursive: true });
-
-  await expect(waitForProcessExit(pid)).resolves.toBeUndefined();
+  try {
+    // A disappearing mount removes the path atomically; recursive deletion races
+    // the running daemon's backup writes before the path has disappeared.
+    await rename(library, join(parent, "unmounted-library"));
+    await expect(waitForProcessExit(pid)).resolves.toBeUndefined();
+    await expect(stat(library)).rejects.toMatchObject({ code: "ENOENT" });
+  } finally {
+    try {
+      process.kill(pid, "SIGTERM");
+    } catch {
+      // The exit check below still requires the process to be gone.
+    }
+    await waitForProcessExit(pid);
+  }
 }, 30_000);
 
 test("the imported-image journey runs through one persistent daemon handle", async () => {

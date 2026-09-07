@@ -51,6 +51,21 @@
   pixels or adding a second placement system.
 - **Confidence:** High.
 
+## Verification fixtures follow the behavior, not incidental scheduling — sound
+
+- **When:** Selection/redo closeout, 2026-09-07.
+- **The choice:** Compare model-download URLs without arrival order, preserving
+  exact values and multiplicity. Simulate an unavailable library by atomically
+  renaming its path, not recursively deleting files beneath a live writer.
+- **The gap:** Earlier tests accidentally required one concurrent download order
+  and mixed disappearance detection with recursive-delete/backup races.
+- **The reach:** Hash checks, cache reuse, duplicate-download detection and the
+  daemon's existing exit budget remain intact. Neither correction changes product
+  scheduling, shutdown logic or performance thresholds.
+- **Verdict:** **Sound.** Tests retain their safety claims while removing unrelated
+  failure modes; deliberate extra downloads and a disabled watcher still fail.
+- **Confidence:** High.
+
 ## Reduced-RGB decode correction — sound
 
 - **When:** Reduced camera RAW correction, 2026-09-06.
