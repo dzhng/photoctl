@@ -8,8 +8,15 @@ Claude `opus` performed a read-only review of pairing, source selection, show/ex
 render/cache identities, removal and their consumers on source `de92d0f` (subsequent
 platform-policy edits do not change those implementations). It reported:
 
-- Import may lose the batch result after earlier units committed when a later unit
-  throws a non-usage `PhotoctlError`. **Pending root reproduction and correction.**
+- Import lost the batch result after earlier units committed when a later unit
+  threw a non-usage `PhotoctlError`. Root reproduced identity refusal at commit
+  and source disappearance at preparation, each with a valid photo before and
+  after the failing input. Both returned a terminal error without the already
+  committed ID and starved the later photo. Each regression was red before its
+  fix and green afterward. Expected per-unit errors now join the existing
+  partial result, with successful IDs and conflict paths; unexpected faults
+  still throw. All 28 import/reimport tests pass, as do typecheck and scoped lint
+  (existing warnings).
 - Disk removal trusts a locator without validating original identity. Root reproduced
   this through `dispatch`: replacing a source with different same-length bytes caused
   the replacement to be moved to Trash. The regression failed with `ENOENT` before
@@ -32,6 +39,19 @@ and the unused selector is deleted rather than retained as an alternate path.
 
 An independent Codex CLI review of the fix could not run: installed CLI 0.144.4
 rejects the configured model as requiring a newer client. This is not a review pass.
+
+Claude's focused import review proposed rethrowing `file_offline` and `volume_readonly`
+as batch-wide failures. Root rejected that classification: `sourceReadError` uses
+`file_offline` for individual-file permission/read errors, and `copyIntoLibrary` uses
+`volume_readonly` for an individual occupied destination. Neither code proves a
+batch-wide outage. The existing partial schema carries paths and human-readable
+reasons, not typed per-item error codes; this change retains that contract. Root also
+rejected the proposed mtime assertion as rollback proof: identity refusal occurs
+before that write. The separate paired-copy failure regression already checks empty
+photo/original/locator rows, cleanup of the first copied member and preservation of
+the conflicting destination. The new tests prove batch continuation, not rollback
+coverage by themselves. Cleanup failures remain ordinary thrown filesystem/database
+errors and are not converted to source conflicts.
 
 ## Revision navigation and provider retention
 

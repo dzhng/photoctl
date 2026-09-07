@@ -133,23 +133,31 @@ export async function importCommand(
     await consumeBoundedOrdered(
       units,
       IMPORT_CONCURRENCY,
-      async (unit) =>
-        unit.conflict
-          ? []
-          : await Promise.all(
-              unit.sources.map(async (source) =>
-                source.probe
-                  ? await prepareCandidate(source.path, externalResolver, source.probe)
-                  : undefined,
-              ),
-            ),
-      async (prepared, index) => {
+      async (unit) => {
+        try {
+          return unit.conflict
+            ? []
+            : await Promise.all(
+                unit.sources.map(async (source) =>
+                  source.probe
+                    ? await prepareCandidate(source.path, externalResolver, source.probe)
+                    : undefined,
+                ),
+              );
+        } catch (error) {
+          if (!(error instanceof PhotoctlError)) throw error;
+          return error;
+        }
+      },
+      async (preparation, index) => {
+        const prepared = preparation instanceof PhotoctlError ? [] : preparation;
         const candidate = prepared[0];
         const unit = units[index];
-        if (unit.conflict) {
+        const conflict = preparation instanceof PhotoctlError ? preparation.message : unit.conflict;
+        if (conflict) {
           conflicts.push({
             paths: unit.sources.map((source) => source.path),
-            reason: unit.conflict,
+            reason: conflict,
           });
         } else if (!candidate) {
           skippedUnsupported += 1;
@@ -169,7 +177,7 @@ export async function importCommand(
               libraryPath: handle.path,
             });
           } catch (error) {
-            if (!(error instanceof PhotoctlError) || error.code !== "usage") throw error;
+            if (!(error instanceof PhotoctlError)) throw error;
             conflicts.push({
               paths: unit.sources.map((source) => source.path),
               reason: error.message,

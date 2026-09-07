@@ -80,7 +80,10 @@ unrelated valid groups; `both` imports independently and needs no pairing decisi
 Explicit `raw` or `jpeg` requires an unambiguous selected original, not an
 unambiguous excluded counterpart.
 Conflicts use the existing partial-failure result, not warning-only success, so a
-caller cannot mistake unadmitted photos for a completed import. Content inspection
+caller cannot mistake unadmitted photos for a completed import. Expected per-unit
+read, identity and copy errors join that result; successful photo IDs remain visible
+and unrelated units continue. Unexpected faults still abort instead of being hidden
+as source conflicts. Content inspection
 reports progress before catalog admission; total elapsed time includes both phases.
 A corrupt counterpart must not hide a valid survivor. An explicit single-file
 import remains scoped to that file; directory import discovers companions.

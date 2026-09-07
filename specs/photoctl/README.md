@@ -20,11 +20,11 @@ update this handoff, and continue until every requirement is verified—not mere
 Delegate straightforward tasks to Claude Code with the user-approved `opus` alias;
 the integrating agent must review its changes and verification before accepting them.
 
-**Current pickup:** verify the pairing review's partial-import failure finding, then
-finish pairing presentation and whole-spec review. The review also reproduced removal
-of a replacement file at a stale locator; removal now checks original identity before
-moving a source. [Review evidence](assets/final-correctness-review.md) records scope
-and outstanding findings. The
+**Current pickup:** finish pairing presentation and whole-spec review. The pairing
+review's lost partial-import results and unsafe stale-locator removal are corrected
+with red/green regressions; an unused source selector is removed.
+[Review evidence](assets/final-correctness-review.md) records scope and reviewer
+findings, including the root's verification and dispositions. The
 [emulated checkpoint](assets/ort-acquisition/README.md#linux-x64-emulated-checkpoint--2026-09-07)
 passes package loading but fails model inference under Docker's default x64 emulator.
 The same optimized arithmetic binary and unchanged addon pass their reduced probes

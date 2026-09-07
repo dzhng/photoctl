@@ -9,11 +9,86 @@ import {
   stat,
   readFile,
   readdir,
+  utimes,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test, vi } from "vitest";
 import { dispatch } from "./dispatch.js";
+
+test.each(["identity", "missing"])(
+  "%s failure preserves completed import results and does not starve later photos",
+  async (failure) => {
+    const root = await mkdtemp(join(tmpdir(), "photoctl-import-partial-"));
+    const drive = join(root, "drive");
+    const library = await initializeLibrary(join(root, "library"));
+    try {
+      await mkdir(drive);
+      const changed = join(drive, "b.JPG");
+      await copyFile(resolve("fixtures/camera/DSC00103.JPG"), changed);
+      const request = {
+        verb: "import",
+        args: [changed, "--link"],
+        cwd: root,
+        env: {
+          noDaemon: true,
+          cacheRoot: join(root, "cache"),
+          volumeMap: `${drive}=partial-drive:online`,
+        },
+      };
+      expect(await dispatch(request, { version: "test", library: library.handle })).toMatchObject({
+        ok: true,
+      });
+      const before = await stat(changed);
+      if (failure === "identity")
+        await utimes(changed, before.atime, new Date(before.mtimeMs + 60_000));
+      await copyFile(resolve("fixtures/camera/DSC08819.JPG"), join(drive, "a.JPG"));
+      await copyFile(resolve("fixtures/camera/DSC00107.JPG"), join(drive, "c.JPG"));
+      const result = await dispatch(
+        { ...request, args: [drive, "--link"] },
+        {
+          version: "test",
+          library: library.handle,
+          emit: async (event) => {
+            if (
+              failure === "missing" &&
+              event.event === "progress" &&
+              event.phase === "inspect" &&
+              event.done === event.total
+            )
+              await rm(changed);
+          },
+        },
+      );
+      const admitted = await library.handle.query<{ photo_id: string }>(
+        "SELECT originals.photo_id::text FROM files JOIN originals ON originals.id = files.original_id WHERE rel_path IN ('a.JPG', 'c.JPG') ORDER BY rel_path",
+      );
+      expect(result).toMatchObject({
+        ok: false,
+        code: "partial",
+        data: {
+          imported: 2,
+          already_present: 0,
+          skipped_conflicts: 1,
+          ids: admitted.rows.map((row) => row.photo_id),
+          conflicts: [
+            {
+              paths: [changed],
+              reason:
+                failure === "identity"
+                  ? "The file at this locator changed before its full identity was recorded"
+                  : `File not found: ${changed}`,
+            },
+          ],
+        },
+      });
+      expect(admitted.rows).toHaveLength(2);
+    } finally {
+      await library.handle.close();
+      await rm(root, { recursive: true });
+    }
+  },
+);
 
 test("paired import is one logical photo with independently identified RAW and JPEG originals", async () => {
   const root = await mkdtemp(join(tmpdir(), "photoctl-paired-"));
