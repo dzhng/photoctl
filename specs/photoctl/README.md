@@ -143,8 +143,10 @@ a substitute for final integrated verification.
   ARM64 Mac/Linux evidence exists. Other targets, older Linux, public model hosting and full
   release acceptance remain open. Release tags publish packages—never use them as experiments.
 - [Release](slices/14-gold-exam-and-release.md): mounted gold execution is proved;
-  photographic delivery, actual Classic sidecars and G3 SSH-capable Mac proof remain
+  photographic delivery and G3 SSH-capable Mac proof remain
   open. Do not require reconnection merely to continue fixture development.
+  [Lightroom interoperability verification is non-blocking](slices/14-gold-exam-and-release.md#lightroom-interoperability-policy)
+  by explicit user direction; retain the implemented XMP behavior and regression tests.
 - [Generation controls](slices/13-generative-extras-and-markup.md#original-command-controls-still-open):
   negative and reference-strength guidance are implemented and honestly reported; higher-strength
   means more variation provisionally, pending the user's product choice.
@@ -537,7 +539,7 @@ migrate daemon(start|stop|status) embed decode render presets(show) search graph
 | Live multimodal embedding dialect | post-09c purpose-key smoke | named one-photo candidate may run only after explicit command or saved auto consent; remains provisional until accepted |
 | Lossless M/S pseudo-RAW and portrait orientation | 07b probe; 14 fixtures | committed uncompressed, lossless-L (original tag 7), and lossy fixtures |
 | SAM 2.1 ONNX hosting URL | 11a | export script committed; download URL `settings.models_base_url` |
-| Founder checklist (Classic masters + XMP) | 04/14 | hand-authored Classic-style sidecars in `fixtures/xmp/` |
+| Classic interoperability evidence (optional) | 04/14 | authored fixtures remain; [actual Classic verification is non-blocking](slices/14-gold-exam-and-release.md#lightroom-interoperability-policy) |
 
 ## Human review checkpoints (non-blocking)
 

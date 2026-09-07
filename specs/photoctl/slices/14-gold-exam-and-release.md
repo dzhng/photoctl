@@ -15,6 +15,14 @@ audit. The full-feature run also executes the keyless fake-adapter reimagine and
 render/node/artifact hashes and paginated graph inspection from the packed CLI, and proves missing live upscaler credentials do not
 block release. A configured live adapter remains smoke evidence, never a release prerequisite.
 
+### Lightroom interoperability policy
+
+**User direction, 2026-09-07:** actual Lightroom Classic interoperability testing and
+verification are optional, not spec-completion or release blockers. Keep the XMP
+implementation and existing regression coverage. A genuine Classic-produced sidecar
+may strengthen interoperability evidence later, but its absence must not hold up
+the spec. Do not relabel authored Classic-style fixtures as verified Classic output.
+
 ## Checkpoint (real input): three real JPEGs — professional "not broken"; `people` retune is data-only. Use
 `compare-screenshots` against their accepted pre-generation render when applicable and run an unprimed `screenshot-critique` last;
 review is non-blocking per the root rule.
@@ -132,8 +140,9 @@ owns the earlier partial mounted-card journey; the mounted gold evidence above n
 records the prescribed exam separately.
 Do not list camera samples or compression coverage as missing, or assume the camera remains mounted.
 
-Actual Lightroom Classic sidecars and an SSH-capable Mac session
-for [G3](../assets/gates/G3-ciraw-headless.md) remain missing acceptance evidence. Earlier localhost
+An SSH-capable Mac session for [G3](../assets/gates/G3-ciraw-headless.md) remains
+missing acceptance evidence. Actual Classic sidecars are optional under the
+Lightroom interoperability policy above. Earlier localhost
 SSH probes were refused; that does not establish whether another suitable Mac exists. Classic-style
 authored fixtures do not prove an actual Classic export. No privacy or Remote Login settings have
 been changed to obtain these inputs. A local fixture run or clean-prefix install cannot retroactively
