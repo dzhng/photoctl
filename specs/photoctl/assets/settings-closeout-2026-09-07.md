@@ -19,6 +19,14 @@ The shared built/installed journey verifies saved values after daemon restart,
 doctor's use of a mirror, reset to the running CLI version's release URL, and
 no-daemon visibility. No model download, paid provider or camera access was needed.
 
+A subsequent built-CLI smoke on `fe4315e` selected a loopback mirror through
+`settings set`, then fetched both real pinned ONNX files with `doctor --fetch-models`
+into a disposable library. Independent SHA-256 checks match the committed encoder
+and decoder hashes. An initial over-escaped JSON argument returned usage without
+changing settings; the correctly quoted command passed. The temporary server is
+stopped and its disposable library removed; retained source models are unchanged.
+This proves mirror configuration through download, not public hosting.
+
 Independent review found overly strict response parsing; the corrected response
 schemas ignore additive fields while writes remain strict. Re-review was clean.
 The separate Codex CLI review could not run because the installed CLI cannot use

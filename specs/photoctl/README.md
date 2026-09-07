@@ -17,6 +17,8 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
+Delegate straightforward tasks to Claude Code with the user-approved `opus` alias;
+the integrating agent must review its changes and verification before accepting them.
 
 **Current pickup:** remaining pairing and external release evidence.
 [Public library settings](slices/09-settings.md) now close the deferred writer,
