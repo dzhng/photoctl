@@ -7,7 +7,7 @@ photographs through the same render-frame model as other photographic layers.
 Their result remains a removable layer. Existing strength/intensity is unchanged:
 versioned provider guidance and one constant blend coverage, not latent denoise.
 
-**Provisional input policy, pending the user's answer:** use the current photographic
+**User-approved input policy, 2026-09-07:** use the current photographic
 result, excluding final markup. This includes prior retouch/fill/outpaint layers.
 The alternative is the developed original branch; it must not be silently substituted
 or implemented as a runtime heuristic. Do not add a new CLI option just to preserve

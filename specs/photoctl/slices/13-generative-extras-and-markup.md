@@ -57,9 +57,9 @@ prompt; the immutable generation request and attempt journal retain the same rec
 is refused before library/provider work. The existing gateway adapter applies guidance on both
 text and reference routes; real HTTP fixtures verify transmitted text and saved provenance.
 
-Reference `--strength` is optional versioned variation guidance: provisionally, higher means
+Reference `--strength` is optional versioned variation guidance: higher means
 more freedom to vary, with zero asking for closest preservation and one allowing greatest variation.
-This direction remains a reversible product interpretation, not user approval. Unlike reimagine,
+This direction was approved by the user on 2026-09-07. Unlike reimagine,
 standalone generation has no editable base to blend: zero is not an exact-copy guarantee and no
 value is a native denoise setting. The optional `reference_strength` record retains the requested
 number, applied guidance mode, version and actual provider prompt in the public result, immutable

@@ -1,6 +1,12 @@
 # Current photographic delivery verdict
 
-**Not accepted as a complete delivery set.** The remaining actionable concern is
+**User acceptance, 2026-09-07:** after reviewing the presented current delivery
+examples, David said “the rendering looks fine.” This closes the user photographic
+approval requirement for the current rendering; it does not assert pixel-perfect
+decoding or resolve the causes of every residual described below. Selection-edge
+quality is separate and was not approved.
+
+**Historical technical review — not accepted as a complete delivery set.** The remaining actionable concern is
 colored highlight boundaries, especially the candle and bridge lights. This is
 not a rejection of flat clipped cores, subdued exposure, or the already accepted
 interpolation correction. No new renderer defect is causally established here.

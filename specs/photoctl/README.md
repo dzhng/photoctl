@@ -18,6 +18,11 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
 
+**Next implementation:** [selection refinement and redo](slices/10-selection-refinement-and-redo.md).
+Implement both on the existing layer/revision owners, then finish pairing presentation
+and remaining release gates. Rendering is user-approved; do not reopen that approval.
+Generation input and reference-strength rules are user-approved in their owning slices.
+
 **Memory policy — explicit user direction, 2026-09-06:** 5 GB is an arbitrary investigation
 canary, not a hard release limit or an optimization target. A crossing alone must not block
 delivery or trigger extended accounting/profiling work. The implementer may raise it when
@@ -54,7 +59,13 @@ Neither result settles photographic or external release acceptance. The temporar
 model server and fixture service are stopped; local model serving does not prove
 public hosting.
 
-**Camera photographic acceptance remains open.** The gold exam exports all ten images,
+**User photographic approval is recorded** in the
+[current-set verdict](assets/camera-delivery-review/balanced-delivery/final-verdict.md).
+The following technical findings are historical evidence, not a request to obtain
+the same approval again; unresolved causes are not automatically release blockers.
+Selection refinement and public redo remain separate capability gaps to scope.
+
+**Historical camera photographic status.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and
 conspicuous highlight false color are corrected; all 18 saved RAW references pass native
 view/export and integrity checks. Residual fine-detail fidelity remains unresolved.
@@ -184,6 +195,7 @@ revision participates in render/execution identity so corrected math bypasses de
 without deleting history.
 
 ### Global TODO
+- [ ] Local selection add/subtract/replace and public saved-state redo — `slices/10-selection-refinement-and-redo.md`
 - [ ] Real camera JPEG pipeline and paired-by-default RAW/JPEG logical photos — `slices/04-paired-import.md`
 - [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
 - [x] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
