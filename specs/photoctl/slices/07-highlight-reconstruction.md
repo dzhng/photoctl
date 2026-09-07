@@ -279,9 +279,10 @@ The [current-set verdict](../assets/camera-delivery-review/balanced-delivery/fin
 now records that per-defect judgment across every saved reference. Candle/bridge
 highlight boundaries are the next causal target; the review is complete, but C
 remains open. The linked current edge samples exclude recovery at sampled bridge
-pixels. The candle's full-frame, hash-matched preset probe accounts for only part of
-the delivery difference; match retained canonical pixels and the actual output path
-before assigning the remainder to encoding or proposing another fidelity change.
+pixels. The candle's matched canonical/output control isolates its additional sampled
+delivery chroma to the JPEG quality-88 round trip. Do not patch recovery for that compression
+effect; the upstream bridge color remains the next distinct causal target. Default
+quality is unchanged, and a numeric sample comparison does not accept a new setting.
 New or exaggerated colored rims or serrated transitions require a bounded causal
 comparison followed by a separately verifiable fidelity pass. Uncertain optical
 versus decoder origin stays a named uncertainty, not an inferred success. Interior

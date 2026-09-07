@@ -75,8 +75,19 @@ people dictionary against the gold report's develop hash and applied it at nativ
 size before sampling. At that location it produces `[255,240,241]` after display
 clipping, versus delivery `[255,236,251]`. Thus develop explains the loss of neutral
 white but not the full blue-versus-green separation in that delivery sample.
-Next match these values to the retained canonical artifact and actual output
-conversion/encoding path; the difference does not yet isolate JPEG compression.
+The [canonical/output control](candle-output-proof.json) subsequently matches those
+developed samples exactly to the retained artifact. Public JPEG re-encoding from
+that artifact reproduces every decoded pixel of the gold delivery. The same public
+output path as PNG yields `[255,240,241]`, whereas JPEG quality 100 yields
+`[255,242,242]`. At the three retained candidate locations, PNG equals the clipped
+pre-encode samples and quality 88 adds the conspicuous blue/green separation.
+This isolates that additional candle chroma to the JPEG round trip, not a new recovery
+defect. Already-colored developed pixels remain separate; this does not certify all
+flame transitions or accept a new default quality. No encoder setting changed.
+Independent numerical review confirms the controls, including all twelve scratch
+sample points. Both JPEG variants use 4:4:4: this is not evidence of chroma subsampling.
+The same decoder read both JPEGs; separating encoder versus decoder contribution
+would require another decoder and is unnecessary for excluding native recovery here.
 Applying the preset to an isolated crop would change the spatial-operator context
 and was not used.
 The pixel selectors only locate pink candidates; neither their count nor absence
@@ -90,6 +101,10 @@ coordinates; both are now explicit in the evidence.
 The candle and bridge detail PNGs opened in Preview at 04:23:44 UTC. After about
 five minutes without feedback, the evidence-based not-accepted verdict was retained
 and close commands targeted those two documents. Silence is not photographic sign-off.
+
+The next fidelity target is upstream bridge chroma, not another candle recovery
+patch. Any quality/file-size policy change needs an explicit photographic comparison;
+the existing quality control already permits higher-quality or lossless delivery.
 
 No API, schema, runtime policy or acceptance threshold changed. This evidence review
 does not require repeating the successful integrated local test gate and does not

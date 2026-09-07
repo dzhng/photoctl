@@ -1,0 +1,110 @@
+{
+  "artifactHash": "a_1d323721525db94662922e4a039b5c4b5ba4474579dd24cef8e46d89afee7d5f",
+  "preset": {
+    "format": "jpeg",
+    "quality": 88,
+    "template": "{stem}",
+    "onCollision": "rename"
+  },
+  "allDecodedPixelsMatchGold": true,
+  "reencodedDecodedSha256": "ac5f1d562c95390fef739477a99c82be6ec70020b88b9077ca33baff9aa2cc71",
+  "goldDecodedSha256": "ac5f1d562c95390fef739477a99c82be6ec70020b88b9077ca33baff9aa2cc71",
+  "samples": [
+    {
+      "xy": [
+        2054,
+        3807
+      ],
+      "canonicalScene": [
+        1.1932700872421265,
+        0.7972751259803772,
+        0.7694051861763
+      ],
+      "canonicalMatchesProbe": true,
+      "preencode": [
+        255,
+        224,
+        226
+      ],
+      "jpeg88": [
+        255,
+        224,
+        239
+      ],
+      "png": [
+        255,
+        224,
+        226
+      ],
+      "jpeg100": [
+        255,
+        225,
+        227
+      ]
+    },
+    {
+      "xy": [
+        2261,
+        4080
+      ],
+      "canonicalScene": [
+        1.1940088272094727,
+        0.9059117436408997,
+        0.8879245519638062
+      ],
+      "canonicalMatchesProbe": true,
+      "preencode": [
+        255,
+        240,
+        241
+      ],
+      "jpeg88": [
+        255,
+        236,
+        251
+      ],
+      "png": [
+        255,
+        240,
+        241
+      ],
+      "jpeg100": [
+        255,
+        242,
+        242
+      ]
+    },
+    {
+      "xy": [
+        2096,
+        3799
+      ],
+      "canonicalScene": [
+        1.1953564882278442,
+        0.8828802108764648,
+        0.865835964679718
+      ],
+      "canonicalMatchesProbe": true,
+      "preencode": [
+        255,
+        237,
+        238
+      ],
+      "jpeg88": [
+        254,
+        236,
+        250
+      ],
+      "png": [
+        255,
+        237,
+        238
+      ],
+      "jpeg100": [
+        254,
+        236,
+        236
+      ]
+    }
+  ]
+}
