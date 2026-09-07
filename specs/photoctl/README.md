@@ -35,24 +35,22 @@ running that suite on every push. Do not resume CI load profiling or native-cach
 for the smoke gate. Preserve all local checks and separate product performance bars.
 The [failure triage](assets/ci-triage.md) retains the real daemon fixes and their evidence.
 
-**First priority:** resume camera photographic acceptance and the remaining release
-requirements below. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
+**First priority:** resolve the local host-test timing uncertainty below, then resume
+camera photographic acceptance and the remaining release requirements. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
 records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
-**Local closeout — 2026-09-07:** the corrected integrated test sequence passes all
-root test stages: host TypeScript, Rust, Docker TypeScript/real models, and macOS
-including fresh release packages. The [closeout evidence](assets/local-closeout-2026-09-07.md)
-retains the complete log and the earlier failures separately. GitHub's small smoke
-gate also passes. Do not repeat these gates merely because external acceptance
-is unavailable. Local pinned-model downloads do not settle public hosting, and
-the temporary download server is stopped. Continue the remaining quality and
-external requirements below; the full spec is not complete.
-
-The later [preview color correction](assets/outpaint-state-review.md#preview-correction)
-passes its focused 34-test gate, typecheck and lint. The full integrated result above
-predates that encoder change; it is not a current whole-release verification claim.
-The [fresh installed-package gate](slices/14-gold-exam-and-release.md#portable-gold-evidence)
-also passes with that correction; it does not replace the remaining external or photographic gates.
+**Current local closeout — 2026-09-07:** verification on the preview-corrected code
+is complete but is **not a clean integrated pass**. The
+[current evidence](assets/preview-closeout-2026-09-07.md) records one host timeout,
+successful unchanged focused/Docker checks of that test, passing Rust and Docker
+stages, and macOS results with a corrected model-directory invocation. Fresh
+installed packages pass. Next resolve the host timing uncertainty narrowly; do not
+restart the full suite as a diagnostic loop or alter product behavior to fit it.
+The [earlier clean gate](assets/local-closeout-2026-09-07.md) predates the
+[preview color correction](assets/outpaint-state-review.md#preview-correction).
+Neither result settles photographic or external release acceptance. The temporary
+model server and fixture service are stopped; local model serving does not prove
+public hosting.
 
 **Camera photographic acceptance remains open.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and
