@@ -56,10 +56,12 @@ without dependency resolution against the wheel-only index, then resolve pinned
 dependencies from PyPI; the wheel index cannot satisfy the complete requirements.
 This proves the exporter, not an actual public tag or npm publication.
 
-Native jobs consume the prepared model artifact directly. This avoids requiring a
-public model URL for a release that does not exist yet. Hosted release verification
-checks actual native/model loading, macOS packaging, lint, types and smoke behavior;
+The Apple Silicon verification job consumes the prepared model artifact directly.
+This avoids requiring a public model URL for a release that does not exist yet. Hosted release verification
+checks Apple Silicon native/model loading and packaging, lint, types and smoke behavior;
 the complete suite remains a local release-preparation gate under the root policy.
+The existing Intel/Linux package builds remain, but their model and packaged-runtime
+verification is not required. Building those packages is not a claim of platform acceptance.
 
 All packages, model files, provenance, hashes and the SAM license are attached to
 one draft release before it is published. Public model downloads are hash-verified

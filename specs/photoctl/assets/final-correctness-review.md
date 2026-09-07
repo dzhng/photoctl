@@ -22,6 +22,13 @@ boundaries before accepting the following dispositions:
 - Actual public publication remains unverified and needs user authority. No tag or
   publish action was taken for verification.
 
+The root's later executable-policy sweep found that the tag workflow still ran
+Intel/Linux model checks despite the documented scope removal. Its model download,
+native/model verification and packed-runtime verification now target only the
+Apple Silicon matrix entry. Existing platform builds and artifact publication remain
+unchanged. A parsed-YAML policy check failed on the old workflow and passed afterward;
+this is configuration verification, not execution of a release or hosted native gate.
+
 The audit did not prove every earlier slice or consolidate the choices ledger. Pairing
 layout and automatic selection quality remain separate, unresolved acceptance items.
 

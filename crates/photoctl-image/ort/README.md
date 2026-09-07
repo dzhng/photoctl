@@ -40,6 +40,7 @@ or damaged completed archive is reported with its exact cache entry rather than
 silently switching runtime implementations. Only that disposable entry needs
 removal to retry; no project source or shared cache is reset.
 
-Platform acceptance still requires the real native load, model/CLI, and packaged
-linkage gates. Successful compilation on one host establishes neither another
-platform's acceptance nor an older Linux ABI floor.
+The [root verification policy](../../../README.md#verification-policy) names the
+required acceptance target. A claim of platform acceptance needs real native load,
+model/CLI and packaged-linkage evidence; a successful build alone supplies none of
+those claims for Intel/Linux or an older Linux ABI floor.
