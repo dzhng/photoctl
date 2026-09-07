@@ -88,9 +88,11 @@ resume script used `--stars` and continued without repeating the import. Both
 attempts remain recorded. No actual unplug/reconnect test was performed.
 
 This is **not** the shared gold exam: it used an exposure adjustment and three
-exports, not the prescribed people preset and ten exports. The exact mounted-drive
-journey remains open. A rerunnable fixture journey cannot
-retroactively replace that missing live-drive evidence.
+exports, not the prescribed people preset and ten exports. The subsequent
+[mounted gold run](mounted-gold-2026-09-07/README.md) now proves that exact mechanical
+journey through a fresh installed CLI. It does not repeat explicit camera-JPEG access
+in the same catalog, so pairing slice D's combined witness remains incomplete.
+A rerunnable fixture journey cannot retroactively replace that missing evidence.
 
 ## Presentation evidence remains incomplete
 

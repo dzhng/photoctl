@@ -105,13 +105,17 @@ the local fixture package gate does not establish real-drive or photographic acc
   originals, explicit camera-JPEG access, and raw/jpeg/both alternatives are integrated.
   Fixture source-selection/orientation review and shared built/installed pairing journeys pass;
   [pairing evidence](assets/paired-import-review.md) records their boundaries. Finish workbench presentation
-  and real-drive acceptance. Use a clean-start development
+  and the remaining same-catalog camera-JPEG witness. Use a clean-start development
   schema, never add migration/compatibility machinery or reset a real library.
 
 The camera may stay unplugged for development. All 18 RAW/JPEG pairs are permanent, hash-verified
 references, covering the card's observed format/crop/orientation groups.
-[Fixture provenance](../../fixtures/camera/README.md) owns this claim; the 431-pair mounted
-development run was not the exact gold/packed acceptance journey.
+[Fixture provenance](../../fixtures/camera/README.md) owns this claim. The
+[mounted gold evidence](assets/mounted-gold-2026-09-07/README.md) now proves the prescribed
+mechanical journey through a fresh packed install. Its ten same-scene deliveries do
+not establish broad photographic acceptance; explicit camera-JPEG access from that
+exact catalog remains unverified. The test daemon is stopped; do not access the camera
+again after telling the user it can be unplugged.
 
 **Do not reimplement completed owners:** source-specific import/locators, bounded culling,
 retained offline export, canvas sampling/source promotion, source-only SAM geometry, public undo,
@@ -135,9 +139,9 @@ a substitute for final integrated verification.
 - [Runtime acquisition](assets/ort-acquisition/README.md): one pinned Cargo-owned ORT recipe;
   ARM64 Mac/Linux evidence exists. Other targets, older Linux, public model hosting and full
   release acceptance remain open. Release tags publish packages—never use them as experiments.
-- [Release](slices/14-gold-exam-and-release.md): exact mounted gold/packed journey, actual
-  Classic sidecars and G3 SSH-capable Mac proof remain unconfirmed. Do not require reconnection
-  merely to continue fixture development.
+- [Release](slices/14-gold-exam-and-release.md): mounted gold execution is proved;
+  photographic delivery, actual Classic sidecars and G3 SSH-capable Mac proof remain
+  open. Do not require reconnection merely to continue fixture development.
 - [Generation controls](slices/13-generative-extras-and-markup.md#original-command-controls-still-open):
   negative and reference-strength guidance are implemented and honestly reported; higher-strength
   means more variation provisionally, pending the user's product choice.

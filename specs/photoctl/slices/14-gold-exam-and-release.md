@@ -103,8 +103,9 @@ pre-existing files whose match to the requested render has not been verified.
 
 `--source-kind fixture|real|unverified` records the operator's classification; omission means
 unverified, and even `real` never records human acceptance. Fixture gates name themselves explicitly.
-Use `--out assets/gold-exam/<run>` to retain an accepted evidence bundle. The camera supplied
-real inputs and permanent reference pairs, but the exact mounted-drive exam remains unverified.
+Use `--out assets/gold-exam/<run>` to retain an evidence bundle. The
+[mounted-camera run](../assets/mounted-gold-2026-09-07/README.md) proves the prescribed
+mechanical exam through a fresh packed install; photographic acceptance remains open.
 The default output-folder behavior is unchanged.
 
 The packed fixture gold and full-feature journey passed together with manifest verification. Focused
@@ -127,11 +128,12 @@ defects must not keep triggering the same diagnosis.
 The [camera reference collection](../../../fixtures/camera/README.md) retains real original pairs
 covering every observed format/crop/orientation group on the supplied card. The camera need not
 remain connected for development. [Paired-import evidence](../assets/paired-import-review.md)
-owns the partial mounted-card journey and distinguishes it from the prescribed gold exam.
+owns the earlier partial mounted-card journey; the mounted gold evidence above now
+records the prescribed exam separately.
 Do not list camera samples or compression coverage as missing, or assume the camera remains mounted.
 
-The exact mounted-drive gold exam, actual Lightroom Classic sidecars, and an SSH-capable Mac session
-for [G3](../assets/gates/G3-ciraw-headless.md) remain separate acceptance evidence. Earlier localhost
+Actual Lightroom Classic sidecars and an SSH-capable Mac session
+for [G3](../assets/gates/G3-ciraw-headless.md) remain missing acceptance evidence. Earlier localhost
 SSH probes were refused; that does not establish whether another suitable Mac exists. Classic-style
 authored fixtures do not prove an actual Classic export. No privacy or Remote Login settings have
 been changed to obtain these inputs. A local fixture run or clean-prefix install cannot retroactively
