@@ -30,6 +30,28 @@ starts no daemon, and the CLI still names a failed daemon's local log. Do not re
 unused CI machinery or require a new user decision. The choices ledger now merges
 both obsolete hosted-log and host-pressure entries into the surviving smoke policy.
 
+The cross-domain audit also returned. Root verified these dispositions:
+
+- `fill --move` already maps its non-subject-layer error to `usage`; the report
+  overlooked the exact-match branch. Message-based classification remains a
+  maintenance weakness, not the claimed current wrong exit class.
+- Retouch's mask is a full-raster, uncompressed Float32 artifact. Its pixel payload
+  is four bytes per pixel even for a small dot; calculate it from the actual raster
+  dimensions, not an informal camera label. Compact mask
+  storage is a possible optimization, not a demonstrated correctness failure or
+  authority to add a new storage/retention policy during this closeout.
+- Explicit fill strength supplies feathering in every fit mode; only the default
+  feather differs. The ledger must not imply that feathering belongs solely to free
+  fitting. Strict protection is measured outside the effective mask.
+- Markup participates in the active output and therefore in export. “Removable”
+  means ordinary undoable markup mutation, not an unimplemented clean-export flag.
+  Normalized fill movement retains its documented range; absolute base coordinates
+  remain available for exterior destinations. Neither observation proves missing
+  behavior in the current command contract.
+
+The audit did not inspect every native draw/heal or refresh implementation, and
+does not replace their existing implementation reviews and execution evidence.
+
 ## Full-frame request controls
 
 The later choices audit exposed a missed contract in the earlier slice-level review:

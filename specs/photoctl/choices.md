@@ -1004,6 +1004,10 @@
 - **When:** Effective-mask integration, 2026-09-05.
 - **The choice:** Strict/expand treat at least half coverage as selected, then use the existing square
   native dilation for expansion. Free fitting preserves fractional selection before its default feather.
+  Explicit `--strength` sets feathering in every fit mode, after that mode's threshold
+  and expansion; it is not provider denoising. Its versioned mapping is an absolute
+  base-pixel radius, so the same strength covers a larger fraction of a small JPEG
+  than of a full-resolution RAW. Without explicit strength, only free mode feathers.
   Expansion is bounded to 4096 base pixels. A declared whole-frame provider edit is refused only for
   strict mode; other fits still protect every sample outside the deterministic effective mask.
 - **The gap:** The plan named hard/expanded/free fits but did not specify the hard threshold or a radius
@@ -3470,6 +3474,11 @@
   its exact byte layout or media-type spelling.
 - **The reach:** Artifact hashes, node pins, evaluator dispatch, restore repair, and later manual/SAM producers all share one
   unambiguous mask identity without allowing RGB artifacts to pose as coverage.
+  Current retouch authoring stores a full-frame mask even for a small repair: a
+  7008×4672 raster consumes 130,965,504 mask-pixel bytes plus its TIFF header per
+  distinct mask. This is a storage tradeoff, not a measured memory failure. Cropped
+  or compressed mask storage is a possible later optimization; it does not authorize
+  collecting retained editing history or changing the user's memory-canary policy.
 - **Verdict:** **Sound.** The layout is minimal and deterministic, and the distinct media type keeps the storage boundary typed.
 - **Confidence:** High; exact-byte round trips and wrong-type/corruption regressions cover publication and restore.
 
@@ -4392,6 +4401,9 @@
   document. Pixel-edit consumers receive the markup-free underlying output, so retouch and future reconstruction operations cannot
   bake a removable presentation overlay into permanent pixels. A future GUI can edit vectors without acquiring a second rendering
   owner.
+  Export includes the active annotations, just as preview does. Clean delivery
+  currently requires an ordinary undoable markup removal; there is no export-only
+  annotation toggle. Treating markup as review-only would be a new product choice.
 - **Verdict:** **Sound.** The table owns current editability; the graph owns reproducible pixels; atomic projection keeps them equal.
 - **Confidence:** High.
 
