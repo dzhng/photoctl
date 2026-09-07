@@ -56,9 +56,9 @@ test("model fetch publishes only hash-verified bytes and reuses a verified cache
     },
   });
   expect(second.every(({ cached }) => cached)).toBe(true);
-  expect(requested).toEqual([
-    "https://models.example.test/photoctl/v1/encoder.onnx",
+  expect(requested.toSorted()).toEqual([
     "https://models.example.test/photoctl/v1/decoder.onnx",
+    "https://models.example.test/photoctl/v1/encoder.onnx",
   ]);
 });
 
