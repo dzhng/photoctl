@@ -258,6 +258,9 @@ export async function removeCommand(
   if (parsed.positionals.length > 1 && !parsed.flags.has("--yes")) {
     throw new PhotoctlError("usage", "removing several photos requires --yes");
   }
+  if (fromDisk && !parsed.flags.has("--yes")) {
+    throw new PhotoctlError("usage", "removing files from disk requires --yes");
+  }
   const lease = await openRequestLibrary(env, cwd, provided);
   const receipts: TrashReceipt[] = [];
   let databaseCommitted = false;

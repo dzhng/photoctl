@@ -2,6 +2,35 @@
 
 This is a scoped review ledger, not whole-spec acceptance.
 
+## Disk-removal confirmation
+
+The [original-decision audit](original-decisions-review.md) found that D34 required
+confirmation for every `remove --from-disk`, but the handler enforced it only for
+multiple IDs. The single-photo case now returns `usage` with a `--yes` instruction
+before opening the library. Existing confirmed Trash, identity and rollback paths
+are unchanged. This restores an approved safety requirement, not a new restriction
+or schema/option. The production change is one three-line guard.
+
+The new single-photo regression failed against the original handler, while the
+two existing multi-photo refusal cases passed. The first corrected cull/pairing
+run passed all 36 tests. Independent Claude `opus` review found no implementation
+defect, but correctly identified that the refusal test initially observed only
+catalog rows. It now also uses a disposable, identity-matched local source and
+asserts exact retained bytes and an unchanged directory. Moving the guard below
+the Trash loop deliberately failed that check: rollback restored the file, but
+the newly created `.trash` directory exposed the forbidden work. The guard is
+restored before library opening. Test copy now checks the actionable `--yes`
+instruction without pinning which refusal message wins when both rules apply;
+the single-file message explicitly says “from disk.”
+
+After restoration, the TypeScript build and all 36 cull/pairing tests pass again.
+Formatting and diff checks pass; scoped lint reports existing warnings, no errors.
+
+The reviewer ran no tests. Root owns the observed red/green and late-guard
+falsification logs (`remove-confirm-*.log`) in the current closeout directory.
+This correction follows the completed full-stage continuation and therefore has
+its own focused verification, not a claimed fresh full-suite result.
+
 ## Source/delivery boundary cleanup
 
 The final ledger audit found an unused `copyExact` hint still produced by image

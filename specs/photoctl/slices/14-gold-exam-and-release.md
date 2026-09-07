@@ -15,6 +15,12 @@ audit. The full-feature run also executes the keyless fake-adapter reimagine and
 render/node/artifact hashes and paginated graph inspection from the packed CLI, and proves missing live upscaler credentials do not
 block release. A configured live adapter remains smoke evidence, never a release prerequisite.
 
+The [2026-09-08 local continuation](../assets/final-closeout-2026-09-08.md) passes
+all ten fresh packed-install cases. Together with the recorded mounted-camera
+exam and separate user-approved rendering below, this closes this slice's required
+acceptance. It does not close pairing layout, automatic selection quality or claim
+an actual public publication.
+
 Platform acceptance follows the [root verification policy](../../../README.md#verification-policy):
 Intel Mac and Linux verification are outside the required scope, not deferred release
 prerequisites. Retain existing portable code, tests and historical evidence without

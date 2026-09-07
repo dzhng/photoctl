@@ -32,7 +32,8 @@ visible in the partial result without starving independent photos.
   [--tag] [--folder] [--xmp-stale] [--stream] [--limit]` → `data:{rows:[A3 row],total}` ordered `shot_at,id`; `next [--unrated|
   --unflagged] [--folder] [--reset]` → cursor keyed by the filter hash, ordered `shot_at,id`, `remaining`; `rate`, `flag
   --pick|--reject|--none`, `label <color|none>` (multi-id → `summary`/`results`, `partial` 65); `remove <id...> [--from-disk --yes]`
-  (multi-id without `--yes` → `usage` 2; `packages/library/src/trash.ts` `Trash` interface: `MacTrash` = move to
+  (`--from-disk` or multiple IDs without `--yes` → `usage` 2 before opening the library;
+  `packages/library/src/trash.ts` `Trash` interface: `MacTrash` = move to
   `<volume>/.Trashes/<uid>/` on external volumes, `~/.Trash` on the boot volume; `DirTrash` = `<dir>/.trash/` under the env resolver).
   Stream mode emits bounded row frames as the stdout consumer accepts them; its terminal daemon envelope is the typed count
   summary `{rows:[],total}` rather than a second buffered copy of every row. Progress events follow the same live path.

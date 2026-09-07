@@ -22,10 +22,13 @@ and indexed hybrid search are implemented without claiming the still-unaccepted 
   routes under `PHOTOCTL_GATEWAY_URL/v1` (default Vercel): `chat/completions` (+`response_format:json_schema`, D29),
   `embeddings`, `images/edits` (multipart, mask), `images/generations`. `ImageModelAdapter{ id; mask:"native"|"instruction+composite";
   maskPolarity:"transparent-edits"|"white-edits"|"unverified"; buildEdit(op, crop, mask, prompt, seed); normalize(res, sentDims)
-  → {png, resampled, warnings} }` and `StructuredModelAdapter{ id; ask(schema, images, prompt) }` (frame conversion inside).
+  → {png, returnedDimensions, wholeFrame, warnings} }` and `StructuredModelAdapter{ id; ask(schema, images, prompt) }` (frame conversion inside).
+  Image normalization preserves the returned raster; the graph owns sizing and placement.
+  Unexplained aspect changes are refused, not stretched into a valid-looking response.
   Fixed table (D25; never read `modalities`): edit/generate → `openai/gpt-image-2`; structured → `google/gemini-3.1-flash`;
   embed → `google/gemini-embedding-2`; overrides in `settings.models.*` and `--model`. Key `AI_GATEWAY_API_KEY`; missing →
-  `provider_unconfigured` 69; 429 → `provider_busy` 75 after bounded retry. `doctor` resolves configured ids. Cost table delegated
+  `provider_unconfigured` 69; 429 → `provider_busy` 75 after bounded retry. `doctor` resolves configured ids locally;
+  it does not prove remote model existence or availability. Cost table delegated
   (placeholder 0 + warning until priced). Fake gateway implements exactly the four routes: PNG at sent dims (modes
   `wrongdims|wholeframe`), canned `box_2d`, vectors = deterministic hash of request bytes.
 - **9a upscaling boundary:** `packages/providers/src/upscale/{adapter.ts,registry.ts,fake.ts}` owns
@@ -112,7 +115,7 @@ photo per request, but only a successful purpose-key smoke can promote it from p
 versioned shape; runtime code does not guess another dialect.
 
 ## Verification
-`provider-unconfigured.test.ts`; `provider-fake.test.ts` (dims-mismatch → `resampled:true`; `doctor` lists ids);
+`provider-unconfigured.test.ts`; `provider-fake.test.ts` (returned dimensions retained; unexplained aspect changes refused; `doctor` lists ids);
 `upscale-adapter.test.ts` (selection precedence, explicit configuration consent, fixed scales/limits, provenance redaction,
 wrong-aspect rejection, failure result); `provider-events.test.ts` (generate + upscale emit distinct execution ids); `model-table.test.ts`;
 `search-hybrid.test.ts` (a tag-only hit and a vector-only hit both appear; RRF order by ids); `embed-drain.test.ts` (`rate` p95 ≤ 2×

@@ -1,4 +1,4 @@
-# Current local closeout — in progress
+# Current local closeout — continuation passed
 
 The full host suite tested production source `ea76aed`. The later stages use that
 source plus the shared-cache correction described below. Documentation-only updates
@@ -25,15 +25,20 @@ Logs are `cache-focused.log`, `cache-falsification.log` and `cache-restored.log`
 
 The remaining-stage continuation passed Rust (9 + 78 tests), all Docker functional
 tests (206 files, 1,128 tests in 1,253.65 seconds) and real-model checks (two files,
-three tests in 23.05 seconds). The Swift build passed and macOS/packed checks are
-running; the two decoder-oracle cases have passed. Collect terminal results before
-claiming success; do not restart the full host suite as a feedback loop.
+three tests in 23.05 seconds). The Swift build and all macOS checks passed: seven
+files, 18 tests in 235.65 seconds, including all ten fresh packed-install cases,
+decoder-oracle checks, real SAM, native loading/linkage and daemon performance.
+The continuation terminated with exit 0. This is not one clean root invocation:
+the initial host failure and its focused correction remain recorded above.
 Single-worker Vitest flags remain explicit. `remaining.sh` and `remaining.log`
 retain this continuation separately from the failed host run.
 
 A later [dead source-hint cleanup](final-correctness-review.md#sourcedelivery-boundary-cleanup)
 passed the TypeScript build and 33 focused tests. It changed no behavior assertions
 or delivery policy and does not turn the earlier failed host run into a clean one.
+The subsequent [D34 confirmation correction](final-correctness-review.md#disk-removal-confirmation)
+also owns separate focused verification; it is not included in the completed
+full-stage continuation's source scope.
 
 Logs and the exact continuation invocation are in
 `/private/tmp/photoctl-final-closeout.j54Do5/`. `verify.log` retains the prerequisite

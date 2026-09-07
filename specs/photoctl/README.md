@@ -19,10 +19,12 @@ Read the owning slice and its evidence before editing. Use reviewed, committed p
 and Claude Code's user-approved `opus` alias for straightforward independent work;
 the integrating agent verifies every delegated result.
 
-**Current pickup:** finish the whole-spec correctness/requirements audit and pairing
-presentation. [Final review evidence](assets/final-correctness-review.md) records the
-corrected partial-import and stale-locator removal defects. Do not treat this focused
-review as the completed whole-spec review.
+**Current pickup:** resolve pairing presentation and automatic fine-edge selection
+acceptance without weakening either requirement. [Review evidence](assets/final-correctness-review.md)
+records the corrected import/removal defects, including the original D34 disk-removal
+confirmation requirement. The [original-decision audit](assets/original-decisions-review.md)
+accounts for all kickoff decisions. Final whole-spec acceptance/archive still follows
+resolution of the open slices; the completed local stages need no speculative rerun.
 
 The [consolidated working ledger](choices.md) and its
 [review companion](assets/choices-consolidation-review.md) are integrated.
@@ -91,7 +93,7 @@ stale findings as well as the focused red/green checks.
 | Pairing | [Review](assets/paired-import-review.md): built/installed source selection, orientation, lifecycle and same-catalog camera JPEG pass; workbench layout remains unverified. |
 | Selection, redo and settings | [Refinement/redo](slices/10-selection-refinement-and-redo.md) and [settings](slices/09-settings.md): public and installed checks pass within their recorded scopes. |
 | Outpaint and full-frame generation | [Layer-state review](assets/outpaint-state-review.md), [six-cycle witness](assets/outpaint-resources/daemon-corrected.md), [placement](assets/full-frame-geometry/README.md) and [refresh](assets/full-frame-refresh/README.md): geometry, retained-only/reconnect and installed lifecycle evidence; not live-provider photographic acceptance. |
-| Local closeout | [Current gate](assets/final-closeout-2026-09-08.md): host suite found one shared-cache error regression; focused correction passes. Resume remaining stages, not the full host suite. [Selection/redo gate](assets/selection-redo-closeout-2026-09-07.md) retains earlier scoped results and failures. |
+| Local closeout | [Current gate](assets/final-closeout-2026-09-08.md): the host cache-error regression is corrected; focused checks and the remaining Rust, Docker/model and macOS/packed stages pass. This is not one clean root invocation. [Selection/redo gate](assets/selection-redo-closeout-2026-09-07.md) retains earlier scoped results and failures. |
 | Earlier integration | [Checkpoint index](assets/integration-checkpoints.md), [preview closeout](assets/preview-closeout-2026-09-07.md), [earlier gate](assets/local-closeout-2026-09-07.md), [CI triage](assets/ci-triage.md) and [runtime acquisition](assets/ort-acquisition/README.md) retain historical scope and failures; do not reimplement completed owners. |
 
 **Carry-forward invariants:** one daemon library handle and one atomic document/revision
@@ -126,7 +128,7 @@ identity without deleting history.
 - [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`
 - [x] Show by existing-photo path — `slices/01-first-jpeg.md#existing-photo-path-lookup`
 - [x] Original CLI reconciliation: negative guidance, provisional reference-strength guidance, reference-only generation and combined fill move/scale — `slices/13-generative-extras-and-markup.md#original-command-controls`
-- [ ] 14 real-drive gold exam + packed-install release gate — `slices/14-gold-exam-and-release.md`
+- [x] 14 prescribed mounted-drive journey, user-approved rendering and Apple Silicon packed-install gate — `slices/14-gold-exam-and-release.md`
 - [ ] 15 (optional, unspecified until real) MCP — `slices/15-mcp.md`
 
 ## Goal and closeout gate
@@ -497,6 +499,15 @@ packed as `packages/mac-helper-*` · duet-agent citations kept, framed as "lift 
 - `assets/concurrency-spike/daemon.mjs` + `cli-socket.mjs` mechanism (PG-wire) → the daemon frame protocol in slice 02.
 - D35's reservation of `restore` for a future provider capability → top-level `photoctl restore` is catalog recovery in slice
   03. V1 has no provider-restoration verb; any later provider operation must use a distinct name rather than overload it.
+- D22's display-referred layer blend space → slices 08/10's scene-linear Float32
+  composition, with exact preservation at zero coverage. This names the existing
+  canonical-artifact contract, not a new rendering change.
+- D27's adapter-level dimension normalization → slice 12's intrinsic returned
+  raster and graph-owned sizing/placement; unexplained aspect changes are refused.
+  D29's named SDK helper → slice 09's schema-constrained request plus Zod validation.
+
+The [original-decision reconciliation](assets/original-decisions-review.md) records
+each map decision's current owner and remaining evidence limits.
 
 ## Implementation notes
 

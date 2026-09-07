@@ -1035,7 +1035,7 @@ test("paired copy retains both original byte streams and logical removal trashes
         await fullFileHash(join(drive, `frame.${row.kind === "raw" ? "ARW" : "JPG"}`)),
       );
     const removed = await dispatch(
-      { ...request, verb: "remove", args: [id, "--from-disk"] },
+      { ...request, verb: "remove", args: [id, "--from-disk", "--yes"] },
       { version: "test", library: library.handle },
     );
     expect(removed).toMatchObject({ ok: true });

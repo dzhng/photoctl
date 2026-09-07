@@ -406,31 +406,54 @@ test("streamed list pages rows in order and waits for each consumer", async () =
   }
 });
 
-test.each([[["--from-disk"]], [[]]])(
-  "removing several photos requires explicit confirmation before any mutation (%j)",
-  async (mode) => {
+test.each([
+  { count: 1, mode: ["--from-disk"] },
+  { count: 2, mode: ["--from-disk"] },
+  { count: 2, mode: [] },
+])(
+  "removing $count photos with $mode requires confirmation before mutation",
+  async ({ count, mode }) => {
     const root = await mkdtemp(join(tmpdir(), "photoctl-remove-confirm-"));
     const library = await initializeLibrary(join(root, "library"));
     const first = newLibraryEntityId();
     const second = newLibraryEntityId();
+    const mount = join(root, "drive");
+    const source = join(mount, "frame.jpg");
     try {
-      await seedPhoto(library.handle, first, "ck_5000000000000001", "2025-01-01T10:00:00Z");
+      await mkdir(mount);
+      await writeFile(source, "original");
+      const identity = await identifyFile(source);
+      await seedPhoto(library.handle, first, identity.contentKey, "2025-01-01T10:00:00Z");
+      await library.handle.query("UPDATE originals SET size = $2 WHERE id = $1", [
+        first,
+        identity.size,
+      ]);
+      await seedLocator(library.handle, first, "frame.jpg");
       await seedPhoto(library.handle, second, "ck_5000000000000002", "2025-01-01T11:00:00Z");
 
-      const result = await dispatch(request("remove", [first, second, ...mode]), {
-        version: "test",
-        library: library.handle,
-      });
+      const result = await dispatch(
+        request(
+          "remove",
+          [...[first, second].slice(0, count), ...mode],
+          `${mount}=test-volume:online`,
+        ),
+        {
+          version: "test",
+          library: library.handle,
+        },
+      );
 
       expect(result).toMatchObject({
         ok: false,
         code: "usage",
-        data: { message: "removing several photos requires --yes" },
+        data: { message: expect.stringContaining("--yes") },
       });
-      const count = await library.handle.query<{ count: string }>(
-        "SELECT count(*)::text AS count FROM photos",
+      const retained = await library.handle.query<{ id: string }>(
+        "SELECT id::text FROM photos ORDER BY id",
       );
-      expect(count.rows).toEqual([{ count: "2" }]);
+      expect(retained.rows).toEqual([first, second].sort().map((id) => ({ id })));
+      expect(await readFile(source, "utf8")).toBe("original");
+      expect(await readdir(mount)).toEqual(["frame.jpg"]);
     } finally {
       await library.handle.close();
       await rm(root, { recursive: true });
@@ -477,7 +500,7 @@ test.each([false, true])(
 
       const pending = dispatch(
         {
-          ...request("remove", [id, "--from-disk"], `${mount}=test-volume:online`),
+          ...request("remove", [id, "--from-disk", "--yes"], `${mount}=test-volume:online`),
           env: {
             noDaemon: true,
             volumeMap: `${mount}=test-volume:online`,
@@ -545,7 +568,7 @@ test("remove from disk preserves a replacement at the original locator", async (
     await writeFile(source, "replaced");
     const result = await dispatch(
       {
-        ...request("remove", [id, "--from-disk"]),
+        ...request("remove", [id, "--from-disk", "--yes"]),
         env: {
           noDaemon: true,
           volumeMap: `${mount}=test-volume:online`,

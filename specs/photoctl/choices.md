@@ -848,7 +848,9 @@ future work inherits every one of them as a given.
 
 - **When:** Slice 04 removal implementation; final pairing correctness review,
   2026-09-08.
-- **The choice:** `remove --from-disk` on a photo whose filename now holds a
+- **The choice:** `remove --from-disk` requires explicit `--yes`, including for
+  one photo, as the original safety decision prescribed. Without confirmation it
+  refuses before opening the library. A confirmed request on a photo whose filename now holds a
   *different* image removes the requested catalog entry, leaves the current file
   untouched, and explains it through the existing `source_offline` warning — as
   in source reads, that means the catalogued original is unavailable even though
