@@ -23,8 +23,9 @@ instead of 0); restoring the condition and rebuilding passed the focused test ag
 These are narrow correction checks, not a clean rerun of the full host suite.
 Logs are `cache-focused.log`, `cache-falsification.log` and `cache-restored.log` below.
 
-The remaining-stage continuation passed Rust (9 + 78 tests) and is building the
-existing Docker functional/model seam; macOS/packed checks follow. Collect terminal results before
+The remaining-stage continuation passed Rust (9 + 78 tests), built the existing
+Docker functional/model image and started its functional tests; macOS/packed
+checks follow. Collect terminal results before
 claiming success; do not restart the full host suite as a feedback loop.
 Single-worker Vitest flags remain explicit. `remaining.sh` and `remaining.log`
 retain this continuation separately from the failed host run.
@@ -36,9 +37,9 @@ stage sequence. Do not restart the complete suite because an observation times o
 
 Docker model acquisition uses a temporary loopback-only HTTP server on port 18764,
 serving the existing model-only directory. Both model hashes match the committed
-manifest, and Docker connectivity was checked. Stop this task-owned server after
-the Docker image has fetched its models. Local fixture serving is not public model
-distribution or provider consent.
+manifest, and Docker fetched both verified files into its image. The task-owned
+server was then stopped; the model files remain intact. Local fixture serving is
+not public model distribution or provider consent.
 
 Pairing layout, automatic fine-edge selection quality, final choices reconciliation
 and actual public publication keep their separate evidence boundaries. This file
