@@ -60,6 +60,11 @@ rebuilt. This closes the current-runtime installed pairing gap, not the full fre
 release gate. The report, command results, package hashes and test output remain at
 `/private/tmp/photoctl-pairing-current-install.so0AVR/REPORT.md`.
 
+The [complete macOS closeout](local-closeout-2026-09-07.md#docker-and-macos-results)
+now passes all freshly built packed-install cases, including both pairing modes.
+The earlier prebuilt-runtime evidence above retains its narrower historical scope;
+fresh-package verification is no longer an outstanding pairing requirement.
+
 ## Partial live-camera witness
 
 On 2026-09-06, a development worktree linked the contents of
@@ -84,7 +89,7 @@ attempts remain recorded. No actual unplug/reconnect test was performed.
 
 This is **not** the shared gold exam: it used an exposure adjustment and three
 exports, not the prescribed people preset and ten exports. The exact mounted-drive
-journey and packed-release gate remain open. A rerunnable fixture journey cannot
+journey remains open. A rerunnable fixture journey cannot
 retroactively replace that missing live-drive evidence.
 
 ## Presentation evidence remains incomplete
