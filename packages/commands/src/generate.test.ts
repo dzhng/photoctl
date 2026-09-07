@@ -19,6 +19,21 @@ afterEach(async () => {
   await Promise.all(cleanups.splice(0).map(async (cleanup) => await cleanup()));
 });
 
+test("generate rejects contradictory upscale flags before opening a library", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-flags-"));
+  cleanups.push(async () => await rm(parent, { recursive: true }));
+  const result = await dispatch(
+    {
+      verb: "generate",
+      args: ["--prompt", "a vase", "--upscale", "--no-upscale"],
+      cwd: parent,
+      env: { noDaemon: true, libraryPath: join(parent, "missing-library") },
+    },
+    { version: "test" },
+  );
+  expect(result).toMatchObject({ ok: false, code: "usage" });
+});
+
 test("reference-only generation sends variation intent and retains its source without importing it", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-variation-"));
   const handle = (await initializeLibrary(join(parent, "library"))).handle;
@@ -229,199 +244,260 @@ test("reference-guided generation retains an immutable reachable image without i
   expect(developed).toMatchObject({ ok: true });
 });
 
-test("generate imports the canonical provider artifact with durable provenance and no automatic upscale", async () => {
-  const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-"));
-  const handle = (await initializeLibrary(join(parent, "library"))).handle;
-  const requests: Array<{ path: string; body?: Record<string, unknown> }> = [];
-  const gateway = await startGatewayFixture(0, {
-    imageMode: "smallerdims",
-    onRequest: (request) => requests.push(request),
-  });
-  cleanups.push(
-    async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
-    async () => await handle.close(),
-    async () => await rm(parent, { recursive: true }),
-  );
-  const address = gateway.address();
-  if (!address || typeof address === "string") throw new Error("Fixture gateway unavailable");
-  await handle.query(
-    `INSERT INTO settings (key, value) VALUES ('providers', $1::jsonb)
+test.each([{ upscaleFlags: [] }, { upscaleFlags: ["--no-upscale"] }])(
+  "generate imports the canonical provider artifact with durable provenance and no automatic upscale ($upscaleFlags)",
+  async ({ upscaleFlags }) => {
+    const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-"));
+    const handle = (await initializeLibrary(join(parent, "library"))).handle;
+    const requests: Array<{ path: string; body?: Record<string, unknown> }> = [];
+    const gateway = await startGatewayFixture(0, {
+      imageMode: "smallerdims",
+      onRequest: (request) => requests.push(request),
+    });
+    cleanups.push(
+      async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
+      async () => await handle.close(),
+      async () => await rm(parent, { recursive: true }),
+    );
+    const address = gateway.address();
+    if (!address || typeof address === "string") throw new Error("Fixture gateway unavailable");
+    await handle.query(
+      `INSERT INTO settings (key, value) VALUES ('providers', $1::jsonb)
      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-    [JSON.stringify({ upscale: { "photoctl/fake-upscale-v1": { configured: true } } })],
-  );
+      [JSON.stringify({ upscale: { "photoctl/fake-upscale-v1": { configured: true } } })],
+    );
 
-  const envelope = await dispatch(
-    {
-      verb: "generate",
-      args: ["--prompt", "blue hour mountains", "--size", "40x30", "--seed", "17"],
-      cwd: parent,
-      env: {
-        noDaemon: true,
-        cacheRoot: join(parent, "cache"),
-        gatewayApiKey: "fixture-key",
-        gatewayUrl: `http://127.0.0.1:${address.port}`,
+    const envelope = await dispatch(
+      {
+        verb: "generate",
+        args: [
+          "--prompt",
+          "blue hour mountains",
+          "--size",
+          "40x30",
+          "--seed",
+          "17",
+          ...upscaleFlags,
+        ],
+        cwd: parent,
+        env: {
+          noDaemon: true,
+          cacheRoot: join(parent, "cache"),
+          gatewayApiKey: "fixture-key",
+          gatewayUrl: `http://127.0.0.1:${address.port}`,
+        },
       },
-    },
-    { version: "test", library: handle },
-  );
+      { version: "test", library: handle },
+    );
 
-  expect(envelope, JSON.stringify(envelope)).toMatchObject({ ok: true });
-  if (!envelope.ok || !("data" in envelope)) throw new Error("Expected success data");
-  const generated = generateDataSchema.parse(envelope.data);
-  expect(generated).toMatchObject({
-    requested: { w: 40, h: 30 },
-    tag: "generated",
-    generation: { returned: { w: 20, h: 15 } },
-    artifact: { w: 20, h: 15, media_type: "image/tiff" },
-    upscale: {
-      enabled: false,
-      executed: false,
-      input: { w: 20, h: 15 },
-      target: { w: 40, h: 30 },
-      final: { w: 20, h: 15 },
-    },
-    executions: [{ kind: "generate", reused: false }],
-  });
-  expect(requests).toEqual([
-    {
-      path: "/v1/images/generations",
-      body: {
-        model: "openai/gpt-image-2",
-        prompt: "blue hour mountains",
-        size: "40x30",
-        output_format: "png",
-        seed: 17,
+    expect(envelope, JSON.stringify(envelope)).toMatchObject({ ok: true });
+    if (!envelope.ok || !("data" in envelope)) throw new Error("Expected success data");
+    const generated = generateDataSchema.parse(envelope.data);
+    expect(generated).toMatchObject({
+      requested: { w: 40, h: 30 },
+      tag: "generated",
+      generation: { returned: { w: 20, h: 15 } },
+      artifact: { w: 20, h: 15, media_type: "image/tiff" },
+      upscale: {
+        enabled: false,
+        executed: false,
+        input: { w: 20, h: 15 },
+        target: { w: 40, h: 30 },
+        final: { w: 20, h: 15 },
       },
-    },
-  ]);
-  expect(
-    (
-      await handle.query<{ tag: string }>("SELECT tag FROM tags WHERE photo_id = $1", [
-        generated.id,
-      ])
-    ).rows,
-  ).toEqual([{ tag: "generated" }]);
-  expect(
-    (
-      await handle.query<{ volume_uuid: string; rel_path: string }>(
-        "SELECT volume_uuid, rel_path FROM files JOIN originals ON originals.id = files.original_id WHERE originals.photo_id = $1",
-        [generated.id],
-      )
-    ).rows,
-  ).toEqual([
-    {
-      volume_uuid: "photoctl-library",
-      rel_path: expect.stringMatching(/^artifacts\/sha256\/[0-9a-f]{2}\/a_[0-9a-f]{64}\.tif$/),
-    },
-  ]);
-  expect(
-    (
-      await handle.query<{ kind: string; recipe_version: number; inputs: string }>(
-        `SELECT node.kind, node.recipe_version,
+      executions: [{ kind: "generate", reused: false }],
+    });
+    expect(requests).toEqual([
+      {
+        path: "/v1/images/generations",
+        body: {
+          model: "openai/gpt-image-2",
+          prompt: "blue hour mountains",
+          size: "40x30",
+          output_format: "png",
+          seed: 17,
+        },
+      },
+    ]);
+    expect(
+      (
+        await handle.query<{ tag: string }>("SELECT tag FROM tags WHERE photo_id = $1", [
+          generated.id,
+        ])
+      ).rows,
+    ).toEqual([{ tag: "generated" }]);
+    expect(
+      (
+        await handle.query<{ volume_uuid: string; rel_path: string }>(
+          "SELECT volume_uuid, rel_path FROM files JOIN originals ON originals.id = files.original_id WHERE originals.photo_id = $1",
+          [generated.id],
+        )
+      ).rows,
+    ).toEqual([
+      {
+        volume_uuid: "photoctl-library",
+        rel_path: expect.stringMatching(/^artifacts\/sha256\/[0-9a-f]{2}\/a_[0-9a-f]{64}\.tif$/),
+      },
+    ]);
+    expect(
+      (
+        await handle.query<{ kind: string; recipe_version: number; inputs: string }>(
+          `SELECT node.kind, node.recipe_version,
           (SELECT count(*)::text FROM image_node_inputs WHERE photo_id = node.photo_id AND node_id = node.id) AS inputs
          FROM image_nodes AS node WHERE node.photo_id = $1`,
-        [generated.id],
-      )
-    ).rows,
-  ).toEqual(
-    expect.arrayContaining([
-      { kind: "generate", recipe_version: 2, inputs: "0" },
-      { kind: "output", recipe_version: 1, inputs: "1" },
-    ]),
-  );
-  expect(
-    (
-      await handle.query<{ provider_execution: { seed: number; target_px: number } }>(
-        "SELECT provider_execution FROM node_executions WHERE photo_id = $1",
-        [generated.id],
-      )
-    ).rows[0]?.provider_execution,
-  ).toMatchObject({ seed: 17, target_px: 1200 });
-});
+          [generated.id],
+        )
+      ).rows,
+    ).toEqual(
+      expect.arrayContaining([
+        { kind: "generate", recipe_version: 2, inputs: "0" },
+        { kind: "output", recipe_version: 1, inputs: "1" },
+      ]),
+    );
+    expect(
+      (
+        await handle.query<{ provider_execution: { seed: number; target_px: number } }>(
+          "SELECT provider_execution FROM node_executions WHERE photo_id = $1",
+          [generated.id],
+        )
+      ).rows[0]?.provider_execution,
+    ).toMatchObject({ seed: 17, target_px: 1200 });
+  },
+);
 
-test("explicit generate upscale reaches the requested size and sends a normalized reference", async () => {
-  const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-upscale-"));
-  const handle = (await initializeLibrary(join(parent, "library"))).handle;
-  const referencePath = join(parent, "reference.jpg");
-  await sharp({ create: { width: 8, height: 6, channels: 3, background: "#aa7733" } })
-    .jpeg()
-    .toFile(referencePath);
-  const requests: Array<{ path: string; body?: Record<string, unknown> }> = [];
-  const uploads: Array<{
-    path: string;
-    fields: Readonly<Record<string, unknown>>;
-    files: ReadonlySet<string>;
-  }> = [];
-  const gateway = await startGatewayFixture(0, {
-    imageMode: "smallerdims",
-    onRequest: (request) => requests.push(request),
-    onImageRequest: (request) => uploads.push(request),
-  });
-  cleanups.push(
-    async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
-    async () => await handle.close(),
-    async () => await rm(parent, { recursive: true }),
-  );
-  const address = gateway.address();
-  if (!address || typeof address === "string") throw new Error("Fixture gateway unavailable");
-  await handle.query(
-    `INSERT INTO settings (key, value) VALUES ('providers', $1::jsonb)
+test.each(["flag", "model"])(
+  "explicit generate upscale via %s reaches the requested size and sends a normalized reference",
+  async (selection) => {
+    const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-upscale-"));
+    const handle = (await initializeLibrary(join(parent, "library"))).handle;
+    const referencePath = join(parent, "reference.jpg");
+    await sharp({ create: { width: 8, height: 6, channels: 3, background: "#aa7733" } })
+      .jpeg()
+      .toFile(referencePath);
+    const requests: Array<{ path: string; body?: Record<string, unknown> }> = [];
+    const uploads: Array<{
+      path: string;
+      fields: Readonly<Record<string, unknown>>;
+      files: ReadonlySet<string>;
+    }> = [];
+    const gateway = await startGatewayFixture(0, {
+      imageMode: "smallerdims",
+      onRequest: (request) => requests.push(request),
+      onImageRequest: (request) => uploads.push(request),
+    });
+    cleanups.push(
+      async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
+      async () => await handle.close(),
+      async () => await rm(parent, { recursive: true }),
+    );
+    const address = gateway.address();
+    if (!address || typeof address === "string") throw new Error("Fixture gateway unavailable");
+    if (selection === "model") {
+      await handle.query(
+        `INSERT INTO settings (key, value) VALUES ('models', $1::jsonb)
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [JSON.stringify({ upscale: "unavailable/library-model" })],
+      );
+    }
+    await handle.query(
+      `INSERT INTO settings (key, value) VALUES ('providers', $1::jsonb)
      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-    [JSON.stringify({ upscale: { "photoctl/fake-upscale-v1": { configured: true } } })],
-  );
+      [JSON.stringify({ upscale: { "photoctl/fake-upscale-v1": { configured: true } } })],
+    );
 
-  const envelope = await dispatch(
-    {
-      verb: "generate",
-      args: [
-        "--prompt",
-        "blue hour mountains",
-        "--ref",
-        referencePath,
-        "--size",
-        "40x30",
-        "--upscale",
-      ],
-      cwd: parent,
-      env: {
-        noDaemon: true,
-        cacheRoot: join(parent, "cache"),
-        gatewayApiKey: "fixture-key",
-        gatewayUrl: `http://127.0.0.1:${address.port}`,
+    const envelope = await dispatch(
+      {
+        verb: "generate",
+        args: [
+          "--prompt",
+          "blue hour mountains",
+          "--ref",
+          referencePath,
+          "--size",
+          "40x30",
+          ...(selection === "model"
+            ? ["--no-upscale", "--upscale-model", "photoctl/fake-upscale-v1"]
+            : ["--upscale"]),
+        ],
+        cwd: parent,
+        env: {
+          noDaemon: true,
+          cacheRoot: join(parent, "cache"),
+          gatewayApiKey: "fixture-key",
+          gatewayUrl: `http://127.0.0.1:${address.port}`,
+        },
       },
-    },
-    { version: "test", library: handle },
-  );
-  expect(envelope, JSON.stringify(envelope)).toMatchObject({ ok: true });
-  if (!envelope.ok || !("data" in envelope)) throw new Error("Expected success data");
-  const generated = generateDataSchema.parse(envelope.data);
-  expect(generated).toMatchObject({
-    reference: { used: true },
-    artifact: { w: 40, h: 30 },
-    upscale: {
-      enabled: true,
-      executed: true,
-      input: { w: 20, h: 15 },
-      target: { w: 40, h: 30 },
-      generated: { w: 40, h: 30 },
-      final: { w: 40, h: 30 },
-      density_satisfied: true,
-    },
-    executions: [{ kind: "generate" }, { kind: "upscale" }],
-  });
-  expect(requests[0]).toMatchObject({
-    path: "/v1/images/edits",
-  });
-  expect(uploads[0]).toMatchObject({ fields: { size: "40x30" } });
-  expect(uploads[0]!.files).toEqual(new Set(["image[]"]));
-  const originals = await handle.query(
-    `SELECT attempt.request->>'operation' AS operation, attempt.state, artifact.w, artifact.h FROM provider_image_attempts attempt JOIN image_artifacts artifact ON artifact.artifact_hash = attempt.original_artifact_hash ORDER BY attempt.created_at, attempt.id`,
-  );
-  expect(originals.rows).toEqual([
-    { operation: "generate", state: "committed", w: 20, h: 15 },
-    { operation: "upscale", state: "committed", w: 40, h: 30 },
-  ]);
-});
+      { version: "test", library: handle },
+    );
+    expect(envelope, JSON.stringify(envelope)).toMatchObject({ ok: true });
+    if (!envelope.ok || !("data" in envelope)) throw new Error("Expected success data");
+    const generated = generateDataSchema.parse(envelope.data);
+    expect(generated).toMatchObject({
+      reference: { used: true },
+      artifact: { w: 40, h: 30 },
+      upscale: {
+        enabled: true,
+        executed: true,
+        input: { w: 20, h: 15 },
+        target: { w: 40, h: 30 },
+        generated: { w: 40, h: 30 },
+        final: { w: 40, h: 30 },
+        density_satisfied: true,
+      },
+      executions: [{ kind: "generate" }, { kind: "upscale" }],
+    });
+    expect(requests[0]).toMatchObject({
+      path: "/v1/images/edits",
+    });
+    expect(uploads[0]).toMatchObject({ fields: { size: "40x30" } });
+    expect(uploads[0]!.files).toEqual(new Set(["image[]"]));
+    const originals = await handle.query(
+      `SELECT attempt.request->>'operation' AS operation, attempt.state, artifact.w, artifact.h FROM provider_image_attempts attempt JOIN image_artifacts artifact ON artifact.artifact_hash = attempt.original_artifact_hash ORDER BY attempt.created_at, attempt.id`,
+    );
+    expect(originals.rows).toEqual([
+      { operation: "generate", state: "committed", w: 20, h: 15 },
+      { operation: "upscale", state: "committed", w: 40, h: 30 },
+    ]);
+    if (selection === "model") {
+      await handle.query(`UPDATE settings SET value = '{}'::jsonb WHERE key = 'providers'`);
+      const unconfigured = await dispatch(
+        {
+          verb: "generate",
+          args: [
+            "--prompt",
+            "a vase",
+            "--size",
+            "40x30",
+            "--upscale-model",
+            "photoctl/fake-upscale-v1",
+          ],
+          cwd: parent,
+          env: {
+            noDaemon: true,
+            cacheRoot: join(parent, "cache"),
+            gatewayApiKey: "fixture-key",
+            gatewayUrl: `http://127.0.0.1:${address.port}`,
+          },
+        },
+        { version: "test", library: handle },
+      );
+      expect(unconfigured).toMatchObject({
+        ok: true,
+        data: {
+          artifact: { w: 20, h: 15 },
+          upscale: { enabled: true, executed: false, warnings: [{ code: "upscale_unconfigured" }] },
+        },
+      });
+      expect(
+        (
+          await handle.query(
+            `SELECT id FROM provider_image_attempts WHERE request->>'operation' = 'upscale'`,
+          )
+        ).rows,
+      ).toHaveLength(1);
+    }
+  },
+);
 
 test("generate provider geometry failure leaves no catalog or graph state", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-failure-"));

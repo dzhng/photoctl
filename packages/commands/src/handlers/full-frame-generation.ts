@@ -26,6 +26,8 @@ interface FullFrameGenerationRequest {
   promptVersion: number;
   strength: number;
   operation: "reimagine" | "relight";
+  upscaleFlag?: "upscale" | "no-upscale";
+  upscaleModel?: string;
 }
 
 export async function executeFullFrameGeneration(
@@ -83,6 +85,8 @@ export async function executeFullFrameGeneration(
           releaseDefaultModel: upscaleRegistry.releaseDefault,
           availableAdapterIds: upscaleRegistry.list().map(({ id: adapterId }) => adapterId),
           settings: providedDependencies?.upscaleSettings ?? settings,
+          ...(request.upscaleFlag ? { flag: request.upscaleFlag } : {}),
+          ...(request.upscaleModel ? { modelOverride: request.upscaleModel } : {}),
           sourceContext,
         });
         const selected = upscaleRegistry.get(policy.upscale.model);

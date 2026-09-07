@@ -3,6 +3,116 @@ import { loadActiveDocument } from "@photoctl/render";
 import { expect, test } from "vitest";
 import { fillUpscaleFixture, fixtureCommand, success } from "./fill-upscale-fixture.js";
 
+test.each([
+  ["reimagine", ["--prompt", "twilight"]],
+  ["relight", ["--azimuth", "45", "--elevation", "30", "--intensity", "1"]],
+])("%s can suppress configured automatic upscaling for one request", async (verb, controls) => {
+  const fixture = await fillUpscaleFixture({ generationMode: "smallerdims" });
+  try {
+    const result = success(
+      await fixtureCommand(fixture, verb, [fixture.id, ...controls, "--no-upscale"]),
+    );
+    expect(result).toMatchObject({
+      upscale: { enabled: false, executed: false },
+      executions: [{ kind: "generate" }],
+    });
+    expect(fixture.generationCalls()).toBe(1);
+    expect(fixture.upscaleCalls()).toBe(0);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test.each([
+  ["reimagine", ["--prompt", "twilight"]],
+  ["relight", ["--azimuth", "45", "--elevation", "30", "--intensity", "1"]],
+])("%s can enable configured upscaling despite the library default", async (verb, controls) => {
+  const fixture = await fillUpscaleFixture({
+    generationMode: "smallerdims",
+    generationUpscale: "off",
+  });
+  try {
+    const result = success(
+      await fixtureCommand(fixture, verb, [fixture.id, ...controls, "--upscale"]),
+    );
+    expect(result).toMatchObject({
+      upscale: { enabled: true, executed: true, density_satisfied: true },
+      executions: [{ kind: "generate" }, { kind: "upscale", model: "photoctl/fake-upscale-v1" }],
+    });
+    expect(fixture.generationCalls()).toBe(1);
+    expect(fixture.upscaleCalls()).toBe(1);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test.each([
+  ["reimagine", ["--prompt", "twilight"]],
+  ["relight", ["--azimuth", "45", "--elevation", "30", "--intensity", "1"]],
+])(
+  "%s uses the requested upscale model without authorizing an unconfigured model",
+  async (verb, controls) => {
+    const fixture = await fillUpscaleFixture({
+      generationMode: "smallerdims",
+      generationUpscale: "off",
+      libraryUpscaleModel: "unavailable/library-model",
+    });
+    try {
+      const selected = success(
+        await fixtureCommand(fixture, verb, [
+          fixture.id,
+          ...controls,
+          "--no-upscale",
+          "--upscale-model",
+          "photoctl/fake-upscale-v1",
+        ]),
+      );
+      expect(selected).toMatchObject({
+        upscale: { enabled: true, executed: true, model: "photoctl/fake-upscale-v1" },
+      });
+      expect(fixture.upscaleCalls()).toBe(1);
+      fixture.fill.upscaleSettings.providers.upscale["photoctl/fake-upscale-v1"].configured = false;
+      const unconfigured = success(
+        await fixtureCommand(fixture, verb, [
+          fixture.id,
+          ...controls,
+          "--upscale-model",
+          "photoctl/fake-upscale-v1",
+        ]),
+      );
+      expect(unconfigured).toMatchObject({
+        upscale: {
+          enabled: true,
+          executed: false,
+          model: "photoctl/fake-upscale-v1",
+          warnings: [{ code: "upscale_unconfigured" }],
+        },
+      });
+      expect(fixture.upscaleCalls()).toBe(1);
+    } finally {
+      await fixture.close();
+    }
+  },
+);
+
+test.each([
+  ["reimagine", ["--prompt", "twilight"]],
+  ["relight", ["--azimuth", "45", "--elevation", "30", "--intensity", "1"]],
+])("%s rejects contradictory upscale flags before purchasing pixels", async (verb, controls) => {
+  const fixture = await fillUpscaleFixture();
+  try {
+    const before = await loadActiveDocument(fixture.handle, fixture.id);
+    expect(
+      await fixtureCommand(fixture, verb, [fixture.id, ...controls, "--upscale", "--no-upscale"]),
+    ).toMatchObject({ ok: false, code: "usage" });
+    expect(await loadActiveDocument(fixture.handle, fixture.id)).toEqual(before);
+    expect(fixture.generationCalls()).toBe(0);
+    expect(fixture.upscaleCalls()).toBe(0);
+  } finally {
+    await fixture.close();
+  }
+});
+
 test("full-frame upscale-only refresh preserves generation and retains the last successful upscale on failure", async () => {
   const fixture = await fillUpscaleFixture({ generationMode: "smallerdims" });
   try {

@@ -2,6 +2,47 @@
 
 This is a scoped review ledger, not whole-spec acceptance.
 
+## Full-frame request controls
+
+The later choices audit exposed a missed contract in the earlier slice-level review:
+`reimagine` and `relight` rejected the global per-command upscale overrides. Root
+confirmed this in both parsers and reproduced each missing flag through public
+dispatch. Both commands now forward request intent into the existing shared density
+policy, without a new provider, schema or consent mechanism. The enable/disable and
+model-override regressions each failed before implementation and passed afterward.
+Contradictory-flag tests were falsified by removing the guards, then passed with
+the guards restored; they check no purchase or document change.
+
+The same audit's claim that standalone `generate` must automatically upscale was
+rejected: slice 13 explicitly gives it no base-density target. Its claim that
+full-frame edits still refuse cropped/reduced inputs is also stale; the current
+authored-frame implementation and relight regressions cover those cases. Proposed
+ledger text is review input, not an authoritative replacement without root checking.
+
+The focused full-frame, relight and existing fill-policy checks passed (27 tests),
+followed by both contradictory-flag regressions. Typechecking passed. This is not
+the final integrated local closeout or live-provider quality acceptance.
+
+The remaining standalone parser gap was corrected in the same pass: `generate`
+accepts an explicit upscale model and the no-upscale flag without changing its
+native-raster default. The existing generation journey was parameterized to prove
+that a requested model overrides a different saved model, retains both purchases
+and reaches the requested size. It failed on the old parser before passing.
+The no-upscale journey similarly failed on the old parser and passed alongside
+the unchanged default; contradictory flags fail before library opening. All 12
+generation tests pass. No new policy choices were introduced: request precedence
+and configured-provider consent remain owned by the existing fill policy.
+
+Independent Claude `opus` review found no behavior defect. Its two coverage findings
+were accepted: the tests now use an available-but-unconfigured adapter, and exercise
+model override together with `--no-upscale` on all three verbs. Removing the shared
+consent condition and rebuilding its TypeScript output made all three consent cases
+fail; restoring and rebuilding made them pass. An initial source-only falsification
+did not reach the package's emitted consumer and is not counted as evidence.
+Both changed test files pass in full (25 tests), with scoped lint/typechecking clean.
+Root's shape/diff/docs review keeps policy in its existing owner; only CLI argument
+forwarding changed. The independent review was static, not a second test execution.
+
 ## Fill, generative extras and release requirement reconciliation
 
 A read-only Claude `opus` audit traced slices 12, 13 and 14 into their linked owners

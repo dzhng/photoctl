@@ -24,6 +24,12 @@ presentation. [Final review evidence](assets/final-correctness-review.md) record
 corrected partial-import and stale-locator removal defects. Do not treat this focused
 review as the completed whole-spec review.
 
+The three domain choices audits have returned; their proposed text still needs
+root verification and consolidation. Scratch drafts are at
+`/private/tmp/photoctl-final-audits.ciVNd7/`. The full-frame/generate CLI override
+gap found during that review is corrected; the review evidence records rejected
+stale findings as well as the focused red/green checks.
+
 **Priority order:**
 
 1. Resolve any concrete correctness findings before collecting more acceptance evidence.

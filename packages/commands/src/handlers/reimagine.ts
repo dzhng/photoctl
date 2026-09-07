@@ -14,7 +14,12 @@ export async function reimagineCommand(
   providedDependencies?: GenerationCommandDependencies,
   emit?: (event: import("@photoctl/protocol").StderrEvent) => void | Promise<void>,
 ): Promise<Envelope> {
-  const parsed = parseArguments(args, { options: ["--prompt", "--strength"] });
+  const parsed = parseArguments(args, {
+    flags: ["--upscale", "--no-upscale"],
+    options: ["--prompt", "--strength", "--upscale-model"],
+  });
+  if (parsed.flags.has("--upscale") && parsed.flags.has("--no-upscale"))
+    throw new PhotoctlError("usage", "reimagine accepts only one of --upscale or --no-upscale");
   if (parsed.positionals.length !== 1)
     throw new PhotoctlError("usage", "reimagine requires exactly one photo ID or prefix");
   const prompt = parsed.options.get("--prompt");
@@ -30,6 +35,14 @@ export async function reimagineCommand(
         promptVersion: built.version,
         strength,
         operation: "reimagine",
+        ...(parsed.options.has("--upscale-model")
+          ? { upscaleModel: parsed.options.get("--upscale-model")! }
+          : {}),
+        ...(parsed.flags.has("--no-upscale")
+          ? { upscaleFlag: "no-upscale" as const }
+          : parsed.flags.has("--upscale")
+            ? { upscaleFlag: "upscale" as const }
+            : {}),
       },
       env,
       cwd,

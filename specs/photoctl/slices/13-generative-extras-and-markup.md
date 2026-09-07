@@ -49,6 +49,18 @@ least one representative mutation. The next `show` remains the only required pre
 
 ## Original command controls
 
+Full-frame edits (`reimagine` and `relight`) inherit fill's request-level upscale
+controls as well as its library defaults. A caller can suppress or request density
+matching, or select a model for this request; model selection never grants provider
+consent. Both enable and disable flags together are a usage error before generation.
+The shared [upscale policy](../../../packages/render/src/fill/upscale-policy.ts)
+owns precedence and fallback behavior. Standalone `generate` accepts the same
+request controls but retains its separate explicit-upscale rule because it has no
+existing photo density to match. Naming an upscale model explicitly requests it;
+omitting upscale controls or using only `--no-upscale` keeps the provider's native
+raster. Model overrides inherit fill's precedence even when combined with the
+disable flag; they still never grant consent.
+
 `generate --neg` is versioned exclusion guidance appended to the provider prompt, not a native
 negative-conditioning parameter or a guarantee that the model obeys it. The optional public
 `negative_prompt` record retains requested text, applied mode, guidance version and actual provider

@@ -41,9 +41,20 @@ export async function generateCommand(
   emit?: (event: import("@photoctl/protocol").StderrEvent) => void | Promise<void>,
 ): Promise<Envelope> {
   const parsed = parseArguments(args, {
-    flags: ["--upscale"],
-    options: ["--prompt", "--ref", "--size", "--seed", "--model", "--neg", "--strength"],
+    flags: ["--upscale", "--no-upscale"],
+    options: [
+      "--prompt",
+      "--ref",
+      "--size",
+      "--seed",
+      "--model",
+      "--neg",
+      "--strength",
+      "--upscale-model",
+    ],
   });
+  if (parsed.flags.has("--upscale") && parsed.flags.has("--no-upscale"))
+    throw new PhotoctlError("usage", "generate accepts only one of --upscale or --no-upscale");
   if (parsed.positionals.length !== 0)
     throw new PhotoctlError("usage", "generate does not accept positional arguments");
   const referenceOnly = !parsed.options.has("--prompt") && parsed.options.has("--ref");
@@ -91,7 +102,8 @@ export async function generateCommand(
       providedDependencies?.gateway ??
       new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl });
     const registry = providedDependencies?.upscaleRegistry ?? createUpscaleRegistry();
-    const explicitUpscale = parsed.flags.has("--upscale");
+    const upscaleModel = parsed.options.get("--upscale-model");
+    const explicitUpscale = parsed.flags.has("--upscale") || upscaleModel !== undefined;
     let upscale: FillUpscaleDependencies | undefined;
     if (explicitUpscale) {
       const policy = resolveUpscalePolicy({
@@ -99,6 +111,7 @@ export async function generateCommand(
         availableAdapterIds: registry.list().map(({ id }) => id),
         settings: providedDependencies?.upscaleSettings ?? settings,
         flag: "upscale",
+        ...(upscaleModel !== undefined ? { modelOverride: upscaleModel } : {}),
         sourceContext: { tier: "standalone", pixelScale: 1, resolutionLimited: false },
       });
       const selected = registry.get(policy.upscale.model);
