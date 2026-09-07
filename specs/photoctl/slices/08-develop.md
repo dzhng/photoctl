@@ -191,7 +191,8 @@ horizons independently, a level repeat/no-op, blank and conflicting-line no-ops,
 existing manual straighten, crop/aspect and consumed-crop canvas state, markup exclusion, offline
 fallback, exact original bytes, revision conflict safety and preview/export identity. Pure detector
 tests pin angle/direction, contrast inversion and varied position/scale without copying its formula
-into the oracle. Tests run the same portable detector on host and Linux; no platform-dependent skips.
+into the oracle. Keep the portable detector and existing tests; required platform
+verification follows the [root policy](../../../README.md#verification-policy).
 
 The visual variable is horizon slope and the resulting trim. Capture matching pre/post public images
 and horizon-edge zooms from an asymmetric scene. Use `compare-screenshots` for changed pixels and

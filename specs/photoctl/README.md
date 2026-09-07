@@ -24,11 +24,11 @@ presentation. [Final review evidence](assets/final-correctness-review.md) record
 corrected partial-import and stale-locator removal defects. Do not treat this focused
 review as the completed whole-spec review.
 
-The five domain choices audits and consolidated draft have returned; the draft
-still needs root acceptance in `/private/tmp/photoctl-choices-worktree.iDlvsx`.
-Its review companion records integrating corrections and the next unread entries.
-Domain drafts are at
-`/private/tmp/photoctl-final-audits.ciVNd7/`. The full-frame/generate CLI override
+The [consolidated working ledger](choices.md) and its
+[review companion](assets/choices-consolidation-review.md) are integrated.
+All entries have received an integrating read; the companion preserves the limits
+of source verification. Complete the remaining requirement/source reconciliation,
+not another build-order rewrite. The full-frame/generate CLI override
 gap found during that review is corrected; the review evidence records rejected
 stale findings as well as the focused red/green checks.
 

@@ -128,8 +128,10 @@ an alternative API backend. No public artifact host or runtime-library override 
 The [default-acquisition evidence](../assets/ort-acquisition/README.md) records actual quiet
 workspace and packed native initialization, unchanged photographic model gates and native
 SAM tests on Linux ARM64 and macOS ARM64. The Mac full external packed-install/linkage journey
-also remains green. All four native release jobs require packed initialization; unrun x64
-jobs and older Linux ABI compatibility remain release limits, not inferred acceptance.
+also remains green. Required platform verification follows the
+[root policy](../../../README.md#verification-policy): Apple Silicon packed initialization
+remains required; Intel Mac and Linux verification are not release prerequisites.
+Retained evidence establishes only its recorded hosts and fixtures.
 No database migration or backward-compatibility shim is required by this integration.
 
 ## Mask inspection contract

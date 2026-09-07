@@ -49,8 +49,8 @@ but also claims that must not enter the final ledger unchanged:
 
 Root checked these against the import/copy and batch owners, frame-size guard,
 generation parser, markup schema and fake adapter. These are corrections to audit
-text, not newly identified product defects. The final ledger still needs the
-cross-domain and build/verification coverage audits before replacement.
+text, not newly identified product defects. The later cross-domain and build
+reviews below informed the [integrated ledger reconciliation](choices-consolidation-review.md).
 
 The build/verification audit has returned. Its only alleged missing behavior was
 the former hosted daemon-log upload, which the smoke cutover removed. Root checked

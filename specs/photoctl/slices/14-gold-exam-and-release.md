@@ -82,7 +82,8 @@ Do not push a publication tag merely to test the workflow.
 
 ## Packed package boundary
 `bun run pack` builds optimized native artifacts; development's debug build must not determine the
-shipping binary. The release matrix likewise builds optimized binaries before its packed-install gate.
+shipping binary. The release matrix builds optimized binaries; the Apple Silicon job
+runs the packed-install gate.
 
 The root release version owns manifest versions, optional package pins, and a generated Swift constant.
 Packing checks drift before producing artifacts; the installed CLI and helper are also compared against

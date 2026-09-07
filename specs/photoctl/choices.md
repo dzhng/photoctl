@@ -1,6343 +1,4107 @@
 # Implementation choices
 
-## Local selection correction and redo — sound
-
-- **When:** Selection/redo planning and history pass, 2026-09-07.
-- **The choice:** Keep manual corrections on the existing selection layer. If SAM
-  misses part of a path, adding a polygon changes that layer's retained coverage;
-  it does not create a second selection or ask the model again. Subtracting all
-  coverage leaves an empty selection that can be filled again. Existing polygon
-  and coordinate conventions remain the public vocabulary.
-- **The gap:** The user requested fine-grained CLI correction, without specifying
-  mask arithmetic or empty-selection behavior.
-- **The reach:** Add uses maximum coverage; subtract removes operand coverage;
-  replace takes the operand. Saved masks remain immutable and undoable. This is
-  manual control, not a claim that SAM's automatic edge quality improved.
-- **Verdict:** **Sound.** Reuses the layer/geometry owners and permits valid empty
-  state instead of adding an artificial refusal.
-- **Confidence:** High.
-
-### Redo navigation versus retained history
-
-- **When:** Public redo, 2026-09-07.
-- **The choice:** Store the revisions left by undo as a stack on the existing
-  photo document. After edits A→B→C, undo twice and redo twice restores B then C.
-  Editing D after undo discards that navigation path, but does not delete C's
-  purchased pixels or history. A failed edit leaves redo available.
-- **The gap:** The user requested redo without specifying persistent path storage.
-- **The reach:** One document column and the existing transaction/activation owner
-  control navigation across restarts. No separate history service, command replay
-  or automatic provider retry. Calling redo on an untouched photo initializes its
-  document like undo and reports no change.
-- **Verdict:** **Sound.** An explicit path avoids guessing among abandoned branches;
-  navigation and paid-artifact retention solve different problems.
-- **Confidence:** High.
-
-### Refinement preserves the selection's coordinate frame
-
-- **When:** Manual refinement implementation, 2026-09-07.
-- **The choice:** Correct subject selections, including moved/scaled selections,
-  in their retained raster. A box or polygon still names base-photo coordinates;
-  it is sampled into that raster rather than resetting the layer's placement.
-  Added coverage is limited to the layer's actual content support, while existing
-  soft coverage survives unchanged. Subtraction can remove coverage anywhere.
-- **The gap:** The user did not specify sampling, content bounds or mask-report
-  semantics after a transform.
-- **The reach:** Bounds describe covered cells in base coordinates; pixel counts
-  count retained raster samples. Refinement is not an arbitrary border/retouch
-  opacity editor. Empty selections can be inspected and explicitly positioned,
-  while operations needing a centroid may require coverage.
-- **Verdict:** **Sound.** Keeps content and selection aligned without inventing
-  pixels or adding a second placement system.
-- **Confidence:** High.
-
-## Verification fixtures follow the behavior, not incidental scheduling — sound
-
-- **When:** Selection/redo closeout, 2026-09-07.
-- **The choice:** Compare model-download URLs without arrival order, preserving
-  exact values and multiplicity. Simulate an unavailable library by atomically
-  renaming its path, not recursively deleting files beneath a live writer.
-- **The gap:** Earlier tests accidentally required one concurrent download order
-  and mixed disappearance detection with recursive-delete/backup races.
-- **The reach:** Hash checks, cache reuse, duplicate-download detection and the
-  daemon's existing exit budget remain intact. Neither correction changes product
-  scheduling, shutdown logic or performance thresholds.
-- **Verdict:** **Sound.** Tests retain their safety claims while removing unrelated
-  failure modes; deliberate extra downloads and a disabled watcher still fail.
-- **Confidence:** High.
-
-## Reduced-RGB decode correction — sound
-
-- **When:** Reduced camera RAW correction, 2026-09-06.
-- **The choice:** Keep the regression at native pixel resolution. When a pale
-  label is decoded, every other column must not lose its green signal. The test
-  checks a whole illuminated patch before resizing; a small preview can average
-  missing columns into plausible-looking colors. It does not require the RAW to
-  match the camera's finished JPEG or pin a host-specific pixel hash.
-- **The gap:** The repair request required photographic regression coverage but
-  did not choose its measurement or test boundary.
-- **The reach:** The fixture guards erased native detail through the public Rust
-  decoder; it is not a complete color-rendering or highlight-recovery oracle.
-- **Verdict:** **Sound.** The observed missing-channel failure is deterministic,
-  and the test was observed red before the correction and green afterward.
-- **Confidence:** High.
-
-### Functional container — Enforce filesystem permissions during tests
-
-- **When:** Local closeout, 2026-09-07.
-- **The choice:** A sidecar test makes one photo directory read-only and expects
-  that item to fail while the next photo succeeds. Docker's root process could
-  bypass those permissions, so the functional service drops its discretionary
-  file-access bypass capabilities. The same real filesystem operations now test
-  the intended failure without inventing permission checks in product code.
-- **The gap:** The Docker test plan did not specify runtime capabilities. Moving
-  the entire build and test toolchain to another user would require unrelated
-  ownership changes; removing these privileges targets the demonstrated mismatch.
-- **The reach:** This affects the functional container, not build steps or the
-  gateway fixture. It enforces file-access permissions but does not claim root
-  has become an ordinary user for every other privilege.
-- **Verdict:** **Sound.** The harness must permit the failure it promises to test;
-  neither test expectations nor application behavior should compensate for root.
-- **Confidence:** High.
-
-### Verification — Separate full-RAW journey hang guards from speed acceptance
-
-- **When:** CI repair pass, 2026-09-06.
-- **The choice:** Two integrity tests import a full camera RAW and deliver its full-resolution
-  pixels. Their implicit five-second runner cutoff interrupted healthy six-second journeys.
-  They now receive the same 30-second hang guard as neighboring RAW-delivery tests, without
-  changing their dimensions, source files or assertions.
-- **The gap:** These functional tests had no explicitly chosen execution budget; the framework
-  default was accidentally acting as an unrequested export-speed requirement.
-- **The reach:** Only these two tests change. Explicit warm-preview and encoder performance
-  gates, the RSS canary, and other test deadlines remain authoritative and unchanged.
-- **Verdict:** **Sound.** The functional oracle can finish observing actual output while a finite
-  hang guard remains; measured completion does not become a universal latency guarantee.
-- **Confidence:** High.
-
-- **When:** Reduced camera RAW correction, 2026-09-06.
-- **The choice:** Let the decoded sensor layout decide whether demosaicing runs.
-  Demosaicing fills missing colors in a sensor mosaic. A reduced Sony RAW already
-  holds all three colors per pixel, so it bypasses that operation. A normal Bayer
-  RAW continues through it. Choosing by Sony filename or compression would confuse
-  storage format with whether colors are actually missing.
-- **The gap:** The request named the broken reduced format; the general dispatch
-  criterion was unspecified.
-- **The reach:** Other complete-RGB codecs receive the same treatment without new
-  flags, wire fields, dependencies or format-specific exceptions. Codec-applied
-  white balance remains reported through the existing metadata.
-- **Verdict:** **Sound.** LibRaw already owns this distinction and uses it in its
-  own processing path.
-- **Confidence:** High.
-
-## Unsound
-
-### Slice 13a generate — Speculative reference transport superseded
-
-- **When:** Slice 13a standalone generation, 2026-09-05; evidence correction, 2026-09-06.
-- **The choice:** `generate --ref photo.jpg` rotates and normalizes the reference to PNG, then places one data URL in a
-  `reference_image` field on the existing OpenAI-compatible `images/generations` request. The command records only that a reference
-  was used, not the local path or image bytes. The fake gateway pins that wire shape. [Vercel's current GPT Image 2 surface](https://vercel.com/ai-gateway/models/gpt-image-2) advertises
-  reference images, but the public raw-REST material inspected during the pass did not name the exact field; its higher-level SDK
-  instead models a prompt as text plus an images array. The alternative is a model-specific multipart edit request, which would move
-  `--ref` off the generation route and require capability-specific adapter evidence.
-- **The gap:** The slice requires `--ref` and fixes the gateway route, but does not version the raw reference-image dialect or supply
-  live acceptance evidence.
-- **The reach:** A live gateway can reject only reference-bearing calls while text-only generation remains valid. The uncertainty is
-  isolated to `ImageModelAdapter.buildGeneration`; catalog, graph, import, and result schemas do not depend on the field name.
-- **Verdict:** **Unsound, corrected.** A fake that accepts an invented field cannot establish the live reference
-  contract. [Current Vercel documentation](https://vercel.com/docs/ai-gateway/modalities/image-generation/openai#editing-images)
-  supplies a supported alternative: reference images on `/images/edits`, with `images[].image_url`
-  documented for JSON requests. The shared adapter now uses the
-  [documented OpenAI multipart edit contract](https://developers.openai.com/api/docs/guides/image-generation):
-  repeated `image[]`, with the editable base first when masked. Standalone references also route to
-  edits; the speculative generation field is removed. Dual immutable reference pins preserve exact
-  oriented PNG bytes including alpha and a separate working RGB projection for reproducible refresh.
-  Live photographic acceptance remains separate and unrun.
-- **Confidence:** High in the corrected transport decision; live execution has not been measured.
-
-## Needs-user
-
-### Slice 12f plan — Removing borders preserves a later exterior crop
-
-- **When:** Outpaint viewport decision checkpoint, 2026-09-06; implemented.
-- **The choice:** Crop into an added border at `[-20,100,60,80]`, then remove every border. Keep the
-  60×80 view and its position: the left 20 columns are opaque black with `canvas_uncovered`, while
-  the other 40 columns show the original. Even a fully unsupported crop stays the same size. The
-  alternative clips to the original bounds, silently changing later editing intent and leaving no
-  defined picture when the intersection is empty.
-- **The gap:** Source-only crop validation could not represent a formerly valid viewport after
-  removal of its generated support. Removing a layer is not authoring a new crop.
-- **The reach:** The output planner distinguishes viewport dimensions from available pixel
-  support. New crops still require intersection with the current visible canvas; existing intent
-  survives layer changes and can be restored by re-enabling a border without provider work.
-- **Verdict:** **Needs-user.** Provisionally retain the viewport, consistent with preserving later
-  absolute editing choices. The user has been asked; clipping remains a reversible planner policy
-  for future canvas authoring. Original bytes and paid artifacts stay unchanged either way.
-- **Confidence:** Low; predictable geometry competes with the visual inconvenience of black areas.
-
-### Slice 12f plan — Missing inner borders leave warned black canvas
-
-- **When:** Outpaint lifecycle planning, 2026-09-06; implemented.
-- **The choice:** Add an outer border B around a picture that already contains border A, then remove A.
-  B stays where it was authored. Areas formerly supplied by A become opaque black and show/export
-  report `canvas_uncovered`; the renderer neither moves B nor buys replacement pixels. Setting A's
-  opacity to zero likewise fades its pixels without changing the canvas size. Disabling A withdraws
-  its own extent, but cannot withdraw the area independently retained by B.
-- **The gap:** Opaque image output needs a deliberate policy for holes; zero-initialized memory is
-  not itself a product decision.
-- **The reach:** Extent is distinct from visible color. Hidden original content cannot silently replace
-  a removed generated border while a surviving authored boundary excludes that content.
-- **Verdict:** **Needs-user.** Provisionally use opaque scene-linear black plus a warning, preserving
-  authored placement and avoiding automatic provider costs. A later background preference can replace
-  the policy without rewriting original images or paid border artifacts.
-- **Confidence:** Low; black is predictable but may be aesthetically undesirable.
-
-### Slice 12f plan — Expand the visible picture symmetrically
-
-- **When:** Outpaint planning checkpoint, 2026-09-06; implemented.
-- **The choice:** After cropping and straightening a photo, `fill --outpaint --px 100` adds
-  100 pixels around the picture currently visible, without restoring the source content the crop
-  excluded. An aspect request uses the smallest containing integer raster with the exact requested
-  ratio: 10×7 expanded to 3:2 becomes 12×8. Growth is split between opposite edges; an odd pixel goes
-  right or bottom so existing pixels never move by half a pixel.
-  Requesting the current aspect does nothing and makes no paid request. The alternatives are expanding
-  the uncropped original, anchoring growth at the top-left, or resampling to obtain perfect symmetry.
-- **The gap:** The original outpaint requirement did not select the expansion frame, anchor, or rounding.
-- **The reach:** These choices determine output dimensions and the meaning of repeated expansion.
-  Original-base coordinates and source dimensions stay unchanged; the graph must represent the visible
-  extent rather than make callers reinterpret stored positions.
-- **Verdict:** **Needs-user.** Provisionally expand the current visible picture and use integer centered
-  placement. The user has been asked; a different answer changes the planner before canvas authoring,
-  not existing photo records. One-axis ceiling was rejected because repeated identical requests can
-  alternately grow width and height; exact-ratio integer dimensions make the second request a no-op.
-- **Confidence:** Medium.
-
-### Canvas ancestry — Capture the ordered input projection when a border is authored
-
-- **When:** 12f2 moved-border input preservation pass, 2026-09-06.
-- **The choice:** Expand a cropped photograph with border A, move A to the right, then add border B
-  around the resulting view. B records the exact ordered projection stages that made its input
-  visible. A stage is a frame and coordinate mapping used by one existing pixel sampler. Later
-  renders replay those immutable stages against live pixels; they do not reconstruct B's input from
-  A's original, unmoved rectangle. That reconstruction erased four already-visible red columns in
-  the public regression. Capturing RGB instead would freeze later photographic edits, so only the
-  projection is retained.
-- **The gap:** Earlier checkpoints kept input/output frames and absolute controls, but those cannot
-  recover the intermediate canvas after an older border has moved. The general requirement is the
-  actual authored projection, not an inferred projection from a prior border's original bounds.
-- **The reach:** Geometry checkpoints require `input_stages`. The canvas recipe stores its shared
-  `viewport_stages` once; each RGB and coverage input still applies that tail before compositing,
-  after its own earlier restrictions. Moving the sampler after compositing would change boundary
-  pixels and is not this factoring. No historical RGB dependency, mutable table, or extra identity
-  resample is introduced. The unshipped scaffold shapes are tightened in place; real schema 19/21
-  fixtures are regenerated through their writers without changing historical SQL migrations.
-- **Verdict:** **Sound.** Captured projection preserves the complete visible input while keeping
-  authored exclusions fixed and later pixels editable. Density realization remains a separate
-  outstanding consumer contract, not permission to force every source to the authoring raster.
-- **Confidence:** High.
-
-### Shared mask projection — preserve both authored footprints
-
-- **When:** Authored mask-frame integration, 2026-09-06.
-- **The choice:** After extending and rotating a photograph, a retouch circle belongs
-  to that photographic frame, not a same-sized rectangle guessed from the original.
-  Its existing placement transform records that location. During composition, mask
-  coverage is projected from its own recorded frame and clipped to both the mask's
-  and the covered image's physical footprints. Otherwise filtering can reveal pixels
-  outside the area either input actually supplied. Binary support for already-covered
-  RGB is derived only after projection, retaining the existing single-coverage rule.
-- **The gap:** Earlier consumers assumed ordinary masks were catalog-sized; the plan
-  did not specify how a retouch mask should carry an expanded photographic footprint.
-- **The reach:** Retouch, ordinary layer composition and canvas composition share the
-  existing frame/projection owners. No new mask schema or special retouch compositor
-  is introduced. Masks are authored at logical photographic density and realized
-  against actual input execution density; source fallback does not redefine location.
-- **Verdict:** **Sound.** The general authored-support contract covers cropped,
-  rotated and expanded inputs without a dimension-based special case.
-- **Confidence:** High.
-
-### Canvas restrictions — Aspect edits start from the stable authored canvas
-
-- **When:** 12f2 restriction-activation pass, 2026-09-06.
-- **The choice:** Crop and straighten a photograph, then expand it. Setting only an aspect ratio
-  afterward crops the expanded canvas, not the old source crop. The ratio still has its familiar
-  before-quarter-turn meaning: a 2:1 ratio on a canvas authored at 90 degrees produces a portrait
-  restriction. The aspect crop happens first, then the existing relative quarter-turn/straighten
-  stages replace the current view. A 175×422 canvas authored at 90/10 becomes 175×350 with aspect
-  2:1, then 146×338 at 90/5 or 338×146 at 180/5. Returning to 90/10 restores exactly 175×350;
-  clearing the aspect restores the original 175×422 authored canvas.
-- **The gap:** The source editor applies aspect before rotation and straightening, but that does
-  not say whether a later aspect edit should replay those operations on the pre-border source.
-  Replaying would reactivate consumed restrictions and can reveal excluded content or erase the
-  border. Applying the ratio directly to screen axes would silently reverse its meaning at 90 degrees.
-- **The reach:** Each crop/aspect activation is tested separately against the supporting checkpoint.
-  Same-value edits can reactivate one restriction without the other. Preflight validates the aspect
-  that is actually active, not a consumed absolute value retained for later fallback. The existing
-  geometry owner handles integer stages and complete mappings; no extra interpolation is inserted
-  simply to make the ratio appear correct.
-- **Verdict:** **Sound.** Stable-canvas restriction preserves reversible editing and the established
-  quarter-turn convention without inventing source pixels or accumulating shrink.
-- **Confidence:** Medium; post-border aspect is explicitly a canvas restriction rather than a replay
-  of the pre-border source operation, a product distinction future editing interfaces must preserve.
-
-### Canvas core — Separate historical order from support that remains active
-
-- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
-- **The choice:** Remove border A, then author B. B remembers that A happened earlier for inspection,
-  but does not inherit A's exclusions merely because A is its chronological predecessor. A required
-  count divides each checkpoint's ordered inputs into supporting checkpoints and an optional final
-  chronological predecessor. A later sequence retains its immediately preceding sequence. These
-  references point to geometry records, never require removed historical RGB to evaluate pixels.
-- **The gap:** The metadata scaffold had not distinguished these two meanings of ancestry.
-- **The reach:** Future removal, duplicate and inspection flows must preserve both relationships.
-  The current unshipped recipe is tightened directly and the real schema-19 fixture regenerated; DDL 19
-  stays unchanged, without a compatibility recipe for development-only data.
-- **Verdict:** **Sound.** Historical retention cannot accidentally reactivate removed support.
-- **Confidence:** High.
-
-### Canvas core — A placed border retains its full intrinsic raster
-
-- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
-- **The choice:** Translating a border four pixels moves its RGB, mask hole and extent together.
-  Placement recipe 2 records the full frame without baking a clipped transformed image; the ordered
-  compositor samples it. Original-content exclusions and later borders stay in their authored
-  coordinates. Existing manual transform 1 retains its baked-raster semantics. A supplied image
-  whose intrinsic dimensions disagree with the prepared frame cannot activate the border.
-- **The gap:** Existing transform 1 clips to its intrinsic canvas, which loses pixels needed for
-  border extent. Reusing that meaning would make moved border pixels disappear.
-- **The reach:** Migration 21 admits a genuinely different durable placement recipe, not a naming
-  alias. Logical dimensions of pinned images come from their artifact metadata, not a latest
-  execution guess. No new artifact store or provider API is added.
-- **Verdict:** **Sound.** Distinct pixel semantics earn a distinct persisted recipe while sharing
-  frame/matrix and compositor owners.
-- **Confidence:** High.
-
-### Canvas core — Clip admissibility after ordered sampling
-
-- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
-- **The choice:** A straightened later border can retain a hole where an earlier border was removed.
-  Lanczos interpolation alone leaked tiny original values into that hole. RGB and coverage still
-  traverse the original ordered samplers, then coverage is clipped against the authored admissible
-  frames. This removes forbidden content without substituting a fused one-pass sampler. A manual
-  layer authored after expansion uses the current photographic image, so its legitimate extension
-  pixels survive; an older hidden layer cannot reveal the excluded original.
-- **The gap:** Geometric exclusion and interpolation coverage have different meanings at edges.
-- **The reach:** Exact-black unsupported pixels coexist with normal interpolation and live base
-  edits. Post-border manual content has a real pixel dependency on its captured photographic input;
-  geometry ancestry itself remains metadata-only.
-- **Verdict:** **Sound.** The explicit admissibility boundary fixes leakage without flattening all
-  content or clipping every layer to the oldest crop.
-- **Confidence:** High.
-
-### Canvas core — Preserve exterior intent and distinguish a new request from support removal
-
-- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
-- **The choice:** On an original photo, a new crop partly outside its edge is accepted if it intersects
-  the current view; a wholly disjoint new crop is rejected before a revision. Once valid, that same
-  crop remains even if removing borders leaves it wholly unsupported. The user sees opaque black
-  where no admissible pixels exist, rather than a silently clipped crop or a failed removal.
-- **The gap:** The old containment check could not represent reversible exterior intent. The
-  selected policy validates intersection for new requests and preserves intent on removal.
-- **The reach:** Mutation owns intersection policy; render geometry accepts signed finite frames
-  with exact source scaling. Reset/shrink/removal must not be reclassified as new enlargement.
-- **Verdict:** **Sound.** This follows the explicit reversible product choice and has public tests
-  for partial exterior acceptance, disjoint refusal and removal fallback.
-- **Confidence:** Medium; black exterior fallback remains a reversible product policy.
-
-### Canvas core — New raster limits preserve source-sized operations
-
-- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
-- **The choice:** A 32 MP source may request a 60 MP exterior view, but a billion-pixel crop is rejected
-  before allocation. The render owner provisionally allows at most 64 million pixels and 16,384 per edge,
-  raising each ceiling to the catalog source size when needed so a 100 MP original can still be
-  cropped/reset/rotated at source size. Provider work must also satisfy its own adapter limits.
-- **The gap:** Canvas growth needed a render safety policy independent of provider capability.
-- **The reach:** These are centralized growth limits, not a memory guarantee, stored checkpoint
-  policy or new user setting. Representative hardware evidence is still needed; changing the
-  centralized limits later does not rewrite authored geometry.
-- **Verdict:** **Needs-user.** Continue with this provisional ceiling; representative
-  hardware evidence or a different product limit can replace it without a schema change.
-- **Confidence:** Medium.
-
-### Canvas core — Snap only roundoff-scale integer boundaries before outward raster rounding
-
-- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
-- **The choice:** Mapping an unchanged rotated frame back into its own axes produced a numerical
-  y=-1.4e-14 and accidentally added one raster row. Before floor/ceiling, the frame owner snaps a
-  coordinate to its nearest integer only within 32 machine epsilons scaled by frame size and coordinate
-  magnitude. A real negative fractional boundary still expands outward; support polygons themselves
-  are not clipped or altered to make the extent smaller.
-- **The gap:** Integer raster bounds need a separate numerical policy from support's area tolerance.
-- **The reach:** Repeated orientation changes restore exact dimensions without hiding ordinary
-  fractional extent. This is floating-point arithmetic, not symbolic precision for ill-conditioned
-  transforms; both near-integer and genuine negative-fraction regressions must remain.
-- **Verdict:** **Sound.** The tolerance matches the measured coordinate-roundoff failure and stays
-  separate from viewport-relative coverage area.
-- **Confidence:** Medium.
-
-### Canvas core — Uncovered warnings describe structural support, not painted color
-
-- **When:** 12f2 deterministic core maintenance checkpoint, 2026-09-06.
-- **The choice:** Fading a border to zero opacity does not warn merely because black is visible.
-  Moving or removing support can warn even if an ordinary painted layer covers the hole. The
-  immutable photographic plan stores whether the final viewport lacks original-admissible or
-  enabled-border support; show/export read that snapped plan before cached previews or skipped
-  deliveries can bypass rendering.
-- **The gap:** “Uncovered” could otherwise mean opacity, black RGB, disabled history or geometric
-  support. Structural support is the selected provisional meaning.
-- **The reach:** No mutable status table, preview sidecar warning cache or pixel-color detector is
-  added. Overlapping borders are evaluated as a union of real transformed polygons.
-- **Verdict:** **Needs-user.** Continue with the explicit provisional structural meaning; changing
-  the product meaning would require rederiving warning identity, not inspecting black RGB.
-- **Confidence:** Medium.
-
-### Slice 12f plan — Authored crop boundaries belong to enabled borders, not permanent source edits
-
-- **When:** Outpaint lifecycle planning, 2026-09-06; implemented.
-- **The choice:** Crop a picture, add border A, crop it more, then add border B. Each enabled border
-  retains the visible frame it was made around. Clearing a later viewing crop reveals that authored
-  canvas, not content excluded before its creation. Removing B withdraws B's boundary; removing all
-  borders lets normal develop controls operate on the original again. Later rotation and crop choices
-  remain current intent throughout, rather than reverting to the values used before outpaint.
-- **The gap:** The plan did not distinguish pre-border cropping from post-border viewing changes.
-- **The reach:** Immutable graph intent encodes those authored frames without a second mutable
-  geometry table or permanently discarding source pixels. A later border must inherit earlier
-  exclusions, not merely its input rectangle: if its interior contains an earlier generated strip,
-  removing that strip cannot reveal hidden original pixels while the later boundary survives.
-  The nonzero-straighten witness in the outpaint plan separates these cases. Reorder changes paint
-  order, not authoring chronology; the [layer-state review](assets/outpaint-state-review.md)
-  records the bounded rendered proof without claiming photographic generation quality.
-- **Verdict:** **Needs-user.** Provisionally retain visible-input boundaries only while the owning
-  borders are enabled. This makes generated borders reproducible and removable. A different product
-  preference must explicitly address already-authored boundaries; original source data remains untouched.
-- **Confidence:** Medium.
-
-### Slice 12f plan — Transform the border, not the whole photograph
-
-- **When:** Outpaint lifecycle recon, 2026-09-06; implemented.
-- **The choice:** Moving an outpaint layer moves its generated pixels, edit mask, and extent together.
-  The source area excluded when that border was authored stays excluded while its boundary is active.
-  Other borders retain their own authored positions. Reordering changes paint order only; duplication
-  creates another copy at the same footprint, not another canvas expansion.
-- **The gap:** Ordinary layer operations were required but their effect on authored canvas extent was unspecified.
-- **The reach:** Border transforms are local paint edits, unlike develop rotation of the whole picture.
-  Resulting holes use the declared background/warning policy rather than triggering generation.
-- **Verdict:** **Needs-user.** Provisionally preserve the existing meaning of layer transforms as local
-  operations. A whole-canvas transform would be a separate product operation, not an implicit side effect.
-  A different preference must preserve the meaning of already-authored layer placement.
-- **Confidence:** Medium.
-
-## Sound
-
-### Paid image responses — Retain original encoded bytes beside working pixels
-
-- **When:** Paid-response journal, 2026-09-06; reconciled after the user's retention/redo direction.
-- **The choice:** A paid generation returns a PNG. Keep that exact file as well as
-  the scene-linear working pixels used by the editor. Undoing its edit does not throw
-  away the purchase, and inspecting the attempt can return the original file. Keeping
-  only working pixels would lose the provider's original encoding and metadata.
-- **The gap:** The spec initially left the retained encoding open. The user accepted
-  keeping purchased results and requested public inspection and redo.
-- **The reach:** Original files participate in the existing artifact store and
-  reachability rules, not a separate retention system. Previously discarded originals
-  cannot be recovered through automatic provider replay. Future deletion policy still
-  needs its own measurement and authority; it does not block retaining results now.
-- **Verdict:** **Sound.** Preserves the user-approved purchase and inspection contract.
-  Format measurements establish the encoding distinction, not a universal storage cost.
-- **Confidence:** High for preservation; library-scale storage costs remain unmeasured.
-
-### Standalone generation — A reference without text requests a variation
-
-- **When:** Reference-only command completion, 2026-09-06.
-- **The choice:** When a caller supplies `generate --ref photo.jpg` without a prompt,
-  request a new variation that keeps the main subject and composition but permits detail
-  changes. Store the resolved instruction and its template version beside the retained
-  reference. This does not promise a copy or exact reconstruction. An explicitly empty
-  prompt is an error, not a request for the default. If the selected adapter cannot send
-  the reference, reject before provider work rather than buy a text-only image about an
-  unseen reference. Explicit text-plus-reference requests keep their existing warning policy.
-- **The gap:** The original command included a reference-only form but did not say what
-  to generate when no text described the desired result.
-- **The reach:** This defines the default creative intent of that shorthand, without a
-  new image model, local blend, database field or implicit reference-photo import. A future
-  template change must retain its version in request provenance.
-- **Verdict:** **Sound.** A variation is a useful generation operation; copying would not
-  justify a provider call. Refusal when its only input cannot be sent prevents unrelated work.
-- **Confidence:** Medium; the variation instruction is a reversible product default,
-  not an assertion of photographic quality or a settled numeric reference-strength policy.
-
-### Native decoding — Request scene pixels without a second full-image snapshot
-
-- **When:** Owned LibRaw camera conversion integration, 2026-09-06.
-- **The choice:** When an editor needs light values in the shared Rec.2020 color space,
-  it requests that space through the existing decoder. LibRaw decodes and scales first,
-  then converts its owned pixels before returning them to JavaScript. Returning camera
-  pixels first would require another full-image snapshot for the subsequent native color
-  conversion. Callers that need camera samples can still request the default decode.
-- **The gap:** The allocation requirement did not specify the decoder API or ownership
-  boundary for combining these operations.
-- **The reach:** The public decode command and shared graph source request scene pixels;
-  there is no segmentation-only decoder. File and CIRAW already return scene pixels.
-  The existing color conversion remains unchanged and idempotent for scene input.
-- **Verdict:** **Sound.** Explicit output space keeps one decoder-selection owner and
-  preserves resize-before-color arithmetic without borrowing mutable caller pixels.
-- **Confidence:** High.
-
-### Native decoding — Calibration belongs only to camera-channel pixels
-
-- **When:** Independent review correction integrated with scene decoding, 2026-09-06.
-- **The choice:** Converted scene pixels carry normalized black/white levels and already
-  applied white balance, but no camera matrix or camera white-balance gains. Leaving
-  those fields on the result would let later operations carry calibration that no longer
-  describes the pixels. Default camera output retains its calibration.
-- **The gap:** The new native scene result needed an explicit metadata contract, not
-  merely matching pixel values and a color-space label.
-- **The reach:** Camera calibration cannot be mistaken for instructions to convert scene
-  pixels again. Historical calibration, if needed later, needs separate provenance.
-- **Verdict:** **Sound after correction.** Metadata describes the returned pixels; the
-  initial stale-field implementation was rejected rather than preserved as compatibility.
-- **Confidence:** High.
-
-### Native decoding — Do not count predicted worker allocations as owned memory
-
-- **When:** Owned LibRaw camera conversion integration, 2026-09-06.
-- **The choice:** The background decoder allocates its pixels and reuses them for color
-  conversion. Node accounts the final returned array. We do not pre-charge a guessed
-  image size while the task is queued or call Node's thread-bound accounting API from
-  the background worker. Those alternatives would change an actual-allocation counter
-  into a reservation estimate or violate its thread requirement.
-- **The gap:** Removing a JavaScript-to-native snapshot also removes that snapshot's
-  charge; the existing guard does not account decoder-created worker allocations.
-- **The reach:** This removes a duplicate image without claiming complete cross-thread
-  accounting. Process residency still requires its own measured resource checks.
-- **Verdict:** **Sound.** Keep accounting honest; a future worker-reporting mechanism
-  needs its own design and evidence rather than a fictional reservation here.
-- **Confidence:** High for accounting semantics; residency remains measurement-dependent.
-
-### Camera references — Keep real JPEG companions and separate geometry from color evidence
-
-- **When:** Permanent camera JPEG fixture pass, 2026-09-06.
-- **The choice:** A camera writes a RAW and a processed JPEG for the same exposure. Keep
-  both original files together, with separate integrity manifests, rather than generating
-  the JPEG from photoctl's RAW renderer. Exercise representative landscape and both portrait
-  rotations through public import, offline preview and full-size delivery. Compare generated
-  pixels as stored against the correctly oriented camera image; require a substantially
-  closer match than any quarter-turn alternative. This checks upright content, not an exact
-  match between different resamplers' colors.
-- **The gap:** The user requested permanent realistic JPEG and paired examples, but did not
-  prescribe fixture naming or the photographic regression oracle.
-- **The reach:** JPEG manifests use `.JPG.json` so the RAW facts are not overwritten. Tests
-  stream integrity hashes and use a second locator to exercise byte-identity deduplication.
-  These references do not by themselves prove paired import or photographic color fidelity.
-- **Verdict:** **Sound.** Camera-produced files expose metadata and codec behavior that our
-  own generated fixtures cannot independently establish; narrowly named assertions avoid
-  presenting an orientation test as a photographic-quality gate.
-- **Confidence:** High.
-
-### Native compositing — Reuse owned inputs without changing mask meaning
-
-- **When:** Full-resolution allocation correction, 2026-09-06.
-- **The choice:** A composite job snapshots its inputs for caller safety, then reuses its
-  owned background for the result instead of allocating another full frame. Its actual
-  vector capacities are reported through the existing native task-memory owner. Lift
-  keeps its distinct fractional-mask behavior and no longer allocates an unused background.
-- **The gap:** The resource requirement did not dictate intermediate allocation ownership.
-- **The reach:** Caller snapshots, fractional arithmetic and signed-zero results remain
-  unchanged; no model, schema, sampling, GC or memory-limit policy changes.
-- **Verdict:** **Sound.** Removes proven redundant allocation without asserting that allocator
-  residency or the whole-command memory ceiling is solved.
-- **Confidence:** High.
-
-### Supported projection — Keep one RGB worker behind the shared frame planner
-
-- **When:** Full-source G6 owned-projection checkpoint, 2026-09-06; API proposed and approved before implementation.
-- **The choice:** A photograph is cropped, rotated, and placed on a larger canvas. The shared renderer
-  still decides each intermediate frame, but submits the whole ordered list to one native worker.
-  Its new RGB-only API receives source pixels and dimensions, stages mapping each input to its next
-  output, and restrictions mapping final pixel centers into earlier visible frames. It returns only
-  final RGB. A separate SAM-only shortcut would make segmentation and ordinary rendering disagree;
-  combining the stage matrices into one transform would change fractional sampling.
-- **The gap:** The required single native owner did not prescribe the boundary's data shape or
-  whether it should also accept mask channels and selectable filters.
-- **The reach:** SAM and rendering keep one geometry planner. The new worker implements their
-  existing Lanczos RGB contract, not a second general transform API or a new saved graph schema.
-  Other masks and transforms retain their existing owners. Finite geometry and final RGB errors
-  reject the request; caller pixels and geometry are copied before asynchronous work begins.
-- **Verdict:** **Sound.** The narrow contract removes repeated boundary snapshots while exact
-  staged and fractional tests preserve existing behavior. It does not itself establish G6 acceptance.
-- **Confidence:** High.
-
-### Supported projection — Share the visible-frame predicate with mask clipping
-
-- **When:** Full-source G6 owned-projection checkpoint, 2026-09-06.
-- **The choice:** A crop cuts through a fractional pixel footprint. Both mask clipping and the new
-  RGB worker ask the same native predicate whether the final pixel center lies inside that frame.
-  The RGB worker writes positive zero outside the intersection of all restrictions, and normalizes
-  selected negative zero exactly as the former zero-base composite did. Copying the predicate into
-  the new task would let future boundary fixes change masks but not RGB; materializing a full mask
-  would preserve the former memory cost without contributing additional information.
-- **The gap:** Ordered exclusions were required, but the existing center-in-frame calculation had
-  no shared native owner available to the new task.
-- **The reach:** The small predicate in the resampling module serves both operations; no mask
-  storage format or geometric comparison changes. Tests pin fractional/out-of-frame intersection
-  and Float32 signed-zero bits, not just visually similar output.
-- **Verdict:** **Sound.** One predicate preserves the same boundary arithmetic for both callers.
-- **Confidence:** High.
-
-### Supported projection — Allocate and account two reusable stage buffers
-
-- **When:** Full-source G6 owned-projection checkpoint, 2026-09-06.
-- **The choice:** A large source is reduced and later expanded. The worker allocates two vectors
-  large enough for their alternating stages, copies the source once, and swaps the vectors after
-  each sampler. Node is charged for those actual allocated capacities while work is pending, not
-  for an estimate of future output. At completion the unused vector is freed and the output is
-  tightened to its exposed length before Node takes ownership. Allocating a new vector per stage
-  would leave more freed storage behind; charging predicted work without allocating it would
-  change the existing memory counter's meaning.
-- **The gap:** The native owner requirement left intermediate storage and output-capacity transfer
-  unspecified. Node accounts typed-array length, not a Rust vector's spare capacity.
-- **The reach:** Long stage chains reuse bounded native workspace but reserve each buffer's largest
-  required stage up front. Tightening can reallocate, and freed storage may stay resident in the
-  process allocator. Counter tests prove actual queued charges, final-output-only transfer, and
-  cleanup after a failed later stage; they do not prove a process RSS ceiling.
-- **Verdict:** **Sound.** Actual ownership and accounting agree without tuning GC or G6 limits.
-  The recorded full-resolution witness remains red; separate runs are not a reliable RSS ranking.
-- **Confidence:** Medium for allocator tradeoffs; high for counter and pixel correctness.
-
-### Slice 11 — Serial SAM inference keeps one allocation thread
-
-- **When:** Native real-model resource pass, 2026-09-06.
-- **The choice:** Segment several photos in one daemon. Each library's existing SAM runtime now
-  loads and runs its encoder and decoder on one dedicated native thread. A bounded handoff passes
-  work to it; failed requests return errors without ending the worker. Dropping the final runtime
-  reference closes the handoff and lets the thread release its sessions. The alternative kept a
-  mutex around model execution but let successive calls run on different general-purpose workers,
-  whose retained allocation working sets multiplied memory usage despite serial execution.
-- **The gap:** The spec required CPU-only, cached inference within a memory band, but did not
-  assign native allocation ownership across Node's worker threads.
-- **The reach:** One additional thread belongs to each loaded SAM runtime; no new process,
-  database field, public command option, global worker-pool setting, or model-math change is needed.
-  The handoff waits for capacity rather than discarding accepted inference requests. Existing
-  asynchronous call lifetime and feature-cache ownership remain unchanged.
-- **Verdict:** **Sound.** Stable ownership addresses worker-dependent memory amplification while
-  preserving model outputs and leaving unrelated native operations' concurrency intact.
-- **Confidence:** High for the ownership decision; full-command photographic memory remains a
-  separate gate beyond the isolated native resource measurement.
-
-### Paid response inspection — Keep metadata listing separate from file verification
-
-- **When:** Retention closeout, 2026-09-06; approved during integration review.
-- **The choice:** Listing a page of attempts reads catalog metadata and labels its availability flag
-  `recorded_available`. Inspecting one attempt verifies its original file and returns `available`.
-  If a file disappeared outside photoctl, the list can still report its last recorded presence while
-  detail correctly reports it missing. The alternative fully decodes every original on every page.
-- **The gap:** Bounded list/detail inspection was specified without choosing whether a list refreshes
-  file availability. A hundred large images would make a metadata query depend on their total pixels.
-- **The reach:** The public names state the freshness difference explicitly. Detail remains read-only;
-  repair and restore retain their existing availability owner. No compatibility alias is needed for
-  this previously unshipped command surface.
-  Attempt pages and detail records use bounded responses like graph inspection. If a saved request
-  is too large for detail output, the response marks truncation rather than deleting that request
-  from storage or expanding the daemon frame. The exact page and field limits belong to
-  `packages/render/src/provider-images/inspection.ts`; they are display limits, not retention limits.
-- **Verdict:** **Sound.** Bounded metadata browsing stays cheap without claiming live file presence;
-  the targeted check supplies stronger evidence when needed.
-- **Confidence:** Medium; an eventual bulk verification command would need its own bounded-work contract.
-
-### SAM preparation — Release photographic pixels before waiting for inference
-
-- **When:** Prepared-input ownership correction, 2026-09-06.
-- **The choice:** A text selection first builds its unchanged grounding JPEG and a small normalized
-  model input, then releases the full photographic display buffer before waiting for the provider
-  and local inference. A prepared handle is a per-command object containing dimensions, coordinate
-  mapping, and either normalized input or cached encoder features—not the original photograph.
-  The alternative keeps the full photograph in a callback throughout the external wait and each
-  mask inference.
-- **The gap:** The runtime cache policy did not specify when commands release full-resolution
-  input or whether preparation must wait until text grounding finds a subject.
-- **The reach:** Empty grounding results now incur preprocessing but still perform no inference
-  and do not alter cache recency or evict another photo. Preparation failure happens before external
-  spend. Concurrent cold preparations may duplicate the bounded input tensor, but first inference
-  shares one encoder promise in the existing cache. Active handles can retain their own features
-  after eviction until the command ends; there is no second persistent cache. A retry after a failed
-  command prepares a new input. Production never forces garbage collection.
-- **Verdict:** **Sound.** Lifetime is explicit and tested without changing pixels, grounding bytes,
-  model identities, or projection. This does not guarantee the separate whole-command RSS budget.
-- **Confidence:** Medium; bounded duplicate preprocessing is an explicit concurrency tradeoff.
-
-### Editable develop input — Preserve the whole purchased RGB branch
-
-- **When:** Standalone upscale consumer correction, 2026-09-06.
-- **The choice:** Generate a picture, pay to enlarge it, then lower exposure. The editable develop
-  node (the graph step holding current adjustment controls) consumes the entire enlarged result,
-  including any final exact-size resample. Replacing exposure replaces those controls without
-  tracing back past purchased processing or stacking a second exposure adjustment. The unbuilt
-  alternative treats only a source or generation leaf as editable input, refusing normal preview
-  of an upscaled picture or discarding its paid pixels when editing.
-- **The gap:** The early develop reader assumed source leaves; the general immutable RGB contract
-  did not specify the reader shared by develop and canvas planning.
-- **The reach:** One graph reader unwraps only the direct editable develop node beneath the base
-  output. Canvas planning shares that interpretation. No schema, provider invocation, or pixel-stage
-  ordering changes; graph publication remains responsible for valid RGB inputs.
-- **Verdict:** **Sound.** Adjustments apply to the actual immutable base, not an older ancestor.
-- **Confidence:** High.
-
-### Paid response retention — Record attempts before deciding whether their images can be used
-
-- **When:** Retention producer audit, 2026-09-06; implemented in migration 20 and producer capture.
-- **The choice:** A paid image arrives with the wrong aspect ratio. Preserve it through the ordinary
-  artifact store, then record the rejection on a library-owned attempt. A successful render execution
-  links that same attempt when its revision commits. Standalone generation can therefore retain a
-  rejected result without inventing a photo or a render node. The alternative stores originals only
-  on successful executions, losing paid results rejected before such an execution exists.
-- **The gap:** All six library image-producing paths can reject or abandon a returned image before
-  graph activation; even the provider adapter and upscale registry contain early policy checks.
-- **The reach:** One attempt journal owns sanitized request/provenance/outcome and the original-image
-  link; executions reference it rather than duplicate retention ownership. Started/retained records
-  left by a crash mean incomplete, not permission to retry. All attempt images remain retention roots,
-  including after photo deletion, until a separately measured deletion policy is chosen. Bounded
-  inspection and attempt IDs in diagnostics make rejected paid work discoverable.
-- **Verdict:** **Sound.** Capture must precede acceptance policy to preserve purchased output. The
-  journal shares the existing artifact lifecycle and avoids a success-only transitional schema.
-- **Confidence:** High in ownership; interrupted attempts remain incomplete rather than authorizing replay.
-
-### Paid response artifacts — Classify bytes independently of how an execution uses them
-
-- **When:** Original-response retention recon, 2026-09-06; implemented by artifact validation profiles.
-- **The choice:** A provider can return a TIFF that is already identical to the strict working TIFF
-  used by the graph. Keep one file and artifact row, with original-response and working links pointing to it. A
-  different, ordinary display TIFF is preserved as encoded image data but cannot be read as working
-  scene-linear RGB. A validation profile describes the content; the execution link describes whether
-  that content is an original response or working output. The alternative labels artifacts by their
-  use, causing the same bytes to collide or generic TIFF decoding to weaken working-image checks.
-- **The gap:** The existing TIFF MIME type implies strict working pixels, while exact paid responses
-  can use that same file format without those color/sample guarantees.
-- **The reach:** The existing artifact owner gains a content-classification column and dispatches
-  validation by it. Byte identity, publication, availability, and reachability stay shared. Original
-  and working readers retain their distinct requirements, and no accepted external image format is
-  silently narrowed to PNG merely to simplify storage.
-- **Verdict:** **Sound.** Content-addressed identity must depend on bytes, not the caller's purpose;
-  strict working validation must remain intact when additional encoded formats are retained.
-- **Confidence:** High; encoded originals and strict working pixels retain separate read requirements.
-
-### Slice 12e2 — Reference intent has one adapter and artifact owner
-
-- **When:** Reference/init production integration, 2026-09-06.
-- **The choice:** Providers owns prepared binary request types, capability decisions, warnings and applied
-  controls. Render imports those types only. Supported references use image edits; unsupported requested
-  controls are retained as immutable intent but warned and not sent. Non-original live initialization is
-  unsupported until evidenced; the fake adapter consumes each mode through distinct fixture signatures.
-- **The contract:** Migration 18 admits `source@2` with required working TIFF and encoded PNG hashes,
-  plus scoped `generate@3` reference ancestry. Both pins use existing publication, availability and
-  reachability even before a source execution. Alpha-only changes change request identity; repeat reuses
-  exact intent and warnings; refresh reads encoded bytes after the original path disappears.
-- **The cost:** Working reference normalization remains full-size, allocating display-16 and float RGB
-  buffers proportional to reference pixels and retaining a full-size TIFF in addition to PNG. No silent
-  flattening or reduced tier was invented. Future bounded projection needs an explicit density/role
-  contract; exact encoded reference intent must remain unchanged.
-- **Verdict:** **Sound for the scoped transport/provenance contract.** Public HTTP tests cover reference,
-  initialization, unsupported warnings, repeat, alpha-only change, deleted-file refresh, corruption and
-  restoration. [Capture evidence](assets/reference-controls/README.md) is limited to alpha and fixture
-  distinctions; agent-limit fallback review is recorded, not presented as fresh-agent or live acceptance.
-- **Confidence:** High in tested transport and immutable intent; medium in the full-size working
-  reference cost, which is explicit and not optimized. No claim about live latent or photographic quality.
-
-### Slice 12f plan — Track whether a crop is active, not only its numeric value
-
-- **When:** Outpaint geometry-intent recon, 2026-09-06; implemented.
-- **The choice:** Crop to rectangle C, expand with border A, then explicitly set crop C again. That
-  command must crop the expanded picture even though the absolute crop value equals the old value.
-  Repeating the set afterward is a no-op. A graph-owned geometry-intent record therefore preserves
-  which restrictions were explicitly activated after each border's authoring checkpoint. Exposure
-  or rotation changes do not reactivate a consumed crop.
-- **The gap:** Equal develop dictionaries previously implied equal intent because there was no canvas authoring boundary.
-- **The reach:** The canonical output planner must own semantic no-op detection across develop and
-  layer writers. Reset/copy/preset operations retain explicit field-touch semantics; optional revision
-  metadata alone cannot own state that ordinary layer mutations would drop.
-- **Verdict:** **Sound.** It distinguishes an actual user action from an incidental unchanged value,
-  without a second mutable geometry table or permanently destructive crop.
-- **Confidence:** High; the shared geometry-intent owner implements the distinction.
-
-### Upscaler reports — Unequal rasters have no direct pixel-drift measurement
-
-- **When:** Upscaler integration correction, 2026-09-06.
-- **The choice:** If one prompt returns 32×24 pixels and another returns 16×12, the report keeps
-  both actual dimensions and returns a null drift metric with `different_output_dimensions`.
-  It does not label this uncomputed comparison as maximum pixel difference. Equal-sized outputs
-  retain the existing normalized mean absolute RGB8 difference.
-- **The gap:** The report did not define how to measure outputs at different realized densities.
-- **The reach:** A report consumer must treat null as missing comparison evidence, not poor image
-  quality. Resizing could support a separately specified comparison, but cannot be silently added
-  without choosing its sampling and alignment contract.
-- **Verdict:** **Sound.** Unknown evidence stays unknown instead of becoming an invented score.
-- **Confidence:** High.
-
-### Slice 12 — Regeneration revisits original selection intent under current visibility
-
-- **When:** Initial cropped-frame fill correction, 2026-09-06.
-- **The choice:** If half a selection is hidden by a crop, fill edits only the visible half and
-  stores that restriction in its effective mask. Clearing the crop alone does not invent edits in
-  the other half. Explicit generation refresh, however, goes back to the original selection and
-  can now fill both halves. It replans the provider crop from the newly visible coverage and stored
-  padding. The alternative was permanently losing the hidden selection intent, or silently revealing
-  generated edits just because the user uncropped.
-- **The gap:** Existing refresh requirements did not define partially invisible selections.
-- **The reach:** Refresh is an explicit regeneration action, unlike inspection or ordinary develop
-  changes. Old requests without a stored padding amount retain their recorded padded rectangle,
-  enlarged only enough to contain refreshed support; they do not guess a new padding preference.
-- **Verdict:** **Sound.** Original selection remains editable intent, while authored effective coverage
-  is the durable protection boundary until a new generation is explicitly requested.
-- **Confidence:** Medium; regeneration may deliberately enlarge the edited area after uncrop.
-
-### Slice 12 — Visibility clips sample centers and reports what was excluded
-
-- **When:** Initial cropped-frame fill correction, 2026-09-06.
-- **The choice:** A selection pixel is visible when its center maps inside the evaluated frame.
-  Effective-mask recipes persist that frame mapping when clipping changes coverage. A partial
-  intersection succeeds with `mask_clipped`; a wholly invisible selection returns usage before a
-  provider call or new revision. After upload downsampling, the wire mask is clipped again at its
-  own sample centers so interpolation cannot mark black-padded context as editable.
-- **The gap:** The plan did not define a subpixel visibility rule or a warning for partial coverage.
-- **The reach:** The original selection is unchanged. The rule is raster sample visibility, not
-  analytical fractional area at crop boundaries, and applies consistently to upload and stored intent.
-- **Verdict:** **Sound.** It matches the actual native sampler's inside/outside decision; an
-  area-coverage rule would describe pixels the RGB sampler does not actually provide.
-- **Confidence:** Medium; fractional photographic boundaries still need separate quality evidence.
-
-### Slice 12 — Provider context uses bounded native affine sampling with protected black padding
-
-- **When:** Initial cropped-frame fill correction, 2026-09-06.
-- **The choice:** A provider still receives a crop in original coordinates even when the available
-  photo is rotated, cropped, or a reduced offline preview. The native sampler borrows the existing
-  RGB buffer, maps each requested output sample into it, and interpolates four neighboring samples.
-  Unseen context is black with zero edit coverage. It never reconstructs a full original-sized float
-  image merely to make a bounded upload. Generation records the sampling map and actual input dimensions.
-- **The gap:** Earlier crop preparation assumed RGB and selection arrays shared dimensions.
-- **The reach:** Refresh uses the same sampler, including any existing generation-input transform.
-  This extends the bounded bilinear upload path; it does not introduce provider tiling or a second
-  canonical resampler. The black-padding policy and limited source density remain inspectable provenance.
-- **Verdict:** **Sound.** Original-coordinate placement stays stable without pretending hidden or
-  unavailable source pixels were present. Photographic interpolation quality is not inferred from fixtures.
-- **Confidence:** High for coordinate and memory ownership; medium for photographic sampling quality.
-
-### Slice 12f plan — Frame ownership precedes canvas growth
-
-- **When:** Outpaint planning checkpoint, 2026-09-06; implemented through the shared frame owner.
-- **The choice:** A rotated photo can have the same width and height as its original while its pixels
-  occupy different coordinates. The plan first makes render, preview, masks, and markup consume the
-  same graph-derived frame: dimensions plus the mapping from original coordinates to evaluated pixels.
-  Canvas growth then lands together with ordinary layer removal and undo; generation follows that
-  deterministic contract. The alternative is a special larger fill path whose preview and layer
-  lifecycle are repaired afterward.
-- **The gap:** The initial slice named outpaint but did not identify ownership across those consumers.
-- **The reach:** Exact execution history determines reduced-resolution sampling. Combined coordinate
-  matrices must not fuse the ordered pixel resampling stages that RGB and fractional mask coverage
-  share. Extent comes from immutable graph intent and active layers, never changed source dimensions
-  or a second mutable canvas-size table.
-- **Verdict:** **Sound.** This addresses the reproduced frame mismatch generally and makes each
-  checkpoint useful through existing user commands, without introducing a disposable outpaint path.
-- **Confidence:** High.
-
-### Slice 12f1 — Recover old execution coordinates only when retained ancestry agrees
-
-- **When:** Shared realized-frame implementation, 2026-09-05.
-- **The choice:** An old execution is a saved render run whose database row predates coordinate
-  metadata. When it points to an input image shared by several historical runs, recovery compares
-  their frames—the source dimensions and mapping that locate those pixels in the original photo.
-  If every candidate agrees, the recovered frame is saved on the old row. If they disagree, recovery
-  reports ambiguity instead of borrowing the newest run's coordinates. Inspection stops at 64
-  candidates per input or 256 distinct executions overall. A preview with its own valid saved frame
-  needs none of this recovery and remains usable offline. The alternative was an unlimited walk or
-  a latest-row guess that silently moves selections; neither establishes which coordinates are true.
-- **The gap:** The approved execution metadata contract left historical recovery and its work limits open.
-- **The reach:** Old libraries upgrade without replaying paid generation. Very large or ambiguous
-  historical graphs can require fresh deterministic evaluation, while retained preview inspection
-  stays independent. The numeric limits are bounded operational policy, not evidence of ambiguity.
-- **Verdict:** **Sound.** Missing history must not become invented geometry; finite recovery prevents
-  an ordinary preview from triggering unbounded database work.
-- **Confidence:** Medium; the limits may need adjustment with real library measurements.
-
-### Slice 12f1 — Save coordinate meaning with each execution, not with shared pixel bytes
-
-- **When:** Shared realized-frame implementation, 2026-09-05; coordinated with the integrating agent.
-- **The choice:** Two differently sized black source images can round through crop/rotation to the
-  exact same 7×7 black output. The pixels therefore share one stored artifact, but their locations
-  in the original photo differ. Migration 17 adds nullable JSON frame metadata to each render run,
-  not to the shared artifact. Deterministic run identity also includes its input frames, so a cached
-  run cannot collapse those two meanings. Paid provider identities and saved images do not change.
-  Preview sidecars retain the same compact frame; their version and deterministic renderer identity
-  advance so older coordinate-less caches cannot masquerade as current ones.
-- **The gap:** The planned shared frame did not specify a durable storage owner. Existing execution
-  rows retained input artifact hashes but no coordinate metadata or exact input execution identity.
-- **The reach:** Future render consumers retrieve coordinates by exact execution identity. The
-  schema adds only optional metadata and does not duplicate image payloads; old rows use bounded
-  recovery. Choosing artifact-owned metadata instead would make identical pixels overwrite meanings.
-- **Verdict:** **Sound.** Coordinates belong to the run that produced the pixels, which the collision
-  regression demonstrates independently of implementation helpers.
-- **Confidence:** High.
-
-### Slice 12f1 — Treat the best declared source tier as a reusable preview ceiling
-
-- **When:** Shared realized-frame implementation, 2026-09-05.
-- **The choice:** A photo can have a 40×20 catalog size but only a declared 20×10 source available.
-  After rendering that source once, a saved native master records both its output frame and the
-  source tier that produced it. Detail requests reuse that master when it already represents the
-  best declared tier, even if a full-catalog-size request would prefer more pixels. A newly available
-  higher tier can still trigger a better render. The alternative repeatedly decoded the same small
-  source and failed after the source disappeared despite having valid cached pixels and coordinates.
-- **Additional boundary:** A pinned fallback's label does not prove its density. Read its available
-  image metadata once: keep a 20×10 cached master instead of a 10×5 pin, but improve a 4×2 master
-  from that same pin. If the pin is missing or unreadable, retain the valid cache and its truthful
-  frame. Native, cached detail, and newly extracted detail follow this rule without repeatedly
-  evaluating an already-warmed source.
-- **The gap:** Exact frame retention specified truthful resolution reporting, but not how a reduced
-  non-pinned source should prove that rendering again cannot improve detail.
-- **The reach:** Cached detail remains usable after source loss without pretending that upscaling
-  adds information. This relies on source-resolution metadata accurately describing the chosen tier.
-- **Verdict:** **Sound.** Reuse follows retained source provenance, not an output-width ratio.
-- **Confidence:** High.
-
-### Renderer corrections select new derived caches without deleting old work
-
-- **When:** Fill projection integration, 2026-09-06.
-- **The choice:** The renderer's semantic revision is part of deterministic evaluation and current
-  render hashes. After a pixel-math correction, an existing photo gets a fresh derived preview and
-  reevaluates deterministic nodes; pinned paid generation and its original bytes remain reusable.
-  The alternative was deleting cached artifacts globally or silently displaying an old wrong image.
-- **The gap:** Logical recipes identify editing intent, but an implementation correction can change
-  its output without changing the recipe. Existing cache keys did not distinguish those semantics.
-- **The reach:** Future pixel-semantic changes must advance this single revision. Old artifacts and
-  paid provenance remain historical evidence; no database migration, provider replay, or cleanup job
-  is required to obtain corrected current pixels.
-- **Verdict:** **Sound.** Pixel semantics belong in derived-cache identity, not in user edits or
-  destructive library cleanup.
-- **Confidence:** High; the warmed-cache regression preserves old files and the paid execution while
-  proving the current output bypasses both the old canonical result and display master.
-
-### Mask inspection names its cached context instead of inventing last-shown history
-
-- **When:** `wb masks` integration, 2026-09-06.
-- **The choice:** The report compares committed masks against the highest-area available execution
-  of the current develop root, breaking ties by creation time. It shows exact identities and density,
-  explicitly disclaiming historical SAM input and last-shown source. Each native-detail crop starts
-  at the first covered sample, not an inferred hair or foliage feature. A separate high-contrast
-  overlay aids visibility without changing the coverage panel; narrow layouts stack native-size panels.
-- **The gap:** The spec requested edge inspection but did not define a crop selector or cache policy.
-  Execution creation time cannot reveal which cached tier a later `show` reused.
-- **The reach:** Inspection performs no provider call or source fetch and can materialize only
-  deterministic masks. Real SAM quality must still be judged on appropriate photographic samples.
-- **Verdict:** **Sound.** The report's explicit policy is reproducible and avoids claiming unavailable
-  historical provenance. First-covered crops are starting points, not semantic quality acceptance.
-- **Confidence:** Medium; choosing the most useful hair/foliage detail remains a human review task.
-
-### Gold reports preserve delivered bytes and require explicit source classification
-
-- **When:** Release report integration, 2026-09-06.
-- **The choice:** The existing exam writes HTML, command JSON, and a checksum manifest beside its
-  actual exports. Only those returned files belong to the report; unrelated files in a reused output
-  directory are excluded. Relative links preserve a movable evidence bundle without reencoding JPEGs.
-  Source classification defaults to unverified; even an operator-declared real source never implies
-  photographic acceptance. Skipped existing exports are labeled as unverified against the requested render.
-- **The gap:** The plan required HTML and hashes but left report membership, relocation, source
-  classification, and the meaning of collision-skipped files unspecified.
-- **The reach:** Layout puts provenance and non-acceptance warnings before images, including on mobile.
-  Checksums detect later byte changes but cannot certify photographic quality or source authenticity.
-- **Verdict:** **Sound.** One exam owns both delivery and its evidence; the report avoids false quality
-  claims without duplicating the image pipeline.
-- **Confidence:** High.
-
-### Slice 12 — Mask-polarity probes capture evidence without enabling a provider
-
-- **When:** Mask smoke and adapter encoding pass, 2026-09-06.
-- **The choice:** An explicitly keyed probe makes one request for one named model and polarity
-  candidate, using synthetic rectangles rather than a private photo. It saves the actual outgoing
-  mask and uncomposited return with hashes, but always leaves polarity unverified. The prompt asks
-  both rectangles to change while the mask protects one, so prompt obedience cannot masquerade as
-  mask enforcement. A reviewer must judge that evidence before a production profile is enabled.
-- **The gap:** The spec required live polarity evidence but did not define the probe's consent,
-  fixture, request budget, or acceptance mechanism.
-- **The reach:** A purpose-specific key is required; an ambient gateway key never starts the probe.
-  One attempt avoids accidental duplicate charges. The same asynchronous adapter encoding serves
-  both ordinary fills and probes, preserving fractional coverage when it becomes inverse alpha.
-- **Verdict:** **Sound.** Transport success is not a mask-quality verdict, and provider-specific
-  encoding has one owner without modifying the compositor's internal white-means-edit convention.
-- **Confidence:** Medium; the evidence capture is deterministic, but real provider behavior still
-  requires the specified independent visual review.
-
-### Slice 14 — Source and installed CLI use the same editing journey
-
-- **When:** Packed full-feature journey integration, 2026-09-05.
-- **The choice:** A release install runs the same editing-and-preview scenario as a source build,
-  selecting only a different executable and working directory. The scenario keeps its direct catalog
-  inspection between CLI calls, so it runs without a persistent daemon. A separate unchanged ten-ARW
-  exam runs through the installed daemon. Copying the scenario into the release test would let the
-  two versions gradually test different behavior.
-- **The gap:** The plan required both installed-runtime coverage and the full editing journey but
-  did not prescribe how to share the existing lossless pixel and catalog checks.
-- **The reach:** New editing assertions automatically cover both runtimes. Installed daemon lifecycle
-  remains independently tested; the full-feature journey does not claim daemon coverage it lacks.
-- **Verdict:** **Sound.** One scenario owns the editing contract without weakening its lossless
-  oracle or dropping the existing daemon exam.
-- **Confidence:** High.
-
-### Slice 12e1 — Selection intent and fill coverage are different graph values
-
-- **When:** Effective-mask integration, 2026-09-05.
-- **The choice:** A subject's original selection remains an immutable mask ancestor. A derived
-  `mask@2` recipe computes expanded or feathered coverage. The explicit fill compositor uses that
-  fractional coverage once; the outer layer uses its binary support, meaning every nonzero sample is
-  one. For a half-covered edge, this yields half-strength paint, not a quarter from applying alpha twice.
-- **The gap:** The previous layer and fill compositors both used the same mask. Hard selections hid
-  that double application. Replacing the original selection with expanded coverage would also change
-  later movement anchors and the hole left behind by a moved subject.
-- **The reach:** Migration 16 adds unary derived masks alongside pinned mask artifacts. Refresh,
-  repetition, and transforms recover original intent instead of repeatedly expanding a prior result.
-  Positioning/vacancy use the original selection; coverage/support follow their separate graph ancestry.
-- **Verdict:** **Sound.** Each mask has one meaning, and transformation must precede support derivation
-  so resampling cannot reintroduce fractional coverage at the outer compositor.
-- **Confidence:** High; the single-alpha and original-selection movement regressions fail under the
-  former behavior. Crop/offline support projection is an explicit integration check, not assumed proven.
-
-### Slice 12e1 — Hard fitting thresholds coverage while free fitting preserves it
-
-- **When:** Effective-mask integration, 2026-09-05.
-- **The choice:** Strict/expand treat at least half coverage as selected, then use the existing square
-  native dilation for expansion. Free fitting preserves fractional selection before its default feather.
-  Explicit `--strength` sets feathering in every fit mode, after that mode's threshold
-  and expansion; it is not provider denoising. Its versioned mapping is an absolute
-  base-pixel radius, so the same strength covers a larger fraction of a small JPEG
-  than of a full-resolution RAW. Without explicit strength, only free mode feathers.
-  Expansion is bounded to 4096 base pixels. A declared whole-frame provider edit is refused only for
-  strict mode; other fits still protect every sample outside the deterministic effective mask.
-- **The gap:** The plan named hard/expanded/free fits but did not specify the hard threshold or a radius
-  ceiling. Its whole-frame refusal was specified for strict mode, not a reason to reject every softer fit.
-- **The reach:** Edge coverage is deterministic and independent of provider behavior. The bound limits
-  the command's expansion request; native mask implementation remains the morphology owner.
-- **Verdict:** **Sound.** Hard fitting has an explicit threshold and soft modes retain their intended
-  coverage without delegating exterior protection to the model.
-- **Confidence:** Medium; the mechanics are verified, but square expansion and feather aesthetics still
-  require the named photographic quality review.
-
-### Slice 14 — One CLI tarball contains the private runtime modules
-
-- **When:** Standalone packaging integration, 2026-09-05.
-- **The choice:** Installing the CLI also installs its private command, render, provider, and daemon
-  modules inside that tarball. Their ordinary third-party dependencies are declared once on the CLI;
-  platform-specific native binaries remain optional packages. A JavaScript bundler or separately
-  published domain packages would create additional release boundaries without helping CLI users.
-- **The gap:** The plan named CLI and platform tarballs but left internal workspace modules unshipped.
-  npm treats dependencies of bundled modules as bundled too, so leaving external dependency declarations
-  on the embedded manifests would misstate what the archive contains.
-- **The reach:** Module-relative assets and package boundaries survive installation. The CLI explicitly
-  owns the daemon dependency; the launcher resolves its package entry rather than a checkout-relative path.
-- **Verdict:** **Sound.** The installed runtime has one public JavaScript release boundary and the same
-  module/data ownership as development, without a commands-to-daemon dependency cycle.
-- **Confidence:** Medium; the clean-prefix exam proves the current closure, and future external
-  dependency conflicts are rejected by the packer rather than silently resolved.
-
-### Slice 14 — Shipping uses optimized binaries and one version owner
-
-- **When:** Standalone packaging integration, 2026-09-05.
-- **The choice:** Ordinary development builds stay debuggable; packaging compiles optimized Rust and
-  Swift binaries. The root version generates the Swift release value and synchronizes platform pins.
-  Packing normally targets the host; the release job combines separately built platform artifacts.
-  Publishing selects only the expected current-version tarballs, not every file left in an output folder.
-- **The gap:** The previous build scripts did not distinguish shipped performance from development
-  performance, and the helper's literal version could diverge from the CLI.
-- **The reach:** Local and CI releases follow the same version/profile rule. The Darwin linkage check
-  accepts system dependencies only; a binary's own LC_ID_DYLIB identity is not a dependency. PGlite
-  diagnostics read the installed package's version, not a dependency declaration stripped during packing.
-- **Verdict:** **Sound.** These are release properties, owned by build/package code rather than runtime
-  fallbacks or changes to image algorithms.
-- **Confidence:** High; the installed CLI/helper version and actual RAW processing are exercised together.
-
-### Slice 11 — Cropped prompts keep their meaning rather than moving to a visible edge
-
-- **When:** Production segmentation integration, 2026-09-05.
-- **The choice:** A base-coordinate point outside the current develop crop returns a usage error;
-  clipping it would select a different object. A base-space box transformed by rotation becomes the
-  enclosing axis-aligned box because SAM's box input cannot express an angled rectangle. Text-grounded
-  boxes already belong to the rendered frame and are passed in that frame directly.
-- **The gap:** The global coordinate contract does not specify how an invisible point or an angled
-  rectangle maps into a model's point/axis-aligned-box prompt vocabulary.
-- **The reach:** CLI coordinates remain stable across crop/rotation; point refusal is explicit, and
-  the conservative box can include more background than the original angled selection.
-- **Verdict:** **Sound.** It avoids silently moving point intent and avoids repeated box conversions.
-- **Confidence:** Medium; enclosing boxes are a model-interface limitation, and real mask quality
-  for rotated selections remains part of the photographic probe gate.
-
-### Slice 11 — Encoder reuse follows pixels, not metadata revisions
-
-- **When:** Production segmentation integration, 2026-09-05.
-- **The choice:** Within a photo/tier cache entry, the encoder input's dimensions and pixel hash decide
-  reuse. Rating a photo does not encode again; changing its develop pixels or switching source quality
-  does. Lazy session loads are coalesced, and failed loads/encodes are removed so a repaired model can retry.
-- **The gap:** The plan required encoder reuse per photo/tier but that pair alone cannot distinguish
-  changed develop inputs. A revision-only key would also discard features after unrelated metadata work.
-- **The reach:** The daemon owns the bounded cache and sessions; individual commands share the same
-  freshness policy. Model-file verification remains local, and downloads stay explicit through doctor.
-- **Verdict:** **Sound.** Actual input identity determines reuse, while eviction bounds retained memory.
-- **Confidence:** High; tests change pixels independently of metadata and prove retry after failure.
-
-### Slice 12e2 — Provider sampling is separate from the final fill crop
-
-- **When:** Fill input-size pass, 2026-09-05.
-- **The choice:** A fill covering a 2048×32 crop sends a 1536×24 image and mask by default, but its
-  returned pixels still occupy the original 2048×32 region. For other aspect ratios, the short side
-  rounds to the nearest whole pixel, with a minimum of one. Both uploads share those dimensions.
-  The native region resampler uses bilinear sampling for both uploads, borrowing source buffers and
-  allocating only the sent-size outputs. The full-size mask still owns exact exterior protection.
-  `--full-res` skips this input reduction.
-- **The gap:** The plan fixed the cap and base-coordinate placement but did not specify integer
-  rounding, mask filtering, or where to retain the sampling choice for a later refresh.
-- **The reach:** The immutable generation request stores sent dimensions and full-resolution intent,
-  independently of its placement crop. Refresh uses that intent; a new fill with changed intent cannot
-  reuse the old provider execution. Earlier recipes without this field retain their original full-size
-  sampling on refresh. A borrowed native mask-region entry point complements the existing RGB entry point;
-  no database column or alternative resampling library is introduced.
-- **Verdict:** **Sound.** Provider bandwidth and final output geometry have distinct owners, so limiting
-  an upload cannot silently shrink the document or misrepresent the generated sampling density.
-- **Confidence:** Medium; the deterministic mapping is covered, while live quality at thin mask edges
-  still requires the separately named photographic evidence.
-
-### Slice 13a generate — Standalone paid pixels are a source-less generation recipe
-
-- **When:** Slice 13a standalone generation, 2026-09-05.
-- **The choice:** A generated photo starts at `generate` recipe version 2 with zero graph inputs. Version 1 remains the edit/fill
-  recipe and still requires exactly one upstream photo node. An ordinary output wrapper becomes both document roots, so `show`,
-  `develop`, and `export` can treat the generated photo like any other photo without manufacturing a blank or hidden source image.
-  The provider execution pins the canonical artifact under the source-less node, so reopening or previewing the photo reuses paid
-  pixels instead of calling the provider again.
-- **The gap:** The graph's only generation recipe was defined for editing existing pixels and therefore required an input, while this
-  command intentionally has no base-density target or source photo.
-- **The reach:** Schema v14 permits version 2 only for the node kinds that genuinely own it. Future generated-photo edits build above
-  the output wrapper, and existing fill/reimagine recipes keep their old identities and arity.
-- **Verdict:** **Sound.** Versioning states the semantic difference directly and keeps all downstream image behavior on the shared
-  document graph.
-- **Confidence:** High; recipe, migration, built-show, and later-develop tests exercise both sides.
-
-### Slice 13a generate — Catalog creation and the first graph revision share the import transaction
-
-- **When:** Slice 13a standalone generation, 2026-09-05.
-- **The choice:** Provider pixels are first normalized into the existing content-addressed canonical artifact store. The ordinary
-  import preparation then identifies that TIFF, builds its pinned preview, and opens one catalog transaction. Inside that same
-  transaction it creates the photo and locator, adds the `generated` tag, registers artifacts and executions, and activates the first
-  revision. If any catalog or graph validation fails, none of those rows survive and staged preview files are rolled back. Published
-  content-addressed bytes may remain as harmless unreferenced repair/cache material, matching existing graph publication semantics.
-  Generated locators are explicitly rooted at the portable `photoctl-library` volume; host disk discovery never reclassifies an
-  artifact that already lives inside the library.
-- **The gap:** Calling the public `import` and `tag` commands sequentially would expose a half-imported photo and could not attach the
-  paid execution atomically. The graph revision owner previously always opened its own transaction.
-- **The reach:** The graph store now exposes the same revision implementation for a caller-owned transaction; regular callers still
-  use its transaction-opening wrapper. A byte-identical generated result is refused within the transaction rather than overwriting an
-  existing photo's edit history.
-- **Verdict:** **Sound.** One import owner still controls identity/cache/catalog work, and all user-visible state crosses a single
-  commit boundary.
-- **Confidence:** Medium; the duplicate-content refusal is safer than silently replacing existing intent, but future product UX may
-  want a distinct duplicate result code.
-
-### Slice 13a generate — External 8-bit samples are expanded before canonical color conversion
-
-- **When:** Slice 13a visual gate, 2026-09-05.
-- **The choice:** Sharp's decoded provider bytes are explicitly expanded from `0..255` to `0..65535` before entering the shared
-  display-sRGB 16-bit image type. Previously the buffer requested a 16-bit container, but Sharp retained the original numeric sample
-  range; dividing those values for preview made ordinary colors nearly black. The conversion now maps 128 to 32896 and 255 to 65535,
-  which preserves the full normalized display range before the canonical scene-linear conversion.
-- **The gap:** Existing fill tests asserted geometry and protected pixels but never pinned the numeric range of provider color
-  samples; the standalone visual checkpoint made the latent black-output defect visible.
-- **The reach:** Generate, fill, reimagine, and future external-image consumers share correct brightness and color scaling. No recipe
-  or stored schema changes; previously generated near-black artifacts remain immutable evidence of the old execution.
-- **Verdict:** **Sound.** The mapping is exact for every 8-bit code value and a pure boundary test owns it.
-- **Confidence:** High; the failed visual metrics, direct pixel probe, corrected telemetry, and focused unit test agree.
-
-### Slice 12d3 — Vacancy workflow state comes from content lineage, not role
-
-- **When:** Slice 12d3 person-move integration, 2026-09-05.
-- **The choice:** A stable `vacancy` identity describes its relationship to a subject; it does not permanently mean “magenta and
-  unfinished.” The active vacancy is unfilled exactly while its content first-input lineage reaches the sentinel `solid`. Only that
-  placeholder state is excluded from develop compensation and staleness. Once filled, the same identity is photographic content and
-  follows the ordinary develop tiers; moving its subject again resets the content to the solid without allocating another vacancy.
-- **The gap:** Slice 10c2 could equate role with placeholder state because vacancy fill did not yet exist. Keeping that shortcut would
-  leave a filled hole warning forever and silently exempt generated pixels from later develop changes.
-- **The reach:** Show, export, develop commits, and strict fill share one derived state. The database relationship remains stable while
-  undoable content revisions move cleanly between pending and filled workflow states.
-- **Verdict:** **Sound.** Immutable lineage already records the state transition, so no mutable status column or parallel flag can
-  drift from the active graph.
-- **Confidence:** High; one public journey observes warning, fill, both develop tiers, export, and reset through command dispatch.
-
-### Slice 12d2 — The keyless agent journey separates state continuity from model aesthetics
-
-- **When:** Slice 12d2 agent-preview integration, 2026-09-05.
-- **The choice:** The mandatory real-CLI journey uses a code-generated, asymmetric high-resolution raster with stable subject,
-  detail, anchor, and protected-pixel facts. It accepts the fake provider's intentionally flat replacement as a deterministic state
-  transition, then judges placement, linear-light opacity, preview reuse, provider request counts, and export identity independently.
-  It does not turn the synthetic fill into an aesthetic oracle; photographic edge and texture quality remains a separate live or
-  workbench visual gate.
-- **The gap:** A keyless provider can deterministically prove orchestration and pixel ownership, but it cannot stand in for the
-  perceptual behavior of a live generative model.
-- **The reach:** CI catches stale previews, repeated paid work, coordinate drift, cache contamination, incorrect blending, and stale
-  export without credentials or lucky sampled content. Live visual review retains one clear variable instead of inheriting false
-  confidence from a synthetic image.
-- **Verdict:** **Sound.** The test's claims stop at the boundary its fixture can actually establish.
-- **Confidence:** High for state, cache, and export continuity; deliberately none for live fill aesthetics.
-
-### Slice 12a — The generation execution and active graph revision commit together
-
-- **When:** Slice 12a strict-fill implementation, 2026-09-05.
-- **The choice:** Provider bytes are normalized and published first, but the artifact row, immutable generate execution, canonical
-  descendants, replacement layer snapshot, and output root enter the catalog in one revision transaction. A failed or structurally
-  invalid provider response therefore has no catalog execution and no new undo state. A prepared execution must also remain
-  reachable from the revision's resulting document roots; retaining an inactive node elsewhere in the catalog is not enough. The
-  alternative was a visible intermediate generation revision or an execution row that no active graph could reach.
-- **The gap:** The graph store previously committed deterministic nodes and revisions separately from provider execution recording.
-- **The reach:** Fill, later refresh, and future paid mutations inherit a transaction boundary that cannot expose a paid node without
-  its exact output or activate a replacement layer piecemeal.
-- **Verdict:** **Sound.** Publication remains content-addressed and recoverable, while all catalog-visible state is atomic.
-- **Confidence:** High; failure tracers compare revision and execution counts before and after rejection.
-
-### Slice 12a — A generation recipe pins the execution that supplied its pixels
-
-- **When:** Slice 12a graph-evaluation integration, 2026-09-05.
-- **The choice:** The immutable generate recipe stores its execution ID. Evaluating descendants reuses that exact recorded artifact;
-  it never silently calls the provider again. A future refresh must create a new generate identity and execution instead of changing
-  the meaning of the existing node.
-- **The gap:** The evaluator could select an execution only when a caller supplied one explicitly, but ordinary show/export walks
-  descendants from the output root without such an argument.
-- **The reach:** Lazy preview and export reproduce the committed paid result, including after restart. Missing generated artifacts fail
-  closed rather than manufacturing different pixels under the same graph.
-- **Verdict:** **Sound.** Nondeterministic pixels become stable graph inputs while refresh remains an explicit later operation.
-- **Confidence:** High.
-
-### Slice 12a — Generation preserves crop sampling; resample owns base placement
-
-- **When:** Slice 12a crop-to-graph integration, 2026-09-05.
-- **The choice:** The paid generate execution publishes only its normalized provider crop. Its artifact keeps the intrinsic raster
-  dimensions actually returned by the provider, and the recipe records the same dimensions as the sampling-density fact. The canonical
-  resample node owns both deterministic sizing and placement through an optional base-canvas target rectangle; pixels outside that
-  rectangle are zero because the following strict compositor copies the base wherever its mask is zero.
-- **The gap:** The existing compositor requires dimension-matched inputs, but storing a copied full-base image as the generation
-  artifact erased which pixels the provider actually returned and made the 12b density planner believe a small crop already had
-  full-frame sampling.
-- **The reach:** Future upscale runs from the original intrinsic paid crop, density uses those real pixel dimensions, and
-  crop-to-base geometry has one immutable recipe owner. The strict compositor
-  still protects every unmasked base sample exactly.
-- **Verdict:** **Sound after correction.** It preserves provider evidence and the required generate → upscale → resample/place →
-  mask-composite sequence without a compatibility branch.
-- **Confidence:** High; asymmetric placement and smaller-provider-output tracers pin artifact, sampling, and base-canvas dimensions.
-
-### Slice 08c3 — Normalized controls use OpenColorIO's scene-linear curve domain
-
-- **When:** Slice 08c3 curve implementation, 2026-09-05.
-- **The choice:** A curve point such as `[0.5,0.6]` is UI-normalized data, not a direct linear-light coordinate. Photoctl maps
-  both axes from zero-to-one onto OpenColorIO's -7-to-+7 `GRADING_LIN` log domain, fits OpenColorIO's monotonic quadratic
-  B-spline, applies red/green/blue channel curves first and the RGB master second, then returns to scene-linear Rec.2020.
-  Values beyond the first and last controls follow the endpoint tangent instead of being clipped. The unbuilt alternative was a
-  simple piecewise-linear curve over raw scene samples, which would give the same UI point a different photographic meaning and
-  discard the operator named by the plan.
-- **The gap:** The plan named OpenColorIO `GradingRGBCurve` and normalized schema points but did not spell out the normalized-to-log
-  mapping, interpolation shape, channel/master order, or endpoint behavior.
-- **The reach:** Presets, copied develop dictionaries, in-memory previews, and canonical artifacts now share one stable curve
-  meaning. Curve outputs must be non-decreasing because that is the monotonic spline's contract.
-- **Verdict:** **Sound.** It follows the authoritative operator's scene-linear path and preserves extended-range pixels.
-- **Confidence:** High for algorithm and ordering; medium for the UI-domain mapping until a broader preset corpus is judged.
-
-### Slice 08c3 — Levels preserve extended scene-linear samples
-
-- **When:** Slice 08c3 levels implementation, 2026-09-05.
-- **The choice:** Levels first maps black to zero and white to one, then applies reciprocal midpoint gamma. For a sample below
-  black, or above white, the same calculation continues with a sign-preserving power instead of clipping it into display range.
-  Levels runs after the existing primary/masked/color controls and immediately before curves. The unbuilt alternative was to clamp
-  at black and white, which would silently destroy recoverable scene-linear highlights and negative working values.
-- **The gap:** The schema fixed black, midpoint, and white ranges, but the plan did not state extended-range behavior or where levels
-  sits relative to the other fixed-order operators.
-- **The reach:** Later local, geometry, and output operators receive finite extended-range samples, while both native entry points
-  use identical level math and order.
-- **Verdict:** **Sound.** It preserves the established no-clipping invariant and familiar midpoint semantics.
-- **Confidence:** Medium; exact ramp tests pin the math, while product feel remains subject to real presets.
-
-### Slice 08c1b — Global develop has one native owner and a fixed scene-linear order
-
-- **When:** Slice 08c1b pixel implementation, 2026-09-05.
-- **The choice:** Rust receives the exact linear artifact samples and applies Bradford white balance and opponent cast, then
-  brightness/black point, exposure, contrast about 0.18, and saturation that preserves Rec.2020 Y using the Y row of the existing
-  Rec.2020→XYZ matrix. OpenColorIO's BSD-3 scene-linear formulas were ported rather than linked. TypeScript validates the dictionary
-  and transports the f32 buffer; it owns no parallel grade.
-- **The gap:** The operator table delegated cross-operator order and UI normalization constants.
-- **The reach:** Show, export, the linear probe, and later masked operators inherit one deterministic implementation and insertion
-  order.
-- **Verdict:** **Sound.** It follows the named math and preserves one owner for pixel behavior.
-- **Confidence:** High for exposure and primary math; medium for product feel until broader preset fixtures land.
-
-### Slice 08c1b — White balance uses a bounded Planckian/Bradford model
-
-- **When:** Slice 08c1b pixel implementation, 2026-09-05.
-- **The choice:** Neutral is D65. Positive temperature means visually warmer, so it lowers target CCT from 6504 K; offsets use the
-  delta from the Planckian 6504 K point applied to the exact D65 chromaticity, bounded to 1667–25000 K. This anchors zero exactly
-  and continuously. Positive tint and cast move toward magenta through separate target-y and opponent-gain controls.
-- **The gap:** The table selected Bradford and an opponent axis but delegated conversion constants and sign conventions.
-- **The reach:** Valid extremes stay finite and platform-independent; later UI clients must use these same directions.
-- **Verdict:** **Sound.** The convention matches established editor controls and keeps constants in the native operator.
-- **Confidence:** Medium until gray-card and skin fixtures exercise the full allowed range.
-
-### Slice 08c1b — The linear probe publishes the actual graph artifact without replacement
-
-- **When:** Slice 08c1b graph integration, 2026-09-05.
-- **The choice:** `render <id> --linear --to out.tif` evaluates the active graph, reads its exact scene-linear artifact, and emits the
-  same hash-verified IEEE-f32 linear Rec.2020 TIFF bytes after validation without a decoded f32 allocation. It uses delivery's durable atomic no-replace primitive, so an occupied path,
-  the source itself, or a hard-link alias is rejected without changing bytes. There is no probe overwrite option.
-- **The gap:** The command shape did not specify publication behavior, and the superseded implementation inverted a clamped display
-  artifact instead of reading the working pixels.
-- **The reach:** Values below zero and above one remain observable, byte determinism describes the real production DAG, and probes
-  cannot truncate originals.
-- **Verdict:** **Sound.** The probe is an output edge over the canonical artifact, not a second render or approximation.
-- **Confidence:** High; a falsified regression proves display-style clamping would fail the three-stop (`8×`) ratio/highlight assertions.
-
-### Slice 08c1b review — Native global develop owns one asynchronous worker buffer
-
-- **When:** Slice 08c1b bounded-memory review, 2026-09-05.
-- **The choice:** N-API copies the JavaScript `Float32Array` once before scheduling because JavaScript may mutate its backing store
-  while the worker runs. Rust grades that owned `Vec<f32>` in place and returns the same allocation; it never captures or mutates
-  JavaScript memory off-thread. Graph develop takes the stronger canonical-byte seam: it copies the verified TIFF once into the
-  asynchronous native task, validates and grades its f32 pixel span in place, then publishes the returned canonical bytes without
-  ever materializing or iterating a full-frame `Float32Array` on the daemon event loop.
-- **The gap:** N-API's asynchronous safety boundary requires one input copy, but the initial implementation also allocated a full
-  Rust output frame.
-- **The reach:** A 7008×4672 RGB f32 frame is 392.9 MB (374.7 MiB). Peak pixel storage during the native call is bounded to the
-  JavaScript input plus one Rust frame (785.8 MB / 749.4 MiB), down from three frames (1.18 GB / 1.10 GiB), while CPU work remains
-  off the daemon thread.
-- **Verdict:** **Sound.** The single unavoidable safety copy is explicit and the native operator reuses it.
-- **Confidence:** High; a native pointer-stability test proves the owned allocation is unchanged by the grade.
-
-### Slice 08c1b review — No-replace publication is one native atomic install
-
-- **When:** Slice 08c1b no-clobber review, 2026-09-05.
-- **The choice:** Photoctl writes and fsyncs a sibling temporary, then asks the native image package to install it with the
-  platform's atomic no-replace rename: `renamex_np(RENAME_EXCL)` on macOS and `renameat2(RENAME_NOREPLACE)` on Linux. The native
-  boundary returns installed, occupied, or unsupported; I/O errors remain errors. Occupied and unsupported outcomes fail closed,
-  preserve the destination, and let the caller remove only its temporary. Explicit replacement remains a separate ordinary rename.
-- **The gap:** Node has no portable rename-without-replacement API. Direct exclusive writes expose partial final files, while a
-  user-space recovery protocol cannot atomically establish ownership across crashes and contenders.
-- **The reach:** Linear probes and delivery exports have one constant-space, crash-safe publication boundary with no marker,
-  polling, or stale-owner state. Filesystems or kernels lacking the primitive refuse publication safely.
-- **Verdict:** **Sound.** The filesystem kernel, not application bookkeeping, owns the atomic name transition.
-- **Confidence:** High on the packaged macOS and Linux targets; native tests pin successful moves and occupied destinations.
-
-### Slice 08c1b — Workbench A/B verifies dimensions, not provenance
-
-- **When:** Slice 08c1b visual checkpoint, 2026-09-05.
-- **The choice:** `wb ab` accepts two equal-sized images and one named variable, embeds their pixels and hashes, and labels neutral
-  versus edited. It explicitly says only dimensions were verified; source, framing, and encoding must come from capture provenance.
-- **The gap:** Pixel dimensions alone cannot prove two inputs share a source or crop.
-- **The reach:** Later visual passes reuse the report without turning a convenient A/B layout into a false provenance claim or an
-  aesthetic endorsement.
-- **Verdict:** **Sound.** The report states exactly what it can establish.
-- **Confidence:** High.
-
-### Slice 08b integration — Develop batches reuse the shared failure owner and classify revision races as contention
-
-- **When:** Slice 08b review after the shared Slice 06 batch owner landed.
-- **The choice:** Resolution, result aggregation, partial-envelope construction, and error-data copying now come from
-  `packages/commands/src/batch.ts`. Each resolved photo encloses its own load, graph read, mutation validation, and revision commit.
-  Invalid requested values become per-item `usage` results; malformed stored graph state becomes `catalog_unreadable`; and the typed
-  graph compare-and-swap conflict becomes retryable `library_locked` with `reason:"revision_conflict"`. The alternative was to keep a
-  develop-specific envelope implementation or let one photo abort later items.
-- **The gap:** The batch contract requires partial progress but did not select existing public error codes for graph validation and
-  a concurrent revision change.
-- **The reach:** Multi-photo develop scripts retain ordered outcomes and can retry a raced photo without replaying successful items.
-  Future batch handlers inherit one result/error envelope owner instead of another near-copy.
-- **Verdict:** **Sound.** The classifications preserve the closed protocol code set and separate corrupt durable state from transient
-  write contention.
-- **Confidence:** Medium; a dedicated revision-conflict code would be clearer if the public error vocabulary is expanded later.
-
-### Slice 08b — Copy selects the mutation base before the other develop operations
-
-- **When:** Slice 08b command integration.
-- **The choice:** One `develop` invocation may copy another photo's settings and refine them. The command first selects its base—the
-  source photo for `--copy-from`, otherwise the target's current state—then applies `--reset`, the named preset overlay, explicit
-  `--set` assignments, and finally `--unset` paths. For example, `--copy-from A --preset people --set contrast=9 --unset cast`
-  produces one before/after classification and at most one immutable revision. If the fully resolved dictionary, including
-  provenance, already equals the target state, the command returns its current hashes without adding undo history. The alternative
-  was to reject combinations, make behavior depend on argument order, or record duplicate no-op revisions.
-- **The gap:** The contract says a preset precedes explicit sets, but does not fully order copy, reset, and unset when options compose.
-- **The reach:** Scripts, retries, undo history, and future layer-staleness classification receive one deterministic result
-  independent of CLI spelling order; idempotent replay cannot manufacture edits a photographer never made.
-- **Verdict:** **Sound.** A copied state is naturally an input, destructive reset is explicit, and the most specific requested edits
-  win last.
-- **Confidence:** Medium.
-
-### Slice 08b — Preset provenance is stored in the node recipe but excluded from the develop hash
-
-- **When:** Slice 08b immutable-node integration.
-- **The choice:** The resolved develop settings and the selected preset name are stored together in the typed develop node. The
-  `develop_hash` excludes that name, as required, so two identical settings dictionaries share one `h_…` identity. The logical node
-  recipe still records the name: applying an alias with identical values can therefore create a different output `render_hash` even
-  though its `develop_hash` matches. The alternative was to discard provenance or add a second revision-metadata schema solely for
-  preset names.
-- **The gap:** The plan requires retaining the preset name while excluding it from the develop hash, but does not choose where that
-  provenance belongs relative to the DAG recipe.
-- **The reach:** Inspection and undo retain what the photographer requested. Identical pixels selected through differently named
-  presets may occupy separate logical recipes until a later metadata owner exists.
-- **Verdict:** **Sound.** It keeps the requested provenance inside the already typed immutable state without duplicating mutable
-  photo columns.
-- **Confidence:** Medium; the harmless cache split is an architectural tradeoff worth revisiting if preset aliases become common.
-
-### Slice 08b — Saved develop presets contain resolved settings and replace atomically by name
-
-- **When:** Slice 08b library preset implementation.
-- **The choice:** `presets save <name> --from <photo>` writes the photo's resolved settings, excluding any prior preset-name
-  provenance, to `<library>/presets/develop/<name>.json`. Publication uses a same-directory temporary file, file sync, rename, and
-  directory sync; saving the same name replaces that library-owned preset. A library preset shadows a package preset with the same
-  name, following the existing preset-precedence rule. The alternatives were to save an inheritance reference, refuse replacement,
-  or expose partially written JSON.
-- **The gap:** The slice names package and library locations but does not define save collisions, inheritance, or crash ordering.
-- **The reach:** Presets remain portable snapshots rather than aliases into another photo's history, and a daemon cannot observe a
-  half-written file.
-- **Verdict:** **Sound.** Resolved data is self-contained, while atomic replacement matches an explicit save action.
-- **Confidence:** High.
-
-### Slice 08b — Structured develop values use one normalized JSON vocabulary
-
-- **When:** Slice 08b dictionary-schema implementation.
-- **The choice:** Curves are per-channel ordered `[input,output]` points normalized to 0–1; levels use
-  `{black,midpoint,white}`; selective color uses named hue bands with bounded channel adjustments; crop remains base-pixel
-  `{x,y,w,h}`; aspect is positive `W:H`; and filters are fixed names plus bounded strength. The alternative was to leave nested
-  values as arbitrary JSON or create a second shape for presets.
-- **The gap:** The operator table fixes the keys and math owners but does not completely specify the nested JSON representation.
-- **The reach:** CLI parsing, presets, canonical hashes, future Rust operators, XMP mapping, and graph validation all inherit these
-  shapes.
-- **Verdict:** **Sound.** One strict normalized representation makes invalid recipes unrepresentable and keeps hashes portable.
-- **Confidence:** Medium; future operator evidence may justify extending the fixed filter names or selective-color vocabulary.
-
-### Slice 05/08a2 integration — Source decode failures cross the evaluator as a distinct error
-
-- **When:** Slice 05 canonical-evaluator integration review.
-- **The choice:** Export first asks the graph evaluator to render from the best online locator. If those source bytes cannot be
-  decoded, the evaluator throws `SourceEvaluationError`, so export can retry the same immutable output node from its pinned preview.
-  A different failure—such as reaching a develop node whose pixel operation has not shipped—keeps its original error and becomes
-  `decoder_unavailable`; it never triggers a misleading source fallback. The alternative was to inspect error-message text or retry
-  every evaluator failure as though the original file were offline.
-- **The gap:** The evaluator accepted a structured source locator but did not distinguish failure to decode that source from failure
-  to evaluate the graph above it, while export's offline contract requires different handling for those cases.
-- **The reach:** Preview and export callers can make source-tier fallback decisions without importing the renderer's private source
-  decoder or coupling to error wording. Future evaluator operations remain unable to silently turn into source pixels after failure.
-- **Verdict:** **Sound.** The error class marks the exact component boundary where recovery differs and preserves the private decoder
-  seam.
-- **Confidence:** High.
-
-### Slice 05 review — TIFF delivery metadata is embedded in-process
-
-- **When:** Slice 05 delivery-export correctness review.
-- **The choice:** Sharp asks its underlying image library, libvips, to encode each TIFF. That path keeps the XMP packet—the metadata
-  block used by Adobe-style tools—but drops the native TIFF `Artist` and `Copyright` fields even when Sharp is given both. After
-  encoding, photoctl therefore appends a replacement first image-file directory (IFD), the TIFF table that points to pixels and
-  metadata. It copies every existing table entry and offset unchanged, adds the two standard text tags, and points the TIFF header
-  at the replacement table. The alternative was to invoke a separately installed metadata executable after every export or add a
-  second image-processing dependency solely to rewrite two fields.
-- **The gap:** The slice requires EXIF-compatible creator and copyright metadata in TIFF, but does not choose how to work around the
-  encoder dropping those fields.
-- **The reach:** TIFF export remains one in-process durable write with no machine-level executable dependency. If Sharp/libvips later
-  preserves these native tags itself, the tested metadata owner can remove the directory rewrite without changing the export API.
-- **Verdict:** **Sound.** It repairs the standard TIFF structure before publication and keeps deployment self-contained; round-trip
-  tests verify both native fields, XMP, and 16-bit pixel samples.
-- **Confidence:** High.
-
-### Slice 05 — Delivery publication wins safety over perfectly atomic history
-
-- **When:** Slice 05 delivery export and closeout review.
-- **The choice:** An export crosses two durable systems: the filesystem that holds the JPEG/PNG/TIFF and the PGlite database that
-  records its history. Photoctl first publishes and synchronizes the complete file, then inserts the history row. For example, if
-  the database write fails after `/delivery/client.jpg` reaches disk, the photographer still has a valid but unrecorded file. The
-  reverse order could leave a durable history row pointing at a partial or nonexistent delivery after a crash. Ordinary writes use
-  a native atomic no-replace rename, while explicit overwrite is the only path allowed to replace an existing name. Unsupported
-  filesystems fail closed after removing the unpublished sibling temporary. This supersedes the earlier direct exclusive-write
-  fallback: a reader can now observe either no destination or the complete fsynced file, never a partially written final path.
-- **The gap:** The plan required durable output, history, and no unasked clobbering, but a filesystem rename and a database insert
-  cannot participate in one shared transaction.
-- **The reach:** Export retries may discover an unrecorded file and apply the requested collision policy, but catalog history never
-  promises a delivery that had not yet been published. Future history reconciliation must preserve this ordering.
-- **Verdict:** **Sound.** It chooses the recoverable orphan over a false durable claim and makes destructive replacement explicit.
-- **Confidence:** High.
-
-### Slice 05 — Library presets shadow package presets and CLI metadata merges by field
-
-- **When:** Slice 05 preset implementation.
-- **The choice:** When both the installed package and a library contain a preset called `delivery`, the library file wins because it
-  is the photographer's local policy. Command-line values then win over that file. Metadata overrides are field-by-field: passing
-  `--iptc creator=Alice` keeps the preset's copyright instead of erasing the whole metadata block. The alternative would either make
-  built-in names impossible to customize or make one small command-line override silently discard unrelated preset values.
-- **The gap:** The plan named package and library preset locations plus CLI precedence, but did not define same-name lookup order or
-  whether the two metadata fields merge together or replace as one object.
-- **The reach:** Libraries can carry portable house delivery policy while one export can change a single value without copying the
-  entire preset. Future preset fields should follow the same specific-over-general precedence.
-- **Verdict:** **Sound.** The closest user-owned configuration wins, and narrow overrides remain narrow.
-- **Confidence:** High.
-
-### Slice 04 — Sampled identity keeps a narrow relocation inference and an mtime replacement boundary
-
-- **When:** Slice 04 identity integration and collision audit.
-- **The choice:** A second path with the same sampled key reuses an unpromoted photo only when its old path is absent on the
-  same confirmed-mounted volume, which is the explicit rename case. An offline or unknown old volume refuses the import because
-  the old bytes cannot be compared. At the exact same locator, unchanged stored mtime remains idempotent; changed mtime refuses
-  an unpromoted match rather than blessing a replacement whose middle bytes may differ. When an old source is readable, both
-  files receive full hashes and the bucket is promoted before identity is decided.
-- **The gap:** Collision safety says not to infer equality from the sample, while the required `mv` contract says a missing old
-  path on the same online volume retains its ID. Exact-locator replacement had a similar ambiguity that the stored mtime can
-  distinguish without hashing every initial import.
-- **The reach:** Rescans preserve IDs for the named same-volume rename and ordinary unchanged file, but refuse every unavailable
-  case outside that boundary; promoted buckets use cryptographic equality thereafter.
-- **Verdict:** **Sound.** The inference is no broader than the explicit relocation contract and uncertainty elsewhere fails safe.
-- **Confidence:** Medium; a same-volume delete followed by an adversarial sampled collision is indistinguishable without an
-  always-full-hash policy.
-
-### Slice 04 — Copy mode has one catalog-local volume identity
-
-- **When:** Slice 04 copy/import integration.
-- **The choice:** Library-owned originals use the stable volume UUID `photoctl-library`, scoped by the library database, and paths
-  remain relative to that library root. Resolution handles this UUID directly, so list/show/export do not need
-  `PHOTOCTL_VOLUME_MAP`; on macOS the resolved path is still mapped to its physical mount before Trash selection. Reusing a copy
-  destination compares the full hash whenever the identity bucket is promoted.
-- **The gap:** External volumes have hardware UUIDs, but a library-owned original needs a durable locator that survives moving
-  the whole library and cannot depend on a test-only mapping.
-- **The reach:** Copy import, offline source removal, display, export, and volume-aware Trash share one stable locator rule.
-- **Verdict:** **Sound.** The identity is stable where it must be and deliberately local where a global UUID would be misleading.
-- **Confidence:** High.
-
-### Slice 04 — Streams retain only bounded pages and honor consumer backpressure
-
-- **When:** Slice 04 drive-scale and daemon transport review.
-- **The choice:** Import retains at most four prepared candidates and commits them in scan order. List reads 64-photo pages,
-  emits one row frame at a time, and awaits socket then stdout consumption. Progress events use the same live path. The terminal
-  stream envelope contains `{rows:[],total}` so neither daemon client nor CLI accumulates a second copy. Frame encoding and
-  decoding both enforce 16 MiB, and import uses a ten-minute activity-reset idle timeout rather than the ordinary 31-second cap.
-- **The gap:** Capping worker count alone still retained every preview buffer; similarly, framing rows without awaiting writes
-  merely moved an unbounded queue into Node streams. A fixed ordinary timeout also abandoned the authoritative 56-second import.
-- **The reach:** Drive-size affects total work, not retained preview/row/event memory, while a silent hung daemon still fails.
-- **Verdict:** **Sound.** Ordering, bounded memory, live telemetry, and failure detection now agree across direct and daemon paths.
-- **Confidence:** High.
-
-### Slice 04 — Disk removal stages reversible receipts before catalog commit
-
-- **When:** Slice 04 removal implementation and failure audit.
-- **The choice:** Source and cache paths move first and return rollback receipts; only then does the catalog transaction delete
-  the photo. A pre-commit failure restores receipts in reverse order. Any rollback failure becomes a typed unavailable error with
-  every unrestored path instead of being swallowed; after database commit, cleanup failure cannot roll the catalog backward.
-- **The gap:** A filesystem move and PGlite transaction cannot be one atomic operation, and silent rollback errors falsely claim
-  the source still exists.
-- **The reach:** `remove --from-disk`, cache cleanup, partial batches, and removable-volume failures expose the truthful durable state.
-- **Verdict:** **Sound.** The only irreversible boundary is the catalog commit, with recovery evidence on every earlier move.
-- **Confidence:** High.
-
-### Slice 03b — Restore recovery trusts durable topology, not the last journal phase
-
-- **When:** Slice 03b restore implementation and crash-window review.
-- **The choice:** Restore writes absolute live, stage, rollback, and source paths whose stage and rollback names share one UUIDv4 token. Recovery rejects any other path grammar or non-directory/symlink target, locks every surviving tree, and chooses rollback from the trees that actually exist rather than assuming the last journal phase reached disk. A `committed` phase is published before rollback deletion, so recovery after that boundary only finishes cleanup and never replaces the promoted library. The shared lock-holding open path also rejects a journal, so an adopted daemon lock cannot bypass this boundary; only restore's own post-promotion verification opts into the journaled tree.
-- **The gap:** The plan required a durable journal and rollback but did not define write/rename crash ordering or how stale phase data is reconciled with filesystem state.
-- **The reach:** Every process interruption between journal writes, directory renames, verification, and recursive cleanup has a single bounded recovery action without authorizing deletion of arbitrary siblings.
-- **Verdict:** **Sound.** The filesystem is the observable truth after a crash, while the committed marker separates rollback-safe work from cleanup-only work.
-- **Confidence:** High.
-
-### Slice 03b — Successful restore returns only durable public facts
-
-- **When:** Slice 03b protocol review.
-- **The choice:** The success envelope is `{library,from,schema_version}`. It omits the proposed `previous_library` and `rollback_removed` fields because successful verification deliberately removes the rollback directory; returning that dead path would imply a usable artifact that no longer exists.
-- **The gap:** Early implementation guidance suggested exposing the rollback path even though the lifecycle contract removes it.
-- **The reach:** Automation can rely on every returned path existing for its documented purpose and does not mistake internal crash-recovery machinery for retained history.
-- **Verdict:** **Sound.** The protocol describes the committed postcondition rather than implementation residue.
-- **Confidence:** High.
-
-### Slice 03b — Migration history must be the exact known prefix
-
-- **When:** Slice 03b migration runner.
-- **The choice:** Before applying anything, the runner sorts the recorded versions and accepts only `[]`, `[1]`, `[1,2]`, through the current complete prefix. Future, duplicate, missing, or gapped ledgers fail. Current-schema verification also requires the named tables, constraints, and explicit locator index, so a dump truncated before post-data constraints cannot be promoted. A persistent handle consumes its startup migration result once; later `migrate` actions query current state and report no newly applied versions.
-- **The gap:** Merely comparing the maximum recorded version with `LATEST_SCHEMA_VERSION` makes a gapped catalog look current, and caching the startup result makes repeated daemon commands lie.
-- **The reach:** Restore validation, direct migration, and repeated daemon migration share one truthful forward-only contract.
-- **Verdict:** **Sound.** Exact-prefix validation prevents partially known schemas from being blessed and keeps command results action-scoped.
-- **Confidence:** High.
-
-### Slice 03b — pgDump cleanup is part of the narrow backup capability
-
-- **When:** Slice 03b backup integration.
-- **The choice:** `LibraryHandle.dumpSql()` exposes text rather than the raw PGlite object. It uses `pgDump` and then commits in a `finally` block because the tool leaves the shared session in a read-only transaction; callers receive `file.text()` only after the session is returned to writable operation.
-- **The gap:** The package API supplies `pgDump` but no restore function and does not clean up the shared session for the daemon's next command.
-- **The reach:** Manual and automatic backup can share the daemon handle without making subsequent imports or tags fail, while the database implementation remains private to the library package.
-- **Verdict:** **Sound.** The capability is narrow and restores the session invariant even when dumping throws.
-- **Confidence:** High.
-
-### Slice 03b — Backup durability precedes retention
-
-- **When:** Slice 03b backup publication.
-- **The choice:** A snapshot is written to a unique temporary file, fsynced, renamed, timestamped, and followed by a backup-directory fsync before rotation. Removals receive another directory fsync. Recency comes from the ISO creation time and collision suffix encoded in photoctl's filename rather than mutable mtimes, so copying history during restore cannot reorder it. The newest snapshot survives even when it alone exceeds 200 MiB, with a typed warning, and restore copies SQL history into the staged library with per-file durability rather than cloning a database directory.
-- **The gap:** The plan fixed the retention numbers but did not specify publication ordering, oversized-newest behavior, or how backup history crosses a restore swap.
-- **The reach:** Power loss cannot expose a half-written snapshot or lose a newly published directory entry merely because retention started, and restored libraries keep their SQL recovery history.
-- **Verdict:** **Sound.** Publication establishes the replacement artifact before optional cleanup and preserves the no-directory-clone firewall.
-- **Confidence:** High.
-
-### Slice 03b — Restore fault hooks are test-only lifecycle seams
-
-- **When:** Slice 03b crash testing.
-- **The choice:** The library restore options expose callbacks immediately before initial journal publication, after each directory rename, and during rollback cleanup. CLI users and environment variables cannot select them; tests use them to terminate a real child process at exact durability boundaries.
-- **The gap:** Ordinary exception injection cannot prove behavior after an uncatchable process exit between two filesystem operations.
-- **The reach:** Crash regressions can falsify journal ordering without adding production flags or parsing special environment state.
-- **Verdict:** **Sound.** Narrow programmatic seams make the destructive boundaries testable without broadening the public CLI contract.
-- **Confidence:** High.
-
-### Slice 02b — Human output neutralizes terminal controls and row delimiters
-
-- **When:** Slice 02b human renderer.
-- **The choice:** Suppose a tag, path, error message, or warning contains a newline, tab, or terminal
-  escape byte. The human renderer writes a visible escaped spelling such as `\\n` or `\\u001b`, and a
-  pipe inside a table cell becomes `\\|`. One logical value therefore stays on one table row and cannot
-  inject a new column or a terminal control sequence. The JSON envelope is untouched; this applies only
-  when a person explicitly asks for `--human`.
-- **The gap:** The plan required deterministic readable text but did not say how to display control
-  characters originating in user or filesystem data.
-- **The reach:** Every current and future command can safely reuse the generic renderer without each verb
-  sanitizing its own values or changing its machine-readable result.
-- **Verdict:** **Sound.** Escaping preserves the information while protecting row boundaries and terminals.
-- **Confidence:** High.
-
-### Slice 02b — Failures without a supplied message get a label derived from their code
-
-- **When:** Slice 02b human renderer.
-- **The choice:** Some failures, such as a mixed batch returning `code:"partial"`, have result rows and a
-  summary but no top-level message. Human output prints `Error [partial]: Partial failure`; when a command
-  does supply a message, that exact message wins. The alternative would print a bare code for some
-  failures even though the human-output contract promises both a stable code and an explanation.
-- **The gap:** The plan required failure messages, while the envelope permits failure `data` and therefore
-  its `message` field to be absent.
-- **The reach:** Future error codes automatically receive a readable label without adding presentation
-  branches to command handlers or widening the protocol.
-- **Verdict:** **Sound.** Presentation fills a presentation-only gap while the typed envelope remains the
-  sole machine contract.
-- **Confidence:** High.
-
-### Slice 03a — Preview provenance is cryptographically bound to the JPEG bytes
-
-- **When:** Slice 03a preview-cache lifecycle.
-- **The choice:** A derived preview is two files: the JPEG an agent opens and a small JSON sidecar explaining which
-  source tier and source dimensions produced it. The sidecar now also stores the JPEG's SHA-256 digest, a compact
-  fingerprint of the exact bytes. On read, photoctl recomputes that fingerprint and rejects the pair if it differs.
-  For example, if power fails after a new JPEG is renamed but before its new sidecar is renamed, the old explanation
-  cannot accidentally bless the new pixels; the next `show` repairs the pair. Cache accounting charges both files,
-  because both are required for one usable artifact.
-- **The gap:** The plan required atomic artifact writes and provenance validation but did not define how two separately
-  renamed files prove they belong to the same completed write, or whether sidecar bytes count toward the cache limit.
-- **The reach:** Every later develop, layer, fill, and markup preview can trust cached provenance after a crash, and
-  `cache prune --max` measures all bytes that must survive together rather than hiding metadata overhead.
-- **Verdict:** **Sound.** Content binding turns a two-file crash window into a detectable cache miss, which is safely
-  regenerated from canonical state.
-- **Confidence:** High.
-
-### Slice 03a — Prune claims each path before deleting and lets a concurrent touch win
-
-- **When:** Slice 03a cache-prune pass.
-- **The choice:** Pruning takes one clock snapshot, pages old rows in bounded least-recently-used order, then asks the shared
-  preview coordinator for an exclusive lease on each path. It conditionally deletes the database row only if
-  `last_used` is still older than the snapshot's 30-minute cutoff. If `show` validated and touched the preview after
-  the list was captured, that condition fails and the file stays. If prune claims first, a new materializer waits;
-  after deletion it regenerates instead of receiving a disappearing path. A filesystem failure restores the row,
-  records the first error, and continues with later candidates before reporting failure.
-- **The gap:** The plan named leases, a captured prune time, and a concurrent-touch test, but did not choose the
-  database/filesystem ordering or specify whether one undeletable file stops the entire LRU pass.
-- **The reach:** Agents can inspect a returned path without a simultaneous cleanup invalidating it, and a permanently
-  bad cache entry cannot starve every newer candidate on repeated prune runs.
-- **Verdict:** **Sound.** The lease closes the file race, the conditional claim closes the stale-query race, and
-  per-item failure isolation preserves forward progress.
-- **Confidence:** High.
-
-### Slice 03a — `cache prune` reports budget movement and accepts zero as an explicit purge target
-
-- **When:** Slice 03a command contract.
-- **The choice:** A successful prune returns four integer byte counters: artifacts removed, bytes freed, bytes still
-  indexed, and the requested maximum. `--max` uses the same binary byte units as library initialization, but explicitly
-  accepts `0B`; that means “remove every eligible derived artifact” while still protecting pinned, recent, and leased
-  files. Without `--max`, the command uses the library's stored cache budget.
-- **The gap:** The slice named `cache prune [--max]` but did not define its result envelope or whether zero is a valid
-  operator-requested budget.
-- **The reach:** Scripts can verify whether cleanup actually made progress and can deliberately clear regenerable
-  previews without deleting offline source previews or model assets.
-- **Verdict:** **Sound.** The counters expose the result without requiring filesystem inspection, and zero is a useful,
-  reversible operation on explicitly prunable data.
-- **Confidence:** Medium.
-
-### Slice 03a — Cache-index paths are relative to the active per-library cache root
-
-- **When:** Slice 03a integration review.
-- **The choice:** The database stores `view/<photo>/<render>/<artifact>` rather than the machine's absolute cache
-  directory. A `CacheIndex` adapter receives the active per-library root and translates at its boundary. If an operator
-  changes `PHOTOCTL_CACHE`, the same logical rows point into the new root: `show` recreates missing artifacts there and
-  prune can remove stale accounting for files that are absent. The abandoned physical files under the old override are
-  outside the newly selected cache and are no longer managed until that old root is selected again or removed directly.
-  Storing absolute paths instead would let one catalog accumulate rows for multiple overrides and make the current
-  budget impossible to satisfy because prune must not delete outside its active root.
-- **The gap:** The plan made the cache base overrideable and the database portable, but did not define whether cache
-  index identities include a machine-specific root or how switching the override reconciles soft cache state.
-- **The reach:** Backup/restore in 03b does not bake one machine's cache directory into the catalog, while every cache
-  producer and pruner resolves paths through the same current-root adapter.
-- **Verdict:** **Sound.** Cache files are regenerable local state, so portable logical identities are safer than
-  permanently accounting for an inactive machine path.
-- **Confidence:** Medium.
-
-### Slice 02 — Daemon startup transfers the already-held kernel lock
-
-- **When:** Slice 02 daemon lifecycle.
-- **The choice:** The starting CLI inherits its locked file descriptor into the detached daemon as fd 3;
-  the daemon rewrites the same lock payload and keeps that descriptor for its full PGlite lifetime.
-- **The gap:** The plan required the client to take the lock and the daemon to own it, but did not define
-  an atomic handoff mechanism.
-- **The reach:** Every auto-start, version replacement, direct-mode transition, and crash recovery keeps
-  the one-writer guarantee without a release/reacquire window.
-- **Verdict:** **Sound.** Descriptor inheritance preserves continuous kernel ownership.
-- **Confidence:** High.
-
-### Slice 02 — Initialization is the sole in-process bootstrap command
-
-- **When:** Slice 02 command routing.
-- **The choice:** `init` dispatches directly because its target is not yet a library, closes that handle,
-  then starts the daemon. All commands against an existing library use the daemon unless explicitly
-  passed `--no-daemon`.
-- **The gap:** A daemon cannot lock or open a PGlite directory before `init` creates it.
-- **The reach:** The public init result remains unchanged while a successful init immediately leaves the
-  new library daemon-served.
-- **Verdict:** **Sound.** It is a bootstrap boundary, not a parallel database access path.
-- **Confidence:** High.
-
-### Slice 02 — Daemon transport has a bounded length-prefixed frame
-
-- **When:** Slice 02 transport implementation.
-- **The choice:** Frames use a four-byte big-endian JSON byte length and reject payloads above 16 MiB.
-  The daemon log is a socket-identity-derived file in the OS temporary directory, beside neither the
-  library nor its source photos.
-- **The gap:** Frame encoding and log location were explicitly delegated.
-- **The reach:** Request, streamed-event, response, and control messages share one decoder that tolerates
-  arbitrary socket chunking; runaway lengths cannot allocate unbounded memory.
-- **Verdict:** **Sound.** The format is deterministic, dependency-free, and safely bounded.
-- **Confidence:** High.
-
-### Slice 02 integration — Initialization success survives an optional daemon-start failure
-
-- **When:** Slice 02 integration review.
-- **The choice:** `init` first creates and migrates the durable library, then attempts to start its convenience daemon. If that
-  second step fails, the command returns the successful initialization envelope with a `daemon_unavailable` warning. For
-  example, a broken packaged daemon no longer makes `init` exit 69 after the library already exists, which made the natural
-  retry fail with “library already exists.” The next ordinary command can retry daemon startup against the valid library.
-- **The gap:** The plan required initialization to leave a daemon running but did not define partial success after the durable
-  creation boundary had committed.
-- **The reach:** Initialization is safely retryable from an automation caller's perspective, and warnings distinguish a usable
-  catalog from its temporarily unavailable acceleration process.
-- **Verdict:** **Sound.** The response follows the irreversible state transition and exposes the recoverable secondary failure.
-- **Confidence:** High.
-
-### Slice 02 integration — Daemon control reports observed state and secures local IPC
-
-- **When:** Slice 02 integration review.
-- **The choice:** Public `daemon start|status` responses ask the daemon for live state instead of inventing uptime and queue values.
-  Ordinary commands take the cheaper endpoint route only when the live lock payload names the expected versioned Unix socket;
-  request failure triggers a probed recovery. `daemon stop` reports failure when a live holder does not answer or does not exit by
-  the deadline. Idle connected sockets do not consume request-queue capacity because only framed work is a request. When an idle
-  queue receives its first request, one 5 ms admission window coalesces simultaneous socket arrivals before serial execution; the
-  caller's lock-wait budget starts after that transport window. Recovery attempts the advisory lock before classifying a
-  live-looking PID/socket pair as an unresponsive owner, allowing stale artifacts with a reused PID to be replaced. The Unix
-  socket and current log are owner-only (`0600`), and each daemon start truncates the prior log instead of appending across restarts.
-- **The gap:** The daemon slice fixed the transport and queue ceiling but left probe truthfulness, idle-connection admission,
-  burst admission, filesystem permissions, and failed-stop reporting implicit.
-- **The reach:** Status and lifecycle automation can trust successful control responses; warm commands avoid an extra control
-  round-trip; another local account cannot send commands through the socket; unused connections cannot manufacture overload;
-  simultaneous work observes the configured queue ceiling; restart logs remain bounded by one daemon run.
-- **Verdict:** **Sound.** Observed status remains truthful while endpoint routing stays cheap, recovery remains explicit, and local
-  control surfaces use least privilege without changing the protocol.
-- **Confidence:** High.
-
-### Spec maintenance — Preview cache safety lands before new render producers
-
-- **When:** Post-slices-02/07a wavefront audit.
-- **The choice:** Slice 03a now installs the one preview coordinator, validation-before-touch cache index, materialization leases,
-  and prune grace before Slice 08 adds developed render graphs. Without that move, Slice 03 was expected to protect in-flight
-  files using machinery the plan did not build until five slices later. Develop now plugs a new producer into the existing
-  lifecycle instead of creating a second cache owner.
-- **The gap:** A preview-contract amendment added concurrency guarantees after the original dependency graph was written.
-- **The reach:** Cache prune, ordinary preview, develop, and later layer previews inherit one writer and one lifetime model.
-- **Verdict:** **Sound.** The dependency order now builds the prerequisite before its first consumer and prevents parallel cache
-  implementations from drifting.
-- **Confidence:** High.
-
-### Spec maintenance — Sampled identity collisions promote only the colliding bucket
-
-- **When:** Post-slices-02/07a wavefront audit.
-- **The choice:** Ordinary imports keep the fast head-and-tail content key. When a second file shares that key, Slice 04 computes
-  full hashes for both files, stores those hashes on the colliding photos, and then decides duplicate versus distinct. If the
-  existing file is offline and has never been promoted, import refuses to attach the newcomer rather than guessing they are the
-  same. The rejected alternatives were hashing every file in full or silently merging different middles.
-- **The gap:** D9 required a full hash “on collision” but did not define persistence or the unavailable-existing-source case.
-- **The reach:** Large-drive import retains its sampled-hash speed while database identity stays collision-safe and repeatable.
-- **Verdict:** **Sound.** Work is paid only by the rare ambiguous bucket, and uncertainty cannot corrupt the locator graph.
-- **Confidence:** Medium.
-
-### Rendered previews are lazy, versioned views of committed edit state
-
-- **When:** User-directed preview workflow amendment, 2026-09-04.
-- **The choice:** Import keeps one immutable pinned source preview for offline recovery. Edited previews are separate,
-  prunable JPEGs keyed by canonical edit state (`render_hash`) and viewport (`view_hash`). Pixel-affecting commands commit state
-  and return the new render hash without rendering. Preview lazily creates one full-frame display master per render state at
-  `view/<id>/<render_hash>/master.jpg`; native full-frame `show` returns it, and crops/smaller views derive from it without
-  reevaluating the graph. Before promotion, a cached numeric full-frame view may feed a crop only when it contains enough real
-  pixels at that region's scale. The default ≤1616px overview stays cheap and does not force the master. Exact derived views live
-  at `view/<id>/<render_hash>/<view_hash>.jpg`. A requested region defaults to native 1:1 source pixels, never an enlarged
-  overview. Export snapshots and reports the same render hash at command start, but renders from the graph rather than treating
-  the lossy display master as export truth. A new edit or viewport produces a new path rather than overwriting inspected pixels.
-  Requests for the same missing artifact coalesce into one render, and preview paths receive a 30-minute post-access prune grace.
-  Every preview is opaque, orientation-applied sRGB with an embedded `sRGB2014` profile; the response includes invertible
-  base/view transforms and rejects a wholly non-visible region rather than returning a misleading edge pixel.
-- **The gap:** The plan exposed the pinned import preview but did not define how an agent sees develop, layer, fill, retouch, or
-  markup changes before export.
-- **The reach:** `packages/render/preview` owns state/view hashing and materialization; every pixel mutation contributes its
-  canonical inputs to the render hash. The mandatory slice-12 journey makes a global edit, creates and inspects the full-frame
-  native master, proves a detail zoom crops it without another graph evaluation, makes and adjusts a local fill while inspecting
-  each new render state's detail, returns to the final overview derived from the final master, then exports the verified hash.
-- **Verdict:** **Sound.** A per-state full-frame display master makes the common full-frame → detail → zoomed-out loop simple and
-  makes every later crop cheap, while the sufficiency check prevents a small overview from masquerading as full-resolution detail.
-- **Confidence:** High.
-
-### Preview clipping intersects pixel edges instead of moving the requested rectangle
-
-- **When:** Slice 01b preview-contract correction.
-- **The choice:** A pixel viewport is treated as an interval with an inclusive left/top edge and an exclusive right/bottom edge.
-  For example, `[-50,0,100,100]` asks for pixels spanning from 50 pixels left of the image through pixel 49 inside it, so the
-  returned region is `[0,0,50,100]`. Fractional outer edges round outward (`floor` at left/top, `ceil` at right/bottom) before
-  the interval is intersected with the image. The rejected alternative was to clamp a negative origin to zero while retaining
-  the original width; that silently moves the request and returns pixels the caller never selected.
-- **The gap:** The contract required clipping and reporting partial intersections but did not define fractional pixel-edge
-  rounding.
-- **The reach:** `show.preview_info.actual.region`, projection matrices, visible polygons, and later crop/mask consumers inherit
-  the same honest intersection rather than a shifted viewport.
-- **Verdict:** **Sound.** Outward edge rounding preserves every pixel touched by the requested continuous rectangle, while
-  intersecting endpoints makes the returned geometry a subset of the request.
-- **Confidence:** High.
-
-### Lossless tiled masters and progressive UI delivery are later optimizations
-
-- **When:** User-directed preview scope decision, 2026-09-04.
-- **The choice:** V1 keeps the full-frame JPEG display master and synchronous `show`. Replacing that master with lossless,
-  random-access tiles and letting a UI cancel, prioritize, or progressively refine requests are tracked in the separate preview
-  optimization spec. Correctness does not depend on either optimization: `show` still returns a complete readable view.
-- **The gap:** The preview audit mixed requirements needed for trustworthy agent inspection with throughput improvements needed
-  only once an interactive UI or measured large-image bottleneck exists.
-- **The reach:** V1 remains smaller. The future implementation must preserve render/view hashes, coordinates, color, warnings,
-  cache lifetime, and export correlation rather than expose a second preview contract.
-- **Verdict:** **Sound.** Defer unmeasured storage and latency complexity while leaving a named replacement seam.
-- **Confidence:** High.
-
-### Slice 01b importer — EXIF parsing returns source dimensions and leaves orientation geometry to render
-
-- **When:** Slice 01b importer pass.
-- **The choice:** A portrait photo can store pixels as a landscape-shaped rectangle plus an EXIF
-  orientation number that says how a viewer must rotate or mirror it. The importer reports that stored
-  rectangle and the orientation number separately. The import command then asks render's coordinate
-  module for the oriented dimensions before writing the photo row. The alternative was for importer and
-  render to each decide that orientations 5–8 swap width and height; those two copies could later
-  disagree on the same photo.
-- **The gap:** The plan says database dimensions are oriented and names render as the coordinate owner,
-  but it does not define whether the EXIF reader returns stored or already-oriented dimensions.
-- **The reach:** The 01b integration must call render's `orientedDimensions` once. Future decoders,
-  crops, and masks then inherit one orientation rule instead of recreating it at every metadata edge.
-- **Verdict:** **Sound.** It keeps parsing at the file boundary and geometry in the module that owns
-  coordinate transforms.
-- **Confidence:** High.
-
-### Slice 01b importer — Missing descriptive EXIF is nullable, but missing dimensions refuse import
-
-- **When:** Slice 01b importer pass.
-- **The choice:** A supported JPEG or TIFF may have pixels but no lens name, camera name, exposure, or
-  timezone. The EXIF reader represents those descriptive facts as `null`, allowing the photo to remain
-  useful. Width and height are different: without them photoctl cannot establish the base coordinate
-  space used by render, crop, masks, and export, so the reader rejects that file. Treating every absent
-  tag as fatal would refuse ordinary stripped images; treating dimensions as optional would push an
-  unusable photo into every later command.
-- **The gap:** The plan defines content-based image admission and the metadata columns but does not say
-  which tags are required when a decodable still image has sparse metadata.
-- **The reach:** Import error mapping must turn the missing-dimensions failure into the per-file
-  unsupported result, while `show` can serialize absent descriptive metadata consistently as `null`.
-- **Verdict:** **Sound.** Pixel geometry is a functional requirement; camera annotations are not.
-- **Confidence:** Medium.
-
-### Slice 01b — Pixel orientation and coordinate orientation share one transform table
-
-- **When:** Slice 01b render-owned pass.
-- **The choice:** A photo can say “rotate right” or “mirror left-to-right” in its EXIF orientation
-  metadata. Photoctl turns that instruction into one small transform record containing a quarter-turn
-  rotation plus an optional vertical or horizontal reflection. Both the coordinate functions and the
-  Sharp pixel decoder consume that same record. Coordinates are measured along image edges: the
-  top-left is `[0,0]`, the bottom-right is `[width,height]`, and a bounding box transforms all four of
-  its edges before its new top-left and size are computed. The alternative was two separate tables—one
-  for points and another for pixels—which could eventually make a click land on a different subject
-  than the one shown on screen.
-- **The gap:** The plan fixed the eight EXIF orientations and the `[x,y,w,h]` box shape but did not
-  define edge-versus-pixel-centre coordinates or how pixel and geometry transforms would stay aligned.
-- **The reach:** Crop, segmentation boxes, masks, layer transforms, markup, and render orientation all
-  inherit one oriented, uncropped base coordinate space.
-- **Verdict:** **Sound.** One owner prevents an orientation fix in rendering from silently leaving
-  editing coordinates behind.
-- **Confidence:** High.
-
-### Slice 01b — Preview-source `Image16` is full-range, display-referred sRGB in an interleaved typed array
-
-- **When:** Slice 01b render-owned pass.
-- **The choice:** Decoding an embedded-range, whole-file, or pinned-preview display source produces
-  three unsigned 16-bit channel values per pixel in red-green-blue order, stored as a `Uint16Array`.
-  “Full-range” means JPEG white becomes 65535, not 255
-  placed inside a larger integer type; `space:"display-srgb"` says the values are ready for display and
-  are not the scene-linear data introduced by later full-resolution decoders. Sharp's plain `ushort` cast
-  kept 8-bit values in the 0–255 range, so the graph deliberately converts through Sharp's `rgb16`
-  colourspace first. The alternative would look correct in TypeScript while giving later compositing
-  code only 1/257th of the expected numeric range.
-- **The gap:** The plan named `Image16` but did not specify its memory layout, numeric range, or explicit
-  colour-space tag.
-- **The reach:** The develop and composite graph stages can accept one stable pixel buffer without
-  guessing whether a value is linear light, display light, 8-bit, or 16-bit.
-- **Verdict:** **Sound.** The type and runtime values carry the information downstream pixel operations
-  need to remain deterministic.
-- **Confidence:** High.
-
-### Slice 01b — Export receives resolved sources and leaves destination planning to its caller
-
-- **When:** Slice 01b render-owned pass.
-- **The choice:** The render package receives a final output path and a resolved `ImageSource`: an
-  online whole file, an online JPEG byte range, or a pinned preview. It never opens the photo catalog
-  or decides where a volume is mounted. In plain control flow after slice 05: `render preferred online source into the requested
-  delivery format → if the online read fails, render the pinned preview and warn → if neither can be read, file_offline`.
-  The command layer creates the output directory and owns collision naming before it calls this API;
-  destination write errors still propagate instead of being mislabeled as an offline source. The
-  alternative would make rendering depend on PGlite, cache policy, volume resolution, and filename
-  policy all at once.
-- **The gap:** The plan assigned source resolution to library/importer and export execution to render,
-  but did not define the data passed across that boundary or who creates the destination directory.
-- **The reach:** Slice 02 can change catalog transport and slice 05 can add templates and collision
-  policy without changing the pixel graph or adding a second source resolver.
-- **Verdict:** **Sound.** The API keeps catalog state, source-byte rendering, and destination planning
-  with their declared owners while preserving the stable offline outcome.
-- **Confidence:** High.
-
-### Slice 01b — Photo rows represent absent metadata without inventing values
-
-- **When:** Slice 01b library pass.
-- **The choice:** A photo always has `camera` and `exposure` JSON objects, but either object may be
-  empty when an admitted image carries no corresponding EXIF fields. Capture time and its UTC offset may
-  be null for the same reason. Structural facts are stricter: byte size cannot be negative, displayed
-  width and height must be positive, and EXIF orientation must be one of 1 through 8. The alternative
-  would either reject otherwise valid photographs with sparse metadata or make every reader handle
-  three states for the JSON objects: missing, null, and empty.
-- **The gap:** The plan named the columns but did not specify nullability, defaults, or database checks.
-- **The reach:** Every import format and every `show` response inherits the distinction between an
-  unknown descriptive fact and an invalid structural fact.
-- **Verdict:** **Sound.** Empty objects preserve a stable response shape while nullable scalar facts
-  remain honestly unknown.
-- **Confidence:** Medium.
-
-### Slice 01b — One open file produces identity and locator stat facts
-
-- **When:** Slice 01b library pass.
-- **The choice:** `identifyFile` opens the source once, reads the contracted head and tail samples from
-  that open descriptor, and returns its size and modification time alongside the content key. It
-  checks size and modification time again before returning. If a copy is still writing the file while
-  photoctl samples it, the operation fails instead of combining the beginning of one state with the
-  end of another. A caller does not reopen the path to obtain locator metadata, because the path could
-  point at a replacement by then.
-- **The gap:** The plan fixed the hash bytes but did not define the API result or concurrent source-file
-  behavior.
-
-- **The reach:** Import and later relocation logic receive one coherent set of file facts; callers must
-  retry a file that changes during inspection.
-- **Verdict:** **Sound.** It makes the content key describe one observed file state rather than a race
-  between independent path reads.
-- **Confidence:** High.
-
-### Slice 01a — A successful `doctor` reports no foreign lock holder
-
-- **When:** Slice 01a.
-- **The choice:** `doctor` must briefly own the library lock to read a consistent catalog. If another
-  process owns it, `doctor` waits or returns `library_locked` with that process's ID. If `doctor`
-  succeeds, it necessarily owns the lock itself, so its JSON reports `lock_holder: null` rather than
-  echoing its own process ID. The alternative would make a healthy result look contended even though
-  the competing holder is gone.
-- **The gap:** The plan named a lock-holder field but did not define what it means on a successful run.
-- **The reach:** Scripts can treat a non-null holder as contention evidence rather than normal
-  self-observation.
-- **Verdict:** **Sound.** The field describes foreign contention, which is the only holder state callers
-  can act on.
-- **Confidence:** Medium.
-
-### Slice 01a — A cache override selects a base directory, not one shared cache
-
-- **When:** Slice 01a.
-- **The choice:** When `PHOTOCTL_CACHE=/tmp/cache` is set, a library whose ID is `abc` uses
-  `/tmp/cache/abc`. The library ID is still appended, just as it is beneath the default macOS cache
-  directory. Treating the override as the final directory would let two libraries overwrite each
-  other's preview files and cache index.
-- **The gap:** The plan named the override but did not say whether it replaces the base or the complete
-  per-library path.
-- **The reach:** Every preview tier, rendered fallback, and later cache-prune operation inherits this
-  isolation boundary.
-- **Verdict:** **Sound.** An override changes location without removing per-library isolation.
-- **Confidence:** High.
-
-### Slice 01a — PGlite durability is configured before Postgres starts
-
-- **When:** Slice 01a.
-- **The choice:** PGlite normally starts its embedded Postgres with `-F`, which means completed writes
-  need not be flushed to durable storage. Postgres does not allow `fsync` to be changed after startup,
-  so photoctl removes `-F` from PGlite's public startup arguments and then verifies both `fsync` and
-  `synchronous_commit` are on. The planned alternative—running `SET fsync=on` after opening—fails at
-  runtime and would leave the library less durable.
-- **The gap:** The plan specified the final settings but assumed Postgres allowed both to change after
-  startup.
-- **The reach:** Every catalog write, migration, and future daemon session depends on this startup
-  policy.
-- **Verdict:** **Sound.** It establishes and verifies the required property at the only phase where
-  Postgres permits it.
-- **Confidence:** High.
-
-### Slice 01a — The external lockfile is backed by the operating system's advisory lock
-
-- **When:** Slice 01a review correction.
-- **The choice:** The lockfile still contains the holder's process ID, socket, and start time, but an
-  open file descriptor now carries the actual exclusion lock. An advisory lock is a lock the operating
-  system releases automatically when its process exits, including after `kill -9`. The first version
-  instead read a dead PID and unlinked its file; two processes could both make that decision and one
-  could delete the other's new live lock. A synchronized concurrent probe reproduced multiple
-  simultaneous holders.
-- **The gap:** The plan required stale-file reclamation but did not provide an atomic compare-and-delete
-  operation; ordinary filesystem unlink has none.
-- **The reach:** All direct PGlite access and the future daemon depend on this being a true one-writer
-  boundary. It also adds the native `fs-ext` install dependency for supported macOS/Linux builds.
-- **Verdict:** **Sound.** Kernel ownership removes the race instead of tuning its timing window.
-- **Confidence:** High.
-
-### Slice 01a — Command options are parsed as a closed set
-
-- **When:** Slice 01a review correction.
-- **The choice:** Each command lists the options it accepts; an unknown option, duplicate option, missing
-  value, or stray positional argument returns `usage` before the library is touched. The first version
-  searched only for known option names, so `--cache-mxa 1GiB` silently initialized a library with the
-  default size and `doctor nonsense` succeeded. The alternative makes automation typos look like valid
-  work.
-- **The gap:** The plan fixed command shapes but delegated the parser implementation.
-- **The reach:** Later verbs can extend one strict parser without inheriting silent argument loss.
-- **Verdict:** **Sound.** A CLI contract is only stable when unrecognized input is rejected.
-- **Confidence:** High.
-
-### Slice 00 — The fixture tool discovers previews through both TIFF pointers and JPEG validation
-
-- **When:** Slice 00.
-- **The choice:** A Sony RAW file is a TIFF container whose directories point at embedded JPEGs. The
-  independent fixture tool follows those directory pointers, then parses each referenced JPEG's own
-  header to establish its dimensions. It also scans for JPEG signatures as a fallback measurement
-  path and de-duplicates the result. This keeps the test oracle independent from the future importer
-  while ensuring an offset is not accepted merely because a TIFF tag named it.
-- **The gap:** The plan required a TIFF directory walk but did not prescribe how referenced bytes
-  should be validated or whether maker-specific directories needed a fallback.
-- **The reach:** Importer and render tests will treat `fixtures/a7c2.json` as their external oracle.
-- **Verdict:** **Sound.** Two independent structures in the fixture must agree before a preview fact is
-  recorded.
-- **Confidence:** High.
-
-### Slice 00 — Workspace packages compile as NodeNext ECMAScript modules
-
-- **When:** Slice 00.
-- **The choice:** TypeScript emits standard ECMAScript modules using Node's `NodeNext` rules. Source
-  imports therefore use the `.js` extension that the built Node 24 process will load. The alternative
-  was bundling packages or relying on a TypeScript runtime, both of which would make tests differ from
-  the shipped CLI.
-- **The gap:** The plan fixed Node 24 as the runtime but did not choose a TypeScript module-resolution
-  mode or whether the CLI would be bundled.
-- **The reach:** Every later package inherits this compile-and-run boundary.
-- **Verdict:** **Sound.** It keeps development and production on the same native Node module contract.
-- **Confidence:** High.
-
-### Slice 01b review — Import returns the IDs it created or recognized
-
-- **When:** Slice 01b command integration.
-- **The choice:** Import adds `ids:[...]` to its summary. Before `list` exists in slice 04, a script
-  that imports one photo otherwise has no machine-readable value it can pass to `show` or `export`;
-  parsing a UUID from logs or querying the database would bypass the CLI contract. On re-import the
-  same array contains the already-existing ID, so the next command does not need a separate branch.
-- **The gap:** The A2 aggregate names counts but does not expose the identities behind them, while the
-  slice-01 checkpoint immediately needs the imported ID.
-- **The reach:** Agents can chain import into every ID-based verb now; slice 04 can retain the field
-  when folder import adds many IDs rather than inventing a second handoff mechanism.
-- **Verdict:** **Sound.** The small additive field closes a real orchestration gap without changing the
-  meaning of any A2 count.
-- **Confidence:** Medium.
-
-### Slice 01b review — A batch with no admitted image has no invented volume
-
-- **When:** Slice 01b command integration.
-- **The choice:** When content probing admits no image, the import result returns `volume:null`.
-  Probing may read the candidate bytes, but the A2 volume summarizes admitted library sources rather
-  than every attempted path. The alternative would fabricate a volume-shaped result for a batch that
-  created no locator.
-- **The gap:** A2 shows a volume for imported photos but does not define the aggregate when every input
-  is skipped before volume resolution.
-- **The reach:** Later folder summaries can distinguish “nothing was opened” from “these files came
-  from this resolved volume,” and callers do not learn false mount state.
-- **Verdict:** **Sound.** Null states exactly which fact is unknown and why.
-- **Confidence:** Medium.
-
-### Slice 01b review — A matching content key, not modification time, proves source identity
-
-- **When:** Slice 01b export review.
-- **The choice:** Before using an online source for export, photoctl recomputes the fixed content key and byte size for
-  each available locator. A file whose contents match but whose filesystem modification time was
-  merely touched remains the same photo and can still supply the 7008×4672 embedded JPEG. Requiring
-  the old timestamp would incorrectly downgrade an unchanged online source to a 1616-pixel cache
-  fallback and warn that it was offline.
-- **The gap:** The plan stores locator modification time but does not say whether it participates in
-  identity. The content-key formula is the explicit identity contract.
-- **The reach:** Relocation, restored backups, and metadata-preserving copies can change filesystem
-  timestamps without changing photo identity; all locators are judged by the same content rule.
-- **Verdict:** **Sound.** Timestamp is useful freshness evidence, but it must not override the declared
-  byte identity.
-- **Confidence:** High.
-
-### Slice 01b review — Whole-file sources are identified by the content probe registry, not stored as embedded previews
-
-- **When:** Slice 01b accepted-format review.
-- **The choice:** Every whole-file image leaves `files.embedded` as the list of genuine embedded JPEG
-  ranges only. When export sees no embedded range, it consults the central content probe registry and
-  uses the whole online file as the render source; a full-frame orientation-1 JPEG may be copied exactly,
-  while every other admitted format is decoded and encoded as JPEG. Sparse files get dimensions from
-  their image header when descriptive EXIF is absent. The rejected alternative stored a whole file as a pretend
-  `EmbeddedJpeg`, which would let future cache code mistake container bytes for a preview.
-- **The gap:** The plan names `source:"file"` but does not define how that source crosses the catalog
-  boundary without adding another schema column.
-- **The reach:** Slice 07 can add decoder selection while the embedded-preview collection keeps one
-  meaning, and slice 04 can scan ordinary images without requiring EXIF metadata.
-- **Verdict:** **Sound.** Source kind remains derivable from the sole format owner and no permanent
-  preview seam is diluted.
-- **Confidence:** High.
-
-### Slice 01b review — Cache repair validates bytes and repairs the index independently
-
-- **When:** Slice 01b idempotency review.
-- **The choice:** Re-import byte-compares the expected 1616 preview with the pinned cache file. A match
-  leaves the file timestamp untouched but still upserts `cache_index`; a missing or same-length corrupt
-  file is atomically rewritten. This covers a crash after the file rename but before the database
-  commit, where checking only file existence would leave the index missing forever, while blindly
-  rewriting every valid preview would turn an idempotent import into repeated cache churn.
-- **The gap:** The plan requires both a pinned file and an index row but does not define recovery when
-  only one side survived.
-- **The reach:** Folder-scale re-import remains convergent and cheap in writes, and later pruning can
-  trust that valid pinned files eventually regain their index entry.
-- **Verdict:** **Sound.** Each half is verified and repaired without treating either as proof that the
-  other committed.
-- **Confidence:** High.
-
-### Slice 01b review — Batch failure codes are independent of item order
-
-- **When:** Slice 01b export review.
-- **The choice:** If every export item fails with the same code, the envelope keeps that shared code.
-  If failure codes differ—or successes and failures are mixed—the aggregate code is `partial`, while
-  every item retains its own result. The alternative chose the first failed item's code, so reversing
-  two IDs could change the process exit and an agent's retry decision without changing any outcome.
-- **The gap:** A6 defines mixed success as partial but does not spell out the all-failed,
-  heterogeneous case.
-- **The reach:** Every future batch verb can adopt the same permutation-invariant aggregation rule.
-- **Verdict:** **Sound.** Aggregate meaning depends on the set of outcomes, never argv ordering.
-- **Confidence:** High.
-
-### Slice 01b review — Source I/O failures keep different retry semantics from malformed bytes
-
-- **When:** Slice 01b import review.
-- **The choice:** A missing path maps to `not_found`; permission, device-I/O, and stale-mount errors map
-  to `file_offline`; bytes that no registered probe can admit map to `unsupported_file`. A file
-  that changes during inspection also returns stable JSON with
-  `reason:"changed_during_import"` instead of leaking a stack trace. Collapsing all four situations
-  into “unsupported” would tell automation to fix data when the storage edge actually needs attention.
-- **The gap:** The content probe registry defines accepted and unsupported inputs but not operating-system read
-  failures or a source mutating during import.
-- **The reach:** CLI exit classes remain actionable when slice 04 adds scanning, removable drives, and
-  retryable import work.
-- **Verdict:** **Sound.** The protocol preserves the operational distinction that its exit classes are
-  designed to carry.
-- **Confidence:** High.
-
-### Slice 01b review — The envelope workbench is static and self-contained
-
-- **When:** Slice 01b checkpoint.
-- **The choice:** `wb envelope` renders typed success, locked, and partial examples into one standalone
-  HTML file. It imports the protocol's exit mapping at build time but needs no live library, daemon,
-  network, scripts, fonts, or linked assets when opened. A live demo would make a contract review
-  depend on machine state and could hide one of the failure shapes when that state was hard to trigger.
-- **The gap:** The plan requires the report but delegates how examples are produced and packaged.
-- **The reach:** Later workbench reports can stay reproducible artifacts, and the protocol review can
-  be opened from a checkout or CI artifact without starting photoctl.
-- **Verdict:** **Sound.** Static fixtures make the human checkpoint deterministic while remaining typed
-  against the owning package.
-- **Confidence:** Medium.
-
-### Slice 07a — Swift sends raw RGB floats through a validated temporary file
-
-- **When:** Slice 07a CIRAW boundary.
-- **The choice:** A quarter-scale camera decode contains more than six million channel samples, so
-  `photoctl-mac` does not turn pixels into JSON or mix binary bytes into its status stream. The caller
-  gives it a unique temporary output path; Swift writes row-major RGB 32-bit little-endian floats
-  there and prints a small JSON description to stdout. TypeScript checks that description and the
-  exact expected byte count before constructing `LinearImage`, then removes the temporary directory
-  whether decoding succeeds or fails. The alternative—base64 in JSON—would enlarge every decode and
-  hold another full copy in memory; a mixed stdout protocol would make partial failures hard to parse.
-- **The gap:** The plan delegated the f32 Swift-to-TypeScript wire format but did not choose framing or
-  lifecycle.
-- **The reach:** CIRAW has a bounded, inspectable process boundary that future helper operations can
-  follow without putting platform frameworks in Node. LibRaw remains an in-process native decoder and
-  does not have to adopt this transport.
-- **Verdict:** **Sound.** Metadata and pixels each use the representation suited to them, and failed
-  calls cannot leave library-owned artifacts behind.
-- **Confidence:** High.
-
-### Slice 07a — Helper discovery never compiles Swift at command time
-
-- **When:** Slice 07a mac-helper packaging seam.
-- **The choice:** When a command needs CIRAW, `@photoctl/mac-helper` first honors the explicit
-  `PHOTOCTL_MAC_HELPER_PATH`, then looks for a packaged binary, then the workspace's already-built
-  debug binary, and finally asks the operating system `PATH`. For example, a source checkout works
-  after the normal build, while a release package can ship its own binary at the same API seam. The
-  rejected alternative ran `swift build` from `decode`, which would turn a photographer's runtime
-  command into a compiler/toolchain operation and make installed packages depend on source code.
-- **The gap:** The repo shape required a wrapper and platform packages but did not define development
-  lookup order before the release-packaging slice exists.
-- **The reach:** Slice 14 can add per-platform binaries without changing commands or decoder selection;
-  tests and unusual installations retain one explicit override.
-- **Verdict:** **Sound.** Build-time and runtime responsibilities stay separate, and the lookup order
-  converges on the packaged artifact rather than a development path.
-- **Confidence:** Medium.
-
-### Slice 07a — An unrun headless gate is represented as unknown
-
-- **When:** Slice 07a G3 verification.
-- **The choice:** `doctor` reports `requires_window_server:null` while the CIRAW helper itself is
-  available. The normal host process decoded the camera fixture twice identically, but this machine
-  refused the SSH connection needed to prove operation without a window server. Reporting `false`
-  would turn “not tested” into a promise; reporting `true` would turn an SSH configuration problem
-  into a decoder failure. The checked-in probe changes the field only after it produces real G3
-  evidence.
-- **The gap:** The plan defined pass and fail behavior for G3 but not the state where the required host
-  environment cannot launch the exam.
-- **The reach:** Agents can distinguish installed CIRAW support from the still-open headless property,
-  and 07b can proceed without silently closing the risk.
-- **Verdict:** **Sound.** A nullable capability records the evidence actually available and prevents a
-  false architecture decision.
-- **Confidence:** High.
-
-### Slice 07a — Decoder fallback has its own warning code
-
-- **When:** Slice 07a automatic selection.
-- **The choice:** Suppose an online ARW is intact but the preferred native decoder is unavailable.
-  `decode --with auto` succeeds from the full embedded JPEG or pinned preview and returns
-  `decoder_fallback`; it uses `source_offline` only when the original file itself cannot be read. The
-  alternative reused `source_offline` for both cases, which would tell an agent to reconnect a drive
-  even though installing or repairing a decoder is the real way to regain RAW pixels.
-- **The gap:** The plan required a warning on automatic decoder fallback, while the closed warning-code
-  union had no member describing that reason.
-- **The reach:** Future show, render, and export integration can preserve the difference between storage
-  availability and decoder capability without parsing human messages.
-- **Verdict:** **Sound.** The machine-readable warning identifies the condition an automated caller can
-  act on while preserving the successful fallback.
-- **Confidence:** High.
-
-### Slice 07a — Linear float output clamps to the representable 16-bit TIFF range
-
-- **When:** Slice 07a decode probe output.
-- **The choice:** The neutral CIRAW configuration disables extended dynamic range, and `decode --to`
-  stores each linear sample as an unsigned integer from 0 through 65,535. A negative numerical fringe
-  becomes 0 and a value above 1 becomes 65,535 instead of wrapping around to an unrelated brightness.
-  The float `LinearImage` remains unchanged in memory; only the explicitly requested integer TIFF is
-  clipped. The alternative would need a floating-point TIFF contract or a scene-referred exposure
-  normalization that the plan did not request.
-- **The gap:** The plan says “linear 16-bit output” without spelling out how out-of-range floating-point
-  samples map to an unsigned file representation.
-- **The reach:** Decoder probes remain comparable and safe to open, while the render graph and later
-  color core retain unclipped floats for actual processing.
-- **Verdict:** **Sound.** Saturating conversion is deterministic and preserves ordering at both bounds;
-  wrapping would create false colors.
-- **Confidence:** Medium.
-
-### Slice 07b — Camera samples are black-subtracted counts, not display-ready colors
-
-- **When:** Slice 07b LibRaw pixel contract.
-- **The choice:** After LibRaw turns the camera's one-color-per-sensor-site mosaic into three channels
-  with AHD (Adaptive Homogeneity-Directed demosaicing), photoctl subtracts the measured sensor black
-  offset but does not divide by the white level or apply the camera white balance. A sample therefore
-  remains a linear camera count: black is `0`, the adjusted saturation point is `white−black`, and the
-  separate `asShotWb` numbers describe rather than alter the pixels. The alternative would emit values
-  from zero to one or bake white balance into the pixels, either of which would make slice 07c repeat or
-  guess which part of the shared camera front end had already run.
-- **The gap:** The plan required camera space and forbade color conversion, but did not choose the
-  numeric units after black subtraction.
-- **The reach:** The shared develop front end, TIFF probes, histograms, and future decoder comparisons
-  must interpret LibRaw samples with the accompanying black and white levels rather than as display RGB.
-- **Verdict:** **Sound.** It preserves the sensor measurement and leaves every color decision with the
-  one shared develop pipeline.
-- **Confidence:** High.
-
-### Slice 07b — Native decode runs off the JavaScript event loop while LibRaw remains thread-safe
-
-- **When:** Slice 07b napi concurrency boundary.
-- **The choice:** A full AHD decode takes several seconds, so the napi function returns a promise and
-  performs the C++ work on Node's native worker pool. LibRaw keeps its thread-local AHD scratch state;
-  photoctl disables OpenMP by supplying no OpenMP build flags rather than defining
-  `LIBRAW_NOTHREADS`, which would replace that scratch state with shared static memory. The alternative
-  synchronous binding would freeze daemon commands during every decode, while the no-threads build
-  would let two otherwise independent probes or decodes corrupt one another.
-- **The gap:** The plan selected napi and prohibited OpenMP but did not specify scheduling or distinguish
-  internal thread safety from parallel demosaic execution.
-- **The reach:** Multiple daemon requests may safely overlap without blocking unrelated JavaScript work;
-  future native image operations should follow the same worker-boundary rule when they are CPU-heavy.
-- **Verdict:** **Sound.** Parallel Rust tests reproduced corruption with shared AHD scratch state and
-  stayed deterministic after restoring LibRaw's thread-safe mode.
-- **Confidence:** High.
-
-### Slice 07b — LibRaw uses its nominal inset crop before orientation
-
-- **When:** Slice 07b LibRaw adapter.
-- **The choice:** The Sony fixture contains a larger stored sensor rectangle around the photograph.
-  Immediately after unpacking, photoctl asks LibRaw to apply the format's declared raw inset, producing
-  the camera's nominal `7008×4672` image, then maps LibRaw's orientation while copying pixels. Returning
-  the larger storage rectangle would expose optical-black and margin pixels that other decoders never
-  show; inventing a photoctl crop would create a second camera geometry table.
-- **The gap:** The global coordinate rule forbids an artistic crop but does not say whether container
-  sensor margins count as image pixels.
-- **The reach:** Imported dimensions, decoder scale flooring, camera matrices, and the slice 07c oracle
-  all begin from the same oriented camera rectangle.
-- **Verdict:** **Sound.** The decoder's own format metadata owns sensor margins; this is normalization of
-  the stored raster, not a user crop.
-- **Confidence:** High.
-
-### Slice 07b — Fractional decoder scales use bilinear pixel-center sampling in Rust
-
-- **When:** Slice 07b scale implementation.
-- **The choice:** LibRaw always performs AHD at the nominal camera dimensions. For scale `0.5` or `0.25`,
-  photoctl then computes each output pixel from the four surrounding camera pixels at pixel-center
-  coordinates, with dimensions floored exactly as the public decoder contract requires. Nearest-neighbor
-  sampling would alias fine detail; asking LibRaw for half-size would change the demosaic algorithm and
-  make full and scaled calls disagree for reasons beyond resizing.
-- **The gap:** The plan required one Rust resampler and exact scaled dimensions but did not select the
-  interpolation kernel or whether scaling occurs before or after AHD.
-- **The reach:** Slice 10 should promote this implementation as the one shared resampler rather than add
-  a second kernel for previews, layers, or masks.
-- **Verdict:** **Sound.** Post-AHD bilinear sampling gives one deterministic camera decode at every scale
-  and a reusable baseline kernel.
-- **Confidence:** Medium.
-
-### Slice 07b — Explicit camera TIFFs normalize measured levels into real 16-bit samples
-
-- **When:** Slice 07b CLI verification output.
-- **The choice:** `decode --to` maps a camera count with `(sample−black)/(white−black)`, clips the result
-  to zero through one, and writes an uncompressed RGB TIFF whose stored channel samples truly span
-  16 bits. Scene-linear inputs already use zero-to-one values and take the same final saturating write.
-  The previous Sharp path labelled its container 16-bit but numerically clamped float camera counts as
-  though they were zero-to-one, leaving effectively 8-bit values and mostly white LibRaw output.
-- **The gap:** The plan required linear 16-bit output but did not define how unnormalized camera counts
-  reach that file or verify the numeric sample depth independently of TIFF metadata.
-- **The reach:** Decoder probes are inspectable by ordinary TIFF readers without changing the in-memory
-  camera contract; slice 07c still owns the linear Rec.2020 profile and display color transform.
-- **Verdict:** **Sound.** The file preserves relative sensor levels at the requested integer precision
-  while the develop graph retains unclipped floats.
-- **Confidence:** High.
-
-### Slice 07b — Native availability is lazy, but native tests build the host addon first
-
-- **When:** Slice 07b package and test boundary.
-- **The choice:** Importing `@photoctl/img` does not immediately load a `.node` binary. The first LibRaw
-  inspection chooses the package matching the current operating system and CPU, and a missing package
-  becomes an explicit unavailable result instead of crashing every command. Because generated native
-  binaries are not committed, the TypeScript test script builds and copies the current host addon before
-  Vitest starts. The alternative eager import would prevent even non-image commands from starting on an
-  unsupported installation; assuming a pre-existing developer build would make a clean checkout fail.
-- **The gap:** The plan named per-platform packages but did not specify load timing or how source-checkout
-  tests obtain an ignored native artifact.
-- **The reach:** `doctor` and automatic decoder selection share one availability truth, and clean local or
-  Docker tests exercise the same package loader used by the CLI.
-- **Verdict:** **Sound.** Optional native capability remains observable without making it a process-wide
-  startup requirement.
-- **Confidence:** High.
-
-### Slice 07b — Probe answers format capability without reading the whole pixel payload
-
-- **When:** Slice 07b decoder selection.
-- **The choice:** `probe()` opens and parses LibRaw metadata, including the TIFF compression tag, but
-  does not unpack every sensor byte. Thus a deliberately truncated file can identify as a supported Sony
-  RAW and later fail decode with an I/O error. Treating that damaged original as “decoder unavailable”
-  and silently switching to an embedded preview would hide source corruption; fully unpacking during
-  probe would also perform the expensive read twice for every healthy decode.
-- **The gap:** The plan requires a support/compression probe and fallback when an adapter is unavailable,
-  but does not define whether probe is also a whole-file integrity check.
-- **The reach:** Automatic selection distinguishes “this decoder understands the format” from “this
-  particular source decoded successfully”; future source-integrity handling should surface the latter
-  explicitly rather than overload decoder availability.
-- **Verdict:** **Sound.** Capability probing stays cheap and source corruption remains an error instead of
-  becoming a lower-quality silent fallback.
-- **Confidence:** Medium.
-
-### Slice 07b — Recursive source discovery excludes LibRaw's alternate placeholder translation units
-
-- **When:** Slice 07b portable build.
-- **The choice:** The build recursively discovers upstream `src/**/*.cpp`, then excludes the three files
-  ending in `_ph.cpp`. Those files implement no-postprocessing placeholders for a different LibRaw build;
-  compiling them beside the real preprocessing, postprocessing, and writer sources defines the same C++
-  functions twice and ELF linkers reject the library. Listing every desired source by hand would avoid
-  duplicates today but silently omit a new decoder file on a later pinned LibRaw update.
-- **The gap:** The plan required recursive source discovery but did not call out upstream's mutually
-  exclusive placeholder files.
-- **The reach:** Linux and macOS use the same full LibRaw implementation, while a future vendor update
-  remains discoverable through the source glob and checksum review.
-- **Verdict:** **Sound.** It preserves the plan's update-safe discovery rule while selecting exactly one
-  implementation of each LibRaw function.
-- **Confidence:** High.
-
-### Slice 07b integration — Git preserves vendored LibRaw whitespace verbatim
-
-- **When:** Slice 07b integration review.
-- **The choice:** Git whitespace diagnostics are disabled only for `crates/libraw-sys/vendor/**`.
-  LibRaw's upstream archive contains trailing whitespace and mixed line endings; normalizing those files
-  would make photoctl's vendored bytes diverge from the pinned, checksummed release. Project-owned Rust,
-  C++, TypeScript, scripts, and documentation keep the repository's normal whitespace checks.
-- **The gap:** The plan required an exact vendored source release and a clean diff gate, but did not say
-  how the gate should treat formatting already present in third-party source.
-- **The reach:** Future LibRaw updates remain auditable against their upstream archive without weakening
-  whitespace review anywhere photoctl owns the code.
-- **Verdict:** **Sound.** The exception is path-scoped to immutable third-party provenance.
-- **Confidence:** High.
-
-### Slice 03b integration — Direct commands defer non-daemon contention to the library lock
-
-- **When:** Slice 03b integration review.
-- **The choice:** A command running with `--no-daemon` stops a live photoctl daemon before opening the
-  library, but does not reject a socketless lock held by another direct process. It proceeds to the
-  ordinary library-open path, which waits for the configured lock budget and reports both the holder PID
-  and elapsed budget if contention persists. Explicit `daemon stop` and destructive restore keep their
-  strict behavior and reject a non-daemon holder immediately.
-- **The gap:** The daemon lifecycle specified how direct commands displace a daemon and how library-open
-  contention waits, but did not define which subsystem owns a socketless holder encountered while
-  preparing direct execution.
-- **The reach:** All direct-mode verbs now expose the same lock-wait contract as `openLibrary`; daemon
-  control and restore retain their stronger safety boundary.
-- **Verdict:** **Sound.** The library lock remains the sole owner of contention timing and error data,
-  while daemon shutdown remains responsible only for actual daemons.
-- **Confidence:** High.
-
-### Slice 07c integration — macOS signs the packaged native addon after copying it
-
-- **When:** Slice 07c integration review.
-- **The choice:** The native packaging script ad-hoc signs the destination `.node` file on macOS after
-  copying Cargo's dylib into its platform package. Cargo's linker signature can verify after a filesystem
-  copy yet still be killed by the macOS loader; signing the artifact at its final path makes the package
-  boundary deterministic. Linux packaging performs no signing step.
-- **The gap:** The release layout required per-platform native packages but did not define how a copied
-  Apple Silicon dylib preserves a loader-acceptable code signature.
-- **The reach:** Source builds, tests, and packed macOS installs all load the exact addon artifact that
-  was signed at its shipped location instead of depending on copy semantics.
-- **Verdict:** **Sound.** This is the narrow platform-required finishing step at the package owner, and
-  it leaves native implementation and non-macOS builds unchanged.
-- **Confidence:** High.
-
-### Slice 07c — Full-frame color transforms run off the daemon event loop
-
-- **When:** Slice 07c shared color-front implementation.
-- **The choice:** When a decoder hands photoctl millions of RGB samples, the native call first snapshots
-  the mutable JavaScript typed array and sends the levels, white-balance, matrix, and transfer work to a
-  worker task. The daemon can continue accepting socket traffic while the pixels are processed. The
-  boundary copy is required because napi typed arrays remain writable by JavaScript; sharing one with a
-  worker would be an unsafe data race and make results depend on mutations after invocation. On the G4
-  host, snapshotting the 11.7 MiB quarter-scale display buffer took 2.4 ms and the 187.3 MiB full A7C II
-  display buffer took 22.3 ms; the much larger per-pixel transform remains off-thread.
-- **The gap:** The plan named Rust as the one color owner but did not specify how its napi boundary
-  should be scheduled inside the persistent daemon.
-- **The reach:** Every later develop operator inherits this execution model. CPU-heavy pixel work
-  belongs on native tasks, while the daemon thread remains an orchestration boundary.
-- **Verdict:** **Sound.** It preserves the single color owner without turning large RAW files into
-  command-admission stalls.
-- **Confidence:** High.
-
-### Slice 07c — A neutral CIRAW oracle zeros per-file presentation defaults
-
-- **When:** Slice 07c G4 diagnosis.
-- **The choice:** A Core Image RAW filter starts with some values chosen from each camera file, including
-  baseline exposure, shadow bias, local tone mapping, and highlight recovery. The oracle's first honest
-  run left those defaults active and failed at mean ΔE00 4.723. Photoctl now sets them to neutral just as
-  it already neutralized boost, noise reduction, sharpening, contrast, detail, lens correction, and
-  gamut mapping. The result is a scene-linear decode rather than Apple's suggested starting look.
-- **The gap:** The 07a property list omitted these newer or file-dependent CIRAW controls even though it
-  required a neutral render.
-- **The reach:** CIRAW remains a useful independent decoder oracle; otherwise later develop settings
-  would be measured on top of an invisible Apple exposure/tone adjustment.
-- **Verdict:** **Sound.** It enforces the stated neutral invariant and made G4 pass without moving its
-  tolerance.
-- **Confidence:** High.
-
-### Slice 07c — The embedded JPEG is visual context, not a neutral RAW measurement
-
-- **When:** Slice 07c workbench report.
-- **The choice:** `wb oracle` shows the full embedded JPEG, CIRAW, and LibRaw images at identical quarter
-  dimensions so framing and orientation are reviewable. Only CIRAW versus LibRaw contributes to ΔE00.
-  The embedded JPEG carries the camera maker's contrast, exposure, and color rendering, so including it
-  in the numeric neutral-decoder score would measure an intentional presentation difference as a bug.
-- **The gap:** The plan required a three-way workbench and a decoder tolerance but did not state whether
-  the already-rendered preview belongs in the numeric pair.
-- **The reach:** Future fixtures can use their camera previews to catch geometry errors without forcing
-  an independent RAW implementation to imitate proprietary picture styles.
-- **Verdict:** **Sound.** It keeps all three views useful while the threshold tests the two comparable
-  scene-linear decoders.
-- **Confidence:** Medium.
-
-### Slice 07c — The oracle measures the public linear-TIFF boundary
-
-- **When:** Slice 07c workbench report.
-- **The choice:** `wb oracle` decodes through the real CLI and measures the exported 16-bit linear
-  Rec.2020 TIFFs rather than importing a private in-memory decoder buffer. The quarter-scale request
-  keeps the three full frames practical while retaining more than one source pixel per 64×64 patch.
-- **The gap:** The plan fixed the patch grid and threshold but did not say whether the oracle should
-  compare private floating-point buffers or the artifacts users can actually request.
-- **The reach:** G4 covers command dispatch, decoder metadata, the shared camera front, TIFF
-  quantization, and framing as one public contract. Sub-16-bit numerical drift is deliberately outside
-  this integration gate and remains the color core's unit-test responsibility.
-- **Verdict:** **Sound.** A decoder oracle is more durable when it exercises the supported seam instead
-  of reaching around it, and the chosen scale still gives every patch real spatial support.
-- **Confidence:** Medium.
-
-### Pre-slice 08 — One immutable image DAG replaces flat render state and private layer pipelines
-
-- **When:** DAG/upscaling unknowns walk, 2026-09-05.
-- **The choice:** Source, develop, generation, upscale, deterministic resample, transform, mask composite,
-  composite, crop, markup, and output are typed immutable nodes in one graph. User-visible layers remain an
-  ordered editing vocabulary, but each revision points a layer at one output node; a processing node never
-  masquerades as another painted layer. Graph topology uses normalized nodes and ordered edges, while each
-  node kind owns a validated canonical parameter schema. Changing parameters inserts a replacement node and
-  document revision rather than mutating history. The rejected alternatives were a visible layer for every
-  operation, per-layer private DAG fragments, and continuing the flat `fill_params` replay design.
-- **The gap:** The plan called a linear renderer a graph and assigned future layers enough fields to become a
-  second render-state owner. Adding upscaling there would compound the duplication.
-- **The reach:** Slice 08 establishes the graph before develop; Slice 10 makes layers roots into it; fill,
-  reimagine, retouch, markup, preview, export, undo, and future processing share the same evaluator and identity.
-- **Verdict:** **Sound.** The feature becomes a general processing architecture instead of an upscaler bolted
-  onto generated layers.
-- **Confidence:** High.
-
-### Slice 08a1 architecture audit — Logical edit identity is separate from pixel execution identity
-
-- **When:** DAG/upscaling unknowns walk, corrected by the Slice 08a1 architecture audit on 2026-09-05.
-- **The choice:** A logical image node says what edit should happen; an execution says which pixels were actually used and produced.
-  For example, changing exposure inserts a logical node and revision immediately, so the CLI can return the new render hash without
-  decoding the photo. Later, preview may evaluate that same node from an online full-resolution artifact or from the pinned offline
-  preview. Those runs share the document edit and render hash, but their evaluation keys differ because the ordered input artifact
-  hashes differ. Source runs additionally record the actual locator, tier, dimensions, and decoder id/version. A deterministic run
-  reuses its evaluation key; a generative run keeps a distinct full execution id even if another attempt returns identical bytes.
-  Canonical recipe, execution, artifact, render, and view hashes retain all 256 SHA-256 bits; only human presentation abbreviates them.
-  The rejected single-level model put the output artifact hash on the logical node: it could not create a revision until rendering,
-  contradicting lazy preview, and it made online and fallback source choice change document history.
-- **The gap:** The initial DAG plan used input artifact hashes directly in node identity without reconciling that with the existing
-  contract that edit commands commit state before pixels exist. It also did not say whether source fallback changes edit history.
-- **The reach:** Cache reuse, refresh, undo, graph pagination, artifact GC, preview paths, and export correlation
-  inherit collision-safe identities and crash-safe publication.
-- **Verdict:** **Sound.** Edit history stays stable and cheap while cache correctness still follows the exact pixels used; paid
-  nondeterministic attempts keep distinct lineage.
-- **Confidence:** High.
-
-### Slice 08a1 implementation — Revision batches use local node keys and must be root-complete
-
-- **When:** Slice 08a1 implementation review, 2026-09-05.
-- **The choice:** `commitRevision` accepts caller-chosen batch-local keys for new nodes, and inputs or roots reference either one
-  of those keys or an existing full node id. Draft order is irrelevant. The writer resolves the graph from the final typed root,
-  refuses cycles and missing/cross-photo references, and rolls back if any supplied draft is not reachable. For example, a caller
-  can submit output → develop → source in any array order, but cannot quietly attach a second unused crop node to the revision.
-- **The gap:** The requested atomic batch contract did not define how nodes created in the same transaction refer to one another,
-  or whether extra unrooted drafts are legal.
-- **The reach:** Develop, crop, layers, and future multi-node mutations get one stable request shape without provisional node ids,
-  while failed or malformed requests cannot accumulate unreachable graph metadata.
-- **Verdict:** **Sound.** Local keys are transaction-scoped addresses, not a second persistent identity, and root-completeness keeps
-  the immutable store honest.
-- **Confidence:** High.
-
-### Slice 08a1 implementation — Unowned future node parameters start strict and minimal
-
-- **When:** Slice 08a1 registry implementation, 2026-09-05.
-- **The choice:** Every node kind has a distinct strict v1 parameter schema now. Kinds whose command/evaluator arrives later expose
-  only their minimal explicit structural fields; unknown top-level fields fail instead of silently entering a recipe. `develop` is
-  the deliberate exception requested by the architecture owner: its parameters are a direct generic JSON object in 8a1, so 8b can
-  replace validation with the real develop dictionary without introducing or removing a wrapper. For example, crop accepts exactly
-  `{x,y,w,h}`, while develop accepts `{exposure:1}` directly rather than `{values:{exposure:1}}`. The same registry owns each
-  kind's supported recipe versions; both the application and v5 schema admit only version 1 until a later migration adds another.
-- **The gap:** The architecture required typed per-kind ownership before several later slices have specified their complete payloads.
-- **The reach:** Canonical recipe stability and malformed-input refusal are available now; each later owner must deliberately revise
-  its kind schema alongside its evaluator and recipe version instead of relying on an open catch-all by accident.
-- **Verdict:** **Sound.** It preserves the direct parameter shape and makes uncertainty visible at the registry boundary.
-- **Confidence:** Medium; later slices still own the final fields and version transitions for their kinds.
-
-## Superseded
-
-### Upscaler spike — Per-case reuse duplicated paid requests
-
-- **When:** Integration finding, corrected by `c1280d5` on 2026-09-06.
-- **The choice:** Listing the same source twice, once to inspect text and once to inspect a mask
-  boundary, originally repeated the same prompt/control requests. Reuse only covered a control
-  value matching the baseline within one source entry. The different crop and category describe
-  inspection, not a different provider request.
-- **The gap:** The plan separated comparison variables but did not define reuse across inspection cases.
-- **The reach:** A richer report could increase external cost without producing new evidence.
-- **Verdict:** **Unsound, corrected.** Completed requests now share one experiment-wide owner keyed
-  by source bytes, adapter/model/version, prompt, and controls. Independent inspection crops remain
-  separate. New experiment invocations still obtain fresh work; they may intentionally measure
-  independent stochastic results. The current contract is banked under Sound.
-- **Confidence:** High.
-
-### Slice 08a2 implementation — Display RGB16 as the canonical graph artifact was unsound
-
-- **When:** Slice 08a2 artifact-publication implementation, 2026-09-05.
-- **The choice:** The artifact owner originally normalized oriented display-sRGB RGB pixels to an uncompressed 16-bit TIFF carrying the
-  bundled `sRGB2014` profile, hashes those exact bytes, and stores them beneath a two-hex shard. Publication fsyncs the temporary
-  file, installs it with an atomic no-replace link, verifies an already-present valid object byte-for-byte, atomically repairs a file
-  whose bytes no longer match its content-addressed path, and fsyncs directory entries.
-  Slice 08c1a supersedes that representation because converting camera data to display RGB clamps highlights and out-of-gamut
-  colors before a later edit can use them. Existing display artifacts are treated as unavailable and lazily recomputed.
-- **The gap:** The plan required one normalized content-addressed representation and durable no-overwrite publication, but did not
-  choose an encoding or shard width for the first executable graph.
-- **The reach:** The durable publication and content-addressing mechanics remain sound, but display pixels are only a view/delivery
-  result. The provider-returned paid artifact encoding remains OPEN; converting that result once into working linear does not decide
-  whether or how its original bytes are retained.
-- **Verdict:** **Unsound.** A graph artifact must preserve the scene-linear values consumed by later pixel operators.
-- **Confidence:** Medium; storage cost is intentionally unoptimized until representative artifacts are measured.
-
-## Sound
-
-### Slice 08d2 — NLM uses bounded row blocks instead of allocating a denoised frame
-
-- **When:** Slice 08d2 noise-reduction implementation, 2026-09-05.
-- **The choice:** Non-local means (NLM) compares each pixel's small neighborhood with nearby
-  neighborhoods and averages the most similar ones. A straightforward implementation writes every
-  result into a second full-size image. This implementation instead caches a fixed block plus the few
-  source rows whose neighborhoods remain reachable, computes each block through one capped persistent
-  worker set, and then replaces those input rows. The existing asynchronous native call still owns the
-  one input buffer required to keep JavaScript memory safe.
-- **The gap:** The plan required deterministic bounded-memory NLM but did not choose the streaming
-  strategy or exact scratch-space bound.
-- **The reach:** A full-resolution RAW uses scratch space proportional to image width and the fixed
-  neighborhood radius, not image height. Future spatial operators can use the same safe-overwrite
-  rule only when they prove how long each source row remains live.
-- **Verdict:** **Sound.** The cached margin follows the search radius plus patch radius, the fixed
-  block allows parallel work without memory growth by image height, and public artifact/in-memory
-  parity proves that storage form does not change pixels.
-- **Confidence:** High.
-
-### Slice 08d2 — Luminance NLM precedes chroma NLM in one fixed native order
-
-- **When:** Slice 08d2 noise-reduction implementation, 2026-09-05.
-- **The choice:** The luminance control averages brightness while adding the same brightness delta to
-  all three working channels, so it leaves their color differences unchanged. The color control then
-  averages two zero-brightness color components and reconstructs RGB at the source brightness. Running
-  brightness first gives the color comparison a quieter signal; running the stages in separate calls
-  produces the same bytes as one combined request. The alternative order would make the controls valid
-  individually but give a different combined result.
-- **The gap:** The plan named separate luminance and color controls and required fixed operator order,
-  but did not order those two sub-stages or define their working representation.
-- **The reach:** Presets, copied edits, canonical artifact hashes, previews, and exports now share this
-  combined-control meaning. Reordering it later would intentionally change rendered identity.
-- **Verdict:** **Sound.** Each control preserves the dimension it does not own, and deterministic tests
-  pin the combined order through the public native seam.
-- **Confidence:** Medium; broader noisy-camera fixtures may motivate different delegated strength data,
-  but not a second pixel owner or ambiguous order.
-
-### Slice 08d1 — Spatial develop extends the existing native worker with dimensions
-
-- **When:** Slice 08d1 local-contrast implementation, 2026-09-05.
-- **The choice:** A develop request already crosses from TypeScript into one asynchronous Rust worker with scene-linear pixels.
-  Brilliance, definition, and sharpen need to know which samples are neighbors, so that same call now also carries image width and
-  height. Rust validates that `width × height × 3` equals the sample count, applies the per-pixel grade, then runs the spatial
-  stages in their fixed order. The alternative was a second local-contrast renderer or a TypeScript pixel pass beside the native
-  owner, either of which could disagree with canonical TIFF evaluation.
-- **The gap:** The plan assigned all develop pixels to Rust and named the spatial kernels, but the earlier per-pixel call did not
-  need dimensions and therefore omitted them from the boundary.
-- **The reach:** In-memory tests, canonical graph artifacts, previews, and exports now use one spatial implementation and one
-  dimension check. Later native noise reduction and geometry can extend this owner rather than creating parallel pixel paths.
-- **Verdict:** **Sound.** Dimensions are the minimum missing input for an image-neighborhood operator and keep the established
-  color-space and artifact owners intact.
-- **Confidence:** High; public memory/artifact equality, dimension validation, determinism, and evaluator tests cover the seam.
-
-### Slice 08c1a — Canonical graph artifacts preserve exact scene-linear working pixels
-
-- **When:** Slice 08c1a artifact correction, 2026-09-05.
-- **The choice:** A source decode produces oriented scene-linear Rec.2020 RGB `f32` samples. The artifact owner writes those exact
-  samples to a deterministic uncompressed IEEE-f32 TIFF with the bundled linear Rec.2020 profile and hashes those bytes. Every DAG
-  node therefore reads the same unclamped values its parent published. Only a view or delivery request converts the working pixels
-  to display-sRGB RGB16 and clamps them. An external provider may still return display pixels; those convert once into the working
-  format, while the paid-response journal separately retains the original encoded return.
-- **The gap:** The 08a2 implementation selected a display artifact before the first scene-linear operator existed, so the loss was
-  not observable then.
-- **The reach:** Develop, later masks/composites, deterministic identity, repair, restore, show, and export now share one true working
-  artifact. Negative, highlight-above-one, and out-of-gamut samples survive the DAG until the final display boundary.
-- **Verdict:** **Sound.** It restores the specified working color contract without adding a decoder replay or a second cache owner.
-- **Confidence:** High; exact sample, reuse, repair, reconciliation, source-only display, and native RAW tests cover the boundary.
-
-### Slice 08c1a — Graph consumers share one ordered source ladder
-
-- **When:** Slice 08c1a source integration, 2026-09-05.
-- **The choice:** Show and export ask one command-layer resolver for candidates. An online ordinary image enters the file decoder;
-  an online RAW enters the first supported full-resolution native decoder. Only decode failure advances to the best embedded JPEG,
-  then the pinned preview. The successful candidate carries its locator, dimensions, decoder identity/version, and fallback reason.
-- **The gap:** Preview selection preferred a RAW container's embedded JPEG and did not represent the production decode order.
-- **The reach:** Current display consumers and the later linear probe agree on source pixels and provenance. Fallback warnings say
-  whether native decoding failed or the original was offline.
-- **Verdict:** **Sound.** It composes the accepted decoder selection policy rather than duplicating it per command.
-- **Confidence:** High; show/export tests cover display delivery and 08c1b adds the real full-resolution RAW route gate.
-
-### Slice 08a2 implementation — Existing photos acquire their initial graph on first graph-aware use
-
-- **When:** Slice 08a2 preview integration, 2026-09-05.
-- **The choice:** A migrated photo without a document gets one immutable source→output revision when `show`, `graph`, or the graph
-  workbench first needs it. Concurrent initializers converge on the winner's revision. The alternative was a data migration that
-  eagerly inserted graph history for every pre-08 photo before any graph consumer existed.
-- **The gap:** Schema v5 introduced graph tables but deliberately did not backfill one logical graph per existing photo.
-- **The reach:** Old libraries enter the graph model without a second compatibility renderer or a potentially large eager migration;
-  after initialization every preview follows the same active-root/evaluator contract.
-- **Verdict:** **Sound.** Lazy creation is deterministic from stable photo orientation, CAS-protected, and removes the legacy pixel
-  path instead of preserving it beside the graph.
-- **Confidence:** High.
-
-### Slice 08a2 implementation — Revision-bound cursors finish the snapshot they started
-
-- **When:** Slice 08a2 graph-inspection implementation, 2026-09-05.
-- **The choice:** The opaque cursor carries and checks the photo, inspected revision, history mode, and last full node identity.
-  If a newer revision becomes active between pages, later pages continue the original revision rather than fail or switch state.
-  Invalid cursor structure is rejected before any database cast.
-- **The gap:** The contract required revision binding so edits cannot mix pages, but did not choose snapshot continuation versus
-  stale-cursor refusal.
-- **The reach:** Agents can finish a consistent inspection while editing continues, and each request remains independently bounded.
-- **Verdict:** **Sound.** Immutable revisions make continuation both simpler and more useful than invalidating a safe snapshot.
-- **Confidence:** High.
-
-### Slice 08a2 implementation — Restore preserves file trees by staging hard links
-
-- **When:** Slice 08a2 restore integration, 2026-09-05.
-- **The choice:** Before swapping the restored database directory into place, restore recreates `artifacts/`, `originals/`,
-  `previews/`, and user-authored `presets/` in the staged sibling using hard links, then fsyncs the staged tree. Unsupported entries and symlinks are refused.
-  After promotion, the command validates registered canonical artifacts and marks missing or corrupt files unavailable.
-- **The gap:** The plan required database replacement without deleting potentially large library-owned file trees, but did not
-  choose byte copying, moving after swap, or hard-link staging.
-- **The reach:** Restore remains rollback-safe, does not duplicate large source/artifact bytes, and does not erase export/develop
-  policy that SQL backups intentionally omit, while SQL metadata cannot claim a missing canonical file is available.
-- **Verdict:** **Sound.** Source and stage share a filesystem by construction, so hard links provide an atomic, bounded-storage
-  preservation mechanism compatible with the existing directory-swap journal.
-- **Confidence:** High.
-
-### Pre-slice 12 — Generated pixels optionally match destination density through a generative node
-
-- **When:** DAG/upscaling unknowns walk, 2026-09-05.
-- **The choice:** `generation.upscale=auto|off` defaults to `auto`; `--upscale`, `--no-upscale`, and
-  `--upscale-model` override it. Full-frame reimagine targets oriented base dimensions; masked generation targets
-  its base-space crop including padding. The planner chooses the smallest supported uniform generative scale
-  covering both axes, then uses the one deterministic resampler once for exact geometry. It reuses any cached
-  generative artifact with sufficient density; otherwise it reruns from the original generation artifact, never
-  recursively from a resized/composited result. Scaling a layer upward maintains density under `auto`. Generic
-  tiling and unexplained aspect stretching are forbidden; adapter-native tiling/reversible frame mappings are
-  allowed and recorded. If limits stop short, exact dimensions still land with `density_satisfied:false`.
-- **The gap:** The old fill normalization only matched provider response dimensions to the sent crop, not to
-  the base image's real pixel density, and a later layer scale could silently magnify that deficit.
-- **The reach:** Fill, reimagine, transform, refresh, preview, and export agree on what “full resolution” means.
-- **Verdict:** **Sound.** It makes generated detail honest at the destination without making rendering itself
-  nondeterministic.
-- **Confidence:** High.
-
-### Pre-slice 09 — Upscaling is an explicit external adapter with balanced guarded semantics
-
-- **When:** DAG/upscaling unknowns walk, 2026-09-05.
-- **The choice:** A dedicated `UpscaleAdapter` sits outside gateway transport and owns its display-sRGB color
-  conversion, supported scales/limits, optional native tiling, and reversible frame mapping. A release pins a
-  generative default; library then command overrides win. `auto` runs only after explicit adapter configuration,
-  never because ambient credentials exist. The default aesthetic is balanced creative: medium detail synthesis,
-  high resemblance, and a versioned guarded prompt that uses original intent as context while forbidding a repeat
-  of the replacement operation. Both original and derived prompts are provenance. A real-provider comparison
-  chooses adapter-specific controls when credentials exist; the fake-adapter contract and build never wait for it.
-- **The gap:** Vercel's four general routes cannot represent every purpose-built SOTA upscaler, while routing to
-  a second vendor silently would violate user intent and make model behavior unreproducible.
-- **The reach:** Provider selection, consent, doctor, settings, events, cost, prompts, and future hosted/local
-  implementations share one stable boundary.
-- **Verdict:** **Sound.** External differences stay at the external boundary without runtime capability guessing.
-- **Confidence:** Medium until the live model/control spike runs.
-
-### Pre-slice 12 — Partial generative success remains useful and refresh follows current lineage
-
-- **When:** DAG/upscaling unknowns walk, 2026-09-05.
-- **The choice:** If generation succeeds and upscaling fails, the generated branch becomes active with an
-  `upscale_failed`/configuration warning; no failed image node enters the graph. Retrying upscale reuses that exact
-  generation. Refreshing generation instead rebinds it to the current upstream develop node and reconstructs
-  descendants, so a brightness change followed by regenerate is visible to the provider. Compatible later develop
-  changes may add deterministic compensation to old generated branches; incompatible ones make the old lineage
-  explicitly stale. Mask exactness is proved at the mask-composite boundary against that node's base input, not
-  against a final output that may contain later global edits. Offline low-resolution context remains usable, but
-  source-context density and generated-output density are reported as separate facts.
-- **The gap:** A flat refresh record cannot express which expensive stage to rerun, and final-image equality would
-  misclassify legitimate downstream edits as mask leakage.
-- **The reach:** Failure recovery, cost, stale warnings, undo, strict compositing, and provenance become precise.
-- **Verdict:** **Sound.** The system retains paid successful work without claiming a failed enhancement happened.
-- **Confidence:** High.
-
-### Pre-slice 08 — PGlite backup remains metadata-only and restore preserves canonical artifacts
-
-- **When:** DAG/upscaling unknowns walk, 2026-09-05.
-- **The choice:** `backup` remains a small SQL recovery mechanism for PGlite corruption, not a full media backup.
-  Before canonical DAG artifacts land, restore is narrowed from replacing the entire library directory to replacing
-  database state while preserving artifacts, originals, previews, and backups. A restored node may honestly report
-  an already-missing artifact; SQL does not promise to recreate it.
-- **The gap:** Today's whole-directory restore is safe only because canonical external layer/generated artifacts do
-  not exist yet. Later it would delete the very files intentionally excluded from SQL.
-- **The reach:** Slice 08 artifact layout and restore tests must land together before generated paid state exists.
-- **Verdict:** **Sound.** It keeps the intentionally simple backup while preventing recovery from causing media loss.
-- **Confidence:** High.
-
-### Slice 09a — Gateway rate limiting has a short bounded retry window
-
-- **When:** Slice 09a provider transport implementation.
-- **The choice:** Gateway calls make three total attempts for HTTP 429 only. A valid `Retry-After` value wins but is capped at two
-  seconds; without one, retries wait 100 then 200 milliseconds. Each attempt has a 30-second abort ceiling. Tests may inject a
-  one-to-five-attempt ceiling and a fake clock. Other HTTP failures remain immediate because the contract does not prove they are
-  safe to repeat: 401/403/404 map to shared credential/model/endpoint configuration, while 400 and other statuses plus transport
-  failures map to temporary per-request provider failure. A malformed individual image may cause 400 without invalidating the
-  remaining batch. URL-returned images have the same 30-second ceiling and a 64 MiB streaming cap. The fake gateway
-  separately rejects request bodies above 32 MiB so malformed fixtures cannot consume unbounded memory.
-- **The gap:** The slice delegated the retry policy and required only that rate-limit retries be bounded.
-- **The reach:** All four gateway routes share the same latency ceiling and attempt provenance; a real deployment with sustained
-  rate limits may fail sooner than a vendor SDK would.
-- **Verdict:** **Sound.** It gives brief provider throttling a chance to recover without hiding prolonged unavailability or
-  retrying unspecified failures.
-- **Confidence:** Low to medium; live 09b timings and provider error bodies may justify different isolated ceilings or status
-  classification.
-
-### Slice 09a — Provider settings use purpose-scoped rows and explicit per-upscaler consent
-
-- **When:** Slice 09a doctor and selection implementation.
-- **The choice:** The existing settings table stores three JSON objects: `models` for purpose-to-model overrides, `generation` for
-  the `auto|off` upscale preference, and `providers.upscale[model].configured` for explicit consent. Unknown fields are ignored so
-  later slices can extend those objects. A command model override still implies a request to upscale, but it cannot bypass the
-  configured bit.
-- **The gap:** The plan fixed precedence and consent semantics but not the durable JSON shape that represents them.
-- **The reach:** Doctor, future generation verbs, migrations, and configuration tooling inherit one explicit distinction between
-  choosing a model and authorizing an external service.
-- **Verdict:** **Sound.** Purpose-specific model choice stays independent from provider authorization, and ambient credentials
-  cannot become consent.
-- **Confidence:** Medium until a settings-writing command exercises the shape in a later slice.
-
-### Slice 09a — External execution details extend the existing DAG execution record
-
-- **When:** Slice 09a provenance integration.
-- **The choice:** Schema v7 adds one nullable, object-constrained JSON column to `node_executions`. The JSON contains only a bounded
-  whitelist of external facts; graph inspection composes it with canonical node parameters, ordered input node/artifact hashes,
-  and output artifact facts already owned by relational tables. Unknown transport/debug/auth fields are stripped at ingestion,
-  while missing or recipe-mismatched provenance prevents a generate/upscale success from committing.
-- **The gap:** The slice required complete bounded provenance but did not choose between a new parallel record model, many nullable
-  columns, or an extension of the existing execution owner.
-- **The reach:** External operations remain part of ordinary graph lineage, secrets do not enter the catalog, and future provenance
-  additions must fit the bounded whitelist rather than create another execution identity.
-- **Verdict:** **Sound.** One owner preserves the logical/execution split while the relational graph remains authoritative for
-  facts it already stores.
-- **Confidence:** High.
-
-### Slice 09a — Provider geometry normalizes once at the adapter boundary
-
-- **When:** Slice 09a image and structured adapter implementation.
-- **The choice:** Structured `box_2d` values are interpreted as Gemini-style `[top,left,bottom,right]` coordinates on a 0–1000
-  scale, rounded into integer `[x,y,w,h]` pixels against the first supplied image. Image responses decode to display-sRGB RGB16,
-  reuse the shared Rust pixel-center resampler when dimensions differ, and encode the normalized result as an 8-bit PNG. Sharp
-  only decodes and encodes; it does not own the resize.
-- **The gap:** The contract assigned frame conversion and adapter-internal color conversion but did not spell out coordinate order,
-  rounding, or the normalized PNG sample depth.
-- **The reach:** Callers see canonical pixel geometry regardless of provider dialect, while future non-Gemini structured adapters
-  may need their own coordinate converter and later delivery work may revisit the intermediate PNG depth.
-- **Verdict:** **Sound.** Provider-specific conventions terminate at the provider boundary and the repository keeps one resize
-  kernel.
-- **Confidence:** Medium; the geometry is pinned by fixtures, while live-provider color/sample evidence remains for 09b.
-
-### Slice 06 — XMP writes target one verified online original locator
-
-- **When:** Slice 06 XMP command implementation, 2026-09-05.
-- **The choice:** A photo can have several locators, meaning several catalog records that point to identical original bytes on
-  different volumes. When `xmp write` runs, photoctl walks those locators in catalog order, verifies that an online file still
-  has the catalogued content identity, and writes one sidecar beside the first match. For example, if the camera card is offline
-  but a verified library copy is online, the library copy receives the sidecar; photoctl does not fan the same write out to every
-  copy. `xmp sync --read` chooses its sidecar by the same rule, so the read and write commands cannot silently target a path whose
-  image bytes were replaced after import.
-- **The gap:** The plan required `<stem>.xmp` beside a source but did not say which source wins when one photo has several
-  locators, whether every copy should receive a sidecar, or whether mere path existence was enough.
-- **The reach:** Multi-volume workflows now have one deterministic XMP target per invocation. A caller that wants another copy's
-  sidecar must make that locator the first verified online source rather than expecting automatic replication.
-- **Verdict:** **Sound.** One identity-verified target avoids writing metadata beside an unrelated replacement file and avoids a
-  partial multi-volume replication protocol that the command contract never promised.
-- **Confidence:** Medium; photographers who intentionally maintain mirrored sidecars may eventually want an explicit all-locators
-  operation rather than changing this default.
-
-### Slice 06 — Sidecars publish atomically before their catalog observation is recorded
-
-- **When:** Slice 06 XMP write implementation, 2026-09-05.
-- **The choice:** The writer reads the current sidecar, merges catalog fields into memory, writes a uniquely named sibling file,
-  preserves the old permission mode, fsyncs the file, and then re-reads the pathname. The comparison includes file identity,
-  permissions/owner, size, nanosecond modification time, and a SHA-256 digest. Publication then atomically moves the pathname's
-  current file to a private sibling and validates those displaced bytes against the snapshot. Change time is deliberately not part
-  of this cross-publication identity because the displacement itself changes it; the opened-file reader still compares change time
-  before and after reading to detect an in-progress mutation. If an editor replaced the sidecar in the tiny interval after
-  verification, photoctl restores that replacement and retries from it. If validation succeeds, photoctl
-  hard-links the prepared file into the now-vacant sidecar name; hard-link creation is atomic and refuses to overwrite a new file
-  that another editor created in the meantime. Three consecutive conflicts refuse that item. Recoverable conflict paths restore
-  the external file and remove private siblings; if a second editor makes restoration impossible, photoctl leaves the displaced
-  bytes at the named recovery path and returns a typed failure rather than deleting either version. Pull reads use the same
-  opened-file snapshot discipline: bytes and timestamps come from one handle, and pathname replacement causes a retry. After a
-  successful publication photoctl fsyncs the directory; only then does PGlite record the written file's modification time.
-- **The gap:** The plan required parse-merge and read-only-volume behavior but did not choose a crash boundary or file publication
-  mechanism.
-- **The reach:** Every future XMP field inherits the same no-partial-file and no-known-lost-update guarantees, including the exact
-  post-verification race. Stale reporting remains the recovery seam between filesystem publication and database bookkeeping. The
-  three-attempt contention budget is a reversible latency policy; a continuously active external editor gets a typed per-item
-  refusal instead of an unbounded loop. A filesystem that does not support same-volume hard links refuses the write rather than
-  falling back to a clobbering rename.
-- **Verdict:** **Sound.** The ordering preserves the only irreplaceable state—the existing sidecar—until a complete replacement is
-  durable, without adding a second journal or schema.
-- **Confidence:** High in the conflict-preservation ordering; medium in the unmeasured three-attempt retry budget and the decision
-  to fail closed on filesystems without hard-link support.
-
-### Slice 06 — Keyword writes flatten the catalog's tags and refuse conflicting standard prefixes
-
-- **When:** Slice 06 XMP parse-merge implementation, 2026-09-05.
-- **The choice:** The catalog stores flat tag strings, not Lightroom's full keyword tree. A write therefore replaces both prior
-  flat and hierarchical keyword properties with one `dc:subject` bag containing exactly those flat strings; it cannot reconstruct
-  a hierarchy that was deliberately discarded on import. Rating, color label, and the photoctl flag are the other owned
-  properties across every `rdf:Description`, then emits the catalog values exactly once. Camera Raw settings and every unrelated
-  XML node remain byte-for-byte in place. Namespace validation follows XML scope through ancestor elements and each Description,
-  rather than looking only at a local opening tag. If the document binds a standard prefix such as `rdf`, `xmp`, `dc`, or
-  `photoctl` to a different namespace URL, the merge refuses that item instead of shadowing the binding and silently
-  reinterpreting preserved XML. Lightroom hierarchy is removed only when `lr` actually denotes Lightroom's namespace.
-- **The gap:** The plan named the round-tripped values and required foreign-node preservation, but did not define how a flat
-  catalog should rewrite Lightroom hierarchy or how to handle a sidecar that reuses a standard prefix for another vocabulary.
-- **The reach:** Tag removal is a real replacement—an old hierarchical leaf cannot reappear on the next import—while develop
-  metadata remains outside this writer. Nonstandard documents fail per item and leave their bytes untouched.
-- **Verdict:** **Sound.** The serialized form matches the information the catalog actually owns, and refusal is safer than
-  assigning new meaning to preserved foreign nodes.
-- **Confidence:** High because slice 04 already made exact flat leaf tags the catalog contract.
-
-### Slice 06 — Filesystem shape failures use the existing per-item data-error channel
-
-- **When:** Slice 06 independent-review remediation, 2026-09-05.
-- **The choice:** The XMP library wraps only its own filesystem operations in a typed error. A disappearing pathname maps to
-  `file_offline`; permission and read-only failures map to `volume_readonly`; other item-local path-shape failures such as an XMP
-  pathname that is a directory map to the existing `unsupported_file` result. Database and programming errors remain unwrapped
-  and abort normally instead of being mislabeled as item failures.
-- **The gap:** The batch contract required isolation but the closed protocol did not name an error code for every POSIX filesystem
-  condition.
-- **The reach:** One malformed sidecar path cannot starve later IDs, while callers do not need a new public error-code variant for
-  uncommon filesystem shapes. The native cause code remains in result details for diagnosis.
-- **Verdict:** **Sound.** It preserves the closed protocol and draws the isolation boundary at the library operation that knows the
-  failure came from an item-local path.
-- **Confidence:** Medium; `unsupported_file` is the closest existing data-error category, but a future protocol revision could add
-  a more specific filesystem-shape code if automation needs it.
-
-### Slice 06 — Doctor reports XMP divergence as a grouped count and one soft warning
-
-- **When:** Slice 06 doctor integration, 2026-09-05.
-- **The choice:** Doctor adds `data.xmp.stale`, a nonnegative count, and emits one `xmp_stale` warning when that count is nonzero.
-  For example, three externally edited sidecars produce `xmp:{stale:3}` plus one warning rather than three warning records. The
-  command still exits successfully because divergence is soft state; `list --xmp-stale` is the surface for retrieving individual
-  photo rows. To keep a very large library from loading every stored path or issuing every filesystem check at once, the count
-  reads 128 catalog rows at a time and checks only that page concurrently before advancing.
-- **The gap:** The plan required a doctor stale count and named the warning code but did not define the response nesting or whether
-  warnings were per photo or aggregated; it also did not choose a bounded scan shape.
-- **The reach:** Monitoring can cheaply read one stable health metric, while callers that need IDs use the already paged list
-  command instead of expanding doctor output without a bound.
-- **Verdict:** **Sound.** It follows doctor's existing grouped diagnostics and keeps the warning payload bounded for large
-  libraries.
-- **Confidence:** High.
-
-### Slice 09b — G5 changes one high-entropy wide value per cycle
-
-- **When:** Slice 09b TOAST probe implementation.
-- **The choice:** Each G5 cycle creates one deterministic but hard-to-compress 3,072-number vector and UPSERTs that value into all
-  5,000 rows. The next cycle changes the vector, so PostgreSQL must replace every row's out-of-line TOAST payload; TOAST is the
-  PostgreSQL storage mechanism that moves a value too wide for an ordinary table page into separately stored chunks. After the
-  twentieth cycle, the probe does not merely count rows: it reads every vector, verifies its dimension, and compares it with the
-  exact final value. Using one vector per cycle controls the experiment around the update/storage mechanism. Generating unrelated
-  random vectors per row would add CPU and transfer volume without making any individual stored value wider. If the database
-  cannot start, run, verify, close, or clean up for an unexpected reason, the probe first replaces any earlier PASS file with
-  `status=unsettled` and an unsettled write strategy, then propagates the failure. Keeping the previous PASS would make the evidence
-  directory claim a decision that the latest invocation did not actually establish. Its diagnostic is flattened to one line and
-  capped at 500 characters so an upstream error cannot turn this small gate file into an unbounded log sink.
-- **The gap:** The plan fixed row count, vector width, cycle count, and UPSERT semantics, but did not define vector contents or the
-  readback needed to distinguish intact rows from rows whose external chunks were corrupt.
-- **The reach:** The G5 result is credible evidence for 09c's write strategy only while the probe really creates wide external
-  values and forces a final read. Dependency upgrades can rerun the same controlled workload and compare a strategy verdict rather
-  than a timing anecdote.
-- **Verdict:** **Sound.** High-entropy per-dimension values exercise the failure class, while deterministic per-cycle inputs make a
-  complete value check possible.
-- **Confidence:** High.
-
-### Slice 09b — The embedding smoke records one aggregated-vector contract, not merely HTTP success
-
-- **When:** Slice 09b multimodal embedding smoke implementation.
-- **The choice:** The smoke sends one candidate item containing a text part and an inline JPEG part and calls the existing
-  OpenAI-compatible `/embeddings` route. It calls that candidate accepted only when the response contains exactly one finite
-  3,072-number vector. This represents the product need: one searchable vector for one photo plus its text, not two unrelated
-  vectors or a provider's smaller default. On success, the evidence keeps the request structure but replaces the JPEG bytes with
-  their SHA-256 digest; on HTTP or transport rejection, it keeps no request fixture. The exact content-part dialect is explicitly
-  labelled a candidate until a live Gateway call accepts it.
-- **The gap:** Vercel's current model page says Gemini Embedding 2 supports interleaved image and text, while its public Gateway
-  example and current AI SDK embedding interface remain text-only and do not specify the raw OpenAI-compatible multimodal body.
-  The plan required a live smoke to settle that gap but did not define what qualifies as acceptance or what may be persisted.
-- **The reach:** 09c cannot silently accept separate or wrong-width vectors. Until a keyed run succeeds, production can attempt
-  the named candidate only after explicit embed consent, one photo at a time, and must keep calling it provisional rather than
-  treating fake-gateway success as live acceptance. A rejected live run requires a new versioned candidate rather than fallback.
-- **Verdict:** **Sound.** The candidate is versioned and explicit-consent-gated in production, while only the purpose-key probe may
-  promote it to an accepted provider fixture. A 200 response with the wrong shape records `response_shape`, the response's scalar
-  item count, and only the first eight observed vector widths. This diagnoses contract drift without copying an unbounded provider
-  response into durable evidence.
-- **Confidence:** Medium; only the still-missing live Gateway response can validate the candidate dialect.
-
-### Slice 09b — Live probes require purpose-specific invocation credentials
-
-- **When:** Slice 09b embedding and upscaler evidence surfaces.
-- **The choice:** An ordinary `AI_GATEWAY_API_KEY` in the shell does not start either experiment. The embedding smoke requires the
-  operator to set `PHOTOCTL_EMBED_SMOKE_API_KEY` for that invocation; with no such key, it exits successfully and writes a
-  machine-readable `not_run:unconfigured` record. The upscaler workbench likewise writes empty adapter, model, controls, and
-  comparisons until an `UpscaleAdapter` is supplied through the existing registry and its model is marked configured. That
-  invocation must also supply source crops and controls; the spike never fills in resemblance or creativity values itself. It then
-  passes each PNG crop's original bytes to the adapter, executes the inherited guarded prompt and a single-sentence “preserve
-  without changing content” prompt through the registry, writes both outputs and a contact sheet, and records dimensions, latency,
-  cost, resolved controls, and pixel drift. The fake adapter includes the prompt in its deterministic output hash so the regression
-  can observe two distinct arms without pretending the pixels are vendor evidence. A failed explicitly requested embedding call
-  exits nonzero but still writes a rejected evidence record, so automation can distinguish “not authorized to run” from “authorized
-  but failed.”
-- **The gap:** The plan prohibited ambient credentials from becoming consent but did not choose the operator-facing key name or
-  the exit/evidence behavior for configured failures.
-- **The reach:** Developers can keep general provider credentials in their environment without accidentally uploading a photo or
-  spending money during routine gates. CI can treat an absent optional experiment as green while still noticing a broken experiment
-  that someone explicitly asked to run. Future live adapters retain ownership of color/profile conversion because the workbench does
-  not normalize the supplied PNG before invocation.
-- **Verdict:** **Sound.** Purpose-specific credentials make consent observable, and the exit split preserves failure visibility.
-- **Confidence:** High.
-
-### Slice 09b review — Pixel drift is normalized telemetry, not the visual verdict
-
-- **When:** Slice 09b configured-upscaler review.
-- **The choice:** For each source crop, the spike decodes the guarded and minimal outputs to opaque RGB and records their mean
-  absolute per-channel difference on a zero-to-one scale. A zero means the two returned pixel buffers look identical; one means
-  every channel is maximally different. Different output sizes record maximal drift because pixels cannot be aligned honestly.
-  The contact sheet remains the review surface: the number proves the two arms differed and locates a suspicious no-op, but never
-  chooses a vendor or claims that larger drift is better.
-- **The gap:** The slice required visible drift telemetry but did not define a metric or how it should behave for incomparable
-  dimensions.
-- **The reach:** Later live comparisons inherit a bounded, provider-independent diagnostic while keeping aesthetic judgment in the
-  required screenshot review.
-- **Verdict:** **Sound.** Normalization makes different crops comparable, and explicitly refusing to turn the metric into a quality
-  score avoids an automated product choice.
-- **Confidence:** Medium until live outputs show whether a perceptual metric would be more useful.
-
-### Slice 09c — Normalized catalog rows feed one generated full-text index
-
-- **When:** Slice 09c schema-v8 implementation, 2026-09-05.
-- **The choice:** A photo's searchable words live in two normalized tables: `files` holds paths and `tags` holds keywords. PostgreSQL
-  cannot make a generated column directly query those child tables. Schema v8 therefore has the database refresh a plain
-  `photos.search_text` string whenever a file or tag row changes; `photos.searchable` is the generated `tsvector`, PostgreSQL's
-  tokenized search document, and its GIN index is the fast lookup structure. For example, importing `weddings/first-look.ARW` and
-  adding tag `ceremony` causes the trigger to rebuild one string from all current paths and tags, then PostgreSQL regenerates and
-  indexes the tokenized form. The alternative was to duplicate refresh calls in import, tag, XMP, restore, and every future writer,
-  where one missed caller would make search silently stale.
-- **The gap:** The plan required a generated text-search value over normalized file and tag data, a shape PostgreSQL cannot express
-  as one generated-column formula, but did not select the synchronization owner.
-- **The reach:** New file/tag writers inherit correct indexing without command-layer bookkeeping. The materialized input is an
-  internal projection, not a second user-editable source of truth; direct child-row changes still refresh it.
-- **Verdict:** **Sound.** Database triggers cover every writer at the boundary where the normalized facts actually change, and the
-  generated/indexed value remains mechanically derived.
-- **Confidence:** High.
-
-### Slice 09c — Keyless catalog search uses PostgreSQL's English text configuration
-
-- **When:** Slice 09c full-text search implementation, 2026-09-05.
-- **The choice:** Both indexed documents and queries use PostgreSQL's `english` configuration. It tokenizes filename, folder, and
-  tag words and applies the same stemming and stop-word rules at write and read time. Before parsing, both sides replace runs of
-  non-alphanumeric punctuation with spaces; the query builds that document once and reuses it for matching and rank. A
-  punctuation-only query becomes no document and returns no hits. The alternative `simple` configuration would preserve every
-  token exactly but would not match ordinary English inflections such as singular and plural forms.
-- **The gap:** The plan required a generated `tsvector` and GIN index but did not choose a text-search configuration.
-- **The reach:** Keyless retrieval is intentionally English-oriented; filenames and tags in other languages still tokenize, but
-  they do not receive language-specific stemming. Changing this later requires rebuilding the generated column and index.
-- **Verdict:** **Sound.** The query is natural-language text, the selected rules are applied symmetrically, and vector retrieval
-  remains the multilingual/semantic arm whenever the explicitly configured provider is available.
-- **Confidence:** Medium; a multilingual catalog evaluation may justify a different or per-library configuration.
-
-### Slice 09c — Background batches yield the daemon command lane, not its lifetime kernel lock
-
-- **When:** Slice 09c worker integration, 2026-09-05.
-- **The choice:** photoctl already has exactly one process—the daemon—holding the library's kernel lock and one PGlite handle for
-  its lifetime. The embedding worker uses that same handle. It selects at most 50 photos, performs bounded per-photo provider work,
-  then pauses before selecting another batch; foreground socket commands take priority during that pause. The pause is derived as
-  twice the same polling ceiling the worker uses to notice foreground work, so changing one timing budget cannot invalidate the
-  other. The duet-agent alternative closed its independent database session between batches so another process could win the
-  lock. Copying that literally here would close the daemon's shared command handle and break the architecture that made the daemon
-  the sole lock owner.
-- **The gap:** The plan said to lift a cross-process relinquish shape from a repo whose worker and foreground were separate database
-  sessions, while photoctl's earlier slice deliberately centralized both in one daemon session.
-- **The reach:** Background embedding cannot monopolize a whole backlog, the daemon remains the sole lock owner, and later workers
-  must use the same cooperative foreground-priority lane rather than introduce a second lock/session model. Foreground requests
-  also replace the worker's key/endpoint/cache context for its next batch. A monotonic cursor completes the current catalog sweep
-  before one scalar retry deadline resets it, so failure state stays constant-size and foreground kicks cannot bypass cooldown.
-  Shutdown aborts active provider I/O and retry backoff rather than waiting behind an ordinary timeout or `Retry-After` delay.
-- **Verdict:** **Sound.** Foreground work stays bounded during automatic backfill while the one-lock invariant remains intact.
-- **Confidence:** High.
-
-### Slice 09c review — Foreground dispatch waits for worker database quiescence
-
-- **When:** Slice 09c shared-handle integration review, 2026-09-05.
-- **The choice:** Before any foreground dispatch, the daemon marks the embedding worker paused, aborts active provider or retry
-  work, wakes sleeps, and awaits the worker promise. Only then may the command use the shared PGlite handle. Dispatch `finally`
-  resumes the same monotonic sweep; a pause-aborted batch does not advance its cursor or enter cooldown.
-- **The gap:** Checking a `foregroundBusy` flag before selecting 50 items left a time-of-check/time-of-use window in which a
-  foreground transaction could begin while a later worker UPSERT used the same connection and transaction scope.
-- **The reach:** Foreground transactions cannot absorb or roll back background embeddings, and foreground work waits for at most
-  the abort/safe-point boundary rather than the remainder of 50 provider requests. Completed pre-pause UPSERTs stay committed and
-  are naturally skipped on resume.
-- **Verdict:** **Sound.** One shared database handle requires explicit ownership transfer, not cooperative polling alone.
-- **Confidence:** High.
-
-### Slice 09c review — Provider errors end before catalog persistence begins
-
-- **When:** Slice 09c worker liveness review, 2026-09-05.
-- **The choice:** The adapter call owns provider error classification; once it returns a validated vector, the catalog UPSERT runs
-  outside that recovery boundary. A persistence failure therefore escapes a foreground batch or becomes one contained background
-  diagnostic, and automatic work stops until another command kicks it.
-- **The gap:** One broad per-item catch converted an UPSERT rejection into `provider_busy`, causing the worker to buy the same
-  vector again after cooldown while hiding the local database fault.
-- **The reach:** Per-photo provider failures remain isolated, but local durability failures are never retried as external work.
-  An operator-triggered retry after fixing the catalog can still regenerate because the first vector was never committed.
-- **Verdict:** **Sound.** Payment/retry policy must not cross the boundary where remote success becomes local persistence.
-- **Confidence:** High.
-
-### Slice 09c review — Mixed-model vector ranking is exact within a materialized model set
-
-- **When:** Slice 09c hybrid-search integration review, 2026-09-05.
-- **The choice:** Search first materializes all embeddings for the requested model, then applies exact cosine ordering and the
-  bounded candidate limit. Schema v8 retains its HNSW index, but this query deliberately does not use it while a single photo-keyed
-  table can contain rows from several model generations.
-- **The gap:** HNSW ordering followed by `WHERE model = ...` may approximate across every model and only then discard old-model
-  rows, underfilling the current-model arm during a partial backfill.
-- **The reach:** Current-model recall is correct during migrations at the cost of scanning that model's materialized rows. A future
-  model-aware physical index or partition can restore approximate indexed ranking without changing the search envelope.
-- **Verdict:** **Sound.** Correct model isolation is more important than claiming an index whose ordering domain is too broad.
-- **Confidence:** High; the pinned PGlite EXPLAIN proves a CTE scan plus exact sort and no HNSW post-filter.
-
-### Slice 09c — The provisional multimodal dialect stays one photo per provider request
-
-- **When:** Slice 09c provider integration, 2026-09-05.
-- **The choice:** The background worker's database batch contains up to 50 photos, but each external request contains exactly one
-  photo: fixed descriptive text plus that photo's pinned 1616-tier JPEG. The adapter accepts success only when that request returns
-  exactly one finite 3,072-number vector. Requests run one at a time within the database batch, so provider concurrency is bounded
-  at one. If photo 17 has a missing preview or malformed response, its result fails and photos 18–50 still run. Sending all 50
-  images in one request would invent a batch dialect that the already-unaccepted one-item live candidate never proposed, and one
-  malformed item would make the whole provider response ambiguous.
-- **The gap:** The slice fixed the database batch size but the live evidence defined only a one-item candidate request and did not
-  authorize a multi-image request body.
-- **The reach:** Provider payload cardinality, strict validation, bounded concurrency, and per-item failure isolation stay aligned.
-  A successful live smoke can promote this candidate; a rejection must produce a newly named request-shape version rather than a
-  silent fallback. Serial calls make a batch slower than controlled parallelism would.
-- **Verdict:** **Sound.** It spends more HTTP round trips and wall time to avoid claiming an unsupported provider contract, prevent
-  a 50-request burst, and keep every failure attributable to one catalog item.
-- **Confidence:** Medium until the live Gateway accepts or rejects the candidate.
-
-### Slice 09c — `embed --all` is an idempotent backfill; named IDs request refresh
-
-- **When:** Slice 09c manual command implementation, 2026-09-05.
-- **The choice:** `embed --all` pages through photos that have no vector for the currently configured model, including rows whose
-  stored model is stale, and leaves already-current rows alone. Running it again after a lost terminal response therefore costs
-  nothing and returns an empty successful batch. Passing explicit photo IDs means “refresh these,” so those rows are sent again and
-  UPSERTed even when already current. The alternative made every retry of `--all` upload an entire library and incur provider cost
-  merely because the caller could not tell whether the prior response arrived.
-- **The gap:** The plan offered `--all` and named-ID forms but did not say whether current embeddings were refreshed.
-- **The reach:** Automation gets safe replay for whole-library maintenance while operators retain a precise repair/re-embed path.
-  Model changes naturally backfill because a row from a different model is not current.
-- **Verdict:** **Sound.** It follows the repository's idempotent-operation rule and minimizes unasked paid work.
-- **Confidence:** High.
-
-### Slice 09c review — Slow foreground provider calls send activity frames
-
-- **When:** Slice 09c independent scale review, 2026-09-05.
-- **The choice:** Foreground embedding and search reuse daemon `progress` frames every five seconds while provider I/O, retry
-  backoff, or response parsing is pending. Embed also reports command start and each 50-row database batch. The client applies an
-  idle ceiling of at least 31 seconds, never shorter than a caller's queue-admission budget, and resets it on every frame. A single
-  provider call that takes 30 seconds therefore emits several small frames, while work queued behind a longer foreground command
-  keeps its requested admission window.
-- **The gap:** Serial one-photo provider calls can leave a command silent beyond the ordinary 31-second idle timeout, causing the
-  client to retry paid work. The plan required activity but did not choose its cadence or idle margin.
-- **The reach:** A single request near the gateway timeout and a complete retry sequence both stay visibly alive. Future
-  foreground provider commands should reuse the event seam rather than receive an unbounded total timeout.
-- **Verdict:** **Sound.** Five seconds is well inside the existing idle window without making progress output noisy at human scale.
-- **Confidence:** High.
-
-### Slice 09c review — Whole-library output keeps totals and only the first 100 failures
-
-- **When:** Slice 09c independent scale review, 2026-09-05.
-- **The choice:** `embed --all` counts every success and failure but does not keep successful item rows. It retains the first 100
-  failures in catalog order and reports how many later failures were omitted. Thus a million-photo success returns an empty result
-  list and exact totals; a million-photo failure returns 100 attributable examples, exact totals, and an explicit omitted count.
-- **The gap:** The review required a bounded aggregate but did not choose the failure-detail budget or which failures survive.
-- **The reach:** Direct memory and the terminal daemon frame no longer scale with library size. Operators see early deterministic
-  failures but must use explicit-ID batches when they need a complete per-photo repair report.
-- **Verdict:** **Sound.** One hundred ordered examples are enough to diagnose a systemic failure while keeping output fixed-size.
-- **Confidence:** Medium; later operator evidence may justify another cap without changing the response shape.
-
-### Slice 09c review — Explicit embed keeps per-item rows within a fixed request budget
-
-- **When:** Slice 09c independent scale review, 2026-09-05.
-- **The choice:** Explicit embedding accepts at most 1,000 photo IDs and returns one result for each. Model identifiers are bounded
-  to 256 bytes before entering any provider or command result, and each ID/prefix is rejected above its canonical 36-character
-  limit before it can be echoed in a failure row. Even the largest accepted explicit batch therefore remains far below the
-  daemon's 16 MiB frame; larger maintenance jobs use the aggregate `--all` contract.
-- **The gap:** The review allowed the per-item contract to remain only if argument and response memory were bounded, but supplied
-  neither an ID count nor a string-size ceiling.
-- **The reach:** Scripts keep precise attribution for repair batches, while direct programmatic dispatch cannot bypass the CLI's
-  operating-system argument limit and allocate an unbounded result array.
-- **Verdict:** **Sound.** The limit is conservative relative to the wire ceiling and makes the guarantee depend on schema bounds,
-  not typical string lengths.
-- **Confidence:** Medium; changing the count later is compatible, while widening model IDs must preserve the frame calculation.
-
-### Slice 09c review — A configuration rejection pauses automatic embedding until context refresh
-
-- **When:** Slice 09c failure-path review, 2026-09-05.
-- **The choice:** A 401/403/404 embedding rejection is treated as a failure of the shared credential/model/endpoint context, not 50
-  independent photo failures. The command records the remainder of the selected batch without more provider calls, and the
-  automatic worker stops until a later foreground command supplies current key/endpoint/cache context and kicks it. HTTP 400 is
-  an isolated per-image `provider_busy` result, so later photos continue; transient failures retain their five-minute retry wakeup.
-- **The gap:** Per-item isolation alone made a full 50-row batch immediately retry the same unusable request context forever.
-- **The reach:** Bad credentials or a missing shared endpoint/model produce one external request per automatic pass, avoiding spin
-  and repeated paid work, while one malformed image cannot stall the library and an operator can resume immediately by issuing a
-  command with corrected context.
-- **Verdict:** **Sound.** Configuration is shared across the batch; retrying it per photo adds no information.
-- **Confidence:** High.
-
-### Slice 09c review — Detached worker failures are contained at the daemon boundary
-
-- **When:** Slice 09c failure-path review, 2026-09-05.
-- **The choice:** A setup, schema, or catalog rejection from detached worker work is caught at `kick`, reported once as a bounded
-  single-line diagnostic, and left dormant until a later kick. `stop` still cancels active provider work and resolves normally.
-- **The gap:** A detached promise had cleanup but no rejection owner, so one local failure could become an unhandled rejection and
-  make daemon shutdown reject.
-- **The reach:** The foreground daemon remains usable after background infrastructure failures without hiding the diagnostic or
-  turning a persistent fault into a busy loop.
-- **Verdict:** **Sound.** The daemon owns the detached lifecycle and therefore owns containment and reporting at that boundary.
-- **Confidence:** High.
-
-### Slice 09c review — Provider failure drops only the optional vector search arm
-
-- **When:** Slice 09c failure-path review, 2026-09-05.
-- **The choice:** Query-embedding configuration, authentication, rate-limit, timeout, outage, and malformed HTTP-success JSON
-  failures return text-search hits with a provider warning. The Gateway maps parse failures to a bounded provider error without
-  retaining the response body. The local indexed-search and fusion path runs outside that recovery boundary, so its failures
-  remain hard command errors. Streaming emits the same warning event carried by the final envelope.
-- **The gap:** Keyless search already fell back to text, but a present yet expired or unavailable provider failed the whole search.
-- **The reach:** Catalog search remains useful during provider incidents without misrepresenting local database corruption as an
-  optional-service warning.
-- **Verdict:** **Sound.** The vector arm enriches recall; it does not own availability of the authoritative local catalog.
-- **Confidence:** High.
-
-### Slice 09c — Each retrieval arm contributes at most 200 ranked candidates
-
-- **When:** Slice 09c hybrid-search implementation, 2026-09-05.
-- **The choice:** Search returns at most 50 hits, but each text/vector arm supplies a candidate window of at least 50, normally four
-  times the requested count, and never more than 200 before reciprocal-rank fusion combines them. This lets an item moderately
-  ranked in both arms rise into the final page without reading an unbounded library into JavaScript. Fetching only the requested
-  count per arm would miss some cross-arm agreements; fetching every match would make latency and memory grow with the catalog.
-- **The gap:** The plan fixed the public limit and RRF constant but not the internal candidate window.
-- **The reach:** Recall quality beyond the first 200 candidates is intentionally bounded. Later relevance evaluation may change
-  this one policy without changing storage, score shape, or the command protocol.
-- **Verdict:** **Sound.** The cap is safely above the public page while preserving bounded work, though real-library evaluation may
-  justify a different multiplier.
-- **Confidence:** Medium.
-
-### Slice 09c — Search labels each hit with one deterministic catalog filename
-
-- **When:** Slice 09c search-result hydration, 2026-09-05.
-- **The choice:** A photo can have several file locators. Search reports the basename of its lexicographically first stored relative
-  path, without probing volumes or exposing an absolute path. Choosing an online locator would make relevance output depend on
-  which drive happens to be mounted and would turn one indexed query into per-hit filesystem work.
-- **The gap:** The public hit shape required one `file` string but did not define how to select it for multi-locator photos.
-- **The reach:** The label is stable and cheap but is descriptive, not a promise that this locator is currently online; `show` keeps
-  ownership of actual source resolution.
-- **Verdict:** **Sound.** It preserves bounded search and avoids leaking host paths while giving humans a recognizable filename.
-- **Confidence:** High.
-
-### Slice 08c2 — Masked controls extend the one native grade in tonal order
-
-- **When:** Slice 08c2 masked-operator implementation, 2026-09-05.
-- **The choice:** The existing native scene-linear grade remains the sole pixel owner. It now applies shadows, highlights,
-  saturation, then vibrance after the primary controls. Highlights and shadows derive smooth masks from Rec.2020 luminance and
-  apply scalar stop gains, preserving chromaticity and unclamped working samples.
-- **The gap:** The plan named each operator and its masks, but did not pin their relative order beyond the existing fixed pipeline.
-- **The reach:** Every in-memory and artifact-backed caller receives identical deterministic ordering without a second evaluator;
-  later curve and local operators inherit one explicit insertion point.
-- **Verdict:** **Sound.** Tonal selection precedes colorfulness changes, and the shared owner keeps the module seam narrow.
-- **Confidence:** Medium; the delegated mask constants still need broader photographic tuning.
-
-### Slice 08c2 — Skin protection classifies hue after converting working primaries
-
-- **When:** Slice 08c2 vibrance implementation, 2026-09-05.
-- **The choice:** Vibrance converts Rec.2020 samples to linear-sRGB primaries only to classify hue, then attenuates the color boost
-  in a smooth warm-hue band. The operator remains color-only and deterministic; it does not claim face or semantic skin detection.
-- **The gap:** The plan required skin-hue protection but did not define the hue coordinate system or require a learned detector.
-- **The reach:** Working-space math stays Rec.2020 while the familiar hue classification avoids interpreting Rec.2020 channel
-  angles as sRGB hues. The protection can also affect warm non-skin colors, a deliberate limitation of this portable slice.
-- **Verdict:** **Sound.** This is the smallest portable interpretation of hue protection and leaves semantic masking to later owners.
-- **Confidence:** Medium; equal-saturation tests pin behavior, while visual portrait acceptance remains open for lack of a fixture.
-
-### Slice 10a — Graph-only revisions inherit the complete layer snapshot
-
-- **When:** Slice 10a immutable document writer, 2026-09-05.
-- **The choice:** A caller that changes only the graph may omit `layers`; the writer then copies every row from the active
-  revision into the new immutable snapshot. Passing `layers:[]` is different and explicitly clears the active stack. For example,
-  a metadata-independent base edit cannot accidentally make two subject layers disappear merely because that caller predates the
-  layer commands, while `layer clear` can still say exactly what it means. When the inherited stack is empty, changing either
-  `base` or `output` advances both typed roots; once layers exist, the explicit composite projection keeps them distinct. The alternative
-  required every graph caller to read and echo the stack even when it was not changing it, creating many places that could silently
-  drop a row.
-- **The gap:** The plan requires complete snapshots but did not define whether unchanged callers must resubmit them.
-- **The reach:** Every future graph mutation inherits layers safely by default; commands that reorder, rename, disable, remove, or
-  clear layers must submit the complete replacement snapshot so the transaction can validate its exact composite projection.
-- **Verdict:** **Sound.** Inheritance preserves immutable state while an explicit empty list keeps clear/removal unambiguous.
-- **Confidence:** High.
-
-### Slice 10a — Vacancy is the only role that may point at another layer
-
-- **When:** Slice 10a layer identity validation, 2026-09-05.
-- **The choice:** A vacancy is the hole left by moving a subject, so it must store `of_layer` pointing to a `subject` identity in
-  the same photo. Subject, reimagine, and retouch identities must leave `of_layer` empty. Thus a future fill can follow a vacancy
-  back to the subject whose original silhouette it preserves, while ordinary layers do not acquire vague parent relationships.
-  The alternative allowed arbitrary layer-to-layer links that no current command could explain or render.
-- **The gap:** The schema named `of_layer` and required legal role pairings but did not enumerate the pairing table.
-- **The reach:** Move/fill owns one precise relationship; adding another relationship later requires deliberately widening this
-  validation rather than teaching every reader to interpret an unconstrained graph.
-- **Verdict:** **Sound.** It constrains persistence to the only relationship in the current product contract.
-- **Confidence:** Medium because a later retouch workflow may justify a separately named relationship.
-
-### Slice 10a — Permanent masks are zero-input artifact pins
-
-- **When:** Slice 10a graph branch vocabulary, 2026-09-05.
-- **The choice:** A permanent manual or SAM selection is represented by a deterministic `mask` node whose parameter is the full
-  canonical mask-artifact hash and which has no graph input. In plain terms, the node says “this exact saved coverage image,” not
-  “run segmentation again.” Transform and resample nodes may then derive new mask branches from that immutable pin. The alternative
-  stored brush prompts or model inputs and made evaluation regenerate a selection that was already accepted and saved.
-- **The gap:** The plan named a typed deterministic mask node but not its recipe parameters or arity.
-- **The reach:** Slice 10b2 must make the typed mask artifact reader/evaluator honor this pin; later segment commands publish the
-  artifact before committing the node. Retention reads the pinned hash directly from the mask recipe, because a permanent pin does
-  not need a `node_executions` row merely to stay live. The revision writer refuses a snapshot if any permanent mask pin in its mask
-  branch is not published and available. Mask identity remains stable across rename, reorder, and content refresh.
-- **Verdict:** **Sound.** It makes the accepted mask bytes, rather than a replayable procedure, the permanent editing fact.
-- **Confidence:** Medium until 10b2 wires the evaluator and typed media contract.
-
-### Slice 10a — UUID layer identities are allocated only inside the revision transaction
-
-- **When:** Slice 10a document writer, 2026-09-05.
-- **The choice:** New layers receive UUIDs after the expected active revision has been locked and checked, inside the same database
-  transaction that stores graph nodes, the complete stack, and the new active revision. A stale caller therefore leaves no visible
-  identity behind; a successful retry receives the identity from the successful revision. The alternative allocated and inserted
-  identities before compare-and-swap, leaving unattached rows when two agents edited the same photo concurrently.
-- **The gap:** The plan required stable full IDs and atomic failure but did not choose their format or allocation point.
-- **The reach:** Prefix lookup follows the same 36-character UUID vocabulary as photos, while names remain freely revisioned
-  presentation. Future commands must reference the writer-returned identity rather than manufacture a name-derived ID.
-- **Verdict:** **Sound.** It reuses the catalog identity convention and makes the transaction boundary enforce the no-orphan rule.
-- **Confidence:** High.
-
-### Slice 10a — Delta recipes reuse the develop dictionary over one RGB input
-
-- **When:** Slice 10a graph branch vocabulary, 2026-09-05.
-- **The choice:** A deterministic `delta` node consumes one RGB node and stores the same sparse, validated operator dictionary used
-  by develop nodes. For example, exposure compensation can be `{exposure:0.5}` without inventing a second spelling or range; the
-  node means “apply this compensation to these already-generated pixels.” The alternative introduced a parallel adjustment schema
-  that would have to remain synchronized with Slice 08's operator owner.
-- **The gap:** The plan named the delta node and its purpose but left its exact recipe shape and arity to implementation.
-- **The reach:** Slice 10b3 can derive compatible compensation from the one develop-operator table and persist it without a schema
-  translation. If compensation later needs provenance beyond operator values, that belongs in a separate field rather than a
-  duplicate operator vocabulary.
-- **Verdict:** **Sound.** One input and the existing validated dictionary are the narrowest shape the described operation needs.
-- **Confidence:** Medium until 10b3 exercises every Tier-1 operator.
-
-### Slice 10a — Relative transforms pre-multiply the current base-space matrix
-
-- **When:** Slice 10a pure transform contract, 2026-09-05.
-- **The choice:** An absolute request compiles directly to one scale-then-rotate-then-translate matrix about its resolved anchor and
-  replaces the prior matrix. A relative request compiles the same way and pre-multiplies the stored matrix: `next = nudge × current`.
-  Applying the result to a point is therefore the same as applying the old edit first and the new base-space nudge second. The
-  alternative post-multiplied the nudge, making translation rotate or scale in the layer's already-transformed local axes.
-- **The gap:** The plan fixed absolute versus relative behavior and S→R→T order but did not state which coordinate frame relative
-  composition uses or name the combined horizontal-and-vertical flip value.
-- **The reach:** Layer commands can retry absolute placement idempotently and use relative movement in the oriented base coordinate
-  system. The pure owner also snaps quarter-turn sine/cosine values so exact geometry does not inherit floating-point near-zero.
-- **Verdict:** **Sound.** Base-space nudges match the global coordinate contract and the documented command meaning.
-- **Confidence:** Medium; 10c1's real command ergonomics will confirm the relative-frame choice.
-
-### Slice 10a — Opacity snapshots preserve recipe-number precision
-
-- **When:** Slice 10a immutable layer persistence review, 2026-09-05.
-- **The choice:** PostgreSQL stores opacity as double precision, matching JavaScript and JSON recipe numbers. A value such as
-  `0.123456789` therefore survives a snapshot reload exactly enough for a rename-only revision to prove that the unchanged
-  composite-v2 recipe still projects the layer rows. The alternative `real` column rounded to float32 on write while the recipe
-  retained the original number, giving one immutable edit two identities depending on whether it had crossed the database seam.
-- **The gap:** The plan constrained opacity to `[0,1]` but did not choose a database precision or a separate canonical quantization.
-- **The reach:** Snapshot reloads, recipe equality, render hashes, and future opacity commands use one numeric representation.
-- **Verdict:** **Sound.** Persistence must not silently change an identity-bearing recipe parameter.
-- **Confidence:** High.
-
-### Slice 10b1 — Resampling maps pixel centers and widens Lanczos support when reducing
-
-- **When:** Slice 10b1 native resample/transform implementation, 2026-09-05.
-- **The choice:** A destination pixel maps from its center to the corresponding source-pixel center. Affine transforms pass that
-  center through the canonical base-image edge-coordinate matrix before converting back to a sample index. Bilinear preview reads clamp
-  at the source edge. Lanczos3 widens its radius-three sampling footprint in proportion to any reduction, including reduction caused
-  by a layer's uniform transform matrix, then normalizes the contributing weights. For example, shrinking a four-pixel row to two
-  pixels integrates a wider neighborhood instead of choosing two sharp point samples; enlarging retains ordinary radius-three
-  Lanczos. Transform taps outside the source contribute zero, so a partially overlapping footprint fades continuously and a fully
-  outside footprint returns zero. An integral lattice transform such as a flip or quarter-turn copies the exact source sample and
-  bypasses every filter.
-- **The gap:** The plan selected bilinear, Lanczos3, and exact right-angle geometry but did not define pixel-center mapping, edge
-  behavior, transform-edge coverage, or how the Lanczos footprint changes during reduction.
-- **The reach:** Preview, provider normalization, and future RGB/mask layer callers share one coordinate convention. Downscaled
-  layers anti-alias; exact flips and quarter-turns remain bit-identical; translated empty space stays empty for later composition.
-- **Verdict:** **Sound.** Center mapping is symmetric, scaled support prevents avoidable aliasing, and the integer fast path makes
-  the exactness requirement structural rather than tolerance-based.
-- **Confidence:** High for the pinned asymmetric grids and integer identities; medium for later mask-edge treatment, which 10b2
-  must judge with its explicit coverage contract.
-
-### Slice 10b1 — Native resampling preserves caller sample depth and bounds full-raster admission
-
-- **When:** Slice 10b1 N-API and preview integration, 2026-09-05.
-- **The choice:** Float layer resample/transform copies JavaScript's typed array once, then runs on a native worker and resolves a
-  new typed array. Display-preview resampling instead borrows the caller's 8- or 16-bit typed array for the duration of a synchronous
-  native call and allocates only the final-sized output. The generic layer route retains Float32 because scene-linear RGB and future
-  masks require it. Sharp decodes the selected preview region and encodes the already-final-sized JPEG, but never receives a resize
-  instruction. Imported preview decode admits at most one full raster at a time even though the surrounding import pipeline prepares
-  four candidates; the cheap rendered-view path crops and downsamples its existing U16 raster before 8-bit conversion. The file
-  decoder preserves its 16-bit display contract through the same typed native bilinear owner before color conversion.
-- **The cache boundary:** Derived-view recipe version 2 identifies the Rust bilinear pixel algorithm, so version-1 artifacts made
-  by Sharp are not reused after upgrade. Full-frame masters retain their render-hash identity because they are not downsampled.
-- **The gap:** The plan assigned pixel ownership to Rust but did not specify scheduling or the typed-array safety/memory boundary.
-- **The reach:** Float worker inputs cannot race JavaScript mutation; borrowed display inputs finish before control returns to
-  JavaScript. Preview resampling adds no full-raster transport copy or Float32 expansion, concurrent import preparation retains at
-  most one decoded preview raster, and future scene-linear layer operations have an asynchronous Float32 seam without another pixel
-  implementation.
-- **Verdict:** **Sound.** Ownership and admission are explicit, and each caller pays only for the precision its contract needs.
-- **Confidence:** High; the production preview regression observes zero Sharp resize calls and exact equality with the native
-  output on pixels where Sharp's default differs.
-
-### Slice 10b3 — Layer compatibility is reconstructed from immutable graph lineage
-
-- **When:** Slice 10b3 develop compensation implementation, 2026-09-05.
-- **The choice:** Before planning a develop change, photoctl walks each layer content branch from its retained develop ancestor
-  through every persisted delta node and reconstructs the develop state those pixels actually represent. It plans and reports each
-  stable layer identity independently, including disabled layers. A Tier-2 edit adds no node, so a later edit still compares against
-  the branch's last represented state rather than the newer base state. The alternative remembered only the preceding global edit,
-  which could append a Tier-1 delta to an already-stale branch and falsely report it synchronized.
-- **The gap:** The plan required stale branches to remain bound to their exact ancestor but introduced no mutable stale flag and did
-  not specify how later develop commands recover that status.
-- **The reach:** Staleness survives process restarts and arbitrary numbers of revisions without duplicating identity in a column;
-  a branch becomes current only when its lineage can be compensated to the requested base state or a later provider refresh rebinds
-  it. Future layer transforms must retain the content ancestry so this reconstruction remains valid.
-- **Verdict:** **Sound.** The immutable DAG is already the authority for what pixels mean, and deriving status prevents a second
-  state owner from drifting away from it.
-- **Confidence:** High for the linear content chains produced through this slice; 10c1 must retain the same first-input ancestry
-  convention when it adds layer transforms.
-
-### Slice 10b3 — Delta planning refuses transitions that cannot compose exactly
-
-- **When:** Slice 10b3 independent review, 2026-09-05.
-- **The choice:** A layer at identity may receive the complete Tier-1 dictionary once. Later single-operator compensation uses the
-  operator's composition law: additive controls use a difference, saturation uses a gain ratio, and black point composes its affine
-  pivot. Large representable changes split into schema-valid nodes without changing that composition. Saturation from zero chroma,
-  repeated vibrance, mixed active controls, and other order-dependent transitions are reported stale instead of receiving an
-  approximate delta. The 300 K white-balance boundary and all Tier-2 membership still come from the single develop-operator owner.
-- **The gap:** The plan named Tier-1 controls but did not define inverse/composition behavior after a layer had already accumulated
-  adjustments. Raw parameter subtraction is not valid for multiplicative or lossy operators and could claim a match while producing
-  visibly different pixels.
-- **The reach:** `delta_applied` means the persisted operation has a defensible scene-linear composition, while conservative cases
-  remain available unchanged and emit `layers_stale`. Supporting more combinations later requires adding a proven composition rule,
-  not weakening the result meaning.
-- **Verdict:** **Sound.** A conservative stale result preserves pixels and truthfully exposes the need for refresh; a false success
-  would silently corrupt the user's edit semantics.
-- **Confidence:** High for exposure and the composition identities pinned by tests; medium for expanding safe combinations after
-  real provider-generated layer workflows exist.
-
-### Slice 10b2 — Canonical masks use a profile-free Float32 TIFF contract distinct from RGB
-
-- **When:** Slice 10b2 mask artifact implementation, 2026-09-05.
-- **The choice:** A mask is an uncompressed little-endian single-channel IEEE Float32 TIFF with black-is-zero photometry, no
-  color profile, finite coverage samples constrained to `[0,1]`, and the dedicated media type
-  `image/vnd.photoctl.mask+tiff`. Publication and restore reconciliation validate that contract rather than accepting any TIFF
-  whose dimensions happen to match.
-- **The gap:** The plan fixed the semantic sample type and required a distinct deterministic artifact contract, but did not choose
-  its exact byte layout or media-type spelling.
-- **The reach:** Artifact hashes, node pins, evaluator dispatch, restore repair, and later manual/SAM producers all share one
-  unambiguous mask identity without allowing RGB artifacts to pose as coverage.
-  Current retouch authoring stores a full-frame mask even for a small repair: a
-  7008×4672 raster consumes 130,965,504 mask-pixel bytes plus its TIFF header per
-  distinct mask. This is a storage tradeoff, not a measured memory failure. Cropped
-  or compressed mask storage is a possible later optimization; it does not authorize
-  collecting retained editing history or changing the user's memory-canary policy.
-- **Verdict:** **Sound.** The layout is minimal and deterministic, and the distinct media type keeps the storage boundary typed.
-- **Confidence:** High; exact-byte round trips and wrong-type/corruption regressions cover publication and restore.
-
-### Slice 10b2 — Mask transforms clamp filtered coverage and composition skips zero alpha
-
-- **When:** Slice 10b2 native transform/composite implementation, 2026-09-05.
-- **The choice:** Mask transforms reuse the canonical Lanczos3 coordinate owner used by RGB, then clamp filter ringing to legal
-  coverage `[0,1]`. Normal composition calculates effective alpha from coverage and opacity, but skips the write entirely when
-  alpha is zero so the accumulated base sample retains its exact Float32 bits.
-- **The gap:** The plan required one transform matrix, legal mask coverage, and exact pixels outside the effective mask, but did
-  not state how a signed resampling kernel's overshoot is reconciled with coverage or how exactness survives arithmetic.
-- **The reach:** Lifted RGB and active masks stay geometrically aligned; transparent areas of later layers cannot perturb or erase
-  earlier results in the ordered composite-v2 fold.
-- **Verdict:** **Sound.** Clamping belongs at the mask boundary, and the zero-alpha branch makes the exactness invariant structural.
-- **Confidence:** High; asymmetric transform and bit-level composite regressions pin both behaviors.
-
-### Slice 10b2 — A corrupt permanent mask pin is made unavailable on its first evaluator read
-
-- **When:** Slice 10b2 independent review, 2026-09-05.
-- **The choice:** If evaluator validation rejects a permanent mask's pinned bytes, it clears that artifact's availability before
-  returning the corruption error, matching restore reconciliation instead of repeatedly trusting the stale catalog claim.
-- **The gap:** The artifact owner defined repair and restore behavior, but the zero-input mask evaluator path could be the first
-  process to discover corruption after startup.
-- **The reach:** Subsequent evaluation and retention see truthful availability, and a later deterministic republication can repair
-  the same hash without a separate restore cycle.
-- **Verdict:** **Sound.** Discovery of invalid canonical bytes must update the catalog fact owned by the artifact boundary.
-- **Confidence:** High; a first-read corruption regression proves both the error and availability transition.
-
-### Slice 08d3 — Geometry projects base-space requests through one affine owner
-
-- **When:** Slice 08d3 geometry implementation, 2026-09-05.
-- **The choice:** A crop is first resolved in the photo's oriented, uncropped base coordinate system.
-  An optional aspect ratio keeps the largest centered rectangle inside that crop. Photoctl then maps
-  that continuous rectangle onto the nearest whole-pixel output, applies an exact clockwise quarter-turn,
-  and finally straightens around the new center. Straighten returns the largest centered rectangle that
-  fits inside the rotated pixels, avoiding empty black corners. The same composed matrix maps a base-space
-  `show --region` request into the developed raster and maps clicks back; the caller's original base-space
-  request, not the internal projected rectangle, remains the view-hash identity. When only a smaller embedded
-  or pinned source is available, catalog-space crop coordinates scale to that source before the same plan runs.
-  Canonical TIFF geometry stays in the native transform worker, which patches canonical dimensions and releases
-  its input frame before encoding output bytes; the persistent JavaScript daemon never walks full-frame samples.
-- **The gap:** The plan fixed the coordinate space, operator order, and exact rotations, but did not choose
-  fractional crop rasterization, aspect anchoring, straighten canvas bounds, or whether projected cache
-  identity should expose internal output coordinates.
-- **The reach:** Develop, canonical artifact dimensions, online and offline previews, view-cache reuse, and
-  future mask/layer consumers inherit one geometry plan. A request wholly outside developed pixels is a
-  usage error; a partial request reports the actual base-space intersection.
-- **Verdict:** **Sound.** Centered maximal crops are deterministic and reversible in the dictionary, trimming
-  prevents synthetic borders, and keeping base-space view identity preserves the public coordinate contract.
-- **Confidence:** Medium; exact grids and the production RAW crop are green, while later manual crop UX can
-  revisit aspect anchoring without changing the geometry owner.
-
-### Slice 08d3 — Invalid crops fail before immutable state commits
-
-- **When:** Slice 08d3 command integration, 2026-09-05.
-- **The choice:** If a batch asks to crop past a photo edge, that photo returns a `usage` failure before a new
-  document revision is written, while independent photos in the same batch can continue. Deferring the check
-  until `show` or export would leave a valid-looking active revision that cannot render.
-- **The gap:** The plan constrained coordinates but did not name whether crop bounds are checked at mutation
-  time or evaluation time.
-- **The reach:** Offline metadata edits remain possible because dimensions live in the catalog, and every later
-  renderer can assume the active crop intersects and stays inside the oriented base raster.
-- **Verdict:** **Sound.** The catalog already owns the dimensions needed for deterministic validation, so invalid
-  immutable state never becomes active.
-- **Confidence:** High.
-
-### Slice 08d4 — A present B&W dictionary activates monochrome mode
-
-- **When:** Slice 08d4 filter and B&W implementation, 2026-09-05.
-- **The choice:** A photo enters monochrome mode whenever its develop state contains a `bw` object,
-  even if the only stored control is zero. For example, `{bw:{intensity:0}}` still converts the color
-  frame to neutral Rec.2020 luminance; intensity zero means neutral B&W density, not “blend zero percent
-  toward B&W.” Removing the whole `bw` object restores color. The alternative is a separate enable flag
-  or treating intensity as a color-to-monochrome blend, neither of which exists in the public dictionary.
-- **The gap:** The plan named four B&W controls and their ranges but did not define which value activates
-  monochrome mode.
-- **The reach:** Presets, `--set`/`--unset`, copy-edits, hashes, and future interfaces all inherit one
-  unambiguous activation rule without adding a fifth hidden control.
-- **Verdict:** **Sound.** Object presence is already durable state and makes zero a useful neutral setting;
-  users can reverse the mode by unsetting `bw`.
-- **Confidence:** Medium; the API stays minimal, but a later UI may prefer an explicit B&W toggle and can
-  map that toggle to adding or removing the same object.
-
-### Slice 10c1 — Manual masks use pixel-center coverage and clip at the oriented base frame
-
-- **When:** Slice 10c1 manual segmentation integration, 2026-09-05.
-- **The choice:** A box is half-open: its left and top edges are included and its right and bottom edges are excluded. A pixel is
-  selected when its center falls inside that box. A brush is treated as a closed polygon and uses the even-odd fill rule at the
-  same pixel centers. Coordinates outside the image are harmlessly clipped by rasterization, while `--norm` requires every supplied
-  number to stay between zero and one before scaling to the oriented, uncropped photo dimensions. The alternative was to round
-  coordinates into inclusive integer endpoints or reject any shape that crosses the image edge, both of which make fractional and
-  normalized selections depend on ad-hoc boundary cases.
-- **The gap:** The plan required exact brush round-trips, box masks, normalized coordinates, and the global oriented coordinate
-  space, but did not define edge inclusion, polygon fill, or partial out-of-frame behavior.
-- **The reach:** Manual selections, later model-returned polygons, mask bounding boxes, and transform anchors inherit one raster
-  convention. A box `x=1,w=2` covers the two pixel centers at 1.5 and 2.5, never a third endpoint pixel.
-- **Verdict:** **Sound.** It reuses the graph's existing pixel-center geometry and makes clipping deterministic without changing the
-  requested shape's stored bounds.
-- **Confidence:** Medium; the math is stable, while a future interactive brush may choose a stroked-path vocabulary rather than a
-  filled polygon.
-
-### Slice 10c1 — A manual subject stays lazy by referencing the immutable base branch
-
-- **When:** Slice 10c1 segment and composite integration, 2026-09-05.
-- **The choice:** Segmenting does not render and save a second RGB image. The new subject layer points its content at the current
-  immutable base-output node and pairs that branch with the newly published permanent mask. When `show` or export eventually asks
-  for pixels, the evaluator renders the base branch and the mask clips it during composition. The unbuilt alternative was to add a
-  new kind of RGB pin or constant node and eagerly lift selected pixels into it, which would invent graph vocabulary that no current
-  artifact contract honestly represents.
-- **The gap:** The plan required permanent mask publication and lazy mutation, but did not name the initial subject content recipe.
-- **The reach:** Manual segmentation creates no node execution or preview and remains compatible with later transforms. Slice 10c2
-  may build vacancy behavior from this content branch, but must not overload the mask pin as an RGB artifact.
-- **Verdict:** **Sound.** Existing base, mask, transform, and composite owners express the selection without a second pixel owner or
-  eager work.
-- **Confidence:** High.
-
-### Slice 10c1 — Layer transforms replace geometry beneath retained develop deltas
-
-- **When:** Slice 10c1 transform integration, 2026-09-05.
-- **The choice:** A develop delta is an immutable color compensation already attached to a layer branch. When an absolute transform
-  replaces that layer's geometry, photoctl walks through the delta nodes, replaces or inserts the one transform beneath them, then
-  rebuilds those same delta recipes above the new transform. In shorthand, `delta → old transform → content` becomes
-  `delta → new transform → content`. If a relative transform uses the default centroid anchor, the original mask centroid is first
-  mapped through the current matrix, so rotating a moved subject keeps its visible center fixed. An explicit `x,y` anchor remains a
-  coordinate in the global oriented base frame.
-- **The gap:** The plan required preserving 10b3 lineage and relative transform composition, but did not specify transform placement
-  among retained delta nodes or whether the word “centroid” meant the original or currently visible center.
-- **The reach:** Staleness reconstruction can continue walking the same first-input ancestry after arbitrary layer moves, and a
-  photographer can move then rotate a subject without it orbiting its old location.
-- **Verdict:** **Sound.** It keeps the immutable compensation meaning intact and makes the default anchor follow the layer users can
-  currently see.
-- **Confidence:** High for lineage; medium for explicit-anchor ergonomics until an interactive client exercises them.
-
-### Slice 10c1 — Numeric reorder positions are one-based and z increases toward the front
-
-- **When:** Slice 10c1 layer command integration, 2026-09-05.
-- **The choice:** `layer reorder --to 1` moves a layer to the back. The highest valid position moves it to the front, matching
-  `--back` and `--front`; persisted `z` remains zero-based internally and increases toward the front. The alternative exposed the
-  database's zero-based index directly, making the first user-visible layer “position zero” while the command vocabulary and
-  existing examples speak in numbered layers.
-- **The gap:** The plan named `--to N` and the directional forms but did not define whether N starts at zero or one.
-- **The reach:** Scripts and future UI clients inherit the position convention; the response still exposes canonical zero-based `z`
-  for exact stack inspection.
-- **Verdict:** **Sound.** Human-facing ordinals start at one while storage retains the established z contract.
-- **Confidence:** Medium.
-
-### Slice 10c1 — Normalized transform displacements are signed image fractions
-
-- **When:** Slice 10c1 transform command integration, 2026-09-05.
-- **The choice:** With `--norm`, an anchor remains an ordinary point whose x and y each run from zero to one. A displacement is a
-  vector rather than a point, so `dx=-0.25` means one quarter of the oriented image width to the left and `dy=0.5` means half its
-  height downward; each component is bounded to minus one through plus one. Without `--norm`, both anchors and displacements remain
-  base-image pixel values. The alternative applied the point-only zero-to-one rule to displacement vectors, which made normalized
-  left and upward movement impossible.
-- **The gap:** The global contract says normalized coordinates use zero to one, but does not distinguish positions from signed
-  translation amounts.
-- **The reach:** CLI scripts and later move controls can express direction symmetrically while sharing the same oriented base
-  dimensions. Scale and rotation are dimensionless and therefore never change under `--norm`.
-- **Verdict:** **Sound.** Signed fractions are the direct normalized form of a displacement and retain the documented point range
-  for actual coordinates.
-- **Confidence:** Medium.
-
-### Slice 10c2 — Vacancy pixels have their own deterministic RGB recipe
-
-- **When:** Slice 10c2 vacancy integration, 2026-09-05.
-- **The choice:** A vacancy's magenta content is a zero-input `solid` recipe at version 1. Its parameters carry oriented width,
-  height, the scene-linear Rec.2020 space, and one RGB triplet; evaluation allocates the pixels asynchronously in the native image
-  owner. It is not disguised as provider output, a mask artifact, markup, or a special composite role.
-- **The gap:** The plan required deterministic RGB vacancy content, but the graph had no honest artifact pin or constant-image node.
-- **The reach:** Solid images now have a canonical hashable graph identity and remain lazy until show or export. Future constant
-  backgrounds can reuse this vocabulary without teaching composite what a vacancy means.
-- **Verdict:** **Sound.** One explicit versioned node keeps pixel generation, graph identity, and layer semantics in their existing
-  owners.
-- **Confidence:** High.
-
-### Slice 10c2 — Repeated moves preserve one original vacancy identity
-
-- **When:** Slice 10c2 move integration, 2026-09-05.
-- **The choice:** The first move creates one vacancy identity for the subject; later moves reuse it even if a prior revision removed
-  it. A partial unique database index enforces that invariant. Each active revision places the vacancy immediately behind its
-  subject and renumbers the whole stack contiguously. `--to` translates the current visible mask centroid while preserving existing
-  scale and rotation; `--by` adds a vector in oriented base-image coordinates. Because a second vacancy identity would violate this
-  contract, `layer duplicate` rejects vacancy layers as a usage error.
-- **The gap:** The plan required a stable original vacancy and repeat moves, but did not define reactivation after removal, exact
-  stack placement, or whether `--to` discarded existing linear transforms.
-- **The reach:** History always refers to the same logical hole, scripts do not accumulate vacancy identities, and repeated moves
-  keep the subject's current shape while relocating it.
-- **Verdict:** **Sound.** The database enforces the identity rule, while direct adjacency makes subject/vacancy order predictable
-  without adding a group abstraction.
-- **Confidence:** Medium; the identity and coordinate rules are strong, while a future UI may want vacancy grouping rather than
-  adjacency as presentation policy.
-
-### Slice 10c2 — Vacancy content never receives develop compensation or stale state
-
-- **When:** Slice 10c2 develop-lineage integration, 2026-09-05.
-- **The choice:** Develop changes plan deltas and staleness only for photographic layers. A vacancy retains its exact solid content
-  chain, never appears in `delta_applied` or `stale`, and is reported separately as `vacancy_unfilled` only while enabled in the
-  active revision. Show and export derive both warnings from the same active document snapshot.
-- **The gap:** The plan required real stale IDs and a vacancy warning, but did not say whether the deliberately synthetic placeholder
-  should inherit ordinary photographic develop policy.
-- **The reach:** Editing exposure cannot tint the warning placeholder or make one vacancy count as two problems. Historical and
-  disabled vacancy rows remain retained without warning current commands.
-- **Verdict:** **Sound.** Vacancy state is workflow state, not photographic compatibility, so its warning and develop behavior stay
-  separate.
-- **Confidence:** High.
-
-## Needs user
-
-### Slice 10c2 — The provisional vacancy color is full scene-linear Rec.2020 magenta
-
-- **When:** Slice 10c2 vacancy rendering, 2026-09-05.
-- **The choice:** The `solid` v1 vacancy recipe stores exactly `rgb:[1,0,1]` in scene-linear Rec.2020 with white level 1. It renders
-  as a deliberately unmistakable saturated magenta and is replaced later by provider-backed fill content. Alternatives include a
-  display-referred sRGB magenta converted into the working space or a less saturated checker pattern.
-- **The gap:** The plan named “magenta” but did not define exact samples, working-space interpretation, or visual intensity.
-- **The reach:** Recipe hashes, exported warning images, screenshots, and any future color-picker representation inherit these exact
-  values until the single solid-node parameter changes in a replacement revision.
-- **Verdict:** **Needs-user.** The value is deterministic and conspicuous, but its visual character is a product choice that the
-  blocked workbench screenshot gate could not validate in this environment.
-- **Confidence:** Low until the workbench and real photographic composites are reviewed visually.
-
-### Slice 10b2 — Morphology uses a square footprint and feather uses three bounded box passes
-
-- **When:** Slice 10b2 mask-kernel implementation, 2026-09-05.
-- **The choice:** Dilation and erosion use a zero-padded square footprint implemented as separable monotonic-window passes.
-  Feather approximates a Gaussian with three zero-padded separable box passes. Both reject radii above 4,096 pixels so hostile
-  parameters remain bounded while ordinary kernel work stays linear in image size.
-- **The gap:** The plan named morphology and feather operations but did not choose circular versus square morphology, an exact
-  Gaussian definition, edge treatment, or a maximum useful radius.
-- **The reach:** Corners enter a one-pixel dilation, image-edge coverage fades against transparent space, and extremely large
-  selections fail validation instead of monopolizing a native worker. Later manual and SAM masks inherit this silhouette feel.
-- **Verdict:** **Needs-user.** The implementation is deterministic, fast, and isolated, but footprint and feather character are
-  visible product choices that should be revisited with real photographic masks.
-- **Confidence:** Medium for the bounded algorithm; low for the preferred visual character before the 10c2 visual gate.
-
-### Slice 10b1 — Lanczos transforms reject kernels above 4,096 source taps per output sample
-
-- **When:** Slice 10b1 independent review, 2026-09-05.
-- **The choice:** A reducing affine transform widens Lanczos3 support for antialiasing, but rejects a request when the resulting
-  two-dimensional kernel exceeds 4,096 source taps per output sample. This keeps a tiny positive scale from occupying a native
-  worker effectively forever. The caller receives a validation error instead of a lower-quality silent fallback.
-- **The gap:** The plan requires positive transform scales and scaled Lanczos support but does not bound the minimum useful scale,
-  kernel work, or define a multistage reduction strategy.
-- **The reach:** Extreme layer reductions must be expressed as a bounded resize plus transform in a later renderer, or rejected;
-  routine reductions through one-eighth scale remain supported by the direct transform kernel.
-- **Verdict:** **Needs-user.** The cap is isolated and reversible; replace it with a measured limit or a multistage affine path if
-  real layer workflows need smaller direct scales.
-- **Confidence:** Medium. The independent review caught the unbounded-work failure and the regression pins prompt rejection, but
-  production image-size benchmarks should select the long-term limit.
-
-### Slice 09a — The fake upscaler is the provisional release default
-
-- **When:** Slice 09a fixed-model table implementation.
-- **The choice:** Until the 09b comparison selects a live service, `photoctl/fake-upscale-v1` occupies the release-default slot.
-  It is deterministic and still requires explicit configuration, so ordinary `auto` operation reports unconfigured instead of
-  synthesizing pixels or selecting from ambient credentials. 09b must replace this placeholder with the evidence-selected adapter
-  and model before a generative release.
-- **The gap:** The slice requires a fixed release default and a complete fake contract, while explicitly leaving the first live
-  adapter/model open to the later spike.
-- **The reach:** Selection and doctor have a concrete non-magical identifier today, but any downstream code that mistakes the fake
-  for a shippable model would expose fixture behavior.
-- **Verdict:** **Needs-user.** The placeholder is safe and reversible for contract work, but only the 09b visual/cost evidence can
-  authorize a real release default.
-- **Confidence:** Low by design.
-
-### Slice 08a2 — Graph inspection uses provisional response bounds
-
-- **When:** Slice 08a2 graph-inspection implementation, 2026-09-05.
-- **The choice:** `graph show` returns at most 100 nodes per page (50 by default) and includes at most 32 ordered inputs in a node
-  summary. `graph node` includes at most 64 inputs, consumers, and executions plus 64 KiB of parameter JSON, while returning exact
-  counts and explicit truncation flags. The tests keep a serialized page below 1 MiB, well under the daemon's 16 MiB frame cap.
-- **The gap:** The contract required bounded records and pagination but did not set product-facing numeric limits.
-- **The reach:** Very wide composites or highly reused nodes require follow-up inspection tooling to reach records beyond the
-  detailed cap; ordinary lineage pagination remains complete.
-- **Verdict:** **Needs-user.** These isolated limits are safe and reversible, but representative large graphs should determine
-  whether 32/64/100 are the right usability/performance tradeoff before release.
-- **Confidence:** Low until measured on real edited libraries.
-
-### Slice 05 — Collision `skip` is a successful no-write result with requested-state identity
+This is photoctl's decision ledger: every material choice an implementing agent
+made on the user's behalf that the spec did not already settle, written so it
+can be judged without reading the code, the diff or any session transcript.
+
+Entries are grouped by verdict and, inside each group, least-confident first.
+**Needs-user** entries are decisions only the user can make; each one records a
+reversible provisional call so nothing is blocked waiting for an answer.
+**Unsound** entries, if present, name decisions still requiring correction. **Sound**
+entries are the architecture the user now owns — they are not skippable.
+
+Evidence, test counts, run chronology and pass/fail narration deliberately do
+not live here; they live in the linked review assets. The mapping from the
+previous ledger's headings into these entries is
+[`assets/choices-consolidation-review.md`](assets/choices-consolidation-review.md).
+
+**Review these first — the three least-confident choices overall:**
+
+1. **U1 — Automatic fine-edge selection quality is not met.** Manual correction
+   is separately implemented; it does not satisfy that automatic-quality target.
+2. **U2 — The release-default upscaler is a deterministic fake.** A stock install
+   has no configured live upscaling adapter, so `auto` density work cannot
+   execute on a stock install.
+3. **U3 — Unfilled canvas is opaque black plus a warning.** Predictable and
+   cheap, and possibly the wrong thing to hand a photographer in an export.
+
+---
+
+## Needs-user — decide
+
+These entries expose product tradeoffs with reversible recommendations. They do
+not grant approval, change acceptance requirements or make every preference a
+release blocker. The spec's remaining requirements retain their own status.
+
+### U1 — Automatic fine-edge selection quality is unmet; manual correction is what shipped
+
+- **When:** Slice 11 segmentation, through the 2026-09-07 selection/redo pass.
+- **The choice:** Point `segment` at a person's hair, or at a wire crossing the
+  sky. The mask that comes back follows the coarse body of the subject
+  correctly and matches the upstream reference implementation numerically, but
+  its fine edges miss the strands and the wire — and tuning the local mask
+  kernel to rescue wires makes foliage worse. Separately, the user requested
+  hand repair on the *same* selection layer: `segment
+  --add` unions a polygon into that layer's retained coverage, `--subtract`
+  removes coverage, `--replace` takes the operand outright, and an empty
+  selection is a legal state that can be filled again rather than a refusal.
+  Coverage is corrected in the layer's own retained raster, so a subject that
+  has already been moved or scaled is repaired where it now sits; the polygon
+  is still expressed in base-photo coordinates. `undo`/`redo` walk a stored
+  revision path, so an over-correction is reversible without asking the model
+  again. The unbuilt alternative is a second refinement model or an alpha-matting
+  post-pass over the coarse mask.
+- **The gap:** The spec promised "selection" and a fine-edge quality target but
+  never named a numeric edge tolerance, nor what should happen when the model
+  simply misses.
+- **The reach:** Edits that consume this selection, such as masked fill and a
+  selected-person move, inherit its boundary quality. The correction vocabulary
+  (add/subtract/replace over base-photo polygons) must remain available if an
+  automatic refiner is added.
+  Manual repair is manual control; it is not evidence that automatic edge
+  quality improved.
+- **Verdict:** **Needs-user.** Recommend initial selection plus manual correction
+  as the v1 scope, but that scope change is not approved. Keep automatic fine-edge
+  quality **unmet** and preserve manual controls while the user decides or further
+  automatic work supplies the required evidence. No refiner architecture is
+  prescribed by this recommendation.
+- **Confidence:** Low.
+- **Owner:** `packages/render/src/sam2*.ts`, `crates/photoctl-image/src/sam2.rs`,
+  `packages/render/src/layers/operations.ts`, [slice 11](slices/11-segment.md).
+
+### U2 — The release-default upscaler is a deterministic fake
+
+- **When:** Slice 09a fixed-model table; unchanged since.
+- **The choice:** An upscaler here is a purpose-built external service that
+  synthesizes extra pixels — distinct from the general image gateway, and
+  reached through its own `UpscaleAdapter` boundary. With no library override,
+  the upscale purpose resolves to `photoctl/fake-upscale-v1`, the only adapter
+  in the release roster. It is deterministic fixture behavior, and it still
+  requires explicit per-model consent, so `auto` density work on a stock install
+  reports `upscale_unconfigured` and preserves the generated pixels rather than
+  silently synthesizing anything. There is no registered live upscaling service.
+  Explicitly configuring the fake can run fixture behavior; that is not
+  photographic upscaling support.
+- **The gap:** The slice required a fixed release default and a complete fake
+  contract while explicitly leaving the first live adapter, its model and its
+  creativity/resemblance values to a later spike that has never had configured
+  credentials.
+- **The reach:** Model selection, `doctor`, settings and cost reporting all have
+  a concrete non-magical identifier to name today. Any downstream code that
+  mistook the fake for a shippable model would expose fixture pixels as product
+  output.
+- **Verdict:** **Needs-user.** Provisional call: keep the fake as the placeholder
+  release default. Reverse by registering an evidenced live adapter and changing
+  one entry in the release model table.
+- **Confidence:** Low by design — only live visual and cost evidence can pick a
+  real default.
+- **Owner:** `packages/providers/src/table.ts`,
+  `packages/providers/src/upscale/{adapter,registry,fake,runtime}.ts`.
+
+### U3 — Unfilled canvas is opaque black with a structural warning, and viewports survive support removal
+
+- **When:** Outpaint viewport and lifecycle checkpoints, 2026-09-06; implemented.
+- **The choice:** Three linked rules govern what a picture looks like where no
+  pixels exist. (1) Crop into an added border at `[-20,100,60,80]`, then remove
+  every border: the view keeps its 60×80 size and its position, the 20 columns
+  that the border used to supply become opaque scene-linear black, and `show`
+  and `export` report `canvas_uncovered`. Even a fully unsupported crop keeps
+  its dimensions. (2) Add an outer border B around a picture that already has
+  border A, then remove A: B stays where it was authored, the area A supplied
+  goes black and warns, and the renderer neither moves B nor buys replacement
+  pixels. (3) "Uncovered" means *structural* support, not visible colour: fading
+  a border to zero opacity does not warn, while moving or removing support does
+  warn even when an ordinary painted layer happens to cover the hole. The
+  immutable output plan records whether the final viewport lacks
+  original-admissible or enabled-border support, and `show`/`export` read that
+  snapped plan before any cached preview can bypass rendering. The alternatives
+  were clipping the crop back to available pixels (which silently rewrites the
+  photographer's later editing intent, and leaves nothing defined when the
+  intersection is empty), or detecting black RGB (which cannot tell a deliberate
+  black subject from a hole).
+- **The gap:** Source-only crop validation could not represent a viewport that
+  was valid when it was authored and lost its support afterwards, and an opaque
+  image format needs a deliberate policy for holes — zero-initialized memory is
+  not a product decision.
+- **The reach:** Extent and visible colour are permanently distinct concepts in
+  the output planner. Original bytes and paid border artifacts are unchanged
+  either way, and re-enabling a border restores the picture with no provider
+  work. Changing the product meaning of the warning later means rederiving
+  warning identity from the plan, not inspecting pixels.
+- **Verdict:** **Needs-user.** Provisional call: keep black plus the warning and
+  keep viewport retention. Both avoid automatic paid regeneration and preserve
+  absolute editing intent; both reverse as planner policy without a schema
+  change or any rewrite of stored geometry.
+- **Confidence:** Low — predictable geometry competes directly with the visual
+  inconvenience of black areas in a delivered file.
+- **Owner:** `packages/render/src/graph/{canvas,canvas-support}.ts`,
+  `packages/protocol/src/envelope.ts`.
+
+### U4 — The vacancy placeholder colour is full scene-linear magenta
+
+- **When:** Slice 10c2 vacancy rendering.
+- **The choice:** Move a person out of a frame and the hole they left is filled
+  by a constant-colour node storing exactly `rgb:[1,0,1]` in the scene-linear
+  working space at full white level — a deliberately unmistakable saturated
+  magenta, so an unfilled hole cannot be mistaken for a plausible black shadow.
+  It is replaced later by provider-backed fill content. The alternatives were a
+  display-referred magenta converted into the working space, or a less saturated
+  checkerboard.
+- **The gap:** The plan said "magenta" but defined neither the exact samples, the
+  working-space interpretation, nor the visual intensity.
+- **The reach:** Recipe hashes, exported images that still contain a warning
+  placeholder, screenshots and any future colour-picker representation inherit
+  these exact values until the single node parameter changes in a replacement
+  revision — and changing it affects only newly created vacancies.
+- **Verdict:** **Needs-user.** Provisional call: keep the conspicuous magenta as
+  an "unfinished" signal. Reversible, since it is one recipe parameter.
+- **Confidence:** Low — deterministic and conspicuous, but a photographer may
+  find it alarming in a delivered preview, and the blocked workbench screenshot
+  gate could not validate its visual character in this environment.
+- **Owner:** `packages/render/src/layers/operations.ts`.
+
+### U5 — Graph inspection uses provisional response bounds
+
+- **When:** Slice 08a2 graph inspection.
+- **The choice:** `graph show` returns at most 100 nodes per page (50 by
+  default) and at most 32 ordered inputs in a node summary; `graph node`
+  includes at most 64 inputs, consumers and executions plus 64 KiB of parameter
+  JSON, always reporting exact counts and explicit truncation flags. A very wide
+  composite or a heavily reused node therefore needs follow-up tooling to see
+  every record, while ordinary lineage pagination stays complete.
+- **The gap:** The contract required bounded records and pagination but set no
+  product-facing numbers.
+- **The reach:** These bounds keep any single response far below the daemon's
+  16 MiB frame ceiling, which never grows to accommodate history.
+- **Verdict:** **Needs-user.** Provisional call: keep 32/64/100. Reversible —
+  they are isolated constants, and representative large edited libraries should
+  decide the usability/performance tradeoff before release.
+- **Confidence:** Low until measured on a real edited library.
+- **Owner:** `packages/render/src/graph/inspection.ts`.
+
+### U6 — `export --on-collision skip` is a successful no-write result carrying the attempted state
 
 - **When:** Slice 05 export protocol.
-- **The choice:** If `client.jpg` already exists and the caller requests `--on-collision skip`, the item returns success with
-  `skipped:true`, the existing file's dimensions and byte count, and the render hash that this command snapshotted. A render hash is
-  a fingerprint of the requested edit state; it is not proof that the pre-existing file contains those pixels. No export-history row
-  is inserted because this invocation wrote nothing. The alternative is to report skip as a failure, omit the required hash, or add
-  a second nullable artifact-provenance field that current files cannot reliably supply.
-- **The gap:** The plan defined skip policy and required a render hash on every successful item, but did not define whether skipping is
-  success or what the hash means when no new artifact is created.
-- **The reach:** Scripts can distinguish completed writes from harmless skips without treating an existing destination as an error;
-  they must not interpret a skipped item's hash as verified provenance for that existing file.
-- **Verdict:** **Needs-user.** Keep the reversible provisional contract because it makes batch retries idempotent and explicit. Before
-  release, change the protocol if `render_hash` must always certify file contents rather than identify the state the command attempted.
+- **The choice:** `client.jpg` already exists and the caller asked to skip. The
+  item returns success with `skipped:true`, the existing file's dimensions and
+  byte count, and the render hash — a fingerprint of the edit state — that *this
+  command* snapshotted. That hash identifies what the command would have
+  written; it is not proof that the pre-existing file contains those pixels. No
+  export-history row is inserted, because this invocation wrote nothing. The
+  alternatives were reporting skip as a failure, omitting the required hash, or
+  adding a second nullable provenance field that existing files cannot supply.
+- **The gap:** The plan defined the skip policy and required a render hash on
+  every successful item, but not whether skipping is success, nor what the hash
+  means when no artifact was created.
+- **The reach:** Scripts can distinguish completed writes from harmless skips and
+  keep batch retries idempotent; they must not read a skipped item's hash as
+  verified provenance for the file already on disk.
+- **Verdict:** **Needs-user.** Provisional call: keep it. Change the protocol
+  before release if `render_hash` must always certify bytes rather than identify
+  the attempted state.
 - **Confidence:** Low.
+- **Owner:** `packages/render/src/export/run.ts`,
+  `packages/commands/src/handlers/export.ts`.
 
-### Slice 04 — Import and list use fixed bounded-work windows
-
-- **When:** Slice 04 performance implementation.
-- **The choice:** Import prepares four files concurrently, list pages 64 photos at a time, and an active import may remain silent
-  for ten minutes before the daemon client declares it hung. These values bound memory and avoid the old 31-second total timeout;
-  none changes ordering or persisted results.
-- **The gap:** The slice delegates scan concurrency and requires bounded streaming but does not select concrete window sizes or
-  an idle ceiling for very slow removable media.
-- **The reach:** Peak memory, filesystem parallelism, first-row latency, and hung-daemon detection inherit these defaults.
-- **Verdict:** **Needs-user.** The values are isolated reversible performance policy; tune them after a real large-drive import if
-  four workers overload the disk or ten silent minutes is too short.
-- **Confidence:** Low until measured on the founder drive.
-
-### Slice 02 integration — CLI tags trim boundaries but preserve case and Unicode
-
-- **When:** Slice 02 integration review.
-- **The choice:** A command such as `tag <id> --add "  Ceremony  "` stores `Ceremony`: boundary whitespace is removed, a
-  whitespace-only tag is rejected, and case plus Unicode spelling remain exact. Repeating the padded or unpadded form is the
-  same idempotent request. The alternative would either preserve invisible accidental differences or impose case folding and
-  Unicode normalization before the product's search and XMP behavior is fully exercised.
-- **The gap:** The plan required exact idempotent tag values but did not define user-input normalization.
-- **The reach:** Slice 04's filters, XMP keyword union, search indexing, and human tables inherit tag identity semantics.
-- **Verdict:** **Needs-user.** The reversible provisional call trims only boundary whitespace and otherwise preserves what the
-  photographer typed. Before release, change the single command boundary if tags should be case-insensitive or Unicode-normalized.
-- **Confidence:** Low.
-
-### Slice 01b — Rendered JPEG fallback uses quality 88
-
-- **When:** Slice 01b render pass.
-- **The choice:** Exact-copy online export preserves any eligible full-frame JPEG source bytes. When photoctl must render a
-  rotated image or encode the pinned 1616 preview, Sharp uses JPEG quality 88. Lower values make smaller
-  files with more visible loss; higher values cost bytes without guaranteeing a useful visual gain.
-- **The gap:** Slice 01 requires a JPEG encoder but does not choose its quality. The later A6 delivery
-  example uses 88, so implementation borrowed that value rather than inventing a second default.
-- **The reach:** Offline fallback appearance and file size inherit this value until slice 05 owns named
-  export presets and delivery defaults.
-- **Verdict:** **Needs-user.** Keep 88 as the reversible provisional call; change the slice-05 preset
-  data if David wants a different delivery tradeoff.
-- **Confidence:** Low.
-
-### Slice 01b — An ambiguous photo prefix uses `not_found` with an explicit reason
+### U8 — An ambiguous photo prefix reuses `not_found` with an explicit reason
 
 - **When:** Slice 01b library pass.
-- **The choice:** Suppose two photo IDs begin with `0199a7c2`. `photoctl show 0199a7c2` must not pick
-  whichever database row sorts first. The library rejects it with the existing `not_found` data-error
-  code and adds `reason:"ambiguous"`; a longer prefix then resolves normally. The alternative is to add
-  a new `ambiguous_id` member to the public error-code union, which is clearer but expands a protocol
-  the plan declared closed without naming that code.
-- **The gap:** The plan requires unambiguous prefixes but defines neither the ambiguous response nor a
-  dedicated error code.
-- **The reach:** Every verb that accepts photo IDs will expose this error shape, so scripts may branch
-  on the code and reason.
-- **Verdict:** **Needs-user.** The reversible provisional call keeps the closed code list and exit 65;
-  before release, add `ambiguous_id` if callers should distinguish ambiguity at the top-level code.
+- **The choice:** Two photo IDs begin with `0199a7c2`. `photoctl show 0199a7c2`
+  must not silently pick whichever row sorts first, so the library refuses with
+  the existing data-error code `not_found` plus `reason:"ambiguous"`; a longer
+  prefix then resolves normally. The clearer alternative — adding an
+  `ambiguous_id` member — expands a public error-code union the plan declared
+  closed, without the plan ever naming that code.
+- **The gap:** The plan requires unambiguous prefixes but defines neither the
+  ambiguous response nor a dedicated code.
+- **The reach:** Every verb that accepts a photo ID exposes this shape, so
+  scripts may branch on the code plus reason rather than the code alone.
+- **Verdict:** **Needs-user.** Provisional call: keep the closed code list and
+  exit 65. Add `ambiguous_id` before release if callers should distinguish
+  ambiguity at the top-level code.
 - **Confidence:** Low.
+- **Owner:** `packages/library/src/locators.ts`.
 
-### Slice 01a — The provisional daemon idle timeout is fifteen minutes
+### U9 — Tag input is trimmed at its boundaries and otherwise preserved exactly
 
-- **When:** Slice 01a.
-- **The choice:** A library stores `daemon_idle_ms=900000`, so the daemon planned for slice 02 will exit
-  after fifteen minutes without commands or background work. Five minutes would save memory sooner but
-  would cause more cold starts during an editing session; never exiting would keep resources resident.
-- **The gap:** The slice required the setting but did not choose its initial value; the planning map
-  called fifteen minutes a proposal rather than a settled product decision.
-- **The reach:** Slice 02's daemon lifecycle and perceived command startup latency will use this value.
-- **Verdict:** **Needs-user.** This is a product tradeoff between resource residency and responsiveness.
-  The reversible provisional call is fifteen minutes, matching the planning map; change the stored
-  default before release if a different editing cadence is preferred.
+- **When:** Slice 02 integration review.
+- **The choice:** `tag <id> --add "  Ceremony  "` stores `Ceremony`: surrounding
+  whitespace is removed, a whitespace-only tag is rejected, and case plus
+  Unicode spelling are preserved exactly. Repeating the padded or unpadded form
+  is the same idempotent request. The alternatives were preserving invisible
+  accidental differences, or imposing case folding and Unicode normalization
+  before the product's search and XMP behavior have been exercised.
+- **The gap:** The plan required exact idempotent tag values but did not define
+  user-input normalization.
+- **The reach:** Cull filters, the XMP keyword union, the search index and human
+  tables all inherit tag identity from this one command boundary.
+- **Verdict:** **Needs-user.** Provisional call: trim boundaries only. Change
+  the single command boundary before release if tags should be case-insensitive
+  or Unicode-normalized.
 - **Confidence:** Low.
-
-### Slice 10c1 — Automatic layer names use stack-local English labels
-
-- **When:** Slice 10c1 command integration, 2026-09-05.
-- **The choice:** A new manual selection is named `Segment N`, where N is one more than the current stack size. Duplicating a layer
-  appends ` copy`; if the source already occupies the 256-character name limit, its tail is shortened so the suffix remains visible.
-  Names are presentation, not identity, so removing layers and adding another can produce duplicate display names while their UUIDs
-  remain distinct. The alternatives were to expose UUID fragments as names, maintain a separate never-reused sequence, or require a
-  name on every segment command.
-- **The gap:** The plan required names to survive snapshots and allowed rename/duplicate, but did not specify automatic user-facing
-  names or collision policy.
-- **The reach:** CLI output and future layer panels display these labels by default; automation must address layers by stable ID,
-  not assume a generated name is unique.
-- **Verdict:** **Needs-user.** Keep the reversible labels because they are readable and require no new persistence. If the product
-  wants localized or unique defaults, change the single naming policy before UI clients treat these strings as durable copy.
-- **Confidence:** Low; this is product language rather than a technical invariant.
-
-### Slice 08 — Selective color interpolates named bands in working-space hue
-
-- **When:** Slice 08 selective-color closeout, 2026-09-05.
-- **The choice:** The seven schema names are centers on the scene-linear Rec.2020 RGB hue wheel, with red wrapping at zero and
-  smooth interpolation between neighboring centers. Achromatic pixels have no hue and remain unchanged. The alternative was a
-  hard nearest-band selection or a second perceptual-color conversion outside the existing native owner.
-- **The gap:** The schema fixes the band names and bounded controls, but not their hue coordinate or boundary behavior.
-- **The reach:** Every selective-color recipe inherits continuous band transitions and working-space hue semantics.
-- **Verdict:** **Sound.** It is deterministic, portable, continuous at every band boundary, and adds no render seam.
-- **Confidence:** Medium; future reference-image evidence could justify a perceptual hue coordinate behind the same schema.
-
-### Slice 08 — Selective color stays in the finishing sequence before vignette
-
-- **When:** Slice 08 selective-color closeout, 2026-09-05.
-- **The choice:** Selective color follows global and local corrections, then precedes vignette, B&W, named filters, and geometry.
-  Its out-of-gamut target blends toward the original color at the same luminance rather than clipping channels or discarding
-  chroma. The alternative was to append it after filters or introduce a separate gamut/resample stage.
-- **The gap:** The plan requires one fixed native operator order and geometry last, but does not place selective color among the
-  already implemented finishing operators or define safe working-gamut behavior.
-- **The reach:** Mixed develop recipes, canonical hashes, layer stale-state behavior, and exported pixels inherit this ordering
-  and gamut policy.
-- **Verdict:** **Sound.** The choice retains the existing owner, exact luminance invariant, and continuous photographic output.
-- **Confidence:** Medium; the first production probe exposed and corrected the naive clipping/desaturation alternatives.
-
-### Slice 11a — An incomplete model release is represented, not counterfeited
-
-- **When:** Slice 11a keyless runtime checkpoint, 2026-09-05.
-- **The choice:** `fixtures/models.json` pins the real Hugging Face revision and the exporter-owned opsets, but carries
-  `status:"awaiting_export"` and null artifact hashes until the pinned exporter actually produces the files. Fetch, Docker's
-  opt-in `models` target, and `doctor --fetch-models` refuse that state. New libraries store `models_base_url:null`; old libraries
-  with no row read identically. The alternative was to invent digests or a release URL merely to make setup appear complete.
-- **The gap:** The slice names a David-hosted release that does not exist yet and supplies no exported bytes or hashes.
-- **The reach:** Keyless development and deterministic runtime tests remain possible, while no machine can mistake test models or
-  upstream PyTorch weights for the production ONNX release.
-- **Verdict:** **Needs-user.** David must host the two exported files, populate the manifest by running the exporter, and set the
-  library base URL before the live gate.
-- **Confidence:** High.
-
-### Slice 11a — SAM uses a centered rounded letterbox and strict-positive mask threshold
-
-- **When:** Slice 11a coordinate/runtime implementation, 2026-09-05.
-- **The choice:** Scale the longer edge to 1024, round the shorter edge to the nearest pixel, and split odd padding with the extra
-  pixel on the bottom or right. Decoder samples map through that exact transform; bilinear logit values strictly greater than zero
-  become mask value 1, while zero and negative values become 0. The CPU sessions use one intra-op and one inter-op thread so
-  concurrent daemon work remains bounded; the encoder cache deduplicates promises by `(photo id, render tier)` and delegates actual
-  eviction to the existing render/cache owner.
-- **The gap:** The spec fixes the input size, interpolation, threshold, and cache identity but not padding alignment, rounding,
-  equality at the threshold, or ONNX Runtime thread counts.
-- **The reach:** Prompt coordinates, edge pixels, repeatability, and daemon CPU contention inherit these conventions.
-- **Verdict:** **Needs-user.** These are isolated reversible policies; validate edge quality and timing with the real weights before
-  treating them as release-tuned defaults.
-- **Confidence:** Medium until the live G6 and visual gate run.
-
-### Slice 11b — One text command commits all matched masks in one revision
-
-- **When:** Slice 11b keyless command checkpoint, 2026-09-05.
-- **The choice:** Suppose text grounding finds three people. The command first asks local segmentation for all three masks, then
-  adds the three subject layers in one document revision. A revision is the catalog's atomic snapshot of an edit: either all three
-  layers become active together, or none do. The alternative was three sequential revisions, which could leave only the first one
-  or two people selected if a later mask or database write failed.
-- **The gap:** The slice required one layer per instance but did not say whether a multi-instance command was one edit or several.
-- **The reach:** Undo, render hashes, graph inspection, and later person-move operations see one coherent text-selection action.
-- **Verdict:** **Sound.** It preserves the existing immutable-document owner and prevents partial multi-instance edits.
-- **Confidence:** High.
-
-### Slice 11b — Grounding fan-out is provisionally capped at 100 instances
-
-- **When:** Slice 11b keyless command checkpoint, 2026-09-05.
-- **The choice:** A structured model controls how many matching boxes it returns. The adapter accepts at most 100, so one crowded
-  or malformed answer cannot launch unlimited local decoder work or create an unbounded layer snapshot. A legitimate empty answer
-  remains a successful no-op. The alternative was no cap, letting an external response decide the command's CPU and catalog growth.
-- **The gap:** The plan required every returned instance to become a layer but supplied no maximum result count.
-- **The reach:** Text segmentation latency, maximum layers added by one command, and provider response validation inherit this
-  bound. Raising or lowering the single adapter constant changes both its JSON request schema and response validator together.
-- **Verdict:** **Needs-user.** Keep 100 as a reversible safety ceiling aligned with existing graph page bounds; tune it after real
-  crowded-frame use if photographers need a different maximum.
-- **Confidence:** Medium until tested on representative group photographs.
-
-### Slice 11b — Dry runs and committed segmentation share one instance response
-
-- **When:** Slice 11b keyless command checkpoint, 2026-09-05.
-- **The choice:** Both modes return ordered instances with labels, base-coordinate mask bounds, and covered-pixel counts. A dry run
-  carries null layer, artifact, revision, and render identities because it wrote nothing; a committed run fills those identities.
-  The alternative was unrelated preview and commit shapes, forcing an agent to translate between two contracts before deciding
-  whether to persist a selection.
-- **The gap:** The spec required dry-run to create zero rows but did not define its JSON shape or how it relates to the commit result.
-- **The reach:** CLI agents and future workbench clients can compare a previewed selection with the resulting persisted layers by
-  instance order while still distinguishing non-mutating output explicitly.
-- **Verdict:** **Sound.** One response vocabulary makes mutation state explicit without claiming an artifact exists before commit.
-- **Confidence:** Medium; a later visual client may justify adding confidence/source fields without changing these identities.
-
-### Slice 12b — Cached density artifacts are bound to one generation and selected deterministically
-
-- **When:** Slice 12b density-planner implementation, 2026-09-05.
-- **The choice:** A cached upscale names the generation artifact it came from. The planner rejects a cache entry from another
-  generation instead of silently borrowing its pixels. When several cached artifacts all cover the requested width and height,
-  it chooses the one with the fewest pixels, breaking an exact tie by artifact ID. For example, an unordered cache containing both
-  a sufficient 2× result and a 4× result always reuses the 2× result; the alternative was to let database row order choose, which
-  could change the plan between otherwise identical runs.
-- **The gap:** The plan required reuse of a sufficient pre-resize artifact, but did not define how the planner proves lineage or
-  resolves several sufficient cache hits.
-- **The reach:** Refresh, retry, and later transform-driven density maintenance inherit a stable rule that cannot mix outputs from
-  different external executions.
-- **Verdict:** **Sound.** Explicit lineage protects image identity, while smallest-sufficient selection minimizes deterministic
-  downsampling work without changing output-density truth.
-- **Confidence:** High.
-
-### Slice 12b — A provider with no valid output falls back to the usable generation
-
-- **When:** Slice 12b density-planner implementation, 2026-09-05.
-- **The choice:** Suppose every advertised upscale would exceed the provider's input-pixel, output-pixel, or edge limit. There is
-  then no legal paid request to make, so the plan uses the already successful generation as its input, performs the one exact
-  deterministic resize, reports `density_satisfied:false`, and emits `upscale_resolution_limited`. The alternative was to fail
-  planning even though usable generated pixels already exist, or knowingly schedule a request outside the adapter contract.
-- **The gap:** The plan said to use the largest valid provider output when limits stop short, but did not define the zero-valid-scale
-  case.
-- **The reach:** Tiny provider ceilings and oversized inputs remain soft density outcomes; generation stays the successful boundary
-  for the later Slice 12c executor.
-- **Verdict:** **Sound.** It preserves usable work and reports the sampling deficit honestly without inventing an invalid call.
-- **Confidence:** High.
-
-### Slice 12b — Fractional advertised scales must still land on whole pixels
-
-- **When:** Slice 12b density-planner implementation, 2026-09-05.
-- **The choice:** Supported scale factors may be fractional because the provider contract models them as numbers, but applying a
-  factor must produce whole, safe pixel dimensions for both axes. A 1.5× scale is valid for a 1000×800 artifact and plans
-  1500×1200; the same factor on dimensions that produce half pixels is rejected loudly. Restricting every adapter to integer
-  factors was the unbuilt alternative.
-- **The gap:** The plan required supported uniform scales and loud invalid-input handling without saying whether a scale itself had
-  to be an integer or only its resulting raster dimensions did.
-- **The reach:** Future adapters may advertise fractional native scales without making executor geometry ambiguous.
-- **Verdict:** **Sound.** It follows the existing numeric provider seam while preserving the integer raster contract.
-- **Confidence:** Medium; the current fake adapter advertises only integer scales, so the first fractional live adapter should
-  confirm its rounding convention matches this exact-output rule.
-
-### Slice 12c1 — Enablement records intent separately from whether execution can proceed
-
-- **When:** Slice 12c1 keyless policy implementation, 2026-09-05.
-- **The choice:** `enabled` answers whether policy requested upscaling, while `action` answers what the caller can do now. For
-  example, default `auto` with an unavailable or unconfigured selected adapter returns `enabled:true`,
-  `action:"preserve_generation"`, and `upscale_unconfigured`; an explicit `off` returns `enabled:false` with the same preserve
-  action and no warning. The alternative was to collapse both situations into `enabled:false`, losing the difference between a
-  user opting out and a requested service being unavailable.
-- **The gap:** The result contract names both `enabled` and `executed`, but this pure pre-execution checkpoint needed a stable way
-  to represent consent before any adapter call exists.
-- **The reach:** Slice 12c2 can report and retry unavailable policy without guessing whether the user disabled upscaling, and UI or
-  agent clients can explain why generated pixels were preserved.
-- **Verdict:** **Sound.** Separating policy intent from executable action preserves both user choice and honest partial-success
-  reporting.
-- **Confidence:** Medium; the command response integration must keep `executed:false` distinct from both fields.
-
-### Slice 12c2 — Retry recognizes one canonical fill branch, not arbitrary ancestry
-
-- **When:** Slice 12c2 execution integration, 2026-09-05.
-- **The choice:** Upscale retry and cached reuse inspect only the active layer's immediate canonical
-  generate → optional upscale → Lanczos3 resample/place → zero-feather mask-composite branch. Exact generation execution identity is
-  reusable when the instruction matches; an upscale cache additionally requires the current adapter/version, model, and guarded-prompt
-  ID/version/text. A retry restores the composite's original base input rather than editing the already-composited layer.
-- **The gap:** The plan required exact generation reuse after an upscale failure but did not define how broadly to search history or
-  which output-recipe fields distinguish a Photoctl fill from a user-authored graph with the same rough topology.
-- **The reach:** Retrying cannot reinterpret arbitrary generate ancestors, stack the same fill repeatedly, or reuse pixels produced by
-  a stale adapter/prompt contract. A changed upscale contract can still reuse the paid generation and retry only the upscaler.
-- **Verdict:** **Sound.** Narrow structural recognition preserves the successful paid boundary without introducing general ancestry
-  rewriting ahead of Slice 12d.
-- **Confidence:** High; focused negative tests reject changed instructions, noncanonical composite settings, and stale adapter versions.
-
-### Slice 12c2 — `executed` describes the active graph path; execution records disclose reuse
-
-- **When:** Slice 12c2 command response integration, 2026-09-05.
-- **The choice:** `upscale.executed` is true whenever the committed fill graph uses an upscale node, including a matching cached node.
-  The corresponding `executions[].reused` field distinguishes a cached pinned execution from a provider call made by this command.
-- **The gap:** The response named `executed` but did not say whether it meant “called during this request” or “present in the resulting
-  image path.”
-- **The reach:** Clients can tell both what pixels the active result uses and whether the current request incurred external work without
-  inferring either fact from node IDs.
-- **Verdict:** **Sound.** Graph truth and request activity are separate facts and now have separate fields.
-- **Confidence:** High.
-
-### Slice 12d — Affine resample matrices map source edges forward into the base canvas
-
-- **When:** Slice 12d affine-resample foundation, 2026-09-05.
-- **The choice:** A resample matrix maps the intrinsic source raster forward into the oriented base canvas using pixel-edge
-  coordinates. For example, `[1,0,0,1,8,6]` places the source's top-left edge at base position `(8,6)`, and
-  `[2,0,0,2,8,6]` doubles its size around that same edge before placement. The native evaluator inverts this matrix only while
-  sampling destination pixel centers. The alternative was to store the inverse destination-to-source transform or define
-  translation around pixel centers, either of which would make graph recipes disagree with the existing layer-transform owner.
-- **The gap:** The slice fixed the six affine values and source-to-base mapping but did not state whether stored matrices were
-  forward or inverse, or whether their translations referred to pixel centers or raster edges.
-- **The reach:** Refresh and transform-driven density maintenance can compose placement directly with the established native
-  transform contract; quarter-turns remain exact, off-canvas pixels remain zero, and recipe hashes have one coordinate meaning.
-- **Verdict:** **Sound.** It reuses the existing forward affine owner instead of introducing a second matrix convention at the
-  graph boundary.
-- **Confidence:** High.
-
-### Slice 12d preview foundation — Reusing a valid preview artifact repairs its cache accounting
-
-- **When:** Slice 12d preview-cache foundation, 2026-09-05.
-- **The choice:** A display master is the full-frame JPEG from which smaller inspection views are cropped. When `show` finds that
-  JPEG and its integrity sidecar valid, it reads it under the same path lease used by writers and cache pruning, then upserts its
-  byte count and last-used time before deriving the overview. If a crash left the JPEG complete but its cache-index row missing,
-  this read repairs the row. The alternative was only updating an existing row, which would leave that valid orphan invisible to
-  storage accounting and eligible to survive outside the configured cache budget.
-- **The gap:** The plan required validated reuse, prune safety, and post-access grace, but did not say whether reuse should repair a
-  missing cache-index row left by an interrupted prior materialization.
-- **The reach:** Every future consumer that reuses a preview artifact through the coordinator inherits one race-free validation and
-  accounting boundary; cache pruning sees the bytes that `show` can actually return.
-- **Verdict:** **Sound.** Repairing accounting from the already validated file restores the cache invariant without rendering or
-  inventing a second source of pixel truth.
-- **Confidence:** High.
-
-### Slice 12d provider runtime — Runtime registry instances share one provider-owned roster
-
-- **When:** Slice 12d provider-runtime foundation, 2026-09-05.
-- **The choice:** When a fill command or the workbench needs to discover upscalers, it asks the provider package to create a fresh
-  registry populated with the release roster. A registry is only an in-memory list of available adapters; it does not mean the
-  user allowed any adapter to receive pixels. The command separately reads the library's persisted consent and calls the listed
-  fake adapter only when its exact ID is marked configured. The unbuilt alternative was one mutable process-global registry,
-  which would let test or future runtime registration leak between independent commands.
-- **The gap:** The pass required one shared factory and continued registry injection, but did not specify whether the factory should
-  return a process singleton or a new registry for each consumer.
-- **The reach:** Fill and workbench cannot drift on which built-in adapters exist, while future callers and tests can still inject an
-  isolated registry without mutating production discovery. A later live adapter joins this single provider-owned roster but still
-  cannot bypass purpose-scoped consent.
-- **Verdict:** **Sound.** A fresh lightweight registry keeps discovery deterministic and avoids hidden global mutation without
-  weakening the separately persisted consent gate.
-- **Confidence:** High.
-
-### Slice 12d1 — A failed explicit upscale refresh preserves the active upscale
-
-- **When:** Slice 12d1 refresh implementation, 2026-09-05.
-- **The choice:** An upscale refresh starts from a branch that already has usable generated and upscaled pixels. If the new provider
-  attempt fails or returns invalid pixels, the command keeps the previously pinned upscale as the active placement input and reports
-  `upscale_failed`; it does not replace a sharper active result with the lower-density generation merely because a refresh attempt
-  failed. The alternative was to make the older generation active, matching a first-time fill failure but degrading an image that was
-  already complete before this request.
-- **The gap:** The plan defined first-time upscale failure and later transform-rescale failure, but not failure while explicitly
-  refreshing an already successful upscale.
-- **The reach:** Refresh, retry, and later density maintenance share the rule that a failed attempt cannot discard a better usable paid
-  artifact. Ordered execution records mark the retained provider result as reused, so the response does not imply that the failed call
-  created those pixels.
-- **Verdict:** **Sound.** Preserving the best valid pinned output follows the later transform-failure rule and avoids destructive
-  quality regression while exposing the failure as a warning.
-- **Confidence:** Medium; a future product decision could instead make explicit refresh failure hard, but that would change the
-  established soft-success contract for usable generated pixels.
-
-### Slice 12d1 review — Generation refresh refuses pre-fill transform geometry until affine rebasing exists
-
-- **When:** Slice 12d1 independent review, 2026-09-05.
-- **The choice:** A layer can be transformed before fill, making that transform part of the base pixels and mask coordinates sent to
-  generation. Refreshing such a branch directly from the current untransformed document base would apply the stored crop and mask to
-  the wrong location. This checkpoint detects that ancestry and refuses before calling the model or changing the revision. Transforms
-  added after fill remain outside the paid branch and are rebuilt normally. The alternative was to silently produce misplaced pixels,
-  or to implement affine crop/mask rebasing inside this bounded refresh pass.
-- **The gap:** The refresh plan required generation to bind directly to the current develop root, while transform-driven branch
-  reconstruction was assigned to the remaining 12d work; it did not define the safe interim behavior for transform-before-fill.
-- **The reach:** The public command is conservative for one valid branch shape rather than corrupting coordinates. Slice 12d2 must
-  replace this refusal by rebasing the stored transform, crop, and mask together before it can claim complete transformed ancestry.
-- **Verdict:** **Sound as a bounded checkpoint.** Refusal is truthful and reversible, and it keeps affine geometry under one later
-  owner instead of introducing a point implementation here.
-- **Confidence:** High; the public regression proves no paid call and no revision, while the remaining limitation is named in 12d2.
-
-### Slice 12d provider runtime — The fake image path is authorized by a safe local profile, not a gateway claim
-
-- **When:** Slice 12d provider-runtime foundation, 2026-09-05.
-- **The choice:** A keyless fill test names a reserved concrete image model. Photoctl maps that model locally to an
-  instruction-and-composite adapter: it asks for replacement pixels without sending a native mask, then applies the resulting
-  pixels through Photoctl's strict compositor, which copies every pixel outside the mask from the original input. Merely pointing
-  the gateway URL at the fixture does nothing; the ordinary live model still stops before network I/O because its native-mask
-  polarity has not been verified. The unbuilt alternative was to trust a fixture hostname, response header, or capability probe
-  and let that remote claim bypass the native-mask gate.
-- **The gap:** The slice said deterministic fake-gateway runs were unaffected by the live polarity gate, but it did not define how
-  the built CLI distinguishes that fake without turning an arbitrary URL into authority.
-- **The reach:** Functional and agent-journey tests can exercise the production CLI, HTTP transport, immutable execution
-  provenance, and strict composite without pretending to prove a live provider's mask convention. A spoofed fixture response can
-  still change only the region the fill operation authorized; aspect and reported whole-frame failures remain atomic.
-- **Verdict:** **Sound.** Safety follows from not sending a native mask and from the local compositor, so it does not depend on a
-  remote server honestly identifying itself.
-- **Confidence:** High.
-
-### Slice 12d workbench fill — Inspection may materialize deterministic nodes only from cached lineage
-
-- **When:** Slice 12d workbench-fill checkpoint, 2026-09-05.
-- **The choice:** When a human opens a fill report before the active layer composite has been rendered, the workbench may execute the
-  graph's deterministic steps, such as exact resampling and strict mask compositing. A deterministic step always produces the same
-  pixels from the same inputs. The source input is reconstructed by following the fill execution's exact input hashes back to its
-  cached, content-hashed source artifact. Paid generate or upscale nodes can only load the exact output pinned in their immutable
-  execution record. If that cache is missing,
-  the report refuses. The unbuilt alternative was to reopen the original photo or construct provider clients, either of which would
-  turn visual inspection into new external work and make an offline report depend on mutable inputs.
-- **The gap:** The checkpoint required existing artifacts and prohibited provider execution, but did not say whether a report could
-  materialize lazy deterministic descendants or must fail until another command had rendered them.
-- **The reach:** Workbench inspection remains useful immediately after a lazy fill commit and while the original volume is offline,
-  without creating a second external execution. It can add only reproducible canonical artifacts and execution rows already implied
-  by the committed graph.
-- **Verdict:** **Sound.** It preserves the DAG's lazy deterministic contract while making the provider boundary mechanically
-  unreachable from the workbench.
-- **Confidence:** High.
-
-### Slice 12d workbench fill — Cyan marks the canonical mask edge without obscuring its texture
-
-- **When:** Slice 12d workbench-fill checkpoint, 2026-09-05.
-- **The choice:** The fourth comparison panel copies the current native-detail crop and changes only pixels on the inside edge of the
-  stored mask to bright cyan. The other three panels remain untouched, so a reviewer can inspect real texture first and then use the
-  cyan trace to find the exact seam. The unbuilt alternatives were a translucent filled overlay, which hides texture across the whole
-  edited region, or no overlay, which makes an irregular boundary hard to locate.
-- **The gap:** The plan required the same mask boundary before and after but did not choose its display color or overlay style.
-- **The reach:** Every fill report uses one legible edge convention; changing the taste later affects only workbench presentation and
-  never graph data or image artifacts.
-- **Verdict:** **Needs-user.** The provisional cyan inside-edge trace is high contrast on typical photographs and reversible after the
-  photographic screenshot gate if it distracts or disappears against real subjects.
-- **Confidence:** Medium; this is a visual taste call that synthetic fixtures cannot settle.
-
-### Slice 12d workbench fill — Refuse transformed branches until crop coordinates can follow them
-
-- **When:** Slice 12d workbench-fill checkpoint, 2026-09-05.
-- **The choice:** The report accepts a canonical fill whose active mask is still the strict composite's mask. If a later move, rotate,
-  flip, or scale has transformed that mask, the report refuses instead of placing the old base-space crop and boundary over transformed
-  current pixels. The unbuilt alternative was to show those mismatched coordinate spaces as though they were comparable.
-- **The gap:** The checkpoint asked for one exact crop and boundary but transform-driven branch rebasing remains explicit 12d2 work.
-- **The reach:** Reports stay trustworthy for the completed strict-fill checkpoint; transformed fills become reportable when 12d2 owns
-  a canonical mapping for the crop, generated placement, current result, and mask.
-- **Verdict:** **Sound.** A clear refusal preserves evidence integrity and matches the existing bounded transform refusal.
-- **Confidence:** High.
-
-### Slice 12d2 — Generation recipes retain later density intent
-
-- **When:** Slice 12d2 transform-density implementation, 2026-09-05.
-- **The choice:** Every new fill generation recipe stores whether automatic upscaling is enabled plus the exact adapter, model, and
-  guarded-prompt identity, even when the first generated raster already has enough density and no upscale node is created. The
-  alternative was inferring future policy from an optional active upscale child, which loses the user's intent on the no-call path.
-  When an otherwise identical refill changes only this intent, a new immutable generation recipe pins the existing artifact and
-  provider provenance; it does not call generation again.
-- **The gap:** The earlier recipe recorded an upscale only after external execution; it did not preserve enough information to decide
-  whether a later layer enlargement should call one.
-- **The reach:** Later transforms can reevaluate density from pinned generation pixels without source access. Historical reuse remains
-  strict to the current adapter version and stored model/prompt identity, so an adapter upgrade is paid at most once per sufficient
-  direct child.
-- **Verdict:** **Sound.** Durable intent belongs with the immutable generation recipe, while paid generation reuse remains governed
-  by generation inputs rather than downstream upscale policy.
-- **Confidence:** High.
-
-### Slice 12d2 — One affine rebuild owns generated placement and mask alignment
-
-- **When:** Slice 12d2 transform-density implementation, 2026-09-05.
-- **The choice:** The shared fill branch descriptor reduces old and new ancestry to one intrinsic-generation placement and current
-  layer matrix. One rebuilder composes those values into resample-v2 and applies the same current matrix to the permanent mask.
-  Generation refresh reconstructs both base and mask in the original generation-input space before cropping. This supersedes 12d1's
-  temporary transformed-input refusal.
-- **The gap:** Transform, refresh, and pre-fill transform ancestry previously expressed geometry in different node shapes, so cloning
-  recipes could silently pair pixels and masks from different coordinate spaces.
-- **The reach:** Move, flip, quarter-turn, scale, refresh, and an intrinsic-size change now share one forward-matrix convention;
-  strict composite alignment no longer depends on duplicating an ancestry parser at each command seam.
-- **Verdict:** **Sound.** Geometry has one parser and one reconstruction owner, with paid nodes left as immutable pixel sources.
-- **Confidence:** High.
-
-### Slice 12d2 — Failed density growth preserves the best valid external artifact
-
-- **When:** Slice 12d2 transform-density implementation, 2026-09-05.
-- **The choice:** A transform that needs a larger upscale always calls from the original pinned generation. If that call fails, the
-  transform still commits using the largest valid matching direct upscale child, or the generation when none exists, and reports
-  `density_satisfied:false` with `upscale_failed`. No node or execution represents the failed attempt.
-- **The gap:** The plan required soft failure after usable generated pixels exist, but did not spell out which historical raster wins
-  when several insufficient candidates remain.
-- **The reach:** Repeated transforms never compound pixels through upscale/resample/composite ancestry, never discard a sharper prior
-  paid result, and remain usable offline when provider consent or availability disappears.
-- **Verdict:** **Sound.** The rule maximizes usable density while preserving lineage and atomic graph truth.
-- **Confidence:** High.
-
-### Slice 13a — Reimagine and fill share one external generation-and-density owner
-
-- **When:** Slice 13a keyless reimagine implementation, 2026-09-05.
-- **The choice:** The fill pipeline and full-frame reimagine projection call the same generation publication, provenance, density
-  planning, upscale execution, and fallback owner. Reimagine owns only its full-frame request shape and layer projection.
-- **The gap:** Slice 13 required reusing Slice 12's DAG planner, while the first implementation draft copied that planner into a
-  second module. Keeping the copies would let provider and failure semantics drift.
-- **The reach:** Fill and reimagine now agree on successful partial generation, explicit upscaler consent, exact final resampling,
-  execution records, and warnings. Later relight can use the same bounded owner without cloning it again.
-- **Verdict:** **Sound.** The shared unit follows the paid external boundary; command-specific layer geometry remains outside it.
-- **Confidence:** High.
-
-### Slice 13a — Strength is provider guidance plus exact whole-frame blend coverage
-
-- **When:** Slice 13a keyless reimagine implementation, 2026-09-05.
-- **The choice:** `--strength` is bounded to `0..1` and defaults to `1`. A versioned prompt tells the provider how much source
-  composition and identity to preserve, while a permanent constant mask applies the same value as exact whole-frame composite
-  coverage. The alternative was a decorative flag that only changed an irrelevant feather parameter on an all-ones mask.
-- **The gap:** The gateway image adapter has no portable native strength control, but the public option still needs deterministic
-  pixel semantics independent of whether a provider follows prose perfectly.
-- **The reach:** Provider requests, graph identity, and rendered pixels all record the user's strength. A future adapter-native
-  control requires a prompt-recipe version change but cannot silently remove the compositor guarantee.
-- **Verdict:** **Sound.** Provider guidance influences generation; the graph-owned blend makes the public contract observable.
-- **Confidence:** High.
-
-### Slice 13a — Reimagine uses the edit model and non-authoritative progress
-
-- **When:** Slice 13a keyless reimagine implementation, 2026-09-05.
-- **The choice:** Full-frame reimagine resolves the library's `models.edit` purpose because it sends source pixels through the image
-  edit endpoint; `models.generate` remains for standalone generation. During its potentially long generation/upscale sequence it
-  emits five-second progress heartbeats, but progress delivery is best-effort and cannot turn an already committed revision into a
-  reported command failure.
-- **The gap:** Using the standalone generation setting could select a model without image-edit support. Without heartbeats, the
-  daemon client's idle timeout could retry a still-running paid mutation; treating the advisory frame as authoritative after commit
-  creates the inverse failure.
-- **The reach:** Model selection matches the request shape, and healthy daemon connections remain alive without making telemetry
-  part of revision atomicity.
-- **Verdict:** **Sound.** Provider work and the graph commit remain authoritative; progress only describes them.
-- **Confidence:** High.
-
-### Slice 13a — Require a dimension-retaining current base before provider work
-
-- **When:** Slice 13a keyless reimagine implementation, 2026-09-05.
-- **The choice:** Reimagine accepts a full oriented source and dimension-preserving develop roots. If geometry changes the frame, it
-  returns a usage error before any provider call or document revision. A smaller pinned source fallback is also refused because the
-  generated base-size layer would not match the active base raster. It does not guess a transform into the current composite.
-- **The gap:** Catalog dimensions describe the oriented base, while a cropped/rotated develop node renders another frame. The layer
-  model does not yet retain a durable mapping that would place a full-frame generated result back into that changed frame honestly.
-- **The reach:** Current keyless reimagine is safe and predictable; supporting developed geometry or offline low-resolution bases
-  later requires one explicit current-frame dimension/mapping contract rather than a reimagine-only workaround.
-- **Verdict:** **Sound but intentionally narrow.** A pre-provider refusal preserves atomicity and avoids corrupt composites.
-- **Confidence:** High.
-
-### Slice 13d — Public repair extent and native reconstruction neighborhood remain separate
-
-- **When:** Slice 13d keyless retouch implementation, 2026-09-05.
-- **The choice:** `radius` always describes the permanent circular repair mask. With `--norm`, an explicit radius is a fraction of
-  the oriented long edge, just like the default two-percent extent. Resolved pixel geometry is canonicalized to nine decimal places
-  so an equivalent normalized and absolute retry has one identity. The versioned heal recipe separately records a fixed three-pixel
-  neighborhood, 512-iteration ceiling, and eight-million masked-pixel update budget for the project-owned deterministic
-  fast-marching fill with harmonic refinement. The recipe names that method directly rather than
-  claiming canonical Telea behavior.
-- **The gap:** The plan named Telea and a public target radius but did not define whether the same number controlled the inpaint
-  sampler, nor how normalized radius should scale. Coupling the values would make a larger selected defect silently change the
-  algorithm instead of only changing its extent.
-- **The reach:** Retouch identity, exact retry reuse, and mask composition remain stable if a later recipe version replaces or tunes
-  the native reconstruction algorithm. Normalized retouch geometry also stays independent of portrait/landscape orientation.
-- **Verdict:** **Sound.** One value belongs to the user-visible edit; the other belongs to a reproducible pixel recipe.
-- **Confidence:** High.
-
-### Slice 13b — Preview statistics have one explicit transfer-space and quantile convention
-
-- **When:** Slice 13b auto-enhance implementation, 2026-09-05.
-- **The choice:** Preview bytes are treated as encoded sRGB. Rec.709 luminance and the gray-world RGB mean are computed after the
-  sRGB transfer function is decoded to linear light; the mean is converted through the standard sRGB-to-XYZ matrix and McCamy's
-  correlated-color-temperature estimator. Saturation remains encoded-sRGB HSV saturation. Percentiles use type-7 linear
-  interpolation, and clipping counts exact black and white luminance endpoints. The alternative was to leave transfer space and
-  boundary quantiles implicit, making the same pixels produce implementation-dependent prompt data.
-- **The gap:** C4 named the statistics but did not define their transfer space, quantile convention, saturation model, or the
-  temperature estimator.
-- **The reach:** The seven-field C4 input is deterministic across future implementations. Neutral gray estimates the D65 neighborhood
-  at 6504 K through the named estimator, while a chroma-free black frame uses D65 as the defined fallback.
-- **Verdict:** **Sound.** The conventions are standard, deterministic, and pinned by a deliberately non-boundary percentile fixture.
-- **Confidence:** High.
-
-### Slice 13b — The C4 proposal contract owns narrower ranges before ordinary develop mutation
-
-- **When:** Slice 13b auto-enhance implementation, 2026-09-05.
-- **The choice:** A versioned strict structured schema accepts a non-empty subset of the eight C4 adjustment paths. Provider numbers
-  are clamped by the C4 range table—most notably exposure to `[-2,2]`—and serialized as one ordinary develop `--set` batch. The
-  alternative was to inherit the wider manual develop ranges or duplicate develop parsing and graph mutation inside auto-enhance.
-- **The gap:** The slice required clamping but did not name the owner or say whether a provider must return every adjustment.
-- **The reach:** Prompt wording, JSON schema, and clamping share one provider-owned contract while all final type/range validation,
-  graph changes, layer compensation, and staleness remain under the existing develop owner.
-- **Verdict:** **Sound.** Partial conservative proposals are useful, and the narrower automated policy cannot widen manual editing.
-- **Confidence:** High.
-
-### Slice 13b — Undo is a versioned active-revision transition, including no-op proposals
-
-- **When:** Slice 13b auto-enhance implementation and independent review, 2026-09-05.
-- **The choice:** Auto-enhance writes a versioned operation discriminator, `develop_before_auto`, and structured execution provenance
-  in generic revision metadata in the same transaction as its immutable revision. `--undo-auto` accepts only that active
-  discriminated revision and always creates a new revision without the marker, even when the restored dictionary is byte-for-byte
-  identical. A later manual edit therefore makes the older marker ineligible. The alternative was a mutable photo-level snapshot,
-  which could erase newer edits, or a no-op shortcut that left undo repeatable forever.
-- **The gap:** The slice required storing and restoring `develop_before_auto` but did not define marker identity, lifetime, or no-op
-  consumption.
-- **The reach:** Provider/schema failures leave the active pointer unchanged; successful no-op proposals remain auditable; one undo
-  consumes exactly one active automatic edit without affecting historical provenance.
-  Unlike ordinary `undo`, `--undo-auto` authors a new revision. After undoing from C to an
-  auto-enhanced B, invoking `--undo-auto` restores B's prior adjustments as a new D and
-  clears the redo path to C. C's history and purchased artifacts remain retained. Ordinary
-  `undo` can undo D; this command does not introduce another history engine.
-- **Verdict:** **Sound.** The behavior follows the existing immutable revision and compare-and-swap ownership model.
-- **Confidence:** High.
-
-### Slice 13b — Model input reuses the current preview owner and records available execution identity
-
-- **When:** Slice 13b auto-enhance implementation and independent review, 2026-09-05.
-- **The choice:** Auto-enhance obtains its 1024-pixel-long-edge JPEG through the existing `show` preview path and threads the shared
-  preview coordinator so concurrent requests join the same materialization. The revision records adapter id/version, fixed model,
-  provider request id, attempt count, prompt version, dimensions, and exact stats. It does not invent cost or duration fields the
-  structured adapter does not return. The alternative was a second render path or misleading placeholder provenance.
-- **The gap:** The slice named current/lazy rendering and provider provenance but did not define the internal preview seam or fields
-  unavailable from the structured adapter.
-- **The reach:** Existing current-source fallback, graph evaluation, cache identity, and daemon single-flight semantics apply unchanged;
-  later adapter telemetry can extend the versioned metadata contract without changing develop mutation.
-- **Verdict:** **Sound.** One preview owner avoids semantic drift, and recorded provenance stays truthful to the available boundary.
-- **Confidence:** Medium; the structured adapter may later grow shared duration and cost telemetry.
-
-### Slice 13a relight — Lighting intensity is both C3 guidance and exact blend coverage
-
-- **When:** Slice 13a keyless relight implementation, 2026-09-05.
-- **The choice:** `--intensity` is bounded to `0..1`, appears literally in the versioned C3 provider instruction, and also becomes
-  the permanent full-frame mask coverage used by the compositor. At zero, photoctl still records the requested provider operation
-  as a removable layer but renders the current pixels exactly; at one, the generated lighting result has full coverage. The
-  alternative was to make intensity prompt-only, leaving rendered strength entirely to a provider's interpretation.
-- **The gap:** C3 described light intensity “of 1” but did not define a provider-independent pixel meaning. The first deterministic
-  full-coverage fixture also showed why an opaque provider result is not useful evidence by itself: it replaced the entire frame
-  with the fake model output instead of expressing a controllable lighting change.
-- **The reach:** Reimagine strength and relight intensity now share one observable guidance-plus-blend rule in the full-frame owner.
-  Future live providers may interpret C3 differently, but they cannot silently remove the graph-owned intensity effect.
-- **Verdict:** **Sound.** One user control affects both nondeterministic guidance and deterministic composition, matching the
-  established reimagine contract.
-- **Confidence:** High.
-
-### Slice 13a relight — Public lighting controls use physical domains and a shared response shape
-
-- **When:** Slice 13a keyless relight implementation, 2026-09-05.
-- **The choice:** The command requires all three controls, accepts azimuth from 0 through 360 degrees, elevation from -90 through
-  90 degrees, and intensity from 0 through 1, and rejects non-finite or out-of-range values before opening a provider request. Its
-  response reuses the reimagine generation, source-density, upscale, execution, layer, revision, and render fields, replacing only
-  reimagine's `strength` field with flat `azimuth`, `elevation`, and `intensity` values. The alternative was an unbounded numeric
-  surface or a second near-copy of the provider response contract.
-- **The gap:** The original command spelling named the controls but not their allowed domains or response schema.
-- **The reach:** Agents receive the exact accepted lighting request alongside the same provenance and density facts as reimagine;
-  later prompt versions can change wording without changing the public units or duplicating the full-frame result schema.
-- **Verdict:** **Sound.** The angle ranges cover a full horizontal turn and all vertical light directions, while the normalized
-  intensity matches C3's documented “of 1” language.
-- **Confidence:** Medium; azimuth 0 and 360 are equivalent but both remain accepted for direct physical input.
-
-### Slice 13c — The vector document is mirrored by one final deterministic graph node
-
-- **When:** Slice 13c vector-markup implementation, 2026-09-05.
-- **The choice:** A photo owns one ordered JSON vector document, while its active output root is a deterministic `markup` node whose
-  recipe contains that same document and consumes the ordinary composite output. A markup mutation changes the table and immutable
-  revision in one transaction. Undo points back to the parent revision and restores the table from that revision's final node. The
-  alternative was a second raster cache or a separate class of markup layers whose ordering and state could drift from the graph.
-- **The gap:** The slice specified the table and native flattening but did not say how editable state, immutable revisions, and the
-  existing typed graph stay synchronized.
-- **The reach:** Preview, export, later develop changes, layer mutations, and undo all retain one render identity and one editable
-  document. Pixel-edit consumers receive the markup-free underlying output, so retouch and future reconstruction operations cannot
-  bake a removable presentation overlay into permanent pixels. A future GUI can edit vectors without acquiring a second rendering
-  owner.
-  Export includes the active annotations, just as preview does. Clean delivery
-  currently requires an ordinary undoable markup removal; there is no export-only
-  annotation toggle. Treating markup as review-only would be a new product choice.
-- **Verdict:** **Sound.** The table owns current editability; the graph owns reproducible pixels; atomic projection keeps them equal.
-- **Confidence:** High.
-
-### Slice 13c — Base-space vectors are projected as premultiplied color plus coverage
-
-- **When:** Slice 13c vector-markup implementation, 2026-09-05.
-- **The choice:** Stored coordinates always describe the oriented, uncropped base. For a cropped, rotated, or straightened photo, the
-  native renderer first creates overlay color and coverage in that base frame. The existing develop matrix transforms both; color is
-  divided by transformed coverage only after resampling and then composited over the current output. The unbuilt alternative was to
-  reinterpret the same stored numbers in output pixels, which would visibly move annotations whenever develop geometry changed.
-- **The gap:** The plan named the coordinate space and flattening stage but did not define how antialiased vector pixels cross the
-  develop transform.
-- **The reach:** Every primitive follows the same crop and rotation order as the photograph, while partially covered edges remain
-  color-correct. Identity geometry keeps untouched pixels bit-for-bit exact.
-- **Verdict:** **Sound.** It reuses the established geometry owner and preserves both coordinate and alpha-compositing semantics.
-- **Confidence:** High.
-
-### Slice 13c — Rendering is host-independent and bounded
-
-- **When:** Slice 13c vector-markup implementation, 2026-09-05.
-- **The choice:** The Rust addon rasterizes every primitive with bundled OFL-licensed Inter, converts hexadecimal display-sRGB colors
-  to scene-linear Rec. 2020 before blending, assigns stable UUID item identities, and bounds document size, path points, text length,
-  and geometry magnitudes. CLI update/remove accepts a unique UUID prefix. The alternatives were depending on whichever font the host
-  happened to install, blending encoded colors into linear pixels, or allowing one JSON item to create unbounded native work.
-- **The gap:** The slice required Inter and primitive shapes but left color space, identity ergonomics, and resource ceilings open.
-- **The reach:** The same recipe renders reproducibly on supported hosts, user-visible colors enter the existing linear pipeline
-  correctly, and agent callers can address items concisely without weakening full stored identity.
-- **Verdict:** **Sound.** These choices make the local native boundary deterministic, usable, and safe to evaluate.
-- **Confidence:** High.
-
-### Slice 13c — Markup scales with the source tier before develop projection
-
-- **When:** Slice 13c vector-markup independent review, 2026-09-05.
-- **The choice:** Markup remains stored in catalog base coordinates, but evaluation traces the exact first-input artifact lineage to
-  recover the base dimensions of the source tier that actually produced the current pixels. Coordinates and develop crop geometry
-  scale to that tier before rasterization; stroke and text sizes use the geometric mean of the two axis ratios so integer rounding
-  cannot make them anisotropic. The alternative was allocating a full-resolution overlay for every preview and applying a
-  full-resolution matrix to smaller pinned-source pixels.
-- **The gap:** The slice fixed the public coordinate space but did not define how those coordinates map onto an offline or pinned
-  preview whose dimensions are smaller than the catalog photo.
-- **The reach:** Native-size export stays exact, while lower-resolution preview evaluation uses bounded memory and places annotations
-  at the same semantic location through crop and rotation. Exact artifact lineage avoids selecting an unrelated historical source
-  execution.
-- **Verdict:** **Sound.** One catalog-space document remains portable across source tiers without introducing a preview-only owner.
-- **Confidence:** High.
-
-### Upscaler spike — Controlled experiments belong to an explicit runner manifest
-
-- **When:** Upscaler report contract pass, 2026-09-06.
-- **The choice:** An operator supplies a JSON experiment manifest to `wb upscale-spike --config`. For example, comparing fidelity
-  0.5 with 0.9 keeps creativity, scale, seed, source bytes, and prompt fixed. A separate prompt sheet keeps every numeric control
-  fixed. Category-validation sheets reuse the baseline guarded result, so adding a category label does not purchase another run.
-- **The gap:** The plan named separate comparisons but did not define how to supply inputs or isolate the strength variable.
-- **The reach:** Experiments are reproducible without changing library settings or treating ambient credentials as permission.
-  The manifest selects only registered adapters; this pass adds no live provider or quality defaults.
-- **Verdict:** **Sound.** One operator-selected variable per comparison makes the eventual quality decision interpretable.
-- **Confidence:** High.
-
-### Upscaler spike — Inspection context and provider facts are not inferred acceptance
-
-- **When:** Upscaler report contract pass, 2026-09-06.
-- **The choice:** If an operator labels a source as face/hair, the report records that declaration and which categories are missing;
-  it does not claim to recognize a face. A supplied crop selects the exact native detail to inspect; without one, the report shows
-  a small top-left detail rather than guessing the subject. A supplied mask is retained as inspection context, not sent through
-  an upscaler interface that has no mask input. Requested controls are recorded; normalized controls remain unknown because the
-  adapter does not return them. Fake output provenance and absent quality acceptance stay visible.
-- **The gap:** The plan required category, crop, mask, and control evidence without defining whether the runner inferred them.
-- **The reach:** A contact sheet cannot silently become proof of photographic preservation, masked compositing, or provider settings.
-  An operator conducting a real quality study must choose meaningful crops and supply actual category examples.
-- **Verdict:** **Sound.** The report separates observed facts from declarations and missing evidence.
-- **Confidence:** Medium; automatically proposing detail crops could help later, but must remain explicitly reviewable.
-
-### Upscaler spike — Evidence belongs to the current run, including failures
-
-- **When:** Upscaler report contract pass, 2026-09-06.
-- **The choice:** Starting an experiment replaces the previous JSON verdict with `running`; malformed inputs or an adapter failure
-  end with `failed`, while an absent configured adapter ends with `not_run`. All source/crop/mask inputs are checked before the
-  first adapter call, including full decode and the adapter's advertised input/output limits. Merely reading PNG dimensions does
-  not prove its compressed pixels can be decoded. Existing image files are not deleted; only the current report's membership identifies a completed run.
-- **The gap:** Reusing the report directory could otherwise leave yesterday's success beside today's failed command.
-- **The reach:** Reviewers cannot mistake stale completed evidence for a new successful experiment. Provider outputs are retained
-  on disk, and report composition holds resized previews/native crops rather than every full provider image across all sources.
-- **Verdict:** **Sound.** Explicit run state preserves truth without destructive cleanup or automatic retry costs.
-- **Confidence:** High.
-
-### Upscaler spike — Keep full detail files, but bound the overview and reuse identical requests
-
-- **When:** Upscaler report independent review, 2026-09-06.
-- **The choice:** A 4× output may make a selected detail crop thousands of pixels wide. Its PNG is saved at native resolution,
-  while the contact sheet shows a labeled fitted preview when it exceeds the panel area. Small crops remain native-sized and
-  all detail labels disclose pixel dimensions. When the requested strength list includes the baseline value, its sheet entry
-  points to the already-completed guarded arm rather than making an identical provider request again.
-- **The gap:** The plan required native detail and separate comparisons but did not distinguish overview size from saved detail,
-  or explicitly address a strength experiment containing its baseline control value.
-- **The reach:** Large photographic crops cannot inflate each overview row into a huge native canvas, and a redundant comparison
-  does not add latency or cost. The actual image detail and request identity remain available for inspection.
-- **Verdict:** **Sound.** The overview remains bounded without claiming fitted pixels are native or buying duplicate evidence.
-- **Confidence:** High.
-
-### Upscaler spike — Request identity owns paid work across inspection cases
-
-- **When:** Experiment-wide reuse correction, 2026-09-06.
-- **The choice:** An operator may inspect the same image once around hair and again around fabric. The runner identifies provider
-  work by source-byte hash, selected adapter/model/version, exact prompt, and exact controls—not by filename, category, mask, or
-  inspection crop. Matching requests within that experiment share one saved result and provider request ID. Each inspection still
-  extracts its own detail PNG. The report totals request count and cost over unique completed requests rather than repeated rows.
-- **The gap:** The quality-spike plan separated comparison axes but did not distinguish inspection cases from paid request identity.
-- **The reach:** Adding another inspection cannot charge for identical work. The reuse table holds paths and metadata, not all
-  full-image buffers. It lives only for one invocation; an explicitly restarted experiment obtains fresh provider work.
-- **Verdict:** **Sound.** The paid operation has one owner while crop/category-specific evidence remains independently inspectable.
-- **Confidence:** High.
-
-### Upscaler spike — Failure stops spending; preflight is not an input snapshot
-
-- **When:** Experiment-wide reuse audit, 2026-09-06.
-- **The choice:** If a provider arm fails, the command marks the run failed and does not submit later arms or cases. There is no
-  automatic retry or partial-success continuation. Before calls begin, the runner validates every current input; it then rereads
-  files one case at a time rather than retaining all source buffers. An operator modifying a later input during the run can thus
-  invalidate the earlier preflight result. Each individual case nevertheless compares the same loaded source bytes across arms.
-- **The gap:** The plan did not settle partial-failure spending or concurrent editing of experiment input files.
-- **The reach:** The default failure policy limits further spend, while bounded per-case loading avoids holding the whole input set
-  in memory. A future frozen-input or resumable experiment would need an explicit persisted-input/run contract.
-- **Verdict:** **Sound.** Conservative failure spending is explicit; preflight is not overstated as an immutable snapshot.
-- **Confidence:** Medium; freezing all inputs on disk would strengthen reproducibility if concurrent editing becomes a supported use.
-
-### Upscaler spike — Detail bounds cover intersecting mapped pixels
-
-- **When:** Experiment-wide reuse audit, 2026-09-06.
-- **The choice:** If a source crop maps to a fractional output-pixel boundary, the detail starts at the floor of the mapped origin
-  and ends at the ceiling of the mapped far edge. The output-frame offset is included. The shared registry requires the mapping's
-  source rectangle to be the entire input, so dividing by full input dimensions does not silently ignore an input crop.
-- **The gap:** The plan required native detail without choosing how partially intersecting output pixels enter a saved crop.
-- **The reach:** Inspection includes every intersecting output pixel rather than trimming border evidence. Supporting provider
-  input-crop mappings in the future would first require changing the shared registry contract.
-- **Verdict:** **Sound.** Outward rounding conservatively preserves boundary detail under the current validated full-input mapping.
-- **Confidence:** High.
-
-### Upscaler spike — Manifest control ranges are a runner restriction, not a provider guarantee
-
-- **When:** Experiment-wide reuse audit, 2026-09-06.
-- **The choice:** The manifest accepts fidelity and creativity values only between zero and one. For example, an operator cannot
-  send fidelity 70 through this runner even though the shared numeric adapter type does not itself declare units or a range.
-  This pass leaves that existing restriction unchanged and does not invent a live-provider conversion or normalized-control claim.
-- **The gap:** The plan named control-strength comparison, but the shared adapter interface does not formally own control ranges.
-- **The reach:** A future live adapter must establish its control units and mapping explicitly before the runner's numeric range
-  can be treated as a provider contract. The restriction is localized and reversible without changing stored library data.
-- **Verdict:** **Sound.** A bounded experiment input remains explicit without presenting an unverified range as provider behavior.
-- **Confidence:** Medium; the eventual shared control contract may require revisiting this runner restriction.
-
-### Photographic output — Resolve editing intent inside the existing revision transaction
-
-- **When:** Output-owner prerequisite, corrected by the 12f2 deterministic core checkpoint, 2026-09-06.
-- **The choice:** A layer edit asks for photographic planning instead of supplying a separately
-  assembled output. After checking that the active revision still matches, the existing transaction
-  resolves the requested base, geometry and layer identities and calls the one output planner.
-  A low-level paid or custom graph commit still supplies its own explicit output; requesting both
-  modes is rejected rather than silently discarding that output. Final vector markup wraps the
-  planned photograph in the same transaction.
-- **The gap:** Authored geometry requires graph reads. This concrete requirement supersedes the
-  prerequisite's pure planner outside publication: new drafts and immutable ancestry must be resolved
-  from the exact state being committed, not from separately read active state.
-- **The reach:** Ordinary photographic writers share one resolved-state owner and one conflict
-  check; custom graph roots retain their explicit validated meaning. No second draft interpreter
-  or transaction owner is introduced.
-- **Verdict:** **Sound.** Actual graph-read requirements justify moving planning into the existing
-  transaction without making arbitrary graph commits implicitly photographic.
-- **Confidence:** High.
-
-### SAM export — Rank logits, preserve reported probabilities, and separate export acceptance
-
-- **When:** Real CPU export prerequisite, 2026-09-06.
-- **The choice:** The pinned ONNX decoder ranks pre-sigmoid IoU logits while leaving its probability outputs and first-index
-  equal-score rule unchanged. The exporter recognizes only the pinned graph topology and fails on any other shape. It checks
-  actual upstream parity results before publishing model files or manifests; the upstream converter's zero exit status alone
-  is insufficient. Python dependencies and source revisions are pinned in an isolated CPU export environment.
-  Candidate output must be new or empty; a complete staged pair plus report is published by directory rename. Metadata
-  files remain individually atomic, not a cross-directory transaction; retry uses another fresh candidate.
-- **The gap:** Real seed-zero inputs exposed numerical sigmoid saturation that selected a different mask, despite the
-  mathematically identical ordering. The installed Hydra package also resolved the exporter's short name to the wrong model
-  config. Neither defect was visible to the prior contract-only tests.
-- **The reach:** The release hashes identify normalized real graphs. A private pinned source copy binds the correct config
-  without changing installed dependencies or upstream checkouts. Local HTTP distribution permits native evidence without
-  credentials; public hosting is still a separate decision. Export parity does not accept inference RSS or mask quality.
-- **Verdict:** **Sound.** Monotonic ordering is preserved without relaxing tolerances or changing probability reporting;
-  installed-package, real-model, ONNX tie, and failed-publication regressions ground the decision.
-- **Confidence:** High for ordering and fail-closed publication; medium for parity coverage beyond the bounded prompt probes.
-  Cross-platform export reproducibility and photographic quality are not established by this one-host CPU run.
-
-### Photographic probes — Image annotations survive only identical source bytes
-
-- **When:** Real SAM photographic checkpoint, 2026-09-06.
-- **The choice:** A maintainer remeasuring the fixture keeps its manually authored subject points and area
-  bands only if the complete image hash still matches. Replacing the image drops those annotations so a
-  different scene cannot silently inherit expectations about this sky and road. The model test reads these
-  annotations, while a separate visual checkpoint judges fine boundaries; passing an area band is not a
-  claim that branches, wires, or the entire distant path were selected correctly.
-- **The gap:** The spec requested independently authored probes but did not define their lifecycle beside
-  regenerated byte measurements. It also did not name how host tests receive the large exported models.
-- **The reach:** The fixture manifest remains the annotation owner, with no second sidecar or model-derived
-  golden area. The real CLI host test requires an explicit `PHOTOCTL_SAM_MODELS_DIR` pointing to the pinned
-  export and fails when absent; it does not add a network fetch, infer a private cache, or silently skip.
-- **Verdict:** **Sound.** Exact byte identity is a conservative preservation boundary and keeps wrong-scene
-  expectations from surviving fixture replacement. Separate coarse and visual verdicts preserve both gates.
-- **Confidence:** High.
-
-### Geometry authoring — New identities capture the checkpoint unless the caller preserves an older one
-
-- **When:** 12f2 metadata prerequisite, 2026-09-06.
-- **The choice:** Suppose a subject layer exists before a canvas checkpoint, and a second subject is
-  created afterward. The revision writer attaches the second layer to the current immutable
-  checkpoint automatically. If the earlier subject is duplicated afterward, duplication explicitly
-  preserves its original reference, including a null reference meaning it predates any checkpoint.
-  Omitting the optional authoring reference means “created now”; supplying null means “preserve the
-  pre-checkpoint origin.” Both are stored on the stable layer identity, not on its changing position
-  in the paint stack.
-- **The gap:** The lifecycle plan required creation and duplication to have different authoring
-  semantics without choosing whether every editing handler or the existing revision writer owns
-  the default. The writer already creates stable layer identities atomically.
-- **The reach:** New layer-producing operations inherit the correct default without each re-reading
-  geometry history. Operations that copy an identity must preserve its reference explicitly. A
-  photo-scoped database foreign key prevents referring to another photo's checkpoint.
-- **Verdict:** **Sound.** One atomic identity owner supplies the default while preserving the distinct
-  meaning of duplication; no timestamps or mutable parallel history table are needed.
-- **Confidence:** High.
-
-### Geometry metadata — Existing revisions adopt the extra root only when it is authored
-
-- **When:** 12f2 metadata prerequisite, 2026-09-06.
-- **The choice:** Upgrading an existing library adds storage support but does not rewrite every old
-  revision with an empty geometry record. An old photograph keeps its existing render identity;
-  its earlier layers have a null authoring reference. Once an operation explicitly authors geometry
-  metadata, that immutable root becomes part of the document identity and subsequent revisions
-  inherit it. Undo returns to the exact earlier root, including its absence.
-- **The gap:** The plan required durable activation provenance without choosing eager migration of
-  historical revisions versus lazy adoption through the existing graph writer.
-- **The reach:** Unrelated upgrades do not invalidate all existing previews. Consumers must treat an
-  absent geometry root as an ordinary pre-canvas document, not as lost data. Future canvas writers
-  are responsible for the first real activation/checkpoint record.
-- **Verdict:** **Sound.** Optional metadata preserves historical identities and avoids manufacturing
-  authoring history during schema migration.
-- **Confidence:** High.
-
-### Pointwise color — Reuse private storage without changing caller ownership
-
-- **When:** Native allocation checkpoint, 2026-09-06.
-- **The choice:** A JavaScript caller starts a color conversion and can immediately reuse or mutate
-  its input. The native asynchronous boundary still snapshots those pixels, preserving that contract.
-  The conversion now transforms its private snapshot in place and returns it instead of allocating a
-  second complete output. For a 7008×4672 RGB float image, that avoids one 392.9 MB allocation per
-  conversion without changing any pixel arithmetic or operation order.
-- **The gap:** The spec set a process-memory target but did not choose an ownership strategy for
-  pointwise operations. Removing the input snapshot would reduce storage further but break existing
-  asynchronous caller semantics.
-- **The reach:** No public API, stored schema, cache identity, or color semantics changes. This is
-  an allocation guarantee, not an RSS guarantee: garbage collection and native residency can keep
-  process memory high even after logical ownership ends. The full-command memory gate stays separate.
-- **Verdict:** **Sound.** Consume memory already owned exclusively by the task; preserve caller buffers
-  and exact output rather than introducing global GC, allocator, or thread-policy changes.
-- **Confidence:** High.
-
-### Canvas coverage — Ignore only roundoff-scale total area after viewport normalization
-
-- **When:** 12f2 convex-support prerequisite, 2026-09-06.
-- **The choice:** A rotated border and its original photograph can share an edge mathematically
-  while floating-point arithmetic leaves a microscopic numerical sliver. Before clipping, the
-  coverage helper maps every frame into viewport-relative coordinates, where the whole view has
-  approximately unit area. It subtracts all supported regions and treats a total remainder no larger
-  than 64 times JavaScript's machine epsilon (about 1.4e-14 of the viewport area) as roundoff. It sums
-  the remainder before applying that threshold: splitting a genuine hole into small pieces must not
-  make it disappear. The alternative of testing for exactly zero would report numerical edge noise;
-  a pixel-sized tolerance would hide real fractional gaps.
-- **The gap:** The plan specified geometric coverage rather than raster sampling, but not a
-  floating-point zero-area policy. Exact symbolic arithmetic is not introduced by this pass.
-- **The reach:** Coverage is independent of preview resolution and ignores no ordinary pixel-sized
-  hole. This remains a numerical tolerance, not a proof for arbitrarily ill-conditioned transforms;
-  future numeric changes must preserve both coincident-edge and small-gap regressions.
-- **Verdict:** **Sound.** One viewport-relative total-area decision avoids resolution-dependent
-  warning changes and fragment-count-dependent suppression without introducing a raster owner.
+- **Owner:** `packages/commands/src/handlers/tag.ts`.
+
+### U10 — Automatic layer names are stack-local English labels
+
+- **When:** Slice 10c1 command integration.
+- **The choice:** A new manual selection is named `Segment N`, where N is one
+  more than the current stack size; duplicating a layer appends ` copy`, and if
+  the source already fills the 256-character name limit its tail is shortened so
+  the suffix stays visible. Names are presentation, not identity: removing
+  layers and adding another can produce two layers displaying the same name
+  while their UUIDs stay distinct. The alternatives were exposing UUID fragments
+  as names, maintaining a never-reused sequence, or requiring a name on every
+  segment command.
+- **The gap:** The plan required names to survive snapshots and allowed
+  rename/duplicate, but specified neither automatic names nor a collision policy.
+- **The reach:** CLI output and any future layer panel display these labels by
+  default; automation must address layers by stable ID and must not assume a
+  generated name is unique.
+- **Verdict:** **Needs-user.** Provisional call: keep the labels. If the product
+  wants localized or guaranteed-unique defaults, change the one naming policy
+  before UI clients treat these strings as durable copy.
+- **Confidence:** Low — this is product language, not a technical invariant.
+- **Owner:** `packages/render/src/layers/operations.ts`.
+
+### U11 — The workbench fill report traces the mask edge in cyan
+
+- **When:** Slice 12d workbench-fill checkpoint.
+- **The choice:** The fourth comparison panel of the developer fill report
+  copies the current native-detail crop and recolours only the pixels on the
+  inside edge of the stored mask to bright cyan; the other three panels are
+  untouched, so a reviewer inspects real texture first and then uses the trace
+  to find the exact seam. The alternatives were a translucent filled overlay,
+  which hides texture across the whole edited region, or no overlay at all,
+  which makes an irregular boundary hard to locate.
+- **The gap:** The checkpoint required the same mask boundary before and after
+  but chose neither display colour nor overlay style.
+- **The reach:** Every fill report uses one legible edge convention; changing the
+  taste later affects only the developer report, never graph data or image
+  artifacts.
+- **Verdict:** **Needs-user.** Provisional call: keep the cyan inside-edge trace;
+  reverse it after the photographic review if it distracts or disappears against
+  real subjects.
+- **Confidence:** Low — a visual taste call that synthetic fixtures cannot settle.
+- **Owner:** `apps/workbench/`.
+
+### U17 — Mask morphology is a square footprint and feather is three box passes
+
+- **When:** Slice 10b2 mask-kernel implementation.
+- **The choice:** Growing or shrinking a mask (dilation and erosion) uses a
+  zero-padded *square* footprint, implemented as separable sliding-window passes;
+  feathering approximates a Gaussian blur with three zero-padded separable box
+  passes. Both reject radii above 4,096 pixels. In practice a one-pixel dilation
+  therefore squares off corners, and coverage at the image edge fades against
+  transparent space rather than being extended.
+- **The gap:** The plan named morphology and feather operations but chose neither
+  circular versus square morphology, an exact Gaussian definition, edge
+  treatment, nor a maximum radius.
+- **The reach:** Later manual and model-produced masks inherit this silhouette
+  feel; extremely large selections fail validation instead of occupying a native
+  worker indefinitely.
+- **Verdict:** **Needs-user.** Provisional call: keep the square footprint and
+  three-pass feather. Footprint and feather character are visible product
+  choices that should be revisited against real photographic masks; a disc
+  footprint or true Gaussian changes only newly created artifacts.
+- **Confidence:** Medium for the bounded algorithm; low for the preferred visual
+  character.
+- **Owner:** `packages/render/src/mask-kernels.ts`,
+  `crates/photoctl-image/src/mask.rs`.
+
+### U12 — Canvas growth has source-size-aware raster ceilings
+
+- **When:** 12f2 deterministic core maintenance checkpoint.
+- **The choice:** A 32-megapixel source may legitimately ask for a 60-megapixel
+  exterior view after outpainting, but a billion-pixel crop must be rejected
+  before any allocation. The render frame owner allows at most 64,000,000 pixels
+  and 16,384 per edge, and raises each ceiling to the catalog source size when
+  that is larger — so a 100-megapixel original can still be cropped, reset and
+  rotated at its own size. Provider work must additionally satisfy its own
+  adapter limits. **These are not the only 64-megapixel numbers in the tree, and
+  they are not the same contract:** the fake upscaler advertises 64 MP as its
+  capability, `generate --size` refuses larger standalone rasters, and the markup
+  text rasterizer bounds its own allocation. Each has a different owner and a
+  different reason to change; they coincide numerically today and must not be
+  collapsed into one shared constant on that basis.
+- **The gap:** Canvas growth needed a render-side safety policy independent of
+  any provider's capability.
+- **The reach:** This is a growth limit, not a memory guarantee, not stored
+  checkpoint policy, and not a user setting. Raising it later does not rewrite
+  authored geometry.
+- **Verdict:** **Needs-user.** Provisional call: keep the ceiling. Representative
+  hardware evidence or a different product limit replaces it without a schema
+  change.
 - **Confidence:** Medium.
+- **Owner:** `packages/render/src/graph/frame.ts` (canvas growth only).
 
-### Native color tasks — Report private snapshots to Node without changing collection policy
+### U13 — Outpaint expands the currently visible picture, symmetrically, onto an exact integer raster
 
-- **When:** Native task accounting checkpoint, 2026-09-06, integrated as `a9ced3a`.
-- **The choice:** When a caller starts converting a large photograph, Rust copies the caller's
-  pixels so asynchronous work cannot observe later caller mutations. That private allocation is
-  outside JavaScript's ordinary typed-array storage. The task now tells Node how much pixel
-  capacity it actually owns, letting Node's existing garbage collector see that pressure. It does
-  not force collection, change the worker pool, or estimate storage that has not been allocated.
-  Charging after allocation cannot prevent the copy's instantaneous peak. Tiny task metadata and
-  matrix arrays are not included in this pixel-capacity charge.
-  On success, the manual charge ends immediately before the same storage becomes a Node-owned
-  typed array, which Node already accounts. There is no asynchronous gap in that transfer.
-  On a worker error, storage may be freed before the originating Node thread runs completion;
-  the charge lasts until that completion destroys the task. Only that originating thread may
-  call Node's accounting API. Explicit transfer errors propagate; destructor cleanup never panics
-  across the native boundary. A scheduler failure that leaks the whole task retains both its real
-  storage and its charge; this does not introduce a second scheduler or promise teardown recovery.
-- **The gap:** The spec required a memory band without prescribing native snapshot accounting.
-  Caller ownership must remain intact, and ordinary Node backing-store statistics do not expose
-  this manual accounting counter in the pinned runtime.
-- **The reach:** Future asynchronous pixel tasks can share the same lifetime guard, but must
-  distinguish transferring the input allocation from producing a separate output. Consumer tests
-  read the pinned Node runtime's actual GC diagnostic at controlled phases, using test-only
-  collection and failing if the diagnostic is missing. No product diagnostic API, schema, model,
-  color arithmetic, or production GC flag is added. Rare scheduler and teardown paths are
-  source-audited rather than dynamically fault-injected; RSS acceptance requires separate real
-  commands and cannot be inferred from a balanced counter.
-- **Verdict:** **Sound.** Report memory actually owned to the platform that manages collection;
-  preserve pixel and caller contracts instead of tuning an allocator around one photograph.
-- **Confidence:** High for ownership/accounting; RSS effectiveness remains measurement-dependent.
-
-### Native resampling tasks — Charge input until it is freed, independently of output
-
-- **When:** Resampler accounting, 2026-09-06, integrated as `c61195c`.
-- **The choice:** Resizing a photograph copies the caller's pixels, then computes a different output
-  allocation. Returning that output does not free the input. The task therefore retains the input's
-  manual Node memory charge while registering the separate output, frees the input, and only then
-  releases its charge. Affine transforms follow the same rule. Treating this like pointwise color
-  conversion would stop reporting a still-live input as soon as the output became visible.
-- **The gap:** The existing guard supported ownership transfer, but the plan did not prescribe how
-  to account operations whose input and output remain distinct allocations.
-- **The reach:** These tasks reuse the existing guard and completion lifecycle; output backing
-  stores retain Node's normal accounting. No predicted worker allocation, scheduler, forced
-  collection, public API, or schema is introduced. Error destruction preserves input-before-guard
-  drop order. This reports actual capacity, not a hard RSS ceiling or prevention of allocation peaks.
-- **Verdict:** **Sound.** Accounting follows the lifetime of the allocation it describes rather
-  than the promise result, preserving caller snapshots and unchanged pixel arithmetic.
-- **Confidence:** High for ownership; resource effectiveness still requires measurement.
-
-### Real-model gate — Rebuild the requested source, with provisioning kept explicit
-
-- **When:** Docker/model gate wiring, 2026-09-06.
-- **The choice:** After changing the CLI, running the functional gate asks Compose to build before
-  executing it. Docker can reuse unchanged layers, but cannot silently run the previous image's
-  tests instead of the current checkout. Only the functional image fetches the pinned models;
-  the fake gateway stops at the built application image. On macOS, the caller supplies an existing
-  model directory or invokes the existing hash-verifying fetch script. There is no second automatic
-  host downloader and no guessed public release address.
-- **The gap:** The plan required real default model coverage but did not settle stale Compose image
-  reuse or whether host test startup should acquire models automatically.
-- **The reach:** A source-changing functional run may rebuild its image and requires a configured
-  model base URL; missing models remain a visible prerequisite failure. The shared model suite adds
-  coverage without replacing existing TypeScript or macOS tests.
-- **Verdict:** **Sound.** The gate tests the requested checkout, while one fetch owner preserves
-  hash verification and avoids hidden distribution or credential policy.
-- **Confidence:** High.
-
-### Docker toolchain — Match the pinned inference archive's C++ runtime
-
-- **When:** Docker/model gate wiring, 2026-09-06.
-- **The choice:** A clean native test build on Node 24 with Debian Bookworm fails at the linker:
-  the existing ONNX Runtime archive calls C++ functions absent from Bookworm's version 12 runtime.
-  The same Node major on Debian Trixie supplies the required versioned symbols, including
-  `__cxa_call_terminate` at `CXXABI_1.3.15`. The Docker test image therefore uses Trixie. The alternative
-  of changing the model/runtime dependency or bundling another C++ library would alter an owner
-  outside this test-wiring pass.
-- **The gap:** The original Docker seam named Bookworm before the current pinned inference archive
-  made a newer C++ runtime a concrete build requirement.
-- **The reach:** Docker tests cover that newer Linux runtime, not arbitrary older installations.
-  The release workflow builds Linux packages on its own Ubuntu runners; this change neither edits
-  those runners nor proves their binary compatibility floor. That remains a separate release check.
-- **Verdict:** **Sound.** Correct the demonstrated test-toolchain mismatch without changing Node,
-  model bytes, inference semantics, or native algorithms, and keep the evidence boundary explicit.
-- **Confidence:** High.
-
-### Runtime initialization — Prove timing separately from artifact equivalence
-
-- **When:** Slice 11 Linux strict-stderr causal proof, 2026-09-06.
-- **The choice:** Compare baseline and candidate built from the same pinned ORT source and
-  artifact-builder recipe. Defer CPU-reading static initialization without changing feature
-  values or kernel selection, then install the explicit upstream logger before discovery.
-  Preserve both the insufficient first patch and the passing complete patch as evidence.
-- **The gap:** The served archive identifies its ORT source but not its exact builder revision.
-  Waiting for that provenance would prevent the bounded causal test; pretending to reproduce
-  the served binary would overstate what the experiment proves.
-- **The reach:** Empty stderr, retained warning, matching feature values and identity output
-  establish the timing correction on the scratch ARM64 build only. Actual addon/CLI behavior,
-  failed-worker diagnostics, model parity and cross-platform distribution remain separate gates.
-- **Verdict:** **Sound.** The experiment isolates the failure without weakening the default
-  gate or silently replacing a release artifact.
-- **Confidence:** High for the measured timing result; no release-equivalence claim.
-
-### Daemon recovery — Never replay an operation whose outcome is unknown
-
-- **When:** Public undo prerequisite, 2026-09-06.
-- **The choice:** A user duplicates a layer. The background library process commits the new layer,
-  but its connection closes before the CLI receives confirmation. Resending could create a second
-  layer; an undo replay could remove a second edit. The CLI therefore recovers and retries once only
-  if connection failure occurred before sending began. Once sending starts, lost confirmation returns
-  unavailable with an explicit unknown-outcome message, so the caller inspects the library first.
-  An accepting broken socket receives the same result because the CLI cannot establish non-delivery.
-  The existing `daemon start` command explicitly verifies and, when the library lock is free,
-  replaces that broken endpoint. Recovery restores access without resending the ambiguous command.
-- **The gap:** Automatic daemon recovery was required, but the plan did not define replay after
-  ambiguous delivery. Durable request IDs with saved responses could allow safe replay, but would
-  require a new cross-command transaction and retention contract that does not exist today.
-- **The reach:** All daemon commands share this rule, including paid operations, rather than a
-  growing list of supposedly safe verbs. No database or wire schema changes are introduced. This
-  prevents client-generated duplicate sends; it does not promise exactly-once execution.
-- **Verdict:** **Sound.** Recovery must not convert missing acknowledgement into another mutation.
-- **Confidence:** High.
-
-### RAW compression — Preserve the file's tag separately from decoder routing
-
-- **When:** RAW codec fixture integration, 2026-09-06.
-- **The choice:** A Sony lossless file contains compression tag 7, but LibRaw changes its working
-  value to 6 while selecting a decoder. Photoctl now retains the original tag in LibRaw's existing
-  per-image-directory metadata and carries it when selecting the RAW frame. The public probe reports
-  7; decoding still follows the same internal routing. Non-TIFF readers retain their previous
-  reporting when there is no original TIFF tag. An alternative reverse mapping from 6 to 7 could
-  mislabel files genuinely carrying 6, and a second parser would duplicate the decoder's selection.
-- **The gap:** The plan required original compression reporting but did not prescribe how to survive
-  LibRaw's metadata normalization.
-- **The reach:** Two internal C++ fields require rebuilding the vendored library and addon together
-  and preserving this patch on dependency upgrades. No C wire, image arithmetic, or database changes.
-- **Verdict:** **Sound.** Preserve the fact at its existing parser rather than infer it afterward.
-- **Confidence:** High.
-
-### Fixture annotations — Bind authored facts to immutable image bytes
-
-- **When:** RAW manifest integration, 2026-09-06.
-- **The choice:** A fixture manifest contains measured tags plus authored provenance and subject
-  annotations. Remeasuring the same SHA-256 refreshes measured fields and keeps authored ones. If
-  someone replaces the image under the same filename, regeneration refuses to overwrite the old
-  manifest until its annotations are explicitly reviewed. Otherwise a new photograph could inherit
-  the old photograph's selection points and source attribution while appearing freshly verified.
-- **The gap:** Adding multiple RAW manifests exposed the need to retain authored fields beyond SAM
-  annotations without silently transferring them between images.
-- **The reach:** Tests discover committed ARWs and use their adjacent manifests; the generator remains
-  scoped to these A7C II fixtures and known preview dimensions. Whole-buffer decode hashes are retained
-  only as same-host before/after evidence because actual Linux bytes differed from macOS. This does
-  not establish cross-platform pixel equivalence or replace photographic-quality acceptance.
-- **Verdict:** **Sound.** Identity is the image hash, not its filename; measured evidence keeps its scope.
-- **Confidence:** High.
-
-### Native diagnostics — Bounded process capture, transported by existing operations
-
-- **When:** Slice 11 actual-addon diagnostic integration, 2026-09-06.
-- **The choice:** The explicit ORT environment logger records process-scoped messages; each
-  worker's session logger records session messages. Creation and job outcomes carry the records
-  even when the operation fails. Command code drains them through its existing stderr-event
-  owner, with no native-to-JavaScript callback lifecycle, direct Rust stderr output, global
-  request map or cached request callback. For example, a CPU warning emitted between commands
-  waits for the next operation; that command transports it without claiming the warning belongs
-  to its photo. An immediate push would instead need a callback owner that survives command changes.
-- **The gap:** Process warnings can occur outside a session operation. No live callback owner
-  exists in the native interface, and installing one solely for diagnostics would add request
-  and teardown lifecycle obligations. The first CPU warning is no longer emitted before logging;
-  this recorder transports post-logger messages, not a workaround for early raw stderr.
-- **The reach:** Each recorder retains 64 messages; each message/location field is capped at
-  4096 UTF-8 bytes, with truncation and dropped counts surfaced. Process messages may be delayed
-  until the next native creation/job boundary and lost at process teardown. They carry runtime
-  scope and no photo/request identity, so delayed delivery does not imply causal attribution.
-  Each scope is FIFO, but there is no cross-scope chronology guarantee or global sequence owner.
-- **Verdict:** **Sound with limits.** Reuse the operation/result and stderr owners while making
-  bounded loss and delayed timing explicit. These diagnostics are not a durable logging service.
-- **Confidence:** Medium for the timing/retention policy; high for measured failure delivery.
-
-### Native diagnostics — Omit the pinned wrapper's unreliable category
-
-- **When:** Actual Linux CLI capture, 2026-09-06.
-- **The choice:** Retain truthful scope, severity, message and code location; omit category.
-  `ort` 2.0.0-rc.13's custom logger decodes category from the code-location pointer, confirmed
-  by the real CLI output and installed source. No Rust dependency fork is added solely for this.
-- **The gap:** The documented upstream callback contract does not match its pinned implementation.
-- **The reach:** Clients receive less metadata, but no mislabeled location posing as category.
-  Warning messages remain intact and strict NDJSON remains the transport contract.
-- **Verdict:** **Sound.** Omission is preferable to inventing or mislabeling diagnostic facts.
-- **Confidence:** High.
-
-### Default overview — Qualify by the image graph, not an empty edit summary
-
-- **When:** Cheap source-overview integration, 2026-09-06.
-- **The choice:** After importing a photo, default `show` can render its pinned import JPEG
-  without decoding the full original. This applies only when the active graph is exactly the
-  initial source followed by its display output, with no geometry. An explicit empty develop
-  node or a disabled-layer graph still uses ordinary graph evaluation: looking empty in a
-  command summary does not prove that every pixel operation is absent. Native and detail
-  requests always retain their existing resolution planning.
-- **The gap:** The plan requires a cheap untouched overview but leaves the eligibility proof
-  unspecified. Treating every apparently neutral edit as equivalent would require a separate
-  graph simplifier that does not currently exist.
-- **The reach:** Future graph changes cannot accidentally bypass pixel operations by clearing
-  a summary field. A future authoritative simplifier may broaden eligibility; this check does
-  not become a parallel list of supposedly harmless operations.
-- **Verdict:** **Sound.** Exact recipe identity proves the shortcut preserves the intended
-  source-preview operation; visually equivalent but unproven recipes remain slower.
-- **Confidence:** Medium for the intentionally narrow performance coverage.
-
-### Default overview — Keep existing source validation and preview publication owners
-
-- **When:** Cheap source-overview integration, 2026-09-06.
-- **The choice:** A user unplugs an original after import and asks to see the photo. The cheap
-  path still checks the catalogued locator through the existing source resolver and warns
-  truthfully, then sends pinned pixels through the existing preview coordinator. That owner
-  publishes a validated, indexed JPEG protected from concurrent pruning. If the pinned JPEG
-  is corrupt, the ordinary original-source graph ladder remains available. Returning the
-  pinned file directly would avoid a bounded re-encode but bypass those derived-view rules.
-  An already-valid native master may still supply the overview, as it does for other views;
-  a render hash identifies edit state, not identical pixels across source tiers.
-- **The gap:** The plan allows direct pinned-path reuse but does not require it or specify
-  whether avoiding the full render should also skip source availability checks.
-- **The reach:** No second cache, warning, identity, or publication lifecycle is introduced.
-  Cheap overview still performs source identity I/O, and native/master reuse stays authoritative.
-- **Verdict:** **Sound.** Reuse the existing owners and accept bounded preview work rather
-  than weakening inspection safety or reporting stale source availability.
-- **Confidence:** High.
-
-### Public undo — Keep the first image inside the atomic revision owner
-
-- **When:** Public undo integration, 2026-09-06.
-- **The choice:** A user generates an image, then immediately asks to undo. With no older
-  revision to restore, undo succeeds with `undone:false` and retains the purchased image.
-  The same rule protects an imported original. The existing locked revision transaction
-  decides this; a separate command-side parent lookup could race another edit. For an import
-  whose lazy document has never been initialized, the existing document initializer establishes
-  its ordinary source revision before returning the same no-op result. Undo itself does not
-  add another history entry or render pixels.
-- **The gap:** The internal undo primitive allowed the first revision to become no active
-  document. No production caller relied on clearing the first image, and that behavior would
-  discard a generated photo's active purchased root at the new public boundary.
-- **The reach:** The public result always names a valid revision and render hash. All undo
-  consumers share the same terminal-history rule rather than maintaining separate policies.
-- **Verdict:** **Sound.** Restoring an older edit cannot mean erasing the only existing image.
-- **Confidence:** High.
-
-### Public undo — Document edits, with the existing conflict boundary
-
-- **When:** Public undo integration, 2026-09-06.
-- **The choice:** Undoing a layer removal restores that revision's image graph, geometry,
-  ordered layers and editable markup together. It does not reverse ratings, tags or XMP writes,
-  whose state is not part of document revisions. The command takes one photo ID or prefix and
-  returns `{id,undone,revision_id,render_hash}`. Public redo uses the same document owner
-  and the saved navigation path described above; neither command adds catalog-wide history.
-  If two commands both read revision C, the first can restore B; the second must report the
-  existing revision-conflict error, not silently continue from B to A. A lost response likewise
-  cannot trigger automatic command replay through the daemon.
-- **The gap:** The spec requires public editing undo but does not define its response or a
-  catalog-wide history model. Existing document snapshots already own reversible image state.
-- **The reach:** `undo` uses the same atomic state and conflict semantics as other image edits.
-  Future catalog undo would require an explicit separate contract, not implied participation
-  in image history. Callers can inspect the returned revision without fetching an unbounded log.
-- **Verdict:** **Sound.** Expose the existing complete document operation without inventing
-  incomplete catalog history or retrying an operation that changes meaning on repetition.
-### Canvas sampling — Local supply satisfies demand; it does not create global demand
-
-- **When:** 12f2 density consumer pass, 2026-09-06.
-- **The choice:** A 16×12 photograph can contain a much smaller, detailed border. The first
-  implementation treated every available pixel as a demand for whole-image resolution: shrinking
-  that border tenfold incorrectly made the native output 160×120. The corrected contract keeps
-  the base image's actual sampling and lets local images fill an offline resolution shortfall only
-  up to native canvas demand. The same shrunken-border request now stays 16×12. A native border
-  can still supply a 10×8 canvas when the original is available only as a half-sized preview.
-- **The gap:** The plan required actual available density and preservation of purchased upscale,
-  but did not distinguish local pixel supply from global output demand. Existing fill planning
-  establishes the distinction: shrinking a layer decreases its target rather than enlarging the
-  whole photograph.
-- **The reach:** Local transforms cannot create runaway full-image sampling requirements. A paid
-  base branch retains its actual resolution. No new memory cap, transform refusal, configuration,
-  or public metadata field is introduced to compensate for excessive demand.
-- **Verdict:** **Unsound initial choice, corrected.** The unrestricted maximum-supply rule was
-  rejected after its public regression produced 160×120; local supply must be bounded by output
-  demand, independently of any allocation safety ceiling.
-- **Confidence:** High.
-
-### Canvas sampling — Preserve physical frames while changing the integer sampling grid
-
-- **When:** 12f2 density consumer pass, 2026-09-06.
-- **The choice:** A 25-unit-wide exterior crop of a half-sized source needs 12.5 samples, which
-  becomes 13 pixels using the existing develop rounding convention. Its catalog coordinates do
-  not move to make the division even. Each saved projection is realized at a uniform density
-  derived from actual input frame mappings; the largest directional sampling rate preserves
-  available detail without separately stretching the two output axes. RGB and mask coverage
-  follow that same grid in the same ordered stages. A quarter-turn produces 6×13 from 13×6.
-- **The gap:** Saved frames establish physical geometry and authored rasters, not the raster
-  available during offline execution. The plan did not specify integer sampling realization.
-- **The reach:** Logical inspection remains stable while actual execution frames and previews
-  describe the real raster. This reuses the frame owner and existing renderer semantic revision
-  for cache invalidation; there is no second persisted geometry or density policy.
-- **Verdict:** **Sound.** Keeping physical intent separate from raster size avoids both fabricated
-  full-resolution fallback pixels and coordinate rebasing. The directional choice is numerical
-  sampling policy, not a promise that every source has equally detailed pixels in both directions.
+- **When:** Outpaint planning checkpoint, 2026-09-06; implemented.
+- **The choice:** After cropping and straightening a photo, `fill --outpaint
+  --px 100` adds 100 pixels around the picture *currently visible* — it does not
+  restore the source content the crop excluded. An aspect request uses the
+  smallest containing integer raster with the exact requested ratio, so a 10×7
+  picture expanded to 3:2 becomes 12×8. Growth is split between opposite edges,
+  and an odd pixel goes right or bottom so existing pixels never move by half a
+  pixel. Requesting the aspect the picture already has does nothing and makes no
+  paid request. The alternatives were expanding the uncropped original,
+  anchoring growth at the top-left, or resampling to obtain perfect symmetry. A
+  one-axis ceiling was rejected because repeated identical requests would
+  alternately grow width and height; exact-ratio integer dimensions make the
+  second request a no-op.
+- **The gap:** The original outpaint requirement chose neither the expansion
+  frame, nor the anchor, nor the rounding.
+- **The reach:** These determine output dimensions and the meaning of repeated
+  expansion. Original-base coordinates and source dimensions are unchanged; the
+  graph represents visible extent rather than asking callers to reinterpret
+  stored positions.
+- **Verdict:** **Needs-user.** Provisional call: expand the current visible
+  picture with integer centered placement. A different answer changes the
+  planner before new canvas authoring, not existing photo records.
 - **Confidence:** Medium.
+- **Owner:** `packages/render/src/fill/outpaint.ts`,
+  `packages/render/src/graph/canvas.ts`.
 
-### Canvas provenance — Output sampling does not certify recovered original detail
+### U14 — Authored crop boundaries belong to the borders that are enabled, not to the source
 
-- **When:** 12f2 density consumer pass, 2026-09-06.
-- **The choice:** A native border plus an offline 8×6 original preview can produce a 10×8 native
-  canvas. Public preview source dimensions describe that rendered master, not the decoder's
-  original input. Output pixel scale can be one and output resolution can be satisfied while
-  original detail remains limited. The retained execution frame still records the 8×6 source,
-  and the public source tier remains pinned-preview.
-- **The gap:** Existing preview field names could be mistaken for a claim about every contributing
-  image. Repurposing them to describe only the decoder would silently change other preview consumers.
-- **The reach:** Existing metadata meanings remain intact; callers must not infer recovered
-  original detail from native output sampling. A separate public original-detail field is not
-  added in this pass.
-- **Verdict:** **Sound.** Preserve the established preview contract and verify the exact original
-  input through the existing retained frame owner.
-- **Confidence:** High.
-
-### Canvas contribution — Reuse final projected mask coverage to admit local supply
-
-- **When:** 12f2 density review correction, 2026-09-06.
-- **The choice:** An offline photograph is cropped wholly inside a border's transparent center.
-  Merely retaining that border initially raised the 3×2 available image to 6×4 even though no border
-  pixels appeared. Local supply now counts only when the existing mask projection has nonzero
-  coverage in the final viewport. Candidates are considered from highest supply downward; the
-  first useful projected mask is kept and reused by compositing. Masks for all layers are never
-  accumulated, and a native base needs no candidate pixel pass.
-- **The gap:** Available image dimensions alone did not establish that the image contributes to
-  the current view. Structural canvas warnings deliberately ignore opacity and are not the answer
-  to this sampling question.
-- **The reach:** The shared mask path preserves ordered transforms, coverage thresholds, and final
-  clipping. In the public fixture the visible border needs one total mask projection and retains
-  320 bytes; the rejected transparent-hole candidate needs two projections, with a 96-byte candidate
-  mask. A native base needs no candidate allocation. In larger scenes the one retained mask costs
-  four bytes per output pixel; this is a bounded extra buffer, not a memory-safety guarantee.
-- **Verdict:** **Unsound initial choice, corrected.** Retained supply is not necessarily visible
-  supply. The correction consumes the compositor's actual projected coverage rather than adding
-  a second mask interpreter or reclassifying invisible content as useful detail.
-- **Confidence:** High.
-
-### Canvas cache — Check original sampling when local pixels satisfy output dimensions
-
-- **When:** 12f2 independent review correction, 2026-09-06.
-- **The choice:** A native border makes an offline master's dimensions look sufficient. When the
-  original returns, the old dimension-only cache check kept serving its reduced interior forever.
-  Sufficiency now also compares retained original sampling with the requested view's demand; if
-  it is insufficient, the existing source-limit check determines whether richer pixels are available.
-  Same-source repeats still reuse the master, and a small overview does not demand unnecessary
-  full-resolution original pixels.
-- **The gap:** Output sampling and original sampling could diverge after local images supplied
-  native detail; the old cache predicate assumed they rose together.
-- **The reach:** Full, exact detail, and overview show requests refresh on reconnect without changing
-  document
-  identity or public metadata meanings. Exact-view returns consume the same sufficiency predicate
-  as master reuse; an independent review caught the old inline dimension-only bypass. The existing
-  retained frame and source-limit owner remain
-  canonical; no second cache status or mutable provenance table is added.
-- **Verdict:** **Sound.** Actual original supply must participate in cache sufficiency when a local
-  layer can otherwise conceal its shortfall. Public reconnect, repeat, and export checks pin it.
-- **Confidence:** High.
-
-### Corrupt RAW fixture — Truncate before any usable preview, preserving genuine container structure
-
-- **When:** Structured truncated-RAW coverage, 2026-09-06.
-- **The choice:** A file copy stops after 64 bytes of the committed Sony RAW. It still declares a
-  real TIFF directory larger than the remaining file, but contains no usable JPEG preview. Public
-  import must skip it and leave the photo list empty. The fixture's hash and source prefix are
-  recorded beside it; it lives outside the known-good decoder inventory.
-- **The gap:** The requested truncated-RAW witness did not specify where the cut occurs. Cutting
-  only the RAW pixel payload could leave a usable embedded preview and legitimately succeed under
-  the existing capability-based import contract.
-- **The reach:** This guards malformed container handling without adding an extension-based refusal
-  or declaring every partially damaged RAW unsupported. No production, schema or dependency changes.
-- **Verdict:** **Sound.** Exercise a real structural failure without contradicting preview-based admission.
-### Historical schema fixtures — Recreate old writer state, not a current database with an old label
-
-- **When:** Schema-v10–v12 fixture completion, 2026-09-06.
-- **The choice:** When checking whether an old edited library survives an upgrade, start a fresh
-  database with the migration runner from that schema's original commit. Use that commit's graph
-  writer—the code that stores immutable edit recipes and their connections—to author a moved
-  subject, affine image sampling, or local retouch before dumping the database. Keep the resulting
-  SQL unchanged as the test input. An alternative would be to insert old-looking rows into today's
-  schema and change its version label; that would never exercise the real old constraints or writers.
-- **The gap:** The plan requires a dump for every schema but does not specify how to recover the
-  omitted historical fixtures after later schema versions have already landed.
-- **The reach:** These are historical application schemas running on the available PGlite/PostgreSQL
-  engine, not a cross-PostgreSQL-version certification. The affine fixture uses the historical graph
-  commit and layer-projection owners directly; it does not claim to recreate a provider request.
-- **Verdict:** **Sound.** Historical code establishes the authoring contract without changing live
-  libraries, adding migrations, or teaching production a second compatibility path.
-- **Confidence:** High.
-
-### Historical schema fixtures — Prove metadata preservation without claiming pixel recovery
-
-- **When:** Schema-v10–v12 fixture completion, 2026-09-06.
-- **The choice:** A restored SQL backup must retain an edit's exact recipe, ordered inputs, saved
-  revision, layer identity and artifact record even when the actual image file is absent. The tests
-  compare those records before and after the real migration, then check what the edit means: the
-  vacancy belongs to the moved subject, the affine node keeps its matrix, and the retouch reads the
-  previous image plus its selection in the correct order. Mask files are generated while authoring
-  the fixture but are not packaged into the SQL dump; a passing check is not evidence that lost
-  image bytes can be recovered or that a retouched photograph looks good.
-- **The gap:** The missing-fixture requirement does not set the boundary between metadata upgrade
-  coverage and pixel rendering/recovery evidence.
-- **The reach:** This extends the existing migration suite while retaining all prior fixtures.
-  Pixel execution and photographic quality remain responsibilities of the renderer and its gates;
-  no new artifact format, runtime dependency or release command is introduced.
-- **Verdict:** **Sound.** It proves the metadata-only backup contract without inventing a broader
-  recovery guarantee from a database-only test.
-- **Confidence:** High.
-
-### Filter command — Share the develop mutation and its result envelope
-
-- **When:** Original filter verb completion, 2026-09-06.
-- **The choice:** `filter PHOTO --name vivid --strength 0.5` validates its single-photo syntax, then
-  performs the same two assignments as `develop`. It returns that command's one-item `results`
-  envelope, including layer compensation and stale warnings. Asking both forms in succession does
-  not add another revision, so one undo restores the original state.
-- **The gap:** The input required the verb and D21 chose its two stored keys, but did not specify
-  whether the convenience verb needed a distinct response shape or mutation implementation.
-- **The reach:** One develop writer owns validation, history and rendering. There is no new filter
-  schema, kernel, persistence field or public result type to keep synchronized.
-- **Verdict:** **Sound.** Reuse the established editing contract instead of duplicating it behind new syntax.
-- **Confidence:** High.
-
-### Show path — Keep IDs stable and do not guess missing-path identity
-
-- **When:** Existing-photo path lookup, 2026-09-06.
-- **The choice:** If an agent types `show abcdef`, treat it as an ID prefix just as before; if the
-  agent means a file named `abcdef`, `show ./abcdef` is explicit. If a requested file has disappeared,
-  return `file_offline` and tell the agent to use the photo ID, which can still show the cached image.
-  Do not select a record by joining an old remembered mount name to a relative path: a different
-  drive may now occupy that mount name. The unbuilt alternative would search historical path
-  spellings and need a separate ambiguity and stale-volume policy.
-- **The gap:** The original `show <id|path>` syntax did not define ID-like filenames or how a missing
-  path identifies a volume. Offline viewing is required, but the existing stable photo ID already
-  supplies that identity.
-- **The reach:** This is a selector rule, not removal of offline viewing. Missing-path lookup could
-  later be expanded with explicit volume identity without changing photo records or previews.
-- **Verdict:** **Sound.** Preserve existing ID behavior and require enough evidence to know which
-  file the caller means instead of silently selecting an unrelated catalog entry.
+- **When:** Outpaint lifecycle planning, 2026-09-06; implemented.
+- **The choice:** Crop a picture, add border A, crop it further, then add border
+  B. Each enabled border retains the visible frame it was authored around.
+  Clearing a later viewing crop reveals that authored canvas — not the content
+  that was excluded before the border existed. Removing B withdraws B's
+  boundary; removing every border lets ordinary develop controls operate on the
+  original again. A later border inherits earlier exclusions rather than merely
+  its input rectangle: if its interior contains an earlier generated strip,
+  removing that strip cannot reveal hidden original pixels while the later
+  boundary survives. Reordering layers changes paint order, never authoring
+  chronology.
+- **The gap:** The plan did not distinguish cropping performed before a border
+  was authored from viewing changes made afterwards.
+- **The reach:** Immutable graph intent encodes those authored frames without a
+  second mutable geometry table and without permanently discarding source
+  pixels. This is what makes generated borders reproducible and removable.
+- **Verdict:** **Needs-user.** Provisional call: retain visible-input boundaries
+  only while their owning borders are enabled. A different product preference
+  must say explicitly what happens to already-authored boundaries; original
+  source data is untouched either way.
 - **Confidence:** Medium.
+- **Owner:** `packages/render/src/graph/{canvas,geometry-intent}.ts`,
+  [layer-state review](assets/outpaint-state-review.md).
 
-### Show path — Select by the existing locator, not image content or implicit import
+### U15 — Moving a border moves the border, not the photograph
 
-- **When:** Existing-photo path lookup, 2026-09-06.
-- **The choice:** An agent inspects a symlink to a linked photograph. Resolve it from the client's
-  working directory, ask the existing volume resolver for the real volume and relative filename,
-  then look up that pair in the catalog's unique file index. If the path belongs to a library-owned
-  copy, use the existing library-local file identity first. An unindexed file returns `not_found`;
-  inspection neither imports it nor searches for a same-content photograph elsewhere. Once selected,
-  the same show pipeline returns the saved edits and current preview as an ID request.
-- **The gap:** The original path form did not specify whether the path selects an indexed location,
-  searches by content, or opens a new image. The reconciliation explicitly forbids implicit import.
-- **The reach:** There is no additional index, persistence field, image hashing pass or response
-  schema. Library-owned copy lookup does not alter how import discovers physical volumes.
-- **Verdict:** **Sound.** The existing locator is the canonical relationship between a file path
-  and a photo; reuse it without another identity or mutation owner.
-- **Confidence:** High.
-
-### Show path — Separate path identity from source-pixel availability
-
-- **When:** Existing-photo path lookup review, 2026-09-06.
-- **The choice:** A mounted path can still identify the catalogued photo even when its image bytes
-  cannot be read, or when the explicit fixture volume mapping declares that known volume offline.
-  Once the locator resolves, ordinary show handles source availability and returns a cached preview
-  with a warning. The alternative is to require source read access before selecting the photo, which
-  would refuse a view that the existing preview contract can satisfy.
-- **The gap:** The initial path documentation used “inaccessible” for both failed path resolution
-  and unreadable image bytes. Review exposed that these are different conditions.
-- **The reach:** File identity lookup does not become a second source-readability check. A path
-  that cannot establish identity still needs an ID; no missing-volume guessing is added.
-- **Verdict:** **Sound.** Keep selection separate from the existing truthful fallback owner.
-- **Confidence:** High.
-
-### SAM canvas — Source exclusion does not invent a second selection rule
-
-- **When:** Source-only canvas consumer, 2026-09-06.
-- **The choice:** After outpainting a cropped photo, the model sees the permitted original image
-  surrounded by black, not the generated border. Its predicted selection may still include black
-  pixels inside that prepared image. Keep the existing clipping to the image boundary rather than
-  additionally erasing every selected pixel outside original-source support. The latter would be
-  a new rule for what the model may select, not merely a correction of its input coordinates.
-- **The gap:** The plan specifies source-only input with authored exclusions but does not specify
-  an additional hard exclusion applied to the model's output mask.
-- **The reach:** Point prompts and returned masks retain original-catalog coordinates and bounds;
-  exterior manual edits remain separate. This does not settle photographic mask-edge refinement.
-- **Verdict:** **Sound.** Correct input geometry while keeping output-selection policy explicit.
+- **When:** Outpaint lifecycle recon, 2026-09-06; implemented.
+- **The choice:** Moving an outpaint layer moves its generated pixels, its edit
+  mask and its extent together. The source area that was excluded when the
+  border was authored stays excluded while its boundary is active; other borders
+  keep their own authored positions. Reordering changes paint order only, and
+  duplicating creates another copy at the same footprint rather than another
+  canvas expansion. Holes produced by the move follow the black-plus-warning
+  policy above rather than triggering generation.
+- **The gap:** Ordinary layer operations were required, but their effect on
+  authored canvas extent was unspecified.
+- **The reach:** Border transforms remain local paint edits, unlike develop
+  rotation which turns the whole picture. A whole-canvas transform would be a
+  separate product operation, never an implicit side effect of moving a layer.
+- **Verdict:** **Needs-user.** Provisional call: preserve the existing meaning of
+  layer transforms as local operations. A different preference must preserve the
+  meaning of already-authored layer placement.
 - **Confidence:** Medium.
+- **Owner:** `packages/render/src/layers/operations.ts`,
+  `packages/render/src/fill/outpaint.ts`.
 
-### SAM grounding — Keep its existing JPEG boundary separate from geometric correctness
+### U16 — Fill edge softness is measured in absolute base pixels, from magnitudes nobody chose
 
-- **When:** Source-only canvas visual review, 2026-09-06.
-- **The choice:** A small colored source island surrounded by black acquires faint colored halos
-  when encoded for text grounding. Keep the existing JPEG transport; verify exact placement and
-  black exclusion before encoding instead of relabeling the lossy result as exact. Changing to
-  lossless input would change the external request and its size, not just the projection code.
-- **The gap:** The geometry requirement does not select a new grounding codec. Its tiny synthetic
-  evidence makes the existing codec's color loss unusually visible.
-- **The reach:** Geometry acceptance is not photographic quality acceptance; future codec work
-  must judge actual grounding quality and request cost separately.
-- **Verdict:** **Sound.** Preserve the established transport without hiding its visible loss.
+- **When:** Fill fitting, slices 12e1–12f; current code.
+- **The choice:** `--fit` chooses how a selection becomes the coverage the fill
+  actually paints: `strict` thresholds at half coverage, `expand=N` thresholds
+  then dilates by N base pixels, `free` keeps fractional selection coverage.
+  `--strength` is a feather — a soft edge — and *not* provider denoising. Its
+  mapping is `feather_px = round(strength × 64)`, applied after that mode's
+  threshold and expansion, in **every** mode: `--fit strict --strength 0.5`
+  really does produce a 32-pixel soft edge. The defaults are likewise invented
+  magnitudes: `--remove` defaults to `strict`; a prompted fill defaults to
+  `expand=24`; `free` with no explicit strength feathers 24 pixels. Because the
+  scale is absolute base pixels rather than a fraction of the long edge (unlike
+  retouch's radius), the same `--strength 0.5` covers a much larger fraction of
+  a small JPEG than of a 33-megapixel RAW. Expansion is separately bounded to
+  4,096 base pixels.
+- **The gap:** The plan named hard/expanded/free fits and the half-coverage
+  threshold; it never chose the feather scale, the two 24-pixel defaults, or
+  whether feathering belongs to one mode.
+- **The reach:** Every judgement about fill edge quality is made against these
+  numbers, and they are recipe parameters — changing them changes the fill
+  recipe hash, so new fills differ while existing ones keep their identity and
+  cached pixels. Exterior protection never depends on them: every sample outside
+  the deterministic effective mask is copied from the base by the strict
+  compositor regardless of fit mode.
+- **Verdict:** **Needs-user.** Provisional call: keep the current constants; this
+  is photographic taste that synthetic fixtures cannot settle. Reverse by
+  bumping the recipe version, which changes new fills without rewriting history.
 - **Confidence:** Medium.
+- **Owner:** `packages/render/src/fill/fit.ts`,
+  `packages/render/src/mask-operations.ts`,
+  `packages/commands/src/handlers/fill.ts`.
 
-### SAM progress — A disconnected listener is not a cancellation request
+### U18 — Extreme reductions are rejected above 4,096 source taps per output pixel
 
-- **When:** Source-only canvas resource correction, 2026-09-06.
-- **The choice:** A full-resolution command can still be preparing pixels when the client expects
-  another response. Send the existing advisory heartbeat throughout initialization, inference and
-  publication, using the same minimum idle window as other long commands. If that listener
-  disconnects, the work may still commit; the caller must inspect state, never automatically replay
-  the mutation. Original warning delivery retains its existing behavior. The alternative would
-  add cancellation semantics that cannot eliminate the disconnect race around a commit anyway.
-- **The gap:** Segmentation had no progress coverage for a command longer than its idle window,
-  while the shared transport already distinguishes lost responses from safe retries.
-- **The reach:** No new timer owner, retry, lowered input resolution or cancellation API is added.
-- **Verdict:** **Sound.** Reuse the existing long-command policy and preserve unknown-outcome safety.
-- **Confidence:** High.
-
-### SAM snapshot — Reject a mask prepared before another shared-handle edit
-
-- **When:** Source-only canvas integration review, 2026-09-06.
-- **The choice:** A caller starts segmentation and another caller edits the same document before
-  inference returns. Capture the initial revision, including the absence of a document, and require
-  it still to match before publishing the mask. The existing initialization owner accepts this
-  optional expectation; a strict initializer that loses to another writer fails rather than adopting
-  that writer's revision. Publication also checks the ensured revision and uses the ordinary final
-  compare-and-swap transaction. Merely loading the newest revision at publication would wrongly
-  attach an old-coordinate mask to a new image.
-- **The gap:** Normal CLI requests are serialized, but dispatch with a supplied library handle
-  can be reentered during an external model callback. The old publication check covered only changes
-  after its final reload, not changes since source preparation.
-- **The reach:** Dry-run and empty grounding still create no graph rows. Existing initialization
-  callers without an expectation retain winner reuse. Rejected work may leave unreferenced prepared
-  artifact bytes, but it activates no stale layer and does not retry.
-- **Verdict:** **Sound.** The initial omission is corrected through the existing revision owner,
-  without another lock or transaction lifecycle.
-- **Confidence:** High.
-
-### Local horizon — Analyze visible contrast in the existing native worker runtime
-
-- **When:** Slice 8e local crop checkpoint, 2026-09-06.
-- **The choice:** When an agent asks to level a photograph, the renderer first reduces the saved
-  photographic output with its existing native resampler, converts those reduced pixels to display
-  RGB, and sends their visible brightness edges to a native background worker. The line search
-  does not run on the daemon's JavaScript event loop. A JavaScript implementation would avoid a
-  new native entry point but could occupy the same thread that answers other commands. Searching
-  linear-light brightness instead would weight scene energy rather than the contrast the visible
-  image presents. The worker receives the real frame's direction mapping so pixel rounding does
-  not become a different physical tilt.
-- **The gap:** The plan delegates a portable bounded line detector, but does not choose its runtime
-  placement or luminance domain. The photographic-versus-markup sampling policy and abstention
-  behavior were already specified and are not new decisions here.
-- **The reach:** Future detector refinements share the image crate's existing async allocation
-  accounting and host/Linux build path. Display-contrast edges may disappear after photographic
-  edits, correctly leaving less evidence under the chosen visible-output policy; this is not a
-  claim of semantic horizon recognition. No dependency, schema, provider or alternate geometry
-  owner is added. Thresholds and the level deadband remain delegated algorithm constants, with
-  failure witnesses in the crop review evidence.
-- **Verdict:** **Sound.** Bounded pixel work stays off the command thread, and the analyzed contrast
-  matches the specified visible photographic output. Synthetic sign/inversion/range tests and
-  public offline/markup/canvas tests establish the current boundary, not general photo aesthetics.
-- **Confidence:** Medium for display-contrast weighting; high for native worker placement.
-
-### Full-source performance — Optimize image work inside the normal development build
-
-- **When:** Full-resolution CLI gate correction, 2026-09-06.
-- **The choice:** Opening an uncached full-resolution RAW made the normal development build
-  spend most of its time in unoptimized native pixel loops. Optimize the Rust image package and
-  its LibRaw decoder package while retaining development assertions, integer-overflow checks,
-  debug information, and the ordinary packaging path. Switching every build to release would
-  also speed this up, but would remove normal development checks and optimize unrelated code.
-- **The gap:** The full-source contract and existing test deadlines were specified; the default
-  native compiler optimization policy was not.
-- **The reach:** All callers of these image packages benefit, rather than one CLI command getting
-  a reduced image or larger deadline. Optimized code can be less straightforward to step through
-  in a debugger even with symbols retained. No schema, dependency, API, or rendering rule changes.
-- **Verdict:** **Sound.** The workspace compiler profile owns this decision; matched complete
-  pixel hashes and unchanged public acceptance tests support it without a special-case runtime path.
-- **Confidence:** High. The [performance audit](assets/full-source-performance.md) records the
-  experiment and its machine-specific limits.
-
-### Native runtime acquisition — Cargo owns a target-local source build
-
-- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
-- **The choice:** A developer runs Cargo directly, or a release job calls it through Bun.
-  Both reach the same pinned source-and-patch recipe; the Rust dependency cannot download
-  another runtime. Docker prepares that same cache before copying ordinary application
-  sources. A new Cargo target directory pays for a cold C++ build; later builds reuse its
-  archive. Sharing one cache across unrelated worktrees would save cold builds but require
-  another concurrency and cleanup owner, so the parent explicitly selected Cargo's existing
-  target-directory lock instead.
-- **The gap:** The successful experiment selected a private scratch archive explicitly. No
-  published patched archive or exact served-archive builder provenance was available, while
-  direct Cargo, Docker and release builds all needed the same selection behavior.
-- **The reach:** Developers now need Python, CMake, Ninja and the documented native compiler.
-  The preparer installs nothing and uploads nothing. This changes build cost and prerequisites,
-  not the model files, CPU feature choices or public image API.
-- **Verdict:** **Sound with acceptance gates.** One build owner prevents silent platform
-  divergence. Cold-build cost and actual target acceptance must remain visible.
-- **Confidence:** Medium for the build-time cost tradeoff; high for shared ownership.
-
-### Native runtime acquisition — Record the actual toolchain, do not imply binary equivalence
-
-- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
-- **The choice:** Two machines use the same pinned source but different Apple SDKs or GCC
-  revisions. Their compiler/tool information and build flags select different cache entries;
-  each output records its own hash. Neither output is called byte-equivalent to the vendor's
-  archive. Native hosts build their own target; cross-compilation is not guessed from a name.
-- **The gap:** The source and patch recipe was established, but the complete vendor build
-  environment and supported packaged Linux ABI floor were not.
-- **The reach:** Compiler/SDK changes require rebuilding, and Linux ARM64 success does not
-  close macOS, x64, old-CPU or packaged-linkage acceptance. The existing x64 feature floor
-  remains unchanged. No untested platform silently keeps the unpatched archive.
-- **Verdict:** **Sound.** Reproducible source inputs and observed toolchain identity are useful
-  evidence without pretending that they define a hermetic, bit-identical build.
-- **Confidence:** High for the evidence boundary; medium for native-only build ergonomics.
-
-### Native runtime acquisition — Damaged cache entries fail explicitly
-
-- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
-- **The choice:** A completed archive no longer matches its recorded hash, or a source patch
-  was interrupted. The build reports the exact disposable cache entry to remove; it does not
-  reset project sources or quietly download another implementation. An interrupted compilation
-  with intact prepared sources resumes through Ninja, the existing incremental build tool.
-- **The gap:** The plan required cache-safe acquisition but did not prescribe recovery from
-  partial patch application or damaged completed output.
-- **The reach:** Rare acquisition damage needs explicit build-cache cleanup. There is no
-  background janitor, stale-process detector, or runtime command that mutates this build state.
-- **Verdict:** **Sound with limits.** Failure remains visible and scoped; ordinary warm builds
-  are idempotent, while destructive cleanup is not inferred.
+- **When:** Slice 10b1 independent review.
+- **The choice:** A reducing transform widens its Lanczos sampling footprint to
+  avoid aliasing, which means a very small scale factor makes each output pixel
+  read from an enormous neighbourhood. The transform rejects any request whose
+  two-dimensional kernel would exceed 4,096 source taps per output sample, so a
+  tiny positive scale cannot occupy a native worker effectively forever. The
+  caller receives a validation error rather than a silent lower-quality fallback.
+- **The gap:** The plan requires positive transform scales and scaled Lanczos
+  support but bounds neither the minimum useful scale nor the kernel work, and
+  defines no multistage reduction strategy.
+- **The reach:** Routine reductions through roughly one-eighth scale remain
+  supported by the direct kernel. More extreme reductions must be expressed as a
+  bounded resize followed by a transform, or rejected.
+- **Verdict:** **Needs-user.** Provisional call: keep the cap. Replace it with a
+  measured limit, or with a multistage affine path, if real layer workflows need
+  smaller direct scales.
 - **Confidence:** Medium.
+- **Owner:** `crates/photoctl-image/src/resample.rs`.
 
-### Native image packaging — The image addon, not a Rust SDK, owns final linkage
+### U19 — Text grounding accepts at most 100 instances
 
-- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
-- **The choice:** A release builds the Node image addon or Cargo builds its native tests.
-  Rust first supplies the image code and its Rust dependencies; the final linker then
-  resolves their native ORT calls from the pinned archive, followed by its system C++
-  dependencies. Loading every archive member forcibly, or calling an otherwise unnecessary
-  ORT function from image code, would make application behavior compensate for build order.
-  The compiler support libraries also follow ORT: the real Linux test link demonstrated
-  that GCC's outlined ARM atomics require its static support archive, not only libgcc_s.
-  The package instead produces only the Node dynamic library, not an unused Rust library
-  whose future callers would need a different transitive-linking contract.
-- **The gap:** The plan specified a Node native addon and one runtime acquisition owner,
-  but did not prescribe how that owner participates in Rust's final native link.
-- **The reach:** Existing Node APIs and native unit tests retain their contract. A future
-  public Rust SDK would require an explicit dependency/linkage design; this package does
-  not silently promise one. There is no database or image-protocol change.
-- **Verdict:** **Sound.** Link ordering belongs to the build owner, without broadening
-  the selected native objects or adding runtime calls solely to influence the linker.
-- **Confidence:** Medium for narrowing the crate's build outputs; high for final-link ownership.
+- **When:** Slice 11b keyless command checkpoint.
+- **The choice:** `segment --text "person"` asks a structured model how many
+  matching boxes exist, and the model controls that number. The adapter accepts
+  at most 100, so one crowded or malformed answer cannot launch unlimited local
+  decoder work or create an unbounded layer snapshot. A legitimately empty
+  answer remains a successful no-op.
+- **The gap:** The plan required every returned instance to become a layer but
+  supplied no maximum.
+- **The reach:** Text-segmentation latency, the maximum layers one command can
+  add, and provider response validation all inherit this bound. Changing the one
+  adapter constant changes both the JSON request schema and the response
+  validator together.
+- **Verdict:** **Needs-user.** Provisional call: keep 100, aligned with the
+  existing graph page bounds. Tune it after real crowded-frame use.
+- **Confidence:** Medium until exercised on representative group photographs.
+- **Owner:** `packages/providers/src/adapters/structured.ts`.
 
-### Native image packaging — One shared macOS deployment floor
+### U20 — SAM's letterbox, threshold and thread policy are implementer conventions
 
-- **When:** Slice 11 default runtime acquisition pass, 2026-09-06.
-- **The choice:** A developer compiles on a newer Mac to distribute an image addon to an
-  older Mac. The workspace Cargo configuration supplies one minimum macOS version to Rust,
-  LibRaw and ORT; an explicit build environment can override it. Without that shared value,
-  one C++ dependency could quietly target the builder's OS while the rest targeted an older
-  OS. A standalone Apple runtime preparation must supply its target explicitly, and the
-  packaged addon is checked against the same policy after installation outside the checkout.
-- **The gap:** LibRaw had an explicit image-addon floor, but the new runtime source build
-  did not yet consume a shared platform policy.
-- **The reach:** Changing the floor affects all native image components together and changes
-  the runtime cache identity. It does not declare the CLI's Node or Swift-helper OS support;
-  those are separate runtime requirements.
-- **Verdict:** **Sound.** A release's builder version cannot implicitly choose the image
-  addon's deployment floor, and explicit overrides remain visible in build provenance.
-- **Confidence:** High.
-### Outpaint refresh — Keep authored predecessors, use their current edits
+- **When:** Slice 11a coordinate/runtime implementation.
+- **The choice:** To segment, the photo is scaled so its longer edge is 1,024
+  pixels, the shorter edge is rounded to the nearest pixel, and odd padding is
+  split with the extra pixel on the bottom or right. Decoder samples map back
+  through that exact transform, and a bilinear logit value **strictly greater
+  than zero** becomes mask value 1 while zero and negative values become 0 —
+  there is no tunable threshold. The CPU sessions use one intra-op and one
+  inter-op thread so concurrent daemon work stays bounded, and the encoder
+  feature cache deduplicates work by `(photo id, render tier)` while delegating
+  eviction to the existing cache owner.
+- **The gap:** The spec fixed the input size, interpolation, threshold concept
+  and cache identity, but not padding alignment, rounding, equality at the
+  threshold, or runtime thread counts.
+- **The reach:** Prompt coordinates, edge pixels, repeatability and daemon CPU
+  contention inherit these conventions; changing the threshold or the letterbox
+  changes mask identity for every future selection.
+- **Verdict:** **Needs-user.** Provisional call: keep them. Validate edge quality
+  and timing against the real weights before treating them as release-tuned.
+- **Confidence:** Medium.
+- **Owner:** `packages/render/src/sam2-frame.ts`,
+  `crates/photoctl-image/src/sam2.rs`.
+
+### U22 — Outpaint refresh replays the predecessors captured at authoring time
 
 - **When:** 12f3 preparation, 2026-09-06.
-- **The choice:** After a crop and border A, author border B, change exposure, and add later local
-  paint. Refresh B uses current exposure and the currently enabled versions of the layers captured
-  before B, in their current order. Removing A removes its contribution. Moving later paint below B
-  does not admit that paint into B's regeneration. B's authored frames and exterior-only ring remain
-  fixed. A density-only retry instead keeps the pinned original generation.
-- **The gap:** Ordinary fill refresh adopts current source edits but does not define membership for
-  a generation input containing multiple earlier photographic layers. A current-z-prefix policy
-  would admit later paint after reorder and could feed descendants back into the border.
-- **The reach:** Membership is explicit immutable request intent, while predecessor appearance is
-  read from current state on explicit refresh. The policy can be changed before authoring; existing
-  requests must not silently change meaning. No new expansion accompanies refresh.
-- **Verdict:** Needs-user. Provisionally preserve captured membership rather than current z-prefix;
-  the parent will surface this choice while implementation proceeds.
+- **The choice:** After a crop and border A, author border B, change exposure,
+  then add more local paint. Refreshing B uses today's exposure and the
+  currently enabled versions of the layers that existed when B was authored, in
+  their current order. Removing A removes A's contribution. Moving the later
+  paint below B does *not* admit that paint into B's regeneration. B's authored
+  frames and exterior-only ring stay fixed, and a density-only retry keeps the
+  pinned original generation instead. The rejected alternative — "everything
+  currently below B in the stack" — would admit later paint after a reorder and
+  could feed B's own descendants back into it.
+- **The gap:** Ordinary fill refresh adopts current source edits, but never
+  defined membership for a generation input containing several earlier
+  photographic layers.
+- **The reach:** Membership is immutable request intent; predecessor *appearance*
+  is read from current state on explicit refresh. The policy can change before
+  new borders are authored, but existing requests must not silently change
+  meaning. Refresh never adds new expansion.
+- **Verdict:** **Needs-user.** Provisional call: preserve captured membership
+  rather than the current stack prefix.
 - **Confidence:** Medium.
+- **Owner:** `packages/render/src/fill/outpaint.ts`,
+  `packages/render/src/full-frame-refresh.ts`.
 
-### Outpaint coverage — One exterior owner at independent native density
+### U24 — The white-balance eyedropper reads the editable base, beneath user grading
 
-- **When:** Native-density clean cutover, 2026-09-06.
-- **The choice:** Generated/upscaled RGB is physically placed at its native raster; the exterior
-  layer mask alone owns coverage. Its authored raster need not match richer paid content.
-- **The gap:** The earlier intrinsic masked composite retained a hidden historical interior and
-  resampled purchased detail back to authored size, duplicating coverage without user benefit.
-- **The reach:** The shared descriptor consumes content and mask roots; canvas projection reads
-  each frame independently. Ordinary masked fills retain their existing composite contract.
-  Border `composite.node` identifies the final photographic output. The redundant recipe and
-  fresh-schema allowance are removed; no migration or compatibility reader is introduced.
-- **Verdict:** Parent-approved clean cut. Public pixel tests distinguish native detail from size.
-- **Confidence:** High.
-
-### Outpaint refresh preparation — Retain immutable drafts without activating them
-
-- **When:** 12f3 refresh/retry follow-up, 2026-09-06.
-- **The choice:** Refresh can prepare a current predecessor image from deterministic graph drafts,
-  store those immutable nodes without an active revision, and evaluate through the existing cache.
-  If generation then fails, the active photo and extent remain unchanged but preparation persists.
-- **The gap:** The evaluator reads persisted nodes; a separate staged evaluator would duplicate
-  node resolution and introduce another cache contract. The current revision store already owns
-  draft canonicalization, so extract that owner rather than create a parallel evaluator.
-- **The reach:** Failed attempts can retain extra nodes and artifacts. With GC disabled, repeated
-  distinct preparations consume storage; identical preparations retain deterministic identity.
-  First-generation document creation remains atomic with successful activation. No temporary
-  active layer or revision is permitted. Captured support stages must stay with the shared planner.
-- **Verdict:** Sound. One deterministic publication owner preserves reusable preparation without
-  exposing an intermediate edit; failed attempts and concurrent source edits retain the active snapshot.
-- **Confidence:** High.
-
-### Outpaint retry — Restore authored density without another generation
-
-- **When:** 12f3 refresh/retry follow-up, 2026-09-06.
-- **The choice:** A border's image was generated successfully but its upscaler failed. After the
-  user moves the border and edits exposure, `fill --layer` with the same generation intent keeps
-  that purchased image and retries density for its current physical placement. Placement and the outer
-  exterior mask stay unchanged. A different prompt is refused rather than silently buying a new
-  image; explicit refresh remains the operation that regenerates from current context.
-- **The gap:** Ordinary fill can replace generation on a changed request, but applying that fallback
-  to a border would conflate its permanent expansion intent with a new canvas operation.
-- **The reach:** The existing immediate-branch lineage owner may look through outpaint placement
-  descendants, because those move the already authored border and do not alter its generation input.
-  Ordinary fill retains its existing stricter ancestry rule. Transform, explicit retry and refresh
-  share the required density calculation. Pure movement cannot silently retry a failed paid step.
-- **Verdict:** Sound. Retrying a failed processing step does not authorize replaying generation or
-  expanding the document twice.
-- **Confidence:** High.
-
-### Outpaint refreshed border — Do not retain a second historical interior
-
-- **When:** 12f3 refresh/retry follow-up, 2026-09-06.
-- **The choice:** Refresh replaces the paid RGB while the sole exterior mask and physical placement
-  remain authored. The live photographic output beneath supplies source and earlier layers.
-- **The gap:** The initial implementation kept a hidden historical interior to satisfy the ordinary
-  fill descriptor. The native-density cutover removes that unnecessary representation instead.
-- **The reach:** The shared branch rebuild preserves the same exterior mask and placement for
-  retry and refresh. A future operation that permits editing a border's interior mask would need
-  to revisit this invariant; current retry rejects fitting and feathering changes.
-- **Verdict:** Sound. Border pixels remain separate from current editable interior pixels; no
-  flattened historical interior is substituted into the final photographic output.
+- **When:** Slice 08g eyedropper pass, 2026-09-06.
+- **The choice:** Clicking a gray patch samples the photographic input that sits
+  *beneath* the editable develop adjustments. The camera's as-shot processing has
+  already happened, and existing purchased processing beneath develop is
+  retained, but a tint the user added, a generated layer, or a red annotation
+  cannot change which correction the same click resolves — so repeating a click
+  does not compound the correction. Sampling the displayed composite instead
+  would let annotations or prior grading change the inferred colour of the light.
+- **The gap:** The original eyedropper requirement did not name the sampling
+  stage. The owning slice retains this provisional base-sampling policy; it is
+  not a new closeout approval requirement.
+- **The reach:** Resolved values use the ordinary develop shape and undo. A later
+  composite policy changes the sampling stage; it does not add a second stored
+  white-balance model. The response names which stage it sampled.
+- **Verdict:** **Needs-user.** Provisional call: keep the pre-develop base
+  policy; it is reversible at the sampling owner.
 - **Confidence:** Medium.
+- **Owner:** `packages/render/src/develop/`.
 
-### Outpaint core — Share paid preparation without early document activation
+### U26 — Actual public model and package publication remains unverified
 
-- **When:** 12f3 core checkpoint, 2026-09-06.
-- **The choice:** An untouched source's deterministic graph is published and evaluated through the
-  normal source execution owner without activating a document. An edited photo instead samples its
-  immutable markup-free photographic output, including earlier photographic layers. Authored frames
-  and predecessor identities distinguish that snapshot from expanded provider preprocessing.
-- **The gap:** Eager document or temporary-layer creation would mutate a failed/no-op request;
-  a second generation pipeline would drift from fill's capping, adapter and optional density rules.
-- **The reach:** Both paths consume shared paid preparation and canvas activation. The already
-  published exterior mask is reused rather than allocated/encoded twice; caller-specific limits
-  supplement the render growth owner. Post-generation publication failure finalizes the retained
-  paid attempt without losing the captured original. This does not prove full-resolution resource
-  acceptance. Retry, refresh and automatic transform-density maintenance use the same fill lineage;
-  ordinary border placement remains available through its existing owner.
-- **Verdict:** Core correctness checkpoint only; the existing release resource gate and complete
-  authored-layer lifecycle journey remain required before feature completion.
-- **Confidence:** High for the tested source/activation contract; medium for full-scale resource
-  behavior.
+- **When:** Slice 11a model manifest; slice 14 release workflow; reconciled
+  2026-09-08.
+- **The choice:** The model manifest pins the upstream SAM 2.1 revision, the
+  exporter-owned opsets and per-file SHA-256 values, and now reads
+  `status:"ready"` with real hashes. Earlier it read `awaiting_export` with null
+  hashes, and every consumer — fetch, the Docker models target, `doctor
+  --fetch-models` — refused that state rather than inventing digests or a
+  release URL; that refusal machinery is retained but dormant. Publication
+  itself is automated by pushing a version tag, which builds packages, assembles
+  a GitHub release with the model files and hashes, re-downloads them from the
+  public URL to verify, then publishes to npm. Actual public publication remains
+  unverified, and a tag must never be pushed as a diagnostic experiment.
+- **The gap:** The slice named a David-hosted release; only the user can
+  authorize the publication that would prove it works end to end.
+- **The reach:** Until a real release runs, "the release pipeline works" is a
+  configuration reading, not an executed fact. `doctor --fetch-models` defaults
+  to the installed version's release URL — never a moving "latest" — with
+  `models_base_url` as an explicit mirror override.
+- **Verdict:** **Needs-user.** Provisional call: leave publication unexercised
+  and unclaimed. Only the user can decide to cut a real release.
+- **Confidence:** High in the representation; the outstanding item is authority,
+  not design.
+- **Owner:** `fixtures/models.json`, `.github/workflows/publish.yml`,
+  `scripts/{fetch-models.mjs,verify-release-models.mjs}`,
+  [release ownership](slices/14-gold-exam-and-release.md#model-distribution).
 
-### Slice 08g — A neutral click reads the editable base before user grading
+---
 
-- **When:** Eyedropper pass, 2026-09-06.
-- **The choice:** Clicking a gray patch samples the photographic input beneath the editable
-  develop adjustments. Camera as-shot processing has already happened. A user-added tint,
-  generated layer or red annotation cannot change which correction the same click resolves.
-  Existing purchased processing beneath develop is retained. Sampling the displayed composite
-  instead would let annotations or prior grading change the inferred light color.
-- **The gap:** The original eyedropper requirement did not name the sampling stage. David's
-  base-versus-composite question remains unanswered; the parent approved this provisional call.
-- **The reach:** Clients can repeat a click without compounding a correction; resolved values
-  use the ordinary develop shape and undo. A later composite policy would change sampling,
-  not add another stored white-balance model.
-- **Verdict:** **Needs-user.** Recommend the implemented pre-develop base policy; it is reversible
-  at the sampling owner and explicitly named in the response.
-- **Confidence:** Medium.
+## Sound — the architecture now owned
 
-### Slice 08g — Limited correction stays useful and exposes what remains colored
+These are settled. They are listed so the user knows what they own, because
+future work inherits every one of them as a given.
 
-- **When:** Eyedropper pass, 2026-09-06.
-- **The choice:** A severely blue patch may need more correction than the current temperature
-  slider permits. Keep the existing bounds, return the best bounded correction along their edges,
-  and report both the limit flag and a relative RGB neutrality residual. The alternative would
-  reject all such clicks or quietly widen the control model. The same native forward grade evaluates
-  the result; its matrix inverse supplies attainable neutral targets without a second color formula.
-- **The gap:** The initial requirement did not settle out-of-range samples. The parent explicitly
-  approved a limited fit with visible residual instead of refusal.
-- **The reach:** Manual controls, layers and undo inherit unchanged stored values and ranges.
-  The residual is a numerical channel mismatch, not a photographic gray-card confidence score.
-- **Verdict:** **Sound.** Useful bounded work is honest about its remaining error.
-- **Confidence:** High.
+### S93 — Five operating numbers nobody chose, one of them not settable
 
-### Slice 08g — Offline sampling reports available pixel centers instead of inventing detail
+- **When:** Slices 01a/01b/04, carried forward unchanged.
+- **The choice:** Five values bound work and latency and were picked by the
+  implementer. Import prepares four files concurrently; `list` pages 64 photos
+  at a time; an active import may go ten minutes without output before the
+  daemon client declares it hung (ordinary commands use a 31-second idle cap);
+  the daemon exits after fifteen idle minutes (`daemon_idle_ms=900000`, seeded
+  at `init`); and when photoctl must *render* a JPEG — a rotated image, or the
+  pinned 1616-pixel import preview — it encodes at quality 88. None of them
+  changes ordering, stored results or pixels except the last, which trades file
+  size against visible loss. Note that `daemon_idle_ms` is stored per library
+  but is **not** accepted by `settings set|reset`: changing it today is a code
+  edit, not a configuration change. Delivery quality is separately owned by the
+  slice-05 export presets, so 88 now governs only preview and fallback encodes.
+- **The gap:** The slices delegated scan concurrency, page size, idle ceilings
+  and encoder quality without naming values, and the planning map called fifteen
+  minutes a proposal rather than a decision.
+- **The reach:** Peak import memory, filesystem parallelism, first-row latency,
+  hung-daemon detection, cold-start cadence and offline preview appearance all
+  inherit these numbers.
+- **Verdict:** **Sound as delegated operating defaults.** Keep the current values
+  and tune from concrete poor behavior, not speculative performance work or a
+  new camera/platform gate. The user delegated ordinary tuning and released the
+  camera; these values do not require fresh approval. Exposing daemon idle as a
+  setting would be a separate public-interface choice.
+- **Confidence:** Low for the exact operating numbers; this does not require new drive access.
+- **Owner:** `packages/commands/src/handlers/import.ts`,
+  `packages/commands/src/daemon-client.ts`, `packages/library/src/open.ts`,
+  `packages/render/src/preview.ts`.
 
-- **When:** Eyedropper pass, 2026-09-06.
-- **The choice:** An offline click maps the same oriented base position into the available
-  preview and selects its containing pixel. A rectangle averages actual centers within its
-  half-open bounds. A tiny rectangle with no available centers fails instead of silently growing
-  into a different patch. The result reports its pixel count, actual raster and scene-linear mean.
-  Sampling reads verified canonical bytes in yielding batches without another full-frame float copy.
-- **The gap:** Point footprint, fractional patch edges and reduced-resolution behavior were not specified.
-- **The reach:** Clients can distinguish native and overview measurements; neighboring patches do
-  not double-count boundary centers. Another footprint policy would require an explicit API decision.
-- **Verdict:** **Sound.** It preserves the existing coordinate/source owners and avoids false precision.
-- **Confidence:** Medium.
-### Paired import — Failed groups remain visible without starving their neighbors
+### S1 — Gateway transport retries throttling only, briefly, and classifies every other failure
 
-- **When:** Paired-originals checkpoint, 2026-09-06.
-- **The choice:** A folder contains an ambiguous RAW/JPEG group and an unrelated valid photo.
-  Import the valid photo, report why the group was not admitted, and return the existing partial
-  failure result. That result uses a nonzero exit status so an agent notices the incomplete work.
-  Warning-only success would make a folder with missing photos look fully processed; aborting
-  the whole roster would prevent safe independent work.
-  A shared preview-cache directory that cannot be created is different: report the
-  destination error before admitting photos, rather than repeating it for each one.
-  An unsupported-only scan skips directory preparation because it has no photos to admit.
-- **The gap:** The pairing contract required independent group handling but did not choose its
-  terminal error envelope.
-- **The reach:** Counts describe logical photos, while conflict details describe the affected
-  source paths. Explicit separate import needs no pairing decision and bypasses this ambiguity.
-- **Verdict:** **Sound.** It follows the existing batch failure convention without inventing retries.
-- **Confidence:** High.
+- **When:** Slice 09a provider transport.
+- **The choice:** The gateway answers HTTP 429 (rate limited). photoctl makes at
+  most three attempts in total, waiting 100 then 200 milliseconds, or honouring a
+  valid `Retry-After` value capped at two seconds; each attempt aborts at 30
+  seconds. Nothing else is retried, because the contract does not prove any other
+  failure is safe to repeat: 401/403/404 map to a shared
+  credential/model/endpoint configuration error, while 400 and every other status
+  plus transport failures map to a temporary per-request provider failure — so a
+  single malformed image can fail without invalidating the rest of a batch. An
+  image returned by URL gets the same 30-second ceiling and a 64 MiB streaming
+  cap, and the fake gateway separately rejects request bodies above 32 MiB so a
+  malformed fixture cannot consume unbounded memory.
+- **The gap:** The slice delegated the retry policy and required only that
+  rate-limit retries be bounded.
+- **The reach:** All four OpenAI-compatible routes share these ceilings and
+  attempt provenance. A real deployment under sustained throttling will fail
+  sooner than a vendor SDK would.
+- **Verdict:** **Sound.** Brief throttling gets a chance to recover without
+  hiding prolonged unavailability or repeating unspecified failures.
+- **Confidence:** Low to medium — no live gateway has ever exercised these
+  numbers, and real error bodies may justify different ceilings or classification.
+- **Owner:** `packages/providers/src/gateway.ts`,
+  `packages/providers/src/adapters/image.ts`.
 
-### Paired import — An established pair is not a collection of alternate JPEGs
+### S2 — Two command seams still classify domain errors by their message text
 
-- **When:** Paired-originals review, 2026-09-06.
-- **The choice:** A RAW already has its camera JPEG. Importing another folder containing the same
-  RAW bytes and a different JPEG must not append a third original or replace the old JPEG.
-  There is at most one original of each kind per photo. Another location of the same JPEG remains
-  valid because it is another copy of one original, not a new member. An occupied path whose bytes
-  changed also cannot be silently transferred to a new original.
-- **The gap:** Late attachment needed an explicit multiplicity boundary; generic original rows
-  alone would also permit several alternative JPEG renditions.
-- **The reach:** Explicit camera-JPEG access remains unambiguous. A future alternate-rendition
-  product would need an explicit selection and ownership contract, not accidental extra rows.
-- **Verdict:** **Sound.** The fresh schema and importer enforce the user's one-RAW/one-JPEG model.
-- **Confidence:** High.
+- **When:** Slice 13d retouch and slice 12 fill move; current code.
+- **The choice:** A domain package raises a plain error and the command handler
+  decides the public error code by inspecting the message: retouch maps any
+  message starting with `Retouch ` to `usage` (exit 2) and anything else to
+  `catalog_unreadable` (exit 65); `fill --move` maps a message containing `not
+  present` to `not_found` and the exact message `fill --move requires a subject
+  layer` to `usage`. Both mappings are correct today — every message a domain
+  owner actually raises lands in the intended class. The fragility is that the
+  contract lives in prose: rewording an error message, which any future agent
+  would treat as cosmetic, moves a user error into a different exit class without
+  a type error anywhere.
+- **The gap:** The closed `ErrorCode` union and its exit mapping are owned by
+  `packages/protocol`; nothing said how a domain package signals *which* code it
+  means when it is not already raising a typed error.
+- **The reach:** This is a pattern later verbs will imitate, and it means the
+  exit-class contract cannot be tested from the domain package alone. The
+  direction that removes the fragility is for domain packages to raise typed
+  errors (a `PhotoctlError` or a named class the handler maps by type) so that no
+  public code is derived from message text.
+- **Verdict:** **Sound today** — the mapping is correct at both seams, including
+  the exact-match branch for a non-subject move target — with the message
+  coupling recorded as a maintenance weakness rather than a current defect.
+- **Confidence:** Low to medium: high that today's behavior is right, low that a
+  reader would expect prose to be load-bearing.
+- **Owner:** `packages/commands/src/handlers/{retouch,fill}.ts`,
+  `packages/render/src/{retouch,layers/operations}.ts`.
 
-### Paired inspection — Online means the primary is available
+### S3 — Photo identity is a sampled key, promoted to a full hash only when it collides
 
-- **When:** Paired-originals presentation checkpoint, 2026-09-06.
-- **The choice:** The RAW disappears while its JPEG is still reachable. The photo remains one
-  entry, displaying the RAW filename and an offline primary state; its member list separately says
-  that the JPEG is online. Calling the whole photo online merely because a JPEG exists would imply
-  that ordinary RAW-led processing still has its original source. Hiding the JPEG's availability
-  would discard useful information.
-- **The gap:** The former single online flag described equivalent file locations, not different
-  originals with different editing roles.
-- **The reach:** List, next and the workbench use the same primary/member distinction. Normal
-  pinned-preview fallback remains available with its existing warning and is not JPEG substitution.
-- **Verdict:** **Sound.** Availability now describes the source the ordinary command actually uses.
-- **Confidence:** High.
+- **When:** Slice 01b identity, slice 04 collision audit, and the post-02/07a
+  wavefront audit.
+- **The choice:** Import opens each file once and reads a fixed head-and-tail
+  sample plus size and modification time from that single descriptor, checking
+  size and mtime again before returning — so a file still being copied fails
+  rather than combining the beginning of one state with the end of another. That
+  sample is the content key. When a second file shares the key, both files are
+  fully hashed, the hashes are stored on the colliding photos, and only that
+  bucket pays for cryptographic equality; if the existing file is offline and has
+  never been promoted, import refuses to attach the newcomer rather than guessing.
+  A second path with the same sample reuses an existing photo only when the old
+  path is gone on the *same confirmed-mounted* volume — the explicit rename case;
+  an offline or unknown old volume refuses. At the exact same locator, an
+  unchanged stored mtime is idempotent while a changed mtime refuses an
+  unpromoted match, since the middle bytes may differ. Touching a file's
+  timestamp never changes identity: export re-derives the content key and a
+  merely touched original still supplies its full-resolution pixels instead of
+  being downgraded to a cached preview. Promoting a sampled identity to a
+  verified full hash changes no pixels, so cached views stay valid.
+- **The gap:** The plan required a full hash "on collision" without saying where
+  it is stored or what happens when the old source is unreadable, and the rename
+  contract and the collision-safety rule pulled in opposite directions.
+- **The reach:** Rescans, reconnects, XMP targeting, disk removal and export all
+  consult this one owner. Large-drive import keeps its sampled-hash speed while
+  database identity stays collision-safe and repeatable.
+- **Verdict:** **Sound.** The inference is no broader than the explicit
+  relocation contract, and every other uncertainty fails closed.
+- **Confidence:** Medium — a same-volume delete followed by an adversarial
+  sampled collision is indistinguishable without an always-full-hash policy.
+- **Owner:** `packages/library/src/{identity,locators}.ts`,
+  `packages/commands/src/image-source.ts`.
 
-### Camera JPEG — Reuse the renderer's cache invalidation owner
+### S4 — Library-owned copies have a catalog-local volume identity and an on-disk layout
 
-- **When:** Paired-originals source review, 2026-09-06.
-- **The choice:** A native color or sampling correction changes rendered pixels. Both document
-  views and camera-JPEG views must stop reusing images produced by the old renderer. The JPEG
-  rendition hashes its original identity and geometry through the same renderer-revision owner
-  as document hashes. A separate JPEG version would require somebody to remember two updates.
-- **The gap:** A source-specific cache key distinguished JPEG from RAW but did not itself account
-  for later changes to pixel processing.
-- **The reach:** No synthetic render node, document mutation or second version setting is needed.
-  Promoting a sampled identity to a verified full hash does not change the original's pixels and
-  therefore does not invalidate its views.
-- **Verdict:** **Sound.** One pixel-semantics revision invalidates both families; a controlled
-  revision-change probe changed both hashes and restored both exactly afterward.
-- **Confidence:** High.
+- **When:** Slice 04 copy/import integration.
+- **The choice:** `import --copy` stores originals at
+  `<library>/originals/<capture-date|undated>/<name>` under the reserved volume
+  UUID `photoctl-library`, resolved relative to the current library root — so
+  moving the whole library keeps every locator valid and no test volume mapping
+  is needed, while macOS still resolves the physical mount before choosing a
+  Trash. If the preferred name is taken, the copy gets a `_<last-8-of-original-id>`
+  suffix. If that destination is *also* occupied, photoctl compares the existing
+  file's identity: the sampled content key, plus the full hash when one is
+  stored. A match reuses the file; a mismatch fails that item with
+  `volume_readonly` rather than overwriting. If the source already sits in the
+  very directory the copy would target, no copy is made and the file is not
+  duplicated.
+- **The gap:** Library files have no hardware UUID, and the plan named neither
+  the on-disk layout, the collision suffix, nor the already-in-place case.
+- **The reach:** Copy import, offline source removal, display, export and
+  volume-aware Trash share one locator rule. The date/name/suffix scheme is now
+  a de facto storage contract that users will see and scripts may depend on.
+  Note what the occupied-destination check is *not*: it is sampled identity plus
+  a stored full hash, never an unconditional byte-for-byte comparison of the
+  whole file.
+- **Verdict:** **Sound.** The identity is stable where it must be and
+  deliberately local where a global UUID would be misleading.
+- **Confidence:** Medium — the layout itself was never surfaced for approval.
+- **Owner:** `packages/commands/src/handlers/import.ts`,
+  `packages/library/src/locators.ts`.
 
-### Camera JPEG — Offline derived views do not expand this checkpoint's source contract
+### S6 — Batch envelope codes depend on the set of outcomes, never on argument order
 
-- **When:** Paired-originals scope review, 2026-09-06.
-- **The choice:** A user has viewed the camera JPEG, then that original becomes unavailable.
-  Explicit camera-JPEG show/export reports it unavailable even if a prior derived view remains
-  cached. Ordinary RAW viewing may still use its separately pinned preview. Serving the cached
-  JPEG with a warning could be useful, but would need a defined JPEG cache-availability ladder;
-  substituting the RAW preview would be incorrect.
-- **The gap:** The contract required honest unavailability but did not promise offline camera-JPEG
-  delivery or pinning of its derived views.
-- **The reach:** This is a documented limitation, not general offline JPEG support. A future
-  extension must preserve original-specific cache provenance and cannot reuse the RAW fallback.
-- **Verdict:** **Sound.** Keep the requested source boundary explicit without widening this pass.
-- **Confidence:** Medium; cached offline JPEG viewing remains a potentially useful follow-up.
+- **When:** Slice 01b export review; shared batch owner from slice 06.
+- **The choice:** A batch verb resolves each target, encloses each one's own
+  work, and aggregates: if every item fails with the same code, the envelope
+  keeps that code; if the codes differ, or successes and failures are mixed, the
+  aggregate code is `partial` while every item retains its own typed result.
+  Reversing two IDs therefore never changes the process exit or an agent's retry
+  decision. The shared owner also fixes classification: an invalid requested
+  value is a per-item `usage`, malformed stored graph state is
+  `catalog_unreadable`, and a concurrent revision change is retryable
+  `library_locked` with `reason:"revision_conflict"`. The rejected alternative
+  took the first failed item's code.
+- **The gap:** A6 defined mixed success as partial but not the all-failed,
+  heterogeneous case, and the batch contract named no existing codes for graph
+  validation or a revision race.
+- **The reach:** Every future batch verb inherits one permutation-invariant
+  aggregation rule and one envelope implementation instead of another near-copy.
+  Multi-photo scripts keep ordered outcomes and can retry a raced photo without
+  replaying successful items.
+- **Verdict:** **Sound.** Aggregate meaning follows outcomes, and the
+  classifications keep the closed protocol intact while separating corrupt
+  durable state from transient write contention.
+- **Confidence:** Medium — a dedicated revision-conflict code would be clearer if
+  the public error vocabulary is ever widened.
+- **Owner:** `packages/commands/src/batch.ts`.
 
-### Paired sidecars — Treat case-only target differences as possible aliases
+### S8 — A paired photo has at most one original of each kind
+
+- **When:** Paired-originals checkpoint and reviews, 2026-09-06.
+- **The choice:** A camera writes a RAW and a JPEG for the same exposure; same
+  folder, same stem, they become one logical photo with two originals. Importing
+  another folder containing the same RAW bytes and a *different* JPEG adds
+  neither a third original nor a replacement — another location of the same JPEG
+  is just another copy of one original. Pairing is *vetoed*, never driven, by
+  capture facts: differing capture time or camera make/model rejects the group,
+  missing values prove nothing, and differing resolution or orientation are
+  expected (a real retained pair has a reduced RAW and a full-resolution JPEG).
+  An ambiguous group fails while its neighbours import, and explicit RAW-only
+  import still admits the RAW even when two JPEG companions exist, because that
+  command does not need to choose a companion. Availability describes the
+  *primary*: when the RAW disappears the photo shows its RAW filename and an
+  offline primary state while its member list separately reports the JPEG online
+  — calling the whole photo online would imply ordinary RAW-led processing still
+  has its source.
+- **The gap:** The pairing contract required content-aware grouping without
+  fixing multiplicity, the veto fields, or what "online" means for a photo with
+  two different originals.
+- **The reach:** The fresh schema enforces one original per kind, so a future
+  alternate-rendition feature needs an explicit selection and ownership contract
+  rather than accidental extra rows. Metadata never pairs files across folders or
+  overrides name ambiguity.
+- **Verdict:** **Sound.** The user's one-RAW/one-JPEG model is enforced where it
+  is decided, and the veto protects obvious mismatches without conflating the
+  JPEG's processing choices with the RAW's geometry.
+- **Confidence:** High on multiplicity; medium on which capture fields suffice.
+- **Owner:** `packages/importer/src/companions.ts`,
+  `packages/commands/src/handlers/import.ts`,
+  [paired-import review](assets/paired-import-review.md).
+
+### S9 — Camera-JPEG renditions share the renderer's cache invalidation and do not gain offline fallback
+
+- **When:** Paired-originals source and scope reviews, 2026-09-06.
+- **The choice:** A native colour or sampling correction changes rendered pixels,
+  so both document views and camera-JPEG views must stop reusing images produced
+  by the old renderer. The JPEG rendition hashes its original identity and
+  geometry through the *same* renderer-revision owner as document hashes, rather
+  than getting a second version number somebody would have to remember to bump.
+  Separately: once a camera JPEG original becomes unavailable, explicit
+  camera-JPEG `show`/`export` report it unavailable even if a derived view of it
+  is still cached. Ordinary RAW viewing may still use its separately pinned
+  preview; substituting that RAW preview for the JPEG would be incorrect.
+- **The gap:** A source-specific cache key distinguished JPEG from RAW but did
+  not itself account for later changes to pixel processing, and the contract
+  required honest unavailability without promising offline camera-JPEG delivery.
+- **The reach:** No synthetic render node, document mutation or second version
+  setting exists. Promoting a sampled identity to a verified full hash does not
+  change the original's pixels and therefore does not invalidate its views. A
+  future offline-JPEG extension must preserve original-specific cache provenance
+  and cannot reuse the RAW fallback.
+- **Verdict:** **Sound.** One pixel-semantics revision invalidates both families,
+  and the source boundary stays explicit rather than quietly widened.
+- **Confidence:** High on invalidation; medium that cached offline JPEG viewing
+  remains a useful follow-up.
+- **Owner:** `packages/render/src/preview.ts`, `packages/commands/src/handlers/show.ts`.
+
+### S10 — Case-only sidecar collisions refuse both operations
 
 - **When:** Independent paired-originals review, 2026-09-06.
-- **The choice:** Separate photos named `frame.ARW` and `FRAME.JPG` can both write the
-  same sidecar on a camera or Mac volume. Compare their existing sidecar targets
-  without letter case and refuse both writes or reads before changing anything.
-  On a case-sensitive disk this can also refuse two genuinely distinct sidecars;
-  the alternative would require filesystem-specific identity probing before every write.
-- **The gap:** Shared-target protection needed a case policy across different volume formats.
-- **The reach:** XMP write and sync share the conservative check. No alternate sidecar
-  filenames, volume capability cache or automatic metadata reconciliation is introduced.
-- **Verdict:** **Sound.** A reversible refusal is safer than overwriting another photo's metadata.
-- **Confidence:** Medium; explicitly accepted as conservative across case-sensitive volumes.
-
-### Companion selection — Excluded originals cannot create selection ambiguity
-
-- **When:** Independent paired-originals review, 2026-09-06.
-- **The choice:** A folder has one RAW and two possible JPEG companions. Default paired
-  import refuses to guess the JPEG, but explicit RAW-only import admits the one RAW.
-  Reversing the policy still refuses the two JPEG choices. Treating every mode like
-  paired import would reject a source the caller selected unambiguously.
-- **The gap:** Ambiguity rules did not distinguish selected from excluded original kinds.
-- **The reach:** Pair construction and explicit single-kind selection use the same roster;
-  unmatched valid files are still retained and separate import remains independent.
-- **Verdict:** **Sound.** Refusal is tied to the decision the command actually needs to make.
-- **Confidence:** High.
-
-### Pair identity — Capture facts are a contradiction check, not a matching heuristic
-
-- **When:** Paired-originals admission checkpoint, 2026-09-06.
-- **The choice:** Same-directory, same-stem RAW/JPEG candidates are rejected when both
-  supply different capture times or camera make/model. Missing values do not prove a
-  mismatch. Resolution and orientation are not equality requirements: a real retained
-  pair has a reduced RAW and a full-resolution JPEG. Each original keeps its own facts.
-- **The gap:** The plan required content-aware pairing and contradiction protection but
-  did not specify which shared capture facts could safely rule out a proposed pair.
-- **The reach:** Metadata never pairs files across folders or overrides name ambiguity.
-  This is a conservative veto, not evidence that two different byte streams are equal.
-- **Verdict:** **Sound.** The check protects obvious mismatches without conflating the
-  JPEG's processing choices with the RAW's original geometry.
-- **Confidence:** Medium; future camera evidence may justify more shared capture fields.
-
-### Culling performance — Separate result membership from current availability
-
-- **When:** Bounded list materialization, 2026-09-06.
-- **The choice:** A catalog contains hundreds of photos but the caller asks for ten.
-  Count every eligible photo and retain the same ordering, while checking drive/file
-  availability only for the ten returned rows. XMP staleness still checks all candidate
-  sidecars because it changes membership. A streamed caller must accept one row before
-  the next row's availability work starts; an ordinary non-stream page retains concurrent
-  checks for the rows it will return. `next` resolves only its selected photo.
-- **The gap:** The existing SQL page bounded catalog memory, but did not define where
-  expensive availability work belonged relative to output limits and stream backpressure.
-- **The reach:** Counts and cursors do not become availability caches. Every returned row
-  still consults the ordinary resolver, preserving offline, wrong-volume and reconnect
-  behavior. Unlimited non-stream lists retain the existing page concurrency rather than
-  trading away throughput to improve small lists.
-- **Verdict:** **Sound.** The output demand bounds external work without changing the
-  catalog's meaning or introducing another count/volume owner.
-- **Confidence:** High; deterministic work-count, concurrency and recovery regressions
-  cover the scheduling distinction. The original camera duration is not a new benchmark.
-
-### Offline export — A retained render must prove both current intent and source quality
-
-- **When:** Retained-output integration, 2026-09-06.
-- **The choice:** A user edits online, inspects the result, then disconnects the drive.
-  Export may reuse the exact canonical output already rendered, but only when its stored
-  renderer identity matches today's recipe semantics. Among valid outputs it prefers greater
-  original-source sampling, then full-file over embedded-JPEG over pinned-preview provenance,
-  then greater output sampling. It validates candidates in bounded metadata pages, using each
-  candidate's own coordinate frame. An obsolete or corrupt output cannot hide another valid
-  candidate or force a paid request to be replayed.
-- **The gap:** Immutable edit-node identity alone does not identify the renderer version or
-  the quality of the source used for that execution. Fresh execution rows now store the existing
-  opaque render identity and inherited base-source tier beside their exact frame; no migration
-  or backfill is added. External paid captures remain independently reusable.
-- **The reach:** The shared retained-output reader also compares candidates against an available
-  fallback's dimensions and tier. Export still tries the live original first, allowing reconnect
-  promotion without a second cache or source-selection owner.
-- **Verdict:** **Sound.** Reuse requires evidence about the actual execution rather than a guess
-  from its age, dimensions alone, or a reconstructed frame.
-- **Confidence:** High.
-
-### Offline export — Equal-quality automatic decoder candidates use a stable tie-break
-
-- **When:** Retained-output integration, 2026-09-06.
-- **The choice:** Two retained executions have the same source tier and sampling but came from
-  different automatic decoder choices. With no public export decoder preference, select by
-  stable execution identity after the quality criteria instead of whichever ran last. A warm
-  preview can still contain the other execution; this does not promise identical decoder pixels.
-- **The gap:** Source quality can rank these candidates equally without proving byte equality.
-- **The reach:** A future explicit decoder choice must constrain retained-output eligibility,
-  not merely change the decoder used for new work. No preview-to-execution pointer is added
-  solely to force this tie to follow inspection history.
-- **Verdict:** **Sound.** Stable selection preserves the existing automatic policy without
-  inventing a decoder preference or claiming equivalence.
-- **Confidence:** Medium; a user-facing decoder-selection contract would supersede the tie policy.
-
-### Full-frame generation — Use the inspected photographic result as model input
-
-- **When:** Shared-frame full-frame planning and creation pass, 2026-09-06; implemented provisionally.
-- **The choice:** A user retouches a face or extends a border, then asks to relight the photo.
-  Send that current photographic result to the model, excluding presentation markup such
-  as arrows or labels. Sending only the developed original would omit edits the user has
-  already inspected. Creation now records and uses the photographic-composite policy.
-- **The gap:** The original full-frame plan described source/develop input; extending it to
-  the current canvas exposes a product choice about preceding photographic layers. A direct
-  question is pending. Neither interpretation changes strength into a denoise control.
-- **The reach:** The generation records its input policy and predecessor membership.
-  Purchased pixels include those prior edits; removing an earlier layer does not un-bake
-  them. Explicit refresh reconstructs only the captured predecessors, never itself or later
-  layers, using the existing captured-input enablement/order policy.
-- **Verdict:** **Needs-user.** Proceed provisionally with the current photographic result
-  because it matches the inspected photo. Reverse by changing the creation/input policy
-  before this pass lands if the user chooses developed-original input; never silently
-  reinterpret already-purchased generation intent or introduce both modes speculatively.
-- **Confidence:** Medium.
-
-### Slice 12 — Combined movement multiplies the subject's current scale
-
-- **When:** Combined move/scale pass, 2026-09-06.
-- **The choice:** A subject already enlarged twice becomes four times its original size when moved
-  with `--scale 2`; its rotation and flips remain. Scaling happens around the selection's currently
-  visible center, then that center reaches the requested destination. Normalized coordinates change
-  only the destination units, not the scale. Omitting scale preserves current geometry.
-- **The gap:** The original optional scale flag did not distinguish an absolute scale from a multiplier.
-  The parent explicitly selected the relative multiplier; the existing `--move <layer>` grammar remains.
-- **The reach:** Repeating the same multiplier deliberately scales again. Clients wanting an absolute
-  transform retain the separate layer-transform contract; no compatibility alias or stored shape is added.
-- **Verdict:** **Sound.** Movement preserves current geometry and composes with the established transform owner.
-- **Confidence:** Medium.
-
-### Slice 12 — A vacancy's first retained snapshot owns its original hole
-
-- **When:** Combined move/scale lifecycle correction, 2026-09-06.
-- **The choice:** Move a person, generate replacement pixels at the new position, fill the old hole,
-  then move again: restore the hole recorded when that vacancy identity first appeared. The same
-  rule applies after removing and reactivating the vacancy. A later subject generation's selection
-  instead describes its new position and cannot redefine the original hole. The existing vacancy
-  identity links a narrow retained-snapshot lookup; there is no second history store or schema field.
-- **The gap:** The original-hole requirement was explicit, but its provenance owner after replacement
-  and reactivation was not. Active vacancy content alone can be filled or absent.
-- **The reach:** Future history collection must preserve this first-snapshot provenance while a vacancy
-  can be reactivated. Automatic canonical/history collection remains disabled; this pass does not
-  invent a retention duration or purge policy.
-- **Verdict:** **Sound.** Original vacancy identity, rather than current subject pixels, owns the hole.
-- **Confidence:** Medium.
-
-### Slice 12 — Density preparation does not publish a partial move
-
-- **When:** Combined move/scale pass, 2026-09-06.
-- **The choice:** Enlarging generated pixels may finish an external upscale before the graph changes.
-  Both transform commands share that preparation, but the move writer activates its pixels, subject
-  geometry and vacancy together against one expected parent revision. If another edit wins, keep
-  the returned original bytes in the existing attempt journal and reject activation. Running a
-  layer-transform command followed by movement would expose two edits and leave half a move on failure.
-- **The gap:** Existing density and movement operations each committed their own revision; composition
-  needed an ownership boundary. Move results also needed to disclose density fallback.
-- **The reach:** Move responses use the existing nullable upscale record and warnings. Preparation
-  resolves the configured adapter using its actual snapped branch model, never a separate earlier
-  branch read. Pure move/shrink selects pinned compatible pixels without inspecting provider
-  configuration or silently retrying a failed upscale; its density verdict does not invent a
-  configuration warning. Explicit refresh owns retries, and no ambient credentials become consent.
-- **Verdict:** **Sound.** One preparation owner and one atomic revision preserve existing failure semantics.
-- **Confidence:** High.
-
-### Full-frame creation — Preserve exact input execution in generation intent
-
-- **When:** Full-frame creation pass A, 2026-09-06.
-- **The choice:** Two cropped views can contain the same pixel bytes while occupying different
-  places in the photo. The generation request stores the specific input execution ID alongside
-  its saved frame, so inspection and later refresh can identify which view supplied the pixels.
-  An artifact hash alone identifies bytes and cannot answer that coordinate question.
-- **The gap:** The plan required an exact execution/frame binding but did not prescribe where
-  to persist that link. Existing generation execution inputs only retain artifact hashes.
-- **The reach:** This extends immutable generation intent without a table, migration or second
-  provenance owner. Future refresh must honor that recorded physical viewport.
-- **Verdict:** **Sound.** The existing generation intent is the durable owner of the purchased
-  request, and the shared execution-frame reader establishes the binding before provider work.
-- **Confidence:** High.
-
-### Full-frame creation — Sample constant coverage at the intended viewport density
-
-- **When:** Full-frame creation pass A, 2026-09-06.
-- **The choice:** A provider can return fewer or more pixels than the requested photo viewport.
-  RGB keeps that intrinsic sampling, while the constant strength mask uses the intended
-  viewport raster. Both are placed in the same physical footprint. Attaching the mask to
-  whichever RGB sampling happened to arrive would couple coverage to provider density.
-- **The gap:** The plan separated RGB placement from coverage but left the mask's sampling
-  choice to implementation.
-- **The reach:** Density processing can change retained RGB detail without changing the
-  strength mask or exposing pixels outside the authored viewport after a later crop change.
-- **Verdict:** **Sound.** Coverage has one owner and native generated sampling remains available
-  to the existing compositor; no additional resample branch or strength multiplication is added.
-- **Confidence:** High.
-
-### Retouch — Original-relative coordinates and supported photographic pixels
-
-- **When:** Expanded-canvas retouch follow-on, 2026-09-06.
-- **The choice:** Extend a photo to the left, then heal a spot in that extension: its horizontal
-  coordinate is negative because zero still means the original photo's left edge. `--norm` scales
-  positions by original width/height and radius by the original long edge, so the same request
-  does not move when the canvas changes. A new circle must intersect actual photographic pixels
-  and leave photographic surroundings. Empty corners inside a rotated canvas rectangle do not
-  count, but a visible generated layer can supply those pixels. The circle is clipped to that
-  coverage rather than healing empty canvas. A circle centered just outside the viewport is valid
-  when its edge still covers supported pixel centers. Positive projected mask coverage counts as
-  photographic support; this is geometric validity, not a judgment of visible brightness.
-- **The gap:** Canvas expansion made the original catalog bounds too narrow, but renormalizing
-  coordinates to each new canvas would silently move existing requests. Rectangular bounds also
-  include empty corners and gaps left by authored geometry.
-- **The reach:** Validation consumes the stored canvas plan and existing mask projection owner.
-  It may materialize deterministic mask execution/cache artifacts, but never decodes a source,
-  replays paid generation, or changes nodes/document revisions. Sequential layer-mask processing
-  retains bounded working buffers. No new support schema or mask-lineage parser is introduced.
-  Existing exact retries return the authored layer even if a later crop hides it; fresh invalid
-  circles are rejected. That distinction preserves the existing idempotent operation contract.
-- **Verdict:** **Sound.** Original-relative coordinates preserve request meaning, and the same
-  projected coverage governs rendering and whether a new repair has photographic input.
-- **Confidence:** High.
-
-### Outpaint verification — Make cold fallback through a new edit, not cache surgery
-
-- **When:** Cold offline lifecycle witness, 2026-09-06.
-- **The choice:** Import a modest synthetic original through the normal pipeline, author a border,
-  then make a new edit before disconnecting its file. Verify the new whole-photo output has never
-  been rendered before asking for a preview or export. The saved reduced import preview remains
-  intact. Deleting cached output or replacing that preview could instead manufacture a state users
-  do not naturally reach and hide whether normal import produced useful fallback pixels.
-- **The gap:** The plan required cold reduced-source evidence but did not prescribe its stimulus.
-- **The reach:** The built and installed CLI share this public journey. The synthetic fine pattern
-  makes original-detail promotion visible without a full-resolution camera decode. It does not
-  replace real-camera, paid-model quality, resource-budget or fresh-native-release acceptance.
-- **Verdict:** Sound; both first-use consumers are proven cold by their exact current output identity,
-  and all mutation goes through public commands except explicit local provider configuration.
-- **Confidence:** High. No product API, persistence or fallback policy changes were introduced.
-
-### RAW reconstruction plan — Normal treatment with an explicit diagnostic escape
-
-- **When:** Highlight reconstruction planning, 2026-09-06; implemented by pass B.
-- **The choice:** Opening a candle photograph should normally correct false highlight color.
-  A caller inspecting the decoder can explicitly request the version without that correction.
-  Both still use RAW pixels, white balance and color conversion; neither substitutes the camera
-  JPEG. Results identify whether correction actually ran and which decoder supplied it.
-- **The gap:** The neutral decoder contract disabled recovery, but delivery review exposed false
-  magenta. The user has not yet answered the question about ordinary versus diagnostic treatment.
-- **The reach:** The default changes derived rendering identity, not original files or paid
-  edit history. Effective treatment is recorded in the existing execution table's nullable
-  provenance column under the clean-start schema. LibRaw remains the preferred decoder. Explicitly disabling
-  recovery remains available for diagnosis, but cannot replace testing the normal delivery path.
-- **Verdict:** **Needs-user; provisional recommendation is normal recovery with explicit disabled
-  diagnostics.** Reversing the default is a policy change with a corresponding render identity,
-  not a migration or destructive cache reset. Native sample-preservation proof comes first.
-- **Confidence:** Medium.
-
-### RAW reconstruction plan — Preserve floating samples instead of adopting integer staging
-
-- **When:** Highlight reconstruction planning, 2026-09-06.
-- **The choice:** The upstream recovery routine infers a clipped color channel from nearby channel
-  ratios. Its integer input conversion also discards some values our current decoder preserves.
-  Translate the neighborhood operation into the existing floating-point camera front, keeping
-  reliable samples and bright values rather than accepting that conversion loss. Begin with
-  upstream mode 3 as a fixed, bounded reference; do not expose a speculative strength control.
-- **The gap:** The spec requires correct RAW output but did not choose a recovery algorithm or
-  numeric representation. Two photographs improving under several upstream modes do not prove
-  those modes interchangeable or establish a safe production port.
-- **The reach:** Reconstruction runs on native decoder neighborhoods before reduction, between
-  the single WB and color-matrix owners. Differential tests establish representable-input behavior;
-  separate float tests preserve what the integer baseline cannot express. Reduced complete-RGB
-  decoding needs truthful saturation information, not assumptions from its dimensions or WB flag.
-- **Verdict:** **Sound as an implementation experiment, not accepted rendering.** Mode 3 and any
-  numerical/grid-edge departures must survive native detail and colored-light review. If that
-  fails, reslice the responsible seam rather than weaken the photographic target.
-- **Confidence:** Medium. Production policy and whole-camera acceptance remain later gates.
-
-### Full-frame refresh — Reuse an unchanged viewport recipe before normalizing geometry
-
-- **When:** Full-frame pass B, 2026-09-06.
-- **The choice:** A photograph is cropped and generated while online, then its original
-  disappears. Refresh first reconstructs the selected layer's earlier layers using today's
-  settings. If that recipe already describes the captured physical rectangle, it keeps the
-  recipe, so its verified retained pixels remain usable. If the crop has moved, the shared
-  photographic planner projects today's color adjustments and earlier layers into the old
-  rectangle. It does not use the selected generation or later layers as input.
-- **The gap:** The plan required current settings, fixed coordinates and retained-only input
-  but did not prescribe how to preserve ordinary recipe identity when no geometry changed.
-- **The reach:** Future planner changes must not normalize every refresh to a new recipe
-  gratuitously: that would make a valid retained-only input unreachable. The equality check
-  compares coordinates and intended sampling, never artifact bytes.
-- **Verdict:** **Sound.** One photographic planner owns both forms, and changed recipes do
-  not silently receive stale retained inputs.
-- **Confidence:** Medium.
-
-### Full-frame refresh — Retained input follows existing fallback quality ranking
-
-- **When:** Full-frame pass B, 2026-09-06.
-- **The choice:** The original disappears but a small pinned preview and a previously rendered
-  native version of the same photographic input remain. Generation uses the verified native
-  render rather than sending the smaller preview. With no decodable source at all, it may use
-  that same exact retained input. Reconnecting first tries the live original again. All choices
-  name one snapped photographic recipe, not a different input policy or an old complete stack.
-- **The gap:** Retained-only support was explicit; its ordering against a usable but smaller
-  pinned fallback was not. Existing export already ranks retained current pixels this way.
-- **The reach:** The shared source-selection boundary owns ranking and reports the retained
-  execution's original-source density, not its generated detail. Missing/corrupt retained
-  input cannot authorize a replacement purchase.
-- **Verdict:** **Sound.** It preserves the best eligible current input using the established
-  retained-output reader and quality ordering, while source failures stop before paid work.
-- **Confidence:** High.
-
-### Full-frame refresh — Failed upscale-only refresh preserves the previous purchase
-
-- **When:** Full-frame pass B, 2026-09-06.
-- **The choice:** A layer already has a usable upscale. The user explicitly retries that
-  upscale and the provider fails. The failure remains inspectable, but the layer keeps its
-  previous upscale and generation, rather than switching to smaller generated pixels. A
-  successful generation refresh can still keep its new generation if optional density work
-  fails, matching the existing creation contract.
-- **The gap:** The pass required no extra generation for upscale-only refresh but did not
-  restate the existing masked-fill failure fallback.
-- **The reach:** Refresh replies distinguish reused executions from new ones; retry failures
-  never pretend a paid output was successfully replaced.
-- **Verdict:** **Sound.** The full-frame path retains the established refresh failure semantics
-  and uses the same attempt/density/publication owners.
-- **Confidence:** High.
-
-### Full-frame refresh — Missing source bytes permit deterministic retained-graph evaluation
-
-- **When:** Full-frame pass B, 2026-09-06.
-- **The choice:** A retained photographic input can support a new purchase while both original
-  and preview files are absent. The new combined output has not been rendered yet. Show and
-  export therefore get one final evaluation policy after their normal source attempts fail:
-  reuse verified retained executions at their exact graph nodes, then run only deterministic
-  descendants such as compositing. A node is a saved image operation; using its own saved
-  result means earlier layers are not applied twice. A missing paid result is an error, not
-  permission to invoke its provider. Reconnecting uses normal live-source evaluation first.
-- **The gap:** The spec required the complete retained-only lifecycle, but the existing reader
-  could reuse only a finished current output. It could not create the first new composite
-  without descending to the unavailable original.
-- **The reach:** This is an explicit policy on the existing evaluator, not a second evaluator
-  or source type. Its public entry accepts no source/provider callbacks and strips any extra
-  runtime fields. Exact execution source tier accompanies pixels into preview metadata, so
-  retained generated detail cannot claim that the original source is native.
-- **Verdict:** **Sound.** The existing registry, cache identity, frame validation and store own
-  every evaluation; only the permitted source of reusable deterministic inputs changes.
-- **Confidence:** Medium.
-
-### Full-frame refresh — Unavailable retained bytes use the existing unavailable exit class
-
-- **When:** Full-frame pass B, 2026-09-06.
-- **The choice:** Missing or corrupt pinned execution bytes report `file_offline` with a
-  structured `retained_artifact_unavailable` reason at the evaluator boundary. Consumers
-  preserve the typed error instead of misreporting a decoder failure.
-- **The gap:** Static review exposed an untyped retained-artifact failure. The existing
-  offline contract reserves exit 69 for required missing or corrupt cached artifacts;
-  `not_found` would instead classify it as a data lookup failure (exit 65).
-- **The reach:** No new protocol code, migration, retry or paid replay is introduced.
-- **Verdict:** **Sound.** Reuses the established unavailable contract.
-- **Confidence:** High.
-
-### Affine sampling — Reuse filter weights without changing the numerical recipe
-
-- **When:** Expanded-export performance pass, 2026-09-06.
-- **The choice:** When an image layer grows to cover a full camera photo, many source
-  samples contribute to each output pixel. Their distance-based weights are the same
-  for red, green and blue. Calculate the horizontal and vertical weights once for
-  that output pixel, then reuse them while adding each channel's contributions in
-  the same order. Two small reusable arrays hold these weights, not another image.
-- **The gap:** The spec requires one exact resampler but does not prescribe how it
-  avoids duplicate arithmetic. Profiling identified repeated trigonometry as the
-  dominant cold-export work. A two-stage horizontal/vertical filter could also be
-  faster, but would change the order of floating-point additions and potentially pixels.
-- **The reach:** RGB and masks keep the same shared sampler, transparent edges and
-  existing kernel-work ceiling. No schema, public option, cache policy or quality
-  setting changes. Exact output means no renderer-semantic revision is warranted.
-- **Verdict:** **Sound.** Remove redundant work at its owner without substituting a
-  different filter or skipping newly edited renders.
-- **Confidence:** High.
-
-### Native highlight recovery — Preserve complete physical cells at image edges
-
-- **When:** Reconstruction pass A, 2026-09-06.
-- **The choice:** Recovery estimates channel ratios from complete four-by-four pixel
-  neighborhoods in the decoder's physical grid. If a photo has one to three pixels
-  left over at its right or bottom edge, those samples remain unchanged. Rotating
-  the displayed image does not move these physical neighborhoods.
-- **The gap:** The plan required explicit partial-cell behavior but did not choose
-  padding, smaller edge neighborhoods or unchanged samples. Padding would invent
-  neighboring evidence that the reference algorithm never saw.
-- **The reach:** Tiny images without a complete cell also remain unchanged. An
-  applied status means the operation ran, not that every pixel was reconstructed;
-  visible edge defects would reopen this numerical choice during delivery review.
-- **Verdict:** **Sound.** Preserve the reference grid without invented samples.
-- **Confidence:** Medium.
-
-### Native highlight recovery — Retain fractional channel estimates
-
-- **When:** Reconstruction pass A, 2026-09-06.
-- **The choice:** A clipped lamp's missing channel is estimated using double-precision
-  ratio maps, and the estimate can only increase that channel. Unlike the integer
-  reference, the result keeps fractional values and brightness above display white.
-  Two small maps replace the need for another full white-balanced RGB image.
-- **The gap:** The plan required floating-point preservation but left intermediate
-  precision unspecified. Copying the reference's integer writes would discard the
-  very headroom the current camera pipeline preserves.
-- **The reach:** This is a floating-domain translation, not a promise of integer
-  bit parity. Its maps consume about 32.7 MB for the measured full-resolution photo;
-  reduced requests still reconstruct the full source before resizing.
-- **Verdict:** **Sound.** Preserve the working representation and bound extra storage.
-- **Confidence:** Medium.
-
-### Native highlight recovery — Ship derivative source with the native package
-
-- **When:** Reconstruction pass A, 2026-09-06.
-- **The choice:** Installing the native runtime also installs the translated recovery
-  source, its CDDL terms and attribution/source-location notice. The translated file
-  is not presented as covered by the repository's MIT license.
-- **The gap:** The plan selected the vendored CDDL algorithm but did not specify how
-  the new derivative source would accompany binary distribution.
-- **The reach:** The native crate declares both licenses; packaging owns the source
-  and notice alongside the binary. This does not assert an audit of unrelated
-  third-party distribution obligations.
-- **Verdict:** **Sound.** Keep attribution and derivative-source access with distribution.
-- **Confidence:** High.
-
-### RAW treatment — Carry decoder revision separately from recovery method
-
-- **When:** Reconstruction pass B, 2026-09-06.
-- **The choice:** A photographer has a cached candle preview, then updates macOS.
-  CIRAW may keep the same highlight-recovery method name while selecting a different
-  decoder revision. The treatment record travelling with pixels therefore includes
-  the decoder's identity and version as well as the requested correction, actual
-  outcome, recovery method and decode scale. The adapter that produced the pixels
-  supplies the actual values; source execution columns derive from that record.
-  Keeping only the method name would let a preview made by the earlier decoder
-  satisfy a request planned for the newer decoder, even when their pixels differ.
-- **The gap:** The plan required complete effective identity but did not prescribe
-  how decoder revision would accompany treatment through descendants and previews.
-- **The reach:** Deterministic operations retain distinct execution identities when
-  treatment differs, even if their pixel bytes happen to match. Decoder version is
-  not embedded in the recovery method name, so the two can evolve independently.
-- **Verdict:** **Sound.** One actual decoder record supplies transport and reuse identity.
-- **Confidence:** Medium.
-
-### RAW treatment — Composite provenance describes the primary photographic source
-
-- **When:** Reconstruction pass B, 2026-09-06.
-- **The choice:** A reconstructed RAW photograph receives a generated replacement
-  patch. The combined output carries the treatment of its primary photographic
-  input, following the same first-input ownership used for source dimensions and
-  coordinates. This does not claim the generated patch passed through RAW recovery.
-  The patch and other inputs still have independently inspectable executions. An
-  alternative would copy every ancestor's treatment into each combined output,
-  duplicating the saved graph and requiring every consumer to interpret that list.
-- **The gap:** The plan required treatment to survive rendering but did not define
-  what one treatment field means for an operation with several image inputs.
-- **The reach:** Preview and retained-output metadata describe the base photograph,
-  not every pixel's processing ancestry. Future operations without a distinguished
-  primary source must establish their semantics instead of treating this field as
-  a complete history of all inputs.
-- **Verdict:** **Sound.** Preserve the existing base-source owner rather than duplicate ancestry.
-- **Confidence:** Medium.
-
-### RAW treatment — Require native treatment for online previews without demoting offline pixels
-
-- **When:** Reconstruction pass B, 2026-09-06.
-- **The choice:** A full RAW preview remains cached after the camera is unplugged.
-  The available source is now a smaller pinned JPEG. Requiring that JPEG's treatment
-  would discard the richer cached image, so fallback and cheap-overview requests may
-  reuse it and return its recorded RAW treatment. Once a preferred native decoder
-  is available, a warm preview must match that decoder's planned treatment as well
-  as the existing geometry and sampling requirements. In decision terms:
-  `preferred native source → require matching treatment; fallback/overview → retain
-  eligible pixels with their actual treatment`. Preferred file-image candidates also
-  keep their existing reuse policy rather than gaining a general decoder-upgrade gate.
-- **The gap:** The plan required pre-cache treatment planning and truthful offline
-  reuse but did not specify which source candidates constrain a warm preview.
-- **The reach:** Returning a source cannot silently reuse the wrong native treatment,
-  while losing a source does not automatically reduce quality. This is not a general
-  promise to invalidate every JPEG preview after a file-decoder library upgrade.
-- **Verdict:** **Sound.** Apply the RAW admission rule without replacing established fallback quality rules.
-- **Confidence:** Medium.
-
-### RAW treatment — Preserve the adapter-name fallback for unavailable version metadata
-
-- **When:** Reconstruction pass B, 2026-09-06.
-- **The choice:** A source probe can omit a decoder version. Planning retains the
-  existing source-provenance convention: use the decoder name as the identity value
-  when the version is unavailable. LibRaw's actual record uses the same convention;
-  CIRAW's actual wire result requires a version. Thus a versionless CIRAW plan does
-  not silently become a known-version result: their disagreement prevents publication.
-  The alternative was to reject every versionless native probe immediately or add a
-  separate unknown-version state to the transported record.
-- **The gap:** Adding decoder revision to transported treatment exposed the existing
-  optional probe-version contract; the plan did not redefine that contract.
-- **The reach:** Consumers must not interpret an adapter-name fallback as a verified
-  codec release. It cannot distinguish two hypothetical successful LibRaw runtimes
-  that both omit version metadata. Supported current runtimes supply their actual
-  version; admitting versionless implementations in future would reopen this choice.
-- **Verdict:** **Sound within the current decoder contract.** Preserve existing admission
-  without claiming the fallback identifies an unknown implementation revision.
-- **Confidence:** Medium; successful versionless LibRaw behavior is not established.
-
-### RAW diagnostics — Keep each oracle run immutable and publish a latest-report pointer
-
-- **When:** Reconstruction pass B, 2026-09-06.
-- **The choice:** A user compares normal decoding, then repeats the oracle with recovery
-  disabled in the same working directory. Each run receives its own directory containing
-  decoder TIFFs and measured JSON. The stable report entry is updated to the latest run,
-  but the earlier directory remains intact. Reusing fixed TIFF names would collide with
-  diagnostic no-clobber publication; deleting the first run to make room would destroy
-  the very comparison evidence the user may want to inspect.
-- **The gap:** The oracle had stable output names, while the diagnostic publication
-  contract forbids replacing existing files. The plan did not choose a repeated-run
-  storage and navigation scheme.
-- **The reach:** Repeating an oracle preserves prior evidence and needs no overwrite
-  escape hatch. The latest report is a navigation pointer, not the historical record;
-  run directories accumulate until their owner chooses to remove them.
-- **Verdict:** **Sound.** Separate immutable evidence from convenient latest navigation.
-- **Confidence:** High.
-
-### RAW diagnostics — Adopt recovery explicitly above the low-level decoder default
-
-- **When:** Reconstruction pass B, 2026-09-06.
-- **The choice:** Ordinary rendering and the public decode command explicitly request
-  recovery. A developer using the lower-level image decoder without an option still
-  receives its disabled behavior, including the existing camera-space path. This keeps
-  a raw numeric inspection from silently becoming a scene-linear recovery request.
-  Changing every omitted option to recovery would instead change those callers as
-  a side effect of adopting the photographer-facing default.
-- **The gap:** The plan selected normal product recovery but did not require changing
-  the meaning of an omitted option at every lower-level decoder entry point.
-- **The reach:** Product source planners must pass the fixed request explicitly.
-  Low-level decoder use remains suitable for disabled numeric diagnosis, while an
-  explicit public disabled request continues to exercise the same underlying route.
-- **Verdict:** **Sound.** Put product policy at its callers without changing the camera-space contract.
-- **Confidence:** High.
-
-### Export safety — Historical mount hints may reserve a destination, never identify a source
-
-- **When:** Original-overwrite protection, 2026-09-06.
-- **The choice:** A fixture library remembers an original on a drive that is no longer
-  in its configured volume map. An explicit delivery overwrite outside the current
-  map checks existing historical mount paths before replacing the destination. If
-  a recorded original occupies that canonical path—or its leaf is missing—the write
-  is refused. An unrelated absent mount is ignored; a permission or I/O failure is
-  not proof of absence and refuses publication. Recreating an old mount directory
-  does not erase its recorded original-path reservation.
-- **The gap:** Protecting originals was mandatory, but the plan did not specify how
-  stale fixture mappings interact with an explicitly requested overwrite outside
-  the active map. Ignoring all history would expose originals; rejecting any absent
-  historical mount would block unrelated deliveries whenever a drive was unplugged.
-- **The reach:** This conservative use of historical paths applies only to destination
-  safety. Source lookup still requires current volume identity and never treats a
-  reused mount path as proof that a different drive contains the old source. Canonical
-  path checks handle file/directory aliases, but are not an adversarial filesystem
-  transaction against concurrent directory renames. No whole-catalog inode scan or
-  new-file source-folder policy is introduced.
-- **Verdict:** **Sound.** Uncertain replacement may be refused without turning historical
-  location hints into source identity or treating ordinary absence as an error.
-- **Confidence:** Medium; permission/I/O uncertainty favors preserving originals over delivery availability.
-
-### Verification — Give the source-checkout gold exam disposable command launchers
-
-- **When:** CI repair pass, 2026-09-06.
-- **The choice:** On a fresh checkout, dependencies are installed before the CLI is compiled.
-  The gold-exam test therefore creates temporary `photoctl` and `wb` commands that load the
-  actual compiled entry points, then runs the unchanged public exam script. It does not
-  depend on installation having created links to files that did not yet exist.
-- **The gap:** The plan requires both built-code and packed-install verification but does not
-  prescribe how the built-code test places commands on its temporary search path.
-- **The reach:** These launchers exist only inside the test's disposable directory. They do
-  not certify npm executable links, published packages or installed dependency resolution;
-  the separate packed-install gate still owns those requirements.
-- **Verdict:** **Sound.** The source test drives the real CLI without depending on a warmed
-  development environment or introducing a production fallback.
-- **Confidence:** High.
-
-### Daemon status — Report background activity separately from the command queue
-
-- **When:** Embedding drain CI repair, 2026-09-06.
-- **The choice:** A photographer's rate command has finished, but automatic search indexing
-  is still saving embeddings. Status now reports `background_busy` from the worker registry
-  that already keeps the daemon alive. Reading status does not interrupt indexing. Once it
-  reports false, a caller knows the worker has settled, but must still check the desired
-  result: a failed worker can also stop. The drain test therefore retains its exact saved-row
-  assertion rather than treating inactivity or network responses as success.
-- **The gap:** The plan exposed the foreground queue but did not define how callers observe
-  background activity without interrupting it.
-- **The reach:** One boolean is added to daemon control results, false for an already-stopped daemon. There
-  is no new database query, worker counter, scheduling mechanism or success guarantee.
-- **Verdict:** **Sound.** Expose the existing state owner rather than infer completed work
-  from provider responses, which can arrive before a canceled database write.
-- **Confidence:** High.
-
-### Generation exclusions — Report guidance rather than pretend native conditioning
-
-- **When:** Generate negative-guidance pass, 2026-09-06.
-- **The choice:** Asking for a vase with `--neg "text, logos"` appends a versioned instruction
-  asking the general image model to avoid those elements. The result explicitly calls this
-  prompt guidance and preserves the requested exclusions plus the actual provider prompt in
-  the generated image's immutable request and paid-attempt journal. It does not claim that the
-  provider accepted a special negative-conditioning parameter or that unwanted content cannot
-  appear. Without the flag, existing prompts and identities are unchanged. No local image blend
-  or reference-strength meaning is introduced.
-- **The gap:** The original spec named the flag but did not define a provider-independent
-  interpretation; the current adapters have no verified native negative-conditioning contract.
-- **The reach:** Future native controls must report a distinct application mode rather than
-  reinterpret already-recorded guidance. Multipart guidance records its normalized transmitted
-  line endings so inspection agrees with the HTTP request. Current gateway adapters all apply
-  this guidance; no speculative capability registry or unsupported-adapter branch is introduced.
-- **Verdict:** **Sound, provisional interpretation.** This provides useful general-model guidance
-  through the existing prompt owner while preserving uncertainty about model compliance.
-- **Confidence:** Medium; the user can revise the product meaning, but historical intent remains explicit.
-
-### Daemon startup — Return the acknowledgement already received
-
-- **When:** Recovery observation correction, 2026-09-06.
-- **The choice:** When the daemon answers the startup handshake, `daemon start` returns that
-  actual status snapshot. It no longer asks again and reports failure if the second reply is
-  lost. The internal connection result carries the verified snapshot only when a handshake
-  occurred; normal command routing still avoids an extra status request.
-- **The gap:** The plan required verified startup but did not prescribe how its acknowledgement
-  reaches the public command result.
-- **The reach:** Success proves the daemon answered, not that it cannot exit afterward.
-  Explicit `daemon status` remains a fresh observation. Wire fields and retry policy do not change.
-- **Verdict:** **Sound.** Use one authoritative acknowledgement instead of discarding it and
-  introducing a second opportunity to misreport startup.
-- **Confidence:** High.
-
-### Reference strength — More freedom to vary, not a promise of exact pixels
-
-- **When:** Generate reference-strength guidance pass, 2026-09-06.
-- **The choice:** A user supplies a vase photograph with `generate --ref ... --strength 0.25`.
-  The model receives an instruction asking for low freedom to vary that reference: zero asks for
-  closest preservation, while one allows greatest variation. This follows reimagine's numeric
-  direction, but does not borrow its pixel blending. A newly generated photograph has no editable
-  base to blend against, so even zero may differ from the reference. The public result and saved
-  history call this prompt guidance, retain the numeric request and exact transmitted instruction,
-  and do not claim native denoising or provider compliance. If the model cannot receive the
-  reference, explicit strength is refused before payment instead of buying a text-only image.
-- **The gap:** The original flag did not say whether a larger number meant more resemblance or
-  more change. The optional question is still pending; no user approval is claimed.
-- **The reach:** The interpretation is versioned in immutable intent. Existing requests without
-  strength retain their prompts and identities; a later direction change must use a new guidance
-  version rather than reinterpret previously purchased work. No local blending or capability
-  framework is introduced.
-- **Verdict:** **Needs-user; provisional and reversible.** Recommend higher means more variation
-  for consistency with reimagine. If the user chooses similarity strength instead, reverse the
-  wording for new requests under a new guidance version and retain old records unchanged.
-- **Confidence:** Medium.
-
-### Hosted smoke selection — Keep fast public-boundary checks
-
-- **When:** Explicit user CI-policy cutover, 2026-09-06; final-ledger reconciliation, 2026-09-08.
-- **The choice:** A push checks command exit classifications, socket framing, human-readable
-  output and image-provider request controls. It builds TypeScript but does not compile the
-  photo runtime, download models or run camera journeys. Local full-suite commands are unchanged.
-- **The gap:** The user chose a small hosted subset, leaving its exact membership to implementation.
-- **The reach:** `test:ci` owns the explicit selection. Green smoke means these boundaries passed,
-  not that photographic quality or a release has been accepted. The full local gate still owns that.
-  Hosted failures retain their ordinary job output, not a separate daemon-log artifact.
-  This subset launches no daemon, so it needs neither host-load sampling nor daemon-log
-  uploads. If future smoke coverage launches background processes, choose diagnostics
-  for that actual workload. The CLI still reports a dead daemon's private local log path;
-  dropping hosted uploads does not remove that product diagnostic.
-- **Verdict:** **Sound.** A small deterministic boundary sample follows the user's policy without
-  deleting broader coverage. Native-cache and host-load machinery are unnecessary for this gate.
-- **Confidence:** High.
-
-### RAW interpolation — Balance the working channels, not the public image
-
-- **When:** Fine-color correction, 2026-09-06.
-- **The choice:** A sensor measures different colors at different pixel positions.
-  AHD estimates the missing colors using nearby channel differences. Feeding it
-  unequal sensor-channel scales creates colored edges on a known gray subject.
-  Normalize a working copy using the recorded channel gains, run the same AHD,
-  undo the normalization into floating-point camera samples, then restore every
-  actually measured sample exactly. The normal camera front still owns white
-  balance and color conversion. This avoids adopting a blurrier interpolator or
-  moving white balance for every downstream consumer.
-- **The gap:** The original camera-space boundary did not specify the internal
-  representation AHD needs. Its integer working buffer also requires explicit
-  rounding and headroom handling; inverse-scaled values must not be clamped back
-  to integers before the existing float image receives them.
-- **The reach:** The private native buffer changes to float; the public image and
-  metadata stay camera-space. Unsupported channel patterns or gains must not
-  silently take the known-wrong path. Derived render identity changes while paid
-  execution identity and history remain intact. The regression and rebuilt-path
-  checks must prove the implementation, not merely reproduce the scratch images.
-- **Verdict:** **Sound.** Controlled known-field and photographic evidence support
-  this representation correction, with exact measured-site preservation and no
-  need for a new setting, decoder or color-processing owner.
-- **Confidence:** High.
-
-### Preview color detail — Keep color samples at image resolution
-
-- **When:** Preview fidelity correction, 2026-09-07.
-- **The choice:** A thin blue detail next to red could look purple in a newly
-  generated preview even though the stored render still contained distinct colors.
-  New preview JPEGs retain a color sample for each pixel (4:4:4), instead of sharing
-  color across neighboring pixels (4:2:0). JPEG quality stays 88, so compression
-  still introduces small errors. This applies to pinned import previews, native
-  masters and derived views; export settings and original image bytes do not change.
-- **The gap:** The preview contract required faithful tagged sRGB inspection but
-  did not specify color sampling. Raising JPEG quality alone would retain the
-  spatial color averaging; changing to PNG would change the public JPEG contract.
-- **The reach:** New previews may be larger. Existing cached previews remain usable
-  until ordinary regeneration; there is no cache purge, graph identity change or
-  catalog migration. Rejecting old high-resolution previews could reduce offline
-  availability when only a smaller pinned source remains, so this pass does not
-  force an upgrade of previously stored pixels.
-- **Verdict:** **Sound.** Preserve fine color information at the encoding boundary
-  without changing source pixels, editing semantics, or offline cache validity.
-- **Confidence:** High for full-resolution color sampling; medium for leaving
-  existing caches unchanged, whose older appearance remains until regenerated.
-
-### Removal — Leave an unverifiable file at a reused locator untouched
-
-- **When:** Final pairing correctness review, 2026-09-08.
-- **The choice:** A user removes an old catalog photo whose filename now holds
-  another image. Remove the requested catalog entry, but leave the current file
-  untouched and explain that through the existing `source_offline` warning. As in
-  source reads, this means the catalogued original is unavailable, even when some
-  other bytes exist at its old address. The alternative is to refuse catalog
-  removal entirely until the old original returns.
-- **The gap:** Removal already allowed catalog-only progress for offline sources,
-  but did not specify how to treat a reused filename. A filename alone cannot
-  authorize moving unrelated bytes.
-- **The reach:** Reads and disk removal share the existing stored-identity check:
-  sampled content and size, plus full hash when available. This does not add a
-  full-hash-at-import requirement or protection against concurrent external writes.
-- **Verdict:** **Sound.** Preserve the unrelated file while allowing the explicit
-  catalog cleanup, with the partial disk effect visible in the result.
+- **The choice:** Two separate photos named `frame.ARW` and `FRAME.JPG` would
+  both write the sidecar `frame.xmp` on a camera card or an ordinary Mac volume,
+  where filenames are case-insensitive. photoctl compares existing sidecar
+  targets without letter case and refuses both the write and the read before
+  changing anything. On a genuinely case-sensitive disk this also refuses two
+  distinct sidecars that could have coexisted; the alternative would require
+  filesystem-specific identity probing before every write.
+- **The gap:** Shared-target protection needed a case policy that works across
+  volume formats.
+- **The reach:** `xmp write` and `xmp sync` share the conservative check. No
+  alternate sidecar filenames, volume-capability cache, or automatic metadata
+  reconciliation is introduced.
+- **Verdict:** **Sound.** A reversible refusal is safer than overwriting another
+  photo's metadata.
+- **Confidence:** Medium — explicitly accepted as conservative on case-sensitive
+  volumes.
+- **Owner:** `packages/library/src/xmp/`.
+
+### S11 — Disk removal verifies the original before touching it and stages reversible receipts
+
+- **When:** Slice 04 removal implementation; final pairing correctness review,
+  2026-09-08.
+- **The choice:** `remove --from-disk` on a photo whose filename now holds a
+  *different* image removes the requested catalog entry, leaves the current file
+  untouched, and explains it through the existing `source_offline` warning — as
+  in source reads, that means the catalogued original is unavailable even though
+  some bytes exist at its old address. A file that *does* match the stored
+  identity (sampled content key and size, plus the full hash when one is stored)
+  moves to Trash first and returns a rollback receipt; cache paths follow; only
+  then does the catalog transaction delete the photo. A pre-commit failure
+  restores receipts in reverse order, and a failed restore becomes a typed
+  unavailable error listing every unrestored path rather than being swallowed.
+  After the database commits, cleanup failure cannot roll the catalog backward.
+- **The gap:** A filesystem move and a PGlite transaction cannot be one atomic
+  act, and removal never specified what to do about a reused filename. A filename
+  alone cannot authorize moving unrelated bytes.
+- **The reach:** The catalog commit is the only irreversible boundary, and reads
+  and removal share one identity owner. This adds no full-hash-at-import
+  requirement and no defence against a concurrent external writer replacing the
+  file between the check and the move.
+- **Verdict:** **Sound.** The unrelated file is preserved while the explicit
+  catalog cleanup still succeeds, with the partial disk effect visible in the
+  result.
 - **Confidence:** High for preserving the file; medium for reusing the offline
-  warning rather than adding a new public warning code.
+  warning instead of adding a new public warning code.
+- **Owner:** `packages/commands/src/handlers/cull.ts`, `packages/library/src/trash.ts`.
 
-### Library configuration — Replace one validated setting at a time
+### S12 — Deliveries are published before they are recorded, and never clobber by accident
+
+- **When:** Slice 05 delivery export and closeout review; original-overwrite
+  protection, 2026-09-06.
+- **The choice:** An export crosses two durable systems that cannot share a
+  transaction: the filesystem holding the JPEG/PNG/TIFF, and the database
+  recording its history. photoctl writes and fsyncs the complete file, installs
+  it with an atomic no-replace rename, and only then inserts the history row — so
+  a database failure leaves a valid but unrecorded delivery, never a durable
+  history row pointing at a partial or missing file. Only `--on-collision
+  overwrite` may replace an existing name; filesystems lacking the no-replace
+  primitive fail closed after removing the unpublished sibling temporary, so a
+  reader observes either no destination or the complete fsynced file. An
+  overwrite aimed outside the currently configured volume map additionally checks
+  *historical* mount paths and refuses if a recorded original occupies that
+  canonical path or its leaf is missing — history may reserve a destination, it
+  may never identify a source. An unrelated absent mount is ignored, while a
+  permission or I/O failure is not proof of absence and refuses publication.
+  TIFF regains its `Artist` and `Copyright` fields by an in-process rewrite of
+  the image-file directory after the encoder drops them, rather than shelling out
+  to a separately installed metadata tool. Library presets shadow package presets
+  of the same name, command-line values win over both, and `--iptc` overrides
+  merge field by field so one override cannot erase an unrelated preset value.
+- **The gap:** The plan required durable output, history and no unasked
+  clobbering, but no shared transaction exists; skip semantics, stale-mount
+  interaction and encoder metadata loss were all unspecified.
+- **The reach:** Export retries may discover an unrecorded file and apply the
+  requested collision policy, but catalog history never promises a delivery that
+  had not yet been published. Canonical path checks handle file/directory
+  aliases but are not an adversarial transaction against concurrent renames.
+- **Verdict:** **Sound.** The recoverable orphan beats a false durable claim, and
+  uncertain replacement is refused rather than guessed.
+- **Confidence:** High; medium on preferring original safety over delivery
+  availability when a permission error makes absence unprovable.
+- **Owner:** `packages/render/src/export/{run,preset}.ts`,
+  `packages/commands/src/handlers/export.ts`.
+
+### S13 — Offline export reuses a retained render only with proof of intent *and* source quality
+
+- **When:** Retained-output integration, 2026-09-06; slice 05/08a2 evaluator
+  review.
+- **The choice:** A user edits online, inspects the result, then unplugs the
+  drive and exports. photoctl tries the live original first; failing that, it may
+  reuse an already-rendered canonical output, but only when that output's stored
+  renderer identity matches today's recipe semantics. Among valid candidates it
+  prefers greater original-source sampling, then full file over embedded JPEG
+  over pinned preview, then greater output sampling; two candidates that tie on
+  all of that but came from different automatic decoder choices are separated by
+  stable execution identity rather than by whichever ran last. Candidates are
+  validated in bounded metadata pages using each candidate's own coordinate
+  frame, so an obsolete or corrupt output cannot hide a valid one or force a paid
+  request to be replayed. Failure kinds stay distinguishable: source bytes that
+  will not decode raise their own evaluator error so export can fall back to the
+  pinned preview and warn, while a graph node whose pixel operation has not
+  shipped stays `decoder_unavailable` and never masquerades as an offline source.
+- **The gap:** Immutable edit-node identity alone names neither the renderer
+  version nor the quality of the source that execution used, and the evaluator
+  did not distinguish failing to decode a source from failing to evaluate the
+  graph above it.
+- **The reach:** Reconnect promotion, warnings and exit classes stay truthful
+  without a second cache or source-selection owner. A future explicit
+  decoder-preference contract must constrain retained-output eligibility, not
+  merely change which decoder new work uses.
+- **Verdict:** **Sound.** Reuse requires evidence about the actual execution
+  rather than a guess from age or dimensions.
+- **Confidence:** High; medium on the tie-break, which a user-facing decoder
+  preference would supersede.
+- **Owner:** `packages/commands/src/handlers/export.ts`,
+  `packages/render/src/export/`.
+
+### S14 — `xmp write` targets exactly one verified locator and publishes without a lost update
+
+- **When:** Slice 06 XMP implementation, 2026-09-05.
+- **The choice:** One photo can have several locators — catalog records pointing
+  at identical original bytes on different volumes. With the camera card offline
+  and a library copy online, `xmp write` walks the locators in catalog order,
+  verifies that an online file still has the catalogued content identity, and
+  writes one sidecar beside the first match; it does not fan the write out to
+  every copy, and `xmp sync --read` picks its sidecar by the same rule so read
+  and write cannot silently target a path whose bytes were replaced after import.
+  Publication then protects the only irreplaceable state — the existing sidecar.
+  photoctl merges catalog fields into memory, writes a uniquely named sibling,
+  preserves the old permission mode, fsyncs it, and re-reads the target,
+  comparing file identity, permissions/owner, size, nanosecond modification time
+  and a SHA-256 digest. It atomically displaces the current file to a private
+  sibling and validates those displaced bytes against the snapshot; if another
+  editor replaced the sidecar in that tiny interval, photoctl restores the
+  replacement and retries from it, up to three times, before refusing that item.
+  On success it hard-links the prepared file into the now-vacant name — hard-link
+  creation is atomic and refuses to overwrite a file another editor just created
+  — then fsyncs the directory, and only then does the database record the
+  observation. If a second editor makes restoration impossible, the displaced
+  bytes are left at a named recovery path with a typed failure rather than either
+  version being deleted.
+- **The gap:** The plan required parse-merge and read-only-volume behavior but
+  chose neither a crash boundary, a publication mechanism, nor which locator wins.
+- **The reach:** Every future XMP field inherits no-partial-file and
+  no-known-lost-update, including the post-verification race. A filesystem
+  without same-volume hard links refuses the write rather than falling back to a
+  clobbering rename. A caller who wants another copy's sidecar must make that
+  locator the first verified online source; there is no replication protocol.
+- **Verdict:** **Sound.** Ordering preserves the existing sidecar until a
+  complete replacement is durable, without a second journal or schema.
+- **Confidence:** High on the conflict-preservation ordering; medium on the
+  unmeasured three-attempt budget and on failing closed without hard links.
+- **Owner:** `packages/library/src/xmp/`, `packages/commands/src/handlers/xmp.ts`.
+
+### S15 — Sidecar content mirrors only what the catalog actually owns
+
+- **When:** Slice 06 parse-merge and doctor integration, 2026-09-05.
+- **The choice:** The catalog stores flat tag strings, not Lightroom's keyword
+  tree, so a write replaces both the flat and the hierarchical keyword properties
+  with one `dc:subject` bag containing exactly those flat strings — a deleted tag
+  cannot reappear on the next import, and a hierarchy discarded at import cannot
+  be reconstructed. Rating, colour label and the photoctl flag are the other
+  owned properties. Every unrelated XML node stays byte-for-byte in place, and
+  Lightroom hierarchy is removed only when the `lr` prefix really denotes
+  Lightroom's namespace: namespace validation follows XML scope through ancestor
+  elements, and if a document rebinds a standard prefix such as `rdf`, `xmp`,
+  `dc` or `photoctl` to a different URL, the merge refuses that item instead of
+  shadowing the binding and reinterpreting preserved XML. Item-local filesystem
+  shapes map to existing codes — a disappearing path to `file_offline`,
+  permission and read-only failures to `volume_readonly`, an XMP pathname that is
+  a directory to `unsupported_file` — while database and programming errors stay
+  unwrapped and abort normally. Divergence is reported by `doctor` as one
+  `xmp:{stale:N}` count plus a single soft warning, scanned 128 catalog rows at a
+  time, with `list --xmp-stale` as the per-photo surface.
+- **The gap:** The plan named the round-tripped values and required foreign-node
+  preservation, but defined neither hierarchy rewriting, prefix shadowing, POSIX
+  error shapes, nor doctor's response nesting and scan bound.
+- **The reach:** One malformed sidecar cannot starve later items; monitoring
+  reads one bounded health metric; callers needing IDs use the already-paged list
+  command instead of expanding doctor output.
+- **Verdict:** **Sound.** The serialized form matches the information the catalog
+  owns, and refusal is safer than assigning new meaning to preserved foreign XML.
+- **Confidence:** High; medium that `unsupported_file` is the right code for
+  path-shape faults.
+- **Owner:** `packages/library/src/xmp/`,
+  `packages/commands/src/handlers/{xmp,cull}.ts`.
+
+### S19 — Cache identity is portable, and prune claims a path before deleting it
+
+- **When:** Slice 03a cache lifecycle and integration review; slice 01a cache
+  override.
+- **The choice:** The cache index stores `view/<photo>/<render>/<artifact>`
+  relative to the *active* per-library cache root, and `PHOTOCTL_CACHE=/tmp/cache`
+  selects a base directory — the library ID is still appended, exactly as it is
+  under the default macOS cache directory — so two libraries cannot overwrite
+  each other and a restored catalog carries no machine-specific path. Files
+  abandoned under an old override simply stop being managed until that root is
+  selected again. Pruning takes one clock snapshot, pages the oldest rows in
+  bounded least-recently-used order, asks the shared preview coordinator for an
+  exclusive lease on each path, and deletes the database row only if `last_used`
+  is still older than the snapshot's 30-minute cutoff: if a concurrent `show`
+  validated and touched that preview after the list was captured, the condition
+  fails and the file stays; if prune claims first, a waiting materializer
+  regenerates rather than receiving a disappearing path. A filesystem failure
+  restores that row, records the first error, and continues with later candidates
+  so one permanently bad entry cannot starve every newer one. The result reports
+  artifacts removed, bytes freed, bytes still indexed and the requested maximum,
+  and `--max 0B` is a legitimate "remove every eligible derived artifact" that
+  still spares pinned, recently used and leased files.
+- **The gap:** The plan named leases, a captured prune time and a budget flag,
+  but chose neither the database/filesystem ordering, the failure isolation, nor
+  whether zero is a valid budget.
+- **The reach:** Agents can inspect a returned preview path without a concurrent
+  cleanup invalidating it, and backup/restore never bakes one machine's cache
+  directory into the catalog.
+- **Verdict:** **Sound.** The lease closes the file race, the conditional claim
+  closes the stale-query race, and per-item isolation preserves forward progress.
+- **Confidence:** Medium.
+- **Owner:** `packages/library/src/cache-index.ts`,
+  `packages/importer/src/cache-prune.ts`,
+  `packages/commands/src/handlers/cache.ts`.
+
+### S21 — Search is a local-first hybrid with an optional vector arm
+
+- **When:** Slice 09c schema and search implementation and its review.
+- **The choice:** A photo's searchable words live in child tables — paths in one,
+  tags in another — which PostgreSQL cannot query from a generated column. So a
+  database trigger refreshes a plain `photos.search_text` string whenever a file
+  or tag row changes, and `photos.searchable` is the generated tokenized search
+  document indexed for fast lookup; importing `weddings/first-look.ARW` and
+  adding the tag `ceremony` rebuilds that string from all current paths and tags
+  automatically. Duplicating refresh calls in import, tag, XMP, restore and every
+  future writer would make one missed caller silently stale the index. Both
+  documents and queries use PostgreSQL's `english` configuration with the same
+  punctuation stripping, so ordinary inflections match; a punctuation-only query
+  becomes no document and returns nothing. The optional vector arm materializes
+  the embeddings for the *requested model* and sorts them exactly rather than
+  using the approximate index, whose ordering domain spans model generations and
+  would underfill the current-model arm during a partial backfill. Each arm
+  supplies at least 50 and normally four times the requested count, never more
+  than 200 candidates, before reciprocal-rank fusion combines them into a page of
+  at most 50. Every hit is labelled with the basename of its lexicographically
+  first stored relative path — deterministic, no per-hit filesystem probe, and
+  not a claim that this copy is online. Provider failures — configuration, auth,
+  rate limit, timeout, outage, malformed success JSON — drop only the vector arm
+  with a warning, while local index and fusion failures stay hard errors.
+- **The gap:** The plan required a generated search value over normalized child
+  tables, a shape PostgreSQL cannot express as one formula, and fixed the public
+  page limit and fusion constant but not the text configuration, the candidate
+  window, the label rule, or the degradation boundary.
+- **The reach:** Keyless retrieval is intentionally English-oriented — other
+  languages tokenize but receive no stemming — and changing that later means
+  rebuilding the generated column and its index. Catalog search stays usable
+  during provider incidents without misrepresenting local corruption as an
+  optional-service warning.
+- **Verdict:** **Sound.** Synchronization lives where the facts change, model
+  isolation beats claiming an index whose ordering domain is too broad, and the
+  vector arm enriches recall without owning availability.
+- **Confidence:** Medium — English-only stemming and the 200-candidate window are
+  unevaluated against a real library.
+- **Owner:** `packages/library/src/search/`,
+  `packages/commands/src/handlers/search.ts`, slice 09c migration.
+
+### S23 — Library configuration replaces one validated setting at a time
 
 - **When:** Public-settings completion pass, 2026-09-07.
-- **The choice:** A developer can save a model mirror through `settings set`
-  instead of editing the database. The command accepts a setting name and JSON
-  value, replaces that whole value, and offers read/reset operations. Setting
-  `models` to one override removes previous overrides rather than silently
-  merging them; reset restores the normal defaults. Library identity and
-  internal navigation state are not user settings. No credentials are stored.
-- **The gap:** The original plan promised saved preferences but left their
-  public editing interface for a later slice, which never supplied it. A
-  dotted-path patch language or per-preference flags were possible alternatives.
-- **The reach:** One typed registry must govern validation and defaults for the
-  existing readers and new writer. Saving configuration makes no immediate
-  download or foreground provider request; existing automatic embedding consent
-  still permits background work. Explicitly enabling automatic embedding grants
-  that already-defined consent. There is no database schema change.
+- **The choice:** `settings get|set|reset` takes a setting name and a JSON value
+  and replaces that *whole* value — setting `models` to one purpose override
+  removes the previous overrides rather than silently merging them, and `reset`
+  restores the normal defaults. Dotted paths are refused; library identity and
+  internal navigation state are not user settings; no credentials are stored.
+  Saving configuration performs no download and makes no foreground provider
+  request, though explicitly enabling automatic embedding grants the
+  already-defined background consent. A developer can therefore point a library
+  at a model mirror without editing the database or being handed arbitrary SQL.
+- **The gap:** The original plan promised saved preferences but left their public
+  editing interface to a later slice that never supplied one; a dotted-path patch
+  language or per-preference flags were the alternatives.
+- **The reach:** One typed registry governs validation and defaults for both the
+  existing readers and the new writer, and there is no database schema change.
+  Not every stored value is exposed — see S93 for the daemon idle timeout.
 - **Verdict:** **Sound.** Whole-setting replacement is small, explicit and
-  retry-safe; it closes the CLI-only workflow without exposing arbitrary SQL.
+  retry-safe.
 - **Confidence:** Medium for whole-object JSON ergonomics; high for shared
-  validation, reset semantics and keeping identity/private state outside the API.
+  validation and for keeping identity and private state outside the API.
+- **Owner:** `packages/library/src/settings.ts`,
+  `packages/commands/src/handlers/settings.ts`.
+
+### S24 — `show` selects by path only through the existing locator, and never guesses
+
+- **When:** Existing-photo path lookup and its review, 2026-09-06.
+- **The choice:** `show abcdef` is treated as an ID prefix exactly as before; an
+  agent that means a file named `abcdef` writes `show ./abcdef`. A path argument
+  is resolved against the client's working directory, checked first against
+  library-local file identity, then handed to the existing volume resolver, and
+  the resulting volume-plus-relative-path pair is looked up in the catalog's
+  unique file index. An unindexed file returns `not_found`: inspection never
+  imports it and never searches for a same-content photograph elsewhere. A
+  missing path returns `file_offline` and tells the agent to use the photo ID,
+  which can still show the cached image — photoctl deliberately does *not* join a
+  remembered mount name to a relative path, because a different drive may now
+  occupy that name. Path identity and pixel availability stay separate: a mounted
+  path can identify the catalogued photo even when its bytes cannot be read, and
+  ordinary `show` then handles source availability and returns a cached preview
+  with a warning. `show` is the only verb that accepts a path.
+- **The gap:** The original `show <id|path>` syntax did not define ID-like
+  filenames, how a missing path identifies a volume, or whether the path selects
+  an indexed location, searches by content, or opens a new image; the initial
+  documentation also used "inaccessible" for both failed resolution and unreadable
+  bytes.
+- **The reach:** No additional index, persistence field, hashing pass or response
+  schema exists. Extending path selection to other single-target verbs would mean
+  giving each of them the resolver and the client working directory. A superficially
+  similar historical-mount join *does* exist nearby, but it belongs to the export
+  collision guard (S12) and is never used for selection.
+- **Verdict:** **Sound.** The existing locator is the canonical relationship
+  between a path and a photo; reuse it rather than adding a second identity owner.
+- **Confidence:** Medium on the ID-versus-path precedence rule; high on the
+  locator lookup itself.
+- **Owner:** `packages/library/src/locators.ts`,
+  `packages/commands/src/handlers/show.ts`.
+
+### S27 — Upscaling is an explicit external adapter with balanced guarded semantics
+
+- **When:** DAG/upscaling unknowns walk, 2026-09-05.
+- **The choice:** A dedicated `UpscaleAdapter` sits *outside* gateway transport
+  and owns its own display colour conversion, supported scale factors, pixel and
+  edge limits, optional provider-native tiling, and a reversible frame mapping. A
+  release pins a default; a library override wins over that; a per-command
+  override wins over both. `auto` runs only after that adapter has been
+  explicitly configured. Its default aesthetic is balanced-creative — medium
+  detail synthesis, high resemblance — expressed as a versioned *guarded* prompt
+  that uses the original generation intent as context while forbidding a repeat
+  of the replacement operation that produced the pixels; both the original and
+  the derived prompt are retained as provenance.
+- **The gap:** The gateway's four general routes cannot represent every
+  purpose-built upscaling service, while silently routing to a second vendor
+  would violate user intent and make behavior unreproducible.
+- **The reach:** Provider selection, consent, `doctor`, settings, events, cost
+  and any future hosted or local implementation share one stable boundary, with
+  no runtime capability guessing.
+- **Verdict:** **Sound.** External differences stay at the external boundary.
+- **Confidence:** Medium until a live model and its control values are measured.
+- **Owner:** `packages/providers/src/upscale/`,
+  `packages/providers/src/prompts/upscale.ts`.
+
+### S28 — No native mask is ever sent live; exterior protection is local
+
+- **When:** Slice 12 mask-polarity work; slice 12d provider runtime.
+- **The choice:** "Mask polarity" is the question of whether a provider treats
+  white as the area to edit or the area to protect — getting it backwards would
+  repaint the photograph and preserve the blemish. Every gateway image adapter is
+  constructed with polarity `unverified`, so an edit that would send a native
+  mask throws `provider_unverified_mask` (exit 69) before any network I/O. The
+  keyless path instead names a reserved fixture model that photoctl maps
+  *locally* to an instruction-and-composite adapter: it asks for replacement
+  pixels without sending a mask at all, then applies the returned pixels through
+  photoctl's strict compositor, which copies every pixel outside the mask from
+  the original input. Merely pointing the gateway URL at a fixture proves
+  nothing — safety comes from not sending a mask and from the local compositor,
+  not from a server identifying itself honestly. The evidence path is a separate
+  explicitly keyed probe that makes exactly one request for one named model and
+  polarity candidate using synthetic rectangles rather than a private photo,
+  saves the outgoing mask and the uncomposited return with hashes, and *always*
+  leaves polarity unverified for human review; its prompt asks both rectangles to
+  change while the mask protects one, so prompt obedience cannot masquerade as
+  mask enforcement.
+- **The gap:** The spec required live polarity evidence but defined neither the
+  probe's consent, fixture, request budget nor acceptance mechanism, and did not
+  say how the built CLI recognizes the fake without turning an arbitrary URL into
+  authority.
+- **The reach:** Functional and agent-journey tests exercise the production CLI,
+  real HTTP transport, immutable execution provenance and the strict composite
+  without pretending to prove a live provider's convention. A spoofed fixture
+  response can still change only the region the fill authorized. Native-mask
+  polarity remains a genuinely open gate that blocks live masked fill entirely.
+- **Verdict:** **Sound.** Transport success is not a mask-quality verdict, and
+  provider-specific encoding has one owner without changing the compositor's
+  internal white-means-edit convention.
+- **Confidence:** High on the safety property; medium that the eventual live
+  evidence will be read correctly, which is why it requires independent visual
+  review.
+- **Owner:** `packages/providers/src/adapters/image.ts`,
+  `crates/photoctl-image` strict composite.
+
+### S29 — Provider dialects terminate at the adapter boundary
+
+- **When:** Slice 09a adapter implementation; slice 13a visual gate correction.
+- **The choice:** A structured model returns `box_2d:[120,300,480,700]`. The
+  adapter reads that as the vendor's `[top,left,bottom,right]` order on a 0–1000
+  scale and rounds it into integer `[x,y,w,h]` pixels against the first supplied
+  image, so callers only ever see canonical geometry. The image adapter captures
+  the original encoded response and produces a PNG at its actual returned
+  dimensions; it does not resize it to the requested dimensions. An unexplained
+  aspect-ratio change is refused as `provider_whole_frame`. Later working-image
+  conversion expands display-sRGB bytes across the full 16-bit range before
+  scene-linear conversion: 128 becomes 32896, not a near-black 128 in a 16-bit
+  container. Deterministic sizing belongs to the render graph and its shared
+  native resampler, independently of adapter normalization.
+- **The gap:** The contract assigned frame conversion and adapter-internal colour
+  conversion but never spelled out coordinate order, rounding, or sample depth.
+- **The reach:** Generate, fill, reimagine and every future external-image
+  consumer share correct brightness and colour scaling; a non-Gemini structured
+  provider will need its own coordinate converter. Previously generated near-black
+  artifacts remain immutable evidence of the old execution.
+- **Verdict:** **Sound.** Provider conventions stop at the provider boundary and
+  the repository keeps one resize kernel.
+- **Confidence:** Medium — geometry is fixture-pinned; live colour and sample
+  evidence remain outstanding.
+- **Owner:** `packages/providers/src/adapters/{structured,image}.ts`,
+  `packages/render/src/fill/external-pixels.ts`.
+
+### S30 — Upload sampling is capped and clipped, and never decides where pixels land
+
+- **When:** Slice 12e2 fill input-size pass; initial cropped-frame fill correction.
+- **The choice:** A fill covering a 2048×32 crop sends a 1536×24 image and mask
+  by default — the long edge is capped, the short side rounds to the nearest
+  whole pixel with a minimum of one, and both uploads share those dimensions —
+  while the returned pixels still occupy the full 2048×32 base region. `--full-res`
+  skips the reduction. A provider still receives its crop in original coordinates
+  even when the available photo is rotated, cropped, or only a reduced offline
+  preview: the native sampler borrows the existing buffer, maps each requested
+  output sample into it and interpolates, and context the current view cannot
+  show is black with zero edit coverage — it never reconstructs a full
+  original-sized image merely to make a bounded upload. Visibility is decided at
+  pixel centres: a selection pixel is visible when its centre maps inside the
+  evaluated frame, a partial intersection succeeds with `mask_clipped`, and a
+  wholly invisible selection is a usage error *before* any provider call or new
+  revision. After downsampling, the wire mask is clipped again at its own sample
+  centres so interpolation cannot mark black padding as editable. The generation
+  request stores the sent dimensions, the full-resolution intent and the actual
+  sampling map, independently of the placement crop.
+- **The gap:** The plan fixed the cap and base-coordinate placement but not
+  integer rounding, mask filtering, the subpixel visibility rule, or where to
+  retain sampling intent for a later refresh.
+- **The reach:** Provider bandwidth and final output geometry have distinct
+  owners, so limiting an upload cannot shrink the document or misrepresent
+  generated sampling density. Refresh reuses the stored intent; a new fill with
+  changed intent cannot reuse the old execution; older recipes without the field
+  keep their original full-size sampling.
+- **Verdict:** **Sound.** The rule matches the native sampler's own
+  inside/outside decision, and original-coordinate placement stays stable without
+  pretending unavailable pixels were present.
+- **Confidence:** High for coordinates and memory ownership; medium for
+  photographic quality at thin mask edges, which needs live evidence.
+- **Owner:** `packages/render/src/fill/{external-pixels,mask,pipeline}.ts`.
+
+### S31 — Selection intent and fill coverage are different graph values
+
+- **When:** Slice 12e1 effective-mask integration; slice 12 refresh correction.
+- **The choice:** A subject's original selection stays an immutable mask
+  ancestor; a derived recipe computes the *expanded or feathered* coverage the
+  fill will paint. The explicit fill compositor uses that fractional coverage
+  once, while the outer layer uses its binary support — every nonzero sample
+  becomes one — so a half-covered edge yields half-strength paint rather than a
+  quarter from applying alpha twice. Positioning and the hole left by a moved
+  subject use the original selection; coverage and support follow their separate
+  ancestry. Relatedly, when a crop hides half a selection, fill edits only the
+  visible half and stores that restriction in its effective mask; clearing the
+  crop alone does not invent edits in the hidden half, but an explicit
+  *regeneration* returns to the original selection intent, can fill both halves,
+  and replans the provider crop from the newly visible coverage and the stored
+  padding.
+- **The gap:** The previous layer and fill compositors used the same mask, which
+  hard selections hid; existing refresh requirements did not define partially
+  invisible selections.
+- **The reach:** Refresh, repetition and transforms recover original intent
+  instead of repeatedly expanding a prior result. Old requests without a stored
+  padding amount keep their recorded rectangle, enlarged only enough to contain
+  refreshed support, rather than guessing a new padding preference.
+- **Verdict:** **Sound.** Each mask has one meaning, and transformation must
+  precede support derivation so resampling cannot reintroduce fractional coverage
+  at the outer compositor.
+- **Confidence:** High for the mask split; medium that a regeneration
+  deliberately enlarging the edited area after an uncrop is what a user expects.
+- **Owner:** `packages/render/src/fill/mask.ts`,
+  `packages/render/src/layers/operations.ts`.
+
+### S33 — Paid pixels and the graph revision commit together, and the node pins its execution
+
+- **When:** Slice 12a strict-fill implementation; slice 09a provenance; slice 13a
+  standalone generation; combined move/scale pass.
+- **The choice:** A provider returns bytes. They are normalized and published
+  into the content-addressed artifact store first; then the artifact row, the
+  immutable generate execution, the canonical descendants, the replacement layer
+  snapshot and the output root all enter the catalog in **one** revision
+  transaction, and the prepared execution must be reachable from the resulting
+  document roots — retaining an inactive node elsewhere is not enough. A
+  malformed or structurally invalid response therefore leaves no catalog
+  execution and no new undo state. The generate recipe stores its execution ID,
+  so later `show` and `export` reuse those exact pixels and never silently call
+  the provider again; a missing generated artifact fails closed rather than
+  manufacturing different pixels under the same graph. Standalone `generate`
+  extends the same discipline to catalog creation: photo row, locator, the
+  `generated` tag, artifact and execution registration, and the first revision
+  all commit or vanish together inside the ordinary import transaction, with
+  generated locators rooted at the portable library volume. External facts extend
+  the *existing* execution record as one nullable, object-constrained JSON column
+  holding a bounded whitelist — transport, debug and auth fields are stripped at
+  ingestion, and missing or recipe-mismatched provenance prevents a
+  generate/upscale success from committing. A combined move that needs new
+  density may finish an external upscale before the graph changes; the move
+  writer then activates pixels, subject geometry and vacancy together against one
+  expected parent revision, and if another edit wins it keeps the returned
+  original bytes in the attempt journal and rejects activation rather than
+  publishing half a move.
+- **The gap:** The graph store previously committed deterministic nodes and
+  revisions separately from provider execution recording, the evaluator could
+  select an execution only when a caller supplied one, and composing density with
+  movement needed an ownership boundary.
+- **The reach:** Fill, refresh and every future paid mutation inherit a
+  transaction boundary that cannot expose a paid node without its exact output or
+  activate a replacement layer piecemeal. Transport credentials are excluded from
+  structured provenance; user-authored prompts remain stored as requested. Future
+  provenance additions must fit the bounded whitelist rather than create
+  another execution identity.
+- **Verdict:** **Sound.** Publication stays content-addressed and recoverable
+  while all catalog-visible state is atomic.
+- **Confidence:** High; medium only in that a byte-identical generated result is
+  refused inside the transaction rather than given a distinct duplicate result
+  code.
+- **Owner:** `packages/render/src/fill/generation.ts`,
+  `packages/render/src/graph/store.ts`,
+  `packages/commands/src/handlers/generate.ts`.
+
+### S35 — Refresh selects the paid stage to retry and never downgrades a better result on failure
+
+- **When:** Pre-slice-12 unknowns walk; slices 12c2, 12d1, 12d2; outpaint
+  refresh/retry follow-up; full-frame pass B.
+- **The choice:** A fill's upscale failed, so the branch is active at generation
+  density with an `upscale_failed` warning and no failed node in the graph.
+  Retrying inspects only the active layer's canonical branch — generate, optional
+  upscale, exact resample/place, zero-feather mask composite — and reuses the
+  exact generation execution when the instruction matches; an upscale cache
+  additionally requires the current adapter, version, model and guarded-prompt
+  identity to match, and the retry restores the composite's original base input
+  rather than editing the already-composited layer. If an *explicit upscale*
+  refresh then fails, the layer keeps its previous, sharper purchase rather than
+  reverting to the smaller generation, and the response marks the retained result
+  as reused so it never implies the failed call produced those pixels.
+  Generation refresh instead rebinds to the current develop root and rebuilds
+  descendants, so a brightness change followed by regenerate is visible to the
+  provider; one affine rebuilder composes generation placement and the permanent
+  mask into one coordinate space, which **supersedes** the earlier bounded
+  refusal of transform-before-fill ancestry. Full-frame refresh reuses an
+  unchanged viewport recipe verbatim so verified retained pixels stay reachable,
+  and only normalizes geometry when the crop actually moved. Compatible later
+  develop changes may add deterministic compensation to old generated branches;
+  incompatible ones make the old lineage explicitly stale. `executed` describes
+  whether the committed graph path uses an upscale node, while
+  `executions[].reused` says whether this request paid.
+- **The gap:** A flat refresh record cannot express which expensive stage to
+  rerun; the plan defined first-time and transform-driven upscale failure but not
+  failure while refreshing an already successful upscale; and it never said how
+  broadly to search history or which recipe fields distinguish a photoctl fill
+  from a user-authored graph with similar topology.
+- **The reach:** Retrying cannot reinterpret arbitrary generate ancestors, stack
+  the same fill repeatedly, or reuse pixels produced by a stale adapter or prompt
+  contract. Failure recovery, cost, stale warnings, undo and strict compositing
+  all become precise. Mask exactness is proved at the mask-composite boundary
+  against that node's base input, not against a final output that may contain
+  later global edits.
+- **Verdict:** **Sound.** The system retains paid successful work without
+  claiming a failed enhancement happened.
+- **Confidence:** High; medium only that a future product decision might make
+  explicit refresh failure hard, which would change the established
+  soft-success contract.
+- **Owner:** `packages/render/src/fill/{refresh,reuse,branch}.ts`,
+  `packages/render/src/full-frame-refresh.ts`.
+
+### S36 — Full-frame verbs share one external owner, and their controls are guidance *and* exact coverage
+
+- **When:** Slice 13a reimagine and relight; per-command override completion,
+  2026-09-08.
+- **The choice:** `reimagine` and `relight` call the same generation publication,
+  provenance, density planning, upscale execution and fallback owner as `fill`;
+  each owns only its own request shape and layer projection, so provider and
+  failure semantics cannot drift between copies. `reimagine` resolves the
+  library's *edit* model purpose — not the standalone generate purpose — because
+  it posts source pixels to the image-edit route. `--strength` is bounded to
+  `0..1` (default 1) and does two things at once: it appears literally in the
+  versioned prompt telling the provider how much composition and identity to
+  preserve, and it becomes the coverage of a permanent whole-frame mask in the
+  compositor, so the pixel effect is observable even if the model ignores the
+  prose. `relight` reuses that entire response shape, replacing `strength` with
+  azimuth (0–360°), elevation (−90–90°) and intensity (0–1), all validated before
+  a request is opened; at intensity zero photoctl still records the requested
+  provider operation as a removable layer while rendering the current pixels
+  exactly. During a long generation-and-upscale sequence both emit five-second
+  progress heartbeats that are best-effort and can never turn a committed
+  revision into a reported command failure. All four generative verbs — `fill`,
+  `generate`, `reimagine`, `relight` — now accept `--upscale`, `--no-upscale` and
+  `--upscale-model`, forwarding request intent into the shared density policy;
+  contradictory flags are a usage error before the library opens. Standalone
+  `generate` remains deliberately opt-in rather than `auto`, because a source-less
+  generation has no destination density to match.
+- **The gap:** The first implementation draft copied the fill planner into a
+  second module; the gateway image route has no portable native strength control,
+  yet the public option still needs deterministic pixel semantics; and the global
+  rule stated the upscale precedence without naming which verbs carry the flags.
+- **The reach:** Provider requests, graph identity and rendered pixels all record
+  the user's control values. A future adapter-native strength control requires a
+  prompt-recipe version change but cannot silently remove the graph-owned blend.
+  Adding the per-command flags introduced no new provider, schema or consent
+  mechanism — request precedence and configured-provider consent stay with the
+  existing fill policy.
+- **Verdict:** **Sound.** Provider guidance influences generation; the graph-owned
+  blend makes the public contract observable; and one shared owner keeps failure
+  semantics identical across the verbs.
+- **Confidence:** High; medium that both azimuth 0 and 360 remain accepted as
+  equivalent physical inputs.
+- **Owner:** `packages/render/src/reimagine.ts`,
+  `packages/commands/src/handlers/{reimagine,relight,generate,full-frame-generation}.ts`,
+  `packages/providers/src/prompts/{reimagine,relight}.ts`.
+
+### S37 — Full-frame refresh may run entirely on retained pixels when the source is gone
+
+- **When:** Full-frame pass B, 2026-09-06.
+- **The choice:** The original file disappears, but a small pinned preview and a
+  previously rendered full-resolution version of the same photographic input
+  remain. Generation prefers the verified native retained render over the smaller
+  preview; with no decodable source at all it may use that exact retained input;
+  reconnecting tries the live original first. Because the new combined output has
+  never been rendered, `show` and `export` get one final evaluation policy after
+  their normal source attempts fail: reuse verified retained executions at their
+  exact graph nodes, then run only the deterministic descendants such as
+  compositing — using a node's own saved result means earlier layers are not
+  applied twice. A missing *paid* result is an error, not permission to invoke
+  its provider. Missing or corrupt pinned execution bytes report `file_offline`
+  with a structured `retained_artifact_unavailable` reason, reusing the
+  established unavailable exit class rather than misreporting a decoder failure
+  or a data lookup failure.
+- **The gap:** The spec required the complete retained-only lifecycle, but the
+  existing reader could reuse only a finished current output and could not create
+  the first new composite without descending to the unavailable original;
+  retained-only support also never said how it ranks against a usable but smaller
+  pinned fallback.
+- **The reach:** This is an explicit policy on the existing evaluator, not a
+  second evaluator or source type; its public entry accepts no source or provider
+  callbacks. The exact execution source tier travels with the pixels into preview
+  metadata, so retained *generated* detail can never claim the original source
+  was native. Missing or corrupt retained input cannot authorize a replacement
+  purchase.
+- **Verdict:** **Sound.** The existing registry, cache identity, frame validation
+  and store own every evaluation; only the permitted source of reusable
+  deterministic inputs changes.
+- **Confidence:** Medium for the retained-graph evaluation policy; high for the
+  fallback ranking and the typed unavailable error.
+- **Owner:** `packages/render/src/full-frame-refresh.ts`,
+  `packages/commands/src/graph-source.ts`.
+
+### S39 — Auto-enhance is a clamped structured proposal, not a second editing engine
+
+- **When:** Slice 13b auto-enhance implementation and independent review.
+- **The choice:** `develop --auto` fetches a 1024-pixel-long-edge JPEG through
+  the ordinary `show` preview path — joining the same single-flight
+  materialization as any other request rather than opening a second render path —
+  and computes seven statistics with pinned conventions: preview bytes are
+  treated as encoded sRGB, luminance and the gray-world mean are computed after
+  decoding that transfer function to linear light, the mean goes through the
+  standard matrix and a named correlated-colour-temperature estimator, saturation
+  stays encoded-sRGB HSV, percentiles use type-7 linear interpolation, and
+  clipping counts the exact black and white endpoints. It then asks a structured
+  model for a non-empty subset of eight develop paths; the numbers are clamped by
+  the narrower automatic range table (exposure to `[-2,2]`, most notably) and
+  serialized as one ordinary develop `--set` batch, so all final validation,
+  graph mutation, layer compensation and staleness stay with the existing develop
+  owner and automation can never widen manual editing. The revision records
+  adapter identity and version, the fixed model, the provider request ID, attempt
+  count, prompt version, dimensions and the exact statistics — and does not invent
+  cost or duration fields the structured adapter does not return. `--undo-auto`
+  accepts only the active revision carrying its versioned marker and *always*
+  authors a new revision without the marker, even when the restored dictionary is
+  byte-for-byte identical, so a later manual edit makes an older marker
+  ineligible and one undo consumes exactly one automatic edit. Undoing from C to
+  an auto-enhanced B and then invoking `--undo-auto` produces a new revision D
+  and clears the redo path to C, while C's history and purchased artifacts stay
+  retained; ordinary `undo` can then undo D.
+- **The gap:** The proposal contract named the statistics but not their transfer
+  space, quantile convention, saturation model or temperature estimator, and
+  required storing and restoring the pre-automatic state without defining marker
+  identity, lifetime or no-op consumption.
+- **The reach:** The seven-field input is deterministic across future
+  implementations. Provider or schema failures leave the active revision pointer
+  unchanged; successful no-op proposals stay auditable; this introduces no second
+  history engine.
+- **Verdict:** **Sound.** Partial conservative proposals are useful, the narrower
+  automated policy cannot widen manual editing, and the behavior follows the
+  existing immutable-revision and compare-and-swap ownership.
+- **Confidence:** High; medium that the structured adapter may later expose
+  shared cost and duration telemetry worth recording.
+- **Owner:** `packages/commands/src/handlers/develop-auto.ts`,
+  `packages/providers/src/{adapters/structured,prompts/auto-enhance}.ts`.
+
+### S40 — Live probes are opt-in per purpose, and their evidence never becomes acceptance
+
+- **When:** Slice 09b evidence surfaces and reviews; upscaler report contract and
+  reuse passes, 2026-09-06.
+- **The choice:** An ordinary gateway key in the shell starts *no* experiment.
+  The embedding smoke requires its own purpose-specific key for that invocation;
+  with no such key it exits successfully and writes a machine-readable
+  `not_run:unconfigured` record, while a configured-but-failed run exits nonzero
+  *and* writes a rejected record — so automation can tell "not authorized to run"
+  from "authorized but broke". Acceptance is defined narrowly: exactly one finite
+  3,072-number vector for one item containing a text part and an inline JPEG,
+  because the product needs one searchable vector per photo, not two unrelated
+  vectors or a provider's smaller default. On success the evidence keeps the
+  request structure but replaces the JPEG bytes with their digest; on rejection
+  it keeps no request fixture; a 200 response of the wrong shape records the item
+  count and the first eight observed vector widths rather than copying an
+  unbounded response into durable evidence. The upscaler spike likewise takes an
+  operator-supplied JSON manifest that changes one variable per comparison and
+  never fills in creativity or resemblance values itself; it identifies paid work
+  by source bytes plus adapter/model/version plus exact prompt and controls, so a
+  second inspection crop of the same image is free; it validates every input —
+  including a full decode, since reading PNG dimensions does not prove the
+  compressed pixels decode — before the first paid call; it stops spending on the
+  first failure with no automatic retry or partial continuation; it marks a
+  started run `running` and replaces a stale verdict rather than leaving
+  yesterday's success beside today's failure; and it records mean absolute
+  per-channel pixel drift as telemetry only. Where two outputs have different
+  rasters there is no honest alignment, so drift is reported as absent with an
+  explicit reason rather than as a computed score. Declared source categories
+  ("this crop is hair") are recorded as operator declarations, never as
+  recognition. Fake outputs are always labelled fake.
+- **The gap:** The plan prohibited ambient credentials from becoming consent but
+  chose neither the operator-facing key names, nor the exit/evidence behavior for
+  configured failures, nor what qualifies as acceptance, nor how the runner
+  isolates a comparison variable.
+- **The reach:** Developers keep general provider credentials in their
+  environment without accidentally uploading a photo or spending money during
+  routine gates, and CI treats an absent optional experiment as green while still
+  noticing a broken one somebody explicitly asked to run. A contact sheet can
+  never silently become proof of photographic preservation or provider settings.
+  Manifest control ranges are a runner restriction, not a provider guarantee; a
+  future live adapter must establish its own control units first.
+- **Verdict:** **Sound.** Purpose-specific credentials make consent observable,
+  and refusing to turn telemetry into a quality score avoids an automated product
+  choice.
+- **Confidence:** High on the consent and evidence mechanics; medium that the
+  candidate embedding dialect and the control ranges survive contact with a live
+  provider.
+- **Owner:** `scripts/{smoke-embed-shape,smoke-mask-polarity}.mjs`,
+  `apps/workbench/` upscaler spike, [09b slice](slices/09-providers-embed-search.md).
+
+### S41 — Keyless journeys and developer reports state exactly what their fixtures can establish
+
+- **When:** Slice 12d2 agent-preview integration; slice 12d workbench fill;
+  release report integration; `wb masks` and `wb ab` reports.
+- **The choice:** The mandatory real-CLI editing journey uses a code-generated,
+  asymmetric high-resolution raster with stable subject, detail, anchor and
+  protected-pixel facts, and accepts the fake provider's intentionally flat
+  replacement as a deterministic *state transition* — then judges placement,
+  linear-light opacity, preview reuse, provider request counts and export
+  identity independently. It never treats the synthetic fill as an aesthetic
+  oracle. The developer fill report may execute the graph's *deterministic* steps
+  (exact resampling, strict mask compositing) by following the fill execution's
+  input hashes back to cached content-addressed artifacts, while paid generate
+  and upscale nodes can only load the exact output pinned in their immutable
+  execution record — if that cache is missing the report refuses, which makes the
+  provider boundary mechanically unreachable from inspection. It also refuses a
+  branch whose mask has since been transformed, rather than drawing an old
+  base-space crop over transformed pixels. The mask report compares committed
+  masks against the highest-area available execution of the current develop root,
+  breaking ties by creation time, and explicitly disclaims knowing which cached
+  tier a previous `show` reused. `wb ab` says outright that only pixel dimensions
+  were verified — source, framing and encoding must come from capture provenance.
+  The release gold report includes only the files the exam actually returned,
+  uses relative links so the bundle can move without re-encoding JPEGs, defaults
+  source classification to unverified even when an operator declares a real
+  drive, and labels collision-skipped exports as unverified against the requested
+  render.
+- **The gap:** A keyless provider can prove orchestration and pixel ownership but
+  cannot stand in for a live model's perceptual behavior; and none of these
+  reports had a defined membership, cache policy or provenance claim.
+- **The reach:** The full local journey catches stale previews, repeated paid work, coordinate drift,
+  cache contamination, incorrect blending and stale exports without credentials
+  or lucky sampled content, while live visual review retains one clear variable
+  instead of inheriting false confidence. Checksums detect later byte changes but
+  certify neither photographic quality nor source authenticity.
+- **Verdict:** **Sound.** Each artifact's claims stop at the boundary its inputs
+  can actually establish.
+- **Confidence:** High for state, cache and export continuity; deliberately none
+  for live aesthetics, and medium that a human still has to choose the most
+  useful detail crop.
+- **Owner:** `apps/workbench/`, `scripts/gold-exam.sh`,
+  [gold report](assets/gold-report/), [agent preview loop](assets/agent-preview-loop/).
+
+### S44 — Historical execution coordinates are recovered only when retained ancestry agrees
+
+- **When:** Shared realized-frame implementation, 2026-09-05.
+- **The choice:** An old execution row predates coordinate metadata. When it
+  points at an input image shared by several historical runs, recovery compares
+  their frames — the source dimensions and the mapping that locate those pixels
+  in the original photo. If every candidate agrees, the recovered frame is saved
+  on the old row; if they disagree, recovery reports ambiguity rather than
+  borrowing the newest run's coordinates and silently moving a selection.
+  Inspection stops at 64 candidates per input and 256 distinct executions
+  overall. A preview that already has its own valid saved frame needs none of
+  this and stays usable offline.
+- **The gap:** The approved execution-metadata contract left historical recovery
+  and its work limits open.
+- **The reach:** A retained execution missing its optional frame can be inspected
+  without replaying paid generation. This is not a promise to migrate old schemas. Very
+  large or ambiguous historical graphs may require a fresh deterministic
+  evaluation instead. The numeric limits are operational policy, not evidence of
+  ambiguity.
+- **Verdict:** **Sound.** Missing history must not become invented geometry, and
+  an ordinary preview must not trigger unbounded database work.
+- **Confidence:** Medium — the limits may need adjustment against real libraries.
+- **Owner:** `packages/render/src/graph/projection.ts`.
+
+### S46 — Revisions are root-complete, lazily created, and nothing is collected automatically
+
+- **When:** Slice 08a1 implementation review; slice 08a2 preview and inspection
+  integration; retention policy carried forward.
+- **The choice:** A revision commit accepts caller-chosen batch-local keys for
+  new nodes, so a caller can submit output → develop → source in any array order;
+  the writer resolves the graph from the final typed root, refuses cycles and
+  missing or cross-photo references, and rolls back if any supplied draft is not
+  reachable — a second unused crop node cannot quietly attach itself. Every node
+  kind has a strict parameter schema from the start, with kinds whose command
+  arrives later exposing only their minimal structural fields so unknown
+  top-level fields fail rather than entering a recipe. An ordinary imported photo
+  acquires one immutable source→output revision the first time
+  a graph-aware command needs it, with concurrent initializers converging on the
+  winner's revision, rather than eagerly creating edit history at import. Paged
+  graph inspection binds its opaque
+  cursor to the photo, the inspected revision, the history mode and the last node
+  identity; if a newer revision becomes active between pages, later pages
+  continue the *original* revision rather than failing or switching state.
+  All retained document revisions and provider-image attempts contribute artifact
+  roots. Availability checks mark missing or corrupt files unavailable; reachability
+  itself does not remove them. No automatic canonical-artifact deletion or numeric
+  undo/age/storage limit is implemented or authorized by measurements alone.
+- **The gap:** The atomic batch contract never defined how nodes created in one
+  transaction refer to each other or whether unrooted drafts are legal; the
+  schema introduced graph tables without backfilling; the pagination contract
+  required revision binding without choosing continuation versus stale-cursor
+  refusal; and retention limits were explicitly deferred.
+- **The reach:** Develop, crop, layers and every future multi-node mutation get
+  one stable request shape with no provisional node IDs, and failed requests
+  cannot accumulate unreachable metadata. Disk grows without bound until a limit
+  is chosen; that is the deliberate current state, and this ledger records no
+  authority to add automatic collection or a retention cap.
+- **Verdict:** **Sound.** Local keys are transaction-scoped addresses, lazy
+  creation is deterministic and compare-and-swap protected, immutable revisions
+  make cursor continuation both simpler and more useful than invalidation, and
+  measurement precedes deletion policy.
+- **Confidence:** High for the writer and cursors; medium for retention, which is
+  an open measurement rather than a settled design.
+- **Owner:** `packages/render/src/graph/{store,inspection}.ts`,
+  `packages/render/src/artifacts/availability.ts`.
+
+### S48 — Rendered previews are lazy, versioned, single-flight views of committed edit state
+
+- **When:** User-directed preview amendment, 2026-09-04; slice 03a lifecycle;
+  slice 12d preview foundation; cheap source-overview integration, 2026-09-06.
+- **The choice:** Import keeps one immutable pinned source preview for offline
+  recovery. Edited previews are separate, prunable JPEGs keyed by the canonical
+  edit state and the viewport. A pixel-affecting command commits state and
+  returns the new render hash *without* rendering; the next `show` lazily creates
+  one full-frame display master for that render state, and crops and smaller
+  views derive from the master without reevaluating the graph. Before promoting
+  to a master, an existing full-frame view may feed a crop only when it really
+  contains enough pixels at that region's scale; the default 1616-pixel overview
+  stays cheap and does not force a full-resolution render. Concurrent requests
+  for the same photo, render state and artifact join **one** materialization: one
+  evaluation runs, every waiter receives the same validated artifact, and a
+  failure clears the flight so a later request can retry. The path is leased
+  while in flight, `cache prune` skips leased paths and anything used within the
+  preceding 30 minutes, and `last_used` updates only after the returned file is
+  readable — so an agent can compare two returned preview paths without a
+  concurrent prune invalidating them. A derived preview is two files, the JPEG
+  and a small sidecar naming its source tier and dimensions; the sidecar also
+  carries the JPEG's digest, which is recomputed on read, so a crash between the
+  two renames produces a detectable cache miss instead of an old explanation
+  blessing new pixels, and cache accounting charges both files. Reusing a valid
+  master repairs a missing index row rather than leaving a valid orphan invisible
+  to the storage budget. A freshly imported photo's default overview may be
+  encoded straight from its pinned import JPEG — but only when the active graph
+  is exactly source followed by display output with no geometry; an explicitly
+  empty develop node or a disabled-layer graph still runs ordinary evaluation,
+  because looking empty in a summary does not prove no pixel operation exists.
+  Even that cheap path checks the catalogued locator through the existing source
+  resolver, warns truthfully, and publishes through the existing preview
+  coordinator rather than returning the pinned file directly.
+- **The gap:** The plan exposed the pinned import preview but never defined how
+  an agent sees develop, layer, fill, retouch or markup changes before export,
+  nor the concurrency and prune interaction, nor how two separately renamed files
+  prove they belong to one completed write, nor how to prove a cheap overview is
+  eligible.
+- **The reach:** Every pixel mutation contributes its canonical inputs to the
+  render hash, so a new edit or viewport produces a new path rather than
+  overwriting inspected pixels. Export snapshots and reports the same render hash
+  at command start but renders from the graph, so preview and export cannot
+  silently refer to different edit states — preview pixels are review-sized, not
+  export truth. Every future preview producer inherits this lease protocol.
+- **Verdict:** **Sound.** A per-state full-frame master makes the
+  overview → detail → zoomed-out loop cheap while the sufficiency check prevents
+  a small overview from masquerading as full-resolution detail.
+- **Confidence:** High; medium only for the intentionally narrow eligibility of
+  the cheap overview shortcut.
+- **Owner:** `packages/render/src/{preview,preview-coordinator,preview-artifact}.ts`,
+  `packages/importer/src/cache-prune.ts`.
+
+### S49 — One coordinate frame, one preview colour, one preview quality
+
+- **When:** Slice 01b coordinate ownership and preview-contract correction;
+  preview fidelity correction, 2026-09-07.
+- **The choice:** Coordinates are oriented, uncropped, top-left base pixels
+  measured along image *edges*, so the top-left is `[0,0]` and a bounding box
+  transforms all four of its edges before its new origin and size are computed.
+  One small transform record — a quarter-turn plus an optional reflection —
+  serves both the coordinate functions and the pixel decoder, so an orientation
+  fix in rendering cannot leave editing coordinates behind. A viewport is a
+  half-open interval: `[-50,0,100,100]` asks for pixels from 50 left of the image
+  through pixel 49 inside it, so the returned region is `[0,0,50,100]`, with
+  fractional outer edges rounded outward before intersection. Clamping a negative
+  origin while keeping the width would silently move the request and return
+  pixels the caller never selected; a wholly non-visible region is a usage error.
+  Every source preview, display master and derived view is an
+  orientation-applied, opaque JPEG tagged with the bundled sRGB profile, encoded
+  at quality 88 with a colour sample per pixel (4:4:4) rather than colour shared
+  between neighbours — a thin blue detail beside red used to read as purple in a
+  new preview even though the stored render still held distinct colours. New
+  previews may be larger; existing cached previews stay usable until ordinary
+  regeneration, with no purge, identity change or migration, because rejecting
+  old high-resolution previews could reduce offline availability when only a
+  smaller pinned source remains.
+- **The gap:** The plan fixed the eight orientations and the box shape but not
+  edge-versus-centre coordinates, fractional clipping, or preview colour
+  sampling; raising JPEG quality alone would have kept the spatial colour
+  averaging, and switching to PNG would change the public JPEG contract.
+- **The reach:** Crop, segmentation boxes, masks, layer transforms, markup and
+  render orientation inherit one base coordinate space, and UI clicks and
+  agent-selected regions share it even after crop, rotate and straighten.
+  Inspection never depends on an application guessing the preview's profile.
+- **Verdict:** **Sound.** Outward edge rounding preserves every pixel the
+  requested rectangle touches, and fine colour is preserved at the encoding
+  boundary without changing source pixels or editing semantics.
+- **Confidence:** High; medium for leaving existing caches unchanged, whose older
+  appearance persists until regenerated.
+- **Owner:** `packages/render/src/{coordinates,preview}.ts`.
+
+### S51 — Metadata ownership at the import boundary: parse at the file, orient in render, refuse only what is structural
+
+- **When:** Slice 01b importer, render-owned and library passes.
+- **The choice:** A portrait photo can store its pixels as a landscape rectangle
+  plus an orientation number saying how to rotate them. The importer reports that
+  stored rectangle and the number separately, and the import command asks render
+  for the oriented dimensions before writing the photo row — rather than importer
+  and render each deciding which orientations swap width and height and
+  eventually disagreeing. Descriptive metadata is nullable: a supported JPEG or
+  TIFF with no lens, camera, exposure or timezone stays a useful photo, and the
+  photo row always has camera and exposure objects that may simply be empty, so
+  readers never juggle missing/null/empty. Width and height are different —
+  without them there is no base coordinate space for render, crop, masks and
+  export, so that file is refused as unsupported. Structural facts are checked
+  strictly: byte size cannot be negative, displayed dimensions must be positive,
+  and orientation must be one of the eight legal values. The preview-source pixel
+  type is explicit too: three unsigned 16-bit channels per pixel in RGB order,
+  *full range* so JPEG white is 65535 rather than 255 sitting inside a larger
+  integer, tagged as display-referred rather than the scene-linear data later
+  decoders produce — the encoder's plain 16-bit cast kept 8-bit values, which
+  would have looked correct in TypeScript while giving compositing 1/257th of the
+  expected range. The command resolves sources and evaluates the selected image.
+  The delivery encoder receives oriented display-sRGB RGB16 pixels, a final output
+  path and delivery options; it never opens the catalog or resolves mounts.
+  The command owns directory creation and collision-policy orchestration.
+- **The gap:** The plan named the columns, the pixel type and the two owners, but
+  specified neither nullability, defaults and checks, nor whether the EXIF reader
+  returns stored or oriented dimensions, nor the pixel buffer's layout, range and
+  colour-space tag, nor the data crossing the export boundary.
+- **The reach:** Every import format and every `show` response inherits the
+  distinction between an unknown descriptive fact and an invalid structural one.
+  Later slices could change catalog transport and add export templates without
+  touching the pixel graph or adding a second source resolver.
+- **Verdict:** **Sound.** Pixel geometry is a functional requirement while camera
+  annotations are not, and parsing stays at the file boundary with geometry in
+  the module that owns coordinate transforms.
+- **Confidence:** High; medium on nullability, which is a schema shape a future
+  reader may want expressed differently.
+- **Owner:** `packages/importer/src/`, `packages/render/src/coordinates.ts`.
+
+### S53 — One native colour core in a fixed scene-linear order
+
+- **When:** Slices 08c1b, 08c2, 08c3, 08d1, 08d2, 08d4 and the selective-colour
+  closeout.
+- **The choice:** One native develop owner processes the exact linear artifact
+  samples in a fixed order: white balance and opponent
+  cast, brightness and black point, exposure, contrast about middle gray,
+  luminance-preserving saturation, then the masked tonal controls (shadows,
+  highlights, saturation, vibrance), levels, curves, local contrast, noise
+  reduction, selective colour, vignette, black-and-white, named filters, and
+  geometry last. TypeScript validates the dictionary and transports the float
+  buffer; it owns no parallel grade. The formulas are ported from OpenColorIO's
+  permissively licensed scene-linear renderer rather than linked. Specific calls
+  inside that order: neutral is D65 and a positive temperature means visually
+  warmer, bounded to 1667–25000 K, so zero is anchored exactly and continuously;
+  levels map black to zero and white to one then apply reciprocal midpoint gamma,
+  continuing with a sign-preserving power outside that range instead of clipping
+  away recoverable highlights and negative working values; a curve point such as
+  `[0.5,0.6]` is UI-normalized data mapped onto the operator's log domain, fitted
+  with its monotonic spline, channel curves before the master curve, with values
+  beyond the end points following the endpoint tangent; vibrance converts to
+  sRGB-like primaries *only to classify hue* before attenuating the boost in a
+  warm band, which is deterministic colour-only protection and not face or skin
+  detection; selective colour treats its seven names as centres on the
+  working-space hue wheel with smooth interpolation and red wrapping at zero,
+  leaving achromatic pixels untouched and blending out-of-gamut targets back
+  toward the original colour at the same luminance; a present black-and-white
+  object activates monochrome mode even when its only control is zero, so
+  removing the object restores colour and no fifth hidden control is needed; and
+  noise reduction runs luminance before chroma in one fixed order, streamed in
+  bounded row blocks with a cached margin sized by the search plus patch radius,
+  so a full-resolution RAW uses scratch space proportional to width rather than
+  to height.
+- **The gap:** The plan named the operators, their masks and "one Rust owner",
+  but delegated cross-operator order, UI normalization constants, sign
+  conventions, extended-range behavior, hue coordinates, activation rules and the
+  streaming strategy.
+- **The reach:** Presets, copied develop dictionaries, in-memory previews,
+  canonical artifacts, previews and exports share one deterministic meaning;
+  reordering anything later intentionally changes rendered identity. Curve outputs
+  must be non-decreasing because that is the spline's contract.
+- **Verdict:** **Sound.** One owner, the authoritative operator's own
+  scene-linear path, and no clipping before the display boundary.
+- **Confidence:** High for the math and ordering; medium for product feel until
+  broader preset and portrait fixtures exist, and medium that hue protection can
+  also affect warm non-skin colours.
+- **Owner:** `crates/photoctl-image/src/develop/`, `packages/render/src/develop/`.
+
+### S54 — The develop dictionary is the mutation vocabulary; provenance is recorded but not hashed
+
+- **When:** Slice 08b command, node, preset and schema integration; original
+  filter verb completion, 2026-09-06.
+- **The choice:** `develop --preset people` stores the *resolved* settings plus
+  the preset name in the typed node, but the develop hash excludes the name, so
+  two photos that end up with identical settings share one settings identity
+  regardless of how they got there — while the logical node recipe still records
+  the name, which means applying an alias with identical values can produce a
+  different output render hash. One invocation may compose several operations,
+  and their order is fixed by the command rather than by argument spelling: it
+  selects its base first (`--copy-from` source, otherwise the target's current
+  state), then applies `--reset`, then the named preset, then explicit `--set`
+  assignments, then `--unset` paths — producing one classification and at most one
+  immutable revision, and returning current hashes with no new undo entry when the
+  fully resolved dictionary already equals the target state. `presets save`
+  writes resolved settings (excluding prior preset provenance) to a library file
+  published by temporary-file, fsync, rename and directory fsync, so a daemon
+  cannot observe a half-written file and a library preset shadows a package
+  preset of the same name. Nested values use one normalized JSON vocabulary —
+  ordered `[input,output]` curve points normalized 0–1, `{black,midpoint,white}`
+  levels, named selective-colour bands with bounded adjustments, base-pixel crop
+  rectangles, positive `W:H` aspect, fixed filter names with bounded strength.
+  The public `filter` verb validates its single-photo syntax and then performs the
+  same two assignments as `develop`, returning that command's one-item envelope
+  including layer compensation and stale warnings, so asking both forms in
+  succession adds only one revision.
+- **The gap:** The plan required retaining the preset name while excluding it
+  from the hash without saying where provenance belongs; it ordered a preset
+  before explicit sets without fully ordering copy, reset and unset; it named the
+  preset locations without defining save collisions, inheritance or crash
+  ordering; it fixed the operator keys without completely specifying nested JSON;
+  and it chose the filter verb's two stored keys without saying whether it needed
+  its own response or mutation.
+- **The reach:** CLI parsing, presets, canonical hashes, future native operators,
+  XMP mapping and graph validation all inherit these shapes. Scripts, retries,
+  undo and layer-staleness classification get one deterministic result
+  independent of CLI spelling, and idempotent replay cannot manufacture edits a
+  photographer never made. Anything wanting provenance-sensitive caching must add
+  a field rather than reuse the develop hash.
+- **Verdict:** **Sound.** One strict normalized representation makes invalid
+  recipes unrepresentable, a copied state is naturally an input, destructive
+  reset is explicit, and the most specific requested edit wins last.
+- **Confidence:** Medium — the harmless cache split from preset aliases, and the
+  fixed filter/selective-colour vocabularies, are tradeoffs worth revisiting if
+  aliases or new operators become common.
+- **Owner:** `packages/render/src/develop/{dict,hash,presets,state}.ts`,
+  `packages/commands/src/handlers/{develop,filter}.ts`.
+
+### S55 — Geometry projects base-space requests through one affine owner, validated before commit
+
+- **When:** Slice 08d3 geometry implementation and command integration; slice 8e
+  local horizon.
+- **The choice:** A crop is resolved in the photo's oriented uncropped base
+  space; an optional aspect ratio keeps the largest centred rectangle inside it;
+  photoctl maps that continuous rectangle onto the nearest whole-pixel output,
+  applies an exact quarter-turn, then straightens around the new centre and
+  returns the largest centred rectangle that fits inside the rotated pixels, so
+  no empty black corners appear. The same composed matrix maps a base-space
+  `show --region` request into the developed raster and maps clicks back, while
+  the caller's original base-space request — not the internal projected rectangle
+  — remains the view identity. When only a smaller embedded or pinned source is
+  available, catalog-space crop coordinates scale to that source before the same
+  plan runs. A crop that would leave the photo edge fails as `usage` *before* a
+  revision is written, while independent photos in the same batch continue, so an
+  active revision that cannot render never exists. Auto-straighten reduces the
+  saved photographic output with the existing native resampler, converts to
+  display RGB, and runs its line search in a native background worker rather than
+  on the daemon's JavaScript thread — analysing the visible contrast the image
+  actually presents rather than linear scene energy, and receiving the real
+  frame's direction mapping so pixel rounding does not become a different
+  physical tilt.
+- **The gap:** The plan fixed the coordinate space, operator order and exact
+  rotations, but not fractional crop rasterization, aspect anchoring, straighten
+  canvas bounds, whether projected cache identity exposes internal coordinates,
+  when crop bounds are checked, or where the line detector runs and in which
+  luminance domain.
+- **The reach:** Develop, canonical artifact dimensions, online and offline
+  previews, view-cache reuse and future mask/layer consumers inherit one geometry
+  plan. A request wholly outside developed pixels is a usage error; a partial one
+  reports its actual base-space intersection. Display-contrast edges may vanish
+  after photographic edits, correctly leaving less evidence — this is not
+  semantic horizon recognition.
+- **Verdict:** **Sound.** Centred maximal crops are deterministic and reversible,
+  trimming prevents synthetic borders, base-space view identity preserves the
+  public coordinate contract, and the catalog already owns the dimensions needed
+  for deterministic pre-commit validation.
+- **Confidence:** Medium for aspect anchoring and display-contrast weighting;
+  high for the single owner and the pre-commit check.
+- **Owner:** `packages/render/src/develop/{geometry,horizon}.ts`,
+  `packages/render/src/transforms.ts`.
+
+### S57 — Masks are their own typed artifact carrying their authored footprint
+
+- **When:** Slice 10b2 mask artifact, transform and review passes; authored
+  mask-frame integration, 2026-09-06.
+- **The choice:** A mask is an uncompressed little-endian single-channel IEEE
+  float TIFF with black-is-zero photometry, no colour profile, coverage samples
+  constrained to `[0,1]`, and its own dedicated media type, so an RGB artifact
+  can never pose as coverage and publication or restore validates the contract
+  rather than accepting any TIFF whose dimensions happen to match. A permanent
+  manual or model selection is a deterministic node whose only parameter is the
+  full mask-artifact hash and which has no graph input — the node says "this
+  exact saved coverage image", not "run segmentation again" — and the revision
+  writer refuses a snapshot whose permanent pins are not published and available.
+  If the evaluator's validation rejects a pinned mask's bytes, it clears that
+  artifact's availability before returning the error, matching restore
+  reconciliation instead of trusting a stale catalog claim. Crucially, a mask
+  belongs to the frame it was authored in: a retouch circle placed on an
+  expanded, rotated photograph is located by its own placement transform, and
+  during composition coverage is projected from that recorded frame and clipped
+  to *both* the mask's and the covered image's real footprints — otherwise
+  filtering can reveal pixels outside the area either input actually supplied.
+  Binary support for already-covered RGB is derived only after projection. Mask
+  transforms reuse the same coordinate owner as RGB and then clamp filter
+  overshoot back to legal coverage, and composition skips the write entirely when
+  effective alpha is zero so the accumulated sample keeps its exact bits. Manual
+  box and brush masks use pixel-centre coverage: a box is half-open with left and
+  top edges included, a brush is a closed polygon filled by the even-odd rule at
+  the same centres, coordinates outside the image are harmlessly clipped by
+  rasterization, and normalized coordinates must lie in the unit interval before
+  scaling. **Recorded storage cost:** a permanent mask is currently stored at the
+  whole logical raster, so a single small retouch circle on a full-resolution
+  frame publishes roughly four bytes per photo pixel; with automatic collection
+  disabled by policy, many retouches accumulate. This is a recorded tradeoff and
+  an input to the still-open retention measurement — not a demonstrated
+  correctness failure, and not authority to redesign mask storage or to add a
+  collection policy during closeout.
+- **The gap:** The plan fixed the semantic sample type and required a distinct
+  deterministic artifact, but chose neither the byte layout and media type, nor
+  the node's parameters and arity, nor how a signed kernel's overshoot is
+  reconciled with coverage, nor edge inclusion and fill rules, nor what raster a
+  permanent mask is stored at, nor how a mask carries an expanded photographic
+  footprint.
+- **The reach:** Artifact hashes, node pins, evaluator dispatch, restore repair
+  and every manual or model-produced mask share one unambiguous identity. Retouch,
+  ordinary layer composition and canvas composition share the existing
+  frame/projection owners with no retouch-specific compositor. Transparent areas
+  of later layers cannot perturb earlier results in the ordered fold. A cropped
+  or bounded mask raster remains a possible later optimization located at the
+  mask-authoring owner, where the placement transform already exists.
+- **Verdict:** **Sound.** The layout is minimal and deterministic, the general
+  authored-support contract covers cropped, rotated and expanded inputs without a
+  dimension-based special case, and clamping belongs at the mask boundary.
+- **Confidence:** High for the format, projection and exactness; medium for the
+  full-raster storage cost, which is explicit and unoptimized.
+- **Owner:** `packages/render/src/{mask-tiff,mask-operations}.ts`,
+  `crates/photoctl-image/src/mask.rs`, `packages/render/src/retouch.ts`.
+
+### S58 — Layers are ordered roots into the graph with lineage-derived compatibility
+
+- **When:** Slice 10a document writer and vocabulary; slice 10b3 compensation;
+  slice 10c1 commands; combined move/scale pass, 2026-09-06.
+- **The choice:** A layer identity is a UUID allocated only *inside* the revision
+  transaction that stores nodes, the complete stack and the new active revision,
+  so a stale caller leaves no orphan identity behind. A caller changing only the
+  graph may omit the stack and the writer copies the previous snapshot forward,
+  while passing an explicitly empty list clears it — so a base edit cannot make
+  two subject layers disappear, and `layer clear` still means what it says. A
+  vacancy is the only role permitted to point at another layer, and only at a
+  subject in the same photo. A delta node consumes one RGB input and stores the
+  *same* validated develop dictionary rather than a parallel adjustment schema.
+  An absolute transform compiles to one scale-then-rotate-then-translate matrix
+  about its resolved anchor and replaces the prior matrix; a relative one
+  pre-multiplies it, so a nudge composes in the oriented base frame rather than
+  in the layer's already-transformed axes; with `--norm`, an anchor is a point in
+  the unit interval while a displacement is a *signed* image fraction from −1 to
+  1, because a displacement is a vector, and scale and rotation are dimensionless
+  and unaffected. `layer reorder --to 1` moves a layer to the back, matching the
+  directional forms, while the response still exposes canonical zero-based
+  ordering. Opacity is stored at double precision so a value like `0.123456789`
+  survives a snapshot reload exactly and one immutable edit cannot acquire two
+  identities across the database seam. Segmenting does not render a second RGB
+  image: the new subject layer points its content at the current immutable
+  base-output node and pairs it with the newly published permanent mask, and the
+  evaluator clips during composition when pixels are eventually needed. When an
+  absolute transform replaces a layer's geometry, photoctl walks through the
+  retained develop-delta nodes, replaces the transform beneath them, and rebuilds
+  those same delta recipes above it; a relative transform's default anchor is the
+  original mask centroid mapped through the current matrix, so rotating a moved
+  subject keeps its visible centre fixed. Combined movement multiplies the
+  subject's *current* scale — a subject already enlarged twice becomes four times
+  its original size under `--scale 2` — while rotation and flips are preserved,
+  and normalized coordinates change only the destination units, not the scale.
+  Whether a layer can take a develop delta is reconstructed by walking its
+  content branch from the retained develop ancestor through every persisted
+  delta; a transition that cannot compose exactly — saturation from zero chroma,
+  repeated vibrance, mixed active controls — is reported stale rather than given
+  an approximate delta.
+- **The gap:** The plan required complete snapshots, stable IDs, atomic failure
+  and relative composition, but chose none of: whether unchanged callers must
+  resubmit the stack, the legal role pairings, the delta recipe's shape, which
+  coordinate frame relative composition uses, the numeric precision of opacity,
+  position numbering, the normalized meaning of a displacement, the initial
+  subject content recipe, transform placement among retained deltas, whether
+  "centroid" meant original or visible centre, whether an optional scale is
+  absolute or a multiplier, or how staleness is recovered after restarts.
+- **The reach:** "Layers are ordered roots, not private pipelines" is the
+  load-bearing shape. Staleness survives process restarts and any number of
+  revisions without a mutable flag that could drift from the graph; commands that
+  reorder, rename, disable, remove or clear must submit a complete replacement
+  snapshot so the transaction can validate the exact composite projection; and
+  future layer transforms must retain content ancestry for this reconstruction to
+  stay valid. Clients wanting an absolute transform keep the separate
+  layer-transform contract; `delta_applied` means the persisted operation has a
+  defensible scene-linear composition, and supporting more combinations later
+  requires a proven composition rule rather than a weaker result meaning.
+- **Verdict:** **Sound.** The immutable graph is already the authority for what
+  pixels mean, so deriving status prevents a second state owner, and each
+  narrow choice reuses an existing owner rather than inventing a parallel one.
+- **Confidence:** High for identity, lineage and the transaction boundary; medium
+  for the ergonomic calls (explicit anchors, one-based positions, relative frame,
+  multiplicative scale) until an interactive client exercises them.
+- **Owner:** `packages/render/src/layers/`, `packages/render/src/graph/store.ts`.
+
+### S59 — Vacancy is workflow state derived from content lineage
+
+- **When:** Slice 10c2 vacancy integration; slice 12d3 person-move integration;
+  combined move/scale lifecycle correction.
+- **The choice:** Moving a person leaves a hole. That hole's pixels are a
+  zero-input `solid` recipe carrying oriented dimensions, the working colour
+  space and one RGB triplet, evaluated lazily in the native image owner — not
+  disguised as provider output, a mask artifact, markup or a special composite
+  role. The vacancy identity is stable: the first move creates one, later moves
+  reuse it even if a prior revision removed it, a database constraint enforces
+  that, and `layer duplicate` therefore rejects vacancy layers. Each active
+  revision places the vacancy immediately behind its subject and renumbers the
+  stack contiguously; `--to` translates the current visible mask centroid while
+  preserving existing scale and rotation, and `--by` adds a vector in oriented
+  base coordinates. The *original* hole is the one recorded when that vacancy
+  identity first appeared, so after moving a person, generating replacement
+  pixels, filling the old hole and moving again, the restored hole is the first
+  one — a later subject generation's selection describes its new position and
+  cannot redefine it. Critically, the role does not permanently mean "magenta and
+  unfinished": the vacancy is unfilled exactly while its content lineage still
+  reaches the solid sentinel, and once filled the same identity is ordinary
+  photographic content following the ordinary develop tiers. Only the placeholder
+  state is excluded from develop compensation and staleness and reported as
+  unfilled, so editing exposure cannot tint the warning placeholder or make one
+  vacancy count as two problems, and a filled hole does not warn forever.
+- **The gap:** The plan required deterministic vacancy content, a stable original
+  and repeat moves, but the graph had no honest constant-image node, and slice
+  10c2 could equate role with placeholder state because vacancy fill did not exist
+  yet. Reactivation after removal, exact stack placement, whether `--to` discards
+  existing transforms, and the provenance owner of the original hole after
+  replacement were all unspecified.
+- **The reach:** Future constant backgrounds can reuse the solid vocabulary
+  without teaching the compositor what a vacancy means. History always refers to
+  the same logical hole, and any future history collection must preserve that
+  first-snapshot provenance while a vacancy can still be reactivated.
+- **Verdict:** **Sound.** Immutable lineage already records the state transition,
+  so no mutable status column can drift from the active graph, and the database
+  enforces the identity rule.
+- **Confidence:** High for the derived state and identity; medium for adjacency
+  as presentation policy and for the multiplicative move/scale ergonomics.
+- **Owner:** `packages/render/src/layers/{operations,model,status}.ts`.
+
+### S60 — Canvas authoring replays the projection that was captured, and clips coverage afterwards
+
+- **When:** 12f2 canvas-ancestry, restriction and deterministic-core checkpoints;
+  geometry metadata prerequisites; 12f3 core checkpoint.
+- **The choice:** Expand a cropped photograph with border A, move A to the right,
+  then add border B around the resulting view. B records the exact *ordered
+  projection stages* — each a frame plus a coordinate mapping used by one existing
+  pixel sampler — that made its input visible, and later renders replay those
+  immutable stages against live pixels rather than reconstructing B's input from
+  A's original unmoved rectangle, which erased already-visible columns.
+  Capturing RGB instead would freeze later photographic edits, so only the
+  projection is retained. A placed border keeps its full intrinsic raster under a
+  distinct persisted placement recipe — translating it moves its RGB, its mask
+  hole and its extent together, and the existing manual transform keeps its
+  baked-raster meaning — while a supplied image whose intrinsic dimensions
+  disagree with the prepared frame cannot activate the border. Ancestry has two
+  meanings that are kept apart: remove border A then author B, and B remembers
+  that A happened earlier for inspection without inheriting A's exclusions merely
+  because A preceded it, so historical retention cannot reactivate removed
+  support. RGB and coverage traverse the same ordered samplers and coverage is
+  clipped against the authored admissible frames *afterwards*, so interpolation
+  cannot leak forbidden original values into a hole while a manual layer authored
+  after expansion keeps its legitimate extension pixels. A new crop partly
+  outside the picture is accepted when it intersects the current view and refused
+  when wholly disjoint, but once valid it survives even if removing borders
+  leaves it unsupported. A later aspect edit crops the *stable authored canvas*
+  rather than replaying the pre-border source operations, keeping the familiar
+  before-quarter-turn meaning of the ratio, so returning to an earlier
+  rotation/straighten pair restores exactly the earlier dimensions. Two numerical
+  tolerances are separate: integer raster bounds snap a coordinate to its nearest
+  integer only within a small multiple of machine epsilon scaled by frame size
+  and magnitude (a rotated frame mapped back into its own axes produced a
+  −1.4e-14 that added a spurious row), while support coverage maps every frame
+  into viewport-relative coordinates and treats a *summed* remainder of roughly
+  1.4e-14 of the viewport area as roundoff — summing first so splitting a real
+  hole into fragments cannot make it vanish. A document without canvas geometry
+  may have no authoring checkpoint. A new layer attaches to the current
+  checkpoint automatically while duplication explicitly preserves the original
+  reference including its absence. This optional state is not a promise to
+  migrate old development catalogs. Finally,
+  editing intent is resolved inside the existing revision transaction: a layer
+  edit asks for photographic planning rather than supplying a separately
+  assembled output, and requesting both a planned photograph and an explicit
+  custom graph root is rejected rather than silently discarding one.
+- **The gap:** Earlier checkpoints kept input and output frames but could not
+  recover the intermediate canvas after an older border moved; the metadata
+  scaffold had not distinguished the two meanings of ancestry; geometric exclusion
+  and interpolation coverage have different meanings at edges; the old
+  containment check could not represent reversible exterior intent; integer
+  raster bounds needed a different numerical policy from area tolerance; and the
+  plan did not choose eager versus lazy adoption of the new metadata root.
+- **The reach:** Geometry checkpoints require the captured stages, and the canvas
+  recipe stores its shared viewport stages once. Reset, shrink and removal must
+  never be reclassified as new enlargement. Coverage is independent of preview
+  resolution and ignores no ordinary pixel-sized hole. Consumers must treat an
+  absent geometry root as an ordinary pre-canvas document, not as lost data.
+  Custom graph roots retain their explicit validated meaning without becoming
+  implicitly photographic.
+- **Verdict:** **Sound.** Captured projection preserves the complete visible
+  input while keeping authored exclusions fixed and later pixels editable, and
+  each tolerance matches the failure it was measured against.
+- **Confidence:** High for ancestry, placement and admissibility; medium for the
+  numerical tolerances and for post-border aspect being a canvas restriction
+  rather than a replay of the source operation.
+- **Owner:** `packages/render/src/graph/{canvas,canvas-support,frame,projection,geometry-intent}.ts`.
+
+### S61 — Canvas density: local supply satisfies demand, and the cache re-checks original sampling
+
+- **When:** 12f2 density consumer pass and independent review correction.
+- **The choice:** The base image's actual sampling sets the output demand; local
+  images may fill an offline resolution shortfall only up to that demand, and
+  they count only where their projected mask really covers the final viewport.
+  Each saved projection is then realized at a uniform integer sampling grid
+  derived from actual input frame mappings — a 25-unit-wide exterior crop of a
+  half-sized source needs 12.5 samples and becomes 13 pixels using the existing
+  rounding convention, without moving the catalog coordinates to make the
+  division even, and a quarter-turn of a 13×6 grid produces 6×13. The largest
+  directional sampling rate is used so available detail is preserved without
+  stretching the two axes independently. Public preview source dimensions
+  describe the rendered master, not the decoder's original input: a native border
+  plus an offline small original preview can produce a native-resolution canvas
+  while original detail stays limited, so the retained execution frame still
+  records the small source and the public tier still reads pinned-preview.
+  Because output sampling and original sampling can therefore diverge, cache
+  sufficiency compares *both*: when the original returns, a master that looked
+  dimensionally sufficient because of a native border no longer keeps serving its
+  reduced interior forever.
+- **The gap:** Saved frames establish physical geometry and authored rasters, not
+  the raster available during an offline execution; existing preview field names
+  could be mistaken for a claim about every contributing image; and the old cache
+  predicate assumed output and original sampling rose together.
+- **The reach:** Logical inspection stays stable while execution frames and
+  previews describe the real raster, reusing the frame owner and the existing
+  renderer semantic revision for invalidation — no second persisted geometry,
+  density policy, cache status or provenance table. Callers must not infer
+  recovered original detail from native output sampling.
+- **Verdict:** **Sound.** Keeping physical intent separate from raster size
+  avoids both fabricated fallback pixels and coordinate rebasing, and actual
+  original supply must participate in cache sufficiency when a local layer can
+  conceal its shortfall.
+- **Confidence:** High for the corrected supply rule and the cache predicate;
+  medium for the directional sampling policy, which is numerical rather than a
+  promise about detail in both directions.
+- **Owner:** `packages/render/src/graph/{canvas-support,frame}.ts`,
+  `packages/render/src/preview.ts`.
+
+### S62 — Outpaint has one exterior owner at native density, prepared without early activation
+
+- **When:** Native-density clean cutover and 12f3 core/refresh/retry follow-ups,
+  2026-09-06.
+- **The choice:** Generated and upscaled border RGB is placed physically at its
+  own native raster, and the exterior layer mask alone owns coverage — the
+  mask's authored raster need not match richer paid content, and the earlier
+  design that retained a hidden historical interior and resampled purchased
+  detail back down to the authored size is removed rather than kept as a
+  compatibility path. Refresh replaces the paid RGB while the sole exterior mask
+  and physical placement stay authored, and the live photographic output beneath
+  supplies the source and earlier layers. Preparation is allowed to run ahead of
+  activation: refresh can build a current predecessor image from deterministic
+  graph drafts, store those immutable nodes *without* an active revision, and
+  evaluate through the existing cache; if generation then fails, the active photo
+  and its extent are unchanged while the preparation persists as reusable
+  deterministic work. An untouched source's deterministic graph is published and
+  evaluated through the normal source execution owner without activating a
+  document at all, while an edited photo samples its immutable markup-free
+  photographic output including earlier layers. Retry is narrow: when a border's
+  image was generated but its upscaler failed, asking again with the *same*
+  generation intent keeps that purchased image and retries density for its
+  current physical placement, leaving placement and the exterior mask unchanged;
+  a different prompt is refused rather than silently buying a new image, and
+  explicit refresh remains the operation that regenerates from current context.
+  The exterior seam itself is hard by construction: outpaint fixes strict fitting
+  with zero feather, and retrying with fitting or strength flags is a usage error
+  — which is exactly what makes the whole-frame refusal meaningful, since a
+  provider that returns a repainted photograph instead of a border is rejected
+  rather than composited.
+- **The gap:** Eager document or temporary-layer creation would mutate a failed
+  or no-op request; a second generation pipeline would drift from fill's capping,
+  adapter and density rules; the evaluator reads persisted nodes, so a separate
+  staged evaluator would duplicate node resolution and add another cache
+  contract; ordinary fill can replace generation on a changed request, but
+  applying that to a border would conflate permanent expansion intent with a new
+  canvas operation; and the fit vocabulary was specified for masked fills without
+  saying how outpaint interacts with it.
+- **The reach:** Failed attempts can retain extra nodes and artifacts, and with
+  automatic collection disabled, repeated *distinct* preparations consume storage
+  while identical ones retain deterministic identity. First-generation document
+  creation stays atomic with successful activation, and no temporary active layer
+  or revision is ever permitted. Any future softening of the original/exterior
+  seam must come from the exterior mask owner, not from a fill strength flag; any
+  future editing of a border's interior mask would have to revisit the
+  single-exterior invariant.
+- **Verdict:** **Sound.** One deterministic publication owner preserves reusable
+  preparation without exposing an intermediate edit, and retrying a failed
+  processing step does not authorize replaying generation or expanding the
+  document twice.
+- **Confidence:** High for the tested source/activation and retry contracts;
+  medium for full-scale resource behavior, which the release resource gate still
+  owns.
+- **Owner:** `packages/render/src/fill/outpaint.ts`,
+  `packages/render/src/graph/canvas.ts`.
+
+### S64 — Markup is one editable vector document mirrored by a final deterministic node — and it is delivered
+
+- **When:** Slice 13c vector markup and its independent review; markup mutation
+  semantics verified against current code.
+- **The choice:** A photo owns one ordered JSON vector document, while its active
+  output root is a deterministic markup node whose recipe contains that same
+  document and consumes the ordinary composite output; a markup mutation changes
+  the table and commits an immutable revision in one transaction, and undo points
+  at the parent revision and restores the table from that revision's final node.
+  Stored coordinates always describe the oriented uncropped base: for a cropped,
+  rotated or straightened photo the native renderer creates overlay colour and
+  coverage in the base frame, transforms both, divides colour by transformed
+  coverage only after resampling, then composites — so annotations follow the
+  photograph through geometry changes instead of moving whenever develop geometry
+  does, and partially covered edges stay colour-correct. Evaluation traces the
+  exact first-input artifact lineage to recover the base dimensions of the source
+  tier that actually produced the current pixels, scales coordinates and crop
+  geometry to that tier before rasterizing, and sizes strokes and text by the
+  geometric mean of the two axis ratios so integer rounding cannot make them
+  anisotropic — so a low-resolution offline preview uses bounded memory while
+  native-size export stays exact. Rendering is host-independent: the native addon
+  rasterizes every primitive with a bundled font, converts hexadecimal
+  display-sRGB colours into the working space before blending, assigns stable
+  UUID item identities addressable by unique prefix, and bounds document size,
+  path points, text length and geometry magnitudes so one JSON item cannot create
+  unbounded native work. Mutation semantics are whole-item: `markup update`
+  rebuilds the item from the supplied JSON keeping only its ID and position, so
+  omitted fields are dropped rather than merged; `markup add` appends, and
+  insertion order *is* z-order with no reorder verb; and a mutation whose result
+  deep-equals the current document returns success with no change and no new
+  revision — unlike an automatic-enhance no-op, which does commit a transition,
+  so callers detecting work must read the change field rather than watch the
+  revision ID. **Delivery boundary:** because the markup node *is* the active
+  output root when the document is non-empty, `export` renders the annotations
+  into the delivered file, exactly as preview shows them. "Removable" means an
+  ordinary undoable markup mutation — `markup clear`, which commits a revision
+  and changes the render hash — not an unimplemented export-only flag. Pixel-edit
+  consumers such as retouch and outpaint do receive the markup-free underlying
+  output, so a presentation overlay is never baked into permanent pixels.
+- **The gap:** The slice specified the table, the coordinate space and native
+  flattening, but not how editable state, immutable revisions and the typed graph
+  stay synchronized, nor how antialiased vector pixels cross the develop
+  transform, nor how base coordinates map onto a smaller offline preview, nor the
+  colour space, identity ergonomics and resource ceilings, nor the mutation
+  verb's patch and no-op semantics.
+- **The reach:** Preview, export, later develop changes, layer mutations and undo
+  all retain one render identity and one editable document, and a future GUI can
+  edit vectors without acquiring a second rendering owner. An agent doing
+  read-modify-write must send the full primitive each time. Treating markup as
+  review-only — an export that omits annotations — would be a *new* product
+  choice, not a missing behavior in the current contract.
+- **Verdict:** **Sound.** The table owns current editability, the graph owns
+  reproducible pixels, atomic projection keeps them equal, and not committing an
+  identical document keeps history meaningful.
+- **Confidence:** High for the graph and rendering contract; medium that
+  delivering annotations by default is the product behavior a photographer
+  expects, which is why the boundary is stated here explicitly.
+- **Owner:** `packages/render/src/markup/`, `crates/photoctl-image/src/draw.rs`,
+  `packages/commands/src/handlers/{markup,export}.ts`.
+
+### S65 — The eyedropper returns a useful bounded correction and says what it could not fix
+
+- **When:** Slice 08g eyedropper pass, 2026-09-06.
+- **The choice:** A severely blue patch may need more correction than the
+  temperature control's bounds allow. Rather than rejecting the click or quietly
+  widening the control model, photoctl keeps the existing bounds, returns the
+  best correction available along their edge, and reports both a limit flag and a
+  relative RGB neutrality residual — a numerical channel mismatch, not a
+  gray-card confidence score. The same native forward grade evaluates the result
+  and its matrix inverse supplies attainable neutral targets, so no second colour
+  formula exists. Offline sampling maps the same oriented base position into the
+  available preview and selects the containing pixel; a rectangle averages the
+  actual pixel centres inside its half-open bounds, and a tiny rectangle
+  containing no centres fails rather than silently growing into a different
+  patch. The result reports its pixel count, actual raster and scene-linear mean,
+  and sampling reads verified canonical bytes in yielding batches without another
+  full-frame float copy.
+- **The gap:** The initial requirement settled neither out-of-range samples, nor
+  point footprint, fractional patch edges, or reduced-resolution behavior.
+- **The reach:** Manual controls, layers and undo inherit unchanged stored values
+  and ranges. Clients can distinguish native from overview measurements, and
+  neighbouring patches do not double-count boundary centres. Another footprint
+  policy would require an explicit API decision.
+- **Verdict:** **Sound.** Useful bounded work is honest about its remaining
+  error, and the existing coordinate and source owners are preserved without
+  false precision.
+- **Confidence:** High for the bounded fit; medium for the offline footprint
+  conventions.
+- **Owner:** `packages/render/src/develop/`.
+
+### S67 — The Core Image decoder is a neutral oracle across a public boundary
+
+- **When:** Slice 07a helper boundary and selection; slice 07c oracle diagnosis
+  and reports.
+- **The choice:** A Core Image RAW filter starts from per-file values the vendor
+  chose — baseline exposure, shadow bias, local tone mapping, and on newer
+  systems highlight recovery — on top of the boost, noise reduction, sharpening,
+  contrast, detail, lens correction and gamut mapping that were already
+  neutralized. Leaving them active failed the unchanged decoder-comparison
+  threshold; explicitly neutralizing them makes the result a scene-linear decode
+  rather than the vendor's suggested starting look, and the same comparison then
+  passed without moving its tolerance. The comparison itself measures the
+  *public* linear TIFF boundary through the real CLI rather than importing a
+  private in-memory buffer, so it covers dispatch, decoder metadata, the shared
+  camera front, quantization and framing as one contract; sub-16-bit numerical
+  drift is deliberately outside it and stays the colour core's unit-test
+  responsibility. The three-way workbench view shows the embedded camera JPEG
+  beside both decoders so framing and orientation are reviewable, but only the
+  two comparable scene-linear decoders contribute to the numeric score — the
+  camera JPEG carries the maker's intentional picture style, and scoring it would
+  measure a presentation difference as a bug. Transport is a validated temporary
+  file: a quarter-scale decode holds millions of channel samples, so the Swift
+  helper writes row-major 32-bit floats to a caller-supplied unique path and
+  prints a small JSON description, TypeScript checks that description and the
+  exact expected byte count before constructing the image, and the temporary
+  directory is removed whether decoding succeeds or fails. The helper is
+  *discovered*, never compiled at command time: an explicit path override, then a
+  packaged binary, then the workspace's built debug binary, then the system
+  search path. `decode --with auto` falling back to an embedded JPEG or pinned
+  preview because the preferred native decoder is unavailable returns its own
+  `decoder_fallback` warning rather than reusing the offline-source warning, so
+  an agent is told to repair a decoder rather than reconnect a drive. `decode
+  --to` writes an unsigned 16-bit TIFF, saturating out-of-range floats at both
+  ends rather than wrapping into unrelated brightness, and normalizing camera
+  counts by their measured black and white levels so the stored samples truly
+  span 16 bits — while the in-memory float image keeps its unclipped values.
+- **The gap:** The property list omitted the newer file-dependent controls even
+  though a neutral render was required; the plan delegated the float wire format,
+  the helper lookup order, the out-of-range mapping, and whether the oracle
+  compares private buffers or requestable artifacts.
+- **The reach:** Any new decoder must publish the same neutral linear boundary or
+  the oracle stops meaning anything. Release packaging can ship a platform binary
+  at the same seam without changing commands, and future fixtures can use camera
+  previews to catch geometry errors without forcing an independent RAW
+  implementation to imitate proprietary picture styles.
+- **Verdict:** **Sound.** A decoder oracle is more durable when it exercises the
+  supported seam instead of reaching around it. Headless verification is removed,
+  not an additional acceptance obligation.
+- **Confidence:** High for the neutralization and transport; medium for the
+  quarter-scale comparison scope and the helper lookup order.
+- **Owner:** `helpers/mac/`, `packages/mac-helper/`,
+  `packages/render/src/decoder.ts`, `apps/workbench/`.
+
+### S68 — Highlight recovery is a floating-point translation that preserves complete cells and ships its source
+
+- **When:** Highlight reconstruction passes A and B, 2026-09-06.
+- **The choice:** The upstream routine infers a clipped colour channel from
+  nearby channel ratios, and its integer input conversion discards values the
+  current decoder preserves — so the neighbourhood operation is translated into
+  the existing floating-point camera front instead, keeping reliable samples and
+  values above display white, with double-precision ratio maps and an estimate
+  that can only *increase* the clipped channel. Two small maps replace the need
+  for another full white-balanced RGB image. Estimation uses complete
+  four-by-four neighbourhoods in the decoder's physical grid: if a photo has one
+  to three leftover pixels at its right or bottom edge, those samples are left
+  unchanged rather than padded with invented neighbouring evidence, and rotating
+  the displayed image does not move these physical neighbourhoods. Reconstruction
+  runs on native decoder neighbourhoods *before* any reduction, between the
+  single white-balance and colour-matrix owners, and a reduced request still
+  reconstructs the full source before resizing. One fixed upstream mode is used
+  as a bounded reference; no speculative strength control is exposed. The
+  translated file is CDDL-licensed, so installing the native runtime also
+  installs that derivative source with its terms and attribution notice, and the
+  native crate declares both licences rather than presenting the file as covered
+  by the repository's own.
+- **The gap:** The spec required correct RAW output and floating-point
+  preservation but chose neither the algorithm, the intermediate precision, the
+  partial-cell behavior, nor how a new derivative source accompanies binary
+  distribution. Two photographs improving under several upstream modes does not
+  prove those modes interchangeable.
+- **The reach:** Float retention is what lets recovery live before the
+  scene-linear canonical artifact; an integer staging buffer would have to be
+  re-derived to change it. An "applied" status means the operation ran, not that
+  every pixel was reconstructed — visible edge defects would reopen the
+  partial-cell choice. The ratio maps consume tens of megabytes on a
+  full-resolution photo. This asserts no audit of unrelated third-party
+  distribution obligations.
+- **Verdict:** **Sound as the implemented translation** — it preserves the
+  working representation, bounds extra storage, and keeps attribution and
+  derivative-source access with distribution. The normal-rendering default is
+  recorded in S92.
+- **Confidence:** Medium for the numerical choices: approval of the current
+  rendering does not identify every residual color cause. High for keeping
+  attribution and translated source with the package.
+- **Owner:** `crates/photoctl-image/src/highlight.rs`, `scripts/package-native.mjs`.
+
+### S69 — Decoder treatment travels with the pixels and gates what may be called a full-quality render
+
+- **When:** Reconstruction pass B, 2026-09-06; RAW diagnostics.
+- **The choice:** "Treatment" is the record of which decoder produced pixels, at
+  what scale, whether recovery was requested, whether it actually ran, and by
+  which method. It is a closed schema that refuses impossible combinations such
+  as "applied without a method", it is compared after decode so a plan and its
+  result cannot disagree silently, and it includes the decoder's *identity and
+  version* — because a system update can leave a decoder's recovery method name
+  unchanged while its revision produces different pixels, and a cached preview
+  from the older revision must not satisfy a request planned for the newer one.
+  A composite output carries the treatment of its *primary* photographic input,
+  following the same first-input ownership already used for source dimensions and
+  coordinates; it does not claim a generated patch passed through RAW recovery,
+  and the patch's own execution remains independently inspectable. Copying every
+  ancestor's treatment into each combined output would duplicate the graph and
+  force every consumer to interpret a list. Admission is asymmetric on purpose:
+  once a preferred native decoder is available, a warm preview must match that
+  decoder's planned treatment as well as the existing geometry and sampling
+  requirements — but a fallback or cheap-overview request may reuse a richer
+  cached RAW preview and report its recorded treatment honestly, because
+  requiring the smaller pinned JPEG's treatment would throw away the better
+  image. When a probe omits a decoder version, planning keeps the existing
+  convention of using the adapter name as the identity value; the two current
+  decoders differ in whether they supply a version, so a versionless plan cannot
+  silently become a known-version result — their disagreement prevents
+  publication. Diagnostic oracle runs are immutable: each run gets its own
+  directory of decoder TIFFs and measured JSON, and a stable report entry points
+  at the latest run while earlier directories remain intact, because reusing
+  fixed filenames would collide with no-clobber publication and deleting the
+  first run would destroy the comparison. Finally, ordinary rendering and the
+  public decode command request recovery *explicitly*; a developer using the
+  lower-level image decoder with no option still gets its disabled behavior, so a
+  raw numeric inspection does not silently become a scene-linear recovery request.
+- **The gap:** The plan required complete effective identity and truthful offline
+  reuse but never said how decoder revision accompanies treatment through
+  descendants and previews, what one treatment field means for an operation with
+  several image inputs, which source candidates constrain a warm preview, how a
+  versionless probe is represented, how repeated oracle runs are stored, or
+  whether adopting the product default should change every lower-level entry point.
+- **The reach:** Deterministic operations retain distinct execution identities
+  when treatment differs even if their bytes happen to match. Decoder version is
+  not embedded in the method name, so the two evolve independently. Consumers
+  must not read an adapter-name fallback as a verified codec release. This is not
+  a general promise to invalidate every ordinary-image preview after a decoding
+  library upgrade. Product source planners must pass the fixed request explicitly.
+- **Verdict:** **Sound.** One actual decoder record supplies both transport and
+  reuse identity, the base-source owner is preserved rather than ancestry
+  duplicated, and product policy sits at its callers.
+- **Confidence:** Medium — successful versionless behavior from the current
+  decoders is not established, and the admission rule is deliberately asymmetric.
+- **Owner:** `packages/protocol/src/treatment.ts`,
+  `packages/commands/src/graph-source.ts`, `packages/render/src/decoder.ts`.
+
+### S70 — SAM's shipped mechanics: source-only input, existing transport, no invented selection rule
+
+- **When:** Slice 11a/11b implementation; source-only canvas consumer, visual
+  review, resource correction and integration review, 2026-09-06; real CPU export
+  prerequisite.
+- **The choice:** After outpainting a cropped photo, the model is shown the
+  permitted original image surrounded by black — not the generated border. Its
+  predicted selection may still include some of that black, and photoctl keeps
+  the existing clipping to the image boundary rather than additionally erasing
+  every selected pixel outside original-source support: that would be a new rule
+  about what the model may select, not a correction of its input coordinates. A
+  base-coordinate point outside the current crop is a usage error rather than
+  being clipped to a visible edge, since clipping would select a different
+  object, while a base-space box rotated by develop geometry becomes its
+  enclosing axis-aligned box because the model's box input cannot express an
+  angled rectangle; text-grounded boxes already belong to the rendered frame and
+  pass through directly. Grounding keeps its existing JPEG transport even though
+  a small colour island surrounded by black acquires faint halos when encoded:
+  placement and black exclusion are verified before encoding rather than
+  relabelling a lossy result as exact, since switching to a lossless input would
+  change the external request and its size, not just the projection code. A
+  long-running command sends the existing advisory heartbeat throughout
+  initialization, inference and publication using the same minimum idle window as
+  other long commands, and a disconnected listener is *not* a cancellation
+  request — the work may still commit, and the caller must inspect state rather
+  than replay the mutation. Publication is snapshot-checked: the initial revision
+  (including the absence of a document) is captured before preparation and must
+  still match before the mask is published, because dispatch with a supplied
+  library handle can be re-entered during an external model callback and merely
+  loading the newest revision at publication would attach an old-coordinate mask
+  to a new image. One text command commits all matched masks in a single
+  revision, so three found people become three layers together or none at all,
+  and dry runs share the committed run's instance response shape with null layer,
+  artifact, revision and render identities because they wrote nothing. Encoder
+  features are cached against the *rendered pixels* — dimensions plus pixel hash
+  — so rating a photo reuses them while changing develop pixels or source quality
+  does not; failed loads and encodes are removed so a repaired model can retry.
+  The exported decoder model ranks pre-sigmoid quality logits while leaving its
+  probability outputs and first-index tie rule unchanged, because real inputs
+  exposed numerical saturation that picked a different mask despite mathematically
+  identical ordering; the exporter recognizes only the pinned graph topology,
+  checks actual upstream parity results rather than trusting a zero exit status,
+  pins its Python dependencies and source revisions in an isolated environment,
+  and publishes a complete staged pair plus report by directory rename into a
+  fresh candidate directory.
+- **The gap:** The plan specified source-only input with authored exclusions but
+  no additional exclusion on the model's *output*; the coordinate contract did
+  not say how an invisible point or an angled rectangle maps into a
+  point/axis-aligned-box vocabulary; grounding had no codec decision or progress
+  coverage for a command longer than the idle window; the old publication check
+  covered only changes after its final reload; and the plan did not say whether a
+  multi-instance command is one edit or several.
+- **The reach:** Prompt coordinates and returned masks keep original catalog
+  coordinates and bounds. Geometry acceptance is not photographic quality
+  acceptance — future codec work must judge grounding quality and request cost
+  separately. Rejected work may leave unreferenced prepared artifact bytes but
+  activates no stale layer and does not retry. Release hashes identify normalized
+  real graphs; export parity accepts neither inference memory nor mask quality,
+  and cross-platform export reproducibility is not established by a single host.
+- **Verdict:** **Sound.** Input geometry is corrected while output-selection
+  policy stays explicit, the existing revision and transport owners are reused
+  rather than duplicated, and monotonic ordering is preserved without relaxing
+  tolerances.
+- **Confidence:** High for the revision, transport and publication contracts;
+  medium for the enclosing-box conversion and the lossy grounding transport,
+  which remain model-interface limitations.
+- **Owner:** `packages/render/src/sam2*.ts`, `crates/photoctl-image/src/sam2.rs`,
+  `scripts/export-sam2.py`.
+
+### S71 — Native pixel work is scheduled off the command thread and accounts only the memory it owns
+
+- **When:** Slice 07c colour front; slice 08c1b bounded-memory review; slice 08d1;
+  native allocation, task-accounting and resampler-accounting checkpoints,
+  2026-09-06; full-source G6 owned-projection checkpoint; slice 11 real-model
+  resource pass.
+- **The choice:** Large native rendering jobs run off the daemon's JavaScript
+  thread; bounded synchronous preview resampling remains a separate contract
+  (S56). Because a JavaScript typed array stays writable by JavaScript, the
+  native boundary copies it once before scheduling asynchronous work — sharing it
+  would be a data race and would make results depend on mutations after the call
+  — and that single unavoidable safety copy is then *reused*: pointwise colour
+  conversion transforms its private snapshot in place and returns it instead of
+  allocating a second full frame; the global develop operator grades its owned
+  buffer in place; a composite job reuses its owned background for the result;
+  and the graph develop path copies verified canonical bytes once into the native
+  task and publishes the returned bytes without ever materializing a full-frame
+  typed array on the event loop. The shared projection worker takes the whole
+  ordered stage list at once — receiving source pixels, the stages mapping each
+  input to its next output, and the restrictions mapping final pixel centres back
+  into earlier visible frames — allocating exactly two vectors large enough for
+  their alternating stages, copying the source once, swapping after each sampler,
+  freeing the unused vector at completion and tightening the output before
+  ownership transfers. A dedicated shared predicate answers "is this final pixel
+  centre inside that frame?" for both mask clipping and the RGB worker, so a
+  future boundary fix cannot change one and not the other. Segmentation goes
+  further: each library's runtime loads and runs its encoder and decoder on **one
+  dedicated native thread** behind a bounded handoff, because the previous design
+  held a mutex around execution while letting successive calls land on different
+  general-purpose workers whose retained allocation working sets multiplied
+  memory. Text selection builds its grounding image and small normalized model
+  input and then *releases the full photographic buffer* before waiting on the
+  provider and inference. Accounting is deliberately literal: a task tells the
+  runtime how much pixel capacity it actually owns so the garbage collector can
+  see that pressure, but it never pre-charges a guessed size while queued, never
+  forces collection, never changes the worker pool, and never calls the
+  thread-bound accounting API from a background thread; where input and output
+  are distinct allocations — resampling, affine transforms — the input's charge is
+  held until the input is actually freed rather than released when the output
+  becomes visible. Memory limits themselves are treated as the user directed: the
+  recorded resident-memory figure is an **adjustable investigation canary, not a
+  cap** — a crossing alone neither blocks delivery nor triggers extended
+  profiling, and no speculative optimization is undertaken for it.
+- **The gap:** The plan named Rust as the one pixel owner and set a memory band,
+  but never specified napi scheduling inside a persistent daemon, intermediate
+  storage ownership, the projection boundary's data shape, native allocation
+  ownership across worker threads, or how to account allocations that outlive or
+  differ from the returned result.
+- **The reach:** Every later develop operator, mask operation and geometry stage
+  inherits this execution model. One additional thread belongs to each loaded
+  segmentation runtime — no new process, database field, command option or global
+  worker-pool setting. These are *allocation* guarantees, not resident-memory
+  guarantees: collection timing and allocator residency can keep process memory
+  high after logical ownership ends, tightening an output can reallocate, and
+  freed storage may stay resident. Whole-command memory acceptance therefore
+  requires its own measured runs and cannot be inferred from a balanced counter.
+- **Verdict:** **Sound.** Consume memory the task already owns exclusively,
+  report what is actually owned to the platform that manages collection, and
+  preserve caller buffers and exact pixel arithmetic rather than tuning an
+  allocator or a garbage collector around one photograph.
+- **Confidence:** High for ownership, scheduling and counter correctness; medium
+  for allocator tradeoffs and bounded duplicate preprocessing under concurrency,
+  where resident memory remains measurement-dependent.
+- **Owner:** `crates/photoctl-image/src/`, `packages/img/`,
+  [full-source performance](assets/full-source-performance.md).
+
+### S72 — Native diagnostics are bounded and transported by existing operations
+
+- **When:** Slice 11 addon diagnostic integration and the actual Linux capture,
+  2026-09-06.
+- **The choice:** The inference runtime can emit warnings between commands, when
+  no operation is running and no callback owner exists. Rather than installing a
+  live native-to-JavaScript callback solely for diagnostics — which would add
+  request and teardown lifecycle obligations — an explicit process-scoped logger
+  and per-worker session loggers record messages, creation and job outcomes carry
+  them even when the operation fails, and command code drains them through its
+  existing stderr-event owner. A CPU warning emitted between commands therefore
+  waits for the next operation, which transports it *without* claiming the
+  warning belongs to that photo. Each recorder retains 64 messages with each
+  field capped at 4,096 bytes, surfacing truncation and dropped counts; each
+  scope is first-in-first-out, but there is no cross-scope chronology or global
+  sequence owner, and process messages may be lost at teardown. One field is
+  deliberately omitted: the pinned wrapper decodes the message category from the
+  code-location pointer, so photoctl reports scope, severity, message and code
+  location and omits category rather than forwarding a mislabelled location — no
+  dependency fork is added for it.
+- **The gap:** No live callback owner exists in the native interface, and the
+  documented upstream callback contract does not match its pinned implementation.
+- **The reach:** Clients receive less metadata but never an invented or
+  mislabelled diagnostic fact, and the strict machine-readable stderr contract is
+  preserved. These diagnostics are not a durable logging service.
+- **Verdict:** **Sound with limits.** Reuse the operation-result and stderr owners
+  while making bounded loss and delayed timing explicit; omission is preferable
+  to inventing facts.
+- **Confidence:** Medium for the timing and retention policy; high for delivery
+  of measured failures and for the omission.
+- **Owner:** `crates/photoctl-image/src/sam2_diagnostics.rs`,
+  `packages/commands/src/`.
+
+### S73 — Cargo owns one target-local source build of the inference runtime, and damage fails by name
+
+- **When:** Slice 11 default runtime acquisition, 2026-09-06.
+- **The choice:** The inference runtime is the C++ library that executes the
+  segmentation models. Rather than letting the Rust dependency download a vendor
+  archive, one pinned source-and-patch recipe is built and cached inside Cargo's
+  own target directory: a developer running Cargo directly, the packaged build
+  script, the Docker test image and the release job all reach the same recipe,
+  and none can select a different runtime behind that owner's back. Docker
+  prewarms it in a recipe-only layer before application sources are copied, so
+  ordinary source edits do not pay for a cold C++ build. If a completed archive
+  stops matching its recorded hash, or a patch was interrupted mid-apply, the
+  build stops and names the exact disposable cache entry to delete — it never
+  resets project sources, silently substitutes another runtime, or runs a
+  background cleaner; an interrupted compilation with intact prepared sources
+  resumes through the ordinary incremental build tool. The rejected alternative,
+  one shared cache across worktrees, would save cold builds but needs its own
+  locking and eviction owner, so Cargo's existing target-directory lock was kept.
+- **The gap:** No published patched archive or reproducible vendor-builder
+  provenance exists, while direct, Docker and release builds all needed identical
+  selection behavior; recovery from partial acquisition damage was unspecified.
+- **The reach:** Contributors now need Python, CMake, Ninja, Git and a native C++
+  toolchain; the preparer installs nothing and uploads nothing. Cold builds are
+  expensive and rare, warm builds are idempotent, and nothing about model files,
+  CPU feature selection or the public image API changes.
+- **Verdict:** **Sound with acceptance gates.** One acquisition owner prevents
+  silent per-platform divergence, and failure stays visible and scoped.
+- **Confidence:** Medium — the build-cost and prerequisite burden is a real
+  tradeoff; the ownership is not in doubt.
+- **Owner:** `crates/photoctl-image/ort/{README.md,recipe.json,prepare.py}`,
+  `test/Dockerfile`.
+
+### S74 — The addon owns the final native link, on one shared macOS deployment floor, signed at its shipped path
+
+- **When:** Slice 07c packaging integration; slice 11 runtime acquisition,
+  2026-09-06.
+- **The choice:** The addon is the dynamic library Node loads to get native image
+  code. When Rust links it, Rust's own object code goes first and the linker then
+  resolves its inference-runtime calls from the pinned archive, followed by the
+  system C++ libraries — and on Linux the compiler's support archive must follow
+  the runtime too, because the real link demonstrated that outlined ARM atomic
+  helpers live there. The rejected alternatives were forcing every archive member
+  to load, or calling an otherwise pointless runtime function from image code so
+  the linker would keep it: both make runtime behavior compensate for build
+  order. The package deliberately emits only the Node dynamic library, not a
+  general-purpose Rust library whose future callers would inherit an undesigned
+  transitive-linkage contract. The deployment floor — the minimum macOS version a
+  binary declares — comes from one workspace value supplied to Rust, the RAW
+  decoder and the inference runtime together, overridable by an explicit build
+  environment variable that a standalone preparer must pass rather than infer
+  from the builder's OS; without it, one C++ dependency could quietly target the
+  build machine's OS while everything else targeted an older one. The check runs
+  where it matters: the platform package is packed, installed into a scratch
+  prefix outside the checkout, loaded, and its declared minimum asserted against
+  policy. Packaging also ad-hoc signs the destination addon on macOS *after*
+  copying it, because a linker signature can survive a filesystem copy and still
+  be rejected by the loader; Linux packaging performs no signing.
+- **The gap:** The plan named a Node native addon and one runtime acquisition
+  owner but never said how that owner participates in the final link; the RAW
+  decoder had a floor while the new runtime source build had no shared platform
+  policy; and the release layout never said how a copied Apple Silicon library
+  keeps a loadable signature.
+- **The reach:** Existing Node APIs and native unit tests are unchanged, and a
+  future public Rust SDK is not implicitly promised. Changing the floor moves all
+  native image components together and changes the runtime cache identity; it
+  says nothing about the CLI's Node or helper OS support.
+- **Verdict:** **Sound.** Link ordering belongs to the build, a builder's OS
+  version cannot implicitly choose what customers can run, and the shipped
+  artifact is the one that is signed and checked.
+- **Confidence:** Medium for narrowing the crate's outputs; high for final-link
+  ownership, the shared floor and the installed-package check.
+- **Owner:** `crates/photoctl-image/` build configuration, `.cargo/config.toml`,
+  `scripts/{package-native,audit-linkage}.mjs`, `test/model-runtime/`.
+
+### S75 — The Linux test image matches the runtime's C++ ABI, and the resulting floor is an observed fact
+
+- **When:** Docker/model gate wiring, 2026-09-06.
+- **The choice:** An ABI here is the versioned set of symbols a compiled binary
+  demands from the system C++ runtime at load time. A clean native build on the
+  older Debian release failed at link, because the pinned inference runtime calls
+  symbols that release's C++ library does not provide; the same Node major on the
+  newer Debian release supplies them, so the test image pins the newer one. The
+  built artifacts then *require* those newer versions — a requirement read back
+  out of the binary rather than assumed. Bundling a second C++ library or
+  changing the runtime pin would have moved an owner outside this test-wiring
+  change.
+- **The gap:** The original Docker seam named the older release before the
+  current pinned runtime made a newer C++ runtime a concrete build requirement.
+- **The reach:** Docker coverage means "this newer Linux", not arbitrary older
+  installations. The release workflow builds Linux packages on its own runners;
+  under the user's verification policy their compatibility floor is not a
+  required gate, and nothing here claims one. Node version, model bytes,
+  inference semantics and image algorithms are untouched.
+- **Verdict:** **Sound.** Fix the demonstrated toolchain mismatch and keep the
+  evidence boundary explicit.
+- **Confidence:** Medium — the fix is certain, while "which Linuxes can load
+  this" stays an open, deliberately unclaimed property.
+- **Owner:** `test/Dockerfile`,
+  [runtime acquisition](assets/ort-acquisition/README.md).
+
+### S76 — Build provenance records the toolchain actually used and claims no binary equivalence
+
+- **When:** Slice 11 runtime acquisition and its initialization experiment;
+  slice 07b vendored-source integration.
+- **The choice:** Two machines building the same pinned source with different
+  platform SDKs or compiler revisions select different cache entries; each
+  records its own compiler and tool identity, its flags and its output hash, and
+  neither is called byte-equivalent to the vendor's archive. Native hosts build
+  their own target — cross-compilation is never inferred from a target name.
+  Separately, a patch defers the runtime's CPU-reading start-up work until an
+  explicit logger exists, because the CLI's error stream must stay strict
+  machine-readable output and diagnostics belong on the typed native transport
+  rather than arriving as a process-load side effect; both the insufficient first
+  patch and the working one are retained, and that timing experiment explicitly
+  does not claim to reproduce the vendor binary. Third-party source stays
+  verbatim: whitespace diagnostics are disabled for the vendored RAW-decoder
+  directory only — its upstream archive contains trailing whitespace and mixed
+  line endings, and normalizing them would make photoctl's vendored bytes diverge
+  from the pinned checksummed release — while every project-owned file keeps the
+  repository's normal whitespace checks.
+- **The gap:** The source and patch recipe were fixed, but the vendor's complete
+  build environment and the supported packaged Linux ABI floor were not, and the
+  clean-diff gate never said how to treat formatting already present in
+  third-party source.
+- **The reach:** SDK or compiler changes force a rebuild, and success on one
+  platform closes nothing on another. The existing x64 CPU-feature floor is
+  retained rather than broadened, no untested platform silently falls back to an
+  unpatched archive, and future vendored updates stay auditable against their
+  upstream archive.
+- **Verdict:** **Sound.** Reproducible inputs plus observed toolchain identity are
+  honest evidence without pretending to a hermetic, bit-identical build.
+- **Confidence:** High for the evidence boundary; medium for native-only build
+  ergonomics.
+- **Owner:** `crates/photoctl-image/ort/README.md`, `.gitattributes`,
+  [acquisition evidence](assets/ort-acquisition/).
+
+### S78 — One CLI tarball carries the private module closure, resolved the way Node resolves any package
+
+- **When:** Standalone packaging integration, 2026-09-05; slice 00 module mode;
+  slice 14 journey sharing.
+- **The choice:** Installing the CLI also installs its private command, render,
+  provider and daemon modules *inside* that one tarball, with their ordinary
+  third-party dependencies declared once on the CLI manifest — the package
+  manager treats a bundled package's dependencies as bundled too, so leaving
+  those edges on the embedded manifests would claim absent files were shipped.
+  Platform native addons and the Swift helper stay separate optional packages.
+  TypeScript compiles to real ECMAScript modules under Node's `NodeNext` rules,
+  so source imports carry the `.js` specifier Node will actually load and there
+  is no bundler step between what is tested and what ships. Ordinary development
+  builds stay debuggable while packaging compiles optimized native binaries, with
+  one root version generating the helper's version constant and synchronizing
+  platform pins, and publication selecting only the expected current-version
+  tarballs rather than every file left in an output folder. One targeted
+  exception to the debug default: opening an uncached full-resolution RAW spent
+  nearly all its time in unoptimized native pixel loops, so the image crate and
+  its RAW-decoder crate are optimized *within* the development profile, retaining
+  assertions, overflow checks and symbols — rather than switching every build to
+  release, which would delete development checks everywhere and optimize
+  unrelated code. A release install runs the same editing-and-preview scenario as
+  a source build, selecting only a different executable and working directory, so
+  new editing assertions automatically cover both runtimes rather than the two
+  copies gradually drifting.
+- **The gap:** The plan named CLI and platform tarballs but left workspace
+  modules unshipped, chose no module-resolution mode, did not distinguish shipped
+  from development performance, let the helper version drift from the CLI's, and
+  did not say how the installed-runtime and full-journey coverage share their
+  checks.
+- **The reach:** Module-relative assets keep their package layout after install
+  and an installed command holds no checkout-relative path; external dependency
+  conflicts are rejected by the packer rather than silently resolved; the linkage
+  audit accepts system libraries only and treats a binary's own build-time
+  identity as not a dependency; optimized code is harder to step through even
+  with symbols; and the installed daemon lifecycle remains independently tested,
+  so the full-feature journey claims no daemon coverage it lacks.
+- **Verdict:** **Sound.** One public JavaScript release boundary with the same
+  module ownership as development, and release properties owned by build code
+  rather than runtime fallbacks.
+- **Confidence:** Medium — the clean-prefix install exam proves the current
+  closure, not every future dependency graph.
+- **Owner:** `scripts/{pack,publish-npm,sync-versions}.mjs`,
+  `apps/cli/package.json`, `Cargo.toml` profiles, `test/macos/`.
+
+### S79 — Release builds four platform packages and verifies one
+
+- **When:** Standalone packaging 2026-09-05; Mac-only verification policy applied
+  to the release workflow, 2026-09-08.
+- **The choice:** Pushing a version tag exports and hash-checks the models,
+  builds native packages on four runners (Linux x64, Linux ARM64, macOS ARM64,
+  macOS Intel), assembles one draft release containing every tarball plus the
+  model files and hashes, publishes it, re-downloads the models from the public
+  URL to verify them, and only then publishes to the package registry. The
+  verification steps — loading the real addon with real models, the packed-install
+  exam and the linkage check — run **only** on the Apple Silicon job. The other
+  three jobs compile and upload; nothing loads them. Intel and Linux validation
+  is **removed, not deferred**: a green release run is not a statement that those
+  packages work, and unverified platforms are never claimed as verified.
+- **The gap:** The plan named a release matrix; the user's later policy named
+  Apple Silicon as the acceptance target without saying whether the other
+  packages stop being built.
+- **The reach:** Users on Linux or Intel Macs can still install packages that no
+  gate has executed — the portable implementation and its existing tests remain,
+  but the builds are explicitly unverified. Release and registry publication are
+  not one transaction, so a registry failure can leave a complete GitHub release
+  with packages unpublished. The full local suite remains the release-preparation
+  gate; a green hosted run is not release acceptance.
+- **Verdict:** **Sound** as the faithful implementation of the user's stated
+  policy — retained builds are explicitly not verification.
+- **Confidence:** Medium, because shipping unexercised platform packages is a
+  user-facing consequence of a verification-scope decision.
+- **Owner:** `.github/workflows/publish.yml`,
+  [verification policy](../../README.md#verification-policy).
+
+### S84 — References ride the documented edit route, and reference-only means "a variation"
+
+- **When:** Slice 12e2 reference/init integration; reference-only completion and
+  negative guidance passes, 2026-09-06.
+- **The choice:** `generate --ref vase.png --prompt "…"` posts to the documented
+  multipart image-*edit* route with repeated image parts, editable base first
+  when a mask exists. The
+  reference is sent only for models a fixed table says accept one — a table, not
+  a capability probe. Unsupported references warn and are omitted when an explicit
+  text prompt still defines the request; reference-only generation and explicit
+  reference-strength requests instead fail before payment. Two immutable pins are kept:
+  the exact oriented PNG bytes including alpha, and a separate working RGB
+  projection, so a later refresh still works after the user's file disappears.
+  Supplying `--ref` with *no* prompt is meaningful on its own: photoctl sends a
+  versioned instruction asking for a new variation that keeps the main subject
+  and composition while permitting detail changes, and stores that resolved
+  instruction and its template version beside the retained reference — it does
+  not promise a copy or an exact reconstruction, and an explicitly *empty* prompt
+  is a usage error rather than a request for the default. `--neg "text, logos"`
+  appends a versioned instruction asking the general model to avoid those
+  elements; the result explicitly calls this prompt guidance, preserves the
+  requested exclusions and the actual transmitted prompt in the immutable request
+  and the attempt journal, and never claims the provider accepted a native
+  negative-conditioning parameter or that unwanted content cannot appear. All
+  provider-facing types, capability decisions, warnings and applied controls live
+  in the provider package; render imports those types only, and an unsupported
+  requested control is retained as immutable intent, warned about, and not sent.
+- **The gap:** The slice required `--ref` and named `--neg`, but versioned
+  neither wire dialect, said nothing about what to generate when no text
+  describes the desired result, and supplied no provider-independent
+  interpretation for exclusions.
+- **The reach:** This defines the default creative intent of the shorthand
+  without a new image model, local blend, database field or implicit
+  reference-photo import. Working reference normalization stays full-size —
+  allocating display and float buffers proportional to the reference's pixels and
+  retaining a full-size working TIFF alongside the PNG — rather than silently
+  flattening or reducing it; a future bounded projection needs an explicit
+  density/role contract. A future template change must retain its version in
+  request provenance, and future native controls must report a distinct
+  application mode rather than reinterpret already-recorded guidance.
+- **Verdict:** **Sound.** A variation is a useful generation operation while
+  copying would not justify a provider call; refusing when the only input cannot
+  be sent prevents unrelated paid work; and guidance is labelled as guidance.
+- **Confidence:** High for the transport and immutable intent; medium for the
+  full-size reference cost, which is explicit and unoptimized, and for the
+  variation wording, which is a reversible product default. Live photographic
+  acceptance is separate and unrun.
+- **Owner:** `packages/providers/src/adapters/image.ts`,
+  `packages/providers/src/prompts/image.ts`,
+  `packages/render/src/fill/reference.ts`.
+
+### S86 — The best declared source tier is a reusable preview ceiling
+
+- **When:** Shared realized-frame implementation, 2026-09-05.
+- **The choice:** A photo can have a 40×20 catalog size while only a declared
+  20×10 source is available. After rendering that source once, the saved
+  full-frame master records both its output frame and the source tier that
+  produced it, and later detail requests reuse that master when it already
+  represents the best declared tier — even though a full-catalog-size request
+  would prefer more pixels. A newly available higher tier can still trigger a
+  better render. Without this the same small source was decoded repeatedly and
+  then failed outright once it disappeared, despite valid cached pixels with
+  valid coordinates. A pinned fallback's *label* does not prove its density, so
+  photoctl reads its actual image metadata once: it keeps a 20×10 cached master
+  rather than dropping to a 10×5 pin, but improves a 4×2 master from that same
+  pin, and if the pin is missing or unreadable it retains the valid cache and its
+  truthful frame. One consequence worth knowing: what "source" means in a frame
+  is set per node kind — a generate or upscale node declares *its own raster* as
+  its source, while a canvas composite carries the decoded original's source
+  through. So after an outpaint the ceiling still means "the original file's
+  pixels", while on a generated branch it is self-referential, which is correct
+  for a source-less generation but must not be read as "how good the original
+  was".
+- **The gap:** Exact frame retention required truthful resolution reporting but
+  never said how a reduced, non-pinned source proves that rendering again cannot
+  improve detail.
+- **The reach:** Cached detail stays usable after source loss without pretending
+  upscaling adds information. This relies on source-resolution metadata
+  accurately describing the chosen tier.
+- **Verdict:** **Sound.** Reuse follows retained source provenance rather than an
+  output-width ratio.
+- **Confidence:** High for the ceiling; medium that its per-node-kind meaning is
+  discoverable enough for a future reader.
+- **Owner:** `packages/render/src/preview.ts`, `packages/render/src/graph/frame.ts`.
+
+### S5 — Import continues past a failing unit and describes each failure by path and reason
+
+- **When:** Slice 01b command integration; slice 04 scanning; corrected
+  2026-09-08.
+- **The choice:** Import a folder where photo 2 has vanished mid-scan and photo 3
+  is a text file: photos 1 and 4 are still imported. The envelope is
+  `code:"partial"`, carrying `ids[]` for everything created *or* already
+  recognized, `conflicts[]` naming the affected source paths with a
+  human-readable reason, and counts describing logical photos. An expected
+  per-unit error joins that partial result; only an unexpected fault still
+  throws. Expected per-unit failures cannot discard IDs already committed by
+  earlier units. Conflict entries preserve paths and readable messages, not the
+  internal error's structured code or data. Unsupported inputs are counted
+  separately. Shared setup has a different scope: when an admissible group exists,
+  prepare the pinned-preview directory before admission; failure returns the
+  destination error rather than one conflict per photo. An unsupported-only scan
+  needs no cache directory. A batch that admitted no image reports `volume:null`
+  instead of inventing a mount. **This
+  per-unit conflict list is a message-and-path partial, and it is deliberately a
+  different contract from the typed batch-envelope aggregation in S6.**
+- **The gap:** The A2/A6 envelope defined counts and mixed success but not the
+  identities behind them, the empty-batch volume, or how a per-unit failure
+  interacts with units that already committed.
+- **The reach:** Agents can chain import into every ID-based verb without parsing
+  logs or querying the database, and one bad file in a folder cannot starve its
+  neighbours. Collapsing the four causes into "unsupported" would tell automation
+  to fix data when the storage edge actually needs attention.
+- **Verdict:** **Sound.** Batch continuation preserves committed work while the
+  result stays truthful about what did not happen.
+- **Confidence:** High.
+- **Owner:** `packages/commands/src/handlers/import.ts`.
+
+### S7 — A successful import always leaves a pinned preview *and* its index row, and re-import repairs either half
+
+- **When:** Slice 01b idempotency review.
+- **The choice:** Every imported photo gets a pinned, source-independent
+  1616-pixel-long-edge JPEG plus a `cache_index` row; a photo row without both is
+  not a successful import state. A crash after the preview file is renamed but
+  before the database commits would otherwise leave a photo whose index row never
+  returns. Re-import therefore byte-compares the expected preview against the
+  pinned cache file: a match leaves the file's timestamp alone but still upserts
+  the index row, while a missing or same-length corrupt file is atomically
+  rewritten. Checking only for the file's existence would leave the index missing
+  forever; blindly rewriting every valid preview would turn an idempotent import
+  into repeated cache churn.
+- **The gap:** The plan required both halves but not the recovery when only one
+  survived.
+- **The reach:** Folder-scale re-import stays convergent and cheap in writes;
+  pruning can trust that valid pinned files eventually regain their accounting.
+  `files.embedded` stays reserved for genuine embedded JPEG byte ranges, so a
+  whole-file source is never stored as a pretend preview.
+- **Verdict:** **Sound.** Each half is verified and repaired without treating
+  either as proof the other committed.
+- **Confidence:** High.
+- **Owner:** `packages/importer/src/cache.ts`,
+  `packages/commands/src/handlers/import.ts`.
+
+### S16 — One writer per library, from the lockfile to the daemon
+
+- **When:** Slices 01a and 02, with the 01a review correction and 03b
+  integration review.
+- **The choice:** The lockfile still carries `{pid,socket,startedAt}`, but the
+  actual exclusion is a kernel advisory lock held on an open descriptor for the
+  whole library session — the operating system releases it automatically when the
+  process exits, including after `kill -9`. The first design read a dead PID and
+  unlinked its file; two contenders could both make that decision and one could
+  delete the other's new live lock, which a synchronized probe reproduced as
+  overlapping holders. PGlite is started *without* the flag that disables
+  `fsync`, and both `fsync` and `synchronous_commit` are verified live at every
+  open. `init` dispatches in-process to create the library and closes its bootstrap
+  handle. Daemon startup then acquires the library lock and hands that
+  *already-held* descriptor to the child as file descriptor 3: ownership is
+  continuous across spawning, not across initialization and spawning. Direct
+  mode, restore and non-library requests also have in-process paths.
+  If that daemon spawn fails, `init` still returns success plus a
+  `daemon_unavailable` warning, so the natural retry does not fail with "library
+  already exists". A `--no-daemon` command stops a live daemon but defers a
+  socketless direct holder to the ordinary library-open wait, which reports the
+  holder PID and elapsed budget; `daemon stop` and destructive restore keep
+  refusing a non-daemon holder immediately. `doctor` reports `lock_holder:null`
+  on success, because a healthy run necessarily holds the lock itself and only
+  foreign contention is actionable.
+- **The gap:** Ordinary filesystem unlink offers no atomic compare-and-delete;
+  the plan assumed runtime-adjustable durability settings; and it never assigned
+  ownership of a socketless holder met while preparing direct execution.
+- **The reach:** Every catalog write, the daemon lifetime, and the native
+  `fs-ext` install dependency on the supported macOS/Linux targets rest on this.
+  The library lock remains the sole owner of contention timing and error data.
+- **Verdict:** **Sound.** Kernel ownership removes the race instead of tuning its
+  timing window.
+- **Confidence:** High.
+- **Owner:** `packages/library/src/{lock,open,database}.ts`,
+  `apps/daemon/src/server.ts`.
+
+### S17 — Daemon transport is bounded, its control answers are observed, and it never replays an unknown outcome
+
+- **When:** Slice 02 transport and integration reviews; recovery and status
+  corrections, 2026-09-06.
+- **The choice:** A frame is a four-byte big-endian JSON byte length followed by
+  that JSON, rejected above 16 MiB on both encode and decode, so arbitrary socket
+  chunking is transparent and a runaway length cannot allocate unbounded memory.
+  The daemon log is a socket-identity-derived file in the OS temporary directory,
+  beside neither the library nor its photos, owner-only, truncated at each start.
+  `daemon status` asks the live daemon for uptime, queue depth and
+  `background_busy` — read from the worker registry that already keeps the daemon
+  alive — instead of inventing values; reading status does not interrupt indexing,
+  and a false `background_busy` means the worker settled, not that its work
+  succeeded. `daemon start` returns the handshake snapshot it already received
+  rather than asking a second time and risking a lost reply. `daemon stop`
+  reports failure when a live holder neither answers nor exits by the deadline.
+  Idle connected sockets consume no request-queue capacity because only framed
+  work is a request, and one 5 ms admission window coalesces simultaneous
+  arrivals before serial execution. Most importantly: if a connection dies
+  **after** a request began sending, the CLI returns unavailable with an explicit
+  unknown-outcome message and does not resend — a duplicated `layer duplicate` or
+  a second paid generation is worse than an unclear answer. Only a failure before
+  sending retries.
+- **The gap:** Framing and log placement were delegated; replay after ambiguous
+  delivery, idle-connection admission, IPC permissions and failed-stop reporting
+  were all implicit.
+- **The reach:** Every verb, including paid ones, shares the no-replay rule
+  rather than a growing list of supposedly safe verbs. This prevents
+  client-generated duplicates; it does not promise exactly-once execution.
+  Durable request IDs with saved responses could allow safe replay, but would
+  need a cross-command transaction and retention contract that does not exist.
+- **Verdict:** **Sound.** Recovery must not convert a missing acknowledgement
+  into another mutation.
+- **Confidence:** High.
+- **Owner:** `packages/protocol/src/frames.ts`,
+  `packages/commands/src/daemon-client.ts`, `apps/daemon/src/server.ts`.
+
+### S18 — Backup is metadata-only; restore trusts the filesystem, not the journal's last word
+
+- **When:** Slice 03b; slice 08a2 restore integration; the pre-slice-08 unknowns
+  walk.
+- **The choice:** `backup` is a small SQL snapshot for recovering from PGlite
+  corruption, never a media backup: it is written to a unique temporary file,
+  fsynced, renamed, and followed by a backup-directory fsync before rotation,
+  with recency taken from the ISO timestamp encoded in photoctl's own filename
+  rather than mutable mtimes — so copying history across a restore cannot
+  reorder it. The newest snapshot survives even when it alone exceeds the
+  retention budget, with a typed warning. `restore` replaces database state while
+  **preserving** `artifacts/`, `originals/`, `previews/` and user-authored
+  presets, recreating them in the staged sibling as hard links on the same
+  filesystem, sharing image payloads while creating directory entries, before the
+  directory swap; after promotion it validates registered canonical artifacts and
+  marks missing or corrupt files unavailable rather than letting SQL claim they
+  exist. Crash recovery reads the surviving directory trees — stage and rollback
+  names share one UUID token, and any other path grammar is rejected — instead of
+  believing whichever journal phase was written last; past the `committed`
+  marker, recovery only finishes cleanup and never replaces the promoted library.
+  Migration is exact-prefix: the recorded versions must be `[]`, `[1]`, `[1,2]`
+  and so on through the current complete prefix, so a gapped or future ledger
+  fails rather than looking current, and a repeated `migrate` re-queries state
+  instead of replaying a cached startup result. The success envelope returns only
+  `{library,from,schema_version}` — not the rollback path, which successful
+  verification deliberately deletes. `dumpSql()` exposes text rather than the raw
+  database object and commits in a `finally` block, because the dump tool leaves
+  the shared session in a read-only transaction the daemon's next command would
+  trip over. Narrow programmatic fault hooks let tests kill a real child process
+  at exact durability boundaries without adding any user-visible flag.
+- **The gap:** Crash ordering, oversized-newest behavior, how backup history
+  crosses the swap, and whether restore may delete library-owned file trees were
+  all unspecified.
+- **The reach:** Recovery can never delete the media that SQL deliberately
+  excludes, and a restored node may honestly report an already-missing artifact
+  because SQL never promised to recreate it.
+- **Verdict:** **Sound.** The filesystem is the observable truth after a crash,
+  and publication establishes the replacement before any optional cleanup.
+- **Confidence:** High.
+- **Owner:** `packages/library/src/{backup,restore,restore-journal}.ts`,
+  `packages/library/src/migrations/runner.ts`.
+
+### S20 — Background embedding borrows the daemon's command lane, never its lock
+
+- **When:** Slice 09c worker integration and the failure-path/scale reviews.
+- **The choice:** photoctl has exactly one process — the daemon — holding the
+  library's kernel lock and one database handle for its lifetime, so the
+  precedent worker's "close the session between batches" cannot be copied: doing
+  so would tear down the shared command handle. Instead the embedding worker
+  selects at most 50 photos, does bounded per-photo provider work, then pauses;
+  and before *any* foreground dispatch the daemon marks it paused, aborts
+  in-flight provider I/O and retry backoff, wakes sleeps, and awaits the worker
+  promise — so no foreground transaction can absorb or roll back a background
+  write on the shared connection. Provider error classification ends *before*
+  catalog persistence begins, so a local write failure is never retried as paid
+  work. A 401/403/404 rejection is treated as a broken shared
+  credential/model/endpoint context: the rest of the batch is recorded without
+  further calls and automatic work stops until a later foreground command
+  supplies fresh context, while an HTTP 400 stays a single-photo failure so
+  photos 18–50 still run. A detached worker rejection is caught at its kick
+  point, reported once as a bounded one-line diagnostic, and left dormant rather
+  than becoming an unhandled rejection that makes shutdown fail. Slow foreground
+  provider work emits progress frames every five seconds inside the client's
+  ≥31-second idle window, so a 30-second provider call is not retried as dead.
+  `embed --all` is an idempotent backfill over rows lacking a current-model
+  vector, returning exact totals with at most the first 100 failures plus an
+  explicit omitted count; naming IDs means "refresh these", capped at 1,000 with
+  bounded identifier lengths so even the largest explicit batch stays far below
+  the 16 MiB frame.
+- **The gap:** The lifted precedent assumed two independent database sessions,
+  and the plan supplied none of the batch, ID, failure-detail or cadence budgets.
+- **The reach:** Future background workers must reuse this cooperative
+  foreground-priority lane rather than introduce a second lock or session model.
+  Operators needing a complete per-photo repair report use explicit-ID batches.
+- **Verdict:** **Sound.** Foreground work stays bounded during automatic backfill
+  while the one-lock invariant holds, and payment policy never crosses the
+  boundary where remote success becomes local persistence.
+- **Confidence:** High for the lane and failure policy. The *request dialect*
+  inside it remains provisional: production may send one photo per request —
+  fixed descriptive text plus that photo's pinned preview, accepted only when the
+  response is exactly one finite 3,072-number vector — and only under explicit
+  embed consent, because no live gateway has ever accepted or rejected it. A
+  rejection must produce a newly named request version, not a silent fallback.
+- **Owner:** `apps/daemon/src/workers/embed.ts`,
+  `packages/commands/src/handlers/embed.ts`,
+  `packages/providers/src/adapters/embedding.ts`.
+
+### S22 — Command input is a closed set, and human output cannot break its own table
+
+- **When:** Slice 01a review correction; slice 02b human renderer.
+- **The choice:** Each command declares the options it accepts; an unknown
+  option, a duplicate option, a missing value or a stray positional argument
+  returns `usage` *before* the library is touched. The first parser searched only
+  for known names, so `--cache-mxa 1GiB` silently initialized a library at the
+  default size and `doctor nonsense` succeeded — automation typos looked like
+  valid work. Separately, `--human` output escapes newlines, tabs, terminal
+  escape bytes and the `|` column separator into visible spellings such as `\n`,
+  so a tag or path containing a control character stays on one table row and
+  cannot inject a column or a terminal control sequence; the JSON envelope is
+  untouched. A failure that carries no message — a mixed batch returning
+  `code:"partial"`, for instance — gets a label derived from its code
+  (`Error [partial]: Partial failure`), while a supplied message always wins.
+- **The gap:** The plan fixed command shapes and required deterministic readable
+  text, but delegated the parser and said nothing about control characters
+  originating in user or filesystem data, or about failures whose `message` field
+  is absent.
+- **The reach:** Every later verb extends one strict parser and reuses one
+  renderer without sanitizing its own values or widening the protocol.
+- **Verdict:** **Sound.** A CLI contract is only stable when unrecognized input
+  is rejected, and presentation fills a presentation-only gap.
+- **Confidence:** High.
+- **Owner:** `packages/commands/src/{arguments,dispatch}.ts`,
+  `apps/cli/src/output.ts`, `packages/protocol/src/envelope.ts`.
+
+### S25 — Listing separates result membership from current availability
+
+- **When:** Bounded list materialization, 2026-09-06.
+- **The choice:** A catalog holds hundreds of photos and the caller asks for ten.
+  photoctl counts every eligible photo and keeps the same ordering, but checks
+  drive and file availability only for the ten rows it will actually return. XMP
+  staleness is different and still checks every candidate sidecar, because
+  staleness changes *membership*. A streaming caller must accept one row before
+  the next row's availability work starts, while an ordinary non-streamed page
+  keeps concurrent checks for the rows it will return; `next` resolves only its
+  one selected photo.
+- **The gap:** The existing SQL page bounded catalog memory but never said where
+  expensive availability work belongs relative to output limits and stream
+  backpressure.
+- **The reach:** Counts and cursors do not become availability caches. Every
+  returned row still consults the ordinary resolver, so offline, wrong-volume and
+  reconnect behavior are unchanged.
+- **Verdict:** **Sound.** Output demand bounds external work without changing the
+  catalog's meaning or adding a second count owner.
+- **Confidence:** High.
+- **Owner:** `packages/commands/src/handlers/cull.ts`.
+
+### S26 — Ambient credentials are never consent; consent is per purpose and per upscaler
+
+- **When:** Slice 09a settings/selection; slice 12c1 policy; slice 12d provider
+  runtime.
+- **The choice:** A developer has a gateway API key exported in their shell.
+  `fill --remove` runs generation through the gateway, but the upscale step
+  reports `upscale_unconfigured` and preserves the generated pixels, because
+  consent lives in a durable per-model row in the library
+  (`providers.upscale[model].configured`), not in the environment. Three settings
+  objects stay separate: `models` maps a purpose to a model, `generation.upscale`
+  is the `auto|off` preference, and the consent row is the authorization —
+  choosing a model never authorizes sending pixels to its vendor, and a
+  command-line model override implies a request to upscale but cannot bypass the
+  consent bit. Discovery is likewise not authorization: when a command or the
+  workbench needs to know which upscalers exist, it asks the provider package for
+  a *fresh* in-memory registry populated with the release roster, and then
+  separately reads persisted consent. A process-global mutable registry would let
+  test or future runtime registration leak between independent commands. The
+  result contract keeps these apart too: `enabled` answers whether policy asked
+  for upscaling, `action` answers what can happen now — default `auto` with an
+  unavailable adapter is `enabled:true, action:"preserve_generation"` plus a
+  warning, while explicit `off` is `enabled:false` with the same action and no
+  warning. Public setting writes reject unknown fields through the shared strict
+  registry; tolerant response parsing is a separate contract.
+- **The gap:** The plan fixed consent semantics and precedence but not their
+  durable shape, and never said where discovery ends and authorization begins.
+- **The reach:** `doctor`, generation verbs, migrations and configuration tooling
+  all inherit one explicit distinction between choosing a model and authorizing
+  an external service, and UI or agent clients can explain why generated pixels
+  were preserved.
+- **Verdict:** **Sound.** Purpose-specific model choice stays independent of
+  provider authorization.
+- **Confidence:** High.
+- **Owner:** `packages/providers/src/{config,upscale/runtime}.ts`,
+  `packages/render/src/fill/upscale-policy.ts`.
+
+### S32 — Density is an optional generative stage with deterministic, honest fallbacks
+
+- **When:** Pre-slice-12 unknowns walk; slices 12a/12b/12d2; standalone upscale
+  consumer correction.
+- **The choice:** Generation publishes exactly the provider's intrinsic raster —
+  the artifact keeps the dimensions the provider actually returned, and the
+  recipe records the same dimensions as the sampling-density fact — while a
+  separate canonical resample node owns deterministic sizing and placement into
+  the base canvas. If the destination needs more density, the planner picks the
+  smallest uniform supported scale covering both axes and then resamples once for
+  exact geometry. A cached upscale is reused only when it names the *same*
+  generation, with ties broken by fewest pixels and then by artifact ID so
+  database row order can never change the plan; a fractional advertised scale is
+  valid only if it lands on whole pixels for both axes. If every advertised scale
+  breaks the adapter's limits, there is no legal paid request to make, so the
+  plan uses the already successful generation, still lands the exact dimensions,
+  and reports `density_satisfied:false` with `upscale_resolution_limited`. If the
+  call fails, the same soft outcome applies with `upscale_failed`, always
+  starting from the original pinned generation rather than recursively from a
+  resized or composited result. Every generation recipe stores its upscale
+  intent, adapter, model and guarded-prompt identity *even when no call was
+  needed*, so a later layer enlargement can decide correctly. Downstream, the
+  editable develop node consumes the entire purchased branch including any final
+  exact-size resample, so lowering exposure on an enlarged image replaces the
+  adjustment controls rather than tracing back past the paid pixels or stacking a
+  second adjustment. Generic tiling and unexplained aspect stretching are
+  forbidden; adapter-native tiling with a reversible frame mapping is allowed and
+  recorded.
+- **The gap:** The old normalization matched provider response dimensions to the
+  sent crop rather than to the base image's real pixel density, and a later layer
+  scale could silently magnify that deficit; the plan also never defined the
+  zero-valid-scale case, multiple sufficient cache hits, or where upscale intent
+  lives when no call happens.
+- **The reach:** Fill, reimagine, relight, transform, refresh, preview and export
+  agree on what "full resolution" means. Repeated transforms never compound
+  pixels through upscale/resample/composite ancestry and never discard a sharper
+  prior purchase.
+- **Verdict:** **Sound.** Generated detail is honest at the destination without
+  making rendering itself nondeterministic, and usable work is preserved rather
+  than an invalid call scheduled.
+- **Confidence:** High.
+- **Owner:** `packages/render/src/fill/{density,prepare-density,transform-density}.ts`,
+  `packages/providers/src/upscale/registry.ts`.
+
+### S34 — Original image responses are retained separately from accepted edits
+
+- **When:** Paid-response retention audit and closeout, 2026-09-06; reconciled
+  after the user's retention/redo direction.
+- **The choice:** A generation returns a PNG with the wrong aspect ratio and is
+  rejected by policy. The bytes are still published through the ordinary artifact
+  store and recorded on a library-owned *attempt journal* — a sanitized request,
+  its provenance, the outcome and a link to the original image — so a valid returned
+  image survives later acceptance-policy rejection, even where no photo or graph
+  node exists yet. Unreadable responses or failed persistence cannot be claimed
+  retained; those attempts expose failure instead. A
+  successful render execution links the same attempt when its revision commits.
+  The original encoded file is kept *alongside* the scene-linear working pixels
+  the editor uses, so undoing an edit does not throw away the purchase and
+  inspecting an attempt can return the provider's exact bytes and metadata.
+  Artifacts are classified by *content*, not by use: a provider TIFF that happens
+  to be identical to the strict working TIFF is one file and one row with both
+  links, while an ordinary display TIFF is retained as encoded image data that
+  cannot be read as working scene-linear RGB — labelling artifacts by their use
+  would make identical bytes collide or weaken working-image validation. Listing
+  a page of attempts reads catalog metadata and calls its flag
+  `recorded_available`; inspecting one attempt verifies the file and reports
+  `available`, so a file deleted outside photoctl still appears in a list with
+  its last recorded presence while detail correctly reports it missing. Records
+  too large for a bounded response mark truncation rather than being deleted or
+  expanding the daemon frame.
+- **The gap:** All six library image-producing paths can reject or abandon a
+  returned image before graph activation, and bounded list/detail inspection was
+  specified without choosing whether a list refreshes file availability.
+- **The reach:** One journal owns retention; executions reference it rather than
+  duplicating ownership. All attempt images remain retention roots, including
+  after photo deletion. Measurements do not authorize automatic deletion.
+  Started-but-incomplete records left by a crash mean incomplete — never
+  permission to retry. Format measurements establish the encoding distinction,
+  not a universal storage cost.
+- **Verdict:** **Sound.** Capture must precede acceptance policy to preserve
+  purchased output, and content-addressed identity must depend on bytes rather
+  than on the caller's purpose.
+- **Confidence:** High on ownership; library-scale storage cost remains
+  unmeasured, and the retention count/age/storage cap stays deliberately open.
+- **Owner:** `packages/render/src/provider-images/{attempts,inspection}.ts`,
+  `packages/render/src/artifacts/publication.ts`.
+
+### S38 — Full-frame generation intent pins the exact input execution and its own coverage raster
+
+- **When:** Full-frame creation pass A, 2026-09-06.
+- **The choice:** Two cropped views can contain byte-identical pixels while
+  occupying different places in the photograph, so an artifact hash alone cannot
+  answer "which view supplied this?". The generation request therefore stores the
+  specific input *execution* ID alongside its saved frame, so inspection and
+  later refresh can identify the physical viewport that was purchased.
+  Separately, a provider may return fewer or more pixels than the requested
+  viewport: the returned RGB keeps its own intrinsic sampling, while the constant
+  strength mask is sampled at the *intended viewport* raster, and both are placed
+  in the same physical footprint. Attaching the mask to whatever sampling
+  happened to arrive would couple coverage to provider density.
+- **The gap:** The plan required an exact execution/frame binding but did not say
+  where to persist the link — existing generation execution inputs retained only
+  artifact hashes — and it separated RGB placement from coverage without choosing
+  the mask's sampling.
+- **The reach:** Immutable generation intent is extended without a new table,
+  migration or second provenance owner, and future refresh must honour the
+  recorded viewport. Density processing can change retained RGB detail without
+  changing the strength mask or exposing pixels outside the authored viewport
+  after a later crop change.
+- **Verdict:** **Sound.** The existing generation intent is the durable owner of
+  the purchased request, and coverage has exactly one owner.
+- **Confidence:** High.
+- **Owner:** `packages/render/src/full-frame-branch.ts`,
+  `packages/render/src/reimagine.ts`.
+
+### S42 — One immutable image DAG replaces flat render state and private layer pipelines
+
+- **When:** DAG/upscaling unknowns walk, 2026-09-05.
+- **The choice:** Source, develop, generation, upscale, deterministic resample,
+  transform, mask, composite, crop, markup and output are typed immutable nodes
+  in one graph. User-visible layers stay an ordered editing vocabulary, but each
+  revision points a layer at one output node; a processing step never masquerades
+  as another painted layer, and a layer never hides a private replay pipeline.
+  Topology is normalized nodes and ordered edges; each node kind owns a validated
+  canonical parameter schema. Changing a parameter inserts a replacement node and
+  a document revision rather than mutating history. The rejected alternatives
+  were a visible layer for every operation, per-layer private DAG fragments, and
+  continuing the flat replay design.
+- **The gap:** The plan called a linear renderer a graph and gave future layers
+  enough fields to become a second render-state owner; adding upscaling there
+  would have compounded the duplication.
+- **The reach:** Slice 08 establishes the graph before develop; slice 10 makes
+  layers roots into it; fill, reimagine, retouch, markup, preview, export, undo
+  and every future processing stage share one evaluator and one identity model.
+- **Verdict:** **Sound.** The feature became a general processing architecture
+  instead of an upscaler bolted onto generated layers.
+- **Confidence:** High.
+- **Owner:** `packages/render/src/graph/`.
+
+### S43 — Logical edit identity and pixel-execution identity are separate
+
+- **When:** Slice 08a1 architecture audit; fill projection integration correction.
+- **The choice:** A logical node says what edit should happen; an execution says
+  which pixels were actually used and produced. Changing exposure inserts a
+  logical node and a revision immediately, so the CLI returns a new render hash
+  without decoding the photo. Later, preview may evaluate that same node from an
+  online full-resolution artifact or from the pinned offline preview: both runs
+  share the document edit and the render hash, but their evaluation keys differ
+  because the ordered input artifacts, frames or source treatments differ.
+  Source runs additionally
+  record the actual locator, tier, dimensions and decoder identity/version. A
+  deterministic run reuses its evaluation key; a generative run keeps a distinct
+  execution ID even when another attempt returns identical bytes. Layered on top,
+  the renderer's *semantic revision* participates in derived-cache identity, so
+  fixing a pixel-math bug gives existing photos a fresh derived preview and
+  reevaluated deterministic nodes while pinned paid generations and their
+  original bytes stay reusable — no global cache deletion, no migration, no
+  provider replay, and no silently displayed old wrong image. Canonical recipe,
+  evaluation, artifact, render and view hashes retain full SHA-256 values.
+  Deterministic execution IDs hash their evaluation identity; nondeterministic
+  execution IDs instead retain a random 256-bit identifier in the same hexadecimal
+  shape. Only human presentation abbreviates them. Coordinate meaning is saved with each
+  *execution* rather than with the shared pixel bytes, because two differently
+  sized black sources can round to the same 7×7 black output while their
+  locations in the original photo differ.
+- **The gap:** The initial plan put input artifact hashes directly in node
+  identity, which cannot coexist with committing an edit before pixels exist, and
+  it never said whether source fallback changes edit history. Existing execution
+  rows retained input artifact hashes but no coordinate metadata.
+- **The reach:** Cache reuse, refresh, undo, graph pagination, artifact
+  collection, preview paths and export correlation all inherit collision-safe
+  identities. Future pixel-semantic changes must advance the single semantic
+  revision; a fourth identity would fork the model.
+- **Verdict:** **Sound.** Edit history stays stable and cheap while cache
+  correctness follows the exact pixels used, and pixel semantics live in
+  derived-cache identity rather than in user edits or destructive cleanup.
+- **Confidence:** High.
+- **Owner:** `packages/render/src/graph/recipes.ts`.
+
+### S45 — Canonical artifacts preserve exact scene-linear working pixels, published before the graph points at them
+
+- **When:** Slice 08c1a artifact correction; slice 08c1b probe and publication
+  reviews.
+- **The choice:** A source decode produces oriented scene-linear Rec.2020 RGB
+  32-bit float samples. The artifact owner writes those exact samples to a
+  deterministic uncompressed IEEE-float TIFF with the bundled linear Rec.2020
+  profile and hashes those bytes, so every node reads the same unclamped values
+  its parent published and negative, above-white and out-of-gamut samples survive
+  to a display/delivery conversion boundary. Canonical publication fsyncs a sibling
+  temporary and hard-links it into the content-addressed name. Identical existing
+  bytes are an idempotent success; corrupt bytes at that owned address may be
+  replaced with the correctly hashed artifact, while a genuine hash collision is
+  refused. The directory is synced before catalog activation. A crash can leave an
+  orphan but cannot publish a new active root before its pixels are durable.
+  User-selected delivery paths have a different contract: native atomic
+  no-replace rename protects an occupied destination, and unsupported filesystems
+  refuse that publication. `render <id> --linear` uses that delivery primitive
+  with no overwrite option while emitting the same verified canonical bytes.
+- **The gap:** "Content-addressed artifacts" named neither a working colour space
+  nor a publish order, and Node has no portable rename-without-replacement API —
+  direct exclusive writes expose partial final files, and a user-space recovery
+  protocol cannot atomically establish ownership across crashes and contenders.
+- **The reach:** Everything reading artifacts must accept samples outside `[0,1]`.
+  Repairing an owned content-addressed artifact is not authority to replace a
+  photographer's chosen delivery path. Each publication boundary keeps that
+  distinction explicit without a separate recovery daemon or marker protocol.
+- **Verdict:** **Sound.** Preserve working pixels and make durable publication
+  precede catalog visibility, with destination ownership deciding replacement.
+- **Confidence:** High in the ownership boundary; platform execution evidence
+  retains the root README's Mac-only acceptance scope.
+- **Owner:** `packages/render/src/linear-tiff.ts`,
+  `packages/render/src/artifacts/publication.ts`, `packages/render/src/export/run.ts`,
+  `crates/photoctl-image/src/publication.rs`.
+
+### S47 — Public undo and redo are document operations with the existing conflict boundary
+
+- **When:** Public undo and redo integration, 2026-09-06/07.
+- **The choice:** Undoing a layer removal restores that revision's image graph,
+  geometry, ordered layers and editable markup together. It does not reverse
+  ratings, tags or XMP writes, whose state is not part of document revisions.
+  With no older revision to restore — a freshly generated image, or an imported
+  original — undo succeeds with `undone:false` and retains the purchased image
+  rather than clearing the only existing root; for an import whose lazy document
+  was never initialized, the existing initializer establishes its ordinary source
+  revision first and returns the same no-op result. Redo stores the revisions
+  left behind by undo as a stack on the same document, so after edits A→B→C,
+  undoing twice and redoing twice restores B then C; editing D after an undo
+  discards that navigation path but deletes neither C's purchased pixels nor its
+  history, and a failed edit leaves redo available. If two commands both read
+  revision C, the first may restore B and the second must report the existing
+  revision-conflict error rather than silently continuing from B to A, and a lost
+  response cannot trigger automatic replay through the daemon.
+- **The gap:** The internal undo primitive allowed the first revision to become
+  no active document, and the spec required public editing undo without defining
+  its response or a catalog-wide history model. Redo was requested without
+  specifying persistent path storage.
+- **The reach:** One document column and the existing transaction/activation
+  owner control navigation across restarts — no separate history service, command
+  replay or automatic provider retry. The public result always names a valid
+  revision and render hash. Future catalog-wide undo would need an explicit
+  separate contract.
+- **Verdict:** **Sound.** Restoring an older edit cannot mean erasing the only
+  existing image, and an explicit navigation path avoids guessing among abandoned
+  branches.
+- **Confidence:** High.
+- **Owner:** `packages/render/src/graph/store.ts`,
+  `packages/commands/src/handlers/history.ts`.
+
+### S50 — Lossless tiled masters and progressive delivery are deliberately deferred
+
+- **When:** User-directed preview scope decision, 2026-09-04.
+- **The choice:** V1 keeps the full-frame JPEG display master and a synchronous
+  `show`. Replacing that master with lossless random-access tiles, and letting a
+  UI cancel, prioritize or progressively refine requests, are tracked in a
+  separate optimization spec. Correctness does not depend on either: `show` still
+  returns one complete readable view.
+- **The gap:** The preview audit mixed requirements needed for trustworthy agent
+  inspection with throughput improvements needed only once an interactive UI or a
+  measured large-image bottleneck exists.
+- **The reach:** V1 stays smaller. Any future implementation must preserve render
+  and view hashes, coordinates, colour, warnings, cache lifetime and export
+  correlation rather than expose a second preview contract.
+- **Verdict:** **Sound.** Defer unmeasured complexity while leaving a named
+  replacement seam.
+- **Confidence:** High.
+- **Owner:** [`specs/preview-rendering-optimizations.md`](../preview-rendering-optimizations.md).
+
+### S52 — Image admission is capability-based, and source kind is derived from one probe registry
+
+- **When:** Slice 01b accepted-format and import reviews.
+- **The choice:** `import --link` and `import --copy` accept every decodable
+  single-frame still image by probing file *contents*; an extension is a filename
+  hint, and an unknown or wrong one is not a refusal. Once imported, a photo is
+  eligible for the same catalog, metadata, culling, develop, search, layer,
+  segmentation, editing, preview, offline and export verbs — format selects
+  the source adapter, never command availability
+  or result shapes. Corrupt bytes, animated or multipage media, and formats no
+  registered preview producer can decode return an unsupported result and create
+  no photo row. A whole-file source is *not* stored as a pretend embedded
+  preview: the embedded list keeps genuine embedded JPEG byte ranges. Resolution
+  probes the online original; ordinary image decoding uses the whole file, while
+  RAW file-decoder fallback can use an embedded JPEG range. Delivery encodes the
+  evaluated pixels into the requested profiled format, even for upright JPEG
+  originals. Sparse files take
+  their dimensions from the image header when descriptive metadata is absent.
+- **The gap:** The plan named a `file` source kind without defining how it
+  crosses the catalog boundary without another schema column, and required
+  content-based admission without saying what an unadmitted file leaves behind.
+- **The reach:** Decoder selection could be added later while the embedded-preview
+  collection kept one meaning, and folder scanning works on ordinary images with
+  no metadata at all.
+- **Verdict:** **Sound.** Source kind stays derivable from the sole format owner
+  and no permanent preview seam is diluted.
+- **Confidence:** High.
+- **Owner:** `packages/importer/src/probe/`, `packages/render/src/decoder.ts`.
+
+### S56 — One resampler, with pixel-centre mapping and widened support when reducing
+
+- **When:** Slice 07b scale implementation; slice 10b1 native resample and N-API
+  integration; slice 12d affine foundation; expanded-export performance pass.
+- **The choice:** Graph and preview geometric resampling share one native owner;
+  model-specific preprocessing and mask-logit reconstruction retain their own
+  sampling contracts. The image encoder also owns final delivery downscaling.
+  A destination pixel maps from its *centre* to the
+  corresponding source-pixel centre. Reducing widens the Lanczos sampling
+  footprint in proportion to the reduction — including reduction caused by a
+  layer's transform matrix — and renormalizes the weights, so shrinking a
+  four-pixel row to two integrates a wider neighbourhood instead of taking two
+  sharp point samples; enlarging keeps the ordinary radius. Taps outside the
+  source contribute zero, so a partially overlapping footprint fades continuously
+  and a fully outside one returns zero, while an exact flip or quarter-turn
+  copies the source sample and bypasses every filter. A stored resample matrix
+  maps the intrinsic source raster *forward* into the oriented base canvas using
+  pixel-edge coordinates — `[1,0,0,1,8,6]` places the source's top-left edge at
+  base position (8,6) — and the native evaluator inverts it only while sampling
+  destination centres, so graph recipes agree with the existing layer-transform
+  owner. Ownership at the boundary is explicit: float layer work copies the
+  caller's typed array once and runs on a worker, since JavaScript may mutate its
+  backing store; display-preview resampling instead borrows the caller's 8- or
+  16-bit array for a synchronous call and allocates only the final-sized output;
+  imported preview decode admits at most one full raster at a time even though
+  import prepares four candidates. Because the same distance-based weights apply
+  to red, green and blue, the horizontal and vertical weights are computed once
+  per output pixel and reused across channels in the same summation order — a
+  two-stage separable filter would be faster still but would change the order of
+  floating-point additions and therefore the pixels.
+- **The gap:** The plan selected the kernels and exact right-angle geometry but
+  defined neither pixel-centre mapping, edge behavior, transform-edge coverage,
+  how the footprint changes when reducing, whether stored matrices are forward or
+  inverse, nor the typed-array safety and memory boundary.
+- **The reach:** Preview, provider normalization, layers, masks and canvas
+  placement share one coordinate convention and one kernel. Downscaled layers
+  anti-alias, exact flips and quarter-turns stay bit-identical, translated empty
+  space stays empty for later composition, and off-canvas pixels stay zero.
+  Because output is bit-exact, the weight reuse warrants no renderer-semantic
+  revision. A derived-view recipe version identifies the native algorithm, so
+  artifacts made by the previous encoder-based path are not reused after upgrade.
+- **Verdict:** **Sound.** Centre mapping is symmetric, scaled support prevents
+  avoidable aliasing, the integer fast path makes exactness structural rather
+  than tolerance-based, and each caller pays only for the precision its contract
+  needs.
+- **Confidence:** High.
+- **Owner:** `crates/photoctl-image/src/resample.rs`,
+  `packages/render/src/preview-resampler.ts`.
+
+### S63 — Retouch coordinates stay original-relative and require real photographic support
+
+- **When:** Slice 13d keyless retouch; expanded-canvas retouch follow-on,
+  2026-09-06.
+- **The choice:** Extend a photo to the left, then heal a spot in that extension:
+  its horizontal coordinate is *negative*, because zero still means the original
+  photo's left edge. With `--norm`, positions scale by the original width and
+  height and the radius scales by the original long edge, so the same request
+  does not move when the canvas changes — renormalizing to each new canvas would
+  silently relocate existing requests. A new circle must intersect actual
+  photographic pixels and leave photographic surroundings; empty corners inside a
+  rotated canvas rectangle do not count, but a visible generated layer can supply
+  those pixels, and the circle is clipped to that coverage rather than healing
+  empty canvas. A circle centred just outside the viewport is valid when its edge
+  still covers supported pixel centres. Two radii are deliberately different
+  things: `radius` always describes the permanent circular repair mask that the
+  user asked for, while the versioned heal recipe separately records a fixed
+  small reconstruction neighbourhood, an iteration ceiling and a masked-pixel
+  update budget for the project-owned deterministic fill — the recipe names that
+  method directly rather than claiming to be a canonical published algorithm.
+  Resolved pixel geometry is canonicalized to nine decimal places so an
+  equivalent normalized and absolute retry has one identity.
+- **The gap:** The plan named a public target radius and an algorithm without
+  saying whether the same number controls the inpainting sampler, how normalized
+  radius scales, or how canvas expansion interacts with original catalog bounds;
+  rectangular bounds also include empty corners and gaps left by authored
+  geometry.
+- **The reach:** Validation consumes the stored canvas plan and the existing mask
+  projection owner; it may materialize deterministic mask artifacts but never
+  decodes a source, replays paid generation, or changes nodes or revisions.
+  Retouch identity, exact retry reuse and mask composition stay stable if a later
+  recipe version tunes or replaces the native reconstruction. An exact retry
+  returns the authored layer even if a later crop now hides it, while a *fresh*
+  invalid circle is rejected — which preserves the idempotent-operation contract.
+- **Verdict:** **Sound.** Original-relative coordinates preserve request meaning,
+  one value belongs to the user-visible edit and the other to a reproducible pixel
+  recipe, and the same projected coverage governs both rendering and validity.
+- **Confidence:** High.
+- **Owner:** `packages/render/src/retouch.ts`,
+  `crates/photoctl-image/src/heal.rs`.
+
+### S66 — RAW decoding is dispatched by sensor facts, not by filename or format label
+
+- **When:** Slice 07b LibRaw adapter and scale implementation; reduced-RGB
+  correction, 2026-09-06; fine-colour correction, 2026-09-06.
+- **The choice:** Demosaicing reconstructs the two missing colours at each sensor
+  site. A reduced Sony RAW already carries all three colours per pixel, so it
+  bypasses that step — and the decision is made from the *decoded sensor layout*,
+  not from a Sony filename or a compression tag, which would confuse storage
+  format with whether colours are actually missing; any other complete-RGB codec
+  gets the same treatment with no new flag, wire field or format exception.
+  Where demosaicing does run, it runs on a working copy normalized by the
+  recorded channel gains, because feeding it unequal sensor-channel scales
+  produces coloured edges on a known gray subject; the normalization is then
+  undone into floating-point camera samples and every actually measured sample is
+  restored exactly, so the public image and its metadata stay camera-space and
+  the ordinary front end still owns white balance and colour conversion. After
+  demosaicing, photoctl subtracts the measured sensor black offset but does not
+  divide by the white level or apply the camera white balance, so a sample stays
+  a linear camera count with the separate as-shot numbers *describing* rather
+  than altering the pixels. LibRaw's own declared inset crop is applied
+  immediately after unpacking, producing the camera's nominal image rather than
+  the larger stored rectangle with its optical-black margins — the decoder's
+  format metadata owns sensor margins, and this is normalization, not a user
+  crop. Fractional decoder scales are computed after demosaicing by bilinear
+  pixel-centre sampling with floored dimensions, rather than asking the library
+  for a half-size decode that would change the demosaic algorithm. A full decode
+  returns a promise and runs on Node's native worker pool while the library keeps
+  its thread-local scratch state — disabling the parallel build by omitting its
+  flags rather than by defining the no-threads macro, which would replace that
+  scratch with shared static memory and let two independent decodes corrupt each
+  other. Capability probing parses metadata including the compression tag without
+  unpacking every sensor byte, so a truncated file still identifies as a
+  supported RAW and then fails decode with an I/O error rather than being
+  mislabelled "decoder unavailable" and silently downgraded to an embedded
+  preview. The original compression tag is preserved separately from the value
+  the library rewrites while selecting a decoder, so the public probe reports
+  what the file actually says while routing is unchanged. Loading the native
+  package is lazy — a missing platform package is an explicit unavailable result
+  rather than a crash on every command — while the test script builds and copies
+  the host addon first, since generated binaries are not committed.
+- **The gap:** The plan required camera space and forbade colour conversion but
+  chose neither the numeric units after black subtraction, nor whether container
+  margins count as image pixels, nor the interpolation kernel or its position
+  relative to demosaicing, nor scheduling versus internal thread safety, nor
+  whether probing is also an integrity check, nor how to survive the library's
+  metadata normalization, nor the internal representation demosaicing needs.
+- **The reach:** The shared develop front end, TIFF probes, histograms and future
+  decoder comparisons must interpret these samples with their accompanying black
+  and white levels rather than as display RGB. Two internal patched fields
+  require rebuilding the vendored library and addon together and preserving the
+  patch across upgrades. Automatic selection distinguishes "this decoder
+  understands the format" from "this particular file decoded".
+- **Verdict:** **Sound.** The distinction the decoder already owns drives
+  dispatch, colour decisions stay with the one develop pipeline, and source
+  corruption stays an error rather than becoming a silent quality downgrade.
+- **Confidence:** High.
+- **Owner:** `crates/libraw-sys/`, `crates/photoctl-image/src/`,
+  `packages/render/src/decoder.ts`, `packages/img/`.
+
+### S77 — Models are pinned by hash, provisioned explicitly, and rebuilt before the gate runs
+
+- **When:** Slice 11a runtime; real-model gate wiring and export, 2026-09-06/07.
+- **The choice:** The model manifest pins the upstream revision, per-file digests
+  and the exporter-owned operator sets. Provisioning is always explicit: the
+  Docker functional image requires a models base URL and fails the build when it
+  is unset, and a host run either points an environment variable at an existing
+  directory or uses the same hash-verifying fetch script. There is no second
+  downloader and no guessed public address. Only the functional image fetches
+  models; the fake gateway service stops at the built application image. Running
+  the gate asks the container tooling to build first, so it can reuse unchanged
+  layers but cannot silently run the previous image's tests against the current
+  checkout.
+- **The gap:** The plan required real default model coverage and a hosted release
+  that did not exist, and settled neither stale image reuse nor automatic host
+  provisioning.
+- **The reach:** A source-changing functional run may rebuild its image and
+  requires a configured base URL; missing models are a visible prerequisite
+  failure, never a skip. Hashes bind bytes, not model quality or latency, and
+  workflow wiring is not proof that a public release has run.
+- **Verdict:** **Sound.** The gate tests the requested checkout, and one fetch
+  owner preserves hash verification without hidden distribution or credential
+  policy.
+- **Confidence:** High for the gate wiring; the publication itself is U26.
+- **Owner:** `fixtures/models.json`, `scripts/fetch-models.mjs`,
+  `test/Dockerfile`, `packages/commands/src/dispatch.ts`.
+
+### S80 — Hosted CI is a four-file public-boundary smoke; the full suite is local
+
+- **When:** Explicit user CI-policy cutover, 2026-09-06; final-ledger
+  reconciliation, 2026-09-08.
+- **The choice:** Every push runs lint, typechecking, and exactly four fast unit
+  files — command exit-code classification, daemon socket framing, human-readable
+  output, and image-provider request controls. It builds TypeScript but does not
+  compile the photo runtime, download models, or run camera journeys. Local
+  commands are unchanged: the root test script still runs the TypeScript, Rust,
+  Docker-functional and macOS suites. This supersedes two pieces of machinery
+  that existed for the old hosted full suite: a host-pressure sampler that
+  recorded CPU and memory snapshots to explain deadline failures, and an
+  upload of a failed test's daemon log files as a short-lived artifact. **Neither
+  is needed and neither should be restored:** this subset starts no daemon, so
+  there are no daemon logs to keep and no contention to attribute. The product
+  half of the old diagnostic survives untouched — the CLI still names a dead
+  daemon's private local log path in its error. If future smoke coverage ever
+  launches background processes, choose diagnostics for that actual workload
+  rather than reinstating these.
+- **The gap:** The user chose a small hosted subset and left its exact membership
+  to implementation; nobody restated whether the diagnostic plumbing survived the
+  shrink.
+- **The reach:** Green smoke means those four boundaries hold — not that
+  photographic quality or a release is accepted. Native-cache warming and
+  host-load machinery are unnecessary for this gate.
+- **Verdict:** **Sound.** A small deterministic boundary sample that follows the
+  user's policy without deleting broader coverage.
+- **Confidence:** High.
+- **Owner:** `.github/workflows/ci.yml`, `package.json` `test:ci`,
+  [verification policy](../../README.md#verification-policy).
+
+### S81 — The local gate is allowed to actually fail
+
+- **When:** Slice 07b test boundary; CI repair pass 2026-09-06; local and
+  selection closeouts, 2026-09-07.
+- **The choice:** Five corrections share one property — the harness must be able
+  to observe the failure it promises to test. (1) A sidecar test makes one photo
+  directory read-only and expects that item to fail while the next photo
+  succeeds; the container's root process would bypass those permissions, so the
+  functional service drops its file-access bypass capabilities rather than the
+  product inventing permission checks. Moving the whole toolchain to another user
+  would require unrelated ownership changes; this targets the demonstrated
+  mismatch, and does not claim root became an ordinary user for every other
+  privilege. (2) Two integrity tests import a full camera RAW and deliver its
+  full-resolution pixels; the framework's implicit five-second cutoff was
+  silently acting as an unrequested export-speed requirement, so they now use the
+  same 30-second *hang guard* as neighbouring RAW tests — a guard against
+  hanging, not a latency promise, with explicit warm-preview, encoder and memory
+  canaries left authoritative and unchanged. (3) The gold-exam test on a fresh
+  checkout creates disposable command launchers pointing at the compiled entry
+  points, so it exercises the real CLI without depending on installation links
+  that do not exist yet — and certifies nothing about executable links, which the
+  packed-install gate still owns. (4) Native binaries are not committed, so the
+  test script builds and copies the host addon before the runner starts, while
+  the image package still loads lazily so non-image commands work on
+  installations without it. (5) Comparisons follow behavior rather than
+  incidental scheduling: model-download URLs are compared without arrival order
+  while preserving exact values and multiplicity, and an unavailable library is
+  simulated by an atomic rename rather than by recursively deleting files
+  underneath a live writer.
+- **The gap:** The Docker plan never specified container capabilities; these
+  functional tests had no chosen execution budget; and the plan required both
+  built-code and packed-install verification without saying how the built-code
+  test places commands on its search path.
+- **The reach:** The capability drop applies to the functional container only,
+  not to build steps or the gateway fixture. Deliberate extra downloads and a
+  disabled watcher still fail; none of these corrections changes product
+  scheduling, shutdown logic or performance thresholds.
+- **Verdict:** **Sound.** Neither test expectations nor product code should
+  compensate for a root user or a framework default.
+- **Confidence:** High.
+- **Owner:** `test/compose.yaml`, `package.json` test scripts,
+  `packages/test-harness/`, `scripts/gold-exam.sh`.
+
+### S82 — Fixture facts are bound to image bytes and to the writer that produced them
+
+- **When:** Slice 00 fixture tool; RAW manifest and codec integration; SAM
+  photographic probes; corrupt-fixture and historical-schema completion,
+  2026-09-06.
+- **The choice:** Each committed RAW has an adjacent manifest produced by an
+  *independent* generator, so identity and embedded-preview tests cannot become
+  tautologies against the code under test — the tool follows the container's own
+  directory pointers to embedded JPEGs, parses each referenced JPEG's own header
+  for its dimensions, and also scans for signatures as a second measurement path,
+  so two independent structures must agree before a fact is recorded. Measured
+  fields regenerate freely, but *authored* fields — provenance, licence, and
+  hand-placed subject points and area bands for segmentation — survive only while
+  the image's digest is unchanged: replace the image under the same filename and
+  regeneration refuses to overwrite the old manifest until its annotations are
+  reviewed, so a new photograph cannot inherit the old one's expectations while
+  looking freshly verified. The known-bad fixture is truncated after 64 bytes,
+  leaving a genuine container directory but no usable embedded preview, chosen
+  deliberately because cutting only the RAW payload would leave a decodable
+  preview that *should* import under the capability-based rule. Historical schema
+  fixtures are recreated by checking out each schema's original migration runner
+  and graph writer and authoring real edits — a moved subject, affine sampling, a
+  local retouch — before dumping the database, rather than relabelling today's
+  schema; the tests then compare records before and after a real migration and
+  check what the edit *means*, while stating plainly that mask files are not
+  packaged into the dump so a passing check is not evidence that lost image bytes
+  can be recovered. The host segmentation test requires an explicit models
+  directory and fails when it is absent rather than fetching, inferring a private
+  cache, or silently skipping.
+- **The gap:** The plan required a manifest, a truncated witness and per-schema
+  dumps without defining the annotation lifecycle, the cut point, or how to
+  recover omitted historical fixtures after later schemas had landed.
+- **The reach:** Decoder suites discover the committed RAW files and consume
+  these manifests rather than keeping a second inventory. Exact decoded-pixel
+  hashes are scoped to their measured host and are not portable equivalence
+  claims. Committed compression coverage does not substitute for real-drive
+  acceptance, and area bands test coarse selection, not edge quality. The camera
+  itself is released: the retained references and recorded gold evidence are the
+  camera contract, and no further camera or mounted-volume access is authorized.
+- **Verdict:** **Sound.** Identity is the image hash rather than the filename,
+  historical code establishes the historical authoring contract, and each
+  fixture's evidence keeps its stated scope.
+- **Confidence:** High.
+- **Owner:** `fixtures/README.md`, `fixtures/tools/`, `fixtures/camera/README.md`.
+
+### S83 — Camera references keep real files and separate geometry evidence from colour evidence
+
+- **When:** Permanent camera JPEG fixture pass, 2026-09-06.
+- **The choice:** A camera writes a RAW and a processed JPEG for the same
+  exposure. Both original files are kept together with separate integrity
+  manifests, rather than generating the JPEG from photoctl's own RAW renderer —
+  camera-produced files expose metadata and codec behavior that generated
+  fixtures cannot independently establish. Representative landscape and both
+  portrait rotations run through public import, offline preview and full-size
+  delivery, and generated pixels are compared, as stored, against the correctly
+  oriented camera image with a requirement to match it substantially better than
+  any quarter-turn alternative. That checks upright content; it is explicitly not
+  a claim that two different resamplers produce matching colours. JPEG manifests
+  use a distinct suffix so the RAW facts are not overwritten, and tests use a
+  second locator to exercise byte-identity deduplication.
+- **The gap:** The user asked for permanent realistic JPEG and paired examples
+  but prescribed neither fixture naming nor the photographic regression oracle.
+- **The reach:** These references do not by themselves prove paired import or
+  photographic colour fidelity; narrowly named assertions keep an orientation
+  test from being presented as a quality gate.
+- **Verdict:** **Sound.** Real camera files establish what generated ones cannot,
+  with claims scoped to what the comparison can support.
+- **Confidence:** High.
+- **Owner:** `fixtures/camera/README.md`.
+
+### S85 — Full-frame generation accepts cropped, rotated and reduced sources
+
+- **When:** Slice 13a reimagine; authored-frame implementation completed through
+  full-frame passes A and B, 2026-09-06.
+- **The choice:** An early bounded checkpoint refused `reimagine` on any photo
+  whose develop roots changed the frame, and refused a smaller pinned fallback,
+  because the layer model then had no durable way to place a full-frame generated
+  result back into a changed frame honestly. That restriction is gone. The
+  current implementation captures the authored frame and the exact input
+  execution (S38), records the source context — tier, pixel scale and whether
+  resolution was limited — with the request, and therefore accepts a cropped,
+  straightened, rotated or reduced-resolution current view as model input,
+  reporting truthfully what it actually sent. Any statement that full-frame edits
+  still refuse cropped or reduced inputs is stale.
+- **The gap:** Catalog dimensions describe the oriented base while a cropped or
+  rotated develop node renders another frame; until the authored-frame contract
+  existed there was no honest mapping, and the interim behavior was a
+  pre-provider refusal rather than a silently misplaced composite.
+- **The reach:** Because the request records its own source context, a result
+  produced from a reduced offline view cannot later be mistaken for one produced
+  at native resolution; refresh reconstructs the recorded viewport rather than
+  guessing today's.
+- **Verdict:** **Sound.** The narrow refusal was correct while the mapping was
+  missing, and superseding it with a recorded frame and source context is the
+  general solution rather than a per-command workaround.
+- **Confidence:** High.
+- **Owner:** `packages/commands/src/handlers/full-frame-generation.ts`,
+  `packages/render/src/full-frame-branch.ts`.
+
+### S87 — Geometry intent records whether a restriction is active, not only its value
+
+- **When:** Outpaint geometry-intent recon, 2026-09-06; implemented.
+- **The choice:** Crop to rectangle C, expand the picture with a border, then
+  explicitly set crop C again. That second command must crop the *expanded*
+  picture even though the absolute numbers are identical to the old crop —
+  otherwise "set the crop I want" would silently do nothing. Repeating the set
+  afterwards is then a genuine no-op, and changing exposure or rotation does not
+  reactivate a consumed crop. A graph-owned geometry-intent record therefore
+  preserves which restrictions were explicitly activated after each border's
+  authoring checkpoint.
+- **The gap:** Before canvas authoring existed, equal develop dictionaries
+  implied equal intent, because there was no boundary that could make the same
+  numbers mean something new.
+- **The reach:** The canonical output planner owns semantic no-op detection
+  across develop and layer writers. Reset, copy and preset operations keep
+  explicit field-touch semantics, and optional revision metadata alone cannot own
+  state that ordinary layer mutations would drop.
+- **Verdict:** **Sound.** It distinguishes an actual user action from an
+  incidental unchanged value, without a second mutable geometry table or a
+  permanently destructive crop.
+- **Confidence:** High.
+- **Owner:** `packages/render/src/graph/geometry-intent.ts`.
+
+### S88 — Prerequisites were resequenced to land before their first consumer
+
+- **When:** Post-slices-02/07a wavefront audit; outpaint planning checkpoint,
+  2026-09-06.
+- **The choice:** Two plan-order changes were made rather than building a feature
+  and repairing it afterwards. First, the preview lifecycle — one coordinator,
+  a validate-before-touch cache index, materialization leases and the prune grace
+  — moved into slice 03a, *before* slice 08 added developed render graphs;
+  otherwise slice 03 would have had to protect in-flight files using machinery
+  the plan did not build until five slices later, and develop would have created
+  a second cache owner. Second, canvas growth was made to depend on shared frame
+  ownership: render, preview, masks and markup were first made to consume the
+  same graph-derived frame — dimensions plus the mapping from original
+  coordinates to evaluated pixels — because a rotated photo can have the same
+  width and height as its original while its pixels occupy different coordinates.
+  Growth then landed together with ordinary layer removal and undo, and
+  generation followed that deterministic contract, instead of a special larger
+  fill path whose preview and layer lifecycle would be repaired later.
+- **The gap:** A preview-contract amendment added concurrency guarantees after
+  the original dependency graph was written, and the initial slice named outpaint
+  without identifying ownership across its consumers.
+- **The reach:** Cache prune, ordinary preview, develop and later layer previews
+  inherit one writer and one lifetime model; extent comes from immutable graph
+  intent and active layers rather than changed source dimensions or a second
+  mutable canvas-size table; and combined coordinate matrices must not fuse the
+  ordered resampling stages that RGB and fractional mask coverage share.
+- **Verdict:** **Sound.** Building the prerequisite before its first consumer
+  prevents parallel implementations from drifting, and makes each checkpoint
+  useful through existing user commands.
+- **Confidence:** High.
+- **Owner:** [slice 03](slices/03-library-lifecycle.md), [slice 12](slices/12-fill.md).
+
+### S89 — Verification stimuli are chosen so a passing check means something
+
+- **When:** Slice 09b storage probe; slice 07b portable build; cold offline
+  lifecycle witness, 2026-09-06.
+- **The choice:** Three unrelated checks share one discipline: construct the
+  stimulus so the thing being claimed is actually exercised. (1) The database
+  storage probe writes one deterministic but hard-to-compress wide value into
+  every row each cycle, and changes it the next cycle, so the database must
+  really replace each row's out-of-line payload — the mechanism under test —
+  rather than merely touching rows; after the final cycle it reads every value
+  back and compares it exactly instead of counting rows, and if the probe cannot
+  start, run, verify, close or clean up it first replaces any earlier pass file
+  with an explicitly unsettled verdict rather than letting the evidence directory
+  claim a decision this invocation did not establish, with its diagnostic
+  flattened to one bounded line. (2) The cold-offline witness imports a modest
+  synthetic original through the normal pipeline, authors a border, then makes a
+  *new* edit before disconnecting the file, and verifies the resulting whole-photo
+  output has never been rendered before asking for a preview or an export —
+  deleting a cached output or replacing the pinned preview would manufacture a
+  state users never reach and would hide whether ordinary import produced useful
+  fallback pixels. (3) The vendored RAW decoder's build discovers its sources
+  recursively but excludes three upstream files that implement no-postprocessing
+  placeholders for a different build configuration; compiling them beside the
+  real sources defines the same functions twice and the linker rejects the
+  library, while listing every wanted file by hand would silently omit a new
+  decoder file on the next pinned update.
+- **The gap:** The plans fixed the probe's row count, width and cycle count
+  without defining the values or the readback; required cold reduced-source
+  evidence without prescribing its stimulus; and required recursive source
+  discovery without calling out upstream's mutually exclusive placeholders.
+- **The reach:** The storage verdict is credible only while the probe really
+  creates wide external values and forces a final read, so a dependency upgrade
+  can rerun the same controlled workload and compare a verdict rather than a
+  timing anecdote. The cold journey runs through public commands on both the
+  built and installed CLI and introduces no product API, persistence or fallback
+  change; it does not replace real-camera, paid-model, resource-budget or
+  fresh-native-release acceptance. Both supported platforms use the same complete
+  decoder implementation, and a future vendor update stays discoverable through
+  the source glob and checksum review.
+- **Verdict:** **Sound.** Each check exercises the failure class it claims to
+  cover, and unsettled evidence is recorded as unsettled.
+- **Confidence:** High.
+- **Owner:** `packages/library/src/`, `crates/libraw-sys/build.rs`,
+  [outpaint lifecycle evidence](assets/outpaint-lifecycle/).
+
+### S90 — Full-frame generation is shown the current photographic result
+
+- **When:** Shared-frame full-frame planning and creation, 2026-09-06;
+  input policy approved by the user on 2026-09-07.
+- **The choice:** A user retouches a face, extends a border, then asks to relight
+  the photo. The model is sent the *current photographic result* — the composite
+  the user has already inspected — with presentation markup such as arrows and
+  labels excluded. Sending only the developed original would omit edits the user
+  has already looked at and approved. The creation records this input policy and
+  the identities of the predecessor layers that were captured at request time.
+- **The gap:** The original full-frame plan described source/develop input;
+  extending it to the current canvas required a choice about preceding
+  photographic layers. The user selected the current result. Neither interpretation turns
+  `--strength` into a denoise control.
+- **The reach:** Purchased pixels contain those prior edits, and removing an
+  earlier layer afterwards does not un-bake them. Explicit refresh reconstructs
+  only the captured predecessors — never itself, never later layers.
+- **Verdict:** **Sound.** It implements the user-approved current-photograph
+  policy. Never silently reinterpret already-purchased generation intent or add
+  a speculative second mode.
+- **Confidence:** High.
+- **Owner:** `packages/render/src/full-frame-branch.ts`,
+  `packages/commands/src/handlers/full-frame-generation.ts`.
+
+### S91 — `generate --strength` means freedom to vary, not resemblance
+
+- **When:** Generate reference-strength guidance pass, 2026-09-06.
+- **The choice:** A user supplies a vase photograph with `generate --ref vase.png
+  --strength 0.25`. The model receives an instruction saying it has *low freedom
+  to vary* that reference: zero asks for the closest preservation, one allows the
+  greatest variation. This follows the numeric direction already used by
+  `reimagine`, but it borrows none of reimagine's pixel blending — a newly
+  generated photograph has no editable base to blend against, so even zero may
+  differ from the reference. The public result and the saved history call this
+  prompt guidance, retain the numeric request and the exact transmitted
+  instruction, and claim neither native denoising nor provider compliance. If the
+  selected model cannot receive the reference at all, an explicit strength is
+  refused before payment rather than buying a text-only image.
+- **The gap:** The original flag did not say whether a larger number meant more
+  resemblance or more change.
+- **The reach:** The interpretation is versioned inside immutable request intent.
+  Existing requests without strength keep their prompts and identities; a later
+  direction change must use a new guidance version rather than reinterpret
+  previously purchased work.
+- **Verdict:** **Sound.** Higher means more variation, as approved by the user
+  on 2026-09-07. Saved guidance retains its original meaning.
+- **Confidence:** High.
+- **Owner:** `packages/providers/src/prompts/image.ts`,
+  `packages/commands/src/handlers/generate.ts`.
+
+### S92 — Highlight recovery is on by default, with an explicit diagnostic escape
+
+- **When:** Highlight reconstruction planning, 2026-09-06; implemented.
+- **The choice:** Opening a candle photograph should normally correct the false
+  magenta that appears where one colour channel clipped. A caller inspecting the
+  decoder can explicitly ask for the version without that correction. Both still
+  use RAW pixels, white balance and colour conversion; neither substitutes the
+  camera's own JPEG. Every result records whether correction actually ran and
+  which decoder supplied it.
+- **The gap:** The neutral-decoder contract disabled recovery, but the delivery
+  review exposed false magenta. The current photographic rendering was approved
+  by the user; the diagnostic alternative remains explicit.
+- **The reach:** The default changes derived rendering identity — not original
+  files, and not paid edit history. Effective treatment is recorded in the
+  existing execution provenance column. Reversing the default is a policy change
+  with a corresponding render identity, not a migration or a destructive cache
+  reset.
+- **Verdict:** **Sound.** Preserve the approved current rendering and explicit
+  diagnostic path without claiming every residual color difference is resolved.
+- **Confidence:** High.
+- **Owner:** `crates/photoctl-image/src/highlight.rs`,
+  `packages/render/src/decoder.ts`, [slice 07 highlight
+  reconstruction](slices/07-highlight-reconstruction.md).
