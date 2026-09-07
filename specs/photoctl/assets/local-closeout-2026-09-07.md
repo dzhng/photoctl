@@ -32,17 +32,34 @@ model. It supplied no review verdict.
 The complete Rust workspace gate passed: nine LibRaw tests and 78 image tests,
 with no failures or ignored cases.
 
-## Remaining execution
+## Docker and macOS results
 
 The Docker run exposed a separate harness mismatch: its root process bypassed
 the read-only directory in the XMP partial-failure test. A direct filesystem probe
 confirmed the write succeeded with default capabilities and returned `EACCES`
 without the access-bypass capabilities. The functional Compose service now drops
-those capabilities; all five unchanged XMP round-trip tests pass through that
-service. Build steps and product code are unchanged. The original full Docker
-run still uses its original capabilities and must not be relabeled as corrected.
+those capabilities. The original Docker TypeScript run finished in 1227.83 seconds:
+1,093 passed and two failed, both XMP permission checks. Both unchanged affected
+files pass through the corrected service: six tests, including the built CLI.
+Build steps and product code are unchanged. The original full run used its
+original capabilities and must not be relabeled as corrected.
 
-Continue the Docker functional/model and host macOS stages. Preserve the
-distinction between the full-run result and the focused correction checks; do not
-report a fully green closeout from their combination alone. Photographic and
+The separately executed Docker model gate passed all three tests: real SAM
+photographic subject selection and both native-load checks. The temporary server
+was stopped after Docker fetched and verified the pinned models; these results
+do not establish public model hosting or fine-edge mask acceptance.
+
+The complete host macOS gate passed all 17 tests across seven files in 250.77
+seconds on source `b8c283d`. This includes all nine freshly built release-package
+cases, both unchanged decoder-oracle modes, deterministic CIRAW, linkage, warm
+daemon performance and model-runtime checks. The packed-install file passed in
+212.02 seconds. No live provider, mounted-camera or SSH-headless claim follows.
+
+## Remaining acceptance
+
+All named local stages have now executed, but the complete TypeScript runs
+preceded their respective test/harness corrections. Preserve the distinction
+between those full-run results and the focused correction checks; do not report
+a fully green closeout from their combination alone. The final integrated gate
+must use the corrected source and container configuration. Photographic and
 external release acceptance remain in the owning slice plans.

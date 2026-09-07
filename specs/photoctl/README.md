@@ -43,7 +43,9 @@ records its scope. A smoke pass cannot close the full spec or replace the local 
 TypeScript run finished with two test-contract failures; their corrected files
 pass focused verification, including deliberate defect checks. The
 [closeout evidence](assets/local-closeout-2026-09-07.md) records the exact boundary.
-Rust passes; continue Docker and macOS stages. Do not call the full gate green yet.
+Rust, Docker model-runtime and the complete macOS gate pass. Both complete
+TypeScript runs exposed test/harness mismatches with focused corrected proofs;
+the final integrated gate must use those corrections. Do not call it green yet.
 Pinned local model files enable Docker verification through a temporary loopback
 server without settling public model hosting.
 
