@@ -37,6 +37,7 @@ and run the appropriate checks; [project commands](package.json) and the
 
 Version tags drive package and model publication together. A CLI release downloads
 its own verified model files, never a moving “latest” model. Libraries can explicitly
-use a mirror. [Release ownership](specs/photoctl/slices/14-gold-exam-and-release.md#model-distribution)
+select a mirror through [library settings](specs/photoctl/slices/09-settings.md).
+[Release ownership](specs/photoctl/slices/14-gold-exam-and-release.md#model-distribution)
 describes the publication boundary; the full local suite remains a release-preparation
 responsibility, separate from the hosted release checks.

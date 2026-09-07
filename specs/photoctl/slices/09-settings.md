@@ -1,5 +1,9 @@
 # 09d — public library settings
 
+Implemented through the built and freshly installed CLI. The
+[closeout evidence](../assets/settings-closeout-2026-09-07.md) records the focused
+checks and review boundary; public release/platform acceptance is separate.
+
 ## Contract
 
 The CLI-first workflow must not require SQL to select a model mirror, save model
@@ -13,16 +17,16 @@ user settings); model overrides remain overrides, while doctor owns resolved
 provider diagnostics.
 `settings set <key> <json>` validates and replaces one whole setting atomically.
 `settings reset <key>` restores its normal initialization/default semantics.
-The typed setting registry owns the supported keys and their validation; include
-the existing models, generation, providers, models_base_url, embed_mode and
-cache_max_bytes settings. Do not expose arbitrary database keys or store secrets.
+The [typed setting registry](../../../packages/protocol/src/verbs/settings.ts)
+owns supported keys and validation. Do not expose arbitrary database keys or store secrets.
 Unknown fields must fail rather than appear to save successfully and disappear.
 
 Reuse the current settings table and existing value schemas, moving shared schemas
 to the protocol leaf if needed so readers and writers cannot disagree. No new
 table, migration, global configuration file, dotted-path patch language or service.
-Setting a mirror does not fetch models; saving model defaults does not execute a
-provider. Explicitly setting automatic embedding grants the existing consent;
+Saving configuration makes no immediate download or foreground provider request;
+existing automatic embedding consent still permits background work. Explicitly
+setting automatic embedding grants that existing consent;
 reset returns it to manual. Configured-upscaler consent retains its existing
 meaning and does not select an adapter from ambient credentials.
 

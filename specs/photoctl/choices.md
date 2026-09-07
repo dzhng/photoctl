@@ -6320,9 +6320,10 @@
   public editing interface for a later slice, which never supplied it. A
   dotted-path patch language or per-preference flags were possible alternatives.
 - **The reach:** One typed registry must govern validation and defaults for the
-  existing readers and new writer. Saving configuration does not itself fetch
-  models or call providers; explicitly enabling automatic embedding grants the
-  already-defined background consent. There is no database schema change.
+  existing readers and new writer. Saving configuration makes no immediate
+  download or foreground provider request; existing automatic embedding consent
+  still permits background work. Explicitly enabling automatic embedding grants
+  that already-defined consent. There is no database schema change.
 - **Verdict:** **Sound.** Whole-setting replacement is small, explicit and
   retry-safe; it closes the CLI-only workflow without exposing arbitrary SQL.
 - **Confidence:** Medium for whole-object JSON ergonomics; high for shared
