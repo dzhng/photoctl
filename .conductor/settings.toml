@@ -1,0 +1,94 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+# Shared Conductor settings for photoctl. Conductor reads this file from the
+# default branch on the remote; per-machine overrides go in the gitignored
+# .conductor/settings.local.toml.
+#
+# photoctl is a CLI/daemon project with no HTTP server, so nothing here binds
+# CONDUCTOR_PORT. Each worktree owns its node_modules, dist, and Cargo target
+# directory; the only shared resource is Docker, which the functional run
+# script namespaces per workspace.
+
+# Gitignored build outputs copied from the main checkout into new workspaces.
+# The prebuilt native addon and Swift helper make `photoctl`/`wb` usable
+# immediately; `bun run test:ts` / `test:macos` rebuild them from this
+# branch's sources before running anyway. `.env*` keeps Conductor's default.
+file_include_globs = '''
+.env*
+packages/img-darwin-*/*.node
+packages/mac-helper-darwin-*/photoctl-mac
+'''
+
+[scripts]
+# Install with the pinned Bun (package.json packageManager) against the
+# committed lockfile, seed the ONNX Runtime source-build cache from the main
+# checkout so the first `cargo build` here does not recompile ORT from source
+# (the cache is content-keyed by recipe + toolchain identity and validated by
+# provenance.json, so copying completed entries is safe), then build the
+# TypeScript workspaces so the CLI, daemon, workbench, and test harness exist.
+setup = '''
+set -euo pipefail
+bun install --frozen-lockfile
+if [ -n "${CONDUCTOR_ROOT_PATH:-}" ] && [ "$CONDUCTOR_ROOT_PATH" != "$PWD" ] && [ -d "$CONDUCTOR_ROOT_PATH/target/ort-runtime" ]; then
+  mkdir -p target/ort-runtime
+  find "$CONDUCTOR_ROOT_PATH/target/ort-runtime" -mindepth 2 -maxdepth 2 -name provenance.json | while read -r record; do
+    entry=$(dirname "$record")
+    name=$(basename "$entry")
+    if [ ! -d "target/ort-runtime/$name" ]; then
+      cp -R "$entry" "target/ort-runtime/$name"
+      echo "Seeded ORT runtime cache entry $name"
+    fi
+  done
+fi
+bun run build:ts
+'''
+
+# Remove this workspace's Docker Compose project (containers, networks, and the
+# images built for it) so archived worktrees do not leave a stack behind.
+# Nothing else lives outside the worktree: the daemon idles out on its own and
+# its socket is a per-library file in the temp directory.
+archive = '''
+docker compose -p "photoctl-$CONDUCTOR_WORKSPACE_NAME" -f test/compose.yaml down --rmi local --remove-orphans 2>/dev/null || true
+'''
+
+# Workspaces do not share ports, databases, or build directories, and the
+# functional gate gets its own Compose project name below, so runs in
+# different workspaces can overlap. (They will still compete for CPU.)
+run_mode = "concurrent"
+
+# Fast feedback loop: formatting, lint, and typecheck, matching the first three
+# steps of `bun run verify` and of GitHub CI.
+[scripts.run.check]
+command = "bun run fmt:check && bun run lint && bun run typecheck"
+default = true
+icon = "check"
+
+# Unit/package tests. Builds the Rust addon first (as the root script does).
+[scripts.run.test-ts]
+command = "bun run test:ts"
+icon = "test-tube"
+
+# The Docker functional seam. COMPOSE_PROJECT_NAME is set per workspace so two
+# worktrees do not share (or tear down) the same `test` Compose project.
+[scripts.run.test-functional]
+command = "COMPOSE_PROJECT_NAME=\"photoctl-$CONDUCTOR_WORKSPACE_NAME\" bun run test:functional"
+icon = "container"
+available_in = ["local"]
+
+# macOS-only suite (Swift helper, Core Image decoder, packed install).
+[scripts.run.test-macos]
+command = "bun run test:macos"
+icon = "laptop"
+available_in = ["local"]
+
+# Full build: TypeScript, Rust addon, and (on macOS) the Swift helper.
+[scripts.run.build]
+command = "bun run build"
+icon = "hammer"
+
+# Closeout gate: fmt, lint, typecheck, build, and the full test ladder
+# including the Docker seam. Run once at the end of a change, not as a loop.
+[scripts.run.verify]
+command = "bun run verify"
+icon = "shield-check"
+available_in = ["local"]
