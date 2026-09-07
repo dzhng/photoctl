@@ -13,19 +13,21 @@ prompt, open-questions list, or the session sample disagree with this README, **
 
 ## Next Agent Prompt
 
-*Last reconciled: 2026-09-07. Implementation is unfinished; Git owns commit/push state.*
+*Last reconciled: 2026-09-08. Implementation is unfinished; Git owns commit/push state.*
 
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
 Delegate straightforward tasks to Claude Code with the user-approved `opus` alias;
 the integrating agent must review its changes and verification before accepting them.
 
-**Current pickup:** remaining pairing and native-platform release evidence. The
+**Current pickup:** remaining pairing presentation and whole-spec review. The
 [emulated checkpoint](assets/ort-acquisition/README.md#linux-x64-emulated-checkpoint--2026-09-07)
 passes package loading but fails model inference under Docker's default x64 emulator.
 The same optimized arithmetic binary and unchanged addon pass their reduced probes
 under QEMU. Do not patch product code or weaken CPU flags to fit the faulty emulator;
-the full native x64 model/CLI gate remains unverified.
+the full native x64 model/CLI gate remains unverified and is not required under the
+[platform verification policy](../../README.md#verification-policy). Do not resume it
+as spec closeout or release-preparation work.
 [Public library settings](slices/09-settings.md) now close the deferred writer,
 with focused and fresh installed verification.
 [Selection refinement and redo](slices/10-selection-refinement-and-redo.md) are
@@ -50,8 +52,8 @@ running that suite on every push. Do not resume CI load profiling or native-cach
 for the smoke gate. Preserve all local checks and separate product performance bars.
 The [failure triage](assets/ci-triage.md) retains the real daemon fixes and their evidence.
 
-**First priority:** finish pairing's remaining evidence and external release
-requirements. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
+**First priority:** finish pairing's remaining evidence and whole-spec review.
+The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
 records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
 **Current local closeout — 2026-09-07:** the
@@ -77,7 +79,7 @@ Further fidelity work needs new causal evidence, not another request for renderi
 Keep both LibRaw and Core Image behind the shared API, as the user agreed; LibRaw
 remains the portable default and Core Image an explicit alternative.
 
-**Parallel pickup:** verify remaining native targets without publication, and preserve
+**Parallel pickup:** review remaining correctness boundaries, and preserve
 the completed outpaint evidence while finishing pairing's remaining gates.
 
 - [Outpaint](slices/12-outpaint.md): geometry, reversible layers, reduced-source fallback
@@ -130,8 +132,9 @@ a substitute for final integrated verification.
   detailed edges fail even against full upstream references. The user-requested
   local refinement workflow is implemented; do not call it an automatic edge-quality fix.
 - [Runtime acquisition](assets/ort-acquisition/README.md): one pinned Cargo-owned ORT recipe;
-  ARM64 Mac/Linux evidence exists. Other targets, older Linux and actual public release
-  acceptance remain open. [Model publication](slices/14-gold-exam-and-release.md#model-distribution)
+  ARM64 Mac/Linux evidence exists. Other targets and older Linux remain unverified,
+  not pending acceptance work under the root verification policy. Actual public release
+  execution remains unverified. [Model publication](slices/14-gold-exam-and-release.md#model-distribution)
   is automated with CLI tags; no external hosting destination is needed. Release tags
   publish packages—never use them as experiments.
 - [Release](slices/14-gold-exam-and-release.md): mounted gold execution is proved;

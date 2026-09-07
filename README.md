@@ -17,6 +17,11 @@ share the same capabilities; a GUI must not become a separate product with exclu
 
 ## Verification policy
 
+The acceptance target is David's Apple Silicon Mac and camera workflow. Intel Mac and
+Linux verification are not spec-completion or release-preparation requirements.
+Keep the portable implementation and existing tests, but do not add platform-validation
+work without a concrete need. Unverified platforms are not claimed as verified.
+
 GitHub CI provides fast feedback through lint, typechecking and a small smoke-test subset.
 The full suite belongs in local development and deliberate release verification, not on
 every push. A green GitHub check is not release acceptance; keep full local coverage intact.

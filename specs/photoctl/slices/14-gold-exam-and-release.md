@@ -2,7 +2,7 @@
 
 ## API seam
 `bun run pack` → tarballs for `apps/cli`, `packages/img-darwin-arm64`, `packages/mac-helper-darwin-arm64` (ships
-`photoctl-mac`; `-darwin-x64` as a sub-slice); `scripts/install-clean.sh` (`npm install -g ./*.tgz --prefix <clean>`);
+`photoctl-mac`); `scripts/install-clean.sh` (`npm install -g ./*.tgz --prefix <clean>`);
 `otool -L` audit; `photoctl doctor` from the packed install must report `ciraw` and `libraw`. `scripts/gold-exam.sh
 /Volumes/<drive>/<folder>` → `assets/gold-exam/<date>/report.html` + sha256s. Real Classic sidecars → `fixtures/xmp/`; one frame
 per ARW compression mode → `fixtures/` with manifest rows; `decoder-libraw.test.ts` is parametrized over manifest rows (absence is
@@ -14,6 +14,11 @@ The gold exam (human accepts JPEGs as deliverable); `packed-install.test.ts` (ma
 audit. The full-feature run also executes the keyless fake-adapter reimagine and masked-density cases from 12/13, verifies full
 render/node/artifact hashes and paginated graph inspection from the packed CLI, and proves missing live upscaler credentials do not
 block release. A configured live adapter remains smoke evidence, never a release prerequisite.
+
+Platform acceptance follows the [root verification policy](../../../README.md#verification-policy):
+Intel Mac and Linux verification are outside the required scope, not deferred release
+prerequisites. Retain existing portable code, tests and historical evidence without
+claiming unverified platforms passed.
 
 ### Lightroom interoperability policy
 
@@ -154,7 +159,7 @@ Use `--out assets/gold-exam/<run>` to retain an evidence bundle. The
 mechanical exam through a fresh packed install; it records no human acceptance of
 its own deliveries. The user's separate
 [current-rendering approval](../assets/camera-delivery-review/balanced-delivery/final-verdict.md)
-closes the rendering approval requirement, not the remaining platform or pairing gates.
+closes the rendering approval requirement, not the remaining pairing presentation gate.
 The default output-folder behavior is unchanged.
 
 The packed fixture gold and full-feature journey passed together with manifest verification. Focused
