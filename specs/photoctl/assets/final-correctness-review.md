@@ -2,6 +2,27 @@
 
 This is a scoped review ledger, not whole-spec acceptance.
 
+## Choices consolidation dispositions
+
+The catalog and deterministic-render proposals contain useful grouping suggestions,
+but also claims that must not enter the final ledger unchanged:
+
+- Import's per-unit conflicts retain paths and message text and produce `partial`;
+  the separate batch-envelope owner preserves typed, order-independent all-failure
+  codes. The proposed catalog entry incorrectly combined those two contracts.
+- Reusing an occupied copy destination checks sampled identity, plus a full hash
+  when stored. It is not an unconditional byte-for-byte equivalence check.
+- Raster growth, standalone generation size, text-raster allocation and the fake
+  upscaler's advertised capability happen to share some current numbers. They are
+  different contracts: source-sized growth remains valid above the growth default,
+  and provider limits are deliberately independent. Reject the proposed global
+  constant refactor; the existing frame owner already centralizes canvas growth.
+
+Root checked these against the import/copy and batch owners, frame-size guard,
+generation parser, markup schema and fake adapter. These are corrections to audit
+text, not newly identified product defects. The final ledger still needs the
+cross-domain and build/verification coverage audits before replacement.
+
 ## Full-frame request controls
 
 The later choices audit exposed a missed contract in the earlier slice-level review:
