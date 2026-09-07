@@ -413,27 +413,6 @@
   preference must explicitly address already-authored boundaries; original source data remains untouched.
 - **Confidence:** Medium.
 
-### Paid image responses — Retain original encoded bytes beside working pixels
-
-- **When:** Bounded format measurement, 2026-09-06; implemented by the paid-response journal.
-- **The choice:** After a paid generation returns a PNG, keep those exact bytes as well as the
-  scene-linear float TIFF consumed by the editing graph. On the 1024×684 photographic proxy,
-  retaining the original adds 1,304,370 bytes beside an 8,405,802-byte working artifact. Its RGB8
-  samples survive the working conversion exactly, but a reconstructed PNG is not the same encoded
-  response. The alternative saves space by keeping only working pixels and cannot recover the
-  original encoding or metadata later.
-- **The gap:** The spec deliberately left paid-return encoding open until a size/round-trip measurement.
-- **The reach:** Original-response availability must join existing execution provenance and artifact
-  reachability, not become an untracked directory or a second retention owner. Already-discarded
-  historical originals remain absent; no automatic provider replay is authorized to recover them.
-- **Verdict:** **Needs-user.** Provisionally preserve original bytes unchanged because they represent
-  purchased, non-reproducible output. The bounded measurement supports the format distinction, not a
-  universal compression ratio or storage budget. A different retention preference can change policy
-  for future responses; canonical graph pixels remain exact regardless. Existing originals are not
-  deleted by changing that preference.
-- **Confidence:** Medium; the tradeoff spends additional disk space, and representative library-history
-  measurements are still required before any automatic deletion policy.
-
 ### Slice 12f plan — Transform the border, not the whole photograph
 
 - **When:** Outpaint lifecycle recon, 2026-09-06; implemented.
@@ -450,6 +429,23 @@
 - **Confidence:** Medium.
 
 ## Sound
+
+### Paid image responses — Retain original encoded bytes beside working pixels
+
+- **When:** Paid-response journal, 2026-09-06; reconciled after the user's retention/redo direction.
+- **The choice:** A paid generation returns a PNG. Keep that exact file as well as
+  the scene-linear working pixels used by the editor. Undoing its edit does not throw
+  away the purchase, and inspecting the attempt can return the original file. Keeping
+  only working pixels would lose the provider's original encoding and metadata.
+- **The gap:** The spec initially left the retained encoding open. The user accepted
+  keeping purchased results and requested public inspection and redo.
+- **The reach:** Original files participate in the existing artifact store and
+  reachability rules, not a separate retention system. Previously discarded originals
+  cannot be recovered through automatic provider replay. Future deletion policy still
+  needs its own measurement and authority; it does not block retaining results now.
+- **Verdict:** **Sound.** Preserves the user-approved purchase and inspection contract.
+  Format measurements establish the encoding distinction, not a universal storage cost.
+- **Confidence:** High for preservation; library-scale storage costs remain unmeasured.
 
 ### Standalone generation — A reference without text requests a variation
 
@@ -641,6 +637,10 @@
 - **The reach:** The public names state the freshness difference explicitly. Detail remains read-only;
   repair and restore retain their existing availability owner. No compatibility alias is needed for
   this previously unshipped command surface.
+  Attempt pages and detail records use bounded responses like graph inspection. If a saved request
+  is too large for detail output, the response marks truncation rather than deleting that request
+  from storage or expanding the daemon frame. The exact page and field limits belong to
+  `packages/render/src/provider-images/inspection.ts`; they are display limits, not retention limits.
 - **Verdict:** **Sound.** Bounded metadata browsing stays cheap without claiming live file presence;
   the targeted check supplies stronger evidence when needed.
 - **Confidence:** Medium; an eventual bulk verification command would need its own bounded-work contract.
@@ -4327,6 +4327,10 @@
   consumption.
 - **The reach:** Provider/schema failures leave the active pointer unchanged; successful no-op proposals remain auditable; one undo
   consumes exactly one active automatic edit without affecting historical provenance.
+  Unlike ordinary `undo`, `--undo-auto` authors a new revision. After undoing from C to an
+  auto-enhanced B, invoking `--undo-auto` restores B's prior adjustments as a new D and
+  clears the redo path to C. C's history and purchased artifacts remain retained. Ordinary
+  `undo` can undo D; this command does not introduce another history engine.
 - **Verdict:** **Sound.** The behavior follows the existing immutable revision and compare-and-swap ownership model.
 - **Confidence:** High.
 
@@ -4920,7 +4924,8 @@
 - **The choice:** Undoing a layer removal restores that revision's image graph, geometry,
   ordered layers and editable markup together. It does not reverse ratings, tags or XMP writes,
   whose state is not part of document revisions. The command takes one photo ID or prefix and
-  returns `{id,undone,revision_id,render_hash}`; no redo, batch history or second log is introduced.
+  returns `{id,undone,revision_id,render_hash}`. Public redo uses the same document owner
+  and the saved navigation path described above; neither command adds catalog-wide history.
   If two commands both read revision C, the first can restore B; the second must report the
   existing revision-conflict error, not silently continue from B to A. A lost response likewise
   cannot trigger automatic command replay through the daemon.

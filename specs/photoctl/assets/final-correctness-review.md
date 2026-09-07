@@ -78,6 +78,18 @@ errors and are not converted to source conflicts.
 
 ## Revision navigation and provider retention
 
+The independent choices audit covered the redo/navigation entries, both public-undo
+entries, undo-auto, encoded-response retention, attempt journaling/classification and
+list/detail inspection. Root verified the reported relationships in the public
+history/develop handlers, revision commit/navigation, attempt inspection and artifact
+reachability. No missing behavior was found in this domain. The stale “no redo” clause
+is corrected; undo-auto's new-revision interaction and bounded inspection versus
+retention are now explicit. These are partial-ledger corrections, not the final
+whole-ledger consolidation.
+The auditor's suggestion to keep encoded-response preservation under “needs-user”
+was not adopted: the user's accepted retention/redo and original-response inspection
+requests settle preservation. Future storage/deletion policy is a different decision.
+
 Root inspected revision commit/navigation and provider-attempt retention/inspection.
 No actionable finding in this bounded scope: new commits clear the redo path, failed
 commits roll back, and navigation restores saved roots without provider invocation.
