@@ -39,6 +39,17 @@ The [failure triage](assets/ci-triage.md) retains the real daemon fixes and thei
 requirements below. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
 records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
+**Local closeout attempt — 2026-09-07:** the full root test command reached the
+TypeScript suite, then exhausted host disk space (`ENOSPC`). It was interrupted;
+the subsequent Rust-test, Docker and macOS stages did not run. The
+[retained log](assets/local-closeout-2026-09-07.log) includes earlier timeouts and
+command failures whose causes are not established independently of the exhausted
+host. Do not classify this as a passing gate or patch product behavior from these
+failures without a focused reproduction. Free disk space before further heavy work.
+Both locally retained model files match the pinned manifest, and Docker can fetch
+them through a temporary loopback server; that server is now stopped. This enables
+local verification without settling public model hosting.
+
 **Camera photographic acceptance remains open.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and
 conspicuous highlight false color are corrected; all 18 saved RAW references pass native

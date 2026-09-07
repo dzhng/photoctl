@@ -1,0 +1,205 @@
+$ bun run test:ts && bun run test:rust && bun run test:functional && bun run test:macos
+$ bun run build:rust && vitest run --config vitest.config.ts
+$ cargo test --workspace --no-run && cargo build -p photoctl-image && node scripts/package-native.mjs
+   Compiling libraw-sys v0.22.2 (/Users/david/dev/photoctl/crates/libraw-sys)
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(8dc2014eb62c13dc-rawspeed_glue.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(8dc2014eb62c13dc-rawspeed_glue.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(8dc2014eb62c13dc-rawspeed_glue.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(e1b66968ee936791-apply_profile.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(c2d802da71f94854-x3f_parse_process.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(c2d802da71f94854-x3f_utils_patched.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(8dc2014eb62c13dc-rawspeed_glue.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(e1b66968ee936791-apply_profile.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(c2d802da71f94854-x3f_parse_process.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(c2d802da71f94854-x3f_utils_patched.o)' has no symbols
+   Compiling photoctl-image v0.1.0 (/Users/david/dev/photoctl/crates/photoctl-image)
+warning: struct `PixelFrameTransform` is never constructed
+  --> crates/photoctl-image/src/resample.rs:17:12
+   |
+17 | pub struct PixelFrameTransform {
+   |            ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `FrameTransform` is never constructed
+  --> crates/photoctl-image/src/resample.rs:23:8
+   |
+23 | struct FrameTransform {
+   |        ^^^^^^^^^^^^^^
+
+warning: function `project_supported_rgb_pixels` is never used
+  --> crates/photoctl-image/src/resample.rs:58:8
+   |
+58 | pub fn project_supported_rgb_pixels(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `SupportedProjectionTask` is never constructed
+   --> crates/photoctl-image/src/resample.rs:101:12
+    |
+101 | pub struct SupportedProjectionTask {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `photoctl-image` (lib test) generated 4 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 56.05s
+  Executable unittests src/lib.rs (target/debug/deps/libraw_sys-be1c24c7e71726e2)
+  Executable unittests src/lib.rs (target/debug/deps/photoctl_image-bea3c8914cb0532b)
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(8dc2014eb62c13dc-rawspeed_glue.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(8dc2014eb62c13dc-rawspeed_glue.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(8dc2014eb62c13dc-rawspeed_glue.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(e1b66968ee936791-apply_profile.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(c2d802da71f94854-x3f_parse_process.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(c2d802da71f94854-x3f_utils_patched.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(8dc2014eb62c13dc-rawspeed_glue.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(e1b66968ee936791-apply_profile.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(c2d802da71f94854-x3f_parse_process.o)' has no symbols
+warning: libraw-sys@0.22.2: ranlib: warning: 'libphotoctl_libraw.a(c2d802da71f94854-x3f_utils_patched.o)' has no symbols
+   Compiling photoctl-image v0.1.0 (/Users/david/dev/photoctl/crates/photoctl-image)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.82s
+packages/img-darwin-arm64/photoctl-image.darwin-arm64.node: replacing existing signature
+Packaged packages/img-darwin-arm64/photoctl-image.darwin-arm64.node
+
+ RUN  v3.2.7 /Users/david/dev/photoctl
+
+ ✓ apps/cli/src/relight-journey.test.ts (1 test) 26844ms
+   ✓ the built CLI relights lazily through the full-frame owner and removal restores exact pixels  26844ms
+ ❯ packages/commands/src/outpaint-generation.test.ts (4 tests | 4 failed) 27942ms
+   × outpaint finalizes a retained paid attempt when exterior publication fails 10531ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × outpaint keeps usable generation and its extent when configured upscaling fails 5531ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × outpaint sends the source in an exterior-only frame and activates one border (edited=true) 6050ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × outpaint sends the source in an exterior-only frame and activates one border (edited=false) 5823ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ packages/commands/src/develop-format-matrix.test.ts (1 test | 1 failed) 38989ms
+   × develop renders whole-file, embedded-container, and extensionless inputs 38988ms
+     → expected { schema: 1, ok: false, …(2) } to match object { schema: 1, ok: true, data: { …(3) } }
+(2 matching properties omitted from actual)
+ ❯ apps/cli/src/agent-preview-loop.test.ts (1 test | 1 failed) 51297ms
+   × the built CLI keeps agent previews current through fill, opacity, retouch, generative, and markup revisions 51296ms
+     → {"schema":1,"ok":false,"code":"catalog_unreadable","data":{"path":"/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-agent-preview-wBa9bv/library","hint":"photoctl restore --path /var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-agent-preview-wBa9bv/library"}}: expected 69 to be +0 // Object.is equality
+ ❯ apps/cli/src/embed-drain.test.ts (1 test | 1 failed) 49637ms
+   × rate p95 stays within 2x warm show p50 while thirty embedding batches drain 49635ms
+     → {"code":69,"json":{"schema":1,"ok":false,"code":"daemon_unavailable","data":{"message":"The photoctl daemon is not running"}},"events":[],"stream":[]}: expected { code: 69, …(3) } to match object { code: +0, json: { ok: true, …(1) } }
+(5 matching properties omitted from actual)
+ ❯ apps/cli/src/paired-originals-journey.test.ts (2 tests | 2 failed) 51983ms
+   × built CLI preserves unequal RAW/JPEG originals through editing, delivery and offline access: --link 33179ms
+     → show 01a079ad-0f5c-7073-b81c-34f1d81b3625 --preview-size 320: {"schema":1,"ok":false,"code":"decoder_unavailable","data":{"id":"01a079ad-0f5c-7073-b81c-34f1d81b3625"}}: expected 69 to be +0 // Object.is equality
+   × built CLI preserves unequal RAW/JPEG originals through editing, delivery and offline access: --copy 18803ms
+     → import /var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-paired-journey-fJ41Gr/sources --copy: {"schema":1,"ok":false,"code":"unsupported_file","data":{"path":"/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-paired-journey-fJ41Gr/sources/frame.JPG"}}: expected 65 to be +0 // Object.is equality
+ ❯ packages/render/src/graph/store.test.ts (23 tests | 1 failed) 53685ms
+   ✓ strict initial document snapshots admit only one concurrent initializer  4594ms
+   × photographic revisions derive output from the resolved layer snapshot and refuse competing output intent 5735ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   ✓ geometry intent is an immutable inherited revision root, restored by undo without pixel executions  3416ms
+   ✓ one revision atomically stores a chain with ordered shared inputs and redirects output  2327ms
+   ✓ concurrent source document initialization converges on one active revision  1529ms
+   ✓ logical mutations are immutable, lazy, CAS-protected, and undoable  2570ms
+   ✓ local cycles and cross-photo edges roll back without partial graph state  1477ms
+   ✓ the same logical recipe is valid in two photo-scoped graphs  2025ms
+   ✓ revision inheritance stays in its photo when revision UUIDs repeat  1753ms
+   ✓ a paid nondeterministic ancestor cannot become active before artifact publication  2160ms
+   ✓ unreachable drafts and node-only revisions are refused without debris  1787ms
+   ✓ a prepared provider execution must be reachable from the resulting roots  1421ms
+   ✓ a revision may redirect its root to an existing node without adding nodes  1648ms
+   ✓ a layer-free base update advances the identical output projection  1337ms
+   ✓ layer mutations create immutable complete snapshots and exact composite-v2 projections  1760ms
+   ✓ invalid layer relationships and composite projections roll back every new identity and node  1575ms
+   ✓ an unpublished permanent mask pin cannot enter an active snapshot  2515ms
+   ✓ an output wrapper cannot relabel RGB pixels as a mask  2695ms
+   ✓ an RGB-only operation cannot relabel a mask branch as layer content  3844ms
+   ✓ an activated RGB branch cannot hide an unpublished permanent mask pin  1803ms
+   ✓ a permanent mask cannot become the document's RGB base and output  2366ms
+   ✓ affine resample accepts only its declared intrinsic RGB input  2078ms
+   ✓ layer identity lookup accepts only a full id or an unambiguous photo-scoped prefix  1256ms
+ ❯ packages/commands/src/outpaint-refresh.test.ts (10 tests | 10 failed) 55170ms
+ ❯ packages/commands/src/fill-strict.test.ts (18 tests | 18 failed) 55374ms
+   × historical fill frames recover without replaying paid generation 11868ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × strict fill commits generated pixels through a mask composite without changing uncovered samples 5415ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+     → ENOTEMPTY: directory not empty, rmdir '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-VBYQ45/library/artifacts/sha256/91'
+   × same-ratio provider dimensions remain intrinsic until the graph placement 6456ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × strict fill rejects a whole-frame provider result with data exit 65 and no revision 5940ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × a smaller provider raster remains intrinsic for density planning 6375ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × an unexplained provider aspect change is discarded before graph activation 5303ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × expanded fill changes the final document outside the selection and preserves its effective exterior 6227ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × moving an expanded edge selection anchors the subject and vacancy to original selection intent 7782ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × feather coverage is applied once through fill, fractional transforms, and refresh 3ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-R6Oo6Y'
+   × develop projection preserves single coverage: 'fractional online' 1ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-2leyC0'
+   × develop projection preserves single coverage: 'fractional offline' 0ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-OaTxSn'
+   × develop projection preserves single coverage: 'same-size rotation' 0ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-Wta8v0'
+   × develop projection preserves single coverage: 'origin crop' 0ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-RE7uKq'
+   × renderer correction bypasses warmed old pixels and views without replaying paid generation 0ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-AVq0vx'
+   × free fit softens selection and explicit zero strength removes feather without growing the next selection 0ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-D5BHic'
+   × free fit accepts declared whole-frame edits while the effective mask still owns coverage 0ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-BflfgN'
+   × invalid fit and strength fail before generation or revision changes 0ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-aY8ddR'
+   × prompt fill stores the exact instruction in its immutable generation recipe 0ms
+     → ENOSPC: no space left on device, mkdtemp '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-fill-strict-GcF7ct'
+stderr | apps/daemon/src/workers/embed-consent.test.ts > ambient credentials do no image work until embed or init auto supplies consent
+Embedding worker stopped: could not create directory "base/5": File exists
+
+ ❯ apps/cli/src/show-path.test.ts (3 tests | 1 failed) 38416ms
+   ✓ show resolves an existing photo by absolute, relative and symlink paths without importing  19306ms
+   × show does not import unknown paths or confuse volume identity, and IDs retain offline access 8086ms
+     → expected 69 to be +0 // Object.is equality
+   ✓ show resolves library-owned originals after the external source disappears  11022ms
+stderr | apps/daemon/src/workers/embed-consent.test.ts > a retryable short batch wakes at cooldown even after a foreground kick
+Embedding worker stopped: PGlite is closed
+
+ ✓ apps/cli/src/auto-enhance.test.ts (1 test) 22333ms
+   ✓ the built CLI applies one clamped auto-enhance batch and undo restores the prior develop  22333ms
+ ❯ apps/cli/src/export-integrity.test.ts (8 tests | 8 failed) 80990ms
+   × export falls back when linked bytes change without an mtime change 5213ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × export accepts matching linked content after an mtime-only touch 30006ms
+     → expected 69 to be +0 // Object.is equality
+   × export tries later catalogued locators when the first source is gone 16373ms
+     → expected 69 to be +0 // Object.is equality
+   × a corrupt pinned preview returns the stable offline envelope 7530ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × a changed online source falls back to the pinned preview with a warning 6392ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+     → ENOTEMPTY: directory not empty, rmdir '/var/folders/3p/k21gnpt573b8yy45xvy27nd00000gn/T/photoctl-export-invalid-online-SCmnUS'
+   × a destination write failure returns a stable volume error envelope 5440ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × an all-failed heterogeneous export is partial regardless of input order 5009ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × an all-failed homogeneous export retains the shared error code 5024ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+error: script "test:ts" exited with code 130
+error: script "test" exited with code 130
