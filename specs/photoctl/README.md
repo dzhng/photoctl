@@ -87,6 +87,9 @@ the local fixture package gate does not establish real-drive or photographic acc
   pass. The [six-cycle JPEG/RAW witness](assets/outpaint-resources/daemon-corrected.md)
   preserves exact delivered interiors and restoration. Photographic and final RAW-policy
   acceptance remain open; further memory tuning is not a prerequisite under the policy above.
+  The 12f2 visual checklist also retains duplicate/clear, overlapping order, arbitrary border
+  rotation and later-border placement after earlier support moves: pixel tests and the narrower
+  lifecycle review do not establish those visual states. Locate existing captures first.
 - [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
   and refresh pass synthetic visual review. Retained-only input, reconnect and fresh-native
   installed lifecycle pass; whole-spec and live photographic acceptance remain separate.

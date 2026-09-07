@@ -13,8 +13,11 @@ resource observations are recorded below. The first persistent-daemon attempt
 [crossed the 5 GB canary](../assets/outpaint-resources/daemon.md) after expanded JPEG export;
 the corrected runtime completes the [six-cycle JPEG/RAW workload](../assets/outpaint-resources/daemon-corrected.md).
 Further memory work is off the critical path under the [user policy](../README.md#next-agent-prompt).
-Remaining acceptance concerns photographic generation and the final integrated release policy;
-do not restart the historical frame/canvas checkpoints below.
+Remaining acceptance includes the 12f2 visual states listed below, photographic generation
+and the final integrated release policy. Duplicate/clear, overlapping reorder, arbitrary border
+rotation and moving earlier support after a later border exists need retained visual witnesses;
+their public pixel tests alone do not close the image review. Do not restart the completed
+historical frame/canvas checkpoints below.
 
 ## Plan rationale
 
@@ -136,9 +139,10 @@ develop values remain in the base graph. New layer identities capture the curren
 same revision transaction; duplicates retain their original authoring relation. Geometry intent is
 included in document render identity and follows ordinary revision inheritance and undo. The
 `layer set --enabled true|false` boundary controls the existing enabled snapshot field explicitly.
-Migration 19 and its real dump fixture cover this storage contract. They do **not** implement canvas
-composition, crop consumption, extent, uncovered warnings, SAM geometry, or pixel lifecycle acceptance;
-those remain 12f2 work. New development-only canvas contracts edit their owning fresh schema directly.
+Migration 19 and its real dump fixture cover this storage contract. Canvas composition,
+crop consumption, extent, uncovered warnings, SAM geometry and pixel lifecycle have separate
+evidence below; the schema fixture alone cannot prove them. New development-only canvas
+contracts edit their owning fresh schema directly.
 
 ### Deterministic core maintenance checkpoint
 
@@ -151,7 +155,7 @@ The public [canvas lifecycle tests](../../../packages/commands/src/outpaint-canv
 cropped/rotated expansion, nonzero-straighten round trips, repeated borders, removal and re-enabling,
 post-border local edits, translated pixels/extent, exterior fallback, and cached show/export warnings.
 These are deterministic geometric/pixel proofs, not photographic generation quality or full 12f2
-acceptance. No paid outpaint command is wired.
+acceptance. Paid activation and its lifecycle evidence belong to 12f3 below.
 
 The complete [core visual evidence](../assets/outpaint-canvas-core/README.md) retains public previews,
 lossless diagnostics, edge crops and both independent critique verdicts. Exact restoration and the
@@ -165,17 +169,23 @@ not adopted: the preceding metadata scaffold had no shipped canvas authoring flo
 user-authored checkpoints requiring the former shape. The real schema-19 fixture is regenerated
 through its writer; migration 19's DDL remains immutable.
 
-Continue from this reviewed core in these bounded consumer passes:
+Keep public pixel coverage and visual acceptance separate for these core requirements:
 
 - Layer lifecycle now has public pixel checks for duplicate/remove/clear, overlapping paint order,
-  arbitrary border rotation, and later-border coordinates when earlier support moves. Include those
-  states in the final visual journey; runnable pixel checks are not its visual closeout.
+  arbitrary border rotation, and later-border coordinates when earlier support moves. The
+  [lifecycle review](../assets/outpaint-lifecycle/README.md) covers removal/undo, refresh,
+  retouch and cold reconnect. It does not establish visual acceptance of duplicate/clear,
+  overlapping order, arbitrary rotation or later-border placement after earlier support moves.
+  Locate retained captures for those states before creating a narrow missing-state witness.
 - Shared consumers: SAM sees source-only pixels with the same geometry/support plan, without
-  photographic layers; native exterior detail and offline density must use that plan too. In
-  particular, prove reduced offline inputs do not masquerade as full-resolution output and purchased
+  photographic layers; native exterior detail and offline density use that plan too. The
+  [cold lifecycle](../assets/outpaint-lifecycle/README.md#cold-reduced-source-lifecycle) and
+  [density evidence](../assets/outpaint-density/README.md) verify that reduced offline inputs
+  do not masquerade as full-resolution output and purchased
   upscale density survives exterior crop/canvas geometry; authored raster dimensions alone are not
   evidence of realized pixel density.
-- Finish the complete deterministic visual journey and its fresh critique before accepting 12f2.
+- The linked lifecycle review records its completed states and fresh critique, not every
+  visual requirement above. Its synthetic verdict does not establish photographic generation quality.
 
 The render frame owner bounds new raster growth independently of provider capabilities, while
 preserving source-sized operations. New crops may extend beyond the original but must intersect the
@@ -189,8 +199,9 @@ The [before/after restriction evidence](../assets/outpaint-activation/README.md)
 the matching public previews, native corner crops, and fresh independent visual verdict.
 
 Public activation, copy/reset/preset and auto-undo regressions are green; ordinary revision undo
-uses the existing graph API with subsequent public show/export. The remaining consumer/layer
-passes above still prevent full 12f2 acceptance.
+uses the existing graph API with subsequent public show/export. The linked consumer/lifecycle
+evidence supplies later bounded acceptance. The remaining visual states above, photographic
+generation and external release gates remain separate.
 
 Crop and aspect activate independently. An aspect-only edit restricts the stable authored canvas;
 it does not replay a consumed source crop or source straighten. Its ratio retains the existing
@@ -336,7 +347,8 @@ applies current nongeometry adjustments to the oriented source, and consumes the
 projection and authored-support clipping as the compositor. Its raster follows only actual source
 sampling; local border pixels never enter the image or increase its density. The ordinary no-canvas
 develop path remains unchanged. [Source-only input evidence](../assets/sam-canvas/README.md) covers
-the consumer contract; final visual lifecycle closeout remains required before 12f2 acceptance.
+the consumer contract; the [lifecycle review](../assets/outpaint-lifecycle/README.md) supplies
+its separate, bounded deterministic visual verdict.
 
 SAM's mask postprocess still clips model logits to the prepared image viewport, not to a new semantic
 support mask. Black excluded-source pixels are visible model input and may be selected by the model;
@@ -472,8 +484,9 @@ interiors and removal. Its original roughly 41-second exports peak at 4.587 GB u
 the 5 GB investigation canary. Profiling then identified repeated native filter-weight
 calculation; exact-order reuse reduces measured exports to roughly 18 seconds, with
 all six baseline/expanded/removed outputs byte-identical. The evidence retains both
-runs and their resource limits. Persistent-daemon retention, photographic quality and
-the final RAW-policy release gate remain separate; no export latency guarantee is inferred.
+runs and their resource limits. The [six-cycle daemon witness](../assets/outpaint-resources/daemon-corrected.md)
+supplies the later persistent-process measurement. Photographic quality and the final
+RAW-policy release gate remain separate; no export latency guarantee is inferred.
 
 Pure translation, rotation and shrinking do not retry failed border density. Increased scale can
 request configured upscaling; explicit retry remains available for a failed processing step.

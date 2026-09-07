@@ -101,9 +101,10 @@ with an unavailable JPEG, and both available. Only scratch copies were renamed.
 The sheet test verifies the membership labels, but does not certify their layout.
 
 The browser rejected the local HTML URL and explicitly disallowed indirect
-workarounds. No UI screenshot or fresh visual acceptance is claimed. The required
-full-image/orientation-crop comparison and unprimed screenshot critique remain
-open; a user-supplied capture or an independently permitted capture route is needed.
+workarounds. A direct in-app-browser attempt on 2026-09-07 is also policy-blocked;
+no alternate route was attempted afterward. No UI screenshot or fresh layout
+acceptance is claimed. Workbench membership-badge layout still needs a user-supplied
+capture or an independently permitted capture route, followed by visual review.
 
 The separate [fixture orientation evidence](paired-orientation/README.md) exercises
 public image artifacts directly without opening HTML. Its image-geometry verdict
