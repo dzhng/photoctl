@@ -94,7 +94,7 @@
 
 ### Slice 12f plan — Removing borders preserves a later exterior crop
 
-- **When:** Outpaint viewport decision checkpoint, 2026-09-06; not implemented yet.
+- **When:** Outpaint viewport decision checkpoint, 2026-09-06; implemented.
 - **The choice:** Crop into an added border at `[-20,100,60,80]`, then remove every border. Keep the
   60×80 view and its position: the left 20 columns are opaque black with `canvas_uncovered`, while
   the other 40 columns show the original. Even a fully unsupported crop stays the same size. The
@@ -102,17 +102,17 @@
   defined picture when the intersection is empty.
 - **The gap:** Source-only crop validation could not represent a formerly valid viewport after
   removal of its generated support. Removing a layer is not authoring a new crop.
-- **The reach:** The output planner must distinguish viewport dimensions from available pixel
+- **The reach:** The output planner distinguishes viewport dimensions from available pixel
   support. New crops still require intersection with the current visible canvas; existing intent
   survives layer changes and can be restored by re-enabling a border without provider work.
 - **Verdict:** **Needs-user.** Provisionally retain the viewport, consistent with preserving later
   absolute editing choices. The user has been asked; clipping remains a reversible planner policy
-  before canvas authoring. Original bytes and paid artifacts stay unchanged either way.
+  for future canvas authoring. Original bytes and paid artifacts stay unchanged either way.
 - **Confidence:** Low; predictable geometry competes with the visual inconvenience of black areas.
 
 ### Slice 12f plan — Missing inner borders leave warned black canvas
 
-- **When:** Outpaint lifecycle planning, 2026-09-06; not implemented yet.
+- **When:** Outpaint lifecycle planning, 2026-09-06; implemented.
 - **The choice:** Add an outer border B around a picture that already contains border A, then remove A.
   B stays where it was authored. Areas formerly supplied by A become opaque black and show/export
   report `canvas_uncovered`; the renderer neither moves B nor buys replacement pixels. Setting A's
@@ -129,8 +129,8 @@
 
 ### Slice 12f plan — Expand the visible picture symmetrically
 
-- **When:** Outpaint planning checkpoint, 2026-09-06; not implemented yet.
-- **The choice:** After cropping and straightening a photo, `fill --outpaint --px 100` would add
+- **When:** Outpaint planning checkpoint, 2026-09-06; implemented.
+- **The choice:** After cropping and straightening a photo, `fill --outpaint --px 100` adds
   100 pixels around the picture currently visible, without restoring the source content the crop
   excluded. An aspect request uses the smallest containing integer raster with the exact requested
   ratio: 10×7 expanded to 3:2 becomes 12×8. Growth is split between opposite edges; an odd pixel goes
@@ -328,22 +328,23 @@
 
 ### Slice 12f plan — Authored crop boundaries belong to enabled borders, not permanent source edits
 
-- **When:** Outpaint lifecycle planning, 2026-09-06; not implemented yet.
+- **When:** Outpaint lifecycle planning, 2026-09-06; implemented.
 - **The choice:** Crop a picture, add border A, crop it more, then add border B. Each enabled border
   retains the visible frame it was made around. Clearing a later viewing crop reveals that authored
   canvas, not content excluded before its creation. Removing B withdraws B's boundary; removing all
   borders lets normal develop controls operate on the original again. Later rotation and crop choices
   remain current intent throughout, rather than reverting to the values used before outpaint.
 - **The gap:** The plan did not distinguish pre-border cropping from post-border viewing changes.
-- **The reach:** Immutable graph intent must encode those authored frames without a second mutable
+- **The reach:** Immutable graph intent encodes those authored frames without a second mutable
   geometry table or permanently discarding source pixels. A later border must inherit earlier
   exclusions, not merely its input rectangle: if its interior contains an earlier generated strip,
   removing that strip cannot reveal hidden original pixels while the later boundary survives.
   The nonzero-straighten witness in the outpaint plan separates these cases. Reorder changes paint
-  order, not authoring chronology; rendered lifecycle verification remains outstanding.
+  order, not authoring chronology; the [layer-state review](assets/outpaint-state-review.md)
+  records the bounded rendered proof without claiming photographic generation quality.
 - **Verdict:** **Needs-user.** Provisionally retain visible-input boundaries only while the owning
   borders are enabled. This makes generated borders reproducible and removable. A different product
-  preference changes the plan before implementation; original source data remains untouched.
+  preference must explicitly address already-authored boundaries; original source data remains untouched.
 - **Confidence:** Medium.
 
 ### Paid image responses — Retain original encoded bytes beside working pixels
@@ -369,7 +370,7 @@
 
 ### Slice 12f plan — Transform the border, not the whole photograph
 
-- **When:** Outpaint lifecycle recon, 2026-09-06; not implemented yet.
+- **When:** Outpaint lifecycle recon, 2026-09-06; implemented.
 - **The choice:** Moving an outpaint layer moves its generated pixels, edit mask, and extent together.
   The source area excluded when that border was authored stays excluded while its boundary is active.
   Other borders retain their own authored positions. Reordering changes paint order only; duplication
@@ -379,7 +380,7 @@
   Resulting holes use the declared background/warning policy rather than triggering generation.
 - **Verdict:** **Needs-user.** Provisionally preserve the existing meaning of layer transforms as local
   operations. A whole-canvas transform would be a separate product operation, not an implicit side effect.
-  This choice is reversible in the planner before implementation.
+  A different preference must preserve the meaning of already-authored layer placement.
 - **Confidence:** Medium.
 
 ## Sound
@@ -678,7 +679,7 @@
 
 ### Slice 12f plan — Track whether a crop is active, not only its numeric value
 
-- **When:** Outpaint geometry-intent recon, 2026-09-06; not implemented yet.
+- **When:** Outpaint geometry-intent recon, 2026-09-06; implemented.
 - **The choice:** Crop to rectangle C, expand with border A, then explicitly set crop C again. That
   command must crop the expanded picture even though the absolute crop value equals the old value.
   Repeating the set afterward is a no-op. A graph-owned geometry-intent record therefore preserves
@@ -690,7 +691,7 @@
   metadata alone cannot own state that ordinary layer mutations would drop.
 - **Verdict:** **Sound.** It distinguishes an actual user action from an incidental unchanged value,
   without a second mutable geometry table or permanently destructive crop.
-- **Confidence:** High for the required distinction; exact node representation remains to be implemented.
+- **Confidence:** High; the shared geometry-intent owner implements the distinction.
 
 ### Upscaler reports — Unequal rasters have no direct pixel-drift measurement
 
@@ -756,7 +757,7 @@
 
 ### Slice 12f plan — Frame ownership precedes canvas growth
 
-- **When:** Outpaint planning checkpoint, 2026-09-06; implementation remains pending.
+- **When:** Outpaint planning checkpoint, 2026-09-06; implemented through the shared frame owner.
 - **The choice:** A rotated photo can have the same width and height as its original while its pixels
   occupy different coordinates. The plan first makes render, preview, masks, and markup consume the
   same graph-derived frame: dimensions plus the mapping from original coordinates to evaluated pixels.
