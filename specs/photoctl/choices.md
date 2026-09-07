@@ -1,5 +1,38 @@
 # Implementation choices
 
+## Local selection correction and redo — sound
+
+- **When:** Selection/redo planning and history pass, 2026-09-07.
+- **The choice:** Keep manual corrections on the existing selection layer. If SAM
+  misses part of a path, adding a polygon changes that layer's retained coverage;
+  it does not create a second selection or ask the model again. Subtracting all
+  coverage leaves an empty selection that can be filled again. Existing polygon
+  and coordinate conventions remain the public vocabulary.
+- **The gap:** The user requested fine-grained CLI correction, without specifying
+  mask arithmetic or empty-selection behavior.
+- **The reach:** Add uses maximum coverage; subtract removes operand coverage;
+  replace takes the operand. Saved masks remain immutable and undoable. This is
+  manual control, not a claim that SAM's automatic edge quality improved.
+- **Verdict:** **Sound.** Reuses the layer/geometry owners and permits valid empty
+  state instead of adding an artificial refusal.
+- **Confidence:** High.
+
+### Redo navigation versus retained history
+
+- **When:** Public redo, 2026-09-07.
+- **The choice:** Store the revisions left by undo as a stack on the existing
+  photo document. After edits A→B→C, undo twice and redo twice restores B then C.
+  Editing D after undo discards that navigation path, but does not delete C's
+  purchased pixels or history. A failed edit leaves redo available.
+- **The gap:** The user requested redo without specifying persistent path storage.
+- **The reach:** One document column and the existing transaction/activation owner
+  control navigation across restarts. No separate history service, command replay
+  or automatic provider retry. Calling redo on an untouched photo initializes its
+  document like undo and reports no change.
+- **Verdict:** **Sound.** An explicit path avoids guessing among abandoned branches;
+  navigation and paid-artifact retention solve different problems.
+- **Confidence:** High.
+
 ## Reduced-RGB decode correction — sound
 
 - **When:** Reduced camera RAW correction, 2026-09-06.

@@ -78,6 +78,12 @@ two independent implementation passes followed by one integrated journey over a 
 generic history/selection subsystem. Run focused red/green checks per pass, review
 and audit choices before committing, then the whole-spec gate once at final closeout.
 
-- [ ] A: public durable redo
+- [x] A: public durable redo
 - [ ] B: local mask refinement
 - [ ] Integrated built/installed and photographic correction witness
+
+Redo's public command, daemon-restart and graph tests pass, including exact generated
+preview restoration with an unavailable provider and failed-edit/branch behavior.
+Disabling central redo clearing made the public branch test fail, then restoration
+passed. Independent history review found no actionable defect. The combined selection
+and installed journey remains the integration gate, not implied by this local pass.
