@@ -1,5 +1,5 @@
 import { openLibrary } from "@photoctl/library";
-import { graphNodeDataSchema, graphShowDataSchema } from "@photoctl/protocol";
+import { graphNodeDataSchema, graphShowDataSchema, segmentDataSchema } from "@photoctl/protocol";
 import { artifactPath, readArtifactLinear } from "@photoctl/render";
 import { FAKE_IMAGE_EDIT_MODEL } from "@photoctl/providers";
 import {
@@ -87,6 +87,30 @@ export function registerAgentPreviewJourney(
     ]);
     expect(segmented.code, JSON.stringify(segmented.json)).toBe(0);
     const layer = (segmented.json.data as { layer_id: string }).layer_id;
+    const initialSelection = segmentDataSchema.parse(segmented.json.data);
+    const [selectionX, selectionY] = AGENT_PREVIEW_FACTS.person.bbox;
+    const corrected = await run(fixture, [
+      "segment",
+      fixture.id,
+      "--layer",
+      layer,
+      "--operation",
+      "subtract",
+      "--box",
+      `${selectionX},${selectionY},1,1`,
+    ]);
+    expect(corrected.code, JSON.stringify(corrected.json)).toBe(0);
+    expect(segmentDataSchema.parse(corrected.json.data)).toMatchObject({
+      layer_id: layer,
+      mask: { pixels: initialSelection.mask.pixels - 1 },
+    });
+    const restoredSelection = await run(fixture, ["undo", fixture.id]);
+    expect(restoredSelection.json).toMatchObject({
+      data: {
+        revision_id: initialSelection.revision_id,
+        render_hash: initialSelection.render_hash,
+      },
+    });
     const filled = await run(fixture, [
       "fill",
       fixture.id,
@@ -120,6 +144,14 @@ export function registerAgentPreviewJourney(
     expect(graph.code, JSON.stringify(graph.json)).toBe(0);
     const fullGraph = graphShowDataSchema.parse(graph.json.data);
     expect(fullGraph.render_hash).toBe(h2);
+    const undoFill = await run(fixture, ["undo", fixture.id]);
+    expect(undoFill.json).toMatchObject({ data: { revision_id: initialSelection.revision_id } });
+    const redoFill = await run(fixture, ["redo", fixture.id]);
+    expect(redoFill.json).toMatchObject({
+      data: { redone: true, revision_id: fullGraph.revision_id, render_hash: h2 },
+    });
+    expect(fixture.gatewayRequests()).toBe(1);
+    expect(await providerExecutionCount(fixture.library)).toBe(2);
     const graphNodes = fullGraph.nodes;
     const pagedNodes: typeof graphNodes = [];
     const cursors = new Set<string>();

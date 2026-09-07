@@ -33,6 +33,24 @@
   navigation and paid-artifact retention solve different problems.
 - **Confidence:** High.
 
+### Refinement preserves the selection's coordinate frame
+
+- **When:** Manual refinement implementation, 2026-09-07.
+- **The choice:** Correct subject selections, including moved/scaled selections,
+  in their retained raster. A box or polygon still names base-photo coordinates;
+  it is sampled into that raster rather than resetting the layer's placement.
+  Added coverage is limited to the layer's actual content support, while existing
+  soft coverage survives unchanged. Subtraction can remove coverage anywhere.
+- **The gap:** The user did not specify sampling, content bounds or mask-report
+  semantics after a transform.
+- **The reach:** Bounds describe covered cells in base coordinates; pixel counts
+  count retained raster samples. Refinement is not an arbitrary border/retouch
+  opacity editor. Empty selections can be inspected and explicitly positioned,
+  while operations needing a centroid may require coverage.
+- **Verdict:** **Sound.** Keeps content and selection aligned without inventing
+  pixels or adding a second placement system.
+- **Confidence:** High.
+
 ## Reduced-RGB decode correction — sound
 
 - **When:** Reduced camera RAW correction, 2026-09-06.
