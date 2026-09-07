@@ -71,14 +71,27 @@ report and SHA manifest are implemented below, without claiming photographic acc
 
 ## Portable gold evidence
 
-**Current native checkpoint — 2026-09-06:** all nine macOS ARM64 packed-install cases
+**Current package checkpoint — 2026-09-07:** after the preview color correction
+at `a620217`, the complete macOS ARM64 packed-install file passes all nine cases
+with no skips in 211.68 seconds. The [runner report](../assets/packed-install-preview-2026-09-07.json)
+records fresh optimized native packaging and clean-prefix installation, fixture gold,
+paired originals and the shared editing lifecycles. Only a choices-ledger status
+correction changed during the run; product and test code stayed fixed.
+The image addon still matches the native checkpoint's SHA-256 below.
+The [first setup attempt](../assets/packed-install-missing-tools-2026-09-07.json)
+failed before any test ran because CMake was absent from PATH. Reusing the already
+approved isolated tools at `/private/tmp/photoctl-build-tools.cZGYSv/bin` resolved
+the prerequisite without changing system tools or tests. This is current installed
+fixture evidence, not full-repository, mounted-drive or photographic acceptance.
+
+**Native checkpoint — 2026-09-06:** all nine macOS ARM64 packed-install cases
 pass with no skips in 182.91 seconds on source `e074e0a`. The
 [saved runner report](../assets/packed-install-balanced-2026-09-06.json) covers the
 complete file, including fixture gold, paired link/copy, preview, warm/cold outpaint and
 full-frame lifecycles. The rebuilt image addon SHA-256 is
 `c6cdb5aac1d845e63b0426bda5cf18794ed1aa73a2f9f077963ecd67c17fe5d5`.
 The separate native-load gate passes both quiet-loading and isolated-package/deployment-floor
-checks. This is current local fixture evidence, not a mounted-drive, live-provider,
+checks. This is historical local fixture evidence, not a mounted-drive, live-provider,
 other-platform or full-repository closeout result.
 
 The existing gold script remains the only exam. Its report writer consumes the command results and

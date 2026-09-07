@@ -51,6 +51,8 @@ external requirements below; the full spec is not complete.
 The later [preview color correction](assets/outpaint-state-review.md#preview-correction)
 passes its focused 34-test gate, typecheck and lint. The full integrated result above
 predates that encoder change; it is not a current whole-release verification claim.
+The [fresh installed-package gate](slices/14-gold-exam-and-release.md#portable-gold-evidence)
+also passes with that correction; it does not replace the remaining external or photographic gates.
 
 **Camera photographic acceptance remains open.** The gold exam exports all ten images,
 but complete photographic delivery is not yet accepted. Reduced-RGB striping and
