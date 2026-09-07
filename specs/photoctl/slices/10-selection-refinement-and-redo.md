@@ -93,3 +93,7 @@ soft coverage, content support, crop/straighten and later absolute/relative move
 Independent review found no actionable correctness defect. The integrated built
 CLI journey also passes correction, undo and paid-result redo without a new request;
 the installed journey remains part of final local closeout.
+
+The [photographic witness](../assets/selection-refinement/README.md) passes bounded
+manual correction and exact revision restoration. Independent visual review keeps
+the remaining automatic selection defects explicit; no automatic matting claim follows.

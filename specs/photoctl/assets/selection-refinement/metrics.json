@@ -1,0 +1,18 @@
+{
+  "target": "Add a small missed pavement patch to the existing road selection without changing coverage elsewhere; not an automatic edge-quality claim.",
+  "mask": {
+    "changed": 1377,
+    "removed": 0,
+    "outsideCorrectionBounds": 0,
+    "beforeSelected": 1605905,
+    "afterSelected": 1607282
+  },
+  "detail": {
+    "width": 1600,
+    "height": 1200,
+    "changedPixels": 5508,
+    "meanAbsoluteRgbDelta": 0.1701
+  },
+  "undoRestoredInitialRevision": true,
+  "redoRestoredCorrectedRevision": true
+}
