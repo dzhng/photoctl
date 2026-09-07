@@ -26,7 +26,7 @@ export async function settingsCommand(
           "Set replaces the whole key, not a nested patch. Quote JSON for your shell; JSON strings need double quotes. Reset restores the user default. Secrets belong in environment variables. Saving configuration makes no immediate download or foreground provider request; existing automatic embedding consent remains effective. Setting embed_mode to auto permits background embedding.",
         examples: [
           "photoctl settings set models_base_url '\"https://models.example.com/pinned/\"'",
-          'photoctl settings set models \'{"edit":"google/gemini-3.1-flash-image-preview"}\'',
+          'photoctl settings set models \'{"edit":"openai/gpt-image-2"}\'',
           "photoctl settings reset models_base_url",
         ],
       },
