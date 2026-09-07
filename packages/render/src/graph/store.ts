@@ -592,7 +592,7 @@ export async function commitRevisionInTransaction(
     );
   }
   await transaction.query(
-    "UPDATE photo_documents SET active_revision_id = $1 WHERE photo_id = $2",
+    "UPDATE photo_documents SET active_revision_id = $1, redo_revision_ids = '{}' WHERE photo_id = $2",
     [revisionId, request.photoId],
   );
   const roots = await loadRevisionRoots(transaction, request.photoId, revisionId);
@@ -728,22 +728,48 @@ export async function undoRevision(
   database: GraphDatabase,
   request: { photoId: string; expectedRevisionId: string },
 ): Promise<{ revisionId: string; renderHash: `r_${string}` | null }> {
+  return await navigateRevision(database, request, "undo");
+}
+
+export async function redoRevision(
+  database: GraphDatabase,
+  request: { photoId: string; expectedRevisionId: string },
+): Promise<{ revisionId: string; renderHash: `r_${string}` | null }> {
+  return await navigateRevision(database, request, "redo");
+}
+
+async function navigateRevision(
+  database: GraphDatabase,
+  request: { photoId: string; expectedRevisionId: string },
+  direction: "undo" | "redo",
+): Promise<{ revisionId: string; renderHash: `r_${string}` | null }> {
   return await database.transaction(async (transaction) => {
     const activeRevisionId = await lockDocument(transaction, request.photoId);
     if (activeRevisionId !== request.expectedRevisionId) {
       throw new RevisionConflictError();
     }
-    const revision = await transaction.query<{ parent_revision_id: string | null }>(
-      "SELECT parent_revision_id FROM document_revisions WHERE id = $1 AND photo_id = $2",
+    const revision = await transaction.query<{
+      parent_revision_id: string | null;
+      redo_revision_ids: string[];
+    }>(
+      `SELECT revision.parent_revision_id, document.redo_revision_ids
+       FROM document_revisions revision
+       JOIN photo_documents document ON document.photo_id = revision.photo_id
+       WHERE revision.id = $1 AND revision.photo_id = $2`,
       [activeRevisionId, request.photoId],
     );
-    const parentRevisionId = revision.rows[0]?.parent_revision_id ?? null;
-    const revisionId = parentRevisionId ?? request.expectedRevisionId;
-    if (parentRevisionId) {
-      await restoreMarkupForRevision(transaction, request.photoId, parentRevisionId);
+    const current = revision.rows[0];
+    if (!current) throw new Error("The active photo revision is missing");
+    const stack = current.redo_revision_ids;
+    const target = direction === "undo" ? current.parent_revision_id : stack.pop();
+    const revisionId = target ?? request.expectedRevisionId;
+    if (target) {
+      if (direction === "undo") stack.push(request.expectedRevisionId);
+      await restoreMarkupForRevision(transaction, request.photoId, target);
       await transaction.query(
-        "UPDATE photo_documents SET active_revision_id = $1 WHERE photo_id = $2",
-        [parentRevisionId, request.photoId],
+        `UPDATE photo_documents SET active_revision_id = $1, redo_revision_ids = $3::uuid[]
+         WHERE photo_id = $2`,
+        [target, request.photoId, stack],
       );
     }
     const roots = await loadRevisionRoots(transaction, request.photoId, revisionId);

@@ -9,6 +9,7 @@ import {
   RevisionConflictError,
   setRevisionPinned,
   undoRevision,
+  redoRevision,
 } from "./store.js";
 import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { compositeV2Projection } from "./output.js";
@@ -202,6 +203,10 @@ test("geometry intent is an immutable inherited revision root, restored by undo 
       layer: inherited.newLayers["earlier-layer"],
     });
     expect(duplicate.layer.authoredCheckpointNodeId).toBeNull();
+    const duplicateState = await loadActiveDocument(db, firstPhoto);
+    await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: duplicate.revisionId });
+    await redoRevision(db, { photoId: firstPhoto, expectedRevisionId: inherited.revisionId });
+    expect(await loadActiveDocument(db, firstPhoto)).toEqual(duplicateState);
     await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: duplicate.revisionId });
     await expect(
       commitRevision(db, {
@@ -378,6 +383,53 @@ test("logical mutations are immutable, lazy, CAS-protected, and undoable", async
     expect(
       (await db.query<{ count: string }>("SELECT count(*)::text AS count FROM image_nodes")).rows,
     ).toEqual([{ count: "2" }]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("redo survives failed edits and conflicts but a committed branch clears its path without deleting history", async () => {
+  const db = await graphDatabase();
+  try {
+    const original = await ensurePhotoDocument(db, { photoId: firstPhoto, orientation: 1 });
+    const edit = async (expectedRevisionId: string, exposure: number) =>
+      await commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId,
+        nodes: [develop("edit", { nodeId: original.outputNodeId }, exposure)],
+        rootUpdates: [{ root: "output", node: { localKey: "edit" } }],
+        metadata: { kind: "auto-enhance", previous_develop: {}, applied_develop: {} },
+      });
+    const first = await edit(original.revisionId, 1);
+    const firstState = await loadActiveDocument(db, firstPhoto);
+    await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: first.revisionId });
+    await expect(
+      redoRevision(db, { photoId: firstPhoto, expectedRevisionId: first.revisionId }),
+    ).rejects.toThrow(RevisionConflictError);
+    await expect(edit(first.revisionId, 2)).rejects.toThrow(RevisionConflictError);
+    await expect(
+      commitRevision(db, {
+        photoId: firstPhoto,
+        expectedRevisionId: original.revisionId,
+        nodes: [],
+        rootUpdates: [{ root: "output", node: { localKey: "missing" } }],
+      }),
+    ).rejects.toThrow();
+    await redoRevision(db, { photoId: firstPhoto, expectedRevisionId: original.revisionId });
+    expect(await loadActiveDocument(db, firstPhoto)).toEqual(firstState);
+    await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: first.revisionId });
+    const branch = await edit(original.revisionId, 2);
+    expect(
+      await redoRevision(db, { photoId: firstPhoto, expectedRevisionId: branch.revisionId }),
+    ).toEqual({ revisionId: branch.revisionId, renderHash: branch.renderHash });
+    await undoRevision(db, { photoId: firstPhoto, expectedRevisionId: branch.revisionId });
+    await redoRevision(db, { photoId: firstPhoto, expectedRevisionId: original.revisionId });
+    expect(
+      await redoRevision(db, { photoId: firstPhoto, expectedRevisionId: branch.revisionId }),
+    ).toEqual({ revisionId: branch.revisionId, renderHash: branch.renderHash });
+    expect((await db.query("SELECT id::text FROM document_revisions ORDER BY id")).rows).toEqual(
+      [original.revisionId, first.revisionId, branch.revisionId].toSorted().map((id) => ({ id })),
+    );
   } finally {
     await db.close();
   }

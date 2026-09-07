@@ -115,6 +115,7 @@ export const migration0005 = `
   CREATE TABLE photo_documents (
     photo_id uuid PRIMARY KEY REFERENCES photos(id) ON DELETE CASCADE,
     active_revision_id uuid,
+    redo_revision_ids uuid[] NOT NULL DEFAULT '{}',
     FOREIGN KEY (photo_id, active_revision_id) REFERENCES document_revisions(photo_id, id)
   );
 `;

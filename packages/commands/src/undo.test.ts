@@ -1,4 +1,4 @@
-import { initializeLibrary } from "@photoctl/library";
+import { initializeLibrary, openLibrary } from "@photoctl/library";
 import {
   generateDataSchema,
   markupDataSchema,
@@ -16,6 +16,7 @@ import { dispatch } from "./dispatch.js";
 test("undo preserves a generated initial root and atomically restores markup and layer snapshots", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-generated-undo-"));
   const initialized = await initializeLibrary(join(directory, "library"));
+  let handle = initialized.handle;
   let requests = 0;
   const gateway = await startGatewayFixture(0, {
     onImageRequest: () => {
@@ -33,7 +34,7 @@ test("undo preserves a generated initial root and atomically restores markup and
   const command = async (verb: string, args: string[]) => {
     const result = await dispatch(
       { verb, args, cwd: directory, env },
-      { version: "test", library: initialized.handle },
+      { version: "test", library: handle },
     );
     expect(result.ok, JSON.stringify(result)).toBe(true);
     if (!result.ok || !("data" in result)) throw new Error("Expected command data");
@@ -46,6 +47,12 @@ test("undo preserves a generated initial root and atomically restores markup and
     const id = generated.id;
     const initial = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
     const initialBytes = await readFile(initial.preview);
+    expect(await command("redo", [id])).toEqual({
+      id,
+      redone: false,
+      revision_id: generated.revision_id,
+      render_hash: generated.render_hash,
+    });
     const noOp = undoDataSchema.parse(await command("undo", [id.slice(0, 12)]));
     expect(noOp).toEqual({
       id,
@@ -81,6 +88,7 @@ test("undo preserves a generated initial root and atomically restores markup and
     await command("layer", ["remove", id, segment.layer_id]);
     const removedLayers = await command("layer", ["list", id]);
     await command("markup", ["clear", id]);
+    const cleared = await command("markup", ["list", id]);
     await command("undo", [id]);
     expect(await command("markup", ["list", id])).toMatchObject({
       items: marked.items,
@@ -91,10 +99,28 @@ test("undo preserves a generated initial root and atomically restores markup and
     const restored = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
     expect(restored.render_hash).toBe(markedPreview.render_hash);
     expect(await readFile(restored.preview)).toEqual(markedBytes);
+    await command("undo", [id]);
+    await handle.close();
+    handle = await openLibrary(join(directory, "library"), { noDaemon: true });
+    env.gatewayUrl = "http://127.0.0.1:1";
+    expect(await command("redo", [id.slice(0, 12)])).toMatchObject({
+      redone: true,
+      revision_id: marked.revision_id,
+      render_hash: markedPreview.render_hash,
+    });
+    expect(await command("markup", ["list", id])).toMatchObject({ items: marked.items });
+    expect(await command("layer", ["list", id])).toEqual(layers);
+    const redone = showDataSchema.parse(await command("show", [id, "--preview-size", "native"]));
+    expect(await readFile(redone.preview)).toEqual(markedBytes);
+    await command("redo", [id]);
+    expect(await command("layer", ["list", id])).toEqual(removedLayers);
+    await command("redo", [id]);
+    expect(await command("markup", ["list", id])).toEqual(cleared);
+    expect(await command("redo", [id])).toMatchObject({ redone: false });
     expect(requests).toBe(1);
     expect(
       (
-        await initialized.handle.query(
+        await handle.query(
           "SELECT count(*)::text AS count FROM document_revisions WHERE photo_id = $1",
           [id],
         )
@@ -102,7 +128,7 @@ test("undo preserves a generated initial root and atomically restores markup and
     ).toEqual([{ count: "5" }]);
   } finally {
     await new Promise<void>((resolve) => gateway.close(() => resolve()));
-    await initialized.handle.close();
+    await handle.close();
     await rm(directory, { recursive: true });
   }
 }, 30_000);

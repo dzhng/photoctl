@@ -43,7 +43,7 @@ import { backupCommand, migrateCommand, restoreCommand } from "./handlers/librar
 import { graphCommand } from "./handlers/graph.js";
 import { xmpCommand } from "./handlers/xmp.js";
 import { developCommand, filterCommand, type DevelopDependencies } from "./handlers/develop.js";
-import { undoCommand } from "./handlers/undo.js";
+import { historyCommand } from "./handlers/history.js";
 import { cropCommand } from "./handlers/crop.js";
 import { whiteBalanceCommand } from "./handlers/white-balance.js";
 import { presetsCommand } from "./handlers/presets.js";
@@ -141,8 +141,14 @@ export async function dispatch(
       return await graphCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "xmp")
       return await xmpCommand(request.args, request.env, request.cwd, context.library);
-    if (request.verb === "undo")
-      return await undoCommand(request.args, request.env, request.cwd, context.library);
+    if (request.verb === "undo" || request.verb === "redo")
+      return await historyCommand(
+        request.verb,
+        request.args,
+        request.env,
+        request.cwd,
+        context.library,
+      );
     if (request.verb === "filter")
       return await filterCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "develop")

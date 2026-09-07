@@ -9,3 +9,6 @@ export const undoDataSchema = z.object({
 });
 
 export type UndoData = z.infer<typeof undoDataSchema>;
+
+export const redoDataSchema = undoDataSchema.omit({ undone: true }).extend({ redone: z.boolean() });
+export type RedoData = z.infer<typeof redoDataSchema>;

@@ -1,11 +1,17 @@
 import { resolvePhotoId, type LibraryHandle } from "@photoctl/library";
-import { PhotoctlError, type Envelope, type UndoData } from "@photoctl/protocol";
-import { ensurePhotoDocument, RevisionConflictError, undoRevision } from "@photoctl/render";
+import { PhotoctlError, type Envelope, type UndoData, type RedoData } from "@photoctl/protocol";
+import {
+  ensurePhotoDocument,
+  RevisionConflictError,
+  undoRevision,
+  redoRevision,
+} from "@photoctl/render";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { loadPhoto } from "../photo.js";
 
-export async function undoCommand(
+export async function historyCommand(
+  direction: "undo" | "redo",
   args: string[],
   env: RequestEnv,
   cwd: string,
@@ -13,7 +19,7 @@ export async function undoCommand(
 ): Promise<Envelope> {
   const parsed = parseArguments(args, { flags: [], options: [] });
   if (parsed.positionals.length !== 1)
-    throw new PhotoctlError("usage", "undo requires one photo ID or prefix");
+    throw new PhotoctlError("usage", `${direction} requires one photo ID or prefix`);
   const lease = await openRequestLibrary(env, cwd, provided);
   try {
     const id = await resolvePhotoId(lease.handle, parsed.positionals[0]!);
@@ -22,7 +28,7 @@ export async function undoCommand(
       photoId: id,
       orientation: photo.orientation,
     });
-    const restored = await undoRevision(lease.handle, {
+    const restored = await (direction === "undo" ? undoRevision : redoRevision)(lease.handle, {
       photoId: id,
       expectedRevisionId: current.revisionId,
     });
@@ -35,10 +41,12 @@ export async function undoCommand(
       ok: true,
       data: {
         id,
-        undone: restored.revisionId !== current.revisionId,
+        ...(direction === "undo"
+          ? { undone: restored.revisionId !== current.revisionId }
+          : { redone: restored.revisionId !== current.revisionId }),
         revision_id: restored.revisionId,
         render_hash: restored.renderHash,
-      } satisfies UndoData,
+      } satisfies UndoData | RedoData,
       warnings: [],
     };
   } catch (error) {

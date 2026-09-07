@@ -9,9 +9,10 @@ import {
   graphShowDataSchema,
   showDataSchema,
   undoDataSchema,
+  redoDataSchema,
 } from "@photoctl/protocol";
 
-test("public undo restores the previous edit pixels and stops at the original image", async () => {
+test("public undo and redo restore saved edit pixels across daemon restarts and stop at history boundaries", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-undo-"));
   const library = join(directory, "library");
   const source = join(directory, "source.png");
@@ -76,10 +77,54 @@ test("public undo restores the previous edit pixels and stops at the original im
     const stopped = undoDataSchema.parse((await run(["undo", id])).data);
     expect(stopped).toMatchObject({ undone: false, render_hash: original.render_hash });
     expect(undoDataSchema.parse((await run(["undo", id])).data)).toEqual(stopped);
-    const invalidResults = await Promise.all(
-      [["undo"], ["undo", id, id], ["undo", id, "--redo"]].map(
-        async (args) => await spawnPhotoctl(args, { libraryDir: library, env }),
+    await spawnPhotoctl(["daemon", "stop"], { libraryDir: library, env });
+    expect(redoDataSchema.parse((await run(["redo", id])).data)).toEqual({
+      id,
+      redone: true,
+      revision_id: graph.revision_id,
+      render_hash: first.render_hash,
+    });
+    expect(
+      await readFile(
+        showDataSchema.parse((await run(["show", id, "--preview-size", "native"])).data).preview,
       ),
+    ).toEqual(firstPixels);
+    expect(redoDataSchema.parse((await run(["redo", id])).data)).toMatchObject({
+      redone: true,
+      render_hash: second.render_hash,
+    });
+    const redoStopped = redoDataSchema.parse((await run(["redo", id])).data);
+    expect(redoStopped).toMatchObject({ redone: false, render_hash: second.render_hash });
+    expect(redoDataSchema.parse((await run(["redo", id])).data)).toEqual(redoStopped);
+    await run(["undo", id]);
+    expect(
+      (
+        await spawnPhotoctl(["develop", id, "--set", "exposure=invalid"], {
+          libraryDir: library,
+          env,
+        })
+      ).code,
+    ).toBe(2);
+    expect(redoDataSchema.parse((await run(["redo", id])).data)).toMatchObject({
+      redone: true,
+      render_hash: second.render_hash,
+    });
+    await run(["undo", id]);
+    await run(["develop", id, "--set", "exposure=0.75"]);
+    const branch = graphShowDataSchema.parse((await run(["graph", "show", id])).data);
+    expect(redoDataSchema.parse((await run(["redo", id])).data)).toMatchObject({
+      redone: false,
+      revision_id: branch.revision_id,
+    });
+    const invalidResults = await Promise.all(
+      [
+        ["undo"],
+        ["undo", id, id],
+        ["undo", id, "--redo"],
+        ["redo"],
+        ["redo", id, id],
+        ["redo", id, "--undo"],
+      ].map(async (args) => await spawnPhotoctl(args, { libraryDir: library, env })),
     );
     for (const invalid of invalidResults) {
       expect(invalid.code).toBe(2);
