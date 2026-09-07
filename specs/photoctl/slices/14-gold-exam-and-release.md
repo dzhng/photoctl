@@ -151,7 +151,10 @@ pre-existing files whose match to the requested render has not been verified.
 unverified, and even `real` never records human acceptance. Fixture gates name themselves explicitly.
 Use `--out assets/gold-exam/<run>` to retain an evidence bundle. The
 [mounted-camera run](../assets/mounted-gold-2026-09-07/README.md) proves the prescribed
-mechanical exam through a fresh packed install; photographic acceptance remains open.
+mechanical exam through a fresh packed install; it records no human acceptance of
+its own deliveries. The user's separate
+[current-rendering approval](../assets/camera-delivery-review/balanced-delivery/final-verdict.md)
+closes the rendering approval requirement, not the remaining platform or pairing gates.
 The default output-folder behavior is unchanged.
 
 The packed fixture gold and full-feature journey passed together with manifest verification. Focused

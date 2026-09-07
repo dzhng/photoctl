@@ -47,9 +47,10 @@ important for the finest boundaries.
 
 The independent review's strongest concerns overlap root's highlight-edge and branch
 observations. Its bokeh, window and animal findings are retained above rather than
-dismissed, but their presence is not proof of a software cause. This verdict leaves
-C open for the named highlight-boundary investigation, not another all-reference
-capture or an undefined demand for perfect photographs.
+dismissed, but their presence is not proof of a software cause. This historical
+verdict left C open for the named highlight-boundary investigation. The subsequent
+user approval recorded above closes the photographic gate without resolving those
+technical questions or requiring another all-reference capture.
 
 The [native reconstruction witness](../native-reconstruction/README.md) already
 shows candle fringes without develop or JPEG encoding. Do not rerun a preset-removal
@@ -138,7 +139,8 @@ Further correction needs an independently known input that exposes a violated
 interpolation contract, or capture/reference evidence that identifies which light
 color/detail is wrong. Repeating the recovery toggle, comparing another demosaicer
 as if it were truth, or desaturating these pixels would not supply that evidence.
-Complete photographic acceptance remains open.
+Those technical questions remain unsettled; they do not reopen the recorded user
+approval of the current rendering.
 
 Any quality/file-size policy change needs an explicit photographic comparison;
 the existing quality control already permits higher-quality or lossless delivery.

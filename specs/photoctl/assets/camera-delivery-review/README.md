@@ -1,12 +1,17 @@
 # Camera-reference delivery quality
 
+The [current-set verdict](balanced-delivery/final-verdict.md) records user approval
+of the current rendering. The checkpoints below retain earlier rejected outputs
+and technical findings; they do not reopen that approval or establish selection-edge,
+same-catalog camera-JPEG or release-platform acceptance.
+
 The permanent camera originals are sufficient to reproduce these failures without
-reconnecting the camera. This checkpoint separates successful command execution
-from photographic deliverability: **the inspected delivery set is rejected**.
+reconnecting the camera. This historical checkpoint separates successful command
+execution from photographic deliverability: **its inspected delivery set was rejected**.
 
 The [integrated recovery comparison](integrated-gold/README.md) now accepts removal
-of the conspicuous magenta cores against that historical set. Complete acceptance
-remains open for classification of residual fine-detail issues. The
+of the conspicuous magenta cores against that historical set. At that checkpoint,
+complete acceptance was still open for classification of residual fine-detail issues. The
 [all-reference review](integrated-reconstruction-allrefs/README.md) now covers
 all 18 pairs at native size with source integrity verified. The
 [controlled toggle comparison](residual-causal/README.md) excludes reconstruction
@@ -72,8 +77,8 @@ identity and the complete reference review are integrated. The reconstruction to
 and interpolation experiments above own the remaining causal evidence. Do not hide a decoder defect with preset tuning,
 switch every RAW to its companion JPEG, or weaken the decoder oracle. Add a
 behavioral regression before correcting the responsible owner, then rerender and
-inspect the complete set plus native details. Until that passes, the camera
-workflow is not photographically accepted.
+inspect the complete set plus native details. The subsequent rendering approval
+is recorded above; these historical findings are not a fresh acceptance blocker.
 
 ## Reduced-RGB decoder correction
 
@@ -122,7 +127,7 @@ Twenty-four merged render-identity and retained-export checks pass, including
 obsolete-output rejection; TypeScript build and typecheck also pass.
 
 Highlight reconstruction is outside
-this correction and the overall delivery checkpoint remains rejected.
+this correction and that historical delivery checkpoint remains rejected.
 
 The [native recovery experiment](highlight-recovery/README.md) preserves the
 complete CIRAW comparison and independent review. It removes false highlight
@@ -136,7 +141,7 @@ Its quarter-resolution captures are not native photographic acceptance.
 The [portable native checkpoint](native-reconstruction/README.md) accepts opt-in
 floating-point reconstruction for false-magenta cores while retaining disabled
 output exactly. Ordinary rendering now adopts the explicit treatment policy. Residual light-edge
-defects and complete delivery acceptance remain open under the
+questions and the subsequent rendering approval are tracked by the
 [reconstruction plan](../../slices/07-highlight-reconstruction.md).
 
 ## Preserved pre-policy library
