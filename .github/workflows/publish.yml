@@ -47,7 +47,7 @@ jobs:
         env:
           SAM2_BUILD_CUDA: '0'
         run: |
-          python -m pip install --index-url https://download.pytorch.org/whl/cpu --constraint scripts/sam2-export-requirements.txt torch torchvision
+          python -m pip install --no-deps --index-url https://download.pytorch.org/whl/cpu --constraint scripts/sam2-export-requirements.txt torch torchvision
           python -m pip install -r scripts/sam2-export-requirements.txt
           python -m pip install --no-build-isolation --no-deps ./out/upstream/sam2
       - name: Export and verify upstream parity

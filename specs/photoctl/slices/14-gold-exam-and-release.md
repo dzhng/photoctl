@@ -45,6 +45,12 @@ package version. Export uses pinned upstream revisions and CPU parity checks;
 generated candidates must match the committed model hashes, never silently replace
 them during publication. Model changes are reviewed and pinned before tagging.
 
+The Linux CPU export was verified locally on 2026-09-07: both ONNX files match
+the committed hashes and pass upstream CPU parity. Install CPU torch wheels
+without dependency resolution against the wheel-only index, then resolve pinned
+dependencies from PyPI; the wheel index cannot satisfy the complete requirements.
+This proves the exporter, not an actual public tag or npm publication.
+
 Native jobs consume the prepared model artifact directly. This avoids requiring a
 public model URL for a release that does not exist yet. Hosted release verification
 checks actual native/model loading, macOS packaging, lint, types and smoke behavior;
