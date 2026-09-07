@@ -1,5 +1,7 @@
 services:
   functional:
+    # Filesystem tests need permission failures even when the container runs as root.
+    cap_drop: [DAC_OVERRIDE, DAC_READ_SEARCH]
     build:
       context: ..
       dockerfile: test/Dockerfile

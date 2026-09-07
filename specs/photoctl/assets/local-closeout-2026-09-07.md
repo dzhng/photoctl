@@ -34,6 +34,14 @@ with no failures or ignored cases.
 
 ## Remaining execution
 
+The Docker run exposed a separate harness mismatch: its root process bypassed
+the read-only directory in the XMP partial-failure test. A direct filesystem probe
+confirmed the write succeeded with default capabilities and returned `EACCES`
+without the access-bypass capabilities. The functional Compose service now drops
+those capabilities; all five unchanged XMP round-trip tests pass through that
+service. Build steps and product code are unchanged. The original full Docker
+run still uses its original capabilities and must not be relabeled as corrected.
+
 Continue the Docker functional/model and host macOS stages. Preserve the
 distinction between the full-run result and the focused correction checks; do not
 report a fully green closeout from their combination alone. Photographic and

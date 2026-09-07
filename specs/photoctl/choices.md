@@ -16,6 +16,24 @@
   and the test was observed red before the correction and green afterward.
 - **Confidence:** High.
 
+### Functional container — Enforce filesystem permissions during tests
+
+- **When:** Local closeout, 2026-09-07.
+- **The choice:** A sidecar test makes one photo directory read-only and expects
+  that item to fail while the next photo succeeds. Docker's root process could
+  bypass those permissions, so the functional service drops its discretionary
+  file-access bypass capabilities. The same real filesystem operations now test
+  the intended failure without inventing permission checks in product code.
+- **The gap:** The Docker test plan did not specify runtime capabilities. Moving
+  the entire build and test toolchain to another user would require unrelated
+  ownership changes; removing these privileges targets the demonstrated mismatch.
+- **The reach:** This affects the functional container, not build steps or the
+  gateway fixture. It enforces file-access permissions but does not claim root
+  has become an ordinary user for every other privilege.
+- **Verdict:** **Sound.** The harness must permit the failure it promises to test;
+  neither test expectations nor application behavior should compensate for root.
+- **Confidence:** High.
+
 ### Verification — Separate full-RAW journey hang guards from speed acceptance
 
 - **When:** CI repair pass, 2026-09-06.
