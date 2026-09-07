@@ -6,6 +6,10 @@ acceptance of the bounded interpolation improvement, not complete camera fidelit
 or release acceptance. Fine clipping fringes remain; flat clipped light cores are
 not evidence of recoverable texture.
 
+The [current-set verdict](final-verdict.md) completes the separate B-only photographic
+review. Colored highlight boundaries remain the next causal target; it does not
+reopen the accepted interpolation improvement or reject clipped cores alone.
+
 ## Production and preservation
 
 At source `a3ee212`, the unchanged gold script ran on permanent camera fixtures

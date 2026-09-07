@@ -275,6 +275,13 @@ toggle, not a requirement to retain defective interpolation forever.
 
 C must conclude per defect, not repeatedly reject everything because lights are
 clipped. Flat cores where channels were lost are not themselves a failed correction.
+The [current-set verdict](../assets/camera-delivery-review/balanced-delivery/final-verdict.md)
+now records that per-defect judgment across every saved reference. Candle/bridge
+highlight boundaries are the next causal target; the review is complete, but C
+remains open. The linked current edge samples exclude recovery at sampled bridge
+pixels. The candle's full-frame, hash-matched preset probe accounts for only part of
+the delivery difference; match retained canonical pixels and the actual output path
+before assigning the remainder to encoding or proposing another fidelity change.
 New or exaggerated colored rims or serrated transitions require a bounded causal
 comparison followed by a separately verifiable fidelity pass. Uncertain optical
 versus decoder origin stays a named uncertainty, not an inferred success. Interior

@@ -70,8 +70,13 @@ now verifies all 18 saved RAW deliveries, retained historical data and native de
 the [complete macOS packed-install gate](slices/14-gold-exam-and-release.md#portable-gold-evidence)
 passes all nine cases with the current decoder. The delivery review accepts reduced fine false
 color without claiming all remaining clipped-light or broad branch fringes are solved.
-Do not repeat the completed breadth captures. Next reconcile each remaining photographic
-requirement against that evidence and complete the remaining release/safety gates below;
+The [current-set verdict](assets/camera-delivery-review/balanced-delivery/final-verdict.md)
+completes the separate photographic review but does not accept the whole delivery set.
+The current edge probe excludes reconstruction at sampled pink bridge pixels; the
+candle's full-frame, hash-matched people-preset probe explains part, but not all, of
+its delivery chroma. Next match that probe to retained canonical pixels and the actual
+output conversion/encoding path. Do not repeat completed breadth captures or the branch-origin
+comparison. Continue the remaining release/safety gates below;
 the local fixture package gate does not establish real-drive or photographic acceptance.
 
 **Parallel pickup:** finish remaining outpaint and pairing release gates.
