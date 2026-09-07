@@ -89,7 +89,10 @@ the local fixture package gate does not establish real-drive or photographic acc
   acceptance remain open; further memory tuning is not a prerequisite under the policy above.
   The 12f2 visual checklist also retains duplicate/clear, overlapping order, arbitrary border
   rotation and later-border placement after earlier support moves: pixel tests and the narrower
-  lifecycle review do not establish those visual states. Locate existing captures first.
+  lifecycle review do not establish those visual states. The
+  [missing-state review](assets/outpaint-state-review.md) now retains all four families:
+  geometry/restoration agree, but public-preview color bleed needs a matched correction
+  review. Do not recapture the baseline or call this photographic acceptance.
 - [Full-frame generation](slices/13-full-frame-geometry.md): creation and generic placement
   and refresh pass synthetic visual review. Retained-only input, reconnect and fresh-native
   installed lifecycle pass; whole-spec and live photographic acceptance remain separate.

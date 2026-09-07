@@ -15,8 +15,10 @@ the corrected runtime completes the [six-cycle JPEG/RAW workload](../assets/outp
 Further memory work is off the critical path under the [user policy](../README.md#next-agent-prompt).
 Remaining acceptance includes the 12f2 visual states listed below, photographic generation
 and the final integrated release policy. Duplicate/clear, overlapping reorder, arbitrary border
-rotation and moving earlier support after a later border exists need retained visual witnesses;
-their public pixel tests alone do not close the image review. Do not restart the completed
+rotation and moving earlier support after a later border exists now have a
+[retained witness](../assets/outpaint-state-review.md). Geometry/restoration agree;
+public-preview color bleed remains under review. Their public pixel tests alone
+do not close the image review. Do not restart the completed
 historical frame/canvas checkpoints below.
 
 ## Plan rationale
@@ -176,7 +178,8 @@ Keep public pixel coverage and visual acceptance separate for these core require
   [lifecycle review](../assets/outpaint-lifecycle/README.md) covers removal/undo, refresh,
   retouch and cold reconnect. It does not establish visual acceptance of duplicate/clear,
   overlapping order, arbitrary rotation or later-border placement after earlier support moves.
-  Locate retained captures for those states before creating a narrow missing-state witness.
+  The [missing-state witness](../assets/outpaint-state-review.md) supplies those captures
+  and isolates public color bleed to preview encoding; visual acceptance remains open.
 - Shared consumers: SAM sees source-only pixels with the same geometry/support plan, without
   photographic layers; native exterior detail and offline density use that plan too. The
   [cold lifecycle](../assets/outpaint-lifecycle/README.md#cold-reduced-source-lifecycle) and

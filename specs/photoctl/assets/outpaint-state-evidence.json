@@ -1,0 +1,1764 @@
+{
+  "boundary": "Synthetic saved native raster evidence; encoding diagnosis only. No visual or photographic acceptance. No product edits, capture rerun, build, tests, or preview-policy change.",
+  "sourceCommit": "c758c5576f8c15739c9952ded26fc859c65e1bd7",
+  "verification": {
+    "savedFilesChecked": 238,
+    "savedFileHashesAndSizesMatch": true,
+    "originalRuntimeBindingsMatch": true,
+    "runnerMatches": true,
+    "states": 18,
+    "canonicalFloatHashesMatch": true,
+    "canonicalRawPngsMatch": true,
+    "cachedPublicJpegsMatch": true,
+    "decodedPublicPngsMatch": true,
+    "exactProductionEncodingReproductions": 18
+  },
+  "control": "Read saved content-addressed linear TIFF, verify artifact and float hashes, convert with current production readArtifactImage to display-sRGB16, round channels /257 to RGB8, verify equals saved canonical PNG raw pixels. Sharp raw input at unchanged dimensions -> flatten white -> toColourspace srgb -> jpeg quality 88 -> bundled sRGB2014 ICC. Explicit 4:2:0 reproduces all public JPEG bytes. Only chromaSubsampling changes for 4:4:4 numeric counterfactual.",
+  "versions": {
+    "sharp": "0.35.4",
+    "vips": "8.18.6"
+  },
+  "limitations": "Capture-time hashes cover dispatch, canvas and publication but do not attest every transitive dependency. Preview/color/ICC hashes recorded at diagnosis time. Byte reproduction establishes encoding sufficiency for these saved files; does not establish correctness of every upstream state or acceptable preview quality. 4:4:4 is a diagnostic counterfactual, still lossy, not adopted policy.",
+  "bindings": [
+    {
+      "path": "/private/tmp/photoctl-outpaint-visual-completion.iADAiu/capture.mjs",
+      "sha256": "1a216562819814bdb78f7cd2fc249fce5b2a53257e9ba351a305809b97564eae"
+    },
+    {
+      "path": "/private/tmp/photoctl-outpaint-visual-completion.iADAiu/evidence.json",
+      "sha256": "3c393d351b7bd175712ea866ed47e86fb539ccc4d03b2bb5751df44291f77906"
+    },
+    {
+      "path": "/private/tmp/photoctl-outpaint-visual-completion.iADAiu/compare.mjs",
+      "sha256": "37fe33c5873929f97f7957427f547501b0245caad4f3f2af024ebc432c436029"
+    },
+    {
+      "path": "/private/tmp/photoctl-outpaint-visual-completion.iADAiu/comparison.json",
+      "sha256": "7501b7e5f724c978664ca0e445f5acc508f999340ebed2565312d7c26888ac6f"
+    },
+    {
+      "path": "/private/tmp/photoctl-outpaint-visual-completion.iADAiu/encoding-probe.mjs",
+      "sha256": "82ad2aefcd6d8bfa855ad954c1afebe9089315c8006e2b33232a390e1c362428"
+    },
+    {
+      "path": "/private/tmp/photoctl-outpaint-visual-completion.iADAiu/encoding-probe.json",
+      "sha256": "c0b47be51e80a813ee4f2bbce9ea87c27efac2b1df1e11d954b1d5ea0ba88585"
+    },
+    {
+      "path": "/Users/david/dev/photoctl/packages/commands/dist/dispatch.js",
+      "sha256": "7c54727a9204493ca9bc96b3a9310174cafc7369eb37fc3e12aac25ccfab327d",
+      "match": true
+    },
+    {
+      "path": "/Users/david/dev/photoctl/packages/render/dist/graph/canvas.js",
+      "sha256": "9b1d8975983686cf4120862d48cb0edc0707ae8324fc976c89898c493e7cd8a9",
+      "match": true
+    },
+    {
+      "path": "/Users/david/dev/photoctl/packages/render/dist/artifacts/publication.js",
+      "sha256": "1f90d3c84b0bcadad181b38b25293c004e711aced0305048aaf8f7045ded4106",
+      "match": true
+    },
+    {
+      "path": "/private/tmp/photoctl-outpaint-visual-completion.iADAiu/capture.mjs",
+      "sha256": "1a216562819814bdb78f7cd2fc249fce5b2a53257e9ba351a305809b97564eae",
+      "match": true
+    },
+    {
+      "path": "/private/tmp/photoctl-outpaint-visual-completion.iADAiu/evidence.json",
+      "sha256": "3c393d351b7bd175712ea866ed47e86fb539ccc4d03b2bb5751df44291f77906",
+      "match": true
+    },
+    {
+      "path": "/Users/david/dev/photoctl/packages/render/dist/preview.js",
+      "sha256": "46e43e456ca280f54cd98f0c5fc0375dc96cafc2d5122216281e9c9c0dab8992"
+    },
+    {
+      "path": "/Users/david/dev/photoctl/packages/render/dist/color.js",
+      "sha256": "947d692e70df8f353074ef6406dcb8ab9e1bff3efbfb8e07dde5ac24febdd9c2"
+    },
+    {
+      "path": "/Users/david/dev/photoctl/packages/render/assets/sRGB2014.icc",
+      "sha256": "384b832de3412066743b52a75ee906b6fb9fb8d9e09e936fc2c43223815c6e0a"
+    }
+  ],
+  "checks": [
+    {
+      "name": "duplicate pixels",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "survivor size",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "survivor pixels",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "cleared size",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "clear restores cropped source",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "overlap size",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "reorder frame",
+      "passed": true,
+      "kind": "value-equality"
+    },
+    {
+      "name": "blue front sentinel",
+      "passed": true,
+      "kind": "value-equality"
+    },
+    {
+      "name": "red front sentinel",
+      "passed": true,
+      "kind": "value-equality"
+    },
+    {
+      "name": "reorder original landmark",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "rotation size",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "rotation frame",
+      "passed": true,
+      "kind": "value-equality"
+    },
+    {
+      "name": "rotation uncovered warning",
+      "passed": true,
+      "kind": "value-equality"
+    },
+    {
+      "name": "rotation red sentinel",
+      "passed": true,
+      "kind": "value-equality"
+    },
+    {
+      "name": "rotation hole",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "rotation fixed original landmark",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "rotation exact restoration",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "moved input size",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "expanded size",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B preserves input row 0",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B preserves input row 1",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B preserves input row 2",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B preserves input row 3",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B preserves input row 4",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B preserves input row 5",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B preserves input row 6",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B preserves input row 7",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B frame remains fixed",
+      "passed": true,
+      "kind": "value-equality"
+    },
+    {
+      "name": "B size remains fixed",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "vacated earlier support is black",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "B corner remains fixed",
+      "passed": true,
+      "kind": "array-equality"
+    },
+    {
+      "name": "earlier movement exact restoration",
+      "passed": true,
+      "kind": "array-equality"
+    }
+  ],
+  "states": [
+    {
+      "scenario": "duplicate-clear",
+      "state": "01-source-crop",
+      "size": [
+        6,
+        4
+      ],
+      "artifactHash": "a_86f752a5e185867ef5b322266f08f1d7ca8606bb13cdb61436cb574c798c5dc6",
+      "canonicalFloatSha256": "66ad6732164b9c7ec8b9c13e75b366f003f86dd4a3f370267afcad0e4487c47c",
+      "canonicalPngSha256": "2ffc9e644e9a1031e34faf71506d18018c3376e0cd60648febd274ac4aa8e86d",
+      "publicJpegSha256": "3fc4b7da6a347686e2d7696dbb4bf391f73f959a43a57c129afe31f042e1001a",
+      "publicPngSha256": "44db3b5ae24a23c47b7a0299bc2eb81875167c10e109f7dbf644199f9eaf97a7",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -4,
+        "f": -3
+      },
+      "warnings": [],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 72,
+        "mae": 5.375,
+        "rmse": 6.520267547339517,
+        "max": 13,
+        "changed": 65
+      },
+      "rgbError444": {
+        "samples": 72,
+        "mae": 1.25,
+        "rmse": 1.5986105077709065,
+        "max": 4,
+        "changed": 54
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            48,
+            80,
+            80
+          ],
+          "public": [
+            57,
+            76,
+            82
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            72,
+            96,
+            80
+          ],
+          "public": [
+            78,
+            89,
+            91
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "duplicate-clear",
+      "state": "02-border",
+      "size": [
+        10,
+        8
+      ],
+      "artifactHash": "a_1d22d5fa6cffe9134306a076cead5e4c19812a2428e298e9413087353a9d4134",
+      "canonicalFloatSha256": "0a494770e2607ce2ece74ef2aa2e7692b4410d1202133b7704ec034dd3ce84a8",
+      "canonicalPngSha256": "3d2df1fa6c97eece618db55d408b1f4e07d69fbe4f6ec336bdd231eaab8aee5c",
+      "publicJpegSha256": "606af1e5e5484ce5677cb2def3ca99d1bd03451b74acd1e05411f7b6ce17ed4d",
+      "publicPngSha256": "e89bac4cab13a1084bdf564ad1f25f0a15fcc1bd2247058c8af2d01dd8e0809d",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -1
+      },
+      "warnings": [
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 240,
+        "mae": 14.5875,
+        "rmse": 22.710221634027853,
+        "max": 100,
+        "changed": 196
+      },
+      "rgbError444": {
+        "samples": 240,
+        "mae": 2.95,
+        "rmse": 4.613386319541572,
+        "max": 18,
+        "changed": 152
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            254,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            48,
+            64,
+            80
+          ],
+          "public": [
+            97,
+            54,
+            48
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "duplicate-clear",
+      "state": "03-duplicated",
+      "size": [
+        10,
+        8
+      ],
+      "artifactHash": "a_1d22d5fa6cffe9134306a076cead5e4c19812a2428e298e9413087353a9d4134",
+      "canonicalFloatSha256": "0a494770e2607ce2ece74ef2aa2e7692b4410d1202133b7704ec034dd3ce84a8",
+      "canonicalPngSha256": "3d2df1fa6c97eece618db55d408b1f4e07d69fbe4f6ec336bdd231eaab8aee5c",
+      "publicJpegSha256": "606af1e5e5484ce5677cb2def3ca99d1bd03451b74acd1e05411f7b6ce17ed4d",
+      "publicPngSha256": "e89bac4cab13a1084bdf564ad1f25f0a15fcc1bd2247058c8af2d01dd8e0809d",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -1
+      },
+      "warnings": [
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 240,
+        "mae": 14.5875,
+        "rmse": 22.710221634027853,
+        "max": 100,
+        "changed": 196
+      },
+      "rgbError444": {
+        "samples": 240,
+        "mae": 2.95,
+        "rmse": 4.613386319541572,
+        "max": 18,
+        "changed": 152
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            254,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            48,
+            64,
+            80
+          ],
+          "public": [
+            97,
+            54,
+            48
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "duplicate-clear",
+      "state": "04-original-removed",
+      "size": [
+        10,
+        8
+      ],
+      "artifactHash": "a_1d22d5fa6cffe9134306a076cead5e4c19812a2428e298e9413087353a9d4134",
+      "canonicalFloatSha256": "0a494770e2607ce2ece74ef2aa2e7692b4410d1202133b7704ec034dd3ce84a8",
+      "canonicalPngSha256": "3d2df1fa6c97eece618db55d408b1f4e07d69fbe4f6ec336bdd231eaab8aee5c",
+      "publicJpegSha256": "606af1e5e5484ce5677cb2def3ca99d1bd03451b74acd1e05411f7b6ce17ed4d",
+      "publicPngSha256": "e89bac4cab13a1084bdf564ad1f25f0a15fcc1bd2247058c8af2d01dd8e0809d",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -1
+      },
+      "warnings": [
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 240,
+        "mae": 14.5875,
+        "rmse": 22.710221634027853,
+        "max": 100,
+        "changed": 196
+      },
+      "rgbError444": {
+        "samples": 240,
+        "mae": 2.95,
+        "rmse": 4.613386319541572,
+        "max": 18,
+        "changed": 152
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            254,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            48,
+            64,
+            80
+          ],
+          "public": [
+            97,
+            54,
+            48
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "duplicate-clear",
+      "state": "05-cleared",
+      "size": [
+        6,
+        4
+      ],
+      "artifactHash": "a_86f752a5e185867ef5b322266f08f1d7ca8606bb13cdb61436cb574c798c5dc6",
+      "canonicalFloatSha256": "66ad6732164b9c7ec8b9c13e75b366f003f86dd4a3f370267afcad0e4487c47c",
+      "canonicalPngSha256": "2ffc9e644e9a1031e34faf71506d18018c3376e0cd60648febd274ac4aa8e86d",
+      "publicJpegSha256": "3fc4b7da6a347686e2d7696dbb4bf391f73f959a43a57c129afe31f042e1001a",
+      "publicPngSha256": "44db3b5ae24a23c47b7a0299bc2eb81875167c10e109f7dbf644199f9eaf97a7",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -4,
+        "f": -3
+      },
+      "warnings": [],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 72,
+        "mae": 5.375,
+        "rmse": 6.520267547339517,
+        "max": 13,
+        "changed": 65
+      },
+      "rgbError444": {
+        "samples": 72,
+        "mae": 1.25,
+        "rmse": 1.5986105077709065,
+        "max": 4,
+        "changed": 54
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            48,
+            80,
+            80
+          ],
+          "public": [
+            57,
+            76,
+            82
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            72,
+            96,
+            80
+          ],
+          "public": [
+            78,
+            89,
+            91
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "overlap-reorder",
+      "state": "01-red-border",
+      "size": [
+        10,
+        8
+      ],
+      "artifactHash": "a_1d22d5fa6cffe9134306a076cead5e4c19812a2428e298e9413087353a9d4134",
+      "canonicalFloatSha256": "0a494770e2607ce2ece74ef2aa2e7692b4410d1202133b7704ec034dd3ce84a8",
+      "canonicalPngSha256": "3d2df1fa6c97eece618db55d408b1f4e07d69fbe4f6ec336bdd231eaab8aee5c",
+      "publicJpegSha256": "606af1e5e5484ce5677cb2def3ca99d1bd03451b74acd1e05411f7b6ce17ed4d",
+      "publicPngSha256": "e89bac4cab13a1084bdf564ad1f25f0a15fcc1bd2247058c8af2d01dd8e0809d",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -1
+      },
+      "warnings": [
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 240,
+        "mae": 14.5875,
+        "rmse": 22.710221634027853,
+        "max": 100,
+        "changed": 196
+      },
+      "rgbError444": {
+        "samples": 240,
+        "mae": 2.95,
+        "rmse": 4.613386319541572,
+        "max": 18,
+        "changed": 152
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            254,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            48,
+            64,
+            80
+          ],
+          "public": [
+            97,
+            54,
+            48
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "overlap-reorder",
+      "state": "02-blue-border",
+      "size": [
+        12,
+        10
+      ],
+      "artifactHash": "a_904c3a70e85963dbb4a270a70daa0b9bd33d7f99fecfbc9310be2dc5bfab97ad",
+      "canonicalFloatSha256": "344e0758fe665020c82a6e39b9a097cb610c04b3b2e9759e08676d1cb41d8a12",
+      "canonicalPngSha256": "d065375e7543b57b920e72ea518b585d7280d35dee69b18439d121fbd5f47a35",
+      "publicJpegSha256": "28e9dc3a8d463a36670387ff2981e27f87833cf0c6fe932fc3b8828e5469c9dc",
+      "publicPngSha256": "9a28931a014ec2652fe179aded7f4e2a1fa476e811d555f814687a43883f9b73",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -1,
+        "f": 0
+      },
+      "warnings": [
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 360,
+        "mae": 67.00833333333334,
+        "rmse": 81.96247447595896,
+        "max": 177,
+        "changed": 320
+      },
+      "rgbError444": {
+        "samples": 360,
+        "mae": 5.136111111111111,
+        "rmse": 8.160712114896729,
+        "max": 30,
+        "changed": 229
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            0,
+            0,
+            255
+          ],
+          "public": [
+            84,
+            0,
+            107
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            178,
+            18,
+            56
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "overlap-reorder",
+      "state": "03-blue-front",
+      "size": [
+        12,
+        10
+      ],
+      "artifactHash": "a_ef527eb06610db87e4753168094b05a7b4ad0302287aacfaf3e3a00d9875b3af",
+      "canonicalFloatSha256": "50a83e835e11440d59da90c2810ec3167fa6bcbb17de737712ae2f777b6a6d92",
+      "canonicalPngSha256": "dd19ea8873686faf83e52347e285fb4598afa559ac9762673e926122d56c7892",
+      "publicJpegSha256": "c0ba96d8621f857e34ef78e1d555b4001927a9fa4c1a2764690b1fa63fb82ebf",
+      "publicPngSha256": "f60195526cac5feac5690d38f9a846e30cd46612f707121b63a4a9439d90671b",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": 0
+      },
+      "warnings": [
+        "canvas_uncovered",
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 360,
+        "mae": 58.172222222222224,
+        "rmse": 75.1790455438807,
+        "max": 171,
+        "changed": 318
+      },
+      "rgbError444": {
+        "samples": 360,
+        "mae": 5.105555555555555,
+        "rmse": 8.279492738084864,
+        "max": 38,
+        "changed": 247
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            0,
+            0,
+            255
+          ],
+          "public": [
+            94,
+            0,
+            121
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            48,
+            48,
+            80
+          ],
+          "public": [
+            112,
+            23,
+            71
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "overlap-reorder",
+      "state": "04-red-front",
+      "size": [
+        12,
+        10
+      ],
+      "artifactHash": "a_75cb069ea586716eede6db05f2b99a7d5582651a5aa3debb18cc31fea8b9fe2d",
+      "canonicalFloatSha256": "ab69af573434829cfc0a11df86d760b53bd88b010e7711b0f4ca65eeb91a2604",
+      "canonicalPngSha256": "8805007e9a47d554973594932285f77143f55f0a316628af1caeea18f70aa009",
+      "publicJpegSha256": "b186649c597a8d1e2e3e8adbcd54463c88815836887661cdecb67eeefe0d537d",
+      "publicPngSha256": "6bf0b041cbfa5588970cdb29183bd938e4db5fc174ea150433fdbf085afc9473",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": 0
+      },
+      "warnings": [
+        "canvas_uncovered",
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 360,
+        "mae": 51.94722222222222,
+        "rmse": 68.59537156397653,
+        "max": 160,
+        "changed": 322
+      },
+      "rgbError444": {
+        "samples": 360,
+        "mae": 4.136111111111111,
+        "rmse": 6.93361377637953,
+        "max": 35,
+        "changed": 243
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            229,
+            14,
+            29
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            48,
+            48,
+            80
+          ],
+          "public": [
+            144,
+            24,
+            26
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "arbitrary-rotation",
+      "state": "01-source-crop",
+      "size": [
+        6,
+        4
+      ],
+      "artifactHash": "a_86f752a5e185867ef5b322266f08f1d7ca8606bb13cdb61436cb574c798c5dc6",
+      "canonicalFloatSha256": "66ad6732164b9c7ec8b9c13e75b366f003f86dd4a3f370267afcad0e4487c47c",
+      "canonicalPngSha256": "2ffc9e644e9a1031e34faf71506d18018c3376e0cd60648febd274ac4aa8e86d",
+      "publicJpegSha256": "3fc4b7da6a347686e2d7696dbb4bf391f73f959a43a57c129afe31f042e1001a",
+      "publicPngSha256": "44db3b5ae24a23c47b7a0299bc2eb81875167c10e109f7dbf644199f9eaf97a7",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -4,
+        "f": -3
+      },
+      "warnings": [],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 72,
+        "mae": 5.375,
+        "rmse": 6.520267547339517,
+        "max": 13,
+        "changed": 65
+      },
+      "rgbError444": {
+        "samples": 72,
+        "mae": 1.25,
+        "rmse": 1.5986105077709065,
+        "max": 4,
+        "changed": 54
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            48,
+            80,
+            80
+          ],
+          "public": [
+            57,
+            76,
+            82
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            72,
+            96,
+            80
+          ],
+          "public": [
+            78,
+            89,
+            91
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "arbitrary-rotation",
+      "state": "02-border",
+      "size": [
+        10,
+        8
+      ],
+      "artifactHash": "a_1d22d5fa6cffe9134306a076cead5e4c19812a2428e298e9413087353a9d4134",
+      "canonicalFloatSha256": "0a494770e2607ce2ece74ef2aa2e7692b4410d1202133b7704ec034dd3ce84a8",
+      "canonicalPngSha256": "3d2df1fa6c97eece618db55d408b1f4e07d69fbe4f6ec336bdd231eaab8aee5c",
+      "publicJpegSha256": "606af1e5e5484ce5677cb2def3ca99d1bd03451b74acd1e05411f7b6ce17ed4d",
+      "publicPngSha256": "e89bac4cab13a1084bdf564ad1f25f0a15fcc1bd2247058c8af2d01dd8e0809d",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -1
+      },
+      "warnings": [
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 240,
+        "mae": 14.5875,
+        "rmse": 22.710221634027853,
+        "max": 100,
+        "changed": 196
+      },
+      "rgbError444": {
+        "samples": 240,
+        "mae": 2.95,
+        "rmse": 4.613386319541572,
+        "max": 18,
+        "changed": 152
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            254,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            48,
+            64,
+            80
+          ],
+          "public": [
+            97,
+            54,
+            48
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "arbitrary-rotation",
+      "state": "03-rotated-30",
+      "size": [
+        13,
+        13
+      ],
+      "artifactHash": "a_270c5a8cb41df294b593c6ef96a32a240e22e6cb15c3a1f1707ea439c0980390",
+      "canonicalFloatSha256": "70c25c36259f2b21d1d01635c66d0050fc52ac2f5e06cfd3c9e79ee514957e5e",
+      "canonicalPngSha256": "e0be87971829a22b5c4d526848b318815212a63eeea5ba07818f0e20b24c7902",
+      "publicJpegSha256": "4671f49e497a0e260d87295f50a6e2292b2e005ae666f08e593b5f5821f75d0c",
+      "publicPngSha256": "4b0a4c880a3a5db766b1b2542ac843369c79227ebc1f5da265f553904041c6fd",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": 3,
+        "f": -1
+      },
+      "warnings": [
+        "canvas_uncovered",
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 507,
+        "mae": 17.925049309664693,
+        "rmse": 28.03407337896087,
+        "max": 107,
+        "changed": 346
+      },
+      "rgbError444": {
+        "samples": 507,
+        "mae": 4.5325443786982245,
+        "rmse": 7.233769154014387,
+        "max": 32,
+        "changed": 315
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            0,
+            0,
+            0
+          ],
+          "public": [
+            7,
+            0,
+            4
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            0,
+            0,
+            0
+          ],
+          "public": [
+            80,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "arbitrary-rotation",
+      "state": "04-restored",
+      "size": [
+        10,
+        8
+      ],
+      "artifactHash": "a_1d22d5fa6cffe9134306a076cead5e4c19812a2428e298e9413087353a9d4134",
+      "canonicalFloatSha256": "0a494770e2607ce2ece74ef2aa2e7692b4410d1202133b7704ec034dd3ce84a8",
+      "canonicalPngSha256": "3d2df1fa6c97eece618db55d408b1f4e07d69fbe4f6ec336bdd231eaab8aee5c",
+      "publicJpegSha256": "606af1e5e5484ce5677cb2def3ca99d1bd03451b74acd1e05411f7b6ce17ed4d",
+      "publicPngSha256": "e89bac4cab13a1084bdf564ad1f25f0a15fcc1bd2247058c8af2d01dd8e0809d",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -1
+      },
+      "warnings": [
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 240,
+        "mae": 14.5875,
+        "rmse": 22.710221634027853,
+        "max": 100,
+        "changed": 196
+      },
+      "rgbError444": {
+        "samples": 240,
+        "mae": 2.95,
+        "rmse": 4.613386319541572,
+        "max": 18,
+        "changed": 152
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            254,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            48,
+            64,
+            80
+          ],
+          "public": [
+            97,
+            54,
+            48
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "earlier-border-movement",
+      "state": "01-border-a",
+      "size": [
+        10,
+        8
+      ],
+      "artifactHash": "a_1d22d5fa6cffe9134306a076cead5e4c19812a2428e298e9413087353a9d4134",
+      "canonicalFloatSha256": "0a494770e2607ce2ece74ef2aa2e7692b4410d1202133b7704ec034dd3ce84a8",
+      "canonicalPngSha256": "3d2df1fa6c97eece618db55d408b1f4e07d69fbe4f6ec336bdd231eaab8aee5c",
+      "publicJpegSha256": "606af1e5e5484ce5677cb2def3ca99d1bd03451b74acd1e05411f7b6ce17ed4d",
+      "publicPngSha256": "e89bac4cab13a1084bdf564ad1f25f0a15fcc1bd2247058c8af2d01dd8e0809d",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -2,
+        "f": -1
+      },
+      "warnings": [
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 240,
+        "mae": 14.5875,
+        "rmse": 22.710221634027853,
+        "max": 100,
+        "changed": 196
+      },
+      "rgbError444": {
+        "samples": 240,
+        "mae": 2.95,
+        "rmse": 4.613386319541572,
+        "max": 18,
+        "changed": 152
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            254,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            48,
+            64,
+            80
+          ],
+          "public": [
+            97,
+            54,
+            48
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "earlier-border-movement",
+      "state": "02-a-moved",
+      "size": [
+        12,
+        8
+      ],
+      "artifactHash": "a_d89f835836a68b9ff60ead4a3f50974c7f1d858af6533a9e5287d90f4b87d0e2",
+      "canonicalFloatSha256": "f67ce42ddb64f798ab98e2f9fe2b017813436590ee231ba96c22f7cbe871d79c",
+      "canonicalPngSha256": "58752d8c904258ce02642007cc95d457c08c6989dcd2901fa9efa13eecc7b940",
+      "publicJpegSha256": "128464126ef1a02f5d9125e0731b04be06afe397de0c4dee00dbbd4053515a76",
+      "publicPngSha256": "b29d6a5a66934e594390417907277a0fb9d0b6af8b8b24c31f6009ed7aee44e6",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -4,
+        "f": -1
+      },
+      "warnings": [
+        "canvas_uncovered",
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 288,
+        "mae": 15.381944444444445,
+        "rmse": 23.590988156968375,
+        "max": 91,
+        "changed": 218
+      },
+      "rgbError444": {
+        "samples": 288,
+        "mae": 3.607638888888889,
+        "rmse": 5.812163968781335,
+        "max": 25,
+        "changed": 176
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            48,
+            48,
+            80
+          ],
+          "public": [
+            44,
+            54,
+            56
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            255,
+            0,
+            0
+          ],
+          "public": [
+            205,
+            20,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "earlier-border-movement",
+      "state": "03-border-b",
+      "size": [
+        14,
+        10
+      ],
+      "artifactHash": "a_684086b33a2aef7eeeac12fb989e004d878d01f7000ce8545da5aadaa1a35627",
+      "canonicalFloatSha256": "a4a018d4bca017c9c4f879b0649b19820e0bda6f325a9de16487079a68010555",
+      "canonicalPngSha256": "8361e10020a530ceee0b9a21413334730d36daebaac0ffe5213bdab2239df4fd",
+      "publicJpegSha256": "6439a146a61a3b9ccca42af3e9561c36153025ad2cb6c729f99c841db617c0a2",
+      "publicPngSha256": "6632cc3ee63531cb0e640b99b184bdd6c25afc9f0e439dbd2a8c12141c363230",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -3,
+        "f": 0
+      },
+      "warnings": [
+        "canvas_uncovered",
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 420,
+        "mae": 56.7047619047619,
+        "rmse": 73.61890285207228,
+        "max": 195,
+        "changed": 345
+      },
+      "rgbError444": {
+        "samples": 420,
+        "mae": 5.021428571428571,
+        "rmse": 8.032226756427303,
+        "max": 36,
+        "changed": 264
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            0,
+            0,
+            255
+          ],
+          "public": [
+            7,
+            15,
+            150
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            60,
+            48,
+            80
+          ],
+          "public": [
+            120,
+            25,
+            69
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "earlier-border-movement",
+      "state": "04-a-moved-after-b",
+      "size": [
+        14,
+        10
+      ],
+      "artifactHash": "a_87c4f9748092bd125d9943378b46b80820a35d363986d54487825f7be38a48f3",
+      "canonicalFloatSha256": "85153451ba957fd2a17d7ddac20c3c439d1371138582538d0d465bfe6bcc9beb",
+      "canonicalPngSha256": "a6cea22ea51616d1d5c5f23cfd17985e126525c1181fffcf6bf0161d7a4fac65",
+      "publicJpegSha256": "3007c770d560d24ad623dc0c928f55394a47b6303d4aa448fbba9bf855d3a52e",
+      "publicPngSha256": "084cb4b81e166e37bc067eaf73cf20ede057e0d0d4297b6db3bc29b2fbd97fe6",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -3,
+        "f": 0
+      },
+      "warnings": [
+        "canvas_uncovered",
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 420,
+        "mae": 49.19047619047619,
+        "rmse": 67.50432084935996,
+        "max": 190,
+        "changed": 340
+      },
+      "rgbError444": {
+        "samples": 420,
+        "mae": 4.623809523809523,
+        "rmse": 7.699412469854591,
+        "max": 33,
+        "changed": 266
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            0,
+            0,
+            255
+          ],
+          "public": [
+            54,
+            0,
+            121
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            60,
+            48,
+            80
+          ],
+          "public": [
+            94,
+            26,
+            63
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "earlier-border-movement",
+      "state": "05-a-restored",
+      "size": [
+        14,
+        10
+      ],
+      "artifactHash": "a_684086b33a2aef7eeeac12fb989e004d878d01f7000ce8545da5aadaa1a35627",
+      "canonicalFloatSha256": "a4a018d4bca017c9c4f879b0649b19820e0bda6f325a9de16487079a68010555",
+      "canonicalPngSha256": "8361e10020a530ceee0b9a21413334730d36daebaac0ffe5213bdab2239df4fd",
+      "publicJpegSha256": "6439a146a61a3b9ccca42af3e9561c36153025ad2cb6c729f99c841db617c0a2",
+      "publicPngSha256": "6632cc3ee63531cb0e640b99b184bdd6c25afc9f0e439dbd2a8c12141c363230",
+      "frame": {
+        "a": 1,
+        "b": 0,
+        "c": 0,
+        "d": 1,
+        "e": -3,
+        "f": 0
+      },
+      "warnings": [
+        "canvas_uncovered",
+        "layers_stale"
+      ],
+      "publicChroma": "4:2:0",
+      "exactEncodingMatch": true,
+      "rgbError420": {
+        "samples": 420,
+        "mae": 56.7047619047619,
+        "rmse": 73.61890285207228,
+        "max": 195,
+        "changed": 345
+      },
+      "rgbError444": {
+        "samples": 420,
+        "mae": 5.021428571428571,
+        "rmse": 8.032226756427303,
+        "max": 36,
+        "changed": 264
+      },
+      "sentinels": [
+        {
+          "x": 0,
+          "y": 2,
+          "canonical": [
+            0,
+            0,
+            255
+          ],
+          "public": [
+            7,
+            15,
+            150
+          ]
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "canonical": [
+            60,
+            48,
+            80
+          ],
+          "public": [
+            120,
+            25,
+            69
+          ]
+        }
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "scenario": "duplicate-clear",
+      "a": "02-border",
+      "b": "03-duplicated",
+      "kind": "public",
+      "comparison": {
+        "comparable": true,
+        "w": 10,
+        "h": 8,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "duplicate-clear",
+      "a": "02-border",
+      "b": "03-duplicated",
+      "kind": "canonical",
+      "comparison": {
+        "comparable": true,
+        "w": 10,
+        "h": 8,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "duplicate-clear",
+      "a": "02-border",
+      "b": "04-original-removed",
+      "kind": "public",
+      "comparison": {
+        "comparable": true,
+        "w": 10,
+        "h": 8,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "duplicate-clear",
+      "a": "02-border",
+      "b": "04-original-removed",
+      "kind": "canonical",
+      "comparison": {
+        "comparable": true,
+        "w": 10,
+        "h": 8,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "duplicate-clear",
+      "a": "01-source-crop",
+      "b": "05-cleared",
+      "kind": "public",
+      "comparison": {
+        "comparable": true,
+        "w": 6,
+        "h": 4,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "duplicate-clear",
+      "a": "01-source-crop",
+      "b": "05-cleared",
+      "kind": "canonical",
+      "comparison": {
+        "comparable": true,
+        "w": 6,
+        "h": 4,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "overlap-reorder",
+      "a": "03-blue-front",
+      "b": "04-red-front",
+      "kind": "public",
+      "comparison": {
+        "comparable": true,
+        "w": 12,
+        "h": 10,
+        "pngBytesEqual": false,
+        "mae": 7.966666666666667,
+        "rmse": 16.741664592666208,
+        "changedGrayscaleRatio": 0.875,
+        "diffRatio16": 0.11666666666666667,
+        "diffRatio32": 0.06666666666666667,
+        "diffRatio64": 0.025
+      }
+    },
+    {
+      "scenario": "overlap-reorder",
+      "a": "03-blue-front",
+      "b": "04-red-front",
+      "kind": "canonical",
+      "comparison": {
+        "comparable": true,
+        "w": 12,
+        "h": 10,
+        "pngBytesEqual": false,
+        "mae": 3.4,
+        "rmse": 13.168143377105217,
+        "changedGrayscaleRatio": 0.06666666666666667,
+        "diffRatio16": 0.06666666666666667,
+        "diffRatio32": 0.06666666666666667,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "arbitrary-rotation",
+      "a": "02-border",
+      "b": "04-restored",
+      "kind": "public",
+      "comparison": {
+        "comparable": true,
+        "w": 10,
+        "h": 8,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "arbitrary-rotation",
+      "a": "02-border",
+      "b": "04-restored",
+      "kind": "canonical",
+      "comparison": {
+        "comparable": true,
+        "w": 10,
+        "h": 8,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "earlier-border-movement",
+      "a": "03-border-b",
+      "b": "04-a-moved-after-b",
+      "kind": "public",
+      "comparison": {
+        "comparable": true,
+        "w": 14,
+        "h": 10,
+        "pngBytesEqual": false,
+        "mae": 26.242857142857144,
+        "rmse": 38.55811939693859,
+        "changedGrayscaleRatio": 0.9785714285714285,
+        "diffRatio16": 0.39285714285714285,
+        "diffRatio32": 0.3,
+        "diffRatio64": 0.15714285714285714
+      }
+    },
+    {
+      "scenario": "earlier-border-movement",
+      "a": "03-border-b",
+      "b": "04-a-moved-after-b",
+      "kind": "canonical",
+      "comparison": {
+        "comparable": true,
+        "w": 14,
+        "h": 10,
+        "pngBytesEqual": false,
+        "mae": 39.27857142857143,
+        "rmse": 69.09450050474351,
+        "changedGrayscaleRatio": 0.34285714285714286,
+        "diffRatio16": 0.34285714285714286,
+        "diffRatio32": 0.34285714285714286,
+        "diffRatio64": 0.3
+      }
+    },
+    {
+      "scenario": "earlier-border-movement",
+      "a": "03-border-b",
+      "b": "05-a-restored",
+      "kind": "public",
+      "comparison": {
+        "comparable": true,
+        "w": 14,
+        "h": 10,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    },
+    {
+      "scenario": "earlier-border-movement",
+      "a": "03-border-b",
+      "b": "05-a-restored",
+      "kind": "canonical",
+      "comparison": {
+        "comparable": true,
+        "w": 14,
+        "h": 10,
+        "pngBytesEqual": true,
+        "mae": 0,
+        "rmse": 0,
+        "changedGrayscaleRatio": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0
+      }
+    }
+  ]
+}
