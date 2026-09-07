@@ -46,7 +46,7 @@ import {
 import { estimateEmbeddingCost, readProviderSettings, resolveModels } from "@photoctl/providers";
 import { constants } from "node:fs";
 import { access, copyFile, mkdir, realpath, rm, stat } from "node:fs/promises";
-import { basename, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
 import { cacheWriteError, sourceChangedError, sourceReadError } from "../errors.js";
@@ -701,6 +701,9 @@ export async function copyIntoLibrary(
     const extension = extname(sourceName);
     const stem = basename(sourceName, extension);
     const preferred = join(directory, sourceName);
+    if ((await realpath(directory)) === (await realpath(dirname(sourcePath)))) {
+      return { path: preferred, created: false };
+    }
     const destination = (await pathExists(preferred))
       ? join(directory, `${stem}_${originalId.replaceAll("-", "").slice(-8)}${extension}`)
       : preferred;

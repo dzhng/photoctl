@@ -123,10 +123,10 @@ a substitute for final integrated verification.
   policy remains open; automatic canonical-artifact deletion stays disabled.
 - Preserve sampled white balance's explicitly reported provisional pre-user-develop sampling
   policy. Do not silently change it to photographic-composite sampling.
-- Source-output safety protects catalog original filenames, not the full D19
-  source-folder rule. Export, decode and linear render can still create new
-  siblings. Folder boundaries and managed-library/cache placement need a settled
-  policy before shared destination enforcement; the user question remains open.
+- **Source placement policy — user direction, 2026-09-07:** edited images may live
+  beside originals and be imported as separate photos. Do not impose source-folder
+  restrictions or track protected folder trees. Preserve original bytes and prevent
+  destructive collisions; an already-in-place copy import must not duplicate its file.
 - Run the whole-spec closeout gate once at the end, audit requirements and consolidated choices,
   then close/archive only when every required gate is proved. Slice 15 is optional and unspecified.
 
@@ -314,8 +314,9 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
   Resolution matching of generated pixels is a generative processing node, not ordinary restoration or resampling.
 - **CoreML EP** is a constraint, not a plan item: no slice enables it in v1; if ever enabled it must be per
   model, static shapes, ≥2× measured, output-equivalent within tolerance; CPU is the reference (D40).
-- **Never write original image bytes, regardless of format; never write into source folders except
-  explicit `xmp write`, which writes or merges a sidecar only** (D19).
+- **Never overwrite original image bytes, regardless of format.** New files may be written
+  beside originals at the user's chosen destination. Explicit `xmp write` writes or merges
+  a sidecar only. The user's 2026-09-07 placement policy supersedes D19's folder-wide ban.
 - **Every library photo has an offline preview:** a successful import leaves a pinned,
   source-independent 1616-tier JPEG plus its `cache_index` row.
   Re-import repairs either half if it is missing or corrupt. A `photos` row without that preview is not
