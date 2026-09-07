@@ -23,7 +23,6 @@ interface LocatedImageSource {
   mediaType: string;
   w: number;
   h: number;
-  copyExact?: boolean;
   orientation?: ExifOrientation;
 }
 

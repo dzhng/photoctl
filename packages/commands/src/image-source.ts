@@ -61,7 +61,6 @@ export async function resolveOnlineOriginalSource(
             w: probe.dimensions.w,
             h: probe.dimensions.h,
             orientation: photo.orientation,
-            copyExact: probe.copyExact,
           },
         };
       }
@@ -88,7 +87,6 @@ export function fileDecodeSource(
         w: full.width,
         h: full.height,
         orientation: photo.orientation,
-        copyExact: true,
       }
     : undefined;
 }

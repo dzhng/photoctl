@@ -10,7 +10,7 @@ import { exportImage } from "./run.js";
 const directories: string[] = [];
 
 async function decodedImage(path: string, mediaType: "image/jpeg" | "image/png") {
-  return await renderSource(1, { kind: "online-file", path, mediaType, copyExact: false });
+  return await renderSource(1, { kind: "online-file", path, mediaType });
 }
 
 afterEach(async () => {

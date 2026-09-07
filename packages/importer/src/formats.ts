@@ -13,7 +13,6 @@ export interface ImageProbe {
   readonly frameCount: 1;
   readonly preview: PreviewProducer;
   readonly embedded: EmbeddedJpeg[];
-  readonly copyExact: boolean;
 }
 
 export async function probeImage(path: string): Promise<ImageProbe | undefined> {
@@ -31,7 +30,6 @@ export async function probeImage(path: string): Promise<ImageProbe | undefined> 
       frameCount: 1,
       preview: { kind: "embedded-jpeg", range },
       embedded,
-      copyExact: false,
     };
   } catch {
     return undefined;
@@ -53,7 +51,6 @@ async function probeDecodedFile(path: string): Promise<ImageProbe | undefined> {
       frameCount: 1,
       preview: { kind: "decoded-file" },
       embedded: [],
-      copyExact: metadata.format === "jpeg",
     };
   } catch {
     return undefined;

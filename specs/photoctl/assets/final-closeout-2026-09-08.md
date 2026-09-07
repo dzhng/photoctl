@@ -23,12 +23,17 @@ instead of 0); restoring the condition and rebuilding passed the focused test ag
 These are narrow correction checks, not a clean rerun of the full host suite.
 Logs are `cache-focused.log`, `cache-falsification.log` and `cache-restored.log` below.
 
-The remaining-stage continuation passed Rust (9 + 78 tests), built the existing
-Docker functional/model image and started its functional tests; macOS/packed
-checks follow. Collect terminal results before
+The remaining-stage continuation passed Rust (9 + 78 tests), all Docker functional
+tests (206 files, 1,128 tests in 1,253.65 seconds) and real-model checks (two files,
+three tests in 23.05 seconds). The Swift build passed and macOS/packed checks are
+running; the two decoder-oracle cases have passed. Collect terminal results before
 claiming success; do not restart the full host suite as a feedback loop.
 Single-worker Vitest flags remain explicit. `remaining.sh` and `remaining.log`
 retain this continuation separately from the failed host run.
+
+A later [dead source-hint cleanup](final-correctness-review.md#sourcedelivery-boundary-cleanup)
+passed the TypeScript build and 33 focused tests. It changed no behavior assertions
+or delivery policy and does not turn the earlier failed host run into a clean one.
 
 Logs and the exact continuation invocation are in
 `/private/tmp/photoctl-final-closeout.j54Do5/`. `verify.log` retains the prerequisite

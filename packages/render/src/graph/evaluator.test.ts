@@ -174,7 +174,6 @@ test("structured sources expose decode failure without masking graph errors", as
             kind: "online-file",
             path: sourcePath,
             mediaType: "image/jpeg",
-            copyExact: false,
           },
           locator: { kind: "online-file", volume_uuid: "card", rel_path: "truncated.jpg" },
         },

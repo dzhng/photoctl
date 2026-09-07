@@ -2,6 +2,27 @@
 
 This is a scoped review ledger, not whole-spec acceptance.
 
+## Source/delivery boundary cleanup
+
+The final ledger audit found an unused `copyExact` hint still produced by image
+probing and carried by image sources. Delivery already accepts evaluated RGB16
+pixels and always encodes its output; a repository-wide consumer check found no
+reader of the hint. It is removed from the internal types, producers and two test
+input objects, with every behavior assertion unchanged. This is deletion of dead
+data, not a new export policy or an original-file copy change.
+
+The TypeScript build and all 33 existing CLI file-source, delivery and evaluator
+tests pass. No new regression test or artificial red was added for a property
+whose absence is a compiler check. Shape/diff review confirms one delivery owner,
+six production lines removed, no replacement mechanism and no schema or public
+option change. The ledger's source and delivery entries describe the current
+contract; no new product discretion was introduced.
+
+Logs are `copy-hint-types.log` and `copy-hint-focused.log` under the current
+closeout directory. The cleanup followed the Docker functional/model verdicts
+and occurred during the macOS continuation, so those earlier results retain their
+original source scope; the focused tests cover the cleanup itself.
+
 ## Shared import destination correction
 
 The full host gate exposed a regression in per-photo failure isolation: a cache
