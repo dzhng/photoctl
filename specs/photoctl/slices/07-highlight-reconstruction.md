@@ -7,9 +7,10 @@ magenta in clipped lights. Preserve genuine colored lights, reliable samples and
 scene-linear headroom. Removing false color is not a claim to recover texture from
 fully lost channels. No camera-JPEG substitution, preset workaround or weaker oracle.
 
-**Provisional product call:** ordinary RAW rendering reconstructs highlights;
-explicit `decode` inspection can disable reconstruction. The user was asked and has
-not answered. Record the chosen treatment in results and immutable render identity;
+**Accepted product call:** ordinary RAW rendering reconstructs highlights;
+explicit `decode` inspection can disable reconstruction. The user's 2026-09-07
+[rendering approval](../assets/camera-delivery-review/balanced-delivery/final-verdict.md)
+accepts the current delivered behavior. Record treatment in results and immutable render identity;
 do not silently change adapter preference. LibRaw stays preferred, CIRAW remains an
 alternative. This call is reversible without migration, backfill or library reset.
 
@@ -205,6 +206,11 @@ to diagnostic mode to conceal changed normal behavior.
 
 ## C — Complete RAW-led delivery acceptance
 
+**Current status:** photographic acceptance is closed by the user's rendering
+approval linked above. The investigations below preserve observed limitations and
+their causes; they are not instructions to reopen approval or perform speculative
+fidelity work. Integrated verification and external release execution remain separate.
+
 The [preserved-library comparison](../assets/camera-delivery-review/integrated-gold/README.md)
 accepts the conspicuous highlight-color correction within its recorded scope. Keep
 the ten-delivery judgment, all-reference coverage, unchanged history and installed
@@ -268,7 +274,7 @@ history/source integrity and installed pairing checks. The bounded false-color
 improvement is accepted; remaining broad fringes, clipped-light edges and release
 boundaries are explicit. The subsequent [complete installed gate](14-gold-exam-and-release.md#portable-gold-evidence)
 passes all nine cases with this decoder. That closes current fixture-package verification,
-not C's complete photographic verdict or the external release gates.
+not the external release gates. C's subsequent user approval is recorded above.
 This distinct decoder-fidelity revision changes interpolated samples in both recovery
 modes. Earlier disabled-output hashes remain historical evidence for the recovery
 toggle, not a requirement to retain defective interpolation forever.
@@ -276,9 +282,9 @@ toggle, not a requirement to retain defective interpolation forever.
 C must conclude per defect, not repeatedly reject everything because lights are
 clipped. Flat cores where channels were lost are not themselves a failed correction.
 The [current-set verdict](../assets/camera-delivery-review/balanced-delivery/final-verdict.md)
-now records that per-defect judgment across every saved reference. Candle/bridge
-highlight boundaries are the next causal target; the review is complete, but C
-remains open. The linked current edge samples exclude recovery at sampled bridge
+now records that per-defect judgment across every saved reference and the subsequent
+user acceptance. Candle/bridge highlight boundaries remain documented limitations,
+not the next required implementation target. The linked current edge samples exclude recovery at sampled bridge
 pixels. The candle's matched canonical/output control isolates its additional sampled
 delivery chroma to the JPEG quality-88 round trip. Do not patch recovery for that compression
 effect. The subsequent measured-sample trace preserves all sampled bridge CFA values

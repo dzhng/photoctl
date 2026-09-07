@@ -81,8 +81,9 @@ Read-only repository verification on 2026-09-06 found no repository variables, r
 or release-workflow runs; `PHOTOCTL_MODELS_BASE_URL` is absent. The Docker functional
 target requires that URL before downloading the normalized encoder/decoder pair.
 The committed manifests and hash-verifying fetcher are ready, but local model acceptance
-does not prove public distribution. A hosting choice and publication authorization are
-pending. Upload only the exact normalized model bytes, then verify public downloads into
+does not prove public distribution. The subsequent
+[tag-triggered publication contract](../../slices/14-gold-exam-and-release.md#model-distribution)
+settles hosting; actual publication remains unverified. Upload only the exact normalized model bytes, then verify public downloads into
 an empty scratch directory against the existing hashes; upstream checkpoints are not
 substitutes for these exported graphs. Do not publish a CLI release as a hosting experiment.
 

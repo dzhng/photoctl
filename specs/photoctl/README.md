@@ -18,9 +18,11 @@ prompt, open-questions list, or the session sample disagree with this README, **
 Read the next owning slice and its evidence before editing. Use reviewed committed passes,
 update this handoff, and continue until every requirement is verified—not merely every test green.
 
-**Next implementation:** [selection refinement and redo](slices/10-selection-refinement-and-redo.md).
-Implement both on the existing layer/revision owners, then finish pairing presentation
-and remaining release gates. Rendering is user-approved; do not reopen that approval.
+**Current pickup:** complete integrated local verification of
+[selection refinement and redo](slices/10-selection-refinement-and-redo.md).
+Both features are implemented and pass focused/built-CLI checks; the photographic
+manual-correction witness is reviewed. Pairing presentation and external release
+evidence remain separate. Rendering is user-approved; do not reopen that approval.
 Generation input and reference-strength rules are user-approved in their owning slices.
 
 **Memory policy — explicit user direction, 2026-09-06:** 5 GB is an arbitrary investigation
@@ -40,7 +42,7 @@ running that suite on every push. Do not resume CI load profiling or native-cach
 for the smoke gate. Preserve all local checks and separate product performance bars.
 The [failure triage](assets/ci-triage.md) retains the real daemon fixes and their evidence.
 
-**First priority:** resume camera photographic acceptance and the remaining release
+**First priority:** finish the current integrated gate and the remaining release
 requirements. The small hosted gate passes; [CI evidence](assets/ci-triage.md#current-policy)
 records its scope. A smoke pass cannot close the full spec or replace the local closeout gate.
 
@@ -137,7 +139,9 @@ a substitute for final integrated verification.
   Live provider comparisons are conditional evidence, not prerequisites for the
   keyless release gates; see the boundary below.
 - [Artifact storage](assets/artifact-storage/README.md): representative paid-history storage
-  policy remains open; automatic canonical-artifact deletion stays disabled.
+  measurement remains open. Retain canonical artifacts and purchased originals;
+  automatic deletion stays disabled. A future pruning policy is not a missing v1
+  subsystem or authority to add a retention cap.
 - Preserve sampled white balance's explicitly reported provisional pre-user-develop sampling
   policy. Do not silently change it to photographic-composite sampling.
 - **Source placement policy — user direction, 2026-09-07:** edited images may live
@@ -177,7 +181,7 @@ without deleting history.
 - [x] 05 delivery export + `scripts/gold-exam.sh` (keyless dry run) — `slices/05-delivery-export.md`
 - [x] 06 xmp write / sync — `slices/06-xmp-write-sync.md`
 - [x] 07a CIRAW helper + shared decoder seam · 07b LibRaw · 07c decoder oracle/color front — `slices/07-decoders.md`
-- [ ] RAW highlight reconstruction: native float preservation → effective policy/identity → complete photographic delivery — `slices/07-highlight-reconstruction.md`
+- [x] RAW highlight reconstruction: native float preservation → effective policy/identity → user-approved photographic delivery — `slices/07-highlight-reconstruction.md`
 - [x] 08 immutable render DAG: [x] 8a1 logical graph/revisions/full hashes · [x] 8a2 artifacts/evaluator/inspection · [x] 8b develop dict/presets/node · [x] 8c1a exact linear artifacts · [x] 8c1b global operators · [x] 8c2 masked operators · [x] 8c3 curves/levels · [x] 8d1 local contrast · [x] 8d2 noise reduction · [x] 8d3 manual geometry · [x] 8d4 filters/B&W/selective color · [x] keyless fixture gold exam · [x] 8e local auto-straighten / `crop --auto` (D24) · [x] 8f public filter · [x] 8g white-balance eyedropper — `slices/08-develop.md`
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
