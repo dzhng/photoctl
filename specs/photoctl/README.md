@@ -329,11 +329,10 @@ publish:npm      used by .github/workflows/publish.yml on v* tags; release = `np
   and renderer semantics; nondeterministic nodes also have an execution id and output-artifact hash. Canonical content-addressed artifacts
   publish and fsync before the graph transaction redirects a root; a crash may leave an orphan, never an active
   node with missing pixels.
-- **Graph retention:** active layer/output roots, bounded undo revisions, and explicitly pinned snapshots keep
-  nodes reachable. Reachability GC may collect canonical pixel artifacts after a grace period while retaining
-  lightweight provenance with `artifact_available:false`; cache pruning remains a separate lifecycle. The numeric
-  undo/age/storage limit stays OPEN until representative artifact sizes are measured, so no automatic canonical-
-  artifact deletion lands before that measurement.
+- **Graph retention:** preserve canonical and purchased artifacts. Reachability records
+  dependencies; it is not permission to delete pixels. Preview-cache pruning remains
+  a separate lifecycle. [Storage measurements](assets/artifact-storage/README.md)
+  inform a possible future retention policy but do not authorize one.
 - **Backup scope:** automatic/manual `backup` remains a metadata-only PGlite recovery snapshot. Once canonical
   artifacts exist, `restore` replaces database state while preserving `artifacts/`, originals, and cache directories;
   it does not claim to recover artifact files already lost outside PGlite.
