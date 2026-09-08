@@ -1,5 +1,5 @@
-import { resampleDisplaySrgb } from "@photoctl/img";
-import { normalizeArtifact, publishArtifact } from "./artifacts/publication.js";
+import { resamplePixels } from "@photoctl/img";
+import { normalizeArtifact, publishArtifact, readArtifactLinear } from "./artifacts/publication.js";
 import { executeGenerationDensity, executeStandaloneGeneration } from "./fill/generation.js";
 import type { FillUpscaleDependencies } from "./fill/pipeline.js";
 import type {
@@ -64,16 +64,22 @@ export async function prepareStandaloneGeneratedPhoto(
         density.outputImage.w !== request.dimensions.w ||
         density.outputImage.h !== request.dimensions.h
       ) {
+        const input = await readArtifactLinear(
+          density.outputArtifact.path,
+          density.outputArtifact.artifactHash,
+        );
         const resized = {
-          ...density.outputImage,
+          ...input,
           w: request.dimensions.w,
           h: request.dimensions.h,
-          data: resampleDisplaySrgb(
-            density.outputImage.data,
-            density.outputImage.w,
-            density.outputImage.h,
+          data: await resamplePixels(
+            input.data,
+            input.w,
+            input.h,
+            3,
             request.dimensions.w,
             request.dimensions.h,
+            "lanczos3",
           ),
         };
         finalArtifact = await publishArtifact(libraryPath, await normalizeArtifact(resized));

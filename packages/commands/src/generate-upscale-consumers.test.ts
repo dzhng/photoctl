@@ -1,17 +1,42 @@
 import { initializeLibrary } from "@photoctl/library";
+import { FakeUpscaleAdapter } from "@photoctl/providers";
 import { generateDataSchema, showDataSchema, exportResultSchema } from "@photoctl/protocol";
 import { artifactPath, readArtifactLinear } from "@photoctl/render";
 import { startGatewayFixture } from "@photoctl/test-harness/gateway-fixture";
 import { mkdtemp, rm } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { dispatch } from "./dispatch.js";
 
 test.each([8, 9])(
   "standalone upscale at %s pixels survives show, replaced develop and export without replay",
   async (edge) => {
+    const upscale = FakeUpscaleAdapter.prototype.upscale;
+    const provider = vi
+      .spyOn(FakeUpscaleAdapter.prototype, "upscale")
+      .mockImplementation(async function (input) {
+        const result = await upscale.call(this, input);
+        const { w, h } = result.dimensions;
+        const pixels = Buffer.from(
+          Array.from({ length: w * h * 3 }, (_, index) =>
+            Math.floor(index / 3) % w < w / 2 ? 32 : 224,
+          ),
+        );
+        const bytes = await sharp(pixels, { raw: { width: w, height: h, channels: 3 } })
+          .png()
+          .toBuffer();
+        return {
+          ...result,
+          artifact: {
+            ...result.artifact,
+            bytes,
+            hash: `a_${createHash("sha256").update(bytes).digest("hex")}`,
+          },
+        };
+      });
     const directory = await mkdtemp(join(tmpdir(), "photoctl-generated-consumers-"));
     const handle = (await initializeLibrary(join(directory, "library"))).handle;
     let providerCalls = 0;
@@ -59,6 +84,11 @@ test.each([8, 9])(
         )
       ).rows;
       const callsBefore = providerCalls;
+      const upscalesBefore = provider.mock.calls.length;
+      const generatedPixels = await readArtifactLinear(
+        artifactPath(handle.path, generated.artifact.hash, "tif"),
+        generated.artifact.hash,
+      );
       const before = showDataSchema.parse(
         (await command("show", [generated.id, "--preview-size", "native"])).data,
       );
@@ -77,6 +107,7 @@ test.each([8, 9])(
       };
       const original = await pixels();
       expect(original).toMatchObject({ w: edge, h: edge });
+      expect(original.data).toEqual(generatedPixels.data);
       expect(await command("develop", [generated.id, "--set", "exposure=-1"])).toMatchObject({
         ok: true,
       });
@@ -162,6 +193,7 @@ test.each([8, 9])(
         ).rows,
       ).toEqual(paidBefore);
       expect(providerCalls).toBe(callsBefore);
+      expect(provider.mock.calls.length).toBe(upscalesBefore);
       expect(
         (
           await handle.query(
@@ -170,6 +202,7 @@ test.each([8, 9])(
         ).rows,
       ).toEqual(attemptsBefore);
     } finally {
+      provider.mockRestore();
       await new Promise<void>((resolve) => gateway.close(() => resolve()));
       await handle.close();
       await rm(directory, { recursive: true });
