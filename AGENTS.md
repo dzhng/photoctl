@@ -34,24 +34,26 @@ also the slowest thing in the repo by an order of magnitude, and almost none of
 it is about the file you just edited.
 
 While iterating, work from the top of this ladder and stop at the first rung
-that covers your change. Run these from the package that owns the code:
+that covers your change. Tests run under Vitest on Node from the repo root
+(Bun's own test runner never executes this repo's TypeScript):
 
 ```bash
-bun test src/foo.test.ts -t 'the case I broke'   # one test
-bun test src/foo.test.ts                          # one file
-bun test --changed                                # every test file whose
+npx vitest run packages/foo/src/foo.test.ts -t 'the case I broke'   # one test
+npx vitest run packages/foo/src/foo.test.ts                          # one file
+npx vitest run --changed                          # every test file whose
                                                   # import graph reaches your
                                                   # uncommitted edits
-bun run test                                      # the owning package
+npx vitest run packages/foo                       # the owning package
 ```
 
 `--changed` is the default reach-for once a change spans more than one file: it
 walks the import graph, so it picks up the tests you would have forgotten, and
-it stays honest about the ones your edit cannot reach. `--changed=<ref>`
+it stays honest about the ones your edit cannot reach. `--changed <ref>`
 compares against a branch or commit instead of the working tree — use it to
-sweep a whole branch (`bun test --changed=origin/main`) without paying for
-the packages the branch never touched. From the repo root,
-`turbo run test --filter=<package>` scopes the gate to one workspace.
+sweep a whole branch (`npx vitest run --changed origin/staging`) without paying
+for the packages the branch never touched. Tests that spawn the CLI run the
+*built* output: rebuild with `bun run build:ts` (and `bun run build:rust` after
+native edits) before trusting a result.
 
 The root `bun run test` belongs at the **end of an implementation** — before a
 handback, before a merge, as the last gate of a spec. One run, not one per

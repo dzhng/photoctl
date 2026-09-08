@@ -8,7 +8,7 @@ do not stand in for the canonical full-frame artifact.
 Regenerate the set with:
 
 ```bash
-PHOTOCTL_RETOUCH_CAPTURE_DIR="$PWD/specs/photoctl/assets/retouch-journey" \
+PHOTOCTL_RETOUCH_CAPTURE_DIR="$PWD/specs/done/photoctl/assets/retouch-journey" \
   node node_modules/vitest/vitest.mjs run apps/cli/src/retouch-journey.test.ts
 ```
 

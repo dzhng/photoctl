@@ -5,7 +5,7 @@ checkerboard with horizontal green and vertical blue ramps; the built CLI normal
 path as paid pixels, imports it, and materializes the saved preview only when `show` asks for one.
 
 `generated.png` is the native 96×64 preview and `generated-4x.png` is a nearest-neighbor inspection enlargement. Recreate the native
-capture with `PHOTOCTL_GENERATE_CAPTURE_DIR=specs/photoctl/assets/generate` and the focused built-CLI journey. The single-image
+capture with `PHOTOCTL_GENERATE_CAPTURE_DIR=specs/done/photoctl/assets/generate` and the focused built-CLI journey. The single-image
 telemetry is under `telemetry/`; it reports zero transparency, substantial edge density and luminance range, and high color entropy.
 
 The visual target is the complete 6×4 cell field with no crop, opaque pixels, alternating red intensity, a left-to-right green ramp,

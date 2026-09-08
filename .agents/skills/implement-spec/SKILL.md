@@ -40,7 +40,7 @@ depends on prior work.
    (static checks and re-anchored assertions all pass on a no-op — a
    palette pass once shipped "verified" while the production frame was
    byte-identical), and an unprimed
-   [screenshot-critique](../../visual/screenshot-critique/SKILL.md) — at the
+   [screenshot-critique](../screenshot-critique/SKILL.md) — at the
    user's reported framing when the pass answers their visual bug report —
    before declaring it fixed; the implementer's eyes are primed by the fix
    and repeatedly pass what fresh eyes catch.
@@ -171,7 +171,7 @@ depends on prior work.
   TODO/graph, and one compact evidence ledger, with details in slice files or
   assets.
 - **Human checkpoints never block.** At a slice's review or sign-off gate, open
-  the relevant shots with [preview-shots](../../visual/preview-shots/SKILL.md),
+  the relevant shots with [preview-shots](../preview-shots/SKILL.md),
   state the decision and the options, and give the user ~5 minutes to weigh in —
   keep building other non-blocked work meanwhile, never idle. If they don't
   answer, make the call yourself on the evidence, record the decision and its

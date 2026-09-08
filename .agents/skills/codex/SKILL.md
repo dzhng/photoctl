@@ -61,7 +61,7 @@ change — before declaring it done or committing. Skip it for trivial edits
    scope with your framing, a scope flag takes no prompt. When you do write
    instructions, scope the risk area — never state the answer you expect
    (unprimed, same discipline as
-   [screenshot-critique](../../visual/screenshot-critique/SKILL.md)).
+   [screenshot-critique](../screenshot-critique/SKILL.md)).
 2. Triage every finding: confirm it against the code before acting. Preserve
    Codex's evidence boundaries — an inference it labelled is not a fact.
    Overlap with your own doubts is high-priority evidence; a finding you

@@ -32,11 +32,24 @@ merely to fit a hosted runner. [Contributor guidance](AGENTS.md) explains how to
 and run the appropriate checks; [project commands](package.json) and the
 [CI workflow](.github/workflows/ci.yml) define the executable gates.
 
+## Development
+
+Bun installs and orchestrates; Node 24 runs everything, including tests. A native
+build additionally needs a Rust toolchain plus CMake and Ninja for the pinned ONNX
+Runtime recipe, and the Swift toolchain on macOS for the Core Image helper.
+`bun install` then `bun run build` produces the CLI, the image addon and the helper;
+`bun run verify` is the complete closeout gate (format, lint, typecheck, build and
+every test stage). The scripts in [package.json](package.json) name each stage
+individually; [contributor guidance](AGENTS.md) explains which rung of the test
+ladder to run while iterating.
+
 ## Where things live
 
 - [v1 record](specs/done/photoctl/README.md) — why the product has this shape, the invariants it keeps, and the decisions made along the way.
 - [Reference fixtures](fixtures/README.md) — retained inputs and the facts they establish.
 - [Native build guide](crates/photoctl-image/ort/README.md) — runtime acquisition and platform constraints.
+- [LibRaw boundary](crates/libraw-sys/README.md) — where the vendored decoder stops and why.
+- [Color profiles](packages/render/assets/README.md) — the bundled ICC profiles and how the linear one is regenerated.
 
 ## Releases
 

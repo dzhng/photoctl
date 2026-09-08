@@ -14,7 +14,7 @@ Run the committed synthetic example from the repository root:
 
 ```sh
 bun run build:ts
-bun run wb upscale-spike --config specs/photoctl/assets/upscale-spike/experiment.json
+bun run wb upscale-spike --config specs/done/photoctl/assets/upscale-spike/experiment.json
 ```
 
 The [manifest](experiment.json) is an example of the runner-owned input contract; paths are relative to that manifest, not the

@@ -1,7 +1,7 @@
 # Preview rendering optimizations — deferred placeholder
 
 **Status:** deferred; not part of the current photoctl implementation plan. Revisit when profiling large images or building an
-interactive editor demonstrates the need. The current [`photoctl` preview contract](photoctl/README.md) remains authoritative.
+interactive editor demonstrates the need. The current [`photoctl` preview contract](done/photoctl/README.md) remains authoritative.
 
 ## Goal
 

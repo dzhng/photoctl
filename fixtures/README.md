@@ -32,14 +32,13 @@ authored provenance and behavioral baselines survive regeneration only for the s
 refuses to overwrite its old manifest; review its annotations and remove that manifest explicitly before generating new facts.
 The generator targets these A7C II fixtures and their known preview sizes, not arbitrary RAW dimensions. `raw` records bytes from the selected Sony RAW SubIFD,
 not decoder output. `libraw` separately pins decoded white-balance metadata. Exact decoded-pixel comparisons are scoped to
-their measured host in the [compression evidence](../specs/photoctl/assets/gates/libraw-compression.json), not treated as
+their measured host in the [compression evidence](../specs/done/photoctl/assets/gates/libraw-compression.json), not treated as
 portable hashes or an independent photographic-quality oracle. Decoder suites discover the committed ARWs
 and consume these same manifests rather than maintaining another compression-mode inventory.
 
 The new compressed frames come from [raw.pixls.us](https://raw.pixls.us/), whose repository rows explicitly mark them CC0;
-their manifests retain source URLs, repository dates, license and SHA-256. Together they add 86,089,728 bytes (~82.1 MiB) to
-git. Keeping the originals makes decoder coverage offline and reproducible; resized/re-encoded substitutes cannot exercise
-the RAW codecs. SonyRawFileType=4 identifies lossless compressed RAW 2 according to [ExifTool's tag documentation](https://exiftool.org/TagNames/EXIF.html);
+their manifests retain source URLs, repository dates, license and SHA-256. Keeping the originals makes decoder coverage
+offline and reproducible; resized/re-encoded substitutes cannot exercise the RAW codecs. SonyRawFileType=4 identifies lossless compressed RAW 2 according to [ExifTool's tag documentation](https://exiftool.org/TagNames/EXIF.html);
 the 7008×4672 default crop matches [Sony's full-frame L specification](https://www.sony.com/electronics/support/e-mount-body-ilce-7-series/ilce-7cm2/specifications).
 The repository's 4:3 label is not proof of the developed aspect ratio or M/S coverage; the crop is read from the file.
 
@@ -52,7 +51,7 @@ using an old catalog as an implicit adapter.
 
 The `sam_probes` annotations in `a7c2.json` are authored from visible subjects, not model outputs.
 Remeasurement preserves them only while the image SHA-256 is unchanged. Their area bands test coarse
-selection, not edge quality; [photographic evidence](../specs/photoctl/assets/sam-photographic/README.md)
+selection, not edge quality; [photographic evidence](../specs/done/photoctl/assets/sam-photographic/README.md)
 records that separate verdict. The shared `test/model-runtime` suite is part of both the default
 Docker functional gate and the default macOS suite, in addition to their existing tests. Missing
 models or an empty test selection fail visibly; the narrow `test:models` script is a diagnostic,
@@ -64,7 +63,7 @@ built application image without fetching models. Use a published release's model
 or a reachable local HTTP server serving the frozen exports. Tag-triggered releases
 prepare models before testing and pass them directly to native-runtime jobs; they do
 not depend on a pre-existing public URL or repository variable. Ordinary smoke CI
-does not run the full model suite. See [release ownership](../specs/photoctl/slices/14-gold-exam-and-release.md#model-distribution).
+does not run the full model suite. See [release ownership](../specs/done/photoctl/README.md#release).
 
 On a host, set `PHOTOCTL_SAM_MODELS_DIR` to an existing exported directory. To provision from a
 configured base URL, build the TypeScript packages and use the same fetch owner as Docker:
@@ -74,4 +73,4 @@ node scripts/fetch-models.mjs "$PHOTOCTL_MODELS_BASE_URL" /path/to/models
 PHOTOCTL_SAM_MODELS_DIR=/path/to/models bun run test:macos
 ```
 
-Generate the pinned segmentation artifacts with `scripts/export-sam2.py`; it writes real hashes only after both ONNX files pass CPU parity and opset checks. [Reproduction and evidence](../specs/photoctl/assets/sam-export/README.md) document the isolated export environment.
+Generate the pinned segmentation artifacts with `scripts/export-sam2.py`; it writes real hashes only after both ONNX files pass CPU parity and opset checks. [Reproduction and evidence](../specs/done/photoctl/assets/sam-export/README.md) document the isolated export environment.

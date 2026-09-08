@@ -1,6 +1,6 @@
 ---
 name: write-spec
-description: Break large features into independently verifiable, human-reviewable slices under specs/<feature>/. Use for risky or multi-step feature work that needs upfront questioning, API seams, browser-playable checkpoints, HTML visualizations, screenshot gates, staged implementation plans, recursive fog-of-war reslicing, or proactive research into reference implementations/best practices before slicing. Pairs with your project's verification harness and screenshot gates (the browser checkpoints), [refactor-clean](../refactor-clean/SKILL.md) (review the materialized spec so the plan describes one-owner architecture, not the feature bolted on), [screenshot-critique](../../visual/screenshot-critique/SKILL.md) and [compare-screenshots](../../visual/compare-screenshots/SKILL.md) (the visual gates), and a code-review pass (audit each slice before it lands).
+description: Break large features into independently verifiable, human-reviewable slices under specs/<feature>/. Use for risky or multi-step feature work that needs upfront questioning, API seams, browser-playable checkpoints, HTML visualizations, screenshot gates, staged implementation plans, recursive fog-of-war reslicing, or proactive research into reference implementations/best practices before slicing. Pairs with your project's verification harness and screenshot gates (the browser checkpoints), [refactor-clean](../refactor-clean/SKILL.md) (review the materialized spec so the plan describes one-owner architecture, not the feature bolted on), [screenshot-critique](../screenshot-critique/SKILL.md) and [compare-screenshots](../compare-screenshots/SKILL.md) (the visual gates), and a code-review pass (audit each slice before it lands).
 ---
 
 # Write Spec
@@ -124,13 +124,13 @@ whole feature is done.
    better-justified call and record the genuine alternative for the human. Where
    the drafts independently agree you're on firm ground; where they split is
    where to think hardest. When the feature has any visual surface, make
-   [screenshot-critique](../../visual/screenshot-critique/SKILL.md) a standing
+   [screenshot-critique](../screenshot-critique/SKILL.md) a standing
    verification gate in the README so every visual slice inherits it: the spec
    must tell the implementing agent to run an unbiased screenshot-critique as the
    last check on any visual shot before accepting it. Whenever a slice has
    something to compare its shot against — a prior look it changes, or a
    reference/inspiration image added for the feature — the spec must also name
-   [compare-screenshots](../../visual/compare-screenshots/SKILL.md) as the gate
+   [compare-screenshots](../compare-screenshots/SKILL.md) as the gate
    that judges candidate-against-target: the telemetry and less-wrong verdict
    that screenshot-critique's single-shot eyes do not give.
 5. **Recursive fog audit:** review the canonical graph slice by slice. For any
@@ -218,14 +218,14 @@ Each slice file answers:
 - What tests, scenarios, screenshots, probes, or perf gates verify it?
 - If the slice produces any visual shot (screenshot, GIF, contact sheet, or
   on-screen render), the slice file must instruct the implementing agent to run
-  [screenshot-critique](../../visual/screenshot-critique/SKILL.md) as the last
+  [screenshot-critique](../screenshot-critique/SKILL.md) as the last
   check before the slice is accepted — an unprimed second opinion the regression
   gates and the implementer's own inspection cannot supply. Write this as an
   explicit verification step in the slice, not as a passing mention.
 - If the slice's shot has a target to compare against — a prior look it changes,
   or a reference/inspiration image added for the feature — the slice file must
   also instruct the agent to use
-  [compare-screenshots](../../visual/compare-screenshots/SKILL.md) to judge
+  [compare-screenshots](../compare-screenshots/SKILL.md) to judge
   candidate-against-target: telemetry plus a less-wrong verdict, not a check that
   the shot matches the reference. Write it as an explicit step too.
 - For visual slices with a reference image, state the **slice variable** and the
@@ -243,7 +243,7 @@ Each slice file answers:
 - What feedback from the human would change this slice?
 - If the slice has a human review checkpoint, the slice file must frame it as
   **non-blocking**: tell the implementing agent to open the shots for the user
-  with [preview-shots](../../visual/preview-shots/SKILL.md), give a short window
+  with [preview-shots](../preview-shots/SKILL.md), give a short window
   (~5 min) for a response, and — if the user stays silent — decide on the
   evidence, record the decision and rationale in the spec, close the opened shots
   (preview-shots cleans up Preview, so an overnight run never piles up windows),

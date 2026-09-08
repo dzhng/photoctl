@@ -13,7 +13,7 @@ their capture-time rendering; they do not replace the current executable checks.
 Regenerate the source, masters, crops, overview, and export while running the public-CLI journey (the montage, difference image, and metrics are review artifacts derived from that capture):
 
 ```bash
-PHOTOCTL_AGENT_PREVIEW_CAPTURE_DIR=specs/photoctl/assets/agent-preview-loop \
+PHOTOCTL_AGENT_PREVIEW_CAPTURE_DIR=specs/done/photoctl/assets/agent-preview-loop \
   node node_modules/vitest/vitest.mjs run --config vitest.config.ts \
   apps/cli/src/agent-preview-loop.test.ts
 ```
