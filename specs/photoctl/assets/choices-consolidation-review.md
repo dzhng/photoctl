@@ -22,10 +22,10 @@ check remain scoped evidence, not exhaustive source verification.
 | Headingless entries in the previous ledger | 1 (old line 118) |
 | **Total previous entries** | **389** |
 | Entries in the consolidated ledger | 115 |
-| — needs-user (`U1`–`U26`, excluding U7/U21/U23/U25) | 22 |
-| — needs-user added after consolidation (`U27`, pairing card layout) | 1 |
+| — needs-user (`U2`–`U26`, excluding U7/U21/U23/U25) | 21 |
+| — resolved by the user on 2026-09-08 and moved to sound (U1 → S94; the pairing card layout entry → S95) | 2 |
 | — unsound current choices | 0 |
-| — sound (`S1`–`S93`) | 93 |
+| — sound (`S1`–`S95`) | 95 |
 | Previous entries merged into a consolidated entry | 388 |
 | Previous entries carried as discretion only (no product surface) | 1 |
 | Previous entries dropped without disposition | 0 |

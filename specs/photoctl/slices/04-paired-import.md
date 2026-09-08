@@ -168,4 +168,6 @@ Record any newly discovered product decision here and in the choices ledger befo
 building past it.
 
 Implementation evidence and remaining verification limits live in
-[the paired-import review](../assets/paired-import-review.md).
+[the paired-import review](../assets/paired-import-review.md). The workbench
+card's membership layout was captured, critiqued and accepted by the user on
+2026-09-08 ([layout evidence](../assets/paired-layout/README.md), ledger S95).

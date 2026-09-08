@@ -1,12 +1,14 @@
 # 11 — segment: 11a SAM 2.1 runtime, 11b verbs
 
-## Manual correction
+## Manual correction — the accepted v1 contract
 
 SAM is a starting selection, not a guarantee of accurate fine edges. The
 [local refinement contract](10-selection-refinement-and-redo.md) lets users and
 agents correct retained coverage on the same layer without another model call.
 Its photographic witness proves that control while preserving the automatic
-edge-quality limitations recorded below.
+edge-quality limitations recorded below. On 2026-09-08 the user confirmed this
+as the v1 scope (ledger S94): automatic fine-edge quality is a documented
+limitation, not an open gate.
 
 ## API seam
 - **11a** `scripts/export-sam2.py` (pinned `facebook/sam2.1-hiera-small` commit) → `encoder.onnx`, `decoder.onnx`; sha256 + opset in

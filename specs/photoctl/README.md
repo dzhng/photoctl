@@ -19,10 +19,12 @@ Read the owning slice and its evidence before editing. Use reviewed, committed p
 and Claude Code's user-approved `opus` alias for straightforward independent work;
 the integrating agent verifies every delegated result.
 
-**Current pickup:** two user decisions are open — accept or amend the captured
-[pairing card layout](assets/paired-layout/README.md) (ledger U27), and rule on
-automatic fine-edge selection acceptance (ledger U1) — without weakening either
-requirement. [Review evidence](assets/final-correctness-review.md)
+**Current pickup:** whole-spec closeout. The user accepted the captured
+[pairing card layout](assets/paired-layout/README.md) (ledger S95) and confirmed
+that v1 selection is an initial SAM mask plus the manual add/subtract/replace
+override (ledger S94) on 2026-09-08. Remaining work is the final reconciliation
+of every requirement and decision against shipped code, the whole-spec review,
+one closeout-gate run and archival under `specs/done/`. [Review evidence](assets/final-correctness-review.md)
 records the corrected import/removal defects, including the original D34 disk-removal
 confirmation requirement. The [original-decision audit](assets/original-decisions-review.md)
 accounts for all kickoff decisions. Final whole-spec acceptance/archive still follows
@@ -39,18 +41,12 @@ stale findings as well as the focused red/green checks.
 **Priority order:**
 
 1. Resolve any concrete correctness findings before collecting more acceptance evidence.
-2. Pairing's workbench membership layout is captured through host headless Chrome
-   and corrected after three unprimed critiques; the
-   [remaining findings](assets/paired-import-review.md#presentation-evidence--captured-awaiting-user-acceptance)
-   are product choices awaiting the user (U27). Narrow captures must use a true
-   390-pixel viewport; headless Chrome clamps small windows.
-3. Resolve [SAM's automatic fine-edge quality](slices/11-segment.md) honestly.
-   Upstream parity and coarse probes pass, but detailed edges fail. Manual correction
-   is implemented and verified, not an automatic-quality fix. The user has been asked
-   whether initial selection plus manual correction is the intended v1 acceptance.
-4. Reconcile every requirement and decision against shipped code, consolidate
-   `choices.md`, and close/archive only after the required gates are proved.
+2. Reconcile every requirement and decision against shipped code, consolidate
+   `choices.md`, run the whole-spec review, prove the closeout gate once, and archive.
    Slice 15 is optional and unspecified.
+3. Presentation captures use host headless Chrome; narrow captures must use a true
+   390-pixel viewport because headless Chrome clamps small windows
+   ([layout evidence](assets/paired-layout/README.md)).
 
 ### User policies
 
@@ -94,7 +90,7 @@ stale findings as well as the focused red/green checks.
 
 | Contract | Current evidence |
 | --- | --- |
-| Pairing | [Review](assets/paired-import-review.md): built/installed source selection, orientation, lifecycle and same-catalog camera JPEG pass; [workbench layout](assets/paired-layout/README.md) captured and critiqued, awaiting user acceptance. |
+| Pairing | [Review](assets/paired-import-review.md): built/installed source selection, orientation, lifecycle and same-catalog camera JPEG pass; [workbench layout](assets/paired-layout/README.md) captured, critiqued and user-accepted. |
 | Selection, redo and settings | [Refinement/redo](slices/10-selection-refinement-and-redo.md) and [settings](slices/09-settings.md): public and installed checks pass within their recorded scopes. |
 | Outpaint and full-frame generation | [Layer-state review](assets/outpaint-state-review.md), [six-cycle witness](assets/outpaint-resources/daemon-corrected.md), [placement](assets/full-frame-geometry/README.md) and [refresh](assets/full-frame-refresh/README.md): geometry, retained-only/reconnect and installed lifecycle evidence; not live-provider photographic acceptance. |
 | Local closeout | [Current gate](assets/final-closeout-2026-09-08.md): the host cache-error regression is corrected; focused checks and the remaining Rust, Docker/model and macOS/packed stages pass. This is not one clean root invocation. [Selection/redo gate](assets/selection-redo-closeout-2026-09-07.md) retains earlier scoped results and failures. |
@@ -110,7 +106,7 @@ identity without deleting history.
 
 ### Global TODO
 - [x] Local selection add/subtract/replace and public saved-state redo — `slices/10-selection-refinement-and-redo.md`
-- [ ] Real camera JPEG pipeline and paired-by-default RAW/JPEG logical photos — `slices/04-paired-import.md`
+- [x] Real camera JPEG pipeline and paired-by-default RAW/JPEG logical photos — `slices/04-paired-import.md`
 - [x] 00 repo skeleton, Docker seam, `protocol` + `commands`, `photoctl --version`, fixture manifest tool — `slices/00-repo-skeleton.md`
 - [x] 01a library open, ONE lock, refuse-to-open, `init`, `doctor` — `slices/01-first-jpeg.md`
 - [x] 01b universal image source → show → offline preview → export (A7C II embedded-container proof) — `slices/01-first-jpeg.md`
@@ -126,7 +122,7 @@ identity without deleting history.
 - [x] 09 providers: [x] 9a gateway contracts + dedicated upscaler adapter · [x] 9b non-blocking spikes · [x] 9c embed worker + search — `slices/09-providers-embed-search.md`
 - [x] 09d public library settings — [validated read/write/reset](slices/09-settings.md)
 - [x] 10: [x] 10a identity/revisions · [x] 10b1 resample/transform · [x] 10b2 masks/composite · [x] 10b3 delta · [x] 10c1 manual commands · [x] 10c2 stale/vacancy/move — `slices/10-layers-and-composite.md`
-- [ ] 11 segment: [x] 11a SAM runtime · [x] 11b verbs · [x] recorded-host G6 latency/retention · [ ] automatic fine-edge quality — `slices/11-segment.md`
+- [x] 11 segment: [x] 11a SAM runtime · [x] 11b verbs · [x] recorded-host G6 latency/retention · [x] v1 selection = initial mask + manual correction (user-accepted; automatic fine edges remain a documented limitation) — `slices/11-segment.md`
 - [x] 12 keyless fill DAG: strict generation/composite, density, upscale policy/failure, refresh, transform density, person move, fit/reference/input controls and outpaint canvas. Photographic/live evidence remains conditional and unverified — `slices/12-fill.md`
 - [x] 13 keyless reimagine/relight/generate, shared-frame/offline consumers, original paid-response retention, auto_enhance, markup and retouch. Live upscaler quality remains conditional and unverified — `slices/13-generative-extras-and-markup.md`
 - [x] Fixture completeness: historical schema-v10/v11/v12 preservation witnesses and structured truncated-RAW rejection — `fixtures/README.md`

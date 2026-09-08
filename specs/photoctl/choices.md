@@ -17,13 +17,13 @@ previous ledger's headings into these entries is
 
 **Review these first — the three least-confident choices overall:**
 
-1. **U1 — Automatic fine-edge selection quality is not met.** Manual correction
-   is separately implemented; it does not satisfy that automatic-quality target.
-2. **U2 — The release-default upscaler is a deterministic fake.** A stock install
+1. **U2 — The release-default upscaler is a deterministic fake.** A stock install
    has no configured live upscaling adapter, so `auto` density work cannot
    execute on a stock install.
-3. **U3 — Unfilled canvas is opaque black plus a warning.** Predictable and
+2. **U3 — Unfilled canvas is opaque black plus a warning.** Predictable and
    cheap, and possibly the wrong thing to hand a photographer in an export.
+3. **U4 — The vacancy placeholder colour is full scene-linear magenta.** A
+   conspicuous "unfinished" signal that may alarm a photographer in a preview.
 
 ---
 
@@ -32,42 +32,6 @@ previous ledger's headings into these entries is
 These entries expose product tradeoffs with reversible recommendations. They do
 not grant approval, change acceptance requirements or make every preference a
 release blocker. The spec's remaining requirements retain their own status.
-
-### U1 — Automatic fine-edge selection quality is unmet; manual correction is what shipped
-
-- **When:** Slice 11 segmentation, through the 2026-09-07 selection/redo pass.
-- **The choice:** Point `segment` at a person's hair, or at a wire crossing the
-  sky. The mask that comes back follows the coarse body of the subject
-  correctly and matches the upstream reference implementation numerically, but
-  its fine edges miss the strands and the wire — and tuning the local mask
-  kernel to rescue wires makes foliage worse. Separately, the user requested
-  hand repair on the *same* selection layer: `segment
-  --add` unions a polygon into that layer's retained coverage, `--subtract`
-  removes coverage, `--replace` takes the operand outright, and an empty
-  selection is a legal state that can be filled again rather than a refusal.
-  Coverage is corrected in the layer's own retained raster, so a subject that
-  has already been moved or scaled is repaired where it now sits; the polygon
-  is still expressed in base-photo coordinates. `undo`/`redo` walk a stored
-  revision path, so an over-correction is reversible without asking the model
-  again. The unbuilt alternative is a second refinement model or an alpha-matting
-  post-pass over the coarse mask.
-- **The gap:** The spec promised "selection" and a fine-edge quality target but
-  never named a numeric edge tolerance, nor what should happen when the model
-  simply misses.
-- **The reach:** Edits that consume this selection, such as masked fill and a
-  selected-person move, inherit its boundary quality. The correction vocabulary
-  (add/subtract/replace over base-photo polygons) must remain available if an
-  automatic refiner is added.
-  Manual repair is manual control; it is not evidence that automatic edge
-  quality improved.
-- **Verdict:** **Needs-user.** Recommend initial selection plus manual correction
-  as the v1 scope, but that scope change is not approved. Keep automatic fine-edge
-  quality **unmet** and preserve manual controls while the user decides or further
-  automatic work supplies the required evidence. No refiner architecture is
-  prescribed by this recommendation.
-- **Confidence:** Low.
-- **Owner:** `packages/render/src/sam2*.ts`, `crates/photoctl-image/src/sam2.rs`,
-  `packages/render/src/layers/operations.ts`, [slice 11](slices/11-segment.md).
 
 ### U2 — The release-default upscaler is a deterministic fake
 
@@ -581,9 +545,51 @@ release blocker. The spec's remaining requirements retain their own status.
   `scripts/{fetch-models.mjs,verify-release-models.mjs}`,
   [release ownership](slices/14-gold-exam-and-release.md#model-distribution).
 
-### U27 — The contact sheet shows membership as kind/role/state pills and a labelled primary pill
+---
 
-- **When:** Pairing presentation checkpoint, 2026-09-08.
+## Sound — the architecture now owned
+
+These are settled. They are listed so the user knows what they own, because
+future work inherits every one of them as a given.
+
+### S94 — v1 selection is an initial SAM mask plus manual correction on the same layer
+
+- **When:** Slice 11 segmentation and the selection/redo pass; accepted by the user on 2026-09-08.
+- **The choice:** Point `segment` at a person's hair, or at a wire crossing the
+  sky. The mask that comes back follows the coarse body of the subject
+  correctly and matches the upstream reference implementation numerically, but
+  its fine edges miss the strands and the wire, and tuning the local mask
+  kernel to rescue wires makes foliage worse. Instead of a second refinement
+  model or an alpha-matting pass, the product treats SAM as the starting point:
+  `segment <photo> --layer <layer> --operation add|subtract|replace` with
+  `--box` or a `--brush` polygon corrects the *same* layer's retained coverage
+  in base-photo coordinates, an empty selection is a legal refillable state,
+  and `undo`/`redo` walk a stored revision path so an over-correction is
+  reversible without another model call. Corrections apply where a moved or
+  scaled subject now sits.
+- **The gap:** The spec promised "selection" and a fine-edge quality target but
+  never named a numeric edge tolerance, nor what should happen when the model
+  simply misses.
+- **The reach:** Edits that consume a selection, such as masked fill and a
+  selected-person move, inherit whatever boundary the user or agent has
+  corrected to. The correction vocabulary must remain available if an automatic
+  refiner is ever added; a refiner would be an additional stage, not a
+  replacement for these controls.
+- **Verdict:** **Sound.** The user confirmed that automatic fine-edge quality
+  is not a v1 requirement because the manual override exists for agents and
+  users. The photographic edge evidence stays recorded as a known limitation,
+  not a failed gate.
+- **Confidence:** High on the contract; the automatic edge limitation itself is
+  documented, not resolved.
+- **Owner:** `packages/commands/src/handlers/segment.ts`,
+  `packages/commands/src/segment-refinement.test.ts`,
+  `packages/render/src/layers/operations.ts`, `crates/photoctl-image/src/sam2.rs`,
+  [slice 11](slices/11-segment.md),
+  [selection refinement](slices/10-selection-refinement-and-redo.md).
+
+### S95 — The contact sheet shows membership as kind/role/state pills and a labelled primary pill
+
+- **When:** Pairing presentation checkpoint, accepted by the user on 2026-09-08.
 - **The choice:** A photo card on the `wb sheet` report shows, beside the RAW
   filename, one pill reading `Primary online` or `Primary offline` — the public
   top-level `online` field, which the slice defines as the primary original's
@@ -592,39 +598,22 @@ release blocker. The spec's remaining requirements retain their own status.
   Online`) with a green or grey dot and a dimmed dashed border when offline. The
   culling row holds only rating, flag and label. Members are not named: the
   public `list` row's `originals` entries carry `id`, `kind` and `online`, and
-  the sheet renders exactly that. No "partially available" summary exists;
-  a reader combines the primary pill with the member pills. The alternatives
-  the unprimed critique asked for were member filenames on each pill (a public
-  list-shape extension), replacing the primary pill with a partial-availability
-  summary, and restyling sheet chrome that predates this slice (full UUID line,
-  letterboxed portrait thumbnails, native `Show JSON` disclosure, empty fourth
-  grid column with three photos).
+  the sheet renders exactly that. No "partially available" summary exists; a
+  reader combines the primary pill with the member pills. The unprimed critique
+  had asked for member filenames (a public list-shape extension), a
+  partial-availability summary, and restyled sheet chrome that predates this
+  slice; the user accepted the card as shown.
 - **The gap:** The slice required list/show and the workbench to agree on one
   photo and its membership, with the top-level state describing the primary and
-  membership reporting each original separately. It did not say how the card
-  should distinguish scope, whether members are named, or whether a mixed state
-  gets its own summary word.
-- **The reach:** Naming members would change the public `list` row, which every
-  agent consumer reads, not just the sheet. The primary pill and the `RAW ·
-  Primary` member pill deliberately state the same fact twice; removing either
-  changes what a standalone photo's card says. Sheet chrome choices are shared
-  with every other workbench card state.
-- **Verdict:** **Needs-user.** Provisional call: keep the labelled primary pill,
-  the headed member group and the unnamed members. Reverse by editing one
-  template; naming members additionally means one additive field on the list
-  row's `originals` entries.
-- **Confidence:** Low — the critique judged the final card decodable but not
-  self-explanatory, and only the user knows what a photographer scanning a
-  sheet needs first.
-- **Owner:** `apps/workbench/src/sheet.ts`, `packages/protocol/src/verbs/`
-  (`list` row shape), [layout evidence](assets/paired-layout/README.md).
-
----
-
-## Sound — the architecture now owned
-
-These are settled. They are listed so the user knows what they own, because
-future work inherits every one of them as a given.
+  membership reporting each original separately, without saying how the card
+  distinguishes scope or whether members are named.
+- **The reach:** The primary pill and the `RAW · Primary` member pill state the
+  same fact twice by design. Naming members later would change the public
+  `list` row, which every agent consumer reads, not just the sheet.
+- **Verdict:** **Sound.** User-accepted on the captured evidence.
+- **Confidence:** High.
+- **Owner:** `apps/workbench/src/sheet.ts`,
+  [layout evidence](assets/paired-layout/README.md).
 
 ### S93 — Five operating numbers nobody chose, one of them not settable
 

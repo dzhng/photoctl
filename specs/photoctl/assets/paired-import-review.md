@@ -129,7 +129,7 @@ preview/cache and export history belong to the local test catalog. The card was
 not remounted, and no whole-card or macOS mount-metadata invariance is claimed.
 Further camera access is unnecessary for this witness.
 
-## Presentation evidence — captured, awaiting user acceptance
+## Presentation evidence — captured and accepted
 
 Earlier attempts could not capture the workbench card: the in-app browser was
 disabled and the Chrome extension refused local `file:` URLs and indirect
@@ -146,7 +146,8 @@ rating/flag/label, and the photo-level state is a labelled `Primary
 online`/`Primary offline` pill beside the filename. The final critique found every
 state decodable with no overflow, clipping or contrast defect. Its remaining
 findings — member filenames, a partial-availability summary and pre-existing
-sheet chrome — are product choices recorded as ledger entry U27 for the user.
+sheet chrome — are product choices the user declined on 2026-09-08 by
+accepting the card as shown (ledger entry S95).
 The [fixture orientation evidence](paired-orientation/README.md) remains the
 image-geometry verdict; neither set is the physical-camera journey.
 

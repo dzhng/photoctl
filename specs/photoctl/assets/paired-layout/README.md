@@ -53,7 +53,7 @@ The final desktop mixed capture differs from the original over 3.3% of pixels
 (grayscale MAE 5.06); the two final states differ only in their badges (0.24%).
 The change is real, not a re-anchored no-op.
 
-## Open presentation questions for the user
+## Presentation findings left as product choices
 
 The final critique's remaining findings are product choices, not defects the
 slice settled:
@@ -70,5 +70,5 @@ slice settled:
   disclosure, and the auto-fill grid leaving a fourth column empty with three
   photos.
 
-These are recorded in the choices ledger as U27. The membership-badge layout is
-otherwise ready for the user's acceptance; no automatic verdict is claimed.
+The user accepted the card as shown on 2026-09-08; the decision is ledger
+entry S95.
