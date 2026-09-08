@@ -68,3 +68,4 @@ tmp
 .wip/
 
 # NOTE: fixtures/ is committed on purpose — known-good/known-bad assets for tests.
+__pycache__/
