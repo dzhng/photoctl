@@ -126,7 +126,7 @@ async function writeUnsettledEvidence(options, error) {
 function parseArgs(args) {
   let rows = 5_000;
   let cycles = 20;
-  let evidence = resolve("specs/photoctl/assets/gates/G5-halfvec.txt");
+  let evidence = resolve("specs/done/photoctl/assets/gates/G5-halfvec.txt");
   for (let index = 0; index < args.length; index += 2) {
     const name = args[index];
     const value = args[index + 1];

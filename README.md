@@ -34,7 +34,7 @@ and run the appropriate checks; [project commands](package.json) and the
 
 ## Where things live
 
-- [Development plan](specs/photoctl/README.md) — current status, requirements and decisions.
+- [v1 record](specs/done/photoctl/README.md) — why the product has this shape, the invariants it keeps, and the decisions made along the way.
 - [Reference fixtures](fixtures/README.md) — retained inputs and the facts they establish.
 - [Native build guide](crates/photoctl-image/ort/README.md) — runtime acquisition and platform constraints.
 
@@ -42,7 +42,8 @@ and run the appropriate checks; [project commands](package.json) and the
 
 Version tags drive package and model publication together. A CLI release downloads
 its own verified model files, never a moving “latest” model. Libraries can explicitly
-select a mirror through [library settings](specs/photoctl/slices/09-settings.md).
-[Release ownership](specs/photoctl/slices/14-gold-exam-and-release.md#model-distribution)
-describes the publication boundary; the full local suite remains a release-preparation
-responsibility, separate from the hosted release checks.
+select a mirror through `photoctl settings set models_base_url`, validated by
+[the settings registry](packages/protocol/src/verbs/settings.ts). The
+[release workflow](.github/workflows/publish.yml) owns the publication boundary; the
+full local suite remains a release-preparation responsibility, separate from the
+hosted release checks.

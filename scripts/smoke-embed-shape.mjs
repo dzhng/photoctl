@@ -151,7 +151,7 @@ function redactUrl(value) {
 }
 
 function parseArgs(args) {
-  let evidence = resolve("specs/photoctl/assets/gates/embed-shape.json");
+  let evidence = resolve("specs/done/photoctl/assets/gates/embed-shape.json");
   for (let index = 0; index < args.length; index += 2) {
     if (args[index] !== "--evidence" || args[index + 1] === undefined) {
       throw new Error("usage: smoke:embed-shape [--evidence PATH]");

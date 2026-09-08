@@ -8,7 +8,7 @@ const args = process.argv.slice(2);
 if (args.length && (args.length !== 2 || args[0] !== "--out")) {
   throw new Error("usage: smoke:mask-polarity [--out DIRECTORY]");
 }
-const output = resolve(args[1] ?? "specs/photoctl/assets/gates/mask-polarity");
+const output = resolve(args[1] ?? "specs/done/photoctl/assets/gates/mask-polarity");
 const key = process.env.PHOTOCTL_MASK_SMOKE_API_KEY;
 await mkdir(output, { recursive: true });
 await writeFile(
