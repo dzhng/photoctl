@@ -86,8 +86,14 @@ Invocations and logs are `/private/tmp/photoctl-review-closeout.tJpUBj/`:
 `remaining-gates.log`, `final-gates.sh`, `final-gates.log`,
 `mac-sam-focused.log`, `mac-sam-shutdown-fixed.log`,
 `rust-sam-shutdown-fixed.log`, and `native-load-sam-shutdown-fixed.log`.
-Next complete the final requirement audit; all identified failures now have
-focused passing evidence on their applicable corrected source.
+The final bounded requirement audit found no remaining implementation or
+acceptance gate in the user-approved v1 scope. All identified failures have
+focused passing evidence on their applicable corrected source. Historical
+audit references to unresolved selection/pairing are explicitly superseded by
+S94/S95. Public publication and live-provider quality remain unverified;
+automatic fine edges remain the accepted limitation. There is no next
+implementation pickup for this spec. Review corrections are committed locally,
+not pushed or published.
 Do not rerun the entire host suite as a feedback loop or treat the earlier
 pre-correction gate as covering these changes.
 
