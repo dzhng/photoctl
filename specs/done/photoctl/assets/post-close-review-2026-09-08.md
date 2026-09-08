@@ -42,10 +42,29 @@ Targeted lint, formatting and whitespace checks pass.
 ## Current handoff
 
 Generation correction is integrated as `9ef99cc`; transport is `17caf24`.
-The final integrated local gate is running on that production source. Its
-invocation and log are
-`/private/tmp/photoctl-review-closeout.tJpUBj/{gate.sh,gate.log}`.
-Do not treat the earlier full gate as covering these later corrections.
+The integrated gate built and passed static checks on that production source.
+Host TypeScript finished with 1,119 passes and one failure in the existing
+embedding-responsiveness benchmark (rate p95 about 800 ms versus a 496 ms
+bound). That unchanged file passed its focused rerun. Heavy unrelated host CPU
+work was observed afterward; contention is plausible, not a proven cause.
+No threshold or product code was changed. This is not an uninterrupted green run.
+
+Rust passed all 85 tests. Docker also finished with 1,119 passes and one
+failure: the RAW treatment correctness test exceeded Vitest's default
+five-second timeout. The embedding-responsiveness benchmark and all new
+regressions passed there. The RAW test performs two full camera decodes, not
+a speed assertion; its hang guard is now an explicit 60 seconds, matching
+related source-treatment checks. All pixel assertions are unchanged. It passed
+locally and in the same Docker image with only the updated test mounted
+read-only (5.2 seconds for the previously timed-out case). Docker's three
+real-model checks passed afterward. Mac packaged checks are now running.
+
+Invocations and logs are `/private/tmp/photoctl-review-closeout.tJpUBj/`:
+`gate.sh`, `gate.log`, `embed-drain-focused.log`, `remaining-gates.sh`,
+`remaining-gates.log`, `final-gates.sh`, and `final-gates.log`.
+Next inspect the live Mac continuation's final result before claiming closeout.
+Do not rerun the entire host suite as a feedback loop or treat the earlier
+pre-correction gate as covering these changes.
 
 Three independent read-only archive audits checked core/storage, rendering,
 and historical/visual-provenance claims. Root verified and corrected omitted

@@ -7,6 +7,7 @@ import {
   type ImageSource,
 } from "./decoder.js";
 
+// Two full camera RAW decodes: this is a correctness check, not a latency gate.
 test("the RAW adapter reports the planned reconstruction and preserves explicit disabled pixels", async () => {
   const source: ImageSource = {
     kind: "online-file",
@@ -43,7 +44,7 @@ test("the RAW adapter reports the planned reconstruction and preserves explicit 
     scale: 0.25,
   });
   expect(Buffer.from(recovered.data.buffer).equals(Buffer.from(disabled.data.buffer))).toBe(false);
-});
+}, 60_000);
 
 test.each([
   [new LibrawDecoder(), "DSC00103.ARW", "image/x-sony-arw", "unsupported"],
