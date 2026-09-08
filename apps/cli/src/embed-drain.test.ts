@@ -191,7 +191,7 @@ async function embeddingResponse(
   if (received === 0) throw new Error("embedding request body is empty");
   await new Promise((resolveDelay) => setTimeout(resolveDelay, 5));
   const bytes = JSON.stringify({
-    data: [{ embedding: Array(3_072).fill(0.125) }],
+    embeddings: [Array(3_072).fill(0.125)],
   });
   response.writeHead(200, {
     "content-type": "application/json",

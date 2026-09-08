@@ -25,7 +25,7 @@ test("the keyless gold exam develops three people presets before exporting ten p
     await mkdir(bin);
     await Promise.all(
       Object.entries({
-        photoctl: "apps/cli/dist/bin.js",
+        openphoto: "apps/cli/dist/bin.js",
         wb: "apps/workbench/dist/cli.js",
       }).map(([name, entry]) =>
         writeFile(
@@ -63,7 +63,7 @@ test("the keyless gold exam develops three people presets before exporting ten p
       PHOTOCTL_CACHE: cache,
       PHOTOCTL_VOLUME_MAP: `${directory}=fixture-volume:online`,
     };
-    await execute(join(bin, "photoctl"), ["init", "--path", library], {
+    await execute(join(bin, "openphoto"), ["init", "--path", library], {
       cwd: directory,
       env,
     });
@@ -73,7 +73,7 @@ test("the keyless gold exam develops three people presets before exporting ten p
       .toFile(existingFile);
     const existingImport = JSON.parse(
       (
-        await execute(join(bin, "photoctl"), ["import", existingFile, "--link"], {
+        await execute(join(bin, "openphoto"), ["import", existingFile, "--link"], {
           cwd: directory,
           env,
         })

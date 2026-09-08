@@ -5,8 +5,9 @@ const directory = "out/packages";
 const { version } = JSON.parse(readFileSync("package.json", "utf8"));
 const tarballs = readdirSync("packages")
   .filter((name) => name.startsWith("img-") || name.startsWith("mac-helper-"))
-  .map((name) => `photoctl-${name}-${version}.tgz`);
-tarballs.push(`photoctl-cli-${version}.tgz`);
+  .map((name) => `dzhng-openphoto-${name}-${version}.tgz`);
+const cliTarball = `dzhng-openphoto-${version}.tgz`;
+tarballs.push(cliTarball);
 for (const tarball of tarballs) {
   if (!existsSync(join(directory, tarball)))
     throw new Error(`Missing release artifact: ${tarball}`);
@@ -14,7 +15,7 @@ for (const tarball of tarballs) {
 // Publish optional platform dependencies before the CLI that references them.
 tarballs.sort(
   (a, b) =>
-    Number(a.startsWith("photoctl-cli-")) - Number(b.startsWith("photoctl-cli-")) ||
+    Number(a === cliTarball) - Number(b === cliTarball) ||
     a.localeCompare(b),
 );
 for (const tarball of tarballs) {

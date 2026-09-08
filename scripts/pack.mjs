@@ -30,7 +30,7 @@ for (const folder of ["apps", "packages"]) {
 }
 const staging = mkdtempSync(join(tmpdir(), "photoctl-pack-"));
 try {
-  const cli = workspace.get("@photoctl/cli");
+  const cli = workspace.get("@dzhng/openphoto");
   const dependencies = {};
   const optionalDependencies = {};
   const bundled = new Set();
@@ -85,14 +85,14 @@ try {
   const platform = `${process.platform}-${process.arch}${process.platform === "linux" ? "-gnu" : ""}`;
   for (const { directory, manifest } of workspace.values()) {
     if (
-      !manifest.name.startsWith("@photoctl/img-") &&
-      !manifest.name.startsWith("@photoctl/mac-helper-")
+      !manifest.name.startsWith("@dzhng/openphoto-img-") &&
+      !manifest.name.startsWith("@dzhng/openphoto-mac-helper-")
     )
       continue;
     if (
       !all &&
-      manifest.name !== `@photoctl/img-${platform}` &&
-      manifest.name !== `@photoctl/mac-helper-${process.platform}-${process.arch}`
+      manifest.name !== `@dzhng/openphoto-img-${platform}` &&
+      manifest.name !== `@dzhng/openphoto-mac-helper-${process.platform}-${process.arch}`
     )
       continue;
     if (!existsSync(join(directory, manifest.main)))
@@ -104,7 +104,7 @@ try {
         { stdio: "inherit" },
       );
     }
-    if (manifest.name.startsWith("@photoctl/img-")) {
+    if (manifest.name.startsWith("@dzhng/openphoto-img-")) {
       const native = join(staging, "native-runtime");
       mkdirSync(native);
       cpSync(join(directory, manifest.main), join(native, manifest.main));

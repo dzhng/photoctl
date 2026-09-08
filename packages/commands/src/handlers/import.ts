@@ -338,7 +338,7 @@ async function generatedArtifactResolver(libraryPath: string): Promise<VolumeRes
       }
       return {
         uuid: LIBRARY_VOLUME_UUID,
-        label: "photoctl library",
+        label: "OpenPhoto library",
         mount: libraryRoot,
         relPath,
         online: true,
@@ -530,7 +530,7 @@ async function commitCandidate(options: {
       const volume = options.copy
         ? {
             uuid: LIBRARY_VOLUME_UUID,
-            label: "photoctl library",
+            label: "OpenPhoto library",
             mount: options.libraryPath,
             relPath: relative(options.libraryPath, storedPath),
             online: true,

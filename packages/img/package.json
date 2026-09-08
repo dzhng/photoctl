@@ -4,10 +4,10 @@
   "type": "module",
   "exports": "./dist/index.js",
   "optionalDependencies": {
-    "@photoctl/img-darwin-arm64": "0.1.0",
-    "@photoctl/img-darwin-x64": "0.1.0",
-    "@photoctl/img-linux-arm64-gnu": "0.1.0",
-    "@photoctl/img-linux-x64-gnu": "0.1.0"
+    "@dzhng/openphoto-img-darwin-arm64": "0.1.0",
+    "@dzhng/openphoto-img-darwin-x64": "0.1.0",
+    "@dzhng/openphoto-img-linux-arm64-gnu": "0.1.0",
+    "@dzhng/openphoto-img-linux-x64-gnu": "0.1.0"
   },
   "scripts": { "build": "tsc -p tsconfig.json" }
 }

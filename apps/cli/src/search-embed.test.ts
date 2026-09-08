@@ -93,7 +93,7 @@ test("a running daemon applies the importing command's embedding key and cache r
     requests += 1;
     request.resume();
     response.setHeader("content-type", "application/json");
-    response.end(JSON.stringify({ data: [{ embedding: Array(3_072).fill(0.25) }] }));
+    response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
   });
   await new Promise<void>((resolveListen) => gateway!.listen(0, "127.0.0.1", resolveListen));
   const address = gateway.address();
@@ -137,7 +137,7 @@ test("a foreground tag quiesces an in-flight worker and then resumes it", async 
     request.resume();
     if (requests === 1) return;
     response.setHeader("content-type", "application/json");
-    response.end(JSON.stringify({ data: [{ embedding: Array(3_072).fill(0.25) }] }));
+    response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
   });
   await new Promise<void>((resolveListen) => gateway!.listen(0, "127.0.0.1", resolveListen));
   const address = gateway.address();
@@ -206,7 +206,7 @@ test("a foreground embed emits progress while one provider request is still in f
     request.resume();
     setTimeout(() => {
       response.setHeader("content-type", "application/json");
-      response.end(JSON.stringify({ data: [{ embedding: Array(3_072).fill(0.25) }] }));
+      response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
     }, 5_500);
   });
   await new Promise<void>((resolveListen) => gateway!.listen(0, "127.0.0.1", resolveListen));

@@ -22,8 +22,8 @@ while [[ $# -gt 0 ]]; do
 done
 [[ $source_kind == fixture || $source_kind == real || $source_kind == unverified ]] || usage
 
-command -v photoctl >/dev/null 2>&1 || {
-  echo "photoctl must be on PATH" >&2
+command -v openphoto >/dev/null 2>&1 || {
+  echo "openphoto must be on PATH" >&2
   exit 69
 }
 
@@ -32,8 +32,8 @@ scratch=$(mktemp -d "${TMPDIR:-/tmp}/photoctl-gold.XXXXXX")
 trap 'rm -rf "$scratch"' EXIT
 trap 'for result in "$scratch"/*.json; do if [[ -f "$result" ]]; then cat "$result" >&2; fi; done' ERR
 
-photoctl import "$source_dir" --link --recursive >"$scratch/import.json"
-photoctl list --limit 10 >"$scratch/list.json"
+openphoto import "$source_dir" --link --recursive >"$scratch/import.json"
+openphoto list --limit 10 >"$scratch/list.json"
 node -e '
   const fs = require("node:fs");
   const value = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
@@ -47,9 +47,9 @@ node -e '
 
 ids=()
 while IFS= read -r id; do ids+=("$id"); done <"$scratch/ids"
-photoctl rate "${ids[@]}" --stars 5 >"$scratch/rate.json"
-photoctl develop "${ids[@]:0:3}" --preset people >"$scratch/develop.json"
-photoctl export "${ids[@]}" --to "$output_dir" --preset delivery >"$scratch/export.json"
+openphoto rate "${ids[@]}" --stars 5 >"$scratch/rate.json"
+openphoto develop "${ids[@]:0:3}" --preset people >"$scratch/develop.json"
+openphoto export "${ids[@]}" --to "$output_dir" --preset delivery >"$scratch/export.json"
 
 node "$(dirname "$0")/gold-exam-report.mjs" "$scratch" "$output_dir" "$source_dir" "$source_kind"
 

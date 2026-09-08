@@ -1,5 +1,5 @@
 {
-  "name": "@photoctl/mac-helper-darwin-x64",
+  "name": "@dzhng/openphoto-mac-helper-darwin-x64",
   "version": "0.1.0",
   "os": [
     "darwin"

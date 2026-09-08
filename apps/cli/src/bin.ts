@@ -6,9 +6,11 @@ import {
   listRowSchema,
   searchDataSchema,
   searchHitSchema,
+  PhotoctlError,
 } from "@photoctl/protocol";
 import { readFileSync } from "node:fs";
 import { renderHuman } from "./output.js";
+import { configureInput } from "./configure-input.js";
 const rawArgs = process.argv.slice(2);
 const human = rawArgs.includes("--human");
 const args = rawArgs.filter((argument) => argument !== "--human");
@@ -19,6 +21,22 @@ const { version } = JSON.parse(
 ) as { version: string };
 const verb = args[0] === "--version" || args[0] === "-V" ? "version" : (args.shift() ?? "");
 const streaming = (verb === "list" || verb === "search") && args.includes("--stream");
+let gatewayApiKey = process.env.AI_GATEWAY_API_KEY;
+if (verb === "configure") {
+  try {
+    gatewayApiKey = await configureInput(args);
+  } catch (error) {
+    if (!(error instanceof PhotoctlError)) throw error;
+    const envelope = {
+      schema: 1 as const,
+      ok: false as const,
+      code: error.code,
+      data: { message: error.message },
+    };
+    process.stdout.write(human ? renderHuman(envelope) : `${JSON.stringify(envelope)}\n`);
+    process.exit(exitCodeFor(error.code));
+  }
+}
 const execution = await execute(
   {
     verb,
@@ -33,7 +51,7 @@ const execution = await execute(
       volumeMap: process.env.PHOTOCTL_VOLUME_MAP,
       macHelperPath: process.env.PHOTOCTL_MAC_HELPER_PATH,
       gatewayUrl: process.env.PHOTOCTL_GATEWAY_URL,
-      gatewayApiKey: process.env.AI_GATEWAY_API_KEY,
+      gatewayApiKey,
     },
   },
   {

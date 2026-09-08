@@ -17,6 +17,7 @@ import {
   type DaemonStatus,
 } from "./daemon-client.js";
 import { libraryPath, parseLockBudget } from "./context.js";
+import { savedGatewayKey } from "./configure.js";
 
 export interface CommandExecution {
   envelope: Envelope;
@@ -31,10 +32,18 @@ export async function execute(
   try {
     if (
       request.verb === "version" ||
+      request.verb === "configure" ||
       (request.verb === "settings" && request.args.length === 1 && request.args[0] === "--help")
     ) {
       return { envelope: await dispatch(request, context), events: [], stream: [] };
     }
+    request = {
+      ...request,
+      env: {
+        ...request.env,
+        gatewayApiKey: request.env.gatewayApiKey ?? (await savedGatewayKey()),
+      },
+    };
     const path = commandLibraryPath(request);
     if (request.verb === "daemon")
       return await executeDaemonControl(request, context.version, path);
@@ -140,7 +149,7 @@ export async function execute(
 }
 
 function daemonRequestFailure(path: string, error: unknown): PhotoctlError {
-  return new PhotoctlError("daemon_unavailable", "The photoctl daemon did not respond", {
+  return new PhotoctlError("daemon_unavailable", "The OpenPhoto daemon did not respond", {
     library: path,
     message:
       error instanceof DaemonConnectionError
@@ -166,7 +175,7 @@ async function executeDaemonControl(
     });
     const status = connection.verifiedStatus;
     if (!status)
-      throw new PhotoctlError("daemon_unavailable", "The photoctl daemon is not responding");
+      throw new PhotoctlError("daemon_unavailable", "The OpenPhoto daemon is not responding");
     return {
       envelope: success(status),
       events: [daemonEvent(connection.action, status)],
@@ -176,7 +185,7 @@ async function executeDaemonControl(
   if (action === "status") {
     const status = await inspectDaemon(path);
     if (!status)
-      throw new PhotoctlError("daemon_unavailable", "The photoctl daemon is not running");
+      throw new PhotoctlError("daemon_unavailable", "The OpenPhoto daemon is not running");
     return { envelope: success(status), events: [daemonEvent("connected", status)], stream: [] };
   }
   const stopped = await stopDaemon(path);
@@ -202,8 +211,10 @@ function commandLibraryPath(request: CommandRequest): string {
 function daemonOptions(request: CommandRequest): {
   lockBudgetMs?: number;
   pollCeilingMs?: number;
+  gatewayApiKey?: string;
 } {
   return {
+    gatewayApiKey: request.env.gatewayApiKey,
     lockBudgetMs: parseLockBudget(request.env.lockBudgetMs),
     pollCeilingMs: parsePollCeiling(request.env.pollCeilingMs),
   };

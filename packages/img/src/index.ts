@@ -912,10 +912,10 @@ function asFloat32Array(data: Float32Array | ArrayLike<number>): Float32Array {
 function platformPackage(): string {
   const suffix = `${process.platform}-${process.arch}`;
   const packages: Record<string, string> = {
-    "darwin-arm64": "@photoctl/img-darwin-arm64",
-    "darwin-x64": "@photoctl/img-darwin-x64",
-    "linux-arm64": "@photoctl/img-linux-arm64-gnu",
-    "linux-x64": "@photoctl/img-linux-x64-gnu",
+    "darwin-arm64": "@dzhng/openphoto-img-darwin-arm64",
+    "darwin-x64": "@dzhng/openphoto-img-darwin-x64",
+    "linux-arm64": "@dzhng/openphoto-img-linux-arm64-gnu",
+    "linux-x64": "@dzhng/openphoto-img-linux-x64-gnu",
   };
-  return packages[suffix] ?? `@photoctl/img-${suffix}`;
+  return packages[suffix] ?? `@dzhng/openphoto-img-${suffix}`;
 }

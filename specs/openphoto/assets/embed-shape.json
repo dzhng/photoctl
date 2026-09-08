@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "status": "accepted",
+  "reason": null,
+  "model": "google/gemini-embedding-2",
+  "endpoint": "https://ai-gateway.vercel.sh/v3/ai/embedding-model",
+  "requestShape": "gateway-google-content-v1",
+  "acceptedRequest": {
+    "imageSha256": [
+      "e8581c4c3e0d42e1cdc32905e3f195bbbfc8e76fce0b2fdbeb3cdaf982ae7265",
+      "518ccc1b0c14b7fcafd0644454a8d7d898b6f94e36e758d9843e5726d7eb0275"
+    ],
+    "caption": "A photograph indexed for cross-modal retrieval."
+  },
+  "dimensions": 3072,
+  "observed": null,
+  "requestId": null,
+  "imageWitness": {
+    "changedImageDifference": 0.024508492,
+    "repeatedImageDifference": 0
+  },
+  "sources": [
+    "https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai",
+    "https://github.com/vercel/ai/blob/ai%406.0.0/packages/gateway/src/gateway-embedding-model.ts"
+  ]
+}

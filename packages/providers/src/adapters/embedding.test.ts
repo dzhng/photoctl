@@ -1,34 +1,22 @@
 import { expect, test } from "vitest";
 import { createEmbeddingAdapter } from "./embedding.js";
 
-test("the embedding adapter sends the versioned candidate image shape and validates 3072 values", async () => {
-  let sent: unknown;
+test("a text-only model cannot silently index the shared caption instead of the image", async () => {
   const adapter = createEmbeddingAdapter({
-    model: "fixture/embed",
-    request: async (body) => {
-      sent = body;
-      return {
-        data: { data: [{ embedding: Array(3_072).fill(0.25) }] },
-        requestId: "req_1",
-        attempts: 1,
-      };
-    },
+    model: "openai/text-embedding-3-large",
+    request: async () => ({
+      data: { data: [{ embedding: Array(3072).fill(0.25) }] },
+      requestId: null,
+      attempts: 1,
+    }),
+    requestImages: async () => ({
+      data: { embeddings: [Array(3072).fill(0.25)] },
+      requestId: null,
+      attempts: 1,
+    }),
   });
-
-  const result = await adapter.images([Buffer.from("jpeg")]);
-
-  expect(result.vectors[0]).toEqual(Array(3_072).fill(0.25));
-  expect(sent).toEqual({
-    model: "fixture/embed",
-    dimensions: 3_072,
-    input: [
-      {
-        content: [
-          { type: "text", text: "A photograph indexed for cross-modal retrieval." },
-          { type: "image_url", image_url: "data:image/jpeg;base64,anBlZw==" },
-        ],
-      },
-    ],
+  await expect(adapter.images([Buffer.from("jpeg")])).rejects.toMatchObject({
+    code: "provider_unconfigured",
   });
 });
 
@@ -40,6 +28,9 @@ test("the embedding adapter rejects a malformed provider response without retain
       requestId: null,
       attempts: 1,
     }),
+    requestImages: async () => {
+      throw new Error("Unexpected image request");
+    },
   });
 
   const error = await adapter.text(["warm portrait"]).catch((caught: unknown) => caught);
@@ -57,6 +48,9 @@ test.each([
   const adapter = createEmbeddingAdapter({
     model: "fixture/embed",
     request: async () => ({ data: { data }, requestId: null, attempts: 1 }),
+    requestImages: async () => {
+      throw new Error("Unexpected image request");
+    },
   });
 
   await expect(adapter.text(["warm portrait"])).rejects.toMatchObject({
@@ -64,14 +58,20 @@ test.each([
   });
 });
 
-test("the provisional image request version never silently widens beyond its one defined candidate", async () => {
+test("each image receives its own vector through the multimodal request", async () => {
   const adapter = createEmbeddingAdapter({
-    model: "fixture/embed",
+    model: "google/gemini-embedding-2",
     request: async () => {
-      throw new Error("must not send");
+      throw new Error("Unexpected text request");
     },
+    requestImages: async () => ({
+      data: { embeddings: [Array(3072).fill(0.25), Array(3072).fill(0.5)] },
+      requestId: "images",
+      attempts: 1,
+    }),
   });
-  await expect(adapter.images([Buffer.from("one"), Buffer.from("two")])).rejects.toThrow(
-    "openai-compatible-content-parts-candidate-v1 requires exactly one image",
-  );
+  expect((await adapter.images([Buffer.from("one"), Buffer.from("two")])).vectors).toEqual([
+    Array(3072).fill(0.25),
+    Array(3072).fill(0.5),
+  ]);
 });

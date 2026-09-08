@@ -51,7 +51,7 @@ test("the packed platform addon loads quietly outside the checkout", () => {
       process.execPath,
       [
         "-e",
-        `const name = '@photoctl/img-${platform}'; const addon = require(name); process.stdout.write(JSON.stringify({version: addon.librawVersion(), path: require.resolve(name)}))`,
+        `const name = '@dzhng/openphoto-img-${platform}'; const addon = require(name); process.stdout.write(JSON.stringify({version: addon.librawVersion(), path: require.resolve(name)}))`,
       ],
       { cwd: scratch, env, encoding: "utf8", timeout: 10_000 },
     );

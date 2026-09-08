@@ -1,8 +1,24 @@
-# photoctl
+# OpenPhoto
 
 A CLI-first photo library and non-destructive editor for photographers and agents.
 The complete workflow must be usable without a screen. Human and machine interfaces
 share the same capabilities; a GUI must not become a separate product with exclusive features.
+
+## Installation and credentials
+
+The npm package is `@dzhng/openphoto`; it installs the `openphoto` command and
+its platform-specific native dependencies. Run `openphoto configure` to enter an
+AI Gateway key without terminal echo. `openphoto configure --help` describes
+non-interactive input. Configuration makes no network request.
+
+Credentials are plaintext in `~/.openphoto/.env`, readable and writable only by
+the owner. They are separate from photo catalogs and backups. Each command loads
+the saved key; an explicit `AI_GATEWAY_API_KEY` environment value takes precedence,
+including an empty value. A running daemon adopts changed credentials on its next
+foreground request, without cancelling work already in progress.
+
+Existing catalog locations and `PHOTOCTL_*` environment controls stay stable.
+The repository and private package names remain photoctl.
 
 ## Principles
 
@@ -47,6 +63,7 @@ while iterating.
 
 ## Where things live
 
+- [Installation and live-provider plan](specs/openphoto/README.md) — current verification work and credential boundaries.
 - [v1 record](specs/done/photoctl/README.md) — why the product has this shape, the invariants it keeps, and the decisions made along the way.
 - [Reference fixtures](fixtures/README.md) — retained inputs and the facts they establish.
 - [Native build guide](crates/photoctl-image/ort/README.md) — runtime acquisition and platform constraints.
@@ -57,7 +74,7 @@ while iterating.
 
 Version tags drive package and model publication together. A CLI release downloads
 its own verified model files, never a moving “latest” model. Libraries can explicitly
-select a mirror through `photoctl settings set models_base_url`, validated by
+select a mirror through `openphoto settings set models_base_url`, validated by
 [the settings registry](packages/protocol/src/verbs/settings.ts). The
 [release workflow](.github/workflows/publish.yml) owns the publication boundary; the
 full local suite remains a release-preparation responsibility, separate from the

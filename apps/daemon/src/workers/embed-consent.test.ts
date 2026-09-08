@@ -130,7 +130,7 @@ test("a retryable short batch wakes at cooldown even after a foreground kick", a
       return;
     }
     response.setHeader("content-type", "application/json");
-    response.end(JSON.stringify({ data: [{ embedding: Array(3_072).fill(0.25) }] }));
+    response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
   });
   await new Promise<void>((resolveListen) => server!.listen(0, "127.0.0.1", resolveListen));
   const address = server.address();
@@ -184,7 +184,7 @@ test("automatic embedding stops after one configuration failure and resumes on r
       return;
     }
     response.setHeader("content-type", "application/json");
-    response.end(JSON.stringify({ data: [{ embedding: Array(3_072).fill(0.25) }] }));
+    response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
   });
   await new Promise<void>((resolveListen) => server!.listen(0, "127.0.0.1", resolveListen));
   const address = server.address();
@@ -256,7 +256,7 @@ test("one HTTP 400 image rejection does not configuration-pause later photos", a
       return;
     }
     response.setHeader("content-type", "application/json");
-    response.end(JSON.stringify({ data: [{ embedding: Array(3_072).fill(0.25) }] }));
+    response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
   });
   await new Promise<void>((resolveListen) => server!.listen(0, "127.0.0.1", resolveListen));
   const address = server.address();
@@ -311,7 +311,7 @@ test("worker stop aborts an in-flight provider request", async () => {
     setTimeout(() => {
       if (!response.destroyed) {
         response.setHeader("content-type", "application/json");
-        response.end(JSON.stringify({ data: [{ embedding: Array(3_072).fill(0.25) }] }));
+        response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
       }
     }, 2_000);
   });
@@ -354,7 +354,7 @@ test("foreground pause reaches a database-safe point before a transaction and re
     request.resume();
     if (requests === 1) return;
     response.setHeader("content-type", "application/json");
-    response.end(JSON.stringify({ data: [{ embedding: Array(3_072).fill(0.25) }] }));
+    response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
   });
   await new Promise<void>((resolveListen) => server!.listen(0, "127.0.0.1", resolveListen));
   const address = server.address();
@@ -463,7 +463,7 @@ test("a successful provider call with a failed catalog write escapes and stops a
     requests += 1;
     request.resume();
     response.setHeader("content-type", "application/json");
-    response.end(JSON.stringify({ data: [{ embedding: Array(3_072).fill(0.25) }] }));
+    response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
   });
   await new Promise<void>((resolveListen) => server!.listen(0, "127.0.0.1", resolveListen));
   const address = server.address();

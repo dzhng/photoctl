@@ -1,5 +1,5 @@
 {
-  "name": "@photoctl/img-linux-x64-gnu",
+  "name": "@dzhng/openphoto-img-linux-x64-gnu",
   "version": "0.1.0",
   "os": ["linux"],
   "cpu": ["x64"],

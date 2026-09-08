@@ -68,15 +68,14 @@ export async function embedPhotoBatch(options: {
   const adapter = createEmbeddingAdapter({
     model,
     request: async (body, signal) => await gateway.embeddings(body, signal),
+    requestImages: async (body, signal) => await gateway.multimodalEmbeddings(body, signal),
   });
   for (let index = 0; index < ready.length; index += 1) {
     const item = ready[index]!;
     if (options.signal?.aborted) break;
     let embedded: Awaited<ReturnType<typeof adapter.images>>;
     try {
-      // The versioned live candidate is defined for exactly one content-parts
-      // item; widening it before that shape is accepted would invent a second
-      // untested provider contract.
+      // Keep failures and cancellation scoped to one photo at a time.
       embedded = await adapter.images([item.jpeg], options.signal);
     } catch (error) {
       if (options.signal?.aborted) break;

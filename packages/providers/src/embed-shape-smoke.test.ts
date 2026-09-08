@@ -50,15 +50,41 @@ test("an explicitly keyed smoke records the accepted redacted multimodal request
   const recorded = JSON.parse(await readFile(evidence, "utf8")) as {
     status: string;
     dimensions: number;
-    acceptedRequest: { input: Array<{ content: Array<{ image_url?: string }> }> };
+    acceptedRequest: { imageSha256: string[] };
+    imageWitness: { changedImageDifference: number; repeatedImageDifference: number };
   };
   expect(recorded.status).toBe("accepted");
   expect(recorded.dimensions).toBe(3_072);
-  expect(recorded.acceptedRequest.input[0]!.content[1]!.image_url).toMatch(
-    /^data:image\/jpeg;sha256=[a-f0-9]{64}$/u,
-  );
+  expect(recorded.acceptedRequest.imageSha256[0]).toMatch(/^[a-f0-9]{64}$/u);
+  expect(recorded.imageWitness.changedImageDifference).toBeGreaterThan(0);
+  expect(recorded.imageWitness.repeatedImageDifference).toBe(0);
   expect(JSON.stringify(recorded)).not.toContain("explicit-fixture-key");
   expect(JSON.stringify(recorded)).not.toContain("base64");
+});
+
+test("a caption-only provider cannot pass the image smoke with valid dimensions", async () => {
+  server = createServer((request, response) => {
+    request.resume();
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ embeddings: [Array(3_072).fill(0.25)] }));
+  });
+  await new Promise<void>((resolve) => server!.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Fixture address unavailable");
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-embed-smoke-"));
+  temporaryDirectories.push(directory);
+  const evidence = join(directory, "embed-shape.json");
+  const result = await runNode(["scripts/smoke-embed-shape.mjs", "--evidence", evidence], {
+    PHOTOCTL_EMBED_SMOKE_API_KEY: "explicit-fixture-key",
+    PHOTOCTL_EMBED_SMOKE_GATEWAY_URL: `http://127.0.0.1:${address.port}/v1`,
+  });
+  expect(result.code).toBe(1);
+  expect(JSON.parse(await readFile(evidence, "utf8"))).toMatchObject({
+    status: "rejected",
+    reason: "image_content_not_demonstrated",
+    acceptedRequest: null,
+    imageWitness: { changedImageDifference: 0, repeatedImageDifference: 0 },
+  });
 });
 
 test("an explicitly keyed transport failure is durably recorded as rejected", async () => {
@@ -84,9 +110,9 @@ test("an HTTP 200 with the wrong embedding shape records bounded shape evidence"
     response.writeHead(200, { "content-type": "application/json" });
     response.end(
       JSON.stringify({
-        data: Array.from({ length: 12 }, (_, index) => ({
-          embedding: Array.from({ length: index + 1 }, () => 0),
-        })),
+        embeddings: Array.from({ length: 12 }, (_, index) =>
+          Array.from({ length: index + 1 }, () => 0),
+        ),
       }),
     );
   });

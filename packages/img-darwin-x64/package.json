@@ -1,5 +1,5 @@
 {
-  "name": "@photoctl/img-darwin-x64",
+  "name": "@dzhng/openphoto-img-darwin-x64",
   "version": "0.1.0",
   "os": ["darwin"],
   "cpu": ["x64"],

@@ -1,145 +1,100 @@
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import sharp from "sharp";
+import {
+  GatewayClient,
+  createEmbeddingAdapter,
+  EMBED_IMAGE_REQUEST_SHAPE,
+} from "../packages/providers/dist/index.js";
 
 const options = parseArgs(process.argv.slice(2));
+// Explicit smoke consent only: never pick up an ambient or saved product key.
 const key = process.env.PHOTOCTL_EMBED_SMOKE_API_KEY;
 const model = process.env.PHOTOCTL_EMBED_SMOKE_MODEL ?? "google/gemini-embedding-2";
-const baseUrl = (
-  process.env.PHOTOCTL_EMBED_SMOKE_GATEWAY_URL ?? "https://ai-gateway.vercel.sh/v1"
-).replace(/\/$/u, "");
-const requestUrl = `${baseUrl}/embeddings`;
-const evidenceEndpoint = redactUrl(requestUrl);
-const sources = [
-  "https://vercel.com/docs/ai-gateway",
-  "https://vercel.com/ai-gateway/models/gemini-embedding-2",
-  "https://ai.google.dev/gemini-api/docs/embeddings",
-];
+const gateway = new GatewayClient({
+  apiKey: key,
+  baseUrl: process.env.PHOTOCTL_EMBED_SMOKE_GATEWAY_URL,
+  maxAttempts: 1,
+});
+const result = {
+  schema: 1,
+  status: "not_run",
+  reason: "unconfigured",
+  model,
+  endpoint: redactUrl(gateway.baseUrl.replace(/\/v1$/u, "/v3/ai") + "/embedding-model"),
+  requestShape: EMBED_IMAGE_REQUEST_SHAPE,
+  acceptedRequest: null,
+  dimensions: null,
+  observed: null,
+  requestId: null,
+  imageWitness: null,
+  sources: [
+    "https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai",
+    "https://github.com/vercel/ai/blob/ai%406.0.0/packages/gateway/src/gateway-embedding-model.ts",
+  ],
+};
 
-if (!key) {
-  await finish({
-    schema: 1,
-    status: "not_run",
-    reason: "unconfigured",
+if (key) {
+  const adapter = createEmbeddingAdapter({
     model,
-    endpoint: evidenceEndpoint,
-    requestShape: "openai-compatible-content-parts-candidate-v1",
-    acceptedRequest: null,
-    dimensions: null,
-    observed: null,
-    requestId: null,
-    sources,
+    request: (body, signal) => gateway.embeddings(body, signal),
+    requestImages: (body, signal) => gateway.multimodalEmbeddings(body, signal),
   });
-} else {
-  const jpeg = Buffer.from(
-    "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJ//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQAGPwJ//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPyF//9oADAMBAAIAAwAAABD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAEDAQE/ED//xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAECAQE/ED//xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAE/ED//2Q==",
-    "base64",
-  );
-  const imageUrl = `data:image/jpeg;base64,${jpeg.toString("base64")}`;
-  const request = {
-    model,
-    dimensions: 3_072,
-    input: [
-      {
-        content: [
-          { type: "text", text: "A photograph indexed for cross-modal retrieval." },
-          { type: "image_url", image_url: imageUrl },
-        ],
-      },
-    ],
-  };
-  let response;
   try {
-    response = await fetch(requestUrl, {
-      method: "POST",
-      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-      body: JSON.stringify(request),
-      signal: AbortSignal.timeout(30_000),
-    });
-  } catch (error) {
-    await finish({
-      schema: 1,
-      status: "rejected",
-      reason: "transport_failure",
-      model,
-      endpoint: evidenceEndpoint,
-      requestShape: "openai-compatible-content-parts-candidate-v1",
-      acceptedRequest: null,
-      dimensions: null,
-      observed: null,
-      requestId: null,
-      sources,
-    });
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-    process.exitCode = 1;
-  }
-  if (response) {
-    const body = await response.json().catch(() => ({ error: "non-JSON response" }));
-    const embedding = body?.data?.[0]?.embedding;
-    const accepted =
-      response.ok &&
-      Array.isArray(body?.data) &&
-      body.data.length === 1 &&
-      Array.isArray(embedding) &&
-      embedding.length === 3_072 &&
-      embedding.every(Number.isFinite);
-    const observed = observeEmbeddingShape(body?.data);
-    const result = {
-      schema: 1,
-      status: accepted ? "accepted" : "rejected",
-      reason: accepted ? null : response.ok ? "response_shape" : `HTTP ${response.status}`,
-      model,
-      endpoint: evidenceEndpoint,
-      requestShape: "openai-compatible-content-parts-candidate-v1",
-      acceptedRequest: accepted ? redactRequest(request, jpeg) : null,
-      dimensions: accepted ? embedding.length : null,
-      observed: accepted ? null : observed,
-      requestId: response.headers.get("x-request-id"),
-      sources,
-    };
-    await finish(result);
-    if (!accepted) {
-      process.stderr.write(`${JSON.stringify({ status: response.status, body })}\n`);
-      process.exitCode = 1;
+    const images = await Promise.all(
+      ["#ff0000", "#0000ff"].map(
+        async (background) =>
+          await sharp({ create: { width: 128, height: 128, channels: 3, background } })
+            .jpeg()
+            .toBuffer(),
+      ),
+    );
+    const vectors = [];
+    // Identical caption, changed image, repeated original: detect caption-only success.
+    for (const jpeg of [images[0], images[1], images[0]]) {
+      const response = await adapter.images([jpeg]);
+      vectors.push(response.vectors[0]);
+      result.requestId = response.requestId;
     }
+    const difference = (a, b) => Math.max(...a.map((value, index) => Math.abs(value - b[index])));
+    result.imageWitness = {
+      changedImageDifference: difference(vectors[0], vectors[1]),
+      repeatedImageDifference: difference(vectors[0], vectors[2]),
+    };
+    const accepted =
+      result.imageWitness.changedImageDifference >
+      Math.max(1e-6, result.imageWitness.repeatedImageDifference * 10);
+    result.status = accepted ? "accepted" : "rejected";
+    result.reason = accepted ? null : "image_content_not_demonstrated";
+    result.dimensions = vectors[0].length;
+    result.acceptedRequest = accepted
+      ? {
+          imageSha256: images.map((jpeg) => createHash("sha256").update(jpeg).digest("hex")),
+          caption: "A photograph indexed for cross-modal retrieval.",
+        }
+      : null;
+  } catch (error) {
+    result.status = "rejected";
+    result.reason =
+      error.message === "The provider returned invalid embeddings"
+        ? "response_shape"
+        : error.data?.status
+          ? "HTTP " + error.data.status
+          : "transport_failure";
+    if (result.reason === "response_shape")
+      result.observed = {
+        embeddingCount: error.data.observed_count,
+        embeddingDimensions: error.data.dimensions,
+        truncated: error.data.truncated,
+      };
+    // Do not print provider bodies or exception messages, which can contain credentials.
   }
+  if (result.status !== "accepted") process.exitCode = 1;
 }
-
-function observeEmbeddingShape(data) {
-  if (!Array.isArray(data)) {
-    return { embeddingCount: 0, embeddingDimensions: [], truncated: false };
-  }
-  return {
-    embeddingCount: data.length,
-    embeddingDimensions: data
-      .slice(0, 8)
-      .map((item) => (Array.isArray(item?.embedding) ? item.embedding.length : null)),
-    truncated: data.length > 8,
-  };
-}
-
-async function finish(result) {
-  await mkdir(dirname(options.evidence), { recursive: true });
-  await writeFile(options.evidence, `${JSON.stringify(result, null, 2)}\n`);
-  process.stdout.write(`${JSON.stringify(result)}\n`);
-}
-
-function redactRequest(request, jpeg) {
-  return {
-    ...request,
-    input: [
-      {
-        content: [
-          request.input[0].content[0],
-          {
-            type: "image_url",
-            image_url: `data:image/jpeg;sha256=${createHash("sha256").update(jpeg).digest("hex")}`,
-          },
-        ],
-      },
-    ],
-  };
-}
+await mkdir(dirname(options.evidence), { recursive: true });
+await writeFile(options.evidence, JSON.stringify(result, null, 2) + "\n");
+process.stdout.write(JSON.stringify(result) + "\n");
 
 function redactUrl(value) {
   const url = new URL(value);
@@ -151,7 +106,7 @@ function redactUrl(value) {
 }
 
 function parseArgs(args) {
-  let evidence = resolve("specs/done/photoctl/assets/gates/embed-shape.json");
+  let evidence = resolve("specs/openphoto/assets/embed-shape.json");
   for (let index = 0; index < args.length; index += 2) {
     if (args[index] !== "--evidence" || args[index + 1] === undefined) {
       throw new Error("usage: smoke:embed-shape [--evidence PATH]");

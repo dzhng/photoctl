@@ -14,10 +14,10 @@
       },
     },
     "apps/cli": {
-      "name": "@photoctl/cli",
+      "name": "@dzhng/openphoto",
       "version": "0.1.0",
       "bin": {
-        "photoctl": "dist/bin.js",
+        "openphoto": "dist/bin.js",
       },
       "dependencies": {
         "@photoctl/commands": "workspace:*",
@@ -72,26 +72,26 @@
       "name": "@photoctl/img",
       "version": "0.1.0",
       "optionalDependencies": {
-        "@photoctl/img-darwin-arm64": "0.1.0",
-        "@photoctl/img-darwin-x64": "0.1.0",
-        "@photoctl/img-linux-arm64-gnu": "0.1.0",
-        "@photoctl/img-linux-x64-gnu": "0.1.0",
+        "@dzhng/openphoto-img-darwin-arm64": "0.1.0",
+        "@dzhng/openphoto-img-darwin-x64": "0.1.0",
+        "@dzhng/openphoto-img-linux-arm64-gnu": "0.1.0",
+        "@dzhng/openphoto-img-linux-x64-gnu": "0.1.0",
       },
     },
     "packages/img-darwin-arm64": {
-      "name": "@photoctl/img-darwin-arm64",
+      "name": "@dzhng/openphoto-img-darwin-arm64",
       "version": "0.1.0",
     },
     "packages/img-darwin-x64": {
-      "name": "@photoctl/img-darwin-x64",
+      "name": "@dzhng/openphoto-img-darwin-x64",
       "version": "0.1.0",
     },
     "packages/img-linux-arm64-gnu": {
-      "name": "@photoctl/img-linux-arm64-gnu",
+      "name": "@dzhng/openphoto-img-linux-arm64-gnu",
       "version": "0.1.0",
     },
     "packages/img-linux-x64-gnu": {
-      "name": "@photoctl/img-linux-x64-gnu",
+      "name": "@dzhng/openphoto-img-linux-x64-gnu",
       "version": "0.1.0",
     },
     "packages/importer": {
@@ -124,16 +124,16 @@
       "name": "@photoctl/mac-helper",
       "version": "0.1.0",
       "optionalDependencies": {
-        "@photoctl/mac-helper-darwin-arm64": "0.1.0",
-        "@photoctl/mac-helper-darwin-x64": "0.1.0",
+        "@dzhng/openphoto-mac-helper-darwin-arm64": "0.1.0",
+        "@dzhng/openphoto-mac-helper-darwin-x64": "0.1.0",
       },
     },
     "packages/mac-helper-darwin-arm64": {
-      "name": "@photoctl/mac-helper-darwin-arm64",
+      "name": "@dzhng/openphoto-mac-helper-darwin-arm64",
       "version": "0.1.0",
     },
     "packages/mac-helper-darwin-x64": {
-      "name": "@photoctl/mac-helper-darwin-x64",
+      "name": "@dzhng/openphoto-mac-helper-darwin-x64",
       "version": "0.1.0",
     },
     "packages/protocol": {
@@ -184,6 +184,20 @@
     "fs-ext",
   ],
   "packages": {
+    "@dzhng/openphoto": ["@dzhng/openphoto@workspace:apps/cli"],
+
+    "@dzhng/openphoto-img-darwin-arm64": ["@dzhng/openphoto-img-darwin-arm64@workspace:packages/img-darwin-arm64"],
+
+    "@dzhng/openphoto-img-darwin-x64": ["@dzhng/openphoto-img-darwin-x64@workspace:packages/img-darwin-x64"],
+
+    "@dzhng/openphoto-img-linux-arm64-gnu": ["@dzhng/openphoto-img-linux-arm64-gnu@workspace:packages/img-linux-arm64-gnu"],
+
+    "@dzhng/openphoto-img-linux-x64-gnu": ["@dzhng/openphoto-img-linux-x64-gnu@workspace:packages/img-linux-x64-gnu"],
+
+    "@dzhng/openphoto-mac-helper-darwin-arm64": ["@dzhng/openphoto-mac-helper-darwin-arm64@workspace:packages/mac-helper-darwin-arm64"],
+
+    "@dzhng/openphoto-mac-helper-darwin-x64": ["@dzhng/openphoto-mac-helper-darwin-x64@workspace:packages/mac-helper-darwin-x64"],
+
     "@electric-sql/pglite": ["@electric-sql/pglite@0.5.8", "", {}, "sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q=="],
 
     "@electric-sql/pglite-pgvector": ["@electric-sql/pglite-pgvector@0.0.9", "", { "peerDependencies": { "@electric-sql/pglite": "0.5.8" } }, "sha512-ue4iBW651gDQwBwn97Ekv1lYGPvXa1ymHbRbTCSL0Ib286PRDD1VDOwzwEoekZuO/wctMbTzKzlwdgDwYrqZ8A=="],
@@ -356,31 +370,17 @@
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.81.0", "", { "os": "win32", "cpu": "x64" }, "sha512-IZuUCwGw9emG5JtCp+fYGB+Z4OWEoeEcM8R5BA1pYw63/ieYFVdcU2ylxTpHbVHSenZnsYE+ZZ20uHAJszQ4cA=="],
 
-    "@photoctl/cli": ["@photoctl/cli@workspace:apps/cli"],
-
     "@photoctl/commands": ["@photoctl/commands@workspace:packages/commands"],
 
     "@photoctl/daemon": ["@photoctl/daemon@workspace:apps/daemon"],
 
     "@photoctl/img": ["@photoctl/img@workspace:packages/img"],
 
-    "@photoctl/img-darwin-arm64": ["@photoctl/img-darwin-arm64@workspace:packages/img-darwin-arm64"],
-
-    "@photoctl/img-darwin-x64": ["@photoctl/img-darwin-x64@workspace:packages/img-darwin-x64"],
-
-    "@photoctl/img-linux-arm64-gnu": ["@photoctl/img-linux-arm64-gnu@workspace:packages/img-linux-arm64-gnu"],
-
-    "@photoctl/img-linux-x64-gnu": ["@photoctl/img-linux-x64-gnu@workspace:packages/img-linux-x64-gnu"],
-
     "@photoctl/importer": ["@photoctl/importer@workspace:packages/importer"],
 
     "@photoctl/library": ["@photoctl/library@workspace:packages/library"],
 
     "@photoctl/mac-helper": ["@photoctl/mac-helper@workspace:packages/mac-helper"],
-
-    "@photoctl/mac-helper-darwin-arm64": ["@photoctl/mac-helper-darwin-arm64@workspace:packages/mac-helper-darwin-arm64"],
-
-    "@photoctl/mac-helper-darwin-x64": ["@photoctl/mac-helper-darwin-x64@workspace:packages/mac-helper-darwin-x64"],
 
     "@photoctl/protocol": ["@photoctl/protocol@workspace:packages/protocol"],
 

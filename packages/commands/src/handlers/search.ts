@@ -49,6 +49,7 @@ export async function searchCommand(
           await createEmbeddingAdapter({
             model,
             request: async (body) => await gateway.embeddings(body),
+            requestImages: async (body, signal) => await gateway.multimodalEmbeddings(body, signal),
           }).text([query])
         ).vectors[0];
         if (vector) vectorSearch = { vector, model };

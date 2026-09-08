@@ -34,6 +34,7 @@ import { relightCommand } from "./handlers/relight.js";
 import { generateCommand, type GenerateDependencies } from "./handlers/generate.js";
 import { markupCommand } from "./handlers/markup.js";
 import { settingsCommand } from "./handlers/settings.js";
+import { configureCommand } from "./configure.js";
 import {
   flagCommand,
   labelCommand,
@@ -59,6 +60,8 @@ export async function dispatch(
   context: DispatchContext,
 ): Promise<Envelope> {
   try {
+    if (request.verb === "configure")
+      return await configureCommand(request.args, request.env.gatewayApiKey);
     if (request.verb === "version") {
       return { schema: 1, ok: true, data: { version: context.version }, warnings: [] };
     }

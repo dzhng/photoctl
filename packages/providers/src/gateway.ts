@@ -56,6 +56,31 @@ export class GatewayClient {
     return await this.request("embeddings", jsonRequest(body), signal);
   }
 
+  async multimodalEmbeddings(
+    body: Record<string, unknown>,
+    signal?: AbortSignal,
+  ): Promise<GatewayResponse<unknown>> {
+    const { model, ...input } = body;
+    if (typeof model !== "string") throw new Error("Embedding model is required");
+    // AI SDK 6's native Gateway protocol carries Google's image content options;
+    // the OpenAI-compatible embeddings endpoint accepts text only.
+    return await this.request(
+      "embedding-model",
+      {
+        ...jsonRequest(input),
+        headers: {
+          "content-type": "application/json",
+          "ai-gateway-protocol-version": "0.0.1",
+          "ai-gateway-auth-method": "api-key",
+          "ai-embedding-model-specification-version": "2",
+          "ai-model-id": model,
+        },
+      },
+      signal,
+      this.baseUrl.replace(/\/v1$/u, "/v3/ai"),
+    );
+  }
+
   async imageGenerations(body: Record<string, unknown>): Promise<GatewayResponse<unknown>> {
     return await this.request("images/generations", jsonRequest(body));
   }
@@ -68,6 +93,7 @@ export class GatewayClient {
     path: string,
     init: RequestInit,
     signal?: AbortSignal,
+    baseUrl = this.baseUrl,
   ): Promise<GatewayResponse<unknown>> {
     if (!this.apiKey) {
       throw new PhotoctlError("provider_unconfigured", "AI_GATEWAY_API_KEY is not configured");
@@ -75,7 +101,7 @@ export class GatewayClient {
     for (let attempt = 1; attempt <= this.maxAttempts; attempt += 1) {
       let response: Response;
       try {
-        response = await this.fetcher(`${this.baseUrl}/${path}`, {
+        response = await this.fetcher(`${baseUrl}/${path}`, {
           ...init,
           signal: signal
             ? AbortSignal.any([signal, AbortSignal.timeout(this.requestTimeoutMs)])

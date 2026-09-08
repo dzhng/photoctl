@@ -20,7 +20,7 @@ test("version check rejects drift; sync repairs package pins and the Swift relea
       JSON.stringify({
         name: "@photoctl/img",
         version: "0.1.0",
-        optionalDependencies: { "@photoctl/img-darwin-arm64": "0.1.0" },
+        optionalDependencies: { "@dzhng/openphoto-img-darwin-arm64": "0.1.0" },
       }),
     );
     const script = resolve("scripts/sync-versions.mjs");
@@ -33,7 +33,7 @@ test("version check rejects drift; sync repairs package pins and the Swift relea
       JSON.parse(await readFile(join(directory, "packages/img/package.json"), "utf8")),
     ).toMatchObject({
       version: "9.8.7",
-      optionalDependencies: { "@photoctl/img-darwin-arm64": "9.8.7" },
+      optionalDependencies: { "@dzhng/openphoto-img-darwin-arm64": "9.8.7" },
     });
     expect(
       await readFile(

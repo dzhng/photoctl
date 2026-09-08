@@ -56,7 +56,12 @@ export function daemonSocketPath(libraryPath: string, version: string): string {
 export async function ensureDaemon(
   libraryPath: string,
   version: string,
-  options: { lockBudgetMs?: number; pollCeilingMs?: number; verifyExisting?: boolean } = {},
+  options: {
+    lockBudgetMs?: number;
+    pollCeilingMs?: number;
+    verifyExisting?: boolean;
+    gatewayApiKey?: string;
+  } = {},
 ): Promise<DaemonConnection> {
   const budgetMs = options.lockBudgetMs ?? 30_000;
   const pollCeilingMs = options.pollCeilingMs ?? 100;
@@ -128,6 +133,9 @@ export async function ensureDaemon(
             stdio: ["ignore", logFd, logFd, lock.fd],
             env: {
               ...process.env,
+              ...(options.gatewayApiKey === undefined
+                ? {}
+                : { AI_GATEWAY_API_KEY: options.gatewayApiKey }),
               PHOTOCTL_LOCK_FD: "3",
               PHOTOCTL_LOCK_STARTED_AT: String(startedAt),
             },
@@ -214,14 +222,14 @@ export async function stopDaemon(
   }
   const status = await statusAt(payload.socket);
   if (!status) {
-    throw new PhotoctlError("daemon_unavailable", "The photoctl daemon is not responding", {
+    throw new PhotoctlError("daemon_unavailable", "The OpenPhoto daemon is not responding", {
       pid: payload.pid,
       socket: payload.socket,
     });
   }
   await exchange(status.socket, { type: "control", action: "stop" }, 5_000);
   if (!(await waitForExit(status.pid, Date.now() + 5_000, 50))) {
-    throw new PhotoctlError("daemon_unavailable", "The photoctl daemon did not stop", {
+    throw new PhotoctlError("daemon_unavailable", "The OpenPhoto daemon did not stop", {
       pid: status.pid,
       socket: status.socket,
     });
@@ -380,7 +388,7 @@ function daemonUnavailable(
   cause?: unknown,
   startup?: { exit_code: number | null; signal: NodeJS.Signals | null; log_path: string },
 ): PhotoctlError {
-  return new PhotoctlError("daemon_unavailable", "Could not start the photoctl daemon", {
+  return new PhotoctlError("daemon_unavailable", "Could not start the OpenPhoto daemon", {
     library: resolve(libraryPath),
     ...(cause instanceof Error ? { message: cause.message } : {}),
     ...startup,

@@ -14,23 +14,26 @@ export interface EmbeddingAdapter {
   images(inputs: readonly Uint8Array[], signal?: AbortSignal): Promise<EmbeddingResult>;
 }
 
-export const EMBED_IMAGE_REQUEST_SHAPE = "openai-compatible-content-parts-candidate-v1";
+export const EMBED_IMAGE_REQUEST_SHAPE = "gateway-google-content-v1";
 
 export function createEmbeddingAdapter(options: {
   model: string;
   request(body: Record<string, unknown>, signal?: AbortSignal): Promise<GatewayResponse<unknown>>;
+  requestImages(
+    body: Record<string, unknown>,
+    signal?: AbortSignal,
+  ): Promise<GatewayResponse<unknown>>;
 }): EmbeddingAdapter {
-  const embed = async (input: unknown[], signal?: AbortSignal): Promise<EmbeddingResult> => {
-    const response = await options.request(
-      { model: options.model, dimensions: 3_072, input },
-      signal,
-    );
-    const data = responseData(response.data);
+  const validate = (
+    response: GatewayResponse<unknown>,
+    count: number,
+    data: Array<{ embedding?: unknown }>,
+  ): EmbeddingResult => {
     const dimensions = data.map((item) =>
       Array.isArray(item.embedding) ? item.embedding.length : null,
     );
     if (
-      data.length !== input.length ||
+      data.length !== count ||
       data.some(
         (item) =>
           !Array.isArray(item.embedding) ||
@@ -39,7 +42,7 @@ export function createEmbeddingAdapter(options: {
       )
     ) {
       throw new PhotoctlError("provider_busy", "The provider returned invalid embeddings", {
-        expected_count: input.length,
+        expected_count: count,
         observed_count: data.length,
         dimensions: dimensions.slice(0, 8),
         truncated: dimensions.length > 8,
@@ -54,22 +57,47 @@ export function createEmbeddingAdapter(options: {
   };
   return {
     model: options.model,
-    text: async (inputs, signal) => await embed([...inputs], signal),
-    images: async (inputs, signal) => {
-      if (inputs.length !== 1) {
-        throw new Error(`${EMBED_IMAGE_REQUEST_SHAPE} requires exactly one image`);
-      }
-      return await embed(
-        inputs.map((jpeg) => ({
-          content: [
-            { type: "text", text: "A photograph indexed for cross-modal retrieval." },
-            {
-              type: "image_url",
-              image_url: `data:image/jpeg;base64,${Buffer.from(jpeg).toString("base64")}`,
-            },
-          ],
-        })),
+    text: async (inputs, signal) => {
+      const response = await options.request(
+        { model: options.model, dimensions: 3_072, input: [...inputs] },
         signal,
+      );
+      return validate(response, inputs.length, responseData(response.data));
+    },
+    images: async (inputs, signal) => {
+      if (options.model !== "google/gemini-embedding-2") {
+        throw new PhotoctlError(
+          "provider_unconfigured",
+          "Image embeddings require the verified google/gemini-embedding-2 content adapter; text-only models cannot index images",
+        );
+      }
+      const response = await options.requestImages(
+        {
+          model: options.model,
+          values: inputs.map(() => "A photograph indexed for cross-modal retrieval."),
+          providerOptions: {
+            google: {
+              outputDimensionality: 3_072,
+              content: inputs.map((jpeg) => [
+                {
+                  inlineData: {
+                    mimeType: "image/jpeg",
+                    data: Buffer.from(jpeg).toString("base64"),
+                  },
+                },
+              ]),
+            },
+          },
+        },
+        signal,
+      );
+      const data = response.data;
+      const vectors =
+        data && typeof data === "object" && "embeddings" in data ? data.embeddings : undefined;
+      return validate(
+        response,
+        inputs.length,
+        Array.isArray(vectors) ? vectors.map((embedding) => ({ embedding })) : [],
       );
     },
   };

@@ -74,7 +74,7 @@ test("doctor resolves a relative cache root from the request working directory",
     expect(data.cache.root).toBe(join(directory, "relative-cache", data.library_id));
     expect(data.native_image).toEqual({
       available: true,
-      package: `@photoctl/img-${process.platform}-${process.arch}${process.platform === "linux" ? "-gnu" : ""}`,
+      package: `@dzhng/openphoto-img-${process.platform}-${process.arch}${process.platform === "linux" ? "-gnu" : ""}`,
       required: true,
     });
     expect(data.decoders).toContainEqual({

@@ -1,9 +1,9 @@
 {
-  "name": "@photoctl/cli",
+  "name": "@dzhng/openphoto",
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "photoctl": "dist/bin.js"
+    "openphoto": "dist/bin.js"
   },
   "files": [
     "dist"

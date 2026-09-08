@@ -5,6 +5,7 @@ import sharp from "sharp";
 const ROUTES = new Set([
   "/v1/chat/completions",
   "/v1/embeddings",
+  "/v3/ai/embedding-model",
   "/v1/images/edits",
   "/v1/images/generations",
 ]);
@@ -57,6 +58,31 @@ async function handleRequest(
   const bytes = await readBody(request);
   const jsonBody = path === "/v1/images/edits" ? undefined : parseJson(bytes);
   options.onRequest?.({ path, ...(jsonBody ? { body: jsonBody } : {}) });
+  if (path === "/v3/ai/embedding-model") {
+    const body = jsonBody!;
+    const google = (body.providerOptions as { google?: { content?: unknown[] } } | undefined)
+      ?.google;
+    if (
+      !Array.isArray(body.values) ||
+      !Array.isArray(google?.content) ||
+      google.content.length !== body.values.length ||
+      !google.content.every(
+        (parts) =>
+          Array.isArray(parts) &&
+          parts.some((part: unknown) => {
+            const data = (part as { inlineData?: { data?: unknown } } | null)?.inlineData?.data;
+            return typeof data === "string" && data.length > 0;
+          }),
+      )
+    ) {
+      sendJson(response, 400, { error: "one image content entry per value required" });
+      return;
+    }
+    sendJson(response, 200, {
+      embeddings: body.values.map((_value, index) => deterministicVector(bytes, index)),
+    });
+    return;
+  }
   if (path === "/v1/embeddings") {
     const body = jsonBody!;
     const inputs = Array.isArray(body.input) ? body.input : [body.input];

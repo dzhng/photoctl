@@ -36,7 +36,7 @@ beforeAll(async () => {
   delete env.PHOTOCTL_MAC_HELPER_PATH;
   delete env.PHOTOCTL_NO_DAEMON;
   delete env.NODE_PATH;
-  binary = join(prefix, "bin/photoctl");
+  binary = join(prefix, "bin/openphoto");
   await execute("bun", ["run", "pack", join(scratch, "tarballs")], {
     cwd: resolve("."),
     timeout: 600_000,
@@ -62,8 +62,20 @@ afterAll(async () => {
   await rm(scratch, { recursive: true, force: true });
 });
 
+test("installed openphoto configures credentials outside the source checkout", async () => {
+  const result = await execute(binary, ["configure", "--from-env"], {
+    cwd: scratch,
+    env: { ...env, HOME: scratch, AI_GATEWAY_API_KEY: "installed-fixture-secret" },
+  });
+  expect(JSON.parse(result.stdout)).toMatchObject({ ok: true, data: { configured: true } });
+  expect(result.stdout + result.stderr).not.toContain("installed-fixture-secret");
+  expect(await readFile(join(scratch, ".openphoto", ".env"), "utf8")).toContain(
+    "AI_GATEWAY_API_KEY=installed-fixture-secret",
+  );
+});
+
 test("native package retains CDDL terms, attribution and the translated source", async () => {
-  const runtime = join(prefix, `lib/node_modules/@photoctl/img-darwin-${process.arch}`);
+  const runtime = join(prefix, `lib/node_modules/@dzhng/openphoto-img-darwin-${process.arch}`);
   expect(await readFile(join(runtime, "LICENSE.CDDL"), "utf8")).toBe(
     await readFile(resolve("crates/libraw-sys/vendor/LICENSE.CDDL"), "utf8"),
   );
@@ -81,7 +93,7 @@ test("packed CLI starts its daemon and finds both packaged decoders outside the 
   expect((await run(["--version"])).data.version).toBe(version);
   const helper = join(
     prefix,
-    `lib/node_modules/@photoctl/mac-helper-darwin-${process.arch}/photoctl-mac`,
+    `lib/node_modules/@dzhng/openphoto-mac-helper-darwin-${process.arch}/photoctl-mac`,
   );
   expect((await execute(helper, ["--version"], { cwd: scratch, env })).stdout.trim()).toBe(
     `photoctl-mac ${version}`,
