@@ -39,9 +39,11 @@ build additionally needs a Rust toolchain plus CMake and Ninja for the pinned ON
 Runtime recipe, and the Swift toolchain on macOS for the Core Image helper.
 `bun install` then `bun run build` produces the CLI, the image addon and the helper;
 `bun run verify` is the complete closeout gate (format, lint, typecheck, build and
-every test stage). The scripts in [package.json](package.json) name each stage
-individually; [contributor guidance](AGENTS.md) explains which rung of the test
-ladder to run while iterating.
+every test stage). Lint also checks that every relative link in the live docs
+resolves; closed specs under `specs/done/` are frozen records and are exempt. The
+scripts in [package.json](package.json) name each stage individually;
+[contributor guidance](AGENTS.md) explains which rung of the test ladder to run
+while iterating.
 
 ## Where things live
 

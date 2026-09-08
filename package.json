@@ -20,7 +20,7 @@
     "test:functional": "docker compose -f test/compose.yaml run --build --rm functional",
     "test:models": "vitest run --config vitest.models.config.ts",
     "test:macos": "if [ \"$(uname -s)\" = Darwin ]; then bun run build:swift && vitest run --config vitest.macos.config.ts; else echo 'macOS tests skipped (non-macOS)'; fi",
-    "lint": "oxlint .",
+    "lint": "oxlint . && node scripts/check-links.mjs",
     "typecheck": "tsc -b --pretty false",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
