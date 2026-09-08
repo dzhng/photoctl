@@ -553,9 +553,7 @@ release blocker. The spec's remaining requirements retain their own status.
   The confirmed user-facing defect (S96) and every mechanical consolidation
   with one obvious owner were applied and are covered by the existing suites.
   The rest were deliberately left: a second Lanczos edge semantic in the
-  native resampler and a plausible `generate --size` artifact/node mismatch
-  (both change canonical pixels and need a semantic revision plus a
-  regression), collapsing twenty-one migrations and the hand-mirrored schema
+  native resampler, collapsing twenty-one migrations and the hand-mirrored schema
   roster into one baseline, three writers of setting defaults, a locator
   fallback that only the test resolver can reach, the `migrate_required`
   code name, message-text error classification and `usage`/`provider_busy`
@@ -567,11 +565,13 @@ release blocker. The spec's remaining requirements retain their own status.
 - **The gap:** The plan required a whole-spec review and its fixes but never
   said which findings an unsupervised closeout may land without the user.
 - **The reach:** Nothing user-visible changes until one of these is taken up;
-  the two pixel-path items are the only ones that could alter output, and
-  they are fenced behind the renderer semantic revision rule.
-- **Verdict:** **Needs-user.** Provisional call: leave them; take the two
-  pixel-path items first if any are taken, with a semantic-revision bump and
-  a regression each. Reversible one finding at a time.
+  merging the resampler edge semantics changes evaluated pixels and belongs
+  behind the renderer semantic revision rule. Confirmed disagreement between
+  a generated original and its saved recipe is a correctness defect, not
+  deferred product discretion.
+- **Verdict:** **Needs-user.** Provisional call: leave the remaining choices;
+  revisit one finding at a time with behavior-specific evidence. A change to
+  evaluated resampling semantics needs a semantic-revision bump.
 - **Confidence:** Medium — the list is complete for the three reviewed areas;
   `apps/cli` argument parsing and the Swift helper were read only in passing.
 - **Owner:** the files named in the closed spec's review-debt section.
@@ -650,7 +650,7 @@ future work inherits every one of them as a given.
 
 - **When:** Whole-spec closeout review, 2026-09-08.
 - **The choice:** While a request is queued or executing, the daemon writes a
-  one-byte-class `keepalive` frame every second on that request's socket. The
+  small `keepalive` frame every second on that request's socket. The
   client treats any frame as proof of life and declares the daemon dead only
   after ten seconds of total silence, or the foreground queue budget plus one
   second if that is longer. Handlers still emit `progress` events for the user,
@@ -665,12 +665,16 @@ future work inherits every one of them as a given.
   a progress heartbeat (progress frames with nothing to report).
 - **The gap:** The plan said long previews refresh the idle deadline through
   the progress heartbeat and never named which verbs qualify.
-- **The reach:** A hung daemon is now detected in ten seconds instead of the
-  queue budget plus one second (thirty-one by default); the import verb's
+- **The reach:** Total silence is bounded by the greater of ten seconds and
+  the queue budget plus one second (thirty-one by default); the import verb's
   private ten-minute ceiling is gone because keepalives cover it. Keepalive
   frames run on the daemon's JavaScript thread, so a handler that blocks that
-  thread for more than ten seconds would still be misreported — the existing
+  thread longer than the client's idle ceiling would still be misreported — the existing
   rule that pixel work runs off the JS thread is what keeps this safe.
+  If the caller disconnects during a paid request, transport timers stop;
+  timer cleanup itself does not cancel a purchase or replay it. Handlers retain
+  their existing progress and stream failure behavior. The connection owns its
+  timer until response or closure, so a closed socket cannot accumulate periodic writes.
 - **Verdict:** **Sound.** One owner for liveness at the seam that actually
   knows whether work is in flight.
 - **Confidence:** High.

@@ -143,6 +143,7 @@ export class DaemonServer {
   private accept(socket: Socket): void {
     // A timed-out client can disconnect before its response is written.
     socket.on("error", () => socket.destroy());
+    socket.once("close", () => this.clearKeepalive(socket));
     const decoder = new FrameDecoder();
     socket.on("data", (chunk) => {
       try {
@@ -168,6 +169,7 @@ export class DaemonServer {
       socket,
       enqueuedAt: this.running ? Date.now() : null,
     });
+    this.clearKeepalive(socket);
     this.keepalives.set(
       socket,
       setInterval(() => {
@@ -264,10 +266,14 @@ export class DaemonServer {
     this.registerBackground("automatic-backup", () => this.automaticBackup !== undefined);
   }
 
-  private respond(socket: Socket, envelope: Envelope): void {
+  private clearKeepalive(socket: Socket): void {
     const keepalive = this.keepalives.get(socket);
     if (keepalive) clearInterval(keepalive);
     this.keepalives.delete(socket);
+  }
+
+  private respond(socket: Socket, envelope: Envelope): void {
+    this.clearKeepalive(socket);
     const frame: DaemonServerFrame = { type: "response", envelope };
     socket.end(encodeFrame(frame));
   }

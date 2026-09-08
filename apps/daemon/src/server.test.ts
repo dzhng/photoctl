@@ -4,14 +4,18 @@ import {
   OPEN_LOCK_NAME,
   type LibraryLock,
 } from "@photoctl/library";
-import { requestDaemon } from "@photoctl/commands";
+import { requestDaemon, IDLE_CEILING_MS } from "@photoctl/commands";
 import { afterEach, expect, test, vi } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DaemonServer } from "./server.js";
+import { connect, Server, Socket } from "node:net";
+import { once } from "node:events";
+import { encodeFrame, FrameDecoder } from "@photoctl/protocol";
+import { DaemonServer, KEEPALIVE_INTERVAL_MS } from "./server.js";
 
-const SILENT_HANDLER_MS = 2_500;
+const SILENT_HANDLER_MS = IDLE_CEILING_MS + 2 * KEEPALIVE_INTERVAL_MS;
+let waitForHandler = () => new Promise<void>((resolve) => setTimeout(resolve, SILENT_HANDLER_MS));
 
 vi.mock("@photoctl/commands", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@photoctl/commands")>();
@@ -20,7 +24,7 @@ vi.mock("@photoctl/commands", async (importOriginal) => {
     // A handler that does real work without emitting a single progress frame,
     // like a paid generation waiting on a slow provider.
     dispatch: async () => {
-      await new Promise((resolve) => setTimeout(resolve, SILENT_HANDLER_MS));
+      await waitForHandler();
       return { schema: 1, ok: true, data: { silent: true }, warnings: [] };
     },
   };
@@ -37,9 +41,10 @@ afterEach(async () => {
   server = undefined;
   lock = undefined;
   directory = undefined;
+  vi.restoreAllMocks();
 });
 
-test("a handler that emits nothing for longer than the client's idle ceiling still returns its envelope", async () => {
+async function startServer(): Promise<string> {
   directory = await mkdtemp(join(tmpdir(), "photoctl-daemon-keepalive-"));
   const library = join(directory, "library");
   const initialized = await initializeLibrary(library);
@@ -54,7 +59,11 @@ test("a handler that emits nothing for longer than the client's idle ceiling sti
     lockStartedAt: Date.now(),
   });
   await server.start();
+  return socketPath;
+}
 
+test("a handler that emits nothing for longer than the client's idle ceiling still returns its envelope", async () => {
+  const socketPath = await startServer();
   const startedAt = Date.now();
   const result = await requestDaemon(socketPath, {
     verb: "doctor",
@@ -66,3 +75,59 @@ test("a handler that emits nothing for longer than the client's idle ceiling sti
   expect(result.envelope).toMatchObject({ ok: true, data: { silent: true } });
   expect(Date.now() - startedAt).toBeGreaterThanOrEqual(SILENT_HANDLER_MS);
 }, 60_000);
+
+test.each([1, 2])(
+  "disconnecting with %i request frames stops writes to the closed connection",
+  async (requestCount) => {
+    const socketPath = await startServer();
+    let serverSocket: Socket | undefined;
+    const emit = Server.prototype.emit;
+    vi.spyOn(Server.prototype, "emit").mockImplementation(function (
+      this: Server,
+      event: string | symbol,
+      ...args: unknown[]
+    ) {
+      if (event === "connection" && args[0] instanceof Socket) serverSocket = args[0];
+      return Reflect.apply(emit, this, [event, ...args]);
+    });
+    let releaseHandler!: () => void;
+    const handlerGate = new Promise<void>((resolve) => {
+      releaseHandler = resolve;
+    });
+    waitForHandler = () => handlerGate;
+    const client = connect(socketPath);
+    try {
+      await once(client, "connect");
+      const frame = encodeFrame({
+        type: "request",
+        request: {
+          verb: "doctor",
+          args: [],
+          cwd: "/",
+          env: { noDaemon: false, lockBudgetMs: "0" },
+        },
+      });
+      client.write(Buffer.concat(Array.from({ length: requestCount }, () => frame)));
+      const decoder = new FrameDecoder();
+      let frames: unknown[] = [];
+      while (frames.length === 0) {
+        // eslint-disable-next-line no-await-in-loop -- A frame may span sequential socket chunks.
+        const [chunk] = await once(client, "data");
+        frames = decoder.push(chunk);
+      }
+      expect(frames[0]).toEqual({ type: "keepalive" });
+      client.destroy();
+      await once(client, "close");
+      await vi.waitFor(() => expect(serverSocket?.destroyed).toBe(true));
+      const writes = vi.spyOn(serverSocket!, "write");
+      await new Promise((resolve) => setTimeout(resolve, 3 * KEEPALIVE_INTERVAL_MS));
+      expect(writes).not.toHaveBeenCalled();
+    } finally {
+      client.destroy();
+      releaseHandler();
+      await new Promise((resolve) => setImmediate(resolve));
+      waitForHandler = () => new Promise<void>((resolve) => setTimeout(resolve, SILENT_HANDLER_MS));
+    }
+  },
+  60_000,
+);

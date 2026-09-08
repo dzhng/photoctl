@@ -77,6 +77,8 @@ end of an implementation, never a feedback loop. The last full run is recorded
 in [`assets/final-closeout-2026-09-08.md`](assets/final-closeout-2026-09-08.md)
 and the closing gate for this archive in
 [`assets/spec-close-2026-09-08.md`](assets/spec-close-2026-09-08.md).
+Later correctness fixes and their current verification status are tracked in
+the [post-close review](assets/post-close-review-2026-09-08.md).
 
 ## The reasons — why it works this way
 
@@ -101,6 +103,9 @@ proves liveness with a keepalive frame every second while a request is queued
 or executing, so the client's idle ceiling is one rule for every verb
 (`requestTimeout` in `packages/commands/src/daemon-client.ts`) and a paid
 generation waiting on a slow provider cannot be misreported as dead.
+Keepalives belong to the live connection, not the handler: disconnecting stops
+keepalive writes. Timer cleanup itself does not cancel work or replay a purchase;
+handlers retain their existing progress and stream failure behavior.
 
 **Identity is sampled, promoted only on collision.** A file's content key is a
 SHA-256 over size plus the first and last mebibyte (`packages/library/src/identity.ts`).
@@ -549,11 +554,6 @@ closeout and are left for the user, each with its owner:
   cache identity is sound, but the "one resampler" claim is one native owner
   with two edge semantics. Collapsing them changes border pixels of existing
   canonical artifacts and belongs behind a renderer semantic revision.
-- **`generate --size` with an upscaler returning other dimensions**
-  (`packages/render/src/generate.ts`) publishes a display-space bilinear
-  artifact beside a scene-linear Lanczos `resample` node with no recorded
-  execution; a later re-evaluation could yield different pixels. Plausible,
-  not reproduced; needs a regression before a fix.
 - **Migrations are told as history.** `packages/library/src/migrations/`
   replays twenty-one steps into every fresh library and `verifyLatestSchema`
   in `runner.ts` hand-mirrors about 130 constraint, index and trigger names. The clean-start policy
