@@ -1,6 +1,6 @@
 import { tmpdir } from "node:os";
 import { expect, test } from "vitest";
-import { daemonSocketPath, requestTimeout } from "./daemon-client.js";
+import { daemonSocketPath, IDLE_CEILING_MS, requestTimeout } from "./daemon-client.js";
 
 test("daemon socket identity is stable and independent of library path length", () => {
   const library = `/tmp/${"library-segment/".repeat(20)}`;
@@ -12,70 +12,15 @@ test("daemon socket identity is stable and independent of library path length", 
   expect(Buffer.byteLength(first)).toBeLessThanOrEqual(104);
 });
 
-test("drive-scale imports are not capped by the ordinary command timeout", () => {
-  const timeout = requestTimeout({
-    verb: "import",
-    args: ["/Volumes/drive", "--link"],
-    cwd: "/",
-    env: { noDaemon: false },
-  });
-
-  expect(timeout).toBeGreaterThanOrEqual(5 * 60 * 1_000);
+test("every verb tolerates silence longer than a handler's progress interval", () => {
+  for (const verb of ["fill", "layer", "develop", "import", "list", "embed", "show"]) {
+    expect(
+      requestTimeout({ verb, args: [], cwd: "/", env: { noDaemon: false, lockBudgetMs: "0" } }),
+    ).toBe(IDLE_CEILING_MS);
+  }
 });
 
-test("embed idle timeout always leaves room for provider progress frames", () => {
-  const timeout = requestTimeout({
-    verb: "embed",
-    args: ["0199a7c2-0000-7000-8000-000000000001"],
-    cwd: "/",
-    env: { noDaemon: false, lockBudgetMs: "0" },
-  });
-
-  expect(timeout).toBeGreaterThan(5_000);
-});
-
-test("search idle timeout always leaves room for provider progress frames", () => {
-  const timeout = requestTimeout({
-    verb: "search",
-    args: ["ceremony"],
-    cwd: "/",
-    env: { noDaemon: false, lockBudgetMs: "0" },
-  });
-
-  expect(timeout).toBeGreaterThan(5_000);
-});
-
-test("reimagine idle timeout always leaves room for provider progress frames", () => {
-  const timeout = requestTimeout({
-    verb: "reimagine",
-    args: ["0199a7c2-0000-7000-8000-000000000001", "--prompt", "twilight"],
-    cwd: "/",
-    env: { noDaemon: false, lockBudgetMs: "0" },
-  });
-
-  expect(timeout).toBeGreaterThan(5_000);
-});
-
-test("relight idle timeout always leaves room for provider progress frames", () => {
-  const timeout = requestTimeout({
-    verb: "relight",
-    args: [
-      "0199a7c2-0000-7000-8000-000000000001",
-      "--azimuth",
-      "35",
-      "--elevation",
-      "60",
-      "--intensity",
-      "0.75",
-    ],
-    cwd: "/",
-    env: { noDaemon: false, lockBudgetMs: "0" },
-  });
-
-  expect(timeout).toBeGreaterThan(5_000);
-});
-
-test("embed timeout still honors a longer foreground queue budget", () => {
+test("the idle ceiling still honors a longer foreground queue budget", () => {
   const timeout = requestTimeout({
     verb: "embed",
     args: ["0199a7c2-0000-7000-8000-000000000001"],
@@ -86,35 +31,8 @@ test("embed timeout still honors a longer foreground queue budget", () => {
   expect(timeout).toBe(61_000);
 });
 
-test("export idle timeout permits heartbeat frames even with immediate queue admission", () => {
-  const timeout = requestTimeout({
-    verb: "export",
-    args: ["0199a7c2-0000-7000-8000-000000000001", "--to", "/tmp/delivery"],
-    cwd: "/",
-    env: { noDaemon: false, lockBudgetMs: "0" },
-  });
-
-  expect(timeout).toBeGreaterThan(5_000);
-});
-
-test("segment idle timeout permits progress while immediately admitted model work is pending", () => {
-  expect(
-    requestTimeout({
-      verb: "segment",
-      args: ["photo", "--at", "3,2"],
-      cwd: "/",
-      env: { noDaemon: false, lockBudgetMs: "0" },
-    }),
-  ).toBeGreaterThan(5_000);
-});
-
-test("auto crop idle timeout permits progress while immediately admitted image work is pending", () => {
-  expect(
-    requestTimeout({
-      verb: "crop",
-      args: ["photo", "--auto"],
-      cwd: "/",
-      env: { noDaemon: false, lockBudgetMs: "0" },
-    }),
-  ).toBeGreaterThan(5_000);
+test("an invalid budget falls back to the default admission window", () => {
+  expect(requestTimeout({ verb: "list", args: [], cwd: "/", env: { noDaemon: false } })).toBe(
+    31_000,
+  );
 });

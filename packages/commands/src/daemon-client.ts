@@ -361,30 +361,18 @@ function processState(pid: number): "alive" | "dead" | "unknown" {
   }
 }
 
+// The daemon writes a keepalive frame every second while a request is queued or
+// executing, so this is a pure idle ceiling: how long the client tolerates total
+// silence before it declares the daemon dead. It is the same for every verb; a
+// handler's own progress frames are for the user, not for liveness. The floor
+// tolerates several missed keepalives; a longer foreground queue budget extends
+// it so a locked-queue response is never mistaken for a dead daemon.
+export const IDLE_CEILING_MS = 10_000;
+
 export function requestTimeout(request: CommandRequest): number {
-  // Import reports progress as each prepared candidate commits. This is an idle
-  // ceiling, reset by every daemon frame, rather than a cap on total drive time.
-  if (request.verb === "import") return 10 * 60 * 1_000;
   const budget = Number(request.env.lockBudgetMs);
-  const queueDeadline =
-    Number.isSafeInteger(budget) && budget >= 0 ? Math.max(1_000, budget + 1_000) : 31_000;
-  // Long-running commands emit a progress heartbeat every five seconds, including
-  // while one image is processing. Keep their idle ceiling independent of the
-  // foreground queue budget without shortening a larger admission window.
-  if (
-    request.verb === "embed" ||
-    request.verb === "search" ||
-    request.verb === "reimagine" ||
-    request.verb === "relight" ||
-    request.verb === "generate" ||
-    request.verb === "show" ||
-    request.verb === "segment" ||
-    request.verb === "crop" ||
-    request.verb === "export"
-  ) {
-    return Math.max(31_000, queueDeadline);
-  }
-  return queueDeadline;
+  const queueDeadline = Number.isSafeInteger(budget) && budget >= 0 ? budget + 1_000 : 31_000;
+  return Math.max(IDLE_CEILING_MS, queueDeadline);
 }
 
 function daemonUnavailable(

@@ -13,6 +13,7 @@ export type DaemonClientFrame =
 export type DaemonServerFrame =
   | { type: "event"; event: StderrEvent }
   | { type: "stream"; row: unknown }
+  | { type: "keepalive" }
   | { type: "response"; envelope: Envelope };
 
 export function encodeFrame(value: unknown): Buffer {

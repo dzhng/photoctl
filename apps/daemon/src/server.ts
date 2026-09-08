@@ -28,6 +28,12 @@ interface QueuedRequest {
   enqueuedAt: number | null;
 }
 
+// While a request is queued or executing, the daemon proves it is alive with a
+// transport-level frame so the client's idle ceiling never depends on whether a
+// handler happens to emit progress. A paid generation waiting on a slow provider
+// must not be reported as "outcome unknown" while the daemon commits it.
+export const KEEPALIVE_INTERVAL_MS = 1_000;
+
 export interface DaemonServerOptions {
   libraryPath: string;
   socketPath: string;
@@ -44,6 +50,7 @@ export class DaemonServer {
   private readonly startedAt = Date.now();
   private readonly background = new BackgroundRegistry();
   private readonly pending: QueuedRequest[] = [];
+  private readonly keepalives = new Map<Socket, ReturnType<typeof setInterval>>();
   private readonly lock;
   private server: Server | undefined;
   private library: LibraryHandle | undefined;
@@ -161,6 +168,14 @@ export class DaemonServer {
       socket,
       enqueuedAt: this.running ? Date.now() : null,
     });
+    this.keepalives.set(
+      socket,
+      setInterval(() => {
+        writeFrame(socket, { type: "keepalive" } satisfies DaemonServerFrame).catch(() =>
+          socket.destroy(),
+        );
+      }, KEEPALIVE_INTERVAL_MS),
+    );
     this.armIdleTimer();
     this.scheduleDrain();
   }
@@ -250,6 +265,9 @@ export class DaemonServer {
   }
 
   private respond(socket: Socket, envelope: Envelope): void {
+    const keepalive = this.keepalives.get(socket);
+    if (keepalive) clearInterval(keepalive);
+    this.keepalives.delete(socket);
     const frame: DaemonServerFrame = { type: "response", envelope };
     socket.end(encodeFrame(frame));
   }
