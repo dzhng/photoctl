@@ -6,6 +6,13 @@ no verdicts, no confidence ratings and no scenarios. It exists so a reviewer can
 trace how 389 accumulated entries became 115
 consolidated ones, and so the limits of that pass are stated rather than implied.
 
+This is historical consolidation evidence, not the current completion handoff.
+Its 115-entry accounting and unresolved-acceptance statements describe that
+pass. The final ledger has 118 entries (22 needs-user, 96 sound), including the
+later S94/S95 user acceptances and closeout additions. Automatic fine edges
+remain a limitation, but selection and pairing are no longer open v1 gates.
+The [post-close review](post-close-review-2026-09-08.md) owns current status.
+
 ## Accounting
 
 This is the integrated working ledger, not a claim of completed whole-spec acceptance.

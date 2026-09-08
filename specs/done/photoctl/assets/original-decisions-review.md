@@ -6,9 +6,11 @@ is decision coverage, not a new execution or a claim that every source line was
 independently reviewed. Current test evidence lives in the
 [local closeout record](final-closeout-2026-09-08.md).
 
-“Implemented” identifies the owning code and retained scoped evidence. Conditional
-provider quality and the two open presentation/selection requirements stay open;
-no old map wording reintroduces removed platform, SSH or Lightroom gates.
+"Implemented" identifies the owning code and retained scoped evidence. This
+audit preceded the user's S94/S95 acceptance: its open presentation/selection
+references are historical, resolved by those entries in `../choices.md`.
+Conditional provider quality remains unverified; no old map wording reintroduces
+removed platform, SSH or Lightroom gates.
 
 | Decision | Current disposition and owner |
 | --- | --- |
