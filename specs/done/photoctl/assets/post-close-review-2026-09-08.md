@@ -41,8 +41,16 @@ Targeted lint, formatting and whitespace checks pass.
 
 ## Current handoff
 
-Generation correction is integrated as `9ef99cc`; transport and docs are the
-following focused pass. Next run the one
-final integrated local gate. The prepared invocation and upcoming log are
+Generation correction is integrated as `9ef99cc`; transport is `17caf24`.
+The final integrated local gate is running on that production source. Its
+invocation and log are
 `/private/tmp/photoctl-review-closeout.tJpUBj/{gate.sh,gate.log}`.
 Do not treat the earlier full gate as covering these later corrections.
+
+Three independent read-only archive audits checked core/storage, rendering,
+and historical/visual-provenance claims. Root verified and corrected omitted
+qualifications: the accepted same-volume relocation inference, engine versus
+schema compatibility, actual import admission, preview size ceiling,
+conditional develop compensation, valid-image retention, visual-review
+fallbacks, live mask refusal, and historical CI wording. These are documentation
+corrections after the gate began; no production code changed during the run.

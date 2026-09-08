@@ -110,8 +110,10 @@ handlers retain their existing progress and stream failure behavior.
 **Identity is sampled, promoted only on collision.** A file's content key is a
 SHA-256 over size plus the first and last mebibyte (`packages/library/src/identity.ts`).
 A second candidate with the same key triggers a persisted full hash of both;
-equality that cannot be established (offline original) refuses rather than
-guesses. Photos, originals and files are three owners: `photos` owns logical
+an offline unpromoted original refuses a new attachment. The recorded relocation
+exception reuses a sampled match when the old path is missing on the same
+confirmed-mounted volume; it is an inference, not full-hash proof (ledger S3).
+Photos, originals and files are three owners: `photos` owns logical
 identity, culling and the edit document; `originals` owns each distinct
 original's byte identity, kind and capture metadata; `files` owns locations of
 one original. A RAW and its camera JPEG are two originals of one photo; two
@@ -120,7 +122,8 @@ pairing different bytes inside `photos` would have corrupted deduplication,
 source validation and relocation.
 
 **Every photo has an offline preview.** Import is not successful until a
-pinned, source-independent 1616-pixel JPEG and its `cache_index` row exist;
+pinned, source-independent JPEG of up to 1616 pixels on the long edge and its
+`cache_index` row exist;
 re-import repairs either half. Edited previews are lazy, prunable derivations
 keyed by the canonical `render_hash`; `show` is the synchronization point and
 returns only after the requested view is readable. One full-frame display
@@ -169,10 +172,11 @@ sees the current photographic composite (excluding final markup) cropped to
 the selection plus context, with outside-visible pixels black-padded and
 recorded; the mask is clipped to the visible footprint; the composite protects
 every zero-mask pixel exactly. Generation is the commit boundary; a failed
-upscale retains the generated branch with `upscale_failed`. Every provider
-return, including rejected work, is journaled with its original encoded bytes
-(`packages/render/src/provider-images/`), and retained bytes are never
-deleted automatically.
+upscale retains the generated branch with `upscale_failed`. Provider attempts
+are journaled, and valid returned images retain their original encoded bytes
+even when later policy rejects the work (`packages/render/src/provider-images/`).
+Invalid image bytes or failed persistence cannot be claimed retained; retained
+bytes are never deleted automatically.
 Refresh is a stored program that rebinds to current develop; reconnect
 promotes only deterministic work; only explicit refresh spends money again.
 Upscaling is a separate `UpscaleAdapter` boundary that requires explicit
@@ -214,8 +218,10 @@ violating one silently breaks a promise the CLI makes to agents.
   destination failures still fail with a code.
 
 ### Library, identity and files
-- A broken or version-mismatched library is refused with a recovery command
-  (`restore`), never recreated, quarantined or auto-upgraded. `fsync` and
+- A broken library or incompatible database-engine version is refused with
+  recovery guidance, never silently recreated or quarantined. Valid older
+  catalog-schema prefixes receive the migrations owned by `open.ts`; this is
+  separate from engine-version compatibility. `fsync` and
   `synchronous_commit` are asserted on after every open.
 - One lock per library, released on every open/throw path; timeout returns
   `library_locked` with `holder_pid` and `waited_ms`.
@@ -234,9 +240,10 @@ violating one silently breaks a promise the CLI makes to agents.
   rather than fabricating pixels.
 
 ### Import and previews
-- Imports are capability-based: every decodable single-frame still is
-  admitted by probing bytes; extensions are hints; corrupt, animated or
-  multipage input returns `unsupported_file` and creates no row.
+- Imports probe bytes rather than trusting extensions. Admission supports
+  sharp-decodable single-frame stills and RAWs with a usable embedded culling
+  preview; `packages/importer/src/formats.ts` owns that boundary. Unsupported,
+  corrupt, animated or multipage input creates no photo row.
 - The shared cache directory is prepared before admission; per-photo failures
   join the partial result without starving other units; unexpected faults
   still abort.
@@ -254,9 +261,10 @@ violating one silently breaks a promise the CLI makes to agents.
   output. Determinism is structural: the crate uses no float atomics, and its
   one threaded kernel (noise reduction) works in fixed row blocks with an
   ordered merge, so the same dictionary and decoder produce the same bytes.
-- Develop tiers: exposure, brightness, contrast, saturation, vibrance, black
-  point and small white-balance moves are compensated on existing layers by a
-  scene-linear delta; everything else marks dependent layers `stale`.
+- Develop compensation applies only when an exact scene-linear delta is
+  supported for the prior operator stack and requested move. Unsupported or
+  non-invertible combinations mark dependent layers `stale` instead;
+  `packages/render/src/develop/tiers.ts` owns the decision.
 - Layer mutations create one revision and one composite root; user-visible
   layers are ordered roots, not containers for private pipelines. Only
   `blend='normal'` exists. A moved subject keeps its untransformed silhouette
@@ -521,7 +529,10 @@ The standards the result was held to, and what each drove:
 - **Canvas and generation** — `assets/outpaint-*`, `assets/frame-views`,
   `assets/fill-fit`, `assets/full-frame-*`, `assets/reference-controls`,
   `assets/*-journey`, `assets/generate`, `assets/auto-enhance`, `assets/markup`:
-  deterministic keyless captures with unprimed critiques. None is a
+  deterministic keyless captures whose review provenance and limitations vary
+  by record.
+  Some used adversarial fallback when an unprimed reviewer was unavailable;
+  those records are not independent-review passes. None is a
   photographic-quality acceptance; live-provider texture, live upscaler
   quality and mask polarity remain conditional and unverified.
 - **Runtime evidence** — `assets/sam-runtime`, `assets/outpaint-resources`,
@@ -535,7 +546,8 @@ the fake release-default upscaler (U2), black uncovered canvas (U3), magenta
 vacancy (U4), graph inspection bounds (U5), and the other needs-user entries.
 Live provider evidence (mask polarity, multimodal embedding dialect, upscaler
 quality) requires purpose-specific keys and consent that were never supplied;
-nothing in the shipped product depends on them.
+the accepted completion scope leaves those capabilities unverified. Live
+native-mask fill remains refused by the shipped adapter.
 
 ## Review debt recorded at closeout
 

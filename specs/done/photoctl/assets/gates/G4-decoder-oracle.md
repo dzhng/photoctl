@@ -32,7 +32,9 @@ recapture or tolerance changes.
 
 The shared native color runtime was exercised through the public file and RAW paths on Darwin ARM64;
 the Docker gate also built and loaded the Linux ARM64 package. The root CI gate runs the same build and
-tests on `ubuntu-latest`, covering the packaged Linux x64 target. `doctor` reports the selected native
+tests on `ubuntu-latest`, covering the packaged Linux x64 target. **Historical CI description:**
+that hosted full-suite policy was subsequently replaced with smoke-only CI;
+it does not describe the current verification requirements. `doctor` reports the selected native
 package separately as `native_image`; it is required on supported targets even though npm declares the
 mutually exclusive OS/CPU packages as optional dependencies.
 The release workflow builds all four supported native packages on matching hosted runners, then
