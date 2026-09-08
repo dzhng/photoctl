@@ -23,6 +23,7 @@ check remain scoped evidence, not exhaustive source verification.
 | **Total previous entries** | **389** |
 | Entries in the consolidated ledger | 115 |
 | — needs-user (`U1`–`U26`, excluding U7/U21/U23/U25) | 22 |
+| — needs-user added after consolidation (`U27`, pairing card layout) | 1 |
 | — unsound current choices | 0 |
 | — sound (`S1`–`S93`) | 93 |
 | Previous entries merged into a consolidated entry | 388 |

@@ -1,0 +1,39 @@
+{
+  "method": "grayscale mean absolute difference and share of pixels differing by more than 32 levels, computed with the repository sharp dependency over the common frame",
+  "desktop_mixed_original_vs_final": {
+    "size": [
+      1440,
+      720
+    ],
+    "mae": 5.057,
+    "diffRatio32": 0.03299,
+    "differingPixels": 34207
+  },
+  "desktop_mixed_intermediate_vs_final": {
+    "size": [
+      1440,
+      720
+    ],
+    "mae": 5.374,
+    "diffRatio32": 0.03437,
+    "differingPixels": 35636
+  },
+  "desktop_final_both_online_vs_mixed": {
+    "size": [
+      1440,
+      720
+    ],
+    "mae": 0.241,
+    "diffRatio32": 0.0024,
+    "differingPixels": 2488
+  },
+  "mobile_mixed_original_true_viewport_vs_final": {
+    "size": [
+      390,
+      1500
+    ],
+    "mae": 22.766,
+    "diffRatio32": 0.17129,
+    "differingPixels": 100206
+  }
+}

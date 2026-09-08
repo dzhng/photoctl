@@ -36,6 +36,53 @@ test("the sheet includes rating, flag, label, and original availability beside e
   expect(html).toContain("JPEG · Offline");
 });
 
+test("original membership is a labelled group whose members carry their own availability state", () => {
+  const html = renderSheetReport({
+    library: "/tmp/photoctl-library",
+    filter: null,
+    photos: [
+      {
+        row: {
+          id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001",
+          primary_original_id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002",
+          originals: [
+            { id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002", kind: "raw", online: true },
+            { id: "0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003", kind: "jpeg", online: false },
+          ],
+          file: "DSC00001.ARW",
+          rating: 0,
+          flag: "none",
+          label: null,
+          shot: null,
+          online: true,
+        },
+        preview: "/tmp/cache/preview.jpg",
+        show: { schema: 1, ok: true, data: { id: "photo" }, warnings: [] },
+      },
+    ],
+  });
+
+  const groups = html.match(/<div class="originals">[\s\S]*?<\/div>/g) ?? [];
+  expect(groups).toHaveLength(1);
+  const [group] = groups;
+  expect(group).toContain('<span class="originals-label">Originals</span>');
+  expect(group).toMatch(
+    /<span class="original" data-online="true" title="0199a7c2-3b1e-7c40-8f2a-1d0e5a91c002"><i><\/i>RAW · Primary · Online<\/span>/,
+  );
+  expect(group).toMatch(
+    /<span class="original" data-online="false" title="0199a7c2-3b1e-7c40-8f2a-1d0e5a91c003"><i><\/i>JPEG · Offline<\/span>/,
+  );
+  // The culling row holds only photo-level facts; members never mix into it.
+  const culling = html.match(/<div class="badges">[\s\S]*?<\/div>/g) ?? [];
+  expect(culling).toHaveLength(1);
+  expect(culling[0]).not.toContain("RAW");
+  expect(culling[0]).not.toContain("JPEG");
+  expect(culling[0]).not.toContain('class="online"');
+  expect(html).toContain(
+    '<div class="title"><h2>DSC00001.ARW</h2><span class="online"><i></i>Primary online</span></div>',
+  );
+});
+
 test("the sheet template renders a mixed-availability pair as one RAW-led card", () => {
   const html = renderSheetReport({
     library: "/tmp/photoctl-library",
@@ -67,8 +114,12 @@ test("the sheet template renders a mixed-availability pair as one RAW-led card",
   const [card] = cards;
   expect(card).toContain("<h2>DSC08819.ARW</h2>");
   expect(card).toContain("0199a7c2-3b1e-7c40-8f2a-1d0e5a91c001");
-  expect(card).toMatch(/<span\b[^>]*>RAW · Primary · Offline<\/span>/);
-  expect(card).toMatch(/<span\b[^>]*>JPEG · Online<\/span>/);
-  expect(card).toMatch(/<span class="online"><i><\/i>Offline<\/span>/);
+  expect(card).toMatch(
+    /<span class="original" data-online="false"[^>]*><i><\/i>RAW · Primary · Offline<\/span>/,
+  );
+  expect(card).toMatch(
+    /<span class="original" data-online="true"[^>]*><i><\/i>JPEG · Online<\/span>/,
+  );
+  expect(card).toMatch(/<span class="online"><i><\/i>Primary offline<\/span>/);
   expect(card).toContain('data-online="false"');
 });

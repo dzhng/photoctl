@@ -581,6 +581,44 @@ release blocker. The spec's remaining requirements retain their own status.
   `scripts/{fetch-models.mjs,verify-release-models.mjs}`,
   [release ownership](slices/14-gold-exam-and-release.md#model-distribution).
 
+### U27 — The contact sheet shows membership as kind/role/state pills and a labelled primary pill
+
+- **When:** Pairing presentation checkpoint, 2026-09-08.
+- **The choice:** A photo card on the `wb sheet` report shows, beside the RAW
+  filename, one pill reading `Primary online` or `Primary offline` — the public
+  top-level `online` field, which the slice defines as the primary original's
+  state — and, under an "Originals" heading on its own line, one pill per
+  original reading kind, role and state (`RAW · Primary · Offline`, `JPEG ·
+  Online`) with a green or grey dot and a dimmed dashed border when offline. The
+  culling row holds only rating, flag and label. Members are not named: the
+  public `list` row's `originals` entries carry `id`, `kind` and `online`, and
+  the sheet renders exactly that. No "partially available" summary exists;
+  a reader combines the primary pill with the member pills. The alternatives
+  the unprimed critique asked for were member filenames on each pill (a public
+  list-shape extension), replacing the primary pill with a partial-availability
+  summary, and restyling sheet chrome that predates this slice (full UUID line,
+  letterboxed portrait thumbnails, native `Show JSON` disclosure, empty fourth
+  grid column with three photos).
+- **The gap:** The slice required list/show and the workbench to agree on one
+  photo and its membership, with the top-level state describing the primary and
+  membership reporting each original separately. It did not say how the card
+  should distinguish scope, whether members are named, or whether a mixed state
+  gets its own summary word.
+- **The reach:** Naming members would change the public `list` row, which every
+  agent consumer reads, not just the sheet. The primary pill and the `RAW ·
+  Primary` member pill deliberately state the same fact twice; removing either
+  changes what a standalone photo's card says. Sheet chrome choices are shared
+  with every other workbench card state.
+- **Verdict:** **Needs-user.** Provisional call: keep the labelled primary pill,
+  the headed member group and the unnamed members. Reverse by editing one
+  template; naming members additionally means one additive field on the list
+  row's `originals` entries.
+- **Confidence:** Low — the critique judged the final card decodable but not
+  self-explanatory, and only the user knows what a photographer scanning a
+  sheet needs first.
+- **Owner:** `apps/workbench/src/sheet.ts`, `packages/protocol/src/verbs/`
+  (`list` row shape), [layout evidence](assets/paired-layout/README.md).
+
 ---
 
 ## Sound — the architecture now owned

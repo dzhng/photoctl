@@ -129,33 +129,26 @@ preview/cache and export history belong to the local test catalog. The card was
 not remounted, and no whole-card or macOS mount-metadata invariance is claimed.
 Further camera access is unnecessary for this witness.
 
-## Presentation evidence remains incomplete
+## Presentation evidence — captured, awaiting user acceptance
 
-The historical `/private/tmp/photoctl-paired-visual.EiW3Lt` contained public CLI evidence and matched
-baseline/candidate contact-sheet HTML for three distinct retained camera pairs.
-The states include an unavailable RAW with an available JPEG, an available RAW
-with an unavailable JPEG, and both available. Only scratch copies were renamed.
-The sheet test verifies the membership labels, but does not certify their layout.
+Earlier attempts could not capture the workbench card: the in-app browser was
+disabled and the Chrome extension refused local `file:` URLs and indirect
+workarounds. Headless Chrome on the host is a different, ordinary capture tool
+and is the route the preview-shots convention prescribes; it now renders the
+production sheet directly. [The layout evidence](paired-layout/README.md) holds
+both-online and mixed-availability captures at desktop and a true 390-pixel
+viewport, the pre-correction card, public command results and pixel metrics.
 
-The browser rejected the local HTML URL and explicitly disallowed indirect
-workarounds. A direct in-app-browser attempt on 2026-09-07 is also policy-blocked;
-no alternate route was attempted afterward. No UI screenshot or fresh layout
-acceptance is claimed. Workbench membership-badge layout still needs a user-supplied
-capture or an independently permitted capture route, followed by visual review.
-
-The old temporary directory was absent on 2026-09-08. Fresh reports now live at
-`/private/tmp/photoctl-pairing-review.4jmsNK/both-online.html` and
-`/private/tmp/photoctl-pairing-review.4jmsNK/mixed-availability.html`, with public
-command results in `commands.json`. They use three local copies of permanent camera
-pairs through the current built CLI and the production sheet owner. The mixed state
-has one missing RAW, one missing JPEG and one fully available pair. Only temporary
-copies were moved. The user has been asked for a screenshot; no browser route was
-attempted and no visual acceptance is claimed. These remain disposable reports,
-not replacement fixtures or durable screenshot evidence.
-
-The separate [fixture orientation evidence](paired-orientation/README.md) exercises
-public image artifacts directly without opening HTML. Its image-geometry verdict
-does not certify workbench membership-badge layout or the physical-camera journey.
+Three unprimed critiques drove two corrections to the sheet owner: original
+membership is now a headed group on its own line with per-member online/offline
+dots and dimmed dashed offline pills, the culling row carries only
+rating/flag/label, and the photo-level state is a labelled `Primary
+online`/`Primary offline` pill beside the filename. The final critique found every
+state decodable with no overflow, clipping or contrast defect. Its remaining
+findings — member filenames, a partial-availability summary and pre-existing
+sheet chrome — are product choices recorded as ledger entry U27 for the user.
+The [fixture orientation evidence](paired-orientation/README.md) remains the
+image-geometry verdict; neither set is the physical-camera journey.
 
 ## Clean-start coverage
 
