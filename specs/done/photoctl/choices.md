@@ -2713,7 +2713,12 @@ future work inherits every one of them as a given.
   dedicated native thread** behind a bounded handoff, because the previous design
   held a mutex around execution while letting successive calls land on different
   general-purpose workers whose retained allocation working sets multiplied
-  memory. Text selection builds its grounding image and small normalized model
+  memory. Releasing the last runtime or inference task closes that handoff and
+  waits for the native worker to finish destroying its sessions, including after
+  initialization failure. Detached cleanup would let Node begin process-wide
+  ONNX Runtime teardown while a session still needs it; synchronous cleanup
+  keeps those lifetimes ordered without a timeout, leaked runtime, or new API.
+  Text selection builds its grounding image and small normalized model
   input and then *releases the full photographic buffer* before waiting on the
   provider and inference. Accounting is deliberately literal: a task tells the
   runtime how much pixel capacity it actually owns so the garbage collector can

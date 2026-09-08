@@ -233,7 +233,8 @@ pub struct Sam2RunOutcome {
 }
 
 struct Sam2Worker {
-    jobs: mpsc::SyncSender<Sam2Job>,
+    jobs: Option<mpsc::SyncSender<Sam2Job>>,
+    thread: Option<std::thread::JoinHandle<()>>,
     encoder_inputs: Vec<String>,
     decoder_inputs: Vec<String>,
 }
@@ -244,7 +245,7 @@ impl Sam2Worker {
         let (ready, initialized) = mpsc::sync_channel(1);
         // Keep inference allocations on one thread: libuv worker rotation retains
         // separate large allocator working sets even when a mutex serializes runs.
-        std::thread::Builder::new()
+        let thread = std::thread::Builder::new()
             .name("photoctl-sam".into())
             .spawn(move || {
                 let mut runtime = match Sam2CpuRuntime::from_bytes(&encoder, &decoder, &recorder) {
@@ -284,13 +285,26 @@ impl Sam2Worker {
                 }
             })
             .map_err(|error| error.to_string())?;
-        let (encoder_inputs, decoder_inputs) =
+        let mut worker = Self {
+            jobs: Some(jobs),
+            thread: Some(thread),
+            encoder_inputs: Vec::new(),
+            decoder_inputs: Vec::new(),
+        };
+        (worker.encoder_inputs, worker.decoder_inputs) =
             initialized.recv().map_err(|error| error.to_string())??;
-        Ok(Self {
-            jobs,
-            encoder_inputs,
-            decoder_inputs,
-        })
+        Ok(worker)
+    }
+}
+
+impl Drop for Sam2Worker {
+    fn drop(&mut self) {
+        // Sessions must finish releasing ORT before process-level C++ teardown.
+        // Close the queue first so an idle worker can exit, then wait for it.
+        drop(self.jobs.take());
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
     }
 }
 
@@ -399,6 +413,8 @@ impl Task for Sam2RunTask {
         let (reply, result) = mpsc::sync_channel(1);
         self.runtime
             .jobs
+            .as_ref()
+            .expect("a live SAM task owns its worker")
             .send(Sam2Job {
                 inputs: std::mem::take(&mut self.inputs),
                 outputs: std::mem::take(&mut self.outputs),
@@ -504,6 +520,19 @@ pub fn sam2_mask_from_logits(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn dropping_worker_releases_session_resources_before_returning() {
+        let recorder = Recorder::new("session");
+        let retained = Arc::downgrade(&recorder);
+        let worker =
+            Sam2Worker::new(IDENTITY_ONNX.to_vec(), IDENTITY_ONNX.to_vec(), recorder).unwrap();
+        drop(worker);
+        assert!(
+            retained.upgrade().is_none(),
+            "SAM session resources outlived their owner"
+        );
+    }
 
     const IDENTITY_ONNX: &[u8] = &[
         0x08, 0x0a, 0x12, 0x0c, 0x62, 0x61, 0x63, 0x6b, 0x65, 0x6e, 0x64, 0x2d, 0x74, 0x65, 0x73,

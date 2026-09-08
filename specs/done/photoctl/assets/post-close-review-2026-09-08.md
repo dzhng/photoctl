@@ -15,6 +15,9 @@ v1 scope; they do not reopen camera, fine-edge, platform or live-provider gates.
   Lanczos calculation as its stored recipe. Its first view cannot silently
   substitute differently resized pixels. The evaluator is unchanged, so no
   renderer semantic revision is needed.
+- Releasing the final SAM runtime owner waits for native session destruction.
+  The worker queue closes before joining its thread; failed initialization
+  follows the same cleanup path. No CLI, schema or inference API changes.
 
 ## Evidence and review
 
@@ -57,12 +60,34 @@ a speed assertion; its hang guard is now an explicit 60 seconds, matching
 related source-treatment checks. All pixel assertions are unchanged. It passed
 locally and in the same Docker image with only the updated test mounted
 read-only (5.2 seconds for the previously timed-out case). Docker's three
-real-model checks passed afterward. Mac packaged checks are now running.
+real-model checks passed afterward.
+
+Mac completed with all ten packed-install tests passing, plus decoder, linkage
+and native-load checks. Two failures remained: SAM aborted during native teardown,
+and warm-show p50 was 325 ms against the unchanged 250 ms target. The crash report
+`node-2026-09-08-123415.ips` in the host DiagnosticReports directory placed
+`ReleaseEnv` on the SAM worker while the main thread was in C++ process teardown.
+An unchanged focused SAM rerun passed; this did not dismiss the lifetime defect.
+
+The SAM owner now joins its worker after closing the queue. A Rust regression
+observing session-owned resource release failed before this fix and passed
+afterward. Six addon tests pass, including sixteen tiny-model subprocess exits;
+those subprocesses also passed before the fix and are boundary coverage, not
+the red witness. The rebuilt native addon passes the real-SAM test. The warm-show
+benchmark also passes its focused rerun with no timing or preview-code changes;
+host contention remains a plausible explanation, not a proven cause. All 86
+Rust tests pass, and the rebuilt addon passes both native-load checks, including
+packing and loading outside the checkout. Independent read-only review confirmed ownership, initialization
+error cleanup, and absence of a self-join path. Typechecking and scoped lint pass
+(lint retains an existing function-scoping warning).
 
 Invocations and logs are `/private/tmp/photoctl-review-closeout.tJpUBj/`:
 `gate.sh`, `gate.log`, `embed-drain-focused.log`, `remaining-gates.sh`,
-`remaining-gates.log`, `final-gates.sh`, and `final-gates.log`.
-Next inspect the live Mac continuation's final result before claiming closeout.
+`remaining-gates.log`, `final-gates.sh`, `final-gates.log`,
+`mac-sam-focused.log`, `mac-sam-shutdown-fixed.log`,
+`rust-sam-shutdown-fixed.log`, and `native-load-sam-shutdown-fixed.log`.
+Next complete the final requirement audit; all identified failures now have
+focused passing evidence on their applicable corrected source.
 Do not rerun the entire host suite as a feedback loop or treat the earlier
 pre-correction gate as covering these changes.
 

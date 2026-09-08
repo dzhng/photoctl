@@ -3,6 +3,7 @@ import { createSam2OnnxRuntime, sam2MaskFromLogits } from "./index.js";
 import { setFlagsFromString } from "node:v8";
 import { runInNewContext } from "node:vm";
 import { setImmediate } from "node:timers/promises";
+import { spawnSync } from "node:child_process";
 
 const field = (tag: number, bytes: number[]) => [tag, bytes.length, ...bytes];
 
@@ -16,6 +17,29 @@ const identityOnnx = Uint8Array.from([
   0x01, 0x0a, 0x02, 0x08, 0x01, 0x0a, 0x02, 0x08, 0x02, 0x0a, 0x02, 0x08, 0x02, 0x42, 0x04, 0x0a,
   0x00, 0x10, 0x15,
 ]);
+
+test("a process with a live SAM runtime exits cleanly after inference", () => {
+  const script = `
+    import { createSam2OnnxRuntime } from '@photoctl/img';
+    const model = Uint8Array.from(${JSON.stringify(Array.from(identityOnnx))});
+    globalThis.runtime = createSam2OnnxRuntime(model, model);
+    const [output] = await globalThis.runtime.runEncoder([
+      { name: 'x', dimensions: [1, 1, 2, 2], f32Data: new Float32Array([1, 2, 3, 4]) }
+    ], ['y']);
+    console.log(JSON.stringify(Array.from(output.data)));
+  `;
+  // Exercise natural Node teardown, not only inference inside a live test runner.
+  for (let attempt = 0; attempt < 16; attempt++) {
+    const result = spawnSync(process.execPath, ["--input-type=module", "-e", script], {
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout.trim()).toBe("[1,2,3,4]");
+  }
+}, 30_000);
 
 test("initialization warnings survive a later decoder construction failure", () => {
   // Add an unused float initializer to the identity graph; ORT reports its removal.
