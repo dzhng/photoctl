@@ -14,6 +14,7 @@ import {
   type MaskImage,
 } from "@photoctl/render";
 import sharp from "sharp";
+import { escapeHtml } from "./html.js";
 
 export async function buildMasksReport(libraryPath: string, photo: string): Promise<string> {
   const library = await openLibrary(libraryPath);
@@ -172,13 +173,4 @@ async function maskPanels(
           .toBuffer(),
     ),
   );
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

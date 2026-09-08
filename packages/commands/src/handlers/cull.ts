@@ -1,4 +1,9 @@
-import { cacheRootForLibrary, formatShotInstant, pinnedEmbeddedJpegPath } from "@photoctl/importer";
+import {
+  cacheRootForLibrary,
+  formatShotInstant,
+  pinnedEmbeddedJpegKey,
+  pinnedEmbeddedJpegPath,
+} from "@photoctl/importer";
 import { deletePhotoGraphs } from "@photoctl/render";
 import {
   createVolumeResolver,
@@ -330,7 +335,7 @@ export async function removeCommand(
         `DELETE FROM cache_index
          WHERE path = ANY($1::text[])
             OR path LIKE ANY($2::text[])`,
-        [ids.map((id) => `emb/${id}.jpg`), ids.map((id) => `view/${id}/%`)],
+        [ids.map((id) => pinnedEmbeddedJpegKey(id)), ids.map((id) => `view/${id}/%`)],
       );
       await lease.handle.query("COMMIT");
       databaseCommitted = true;

@@ -11,7 +11,6 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
-import { expect } from "vitest";
 import { dispatch } from "./dispatch.js";
 
 export async function fillUpscaleFixture(
@@ -204,7 +203,8 @@ export async function fixtureCommand(
 }
 
 export function success(envelope: Awaited<ReturnType<typeof dispatch>>): unknown {
-  expect(envelope, JSON.stringify(envelope)).toMatchObject({ ok: true });
-  if (!envelope.ok || !("data" in envelope)) throw new Error("Expected data envelope");
+  if (!envelope.ok || !("data" in envelope)) {
+    throw new Error(`Expected a successful data envelope, received ${JSON.stringify(envelope)}`);
+  }
   return envelope.data;
 }

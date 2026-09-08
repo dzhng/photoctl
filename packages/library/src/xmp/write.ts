@@ -1,13 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { open, rm } from "node:fs/promises";
 import { dirname } from "node:path";
-import { InvalidXmpError, XmpChangedError, XmpFilesystemError } from "./errors.js";
+import { InvalidXmpError, XmpChangedError } from "./errors.js";
 import type { CullFlag, CullLabel } from "./read.js";
 import { sidecarPathForImage } from "./read.js";
 import { publishXmpSnapshot } from "./publish.js";
 import { readFileSnapshot } from "./snapshot.js";
-
-export { InvalidXmpError } from "./errors.js";
+import { filesystem } from "./filesystem.js";
 
 const PHOTOCTL_NAMESPACE = "http://photoctl.dev/xmp/1.0/";
 const MAX_WRITE_ATTEMPTS = 3;
@@ -368,16 +367,4 @@ function escapeXml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
-}
-
-async function filesystem<T>(
-  operation: string,
-  path: string,
-  action: () => Promise<T>,
-): Promise<T> {
-  try {
-    return await action();
-  } catch (error) {
-    throw new XmpFilesystemError(operation, path, error);
-  }
 }

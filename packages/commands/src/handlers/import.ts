@@ -20,6 +20,7 @@ import {
   createEmbeddedPreviewJpeg,
   consumeBoundedOrdered,
   pinPreviewBytes,
+  pinnedEmbeddedJpegKey,
   pinnedEmbeddedJpegPath,
   pinnedPreviewMatches,
   preparePinnedPreviewCache,
@@ -624,7 +625,7 @@ async function commitCandidate(options: {
       await handle.query(
         `INSERT INTO cache_index (path, bytes, last_used, pinned) VALUES ($1, $2, now(), true)
          ON CONFLICT (path) DO UPDATE SET bytes = EXCLUDED.bytes, last_used = EXCLUDED.last_used, pinned = true`,
-        [`emb/${photoId}.jpg`, candidate.preview.length],
+        [pinnedEmbeddedJpegKey(photoId), candidate.preview.length],
       );
     }
     if (candidate.xmp && isPrimary)

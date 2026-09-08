@@ -1,4 +1,5 @@
 import { DEVELOP_OPERATORS, PACKAGE_PRESETS, developHash } from "@photoctl/render";
+import { escapeHtml } from "./html.js";
 
 const labels: Record<string, string> = {
   neutral: "Neutral identity",
@@ -35,13 +36,4 @@ function flattened(value: Record<string, unknown>, prefix = ""): Array<[string, 
       ? flattened(item as Record<string, unknown>, path)
       : [[path, item]];
   });
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

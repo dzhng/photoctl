@@ -38,6 +38,25 @@ export interface RevisionLayer {
   enabled: boolean;
 }
 
+/** Carry an existing layer into the next revision, optionally rewiring its nodes or position. */
+export function layerDraft(
+  layer: RevisionLayer,
+  z: number,
+  contentNode: NodeReference = { nodeId: layer.contentNodeId },
+  maskNode: NodeReference = { nodeId: layer.maskNodeId },
+): RevisionLayerDraft {
+  return {
+    layer: { layerId: layer.id },
+    name: layer.name,
+    z,
+    contentNode,
+    maskNode,
+    opacity: layer.opacity,
+    blend: layer.blend,
+    enabled: layer.enabled,
+  };
+}
+
 export async function resolveLayerId(
   database: { query<Row>(sql: string, parameters?: unknown[]): Promise<{ rows: Row[] }> },
   photoId: string,

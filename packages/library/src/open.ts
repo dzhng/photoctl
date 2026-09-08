@@ -14,6 +14,7 @@ import {
 } from "./lock.js";
 import { migrate, verifyLatestSchema, type MigrationResult } from "./migrations/runner.js";
 import { assertNoRestoreJournal } from "./restore-journal.js";
+import { hasCode } from "./fs-errors.js";
 
 export const DEFAULT_CACHE_MAX_BYTES = userSettingsSchema.shape.cache_max_bytes.parse(undefined);
 
@@ -119,8 +120,7 @@ export async function openLibrary(
   options: { noDaemon?: boolean; lockBudgetMs?: number; initialize?: boolean } = {},
 ): Promise<LibraryHandle> {
   const libraryPath = resolve(path);
-  await assertNoRestoreJournal(libraryPath);
-  let lock;
+  let lock: LibraryLock;
   try {
     lock = await acquireLibraryLock(
       join(libraryPath, OPEN_LOCK_NAME),
@@ -129,12 +129,6 @@ export async function openLibrary(
   } catch (error) {
     if (error instanceof PhotoctlError) throw error;
     throw catalogUnreadable(libraryPath);
-  }
-  try {
-    await assertNoRestoreJournal(libraryPath);
-  } catch (error) {
-    await lock.release();
-    throw error;
   }
   return await openLibraryHoldingLock(libraryPath, lock, options.initialize ?? false);
 }
@@ -221,8 +215,4 @@ function catalogUnreadable(libraryPath: string): PhotoctlError {
     path: libraryPath,
     hint: `photoctl restore --path ${libraryPath}`,
   });
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
 }

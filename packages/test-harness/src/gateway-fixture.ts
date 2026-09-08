@@ -111,12 +111,7 @@ async function handleRequest(
     }
   }
   const sent = parseDimensions(fields);
-  const mode = String(
-    fields.fixture_mode ??
-      request.headers["x-photoctl-fixture-mode"] ??
-      options.imageMode ??
-      "normal",
-  );
+  const mode = String(fields.fixture_mode ?? options.imageMode ?? "normal");
   const output =
     mode === "wrongdims"
       ? { w: sent.w * 2, h: sent.h * 2 }

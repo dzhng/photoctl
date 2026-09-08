@@ -1,6 +1,7 @@
 import { access } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { PhotoctlError } from "@photoctl/protocol";
+import { hasCode } from "./fs-errors.js";
 
 export type RestorePhase = "prepared" | "live_moved" | "promoted" | "committed";
 
@@ -93,7 +94,3 @@ export function validateRestoreJournal(value: unknown, libraryPath: string): Res
 }
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
-}

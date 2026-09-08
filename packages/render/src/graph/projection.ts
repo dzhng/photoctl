@@ -14,7 +14,11 @@ import type { LinearImage } from "../decoder.js";
 import { frameForNode, parseRenderFrame, savedRenderFrame, type RenderFrame } from "./frame.js";
 import { canonicalJson, imageNodeRegistry } from "./recipes.js";
 import type { MaskImage } from "../mask-tiff.js";
-import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
+import {
+  composeTransformMatrices,
+  invertTransformMatrix,
+  isIdentityMatrix,
+} from "../transforms.js";
 import type { EvaluateGraphNodeRequest, EvaluatedNode } from "./evaluator.js";
 import type { GraphTransaction } from "./store.js";
 import type { JsonValue } from "./types.js";
@@ -170,9 +174,7 @@ export async function projectMaskToRender(
   frame: { w: number; h: number },
 ): Promise<MaskImage> {
   const matrix = projection.baseToRaster;
-  return mask.w === frame.w &&
-    mask.h === frame.h &&
-    matrix.every((value, coefficient) => value === [1, 0, 0, 1, 0, 0][coefficient])
+  return mask.w === frame.w && mask.h === frame.h && isIdentityMatrix(matrix)
     ? mask
     : {
         ...frame,
@@ -196,11 +198,7 @@ function isIdentityProjection(
   to: RenderFrame["raster"],
   matrix: PixelFrameTransform["matrix"],
 ) {
-  return (
-    from.w === to.w &&
-    from.h === to.h &&
-    matrix.every((value, coefficient) => value === [1, 0, 0, 1, 0, 0][coefficient])
-  );
+  return from.w === to.w && from.h === to.h && isIdentityMatrix(matrix);
 }
 
 export async function projectCoverageBetweenFrames(
@@ -210,12 +208,7 @@ export async function projectCoverageBetweenFrames(
   frame: { w: number; h: number },
 ): Promise<MaskImage> {
   const matrix = frameToFrameMatrix(from, to);
-  if (
-    mask.w === frame.w &&
-    mask.h === frame.h &&
-    matrix.every((value, coefficient) => value === [1, 0, 0, 1, 0, 0][coefficient])
-  )
-    return mask;
+  if (mask.w === frame.w && mask.h === frame.h && isIdentityMatrix(matrix)) return mask;
   return {
     ...frame,
     data: await transformMaskPixels(mask.data, mask.w, mask.h, frame.w, frame.h, matrix),

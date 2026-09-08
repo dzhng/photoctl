@@ -20,8 +20,9 @@ export const DEVELOP_FILTER_NAMES = [
 ] as const;
 
 /**
- * The canonical operator inventory. Validation and tiering consume these
- * paths; later pixel implementations are tested against the named formulas.
+ * The canonical operator inventory. The dict schema derives its numeric ranges
+ * from these paths, tiering reads their tier, and the pixel kernels are tested
+ * against the named formulas.
  */
 export const DEVELOP_OPERATORS = {
   brilliance: {
@@ -182,5 +183,3 @@ export const DEVELOP_OPERATORS = {
 } as const satisfies Record<string, DevelopOperator>;
 
 export type DevelopKey = keyof typeof DEVELOP_OPERATORS;
-
-export const DEVELOP_KEY_PATHS = Object.freeze(Object.keys(DEVELOP_OPERATORS) as DevelopKey[]);

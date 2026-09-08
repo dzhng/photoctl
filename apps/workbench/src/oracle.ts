@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import sharp from "sharp";
 import { sourceTreatmentSchema, type SourceTreatment } from "@photoctl/protocol";
+import { escapeHtml } from "./html.js";
 
 const executeFile = promisify(execFile);
 
@@ -322,12 +323,4 @@ function renderOracleReport(
 
 function formatMetric(value: number | null): string {
   return value === null ? "n/a" : value.toFixed(3);
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }

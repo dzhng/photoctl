@@ -1,8 +1,7 @@
 import type { LinearImage } from "./decoder.js";
 import { readFile } from "node:fs/promises";
 import { validateLinearArtifactSamples } from "@photoctl/img";
-import { linearRec2020ProfilePath, srgb2014ProfilePath } from "./color.js";
-import type { Image16 } from "./source-render.js";
+import { linearRec2020ProfilePath } from "./color.js";
 
 const IFD_OFFSET = 8;
 const ENTRY_COUNT = 13;
@@ -113,18 +112,6 @@ export async function inspectArtifactLinearTiff(bytes: Buffer): Promise<{
     throw new Error("Linear TIFF has the wrong color profile");
   }
   return { width, height, pixelOffset, pixelBytes };
-}
-
-export async function encodeDisplayTiff(image: Image16): Promise<Buffer> {
-  if (
-    image.space !== "display-srgb" ||
-    image.channels !== 3 ||
-    !image.orientationApplied ||
-    image.data.length !== image.w * image.h * 3
-  ) {
-    throw new Error("Display TIFF accepts only oriented display-sRGB RGB16 samples");
-  }
-  return encodeRgb16Tiff(image.w, image.h, image.data, await readFile(srgb2014ProfilePath));
 }
 
 function encodeRgb16Tiff(

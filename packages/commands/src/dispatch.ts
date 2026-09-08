@@ -1,39 +1,13 @@
 import {
   PhotoctlError,
-  userSettingsSchema,
   type CommandRequest,
-  type DoctorData,
   type Envelope,
-  type InitData,
   type StderrEvent,
 } from "@photoctl/protocol";
-import {
-  databaseDescription,
-  DEFAULT_CACHE_MAX_BYTES,
-  initializeLibrary,
-  openLibrary,
-  readLibraryDiagnostics,
-  countStaleXmp,
-  completeModelManifest,
-  fetchPinnedModels,
-  inspectModelRelease,
-  parseModelReleaseManifest,
-  PINNED_MODEL_RELEASE,
-  type LibraryHandle,
-} from "@photoctl/library";
-import { cacheRootForLibrary } from "@photoctl/importer";
-import { resolveMacHelperPath } from "@photoctl/mac-helper";
-import {
-  inspectCirawHelper,
-  inspectLibrawDecoder,
-  inspectNativeImageRuntime,
-} from "@photoctl/render";
+import type { LibraryHandle } from "@photoctl/library";
 import type { PreviewCoordinator } from "@photoctl/render";
-import { providerDiagnostics, readProviderSettings } from "@photoctl/providers";
-import { join, resolve } from "node:path";
-import { parseArguments } from "./arguments.js";
-import { cacheBase, libraryPath, parseLockBudget } from "./context.js";
-import { parseByteSize } from "./byte-size.js";
+import { doctorCommand } from "./handlers/doctor.js";
+import { initCommand } from "./handlers/init.js";
 import { cacheCommand } from "./handlers/cache.js";
 import { exportCommand } from "./handlers/export.js";
 import { decodeCommand } from "./handlers/decode.js";
@@ -268,150 +242,15 @@ export async function dispatch(
       return await restoreCommand(request.args, request.env, request.cwd);
     if (request.verb === "migrate")
       return await migrateCommand(request.args, request.env, request.cwd, context.library);
-    if (request.verb === "init") {
-      const parsed = parseArguments(request.args, {
-        options: ["--path", "--cache-max", "--embed"],
-      });
-      if (parsed.positionals.length > 0) {
-        throw new PhotoctlError("usage", `Unexpected argument: ${parsed.positionals[0]}`);
-      }
-      const { options } = parsed;
-      const pathOption = options.get("--path");
-      const path = pathOption
-        ? resolve(request.cwd, pathOption)
-        : libraryPath(request.env, request.cwd);
-      const cacheMax = options.get("--cache-max");
-      const embed = options.get("--embed") ?? "manual";
-      if (embed !== "auto" && embed !== "manual") {
-        throw new PhotoctlError("usage", "--embed must be auto or manual");
-      }
-      const initialized = await initializeLibrary(
-        path,
-        cacheMax ? parseByteSize(cacheMax) : DEFAULT_CACHE_MAX_BYTES,
-        embed,
+    if (request.verb === "init") return await initCommand(request.args, request.env, request.cwd);
+    if (request.verb === "doctor")
+      return await doctorCommand(
+        request.args,
+        request.env,
+        request.cwd,
+        context.version,
+        context.library,
       );
-      try {
-        return {
-          schema: 1,
-          ok: true,
-          data: {
-            library: initialized.handle.path,
-            db: await databaseDescription(initialized.handle),
-            cache_max_bytes: initialized.cacheMaxBytes,
-            embed,
-          } satisfies InitData,
-          warnings: [],
-        };
-      } finally {
-        await initialized.handle.close();
-      }
-    }
-    if (request.verb === "doctor") {
-      const parsed = parseArguments(request.args, { flags: ["--fetch-models"] });
-      if (parsed.positionals.length > 0) {
-        throw new PhotoctlError("usage", `Unexpected argument: ${parsed.positionals[0]}`);
-      }
-      const path = libraryPath(request.env, request.cwd);
-      const ownsHandle = context.library === undefined;
-      const handle =
-        context.library ??
-        (await openLibrary(path, {
-          noDaemon: request.env.noDaemon,
-          lockBudgetMs: parseLockBudget(request.env.lockBudgetMs),
-        }));
-      try {
-        const diagnostics = await readLibraryDiagnostics(handle);
-        const ciraw = await inspectCirawHelper(resolveMacHelperPath(request.env.macHelperPath));
-        const libraw = inspectLibrawDecoder();
-        const nativeImage = inspectNativeImageRuntime();
-        const providers = providerDiagnostics(await readProviderSettings(handle), request.env);
-        const xmpStale = await countStaleXmp(handle);
-        const modelManifest = parseModelReleaseManifest(PINNED_MODEL_RELEASE);
-        const modelSettings = await handle.query<{ value: unknown }>(
-          "SELECT value FROM settings WHERE key = 'models_base_url'",
-        );
-        const storedModelBaseUrl = modelSettings.rows[0]?.value ?? null;
-        const parsedModelBaseUrl =
-          userSettingsSchema.shape.models_base_url.safeParse(storedModelBaseUrl);
-        if (!parsedModelBaseUrl.success) {
-          throw new PhotoctlError("provider_unconfigured", "Invalid models_base_url setting", {
-            reason: "models_base_url_invalid",
-          });
-        }
-        const configuredModelBaseUrl =
-          parsedModelBaseUrl.data ??
-          `https://github.com/dzhng/photoctl/releases/download/v${encodeURIComponent(context.version)}/`;
-        const modelDirectory = join(handle.path, "models");
-        const completeManifest = completeModelManifest(modelManifest);
-        if (parsed.flags.has("--fetch-models")) {
-          if (completeManifest === null) {
-            throw new PhotoctlError(
-              "provider_unconfigured",
-              "Model export manifest is incomplete",
-              {
-                reason: "model_manifest_incomplete",
-              },
-            );
-          }
-          try {
-            await fetchPinnedModels({
-              manifest: completeManifest,
-              baseUrl: configuredModelBaseUrl,
-              directory: modelDirectory,
-            });
-          } catch (error) {
-            throw new PhotoctlError("provider_unconfigured", "Pinned model fetch failed", {
-              reason: "model_fetch_failed",
-              message: error instanceof Error ? error.message : String(error),
-            });
-          }
-        }
-        const modelArtifacts = await inspectModelRelease(modelManifest, modelDirectory);
-        return {
-          schema: 1,
-          ok: true,
-          data: {
-            library: handle.path,
-            library_id: diagnostics.libraryId,
-            node: process.versions.node,
-            db: await databaseDescription(handle),
-            vector: { installed: true, version: diagnostics.vectorVersion },
-            cache: {
-              root: cacheRootForLibrary(diagnostics.libraryId, cacheBase(request.env, request.cwd)),
-              max_bytes: diagnostics.cacheMaxBytes,
-            },
-            xmp: { stale: xmpStale },
-            native_image: { ...nativeImage, required: true },
-            decoders: [
-              {
-                id: "ciraw",
-                available: ciraw.available,
-                version: ciraw.version,
-              },
-              {
-                id: "libraw",
-                available: libraw.available,
-                version: libraw.version,
-              },
-            ],
-            providers,
-            models: {
-              base_url: configuredModelBaseUrl,
-              manifest_ready: completeManifest !== null,
-              directory: modelDirectory,
-              artifacts: modelArtifacts,
-            },
-            lock_holder: null,
-          } satisfies DoctorData,
-          warnings:
-            xmpStale > 0
-              ? [{ code: "xmp_stale", message: `${xmpStale} XMP sidecar(s) changed on disk` }]
-              : [],
-        };
-      } finally {
-        if (ownsHandle) await handle.close();
-      }
-    }
     throw new PhotoctlError("usage", `Unknown command: ${request.verb}`);
   } catch (error) {
     if (error instanceof PhotoctlError)

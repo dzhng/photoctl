@@ -13,7 +13,7 @@ import { executeFreshGeneration, executeGenerationDensity } from "./fill/generat
 import { image16Png } from "./fill/external-pixels.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./fill/pipeline.js";
 import type { SourceContextDensity } from "./fill/density.js";
-import type { RevisionLayerDraft } from "./layers/model.js";
+import { layerDraft, type RevisionLayerDraft } from "./layers/model.js";
 
 export type ReimagineDependencies = FillGenerationDependencies;
 
@@ -148,16 +148,7 @@ export async function createReimagineLayer(
       })),
     ];
     const layers: RevisionLayerDraft[] = [
-      ...state.layers.map((layer) => ({
-        layer: { layerId: layer.id },
-        name: layer.name,
-        z: layer.z,
-        contentNode: { nodeId: layer.contentNodeId },
-        maskNode: { nodeId: layer.maskNodeId },
-        opacity: layer.opacity,
-        blend: layer.blend,
-        enabled: layer.enabled,
-      })),
+      ...state.layers.map((layer) => layerDraft(layer, layer.z)),
       {
         layer: { localKey: "reimagine-layer" },
         name: `${request.layerName} ${state.layers.length + 1}`,

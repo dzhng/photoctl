@@ -7,7 +7,7 @@ import {
   type NodeReference,
 } from "../graph/store.js";
 import type { ImageNodeKind, JsonValue } from "../graph/types.js";
-import type { RevisionLayer, RevisionLayerDraft } from "../layers/model.js";
+import { layerDraft, type RevisionLayer, type RevisionLayerDraft } from "../layers/model.js";
 import { unfilledVacancyLayerIds } from "../layers/status.js";
 import { developDictSchema, type DevelopDict } from "./dict.js";
 import { applyDevelopCompensation, planDevelopChange } from "./tiers.js";
@@ -152,16 +152,7 @@ export async function commitDevelopState(
         contentNode = { localKey };
       }
     }
-    return {
-      layer: { layerId: layer.id },
-      name: layer.name,
-      z: layer.z,
-      contentNode,
-      maskNode: { nodeId: layer.maskNodeId },
-      opacity: layer.opacity,
-      blend: layer.blend,
-      enabled: layer.enabled,
-    };
+    return layerDraft(layer, layer.z, contentNode);
   });
   const committed = await commitRevision(database, {
     outputPlan: "photographic",

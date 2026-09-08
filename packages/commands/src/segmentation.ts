@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { completeModelManifest, PINNED_MODEL_RELEASE, type LibraryHandle } from "@photoctl/library";
+import { PINNED_MODEL_RELEASE, type LibraryHandle } from "@photoctl/library";
 import {
   createSam2OnnxRuntime,
   Sam2Segmenter,
@@ -30,11 +30,7 @@ import { graphSourceWarning } from "./graph-source.js";
 
 export function createLibrarySegmenter(libraryPath: string): Sam2Segmenter {
   return new Sam2Segmenter(async (diagnostics) => {
-    const manifest = completeModelManifest(PINNED_MODEL_RELEASE);
-    if (!manifest)
-      throw new PhotoctlError("provider_unconfigured", "Model export manifest is incomplete", {
-        reason: "model_manifest_incomplete",
-      });
+    const manifest = PINNED_MODEL_RELEASE;
     const bytes = await Promise.all(
       ["encoder.onnx", "decoder.onnx"].map(async (file) => {
         const artifact = manifest.artifacts.find((entry) => entry.file === file);

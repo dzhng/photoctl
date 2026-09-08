@@ -1,6 +1,7 @@
 /* eslint-disable no-await-in-loop -- Each bounded page requires the preceding opaque cursor. */
 import { openLibrary, resolvePhotoId } from "@photoctl/library";
 import { ensurePhotoDocument, inspectGraph, type GraphNodeSummary } from "@photoctl/render";
+import { escapeHtml } from "./html.js";
 
 export async function buildGraphReport(libraryPath: string, photo: string): Promise<string> {
   const library = await openLibrary(libraryPath);
@@ -113,13 +114,4 @@ function shortHash(value: string): string {
   return separator < 0
     ? value
     : `${value.slice(0, separator + 1)}${value.slice(separator + 1, separator + 13)}`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

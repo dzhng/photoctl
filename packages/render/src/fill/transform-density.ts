@@ -1,5 +1,5 @@
 import { commitRevision, loadActiveDocument, type GraphDatabase } from "../graph/store.js";
-import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { layerDraft, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { maskCentroid } from "../layers/operations.js";
 import {
   resolveTransformMatrix,
@@ -60,16 +60,11 @@ export async function transformFillLayer(
     matrix,
     baseNodeId: document.roots.base,
   });
-  const layers: RevisionLayerDraft[] = document.layers.map((layer) => ({
-    layer: { layerId: layer.id },
-    name: layer.name,
-    z: layer.z,
-    contentNode: layer.id === layerId ? prepared.content : { nodeId: layer.contentNodeId },
-    maskNode: layer.id === layerId ? prepared.mask : { nodeId: layer.maskNodeId },
-    opacity: layer.opacity,
-    blend: layer.blend,
-    enabled: layer.enabled,
-  }));
+  const layers: RevisionLayerDraft[] = document.layers.map((layer) =>
+    layer.id === layerId
+      ? layerDraft(layer, layer.z, prepared.content, prepared.mask)
+      : layerDraft(layer, layer.z),
+  );
   const committed = await commitRevision(database, {
     outputPlan: "photographic",
     photoId: request.photoId,

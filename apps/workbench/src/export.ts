@@ -1,6 +1,7 @@
 import { readdir, stat } from "node:fs/promises";
 import { basename, join } from "node:path";
 import sharp from "sharp";
+import { escapeHtml } from "./html.js";
 
 interface DeliveryEvidence {
   name: string;
@@ -55,15 +56,6 @@ async function inspectDelivery(path: string): Promise<DeliveryEvidence> {
     format: metadata.format,
     preview: `data:image/jpeg;base64,${preview.toString("base64")}`,
   };
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }
 
 function formatBytes(bytes: number): string {

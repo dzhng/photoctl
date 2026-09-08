@@ -1,6 +1,7 @@
 import { openLibrary } from "@photoctl/library";
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { escapeHtml } from "./html.js";
 
 export interface LibraryEvidence {
   library: string;
@@ -91,13 +92,4 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KiB`;
   return `${(bytes / 1024 ** 2).toFixed(1)} MiB`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

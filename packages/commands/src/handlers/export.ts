@@ -2,7 +2,6 @@
 import {
   PhotoctlError,
   type Envelope,
-  type ErrorCode,
   type ExportResult,
   type StderrEvent,
   type Warning,
@@ -40,8 +39,9 @@ import {
 } from "@photoctl/render";
 import { mkdir, stat } from "node:fs/promises";
 import { basename, extname, join, resolve } from "node:path";
+import { batchEnvelope, errorData, type BatchFailure } from "../batch.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
-import { hasErrorCode } from "../errors.js";
+import { errorMessage, hasErrorCode } from "../errors.js";
 import { parseExportArguments, type ExportOverrides } from "../export-arguments.js";
 import {
   graphSourceWarning,
@@ -49,7 +49,6 @@ import {
   type GraphSourceCandidate,
 } from "../graph-source.js";
 import { loadPhoto, type StoredPhoto } from "../photo.js";
-import { runSerially } from "../serial.js";
 import { createProgressHeartbeat } from "../progress.js";
 import { cameraJpegRendition } from "../original-rendition.js";
 import { resolveOnlineOriginalSource } from "../image-source.js";
@@ -73,13 +72,6 @@ interface ExportSnapshotBase {
 }
 type ExportSnapshot = ExportSnapshotBase &
   ({ source: "document"; outputNodeId: `node_${string}` } | { source: "camera-jpeg" });
-
-interface ExportFailure {
-  id: string;
-  ok: false;
-  code: ErrorCode;
-  [key: string]: unknown;
-}
 
 export async function exportCommand(
   args: string[],
@@ -122,66 +114,48 @@ export async function exportCommand(
     const libraryId = await readLibraryId(handle);
     const resolver = createVolumeResolver(env.volumeMap, handle.path);
     const cacheRoot = cacheRootForLibrary(libraryId, cacheBase(env, cwd));
-    const results: Array<ExportResult | ExportFailure> = [];
+    const results: Array<ExportResult | BatchFailure> = [];
     const warnings: Warning[] = [];
 
-    await runSerially(
-      snapshots.map((snapshot, index) => ({ snapshot, sequence: index + 1 })),
-      async ({ snapshot, sequence }) => {
-        if ("failure" in snapshot) {
-          results.push(snapshot.failure);
-          await progress.advance(1);
-          return;
-        }
-        warnings.push(...snapshot.warnings);
-        try {
-          const exported = await exportOne(
-            handle,
-            resolver,
-            snapshot,
-            outputDirectory,
-            cacheRoot,
-            options,
-            sequence,
-            env,
-          );
-          warnings.push(...exported.warnings);
-          results.push(exported.result);
-        } catch (error) {
-          if (error instanceof PhotoctlError) {
-            const sourceFile = snapshot.photo.originals.find(
-              (original) => original.id === snapshot.photo.primaryOriginalId,
-            )?.files[0];
-            results.push({
-              id: snapshot.input,
-              ok: false,
-              code: error.code,
-              ...(error.code === "file_offline" && sourceFile
-                ? { volume: sourceFile.volumeUuid, hint: `mount ${sourceFile.lastMount}` }
-                : {}),
-              ...errorData(error.data),
-            });
-            return;
-          }
-          throw error;
-        } finally {
-          await progress.advance(1);
-        }
-      },
-    );
-
-    const failed = results.filter((result) => !result.ok);
-    if (failed.length > 0) {
-      return {
-        schema: 1,
-        ok: false,
-        code: aggregateFailureCode(failed, results.length),
-        summary: { ok: results.length - failed.length, failed: failed.length },
-        results,
-        warnings,
-      };
+    for (const [index, snapshot] of snapshots.entries()) {
+      if ("failure" in snapshot) {
+        results.push(snapshot.failure);
+        await progress.advance(1);
+        continue;
+      }
+      warnings.push(...snapshot.warnings);
+      try {
+        const exported = await exportOne(
+          handle,
+          resolver,
+          snapshot,
+          outputDirectory,
+          cacheRoot,
+          options,
+          index + 1,
+          env,
+        );
+        warnings.push(...exported.warnings);
+        results.push(exported.result);
+      } catch (error) {
+        if (!(error instanceof PhotoctlError)) throw error;
+        const sourceFile = snapshot.photo.originals.find(
+          (original) => original.id === snapshot.photo.primaryOriginalId,
+        )?.files[0];
+        results.push({
+          id: snapshot.input,
+          ok: false,
+          code: error.code,
+          ...(error.code === "file_offline" && sourceFile
+            ? { volume: sourceFile.volumeUuid, hint: `mount ${sourceFile.lastMount}` }
+            : {}),
+          ...errorData(error.data),
+        });
+      } finally {
+        await progress.advance(1);
+      }
     }
-    return { schema: 1, ok: true, summary: { ok: results.length, failed: 0 }, results, warnings };
+    return batchEnvelope(results, warnings);
   } finally {
     try {
       await progress.stop();
@@ -195,7 +169,7 @@ async function snapshotBatch(
   database: LibraryHandle,
   inputs: string[],
   source?: "camera-jpeg",
-): Promise<Array<ExportSnapshot | { failure: ExportFailure }>> {
+): Promise<Array<ExportSnapshot | { failure: BatchFailure }>> {
   return await Promise.all(
     inputs.map(async (input) => {
       try {
@@ -309,13 +283,7 @@ async function exportOne(
     const candidates = await resolveGraphSources({
       photo: snapshot.photo,
       resolver,
-      pinned: {
-        kind: "pinned-preview",
-        path: join(cacheRoot, "emb", `${snapshot.id}.jpg`),
-        mediaType: "image/jpeg",
-        orientation: 1,
-      },
-      pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${snapshot.id}.jpg` },
+      cacheRoot,
       env,
     });
     outputFile = candidates.find((candidate) => candidate.file)?.file ?? fallbackFile;
@@ -335,7 +303,7 @@ async function exportOne(
       rating: snapshot.photo.rating,
     });
   } catch (error) {
-    throw new PhotoctlError("usage", error instanceof Error ? error.message : String(error));
+    throw new PhotoctlError("usage", errorMessage(error));
   }
   const extension =
     options.format === "jpeg" ? ".jpg" : options.format === "tiff" ? ".tif" : ".png";
@@ -344,11 +312,7 @@ async function exportOne(
   try {
     collision = await resolveExportCollision(requestedPath, options.onCollision);
   } catch (error) {
-    throw new PhotoctlError(
-      "volume_readonly",
-      error instanceof Error ? error.message : String(error),
-      { path: requestedPath },
-    );
+    throw new PhotoctlError("volume_readonly", errorMessage(error), { path: requestedPath });
   }
   if (collision.action === "skip") {
     let existing;
@@ -551,10 +515,6 @@ async function evaluateExportImage(
   );
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 async function effectiveOptions(
   overrides: ExportOverrides,
   libraryPath: string,
@@ -586,16 +546,4 @@ async function effectiveOptions(
     onCollision: merged.onCollision ?? "rename",
     metadata: merged.metadata ?? {},
   };
-}
-
-function aggregateFailureCode(failures: ExportFailure[], total: number): ErrorCode {
-  if (failures.length < total) return "partial";
-  const codes = new Set(failures.map((failure) => failure.code));
-  return codes.size === 1 ? failures[0].code : "partial";
-}
-
-function errorData(data: unknown): Record<string, unknown> {
-  return data !== null && typeof data === "object" && !Array.isArray(data)
-    ? (data as Record<string, unknown>)
-    : {};
 }

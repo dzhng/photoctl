@@ -1,3 +1,4 @@
+import { pinnedEmbeddedJpegKey, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import { resolveMacHelperPath } from "@photoctl/mac-helper";
 import type { VolumeResolver } from "@photoctl/library";
 import {
@@ -55,14 +56,24 @@ export function graphSourceWarning(id: string, fallback: GraphSourceFallback): W
   return undefined;
 }
 
+/** The library's pinned preview JPEG for a photo, as the last-resort graph image source. */
+export function pinnedPreviewSource(cacheRoot: string, photoId: string): ImageSource {
+  return {
+    kind: "pinned-preview",
+    path: pinnedEmbeddedJpegPath(cacheRoot, photoId),
+    mediaType: "image/jpeg",
+    orientation: 1,
+  };
+}
+
 /** Resolves the one ordered full-file → embedded → pinned source ladder shared by graph consumers. */
 export async function resolveGraphSources(options: {
   photo: StoredPhoto;
   resolver: VolumeResolver;
-  pinned: ImageSource;
-  pinnedLocator: SourceExecutionProvenance["locator"];
+  cacheRoot: string;
   env: RequestEnv;
 }): Promise<GraphSourceCandidate[]> {
+  const pinned = pinnedPreviewSource(options.cacheRoot, options.photo.id);
   const original = await resolveOnlineOriginalSource(options.photo, options.resolver);
   const candidates: GraphSourceCandidate[] = [];
   if (original?.probe.kind === "raw") {
@@ -71,7 +82,7 @@ export async function resolveGraphSources(options: {
       requested: "auto",
       probe: original.probe,
       original: original.source,
-      fallback: embedded ?? options.pinned,
+      fallback: embedded ?? pinned,
       decoders: {
         file: new FileImageDecoder(),
         ciraw: new CirawDecoder(resolveMacHelperPath(options.env.macHelperPath)),
@@ -106,8 +117,8 @@ export async function resolveGraphSources(options: {
   }
   candidates.push(
     fileCandidate(
-      options.pinned,
-      options.pinnedLocator,
+      pinned,
+      { kind: "pinned-preview", cache_path: pinnedEmbeddedJpegKey(options.photo.id) },
       original ? "decoder_fallback" : "source_offline",
     ),
   );

@@ -1,15 +1,20 @@
 import { countEmbeddingCandidates, type LibraryHandle } from "@photoctl/library";
-import { PhotoctlError, type Envelope, type StderrEvent } from "@photoctl/protocol";
+import {
+  PhotoctlError,
+  type EmbedResult,
+  type Envelope,
+  type StderrEvent,
+} from "@photoctl/protocol";
 import { readProviderSettings, resolveModels } from "@photoctl/providers";
 import { parseArguments } from "../arguments.js";
-import { batchEnvelope, resolveBatchInputs } from "../batch.js";
-import { EMBED_PROVIDER_BATCH_SIZE, embedPhotoBatch, type EmbedItemResult } from "../embedding.js";
+import { batchEnvelope, batchFailureCode, resolveBatchInputs } from "../batch.js";
+import { EMBED_PROVIDER_BATCH_SIZE, embedPhotoBatch } from "../embedding.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { createProgressHeartbeat } from "../progress.js";
 
 const EMBED_ALL_FAILURE_LIMIT = 100;
 const EMBED_EXPLICIT_ID_LIMIT = 1_000;
-type EmbedFailure = Extract<EmbedItemResult, { ok: false }>;
+type EmbedFailure = Extract<EmbedResult, { ok: false }>;
 
 export async function embedCommand(
   args: string[],
@@ -54,7 +59,7 @@ export async function embedCommand(
       if (parsed.flags.has("--all")) {
         return await embedAll(lease.handle, env, cwd, progress);
       }
-      const embedded: EmbedItemResult[] = [];
+      const embedded: EmbedResult[] = [];
       for (let offset = 0; offset < ids.length; offset += EMBED_PROVIDER_BATCH_SIZE) {
         const batchIds = ids.slice(offset, offset + EMBED_PROVIDER_BATCH_SIZE);
         const batch = await embedPhotoBatch({
@@ -70,9 +75,12 @@ export async function embedCommand(
       }
       const byId = new Map(embedded.map((result) => [result.id, result]));
       return batchEnvelope(
-        resolved.map((item) =>
-          item.ok ? (byId.get(item.id) ?? { id: item.id, ok: false, code: "file_offline" }) : item,
-        ),
+        resolved.map((item) => {
+          if (!item.ok) return item;
+          const result = byId.get(item.id);
+          if (!result) throw new Error(`embed produced no result for ${item.id}`);
+          return result;
+        }),
       );
     } finally {
       await progress.stop();
@@ -125,7 +133,7 @@ async function embedAll(
   return {
     schema: 1,
     ok: false,
-    code: succeeded > 0 || failureCodes.size > 1 ? "partial" : failures[0]!.code,
+    code: batchFailureCode(failureCodes, succeeded),
     data: { failures_omitted: failed - failures.length },
     summary: { ok: succeeded, failed },
     results: failures,

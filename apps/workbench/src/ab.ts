@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import sharp from "sharp";
+import { escapeHtml } from "./html.js";
 
 export async function buildAbReport(
   neutralPath: string,
@@ -42,13 +43,4 @@ async function inspectImage(path: string) {
 
 function title(value: string): string {
   return `${value[0]?.toUpperCase() ?? ""}${value.slice(1)}`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

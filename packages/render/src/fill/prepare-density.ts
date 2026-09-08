@@ -20,6 +20,7 @@ import type { TransformMatrix } from "../transforms.js";
 import { directUpscaleChildren, type FillBranchDescriptor } from "./branch.js";
 import { planOutputDensity, fillPlacementDimensions } from "./density.js";
 import { image16Png } from "./external-pixels.js";
+import { appendWarnings } from "./generation.js";
 import type { FillUpscaleDependencies } from "./pipeline.js";
 import { rebuildFillBranch } from "./rebuild.js";
 
@@ -341,12 +342,4 @@ function providerFromResult(
     densityVerdict: result.densitySatisfied ? "satisfied" : "limited",
     warnings: result.warnings,
   };
-}
-
-function appendWarnings(target: Warning[], additions: readonly Warning[]): void {
-  for (const warning of additions) {
-    if (!target.some(({ code, message }) => code === warning.code && message === warning.message)) {
-      target.push(warning);
-    }
-  }
 }

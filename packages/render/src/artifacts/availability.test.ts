@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { migrate } from "../../../library/src/migrations/runner.js";
 import { testDatabase } from "../../../library/src/migrations/test-database.js";
-import { encodeDisplayTiff } from "../linear-tiff.js";
+import { srgb2014ProfilePath } from "../color.js";
 import {
   reconcileArtifactAvailability,
   retainedArtifacts,
@@ -57,14 +57,12 @@ test("reconciliation invalidates legacy display artifacts", async () => {
   const database = await testDatabase();
   await migrate(database);
   try {
-    const bytes = await encodeDisplayTiff({
-      w: 1,
-      h: 1,
-      channels: 3,
-      data: new Uint16Array([1, 2, 3]),
-      space: "display-srgb",
-      orientationApplied: true,
-    });
+    const bytes = await sharp({
+      create: { width: 1, height: 1, channels: 3, background: "#010203" },
+    })
+      .withIccProfile(srgb2014ProfilePath)
+      .tiff({ compression: "none" })
+      .toBuffer();
     const hash = `a_${createHash("sha256").update(bytes).digest("hex")}`;
     const path = artifactPath(library, hash, "tif");
     await mkdir(dirname(path), { recursive: true });

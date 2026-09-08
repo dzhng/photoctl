@@ -1,13 +1,12 @@
 /* eslint-disable no-await-in-loop -- Source fallbacks must stop before the paid provider call. */
 import { createVolumeResolver, type LibraryHandle } from "@photoctl/library";
-import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
+import { cacheRootForLibrary } from "@photoctl/importer";
 import {
   SourceEvaluationError,
   readRetainedGraphOutput,
   evaluateRetainedGraphNode,
   type EvaluatedNode,
   type FillGenerationDependencies,
-  type ImageSource,
 } from "@photoctl/render";
 import type { UpscaleRegistry } from "@photoctl/providers";
 import { PhotoctlError } from "@photoctl/protocol";
@@ -38,20 +37,8 @@ export async function withGenerationSource<T>(
 ): Promise<T> {
   const photoId = photo.id;
   const resolver = createVolumeResolver(env.volumeMap, handle.path);
-  const libraryId = await readLibraryId(handle);
-  const pinned: ImageSource = {
-    kind: "pinned-preview",
-    path: pinnedEmbeddedJpegPath(cacheRootForLibrary(libraryId, cacheBase(env, cwd)), photoId),
-    mediaType: "image/jpeg",
-    orientation: 1,
-  };
-  const candidates = await resolveGraphSources({
-    photo,
-    resolver,
-    pinned,
-    pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${photoId}.jpg` },
-    env,
-  });
+  const cacheRoot = cacheRootForLibrary(await readLibraryId(handle), cacheBase(env, cwd));
+  const candidates = await resolveGraphSources({ photo, resolver, cacheRoot, env });
   if (candidates.length === 0 && !dependencies.source && !retainedInputNodeId) {
     throw new PhotoctlError("file_offline", "No usable image source is available", { id: photoId });
   }

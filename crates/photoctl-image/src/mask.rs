@@ -143,53 +143,7 @@ pub fn transform_mask_pixels(
 }
 
 #[napi]
-pub fn lift_masked_pixels(
-    env: Env,
-    content: Float32Array,
-    mask: Float32Array,
-    width: u32,
-    height: u32,
-) -> napi::Result<AsyncTask<CompositeTask>> {
-    validate_rgb_and_mask(&content, &mask, width, height)?;
-    CompositeTask::new(
-        env,
-        CompositeTaskInputs {
-            base: Vec::new(),
-            content: content.to_vec(),
-            mask: mask.to_vec(),
-            opacity: 1.0,
-            lift: true,
-        },
-    )
-}
-
-#[napi]
-pub fn overlay_masked_pixels(
-    env: Env,
-    base: Float32Array,
-    content: Float32Array,
-    mask: Float32Array,
-    width: u32,
-    height: u32,
-    opacity: f64,
-) -> napi::Result<AsyncTask<CompositeTask>> {
-    composite_task(env, base, content, mask, width, height, opacity)
-}
-
-#[napi]
 pub fn composite_masked_pixels(
-    env: Env,
-    base: Float32Array,
-    content: Float32Array,
-    mask: Float32Array,
-    width: u32,
-    height: u32,
-    opacity: f64,
-) -> napi::Result<AsyncTask<CompositeTask>> {
-    composite_task(env, base, content, mask, width, height, opacity)
-}
-
-fn composite_task(
     env: Env,
     base: Float32Array,
     content: Float32Array,
@@ -210,7 +164,6 @@ fn composite_task(
             content: content.to_vec(),
             mask: mask.to_vec(),
             opacity,
-            lift: false,
         },
     )
 }
@@ -312,7 +265,6 @@ struct CompositeTaskInputs {
     content: Vec<f32>,
     mask: Vec<f32>,
     opacity: f64,
-    lift: bool,
 }
 
 impl CompositeTask {
@@ -331,9 +283,6 @@ impl Task for CompositeTask {
     type JsValue = Float32Array;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        if self.inputs.lift {
-            return Ok(lift(&self.inputs.content, &self.inputs.mask));
-        }
         Ok(composite(
             std::mem::take(&mut self.inputs.base),
             &self.inputs.content,
@@ -343,10 +292,8 @@ impl Task for CompositeTask {
     }
 
     fn resolve(&mut self, _env: napi::Env, data: Self::Output) -> napi::Result<Self::JsValue> {
-        if !self.inputs.lift {
-            // The reused base becomes Node's output backing store; other snapshots stay task-owned.
-            self.memory[0].release()?;
-        }
+        // The reused base becomes Node's output backing store; other snapshots stay task-owned.
+        self.memory[0].release()?;
         Ok(data.into())
     }
 }
@@ -483,17 +430,6 @@ fn box_blur(input: &[f32], width: usize, height: usize, radius: usize) -> Vec<f3
     output
 }
 
-fn lift(content: &[f32], mask: &[f32]) -> Vec<f32> {
-    let mut output = vec![0.0; content.len()];
-    for (pixel, coverage) in mask.iter().copied().enumerate() {
-        if coverage == 0.0 {
-            continue;
-        }
-        output[pixel * 3..pixel * 3 + 3].copy_from_slice(&content[pixel * 3..pixel * 3 + 3]);
-    }
-    output
-}
-
 fn composite(mut output: Vec<f32>, content: &[f32], mask: &[f32], opacity: f64) -> Vec<f32> {
     for (pixel, coverage) in mask.iter().copied().enumerate() {
         let alpha = f64::from(coverage) * opacity;
@@ -557,14 +493,5 @@ mod tests {
         let output = composite(base, &content, &[0.0, 0.5], 0.5);
         assert_eq!(&output[..3], &[-0.25, 0.5, 2.0]);
         assert_eq!(&output[3..], &[15.0, 25.0, 35.0]);
-    }
-
-    #[test]
-    fn lift_zeros_the_exterior_and_preserves_selected_rgb_values() {
-        let content = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-        assert_eq!(
-            lift(&content, &[0.0, 0.25]),
-            vec![0.0, 0.0, 0.0, 4.0, 5.0, 6.0]
-        );
     }
 }

@@ -10,6 +10,7 @@ import {
 } from "@photoctl/render";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
+import { errorMessage } from "../errors.js";
 
 export async function graphCommand(
   args: string[],
@@ -203,8 +204,4 @@ function parseLimit(value: string | undefined): number | undefined {
     throw new PhotoctlError("usage", "--limit must be an integer between 1 and 100");
   }
   return limit;
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

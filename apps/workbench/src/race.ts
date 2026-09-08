@@ -1,3 +1,4 @@
+import { escapeHtml } from "./html.js";
 export interface RaceEvidence {
   clients: number;
   rowsPerClient: number;
@@ -75,13 +76,4 @@ export function renderRaceReport(evidence: RaceEvidence): string {
     </main>
   </body>
 </html>\n`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

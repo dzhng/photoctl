@@ -2,6 +2,7 @@ import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { publishDurableFile, syncDirectory } from "./fs-durability.js";
 import type { LibraryHandle } from "./open.js";
+import { hasCode } from "./fs-errors.js";
 
 export const AUTO_BACKUP_DEDUPE_MS = 5 * 60 * 1000;
 export const BACKUP_MAX_COUNT = 10;
@@ -148,8 +149,4 @@ async function availableBackupPath(directory: string, now: Date): Promise<string
     return await candidate(suffix + 1);
   }
   return await candidate(0);
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
 }

@@ -136,7 +136,6 @@ extern "C" int photoctl_libraw_decode_file(const char *path,
   if (result != LIBRAW_SUCCESS)
     return result;
   raw.adjust_to_raw_inset_crop(1);
-  raw.imgdata.params.user_qual = 3;
   result = raw.decode_camera();
   if (result != LIBRAW_SUCCESS)
     return result;

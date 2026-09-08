@@ -16,8 +16,13 @@ export function cacheRootForLibrary(libraryId: string, baseOverride?: string): s
   return join(base, libraryId);
 }
 
+/** Cache-relative key of a photo's pinned preview: its `cache_index.path` row and locator. */
+export function pinnedEmbeddedJpegKey(photoId: string): string {
+  return `emb/${photoId}.jpg`;
+}
+
 export function pinnedEmbeddedJpegPath(cacheRoot: string, photoId: string): string {
-  return join(cacheRoot, "emb", `${photoId}.jpg`);
+  return join(cacheRoot, pinnedEmbeddedJpegKey(photoId));
 }
 
 export async function preparePinnedPreviewCache(cacheRoot: string): Promise<void> {

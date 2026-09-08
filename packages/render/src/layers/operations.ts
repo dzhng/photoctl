@@ -21,6 +21,7 @@ import {
   type TransformMatrix,
 } from "../transforms.js";
 import {
+  layerDraft,
   resolveLayerId,
   type NewLayerIdentity,
   type RevisionLayer,
@@ -220,16 +221,7 @@ export async function commitPreparedMaskLayers(
     maskKey: `mask-node-${index}`,
   }));
   const layers: RevisionLayerDraft[] = [
-    ...current.layers.map((layer) => ({
-      layer: { layerId: layer.id },
-      name: layer.name,
-      z: layer.z,
-      contentNode: { nodeId: layer.contentNodeId },
-      maskNode: { nodeId: layer.maskNodeId },
-      opacity: layer.opacity,
-      blend: layer.blend,
-      enabled: layer.enabled,
-    })),
+    ...current.layers.map((layer) => layerDraft(layer, layer.z)),
     ...prepared.map((item, index) => ({
       layer: { localKey: item.layerKey },
       name: item.name ?? `Segment ${current.layers.length + index + 1}`,
@@ -684,24 +676,6 @@ async function commitLayerSnapshot(
   });
   if (!committed.renderHash) throw new Error("A layer revision must have a render hash");
   return { ...committed, renderHash: committed.renderHash as `r_${string}` };
-}
-
-function layerDraft(
-  layer: RevisionLayer,
-  z: number,
-  contentNode: { nodeId: string } | { localKey: string } = { nodeId: layer.contentNodeId },
-  maskNode: { nodeId: string } | { localKey: string } = { nodeId: layer.maskNodeId },
-): RevisionLayerDraft {
-  return {
-    layer: { layerId: layer.id },
-    name: layer.name,
-    z,
-    contentNode,
-    maskNode,
-    opacity: layer.opacity,
-    blend: layer.blend,
-    enabled: layer.enabled,
-  };
 }
 
 function requiredLayer(layers: RevisionLayer[], layerId: string): RevisionLayer {

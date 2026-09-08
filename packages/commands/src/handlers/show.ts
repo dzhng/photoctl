@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop -- Source fallback order is semantic and bounds native decoder memory. */
-import { cacheRootForLibrary, formatShotInstant, pinnedEmbeddedJpegPath } from "@photoctl/importer";
+import { cacheRootForLibrary, formatShotInstant } from "@photoctl/importer";
 import {
   CacheIndex,
   createVolumeResolver,
@@ -34,7 +34,6 @@ import {
   developFrame,
   SourceEvaluationError,
   viewHash,
-  type ImageSource,
   type ViewSpec,
   type RenderFrame,
 } from "@photoctl/render";
@@ -42,6 +41,7 @@ import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
 import {
   graphSourceWarning,
+  pinnedPreviewSource,
   resolveGraphSources,
   type GraphSourceCandidate,
 } from "../graph-source.js";
@@ -147,19 +147,8 @@ export async function showCommand(
     const frame = document
       ? await loadLogicalFrame(handle, id, document.outputNodeId)
       : developFrame(photo, photo);
-    const pinned: ImageSource = {
-      kind: "pinned-preview",
-      path: pinnedEmbeddedJpegPath(cacheRoot, id),
-      mediaType: "image/jpeg",
-      orientation: 1,
-    };
-    const sourceOptions = {
-      photo,
-      resolver,
-      pinned,
-      pinnedLocator: { kind: "pinned-preview" as const, cache_path: `emb/${id}.jpg` },
-      env,
-    };
+    const pinned = pinnedPreviewSource(cacheRoot, id);
+    const sourceOptions = { photo, resolver, cacheRoot, env };
     const sourceOverview =
       document !== undefined &&
       view.region === null &&

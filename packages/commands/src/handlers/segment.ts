@@ -18,6 +18,7 @@ import {
 import { PhotoctlError, type Envelope } from "@photoctl/protocol";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
+import { errorMessage } from "../errors.js";
 import { loadPhoto } from "../photo.js";
 import { configuredSegmentation } from "../segmentation.js";
 import type { Sam2Segmenter } from "@photoctl/render";
@@ -71,9 +72,10 @@ export async function segmentCommand(
     const photoId = await resolvePhotoId(lease.handle, parsed.id);
     const photo = await loadPhoto(lease.handle, photoId);
     const dimensions = { w: photo.w, h: photo.h };
+    const geometry: ManualGeometry = { photoId, dimensions, normalized: parsed.normalized };
     try {
       if (parsed.mode === "manual") {
-        const shape = parseManualShape(parsed, dimensions);
+        const shape = parseManualShape(parsed, geometry);
         if (parsed.dryRun) {
           throw new PhotoctlError("usage", "--dry-run requires --at or --text");
         }
@@ -93,10 +95,8 @@ export async function segmentCommand(
         return manualEnvelope(photoId, result);
       }
 
-      const points = parsed.at.map((value) => parsePoint(value, parsed.normalized, dimensions));
-      const explicitBox = parsed.box
-        ? parseBox(parsed.box, parsed.normalized, dimensions)
-        : undefined;
+      const points = parsed.at.map((value) => parsePoint(value, geometry));
+      const explicitBox = parsed.box ? parseBox(parsed.box, geometry) : undefined;
       await progress.start();
       const expectedRevisionId =
         (await loadActiveDocument(lease.handle, photoId))?.revisionId ?? null;
@@ -146,7 +146,7 @@ export async function segmentCommand(
             : {}),
         });
         if (mask.w !== dimensions.w || mask.h !== dimensions.h) {
-          throw new Error("Mask must use oriented base-image dimensions");
+          throw usageError(geometry, "Mask must use oriented base-image dimensions");
         }
         masks.push({ label: candidate.label });
         if (parsed.dryRun) summaries.push(summarizeMask(mask));
@@ -201,12 +201,11 @@ export async function segmentCommand(
           reason: "revision_conflict",
         });
       }
-      const message = error instanceof Error ? error.message : String(error);
+      const message = errorMessage(error);
       if (
         message.startsWith("Segment") ||
         message.startsWith("Manual mask") ||
-        message.startsWith("Mask") ||
-        message.startsWith("--")
+        message.startsWith("Mask")
       ) {
         throw new PhotoctlError("usage", message, { id: photoId });
       }
@@ -291,18 +290,28 @@ function parseSegmentArguments(args: string[]): ParsedSegment {
   };
 }
 
-function parseManualShape(
-  parsed: ParsedSegment,
-  dimensions: { w: number; h: number },
-): ManualMaskShape {
-  if (parsed.box) return { kind: "box", bbox: parseBox(parsed.box, parsed.normalized, dimensions) };
+/** The coordinate frame user-supplied geometry is parsed against, plus the photo it reports for. */
+interface ManualGeometry {
+  photoId: string;
+  dimensions: { w: number; h: number };
+  normalized: boolean;
+}
+
+function usageError(geometry: ManualGeometry, message: string): PhotoctlError {
+  return new PhotoctlError("usage", message, { id: geometry.photoId });
+}
+
+function parseManualShape(parsed: ParsedSegment, geometry: ManualGeometry): ManualMaskShape {
+  if (parsed.box) return { kind: "box", bbox: parseBox(parsed.box, geometry) };
   let value: unknown;
   try {
     value = JSON.parse(parsed.brush!);
   } catch {
-    throw new Error("--brush must be a JSON array of [x,y] points");
+    throw usageError(geometry, "--brush must be a JSON array of [x,y] points");
   }
-  if (!Array.isArray(value)) throw new Error("--brush must be a JSON array of [x,y] points");
+  if (!Array.isArray(value)) {
+    throw usageError(geometry, "--brush must be a JSON array of [x,y] points");
+  }
   return {
     kind: "brush",
     points: value.map((point) => {
@@ -311,58 +320,49 @@ function parseManualShape(
         point.length !== 2 ||
         point.some((item) => typeof item !== "number")
       ) {
-        throw new Error("--brush must be a JSON array of [x,y] points");
+        throw usageError(geometry, "--brush must be a JSON array of [x,y] points");
       }
-      return parseCoordinates(point as [number, number], parsed.normalized, dimensions);
+      return parseCoordinates(point as [number, number], geometry);
     }),
   };
 }
 
-function parsePoint(
-  value: string,
-  normalized: boolean,
-  dimensions: { w: number; h: number },
-): [number, number] {
+function parsePoint(value: string, geometry: ManualGeometry): [number, number] {
   const coordinates = value.split(",").map(Number);
   if (coordinates.length !== 2 || coordinates.some((item) => !Number.isFinite(item))) {
-    throw new Error("--at must be x,y");
+    throw usageError(geometry, "--at must be x,y");
   }
-  const point = parseCoordinates(coordinates as [number, number], normalized, dimensions);
-  if (point[0] < 0 || point[1] < 0 || point[0] >= dimensions.w || point[1] >= dimensions.h) {
-    throw new Error("--at coordinates must be inside the oriented base image");
+  const point = parseCoordinates(coordinates as [number, number], geometry);
+  const { w, h } = geometry.dimensions;
+  if (point[0] < 0 || point[1] < 0 || point[0] >= w || point[1] >= h) {
+    throw usageError(geometry, "--at coordinates must be inside the oriented base image");
   }
   return point;
 }
 
-function parseBox(
-  value: string,
-  normalized: boolean,
-  dimensions: { w: number; h: number },
-): [number, number, number, number] {
+function parseBox(value: string, geometry: ManualGeometry): [number, number, number, number] {
   const coordinates = value.split(",").map(Number);
   if (coordinates.length !== 4 || coordinates.some((item) => !Number.isFinite(item))) {
-    throw new Error("--box must be x,y,w,h");
+    throw usageError(geometry, "--box must be x,y,w,h");
   }
-  assertNormalized(coordinates, normalized);
+  assertNormalized(coordinates, geometry);
   const box = coordinates as [number, number, number, number];
-  if (box[2] <= 0 || box[3] <= 0) throw new Error("--box must have positive width and height");
-  return normalized
-    ? [box[0] * dimensions.w, box[1] * dimensions.h, box[2] * dimensions.w, box[3] * dimensions.h]
-    : box;
+  if (box[2] <= 0 || box[3] <= 0) {
+    throw usageError(geometry, "--box must have positive width and height");
+  }
+  const { w, h } = geometry.dimensions;
+  return geometry.normalized ? [box[0] * w, box[1] * h, box[2] * w, box[3] * h] : box;
 }
 
-function parseCoordinates(
-  values: [number, number],
-  normalized: boolean,
-  dimensions: { w: number; h: number },
-): [number, number] {
-  assertNormalized(values, normalized);
-  return normalized ? [values[0] * dimensions.w, values[1] * dimensions.h] : values;
+function parseCoordinates(values: [number, number], geometry: ManualGeometry): [number, number] {
+  assertNormalized(values, geometry);
+  const { w, h } = geometry.dimensions;
+  return geometry.normalized ? [values[0] * w, values[1] * h] : values;
 }
 
-function assertNormalized(values: number[], normalized: boolean): void {
-  if (normalized && values.some((value) => value < 0 || value > 1)) {
-    throw new Error("--norm coordinates must be between 0 and 1");
+function assertNormalized(values: number[], geometry: ManualGeometry): void {
+  if (geometry.normalized && values.some((value) => value < 0 || value > 1)) {
+    throw usageError(geometry, "--norm coordinates must be between 0 and 1");
   }
 }
 

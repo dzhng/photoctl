@@ -218,20 +218,6 @@ interface NativeBinding {
     outputHeight: number,
     matrix: readonly number[],
   ): Promise<Float32Array>;
-  liftMaskedPixels(
-    content: Float32Array,
-    mask: Float32Array,
-    width: number,
-    height: number,
-  ): Promise<Float32Array>;
-  overlayMaskedPixels(
-    base: Float32Array,
-    content: Float32Array,
-    mask: Float32Array,
-    width: number,
-    height: number,
-    opacity: number,
-  ): Promise<Float32Array>;
   compositeMaskedPixels(
     base: Float32Array,
     content: Float32Array,
@@ -754,28 +740,6 @@ export async function transformMaskPixels(
       outputHeight,
       matrix,
     ),
-  );
-}
-
-export async function liftMaskedPixels(
-  content: Float32Array,
-  mask: Float32Array,
-  width: number,
-  height: number,
-): Promise<Float32Array> {
-  return asFloat32Array(await requiredBinding().liftMaskedPixels(content, mask, width, height));
-}
-
-export async function overlayMaskedPixels(
-  base: Float32Array,
-  content: Float32Array,
-  mask: Float32Array,
-  width: number,
-  height: number,
-  opacity: number,
-): Promise<Float32Array> {
-  return asFloat32Array(
-    await requiredBinding().overlayMaskedPixels(base, content, mask, width, height, opacity),
   );
 }
 

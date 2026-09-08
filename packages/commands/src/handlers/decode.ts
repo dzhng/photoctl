@@ -1,4 +1,4 @@
-import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
+import { cacheRootForLibrary } from "@photoctl/importer";
 import { createVolumeResolver, resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import { resolveMacHelperPath } from "@photoctl/mac-helper";
 import { PhotoctlError, type DecodeData, type Envelope, type Warning } from "@photoctl/protocol";
@@ -14,11 +14,11 @@ import {
   publishFile,
   toSceneLinearRec2020,
   type DecodeScale,
-  type ImageSource,
 } from "@photoctl/render";
 import { resolve } from "node:path";
 import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
+import { pinnedPreviewSource } from "../graph-source.js";
 import { fileDecodeSource, resolveOnlineOriginalSource } from "../image-source.js";
 import { loadPhoto } from "../photo.js";
 
@@ -55,12 +55,7 @@ export async function decodeCommand(
     const resolver = createVolumeResolver(env.volumeMap, handle.path);
     const original = await resolveOnlineOriginalSource(photo, resolver);
     const libraryId = await readLibraryId(handle);
-    const pinned: ImageSource = {
-      kind: "pinned-preview",
-      path: pinnedEmbeddedJpegPath(cacheRootForLibrary(libraryId, cacheBase(env, cwd)), id),
-      mediaType: "image/jpeg",
-      orientation: 1,
-    };
+    const pinned = pinnedPreviewSource(cacheRootForLibrary(libraryId, cacheBase(env, cwd)), id);
     const warnings: Warning[] = [];
     if (!original) {
       warnings.push({

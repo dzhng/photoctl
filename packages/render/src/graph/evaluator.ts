@@ -736,9 +736,6 @@ async function evaluateResample(
   const parsed = resampleV1ParametersSchema.parse(parameters);
   if (!parsed.target && image.w === parsed.w && image.h === parsed.h)
     return linearImage(image, new Float32Array(image.data));
-  if (parsed.kernel === "nearest" || parsed.kernel === "bicubic") {
-    throw new Error(`The ${parsed.kernel} graph resample kernel is not implemented`);
-  }
   if (parsed.target) {
     const target = parsed.target;
     return {
@@ -900,7 +897,6 @@ async function evaluateCanvasComposite(
         : await loadBaseProjection(request.database, request.photoId, inputs[1 + index * 2]!),
     ),
   );
-  const sourceFrame = baseFrame;
   const projectLayerMask = async (
     index: number,
     realizeFrame: (saved: typeof plan.frame) => RenderFrame,
@@ -915,7 +911,7 @@ async function evaluateCanvasComposite(
     );
   };
   const authoredOutput = parseRenderFrame(plan.frame);
-  const baseDensity = frameSamplingDensity(sourceFrame, authoredOutput);
+  const baseDensity = frameSamplingDensity(baseFrame, authoredOutput);
   const candidates = layerFrames
     .map((frame, index) => ({
       index,
@@ -926,7 +922,7 @@ async function evaluateCanvasComposite(
   let selectedSupply: { index: number; mask: MaskImage } | undefined;
   for (const { index } of candidates) {
     const mask = await projectLayerMask(index, (saved) =>
-      realizeCanvasFrame(parseRenderFrame(saved), sourceFrame, [layerFrames[index]!]),
+      realizeCanvasFrame(parseRenderFrame(saved), baseFrame, [layerFrames[index]!]),
     );
     if (mask.data.some((value) => value > 0)) {
       selectedSupply = { index, mask };
@@ -935,7 +931,7 @@ async function evaluateCanvasComposite(
   }
   const contributingLayers = selectedSupply ? [layerFrames[selectedSupply.index]!] : [];
   const realize = (saved: typeof plan.frame) =>
-    realizeCanvasFrame(parseRenderFrame(saved), sourceFrame, contributingLayers);
+    realizeCanvasFrame(parseRenderFrame(saved), baseFrame, contributingLayers);
   const output = realize(plan.frame);
   const baseStages = [...plan.base_stages, ...plan.viewport_stages];
   const projectedBase = await projectSupportedRgbToRender(
@@ -943,7 +939,7 @@ async function evaluateCanvasComposite(
     baseFrame,
     baseStages.map(parseRenderFrame),
     authoredOutput,
-    (frame) => realizeCanvasFrame(frame, sourceFrame, contributingLayers),
+    (frame) => realizeCanvasFrame(frame, baseFrame, contributingLayers),
   );
   let pixels = projectedBase.data;
   for (const [index, layer] of plan.layers.entries()) {
@@ -1007,16 +1003,9 @@ function transformMatrix(parameters: JsonValue): [number, number, number, number
     .parse(parameters).matrix;
 }
 
-async function readRgbInput(
-  input: EvaluatedNode,
-  dimensions?: { w: number; h: number },
-): Promise<LinearImage> {
+async function readRgbInput(input: EvaluatedNode): Promise<LinearImage> {
   if (input.artifact.mediaType !== "image/tiff") throw new Error("Expected an RGB artifact");
-  const image = await readArtifactLinear(input.artifact.path, input.artifact.artifactHash);
-  if (dimensions && (image.w !== dimensions.w || image.h !== dimensions.h)) {
-    throw new Error("Composite RGB artifact dimensions do not match");
-  }
-  return image;
+  return await readArtifactLinear(input.artifact.path, input.artifact.artifactHash);
 }
 
 async function readMaskInput(

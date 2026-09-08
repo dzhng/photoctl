@@ -16,8 +16,6 @@ import { cacheBase, readLibraryId, type RequestEnv } from "./context.js";
 
 export const EMBED_PROVIDER_BATCH_SIZE = 50;
 
-export type EmbedItemResult = EmbedResult;
-
 export async function embedPhotoBatch(options: {
   handle: LibraryHandle;
   env: RequestEnv;
@@ -27,7 +25,7 @@ export async function embedPhotoBatch(options: {
   includeCurrent?: boolean;
   afterId?: string;
   signal?: AbortSignal;
-}): Promise<{ results: EmbedItemResult[]; candidateIds: string[] }> {
+}): Promise<{ results: EmbedResult[]; candidateIds: string[] }> {
   const settings = await readProviderSettings(options.handle);
   const model = resolveModels(settings.models).embed;
   const candidates = await selectEmbeddingCandidates(options.handle, model, {
@@ -48,7 +46,7 @@ export async function embedPhotoBatch(options: {
     cacheBase(options.env, options.cwd),
   );
   const ready: Array<{ id: string; jpeg: Buffer }> = [];
-  const results: EmbedItemResult[] = [];
+  const results: EmbedResult[] = [];
   for (const candidate of candidates) {
     try {
       const jpeg = await readFile(pinnedEmbeddedJpegPath(cacheRoot, candidate.id));

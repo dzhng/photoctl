@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop -- Source candidates are an ordered fallback ladder. */
-import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
+import { cacheRootForLibrary } from "@photoctl/importer";
 import { createVolumeResolver, resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import {
   commitDevelopState,
@@ -152,13 +152,7 @@ async function analyze(
   const candidates = await resolveGraphSources({
     photo,
     resolver: createVolumeResolver(env.volumeMap, handle.path),
-    pinned: {
-      kind: "pinned-preview",
-      path: pinnedEmbeddedJpegPath(cacheRoot, id),
-      mediaType: "image/jpeg",
-      orientation: 1,
-    },
-    pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${id}.jpg` },
+    cacheRoot,
     env,
   });
   for (const candidate of candidates) {

@@ -23,7 +23,7 @@ import {
   type NodeDraft,
 } from "../graph/store.js";
 import type { JsonValue } from "../graph/types.js";
-import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { layerDraft, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { unfilledVacancyLayerIds } from "../layers/status.js";
 import { planFillCrop } from "./crop.js";
 import { fillPlacementDimensions, type SourceContextDensity } from "./density.js";
@@ -259,22 +259,16 @@ export async function fillLayer(
         ],
       },
     );
-  const layers: RevisionLayerDraft[] = document.layers.map((layer) => ({
-    layer: { layerId: layer.id },
-    name: layer.name,
-    z: layer.z,
-    contentNode:
-      layer.id === selected.id
-        ? (rebuilt?.content ?? { localKey: "strict-composite" })
-        : { nodeId: layer.contentNodeId },
-    maskNode:
-      layer.id === selected.id
-        ? (rebuilt?.mask ?? { localKey: "fill-support" })
-        : { nodeId: layer.maskNodeId },
-    opacity: layer.opacity,
-    blend: layer.blend,
-    enabled: layer.enabled,
-  }));
+  const layers: RevisionLayerDraft[] = document.layers.map((layer) =>
+    layer.id === selected.id
+      ? layerDraft(
+          layer,
+          layer.z,
+          rebuilt?.content ?? { localKey: "strict-composite" },
+          rebuilt?.mask ?? { localKey: "fill-support" },
+        )
+      : layerDraft(layer, layer.z),
+  );
   const committed = await commitRevision(database, {
     outputPlan: "photographic",
     photoId: request.photoId,

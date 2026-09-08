@@ -522,11 +522,12 @@ release blocker. The spec's remaining requirements retain their own status.
 - **When:** Slice 11a model manifest; slice 14 release workflow; reconciled
   2026-09-08.
 - **The choice:** The model manifest pins the upstream SAM 2.1 revision, the
-  exporter-owned opsets and per-file SHA-256 values, and now reads
-  `status:"ready"` with real hashes. Earlier it read `awaiting_export` with null
-  hashes, and every consumer — fetch, the Docker models target, `doctor
-  --fetch-models` — refused that state rather than inventing digests or a
-  release URL; that refusal machinery is retained but dormant. Publication
+  exporter-owned opsets and per-file SHA-256 values; a manifest without real
+  hashes is a parse error, not a state. Earlier builds carried an
+  `awaiting_export` status with null hashes that every consumer refused; once
+  the real export landed nothing produced that state, so the closeout review
+  deleted the status field and its dormant refusal branches rather than keep a
+  second manifest shape alive. Publication
   itself is automated by pushing a version tag, which builds packages, assembles
   a GitHub release with the model files and hashes, re-downloads them from the
   public URL to verify, then publishes to npm. Actual public publication remains
@@ -614,6 +615,38 @@ future work inherits every one of them as a given.
 - **Confidence:** High.
 - **Owner:** `apps/workbench/src/sheet.ts`,
   [layout evidence](assets/paired-layout/README.md).
+
+### S96 — Daemon liveness is a transport keepalive, not handler progress
+
+- **When:** Whole-spec closeout review, 2026-09-08.
+- **The choice:** While a request is queued or executing, the daemon writes a
+  one-byte-class `keepalive` frame every second on that request's socket. The
+  client treats any frame as proof of life and declares the daemon dead only
+  after ten seconds of total silence, or the foreground queue budget plus one
+  second if that is longer. Handlers still emit `progress` events for the user,
+  but nothing about liveness depends on whether a verb happens to emit them.
+  Before this, liveness rode on handler heartbeats and a hand-maintained list
+  of "long-running" verbs in the client; the two had drifted, and `fill`
+  generation, `layer refresh` and `develop --auto-enhance` — the verbs that
+  spend money — emitted nothing and were on no list, so thirty-one seconds of
+  provider silence returned `daemon_unavailable` ("outcome unknown") while the
+  daemon committed the paid layer. The alternatives were adding those verbs to
+  the list (a third owner that would drift again) or wrapping every handler in
+  a progress heartbeat (progress frames with nothing to report).
+- **The gap:** The plan said long previews refresh the idle deadline through
+  the progress heartbeat and never named which verbs qualify.
+- **The reach:** A hung daemon is now detected in ten seconds instead of the
+  queue budget plus one second (thirty-one by default); the import verb's
+  private ten-minute ceiling is gone because keepalives cover it. Keepalive
+  frames run on the daemon's JavaScript thread, so a handler that blocks that
+  thread for more than ten seconds would still be misreported — the existing
+  rule that pixel work runs off the JS thread is what keeps this safe.
+- **Verdict:** **Sound.** One owner for liveness at the seam that actually
+  knows whether work is in flight.
+- **Confidence:** High.
+- **Owner:** `apps/daemon/src/server.ts` (`KEEPALIVE_INTERVAL_MS`),
+  `packages/commands/src/daemon-client.ts` (`IDLE_CEILING_MS`, `requestTimeout`),
+  `packages/protocol/src/frames.ts`, `apps/daemon/src/server.test.ts`.
 
 ### S93 — Five operating numbers nobody chose, one of them not settable
 

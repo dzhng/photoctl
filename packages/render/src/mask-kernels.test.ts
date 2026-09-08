@@ -1,7 +1,6 @@
 import {
   compositeMaskedPixels,
   featherMask,
-  liftMaskedPixels,
   morphologyMask,
   transformMaskPixels,
   transformPixels,
@@ -40,16 +39,12 @@ test("native mask morphology and feather operate on asymmetric single-channel co
   expect(feathered.every((sample) => sample >= 0 && sample <= 1)).toBe(true);
 });
 
-test("native lift and composite preserve exterior values exactly", async () => {
+test("native composite preserves exterior values exactly", async () => {
   const base = new Float32Array([
     -0.25, 0.5, 2, 10, 20, 30, 100, 200, 300, 1, 2, 3, 4, 5, 6, 7, 8, 9,
   ]);
   const content = new Float32Array(base.map((sample) => sample + 20));
   const mask = new Float32Array([0, 0.5, 0, 1, 0, 0]);
-
-  const lifted = await liftMaskedPixels(content, mask, 3, 2);
-  expect(Array.from(lifted.slice(0, 3))).toEqual([0, 0, 0]);
-  expect(lifted.slice(3, 6)).toEqual(content.slice(3, 6));
 
   const composite = await compositeMaskedPixels(base, content, mask, 3, 2, 0.5);
   for (const pixel of [0, 2, 4, 5]) {

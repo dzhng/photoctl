@@ -1,4 +1,5 @@
 import type { EnvelopeExample } from "./envelopes.js";
+import { escapeHtml } from "./html.js";
 
 export function renderEnvelopeReport(examples: EnvelopeExample[]): string {
   const cards = examples
@@ -55,13 +56,4 @@ export function renderEnvelopeReport(examples: EnvelopeExample[]): string {
     </main>
   </body>
 </html>\n`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

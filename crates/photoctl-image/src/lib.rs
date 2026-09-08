@@ -28,8 +28,8 @@ use develop::{
 };
 pub use horizon::detect_horizon;
 pub use mask::{
-    clip_mask_to_frame, composite_masked_pixels, feather_mask, lift_masked_pixels, morphology_mask,
-    overlay_masked_pixels, threshold_mask, transform_mask_pixels,
+    clip_mask_to_frame, composite_masked_pixels, feather_mask, morphology_mask, threshold_mask,
+    transform_mask_pixels,
 };
 use publication::{AtomicRenameOutcome, atomic_rename_no_replace as rename_no_replace};
 use resample::{Filter as ResampleFilter, resize};

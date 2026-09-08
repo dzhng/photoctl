@@ -19,6 +19,7 @@ import {
   validateRestoreJournal,
   type RestoreJournal,
 } from "./restore-journal.js";
+import { hasCode } from "./fs-errors.js";
 
 export interface RestoreResult {
   library: string;
@@ -64,12 +65,7 @@ async function restoreLibraryExclusive(
     throw unreadableBackup(live, source);
   }
 
-  let liveLock = await acquireLibraryLock(join(live, OPEN_LOCK_NAME), budget);
-  if (await journalExists(live)) {
-    await liveLock.release();
-    await recoverInterruptedRestoreExclusive(live, budget);
-    liveLock = await acquireLibraryLock(join(live, OPEN_LOCK_NAME), budget);
-  }
+  const liveLock = await acquireLibraryLock(join(live, OPEN_LOCK_NAME), budget);
 
   const token = randomUUID();
   const parent = dirname(live);
@@ -125,10 +121,9 @@ async function restoreLibraryExclusive(
     await writeJournal(journal);
     await rename(stage, live);
     await options.afterStageRename?.();
-    stageLock?.moveTo(join(live, OPEN_LOCK_NAME));
+    stageLock.moveTo(join(live, OPEN_LOCK_NAME));
     journal.phase = "promoted";
     await writeJournal(journal);
-    if (!stageLock) throw new Error("The staged library lock was lost");
     promoted = await openLibraryHoldingLock(live, stageLock, false, true);
     stageLock = undefined;
     await readLibraryDiagnostics(promoted);
@@ -363,8 +358,4 @@ function unreadableBackup(libraryPath: string, source: string, cause?: unknown):
     from: source,
     ...(cause instanceof Error ? { message: cause.message } : {}),
   });
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
 }

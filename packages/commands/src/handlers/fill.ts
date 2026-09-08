@@ -287,10 +287,21 @@ export async function executeFillRefresh(
   if (!document) throw new Error("The active photo document is missing");
   const layerId = await resolveLayerId(handle, photoId, layer);
   const selected = document.layers.find(({ id }) => id === layerId);
-  if (!selected) throw new Error(`Layer is not present in the active revision: ${layerId}`);
+  if (!selected) {
+    throw new PhotoctlError(
+      "not_found",
+      `Layer is not present in the active revision: ${layerId}`,
+      { id: photoId, layer },
+    );
+  }
   const fullFrame = await prepareFullFrameRefresh(handle, photoId, layerId, from);
   const branch = fullFrame?.branch ?? (await describeFillBranch(handle, photoId, selected));
-  if (!branch) throw new Error("Layer does not contain a refreshable fill branch");
+  if (!branch) {
+    throw new PhotoctlError("usage", "Layer does not contain a refreshable fill branch", {
+      id: photoId,
+      layer,
+    });
+  }
   const generationParameters = branch.generation.parameters as { model?: unknown } | null;
   if (typeof generationParameters?.model !== "string") {
     throw new Error("Fill generation recipe has no concrete model");

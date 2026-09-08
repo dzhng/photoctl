@@ -7,7 +7,7 @@ import {
   type GraphDatabase,
   type NodeDraft,
 } from "./graph/store.js";
-import type { RevisionLayerDraft } from "./layers/model.js";
+import { layerDraft, type RevisionLayerDraft } from "./layers/model.js";
 import type { JsonValue } from "./graph/types.js";
 import { developFrame, savedRenderFrame, type RenderFrame } from "./graph/frame.js";
 import { markupFreeOutputNode } from "./markup/graph.js";
@@ -132,16 +132,7 @@ export async function createRetouchLayer(
     },
   ];
   const layers: RevisionLayerDraft[] = [
-    ...document.layers.map((layer) => ({
-      layer: { layerId: layer.id },
-      name: layer.name,
-      z: layer.z,
-      contentNode: { nodeId: layer.contentNodeId },
-      maskNode: { nodeId: layer.maskNodeId },
-      opacity: layer.opacity,
-      blend: layer.blend,
-      enabled: layer.enabled,
-    })),
+    ...document.layers.map((layer) => layerDraft(layer, layer.z)),
     {
       layer: { localKey: "retouch-layer" },
       name: `Retouch ${document.layers.length + 1}`,

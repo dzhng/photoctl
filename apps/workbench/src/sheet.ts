@@ -3,6 +3,7 @@ import type { Envelope, ListData, ListRow } from "@photoctl/protocol";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import { escapeHtml } from "./html.js";
 
 export interface SheetEvidence {
   library: string;
@@ -95,13 +96,4 @@ function filterArgs(filter: string | null): string[] {
 
 function title(value: string): string {
   return `${value[0].toUpperCase()}${value.slice(1)}`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

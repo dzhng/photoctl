@@ -38,16 +38,13 @@ export function batchEnvelope<T extends { id: string; ok: boolean }>(
       warnings,
     };
   }
-  const codes = new Set(failures.map((failure) => failure.code));
   return {
     schema: 1,
     ok: false,
-    code:
-      failures.length < results.length
-        ? "partial"
-        : codes.size === 1
-          ? failures[0].code
-          : "partial",
+    code: batchFailureCode(
+      failures.map((failure) => failure.code),
+      results.length - failures.length,
+    ),
     summary: { ok: results.length - failures.length, failed: failures.length },
     results,
     warnings,
@@ -59,7 +56,13 @@ export function batchFailure(id: string, error: unknown): BatchFailure {
   return { ...errorData(error.data), id, ok: false, code: error.code };
 }
 
-function errorData(data: unknown): Record<string, unknown> {
+/** All-failed batches with one code keep it; any success or mixed codes are `partial`. */
+export function batchFailureCode(codes: Iterable<ErrorCode>, succeeded: number): ErrorCode {
+  const distinct = new Set(codes);
+  return succeeded === 0 && distinct.size === 1 ? [...distinct][0] : "partial";
+}
+
+export function errorData(data: unknown): Record<string, unknown> {
   return data !== null && typeof data === "object" && !Array.isArray(data)
     ? (data as Record<string, unknown>)
     : {};

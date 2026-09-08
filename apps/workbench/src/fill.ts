@@ -13,6 +13,7 @@ import {
   type SourceExecutionProvenance,
 } from "@photoctl/render";
 import sharp from "sharp";
+import { escapeHtml } from "./html.js";
 
 interface Crop {
   x: number;
@@ -402,13 +403,4 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

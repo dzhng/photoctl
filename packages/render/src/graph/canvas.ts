@@ -18,6 +18,7 @@ import {
   type NodeReference,
 } from "./store.js";
 import { loadLogicalFrame } from "./projection.js";
+import { layerDraft } from "../layers/model.js";
 import { loadGeometryAncestry } from "./geometry-intent.js";
 import {
   normalizeMaskArtifact,
@@ -170,16 +171,7 @@ export async function commitCanvasExpansion(
     executions: request.executions,
     newLayers: [{ localKey: "border", role: "border" }],
     layers: [
-      ...(current?.layers.map((layer) => ({
-        layer: { layerId: layer.id },
-        name: layer.name,
-        z: layer.z,
-        contentNode: { nodeId: layer.contentNodeId },
-        maskNode: { nodeId: layer.maskNodeId },
-        opacity: layer.opacity,
-        blend: layer.blend,
-        enabled: layer.enabled,
-      })) ?? []),
+      ...(current?.layers.map((layer) => layerDraft(layer, layer.z)) ?? []),
       {
         layer: { localKey: "border" },
         name: "Outpaint",

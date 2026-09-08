@@ -1,1 +1,1 @@
-{"extends":"../typescript-config/base.json","compilerOptions":{"rootDir":"src","outDir":"dist"},"include":["src/**/*.ts"],"exclude":["src/**/*.test.ts"]}
+{"extends":"../typescript-config/base.json","compilerOptions":{"rootDir":"src","outDir":"dist"},"include":["src/**/*.ts"],"exclude":["src/**/*.test.ts","src/fill-upscale-fixture.ts"]}

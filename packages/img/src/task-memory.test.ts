@@ -15,17 +15,13 @@ function measureTaskMemory(mode: string, reject = false) {
       "-e",
       `
           import { writeSync } from "node:fs";
-          import { developCameraFront, linearRec2020ToDisplaySrgb, resamplePixels, transformPixels, projectSupportedRgbPixels, compositeMaskedPixels, liftMaskedPixels, overlayMaskedPixels, validateLinearArtifactSamples } from ${JSON.stringify(new URL("../dist/index.js", import.meta.url).href)};
+          import { developCameraFront, linearRec2020ToDisplaySrgb, resamplePixels, transformPixels, projectSupportedRgbPixels, compositeMaskedPixels, validateLinearArtifactSamples } from ${JSON.stringify(new URL("../dist/index.js", import.meta.url).href)};
           const mode = ${JSON.stringify(mode)};
-          const masked = ["composite", "lift", "overlay"].includes(mode);
+          const masked = mode === "composite";
           const mask = masked ? new Float32Array(262144).fill(0.25) : undefined;
           const projectionMatrix = [0.5,0,0,0.5,0,0];
           const convert = mode === "validation"
             ? data => validateLinearArtifactSamples(new Uint8Array(data.buffer, data.byteOffset, data.byteLength), 0, data.byteLength)
-            : mode === "lift"
-            ? data => liftMaskedPixels(data, mask, 512, 512)
-            : mode === "overlay"
-            ? data => overlayMaskedPixels(data, data, mask, 512, 512, 0.5)
             : mode === "composite"
             ? data => compositeMaskedPixels(data, data, mask, 512, 512, 0.5)
             : mode === "projection"
@@ -150,34 +146,23 @@ test("resample pending work reports its native input snapshot", () => {
   expect(result.queued - result.before).toBe(result.bytes / 1024);
 });
 
-test.each(["composite", "lift", "overlay"])(
-  "%s pending work reports its RGB snapshots and mask capacity",
-  (mode) => {
-    const result = measureTaskMemory(mode);
-    expect(result.queued - result.before).toBe(
-      (result.bytes * (mode === "lift" ? 4 : 7)) / 3 / 1024,
-    );
-  },
-);
+test("composite pending work reports its RGB snapshots and mask capacity", () => {
+  const result = measureTaskMemory("composite");
+  expect(result.queued - result.before).toBe((result.bytes * 7) / 3 / 1024);
+});
 
-test.each(["composite", "lift", "overlay"])(
-  "%s settles with only its output backing store charged",
-  (mode) => {
-    const result = measureTaskMemory(mode);
-    expect(result.sample).toBe(0.25);
-    expect(result.outputBytes).toBe(result.bytes);
-    expect(result.settled - result.before).toBe(result.bytes / 1024);
-  },
-);
+test("composite settles with only its output backing store charged", () => {
+  const result = measureTaskMemory("composite");
+  expect(result.sample).toBe(0.25);
+  expect(result.outputBytes).toBe(result.bytes);
+  expect(result.settled - result.before).toBe(result.bytes / 1024);
+});
 
-test.each(["composite", "lift", "overlay"])(
-  "invalid %s requests leave no native snapshot charge",
-  (mode) => {
-    const result = measureTaskMemory(mode, true);
-    expect(result.errors).toEqual(Array(4).fill("RGB data does not match the mask dimensions"));
-    expect(result.settled).toBe(result.before);
-  },
-);
+test("invalid composite requests leave no native snapshot charge", () => {
+  const result = measureTaskMemory("composite", true);
+  expect(result.errors).toEqual(Array(4).fill("RGB data does not match the mask dimensions"));
+  expect(result.settled).toBe(result.before);
+});
 
 test("transform pending work reports its native input snapshot", () => {
   const result = measureTaskMemory("transform");

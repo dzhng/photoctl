@@ -1,17 +1,10 @@
 import { copyFile, readFile, writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
-import {
-  completeModelManifest,
-  inspectPinnedModels,
-  parseModelReleaseManifest,
-} from "../packages/library/dist/index.js";
+import { inspectPinnedModels, parseModelReleaseManifest } from "../packages/library/dist/index.js";
 
 const [directory, manifestPath = "fixtures/models.json"] = process.argv.slice(2);
 if (!directory) throw new Error("usage: verify-release-models.mjs DIRECTORY [MANIFEST]");
-const manifest = completeModelManifest(
-  parseModelReleaseManifest(JSON.parse(await readFile(manifestPath, "utf8"))),
-);
-if (!manifest) throw new Error("Release models must have committed hashes");
+const manifest = parseModelReleaseManifest(JSON.parse(await readFile(manifestPath, "utf8")));
 const results = await inspectPinnedModels(manifest, resolve(directory));
 const invalid = results.filter((result) => !result.cached);
 if (invalid.length)

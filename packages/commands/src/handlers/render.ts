@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop -- Source fallback order is semantic and bounds native decoder memory. */
 import { resolve } from "node:path";
-import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
+import { cacheRootForLibrary } from "@photoctl/importer";
 import { createVolumeResolver, resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import { PhotoctlError, type Envelope, type RenderData, type Warning } from "@photoctl/protocol";
 import {
@@ -9,10 +9,10 @@ import {
   publishFile,
   readArtifactBytes,
   SourceEvaluationError,
-  type ImageSource,
 } from "@photoctl/render";
 import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
+import { errorMessage } from "../errors.js";
 import { graphSourceWarning, resolveGraphSources } from "../graph-source.js";
 import { loadPhoto } from "../photo.js";
 
@@ -45,20 +45,8 @@ export async function renderCommand(
     const resolver = createVolumeResolver(env.volumeMap, handle.path);
     const libraryId = await readLibraryId(handle);
     const cacheRoot = cacheRootForLibrary(libraryId, cacheBase(env, cwd));
-    const pinned: ImageSource = {
-      kind: "pinned-preview",
-      path: pinnedEmbeddedJpegPath(cacheRoot, id),
-      mediaType: "image/jpeg",
-      orientation: 1,
-    };
     const warnings: Warning[] = [];
-    const candidates = await resolveGraphSources({
-      photo,
-      resolver,
-      pinned,
-      pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${id}.jpg` },
-      env,
-    });
+    const candidates = await resolveGraphSources({ photo, resolver, cacheRoot, env });
     let resolved:
       | {
           evaluated: Awaited<ReturnType<typeof evaluateGraphNode>>;
@@ -118,8 +106,4 @@ export async function renderCommand(
   } finally {
     await lease.release();
   }
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

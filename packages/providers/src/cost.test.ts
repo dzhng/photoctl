@@ -1,15 +1,5 @@
 import { expect, test } from "vitest";
-import { estimateEmbeddingCost, estimateProviderCost } from "./cost.js";
-
-test("unpriced models report a zero placeholder and an honest warning", () => {
-  expect(estimateProviderCost("openai/gpt-image-2", { inputPx: 10, outputPx: 40 })).toEqual({
-    usd: 0,
-    warning: {
-      code: "provider_warning",
-      message: "Pricing is not available for openai/gpt-image-2; estimated cost is a placeholder",
-    },
-  });
-});
+import { estimateEmbeddingCost } from "./cost.js";
 
 test("the pinned Gemini embedding price estimates the explicitly queued image count", () => {
   expect(estimateEmbeddingCost("google/gemini-embedding-2", 2_000)).toEqual({ usd: 0.9 });

@@ -1,5 +1,6 @@
 import { openLibrary, resolvePhotoId } from "@photoctl/library";
 import { activeLayerStatus, readActiveDevelopState } from "@photoctl/render";
+import { escapeHtml } from "./html.js";
 
 export async function buildLayersReport(libraryPath: string, photo: string): Promise<string> {
   const library = await openLibrary(libraryPath);
@@ -94,13 +95,4 @@ export async function buildLayersReport(libraryPath: string, photo: string): Pro
   } finally {
     await library.close();
   }
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

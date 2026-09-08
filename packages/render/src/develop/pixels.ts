@@ -15,34 +15,6 @@ import {
   scaleDevelopGeometry,
 } from "./geometry.js";
 
-const IMPLEMENTED_KEYS = new Set([
-  "preset",
-  "brilliance",
-  "exposure",
-  "highlights",
-  "shadows",
-  "brightness",
-  "contrast",
-  "black_point",
-  "saturation",
-  "vibrance",
-  "white_balance",
-  "cast",
-  "curves",
-  "levels",
-  "definition",
-  "sharpen",
-  "noise_reduction",
-  "selective_color",
-  "bw",
-  "filter",
-  "vignette",
-  "crop",
-  "rotate",
-  "straighten_deg",
-  "aspect_ratio",
-]);
-
 /** Runs deterministic develop in Rust; TypeScript owns only color-space transport. */
 export async function applyDevelop(
   image: SceneLinearImage,
@@ -52,9 +24,6 @@ export async function applyDevelop(
     throw new Error("Develop requires oriented scene-linear Rec.2020 pixels");
   }
   const parameters = developDictSchema.parse(unparsed);
-  const unsupported = Object.keys(parameters).find((key) => !IMPLEMENTED_KEYS.has(key));
-  if (unsupported) throw new Error(`Develop operation is not implemented: ${unsupported}`);
-
   const developed = hasPixelDevelop(parameters)
     ? {
         ...image,
@@ -76,8 +45,6 @@ export async function applyDevelopArtifact(
     geometryBaseDimensions,
     dimensions,
   );
-  const unsupported = Object.keys(parameters).find((key) => !IMPLEMENTED_KEYS.has(key));
-  if (unsupported) throw new Error(`Develop operation is not implemented: ${unsupported}`);
   const layout = await inspectArtifactLinearTiff(bytes);
   if (layout.width !== dimensions.w || layout.height !== dimensions.h) {
     throw new Error("Develop artifact dimensions do not match graph metadata");

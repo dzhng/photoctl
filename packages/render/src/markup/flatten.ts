@@ -1,12 +1,13 @@
 import {
   drawMarkupPixels,
   drawMarkupOverlay,
-  overlayMaskedPixels,
+  compositeMaskedPixels,
   transformMaskPixels,
   transformPixels,
 } from "@photoctl/img";
 import type { MarkupDocument } from "@photoctl/protocol";
 import type { RenderFrame } from "../graph/frame.js";
+import { isIdentityMatrix } from "../transforms.js";
 
 export async function drawMarkup(
   image: { w: number; h: number; data: Float32Array },
@@ -16,7 +17,7 @@ export async function drawMarkup(
   const identity =
     projection.source.w === image.w &&
     projection.source.h === image.h &&
-    projection.sourceToRaster.every((value, index) => value === [1, 0, 0, 1, 0, 0][index]);
+    isIdentityMatrix(projection.sourceToRaster);
   if (identity) {
     return {
       ...image,
@@ -62,7 +63,7 @@ export async function drawMarkup(
   }
   return {
     ...image,
-    data: await overlayMaskedPixels(image.data, color, projectedAlpha, image.w, image.h, 1),
+    data: await compositeMaskedPixels(image.data, color, projectedAlpha, image.w, image.h, 1),
   };
 }
 

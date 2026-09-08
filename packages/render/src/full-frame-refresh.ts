@@ -7,7 +7,7 @@ import {
   type NodeDraft,
   type NodeReference,
 } from "./graph/store.js";
-import { resolveLayerId } from "./layers/model.js";
+import { layerDraft, resolveLayerId } from "./layers/model.js";
 import { resolveFillRefreshTarget, type RefreshFillRequest } from "./fill/refresh.js";
 import { planPhotographicOutput } from "./graph/output.js";
 import { frameAtRaster, parseRenderFrame, savedRenderFrame } from "./graph/frame.js";
@@ -234,16 +234,9 @@ export async function refreshFullFrameLayer(
       rootUpdates: [],
       artifacts: density.artifacts,
       executions: density.executions,
-      layers: document.layers.map((layer) => ({
-        layer: { layerId: layer.id },
-        name: layer.name,
-        z: layer.z,
-        contentNode: layer.id === selected.id ? content : { nodeId: layer.contentNodeId },
-        maskNode: { nodeId: layer.maskNodeId },
-        opacity: layer.opacity,
-        blend: layer.blend,
-        enabled: layer.enabled,
-      })),
+      layers: document.layers.map((layer) =>
+        layer.id === selected.id ? layerDraft(layer, layer.z, content) : layerDraft(layer, layer.z),
+      ),
     });
     const upscale = density.upscale;
     return {

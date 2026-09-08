@@ -10,6 +10,7 @@ import {
 import { open, readFile, stat, unlink, type FileHandle } from "node:fs/promises";
 import { flockSync } from "fs-ext";
 import { PhotoctlError } from "@photoctl/protocol";
+import { hasCode } from "./fs-errors.js";
 
 export const OPEN_LOCK_NAME = ".photoctl-open.lock";
 export const DEFAULT_LOCK_BUDGET_MS = 30_000;
@@ -239,8 +240,4 @@ function installCleanup(): void {
     cleanup();
     process.exit(143);
   });
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
 }

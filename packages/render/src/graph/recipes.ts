@@ -92,7 +92,7 @@ export const resampleV1ParametersSchema = z
   .object({
     w: z.number().int().positive(),
     h: z.number().int().positive(),
-    kernel: z.enum(["nearest", "bilinear", "bicubic", "lanczos3"]),
+    kernel: z.enum(["bilinear", "lanczos3"]),
     target: z
       .object({
         x: z.number().int().nonnegative(),

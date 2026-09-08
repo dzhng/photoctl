@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop -- Ordered source fallback, never parallel decode. */
-import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
+import { cacheRootForLibrary } from "@photoctl/importer";
 import { createVolumeResolver, resolvePhotoId, type LibraryHandle } from "@photoctl/library";
 import {
   commitDevelopState,
@@ -81,13 +81,7 @@ export async function whiteBalanceCommand(
     const candidates = await resolveGraphSources({
       photo,
       resolver: createVolumeResolver(env.volumeMap, lease.handle.path),
-      pinned: {
-        kind: "pinned-preview",
-        path: pinnedEmbeddedJpegPath(cacheRoot, id),
-        mediaType: "image/jpeg",
-        orientation: 1,
-      },
-      pinnedLocator: { kind: "pinned-preview", cache_path: `emb/${id}.jpg` },
+      cacheRoot,
       env,
     });
     await progress.start();

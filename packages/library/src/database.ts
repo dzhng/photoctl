@@ -5,6 +5,8 @@ export async function startDatabase(path: string): Promise<PGlite> {
   const db = await PGlite.create({
     dataDir: path,
     extensions: { vector },
+    // PGlite starts postgres with -F (fsync off); the library requires fsync on, which
+    // assertDurability below verifies.
     startParams: PGlite.defaultStartParams.filter((argument) => argument !== "-F"),
   });
   await db.exec("SET synchronous_commit = on");

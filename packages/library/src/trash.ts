@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, rename, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join, parse } from "node:path";
+import { hasCode } from "./fs-errors.js";
 
 export interface TrashReceipt {
   original: string;
@@ -73,8 +74,4 @@ function receipt(original: string, destination: string, deleteOnCommit: boolean)
       settled = true;
     },
   };
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
 }

@@ -4,8 +4,12 @@ import { evaluateGraphNode, type EvaluateGraphNodeRequest } from "../graph/evalu
 import { inspectGraphNode } from "../graph/inspection.js";
 import { canonicalNodeRecipe, logicalNodeId, recipeHash } from "../graph/recipes.js";
 import type { GraphDatabase, NodeDraft, NodeReference } from "../graph/store.js";
-import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
-import { transformPoint } from "../transforms.js";
+import {
+  composeTransformMatrices,
+  invertTransformMatrix,
+  isIdentityMatrix,
+  transformPoint,
+} from "../transforms.js";
 import { describeFillBranch } from "./branch.js";
 import { applyEffectiveMask, type FillFit } from "../mask-operations.js";
 
@@ -46,7 +50,7 @@ export async function prepareFillMask(
         invertTransformMatrix(branch.generationInputMatrix),
       )
     : ([1, 0, 0, 1, 0, 0] as const);
-  if (matrix.some((value, index) => value !== [1, 0, 0, 1, 0, 0][index])) {
+  if (!isIdentityMatrix(matrix)) {
     const parameters = { matrix: [...matrix] };
     nodes.push({
       localKey: "fill-selection",

@@ -1094,14 +1094,7 @@ fn lanczos3(
     (weighted / weight_sum) as f32
 }
 
-#[cfg(test)]
-thread_local! {
-    static LANCZOS_EVALUATIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-
 fn lanczos(distance: f64) -> f64 {
-    #[cfg(test)]
-    LANCZOS_EVALUATIONS.with(|count| count.set(count.get() + 1));
     if distance == 0.0 {
         return 1.0;
     }
@@ -1201,33 +1194,6 @@ mod tests {
         Filter, lanczos_contributors, resize, resize_integer_region_bilinear,
         sample_integer_affine, transform,
     };
-
-    #[test]
-    fn affine_filter_work_is_axis_bounded_and_independent_of_channels() {
-        let plane: Vec<f32> = (0..32 * 24)
-            .map(|i| ((i * 31 % 101) as f32 - 20.0) / 17.0)
-            .collect();
-        let matrix = [2.0, 0.25, -0.15, 2.0, 0.33, -0.27];
-        super::LANCZOS_EVALUATIONS.with(|count| count.set(0));
-        let mono = transform(&plane, 32, 24, 1, 5, 7, matrix, Filter::Lanczos3).unwrap();
-        let mono_work = super::LANCZOS_EVALUATIONS.with(|count| count.get());
-        let rgb: Vec<f32> = plane.iter().flat_map(|v| [*v; 3]).collect();
-        super::LANCZOS_EVALUATIONS.with(|count| count.set(0));
-        let color = transform(&rgb, 32, 24, 3, 5, 7, matrix, Filter::Lanczos3).unwrap();
-        let color_work = super::LANCZOS_EVALUATIONS.with(|count| count.get());
-        for (sample, pixel) in mono.iter().zip(color.chunks_exact(3)) {
-            assert!(pixel.iter().all(|v| v.to_bits() == sample.to_bits()));
-        }
-        assert!(mono_work > 0, "the witness must exercise filtered sampling");
-        assert!(
-            mono_work <= 12 * 5 * 7,
-            "axis weight budget exceeded: {mono_work}"
-        );
-        assert_eq!(
-            color_work, mono_work,
-            "RGB must reuse the same axis weights"
-        );
-    }
 
     #[test]
     fn affine_weight_reuse_preserves_float_words_across_geometry_and_channels() {

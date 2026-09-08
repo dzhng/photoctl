@@ -17,7 +17,11 @@ import { loadBaseProjection } from "../graph/projection.js";
 import { planPhotographicOutput } from "../graph/output.js";
 import { parseRenderFrame } from "../graph/frame.js";
 import { prepareOutpaintPixels } from "./outpaint.js";
-import { composeTransformMatrices, invertTransformMatrix } from "../transforms.js";
+import {
+  composeTransformMatrices,
+  invertTransformMatrix,
+  isIdentityMatrix,
+} from "../transforms.js";
 import { prepareFillMask } from "./mask.js";
 import { readReferenceArtifact } from "./reference.js";
 import { planRefreshedFillCrop } from "./crop.js";
@@ -38,13 +42,13 @@ import {
   type PreparedNodeExecution,
 } from "../graph/store.js";
 import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
-import { resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
+import { layerDraft, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { describeFillBranch, type FillBranchDescriptor } from "./branch.js";
 import { fillProviderInputs, decodeExternalImage, image16Png } from "./external-pixels.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./pipeline.js";
 import { rebuildFillBranch } from "./rebuild.js";
 import { fillPlacementDimensions, planOutputDensity } from "./density.js";
-import { executeGenerationDensity } from "./generation.js";
+import { appendWarnings, executeGenerationDensity } from "./generation.js";
 import { resolveUpscalePolicy } from "./upscale-policy.js";
 
 export interface RefreshFillRequest {
@@ -277,16 +281,11 @@ export async function refreshFillLayer(
     preserveCompensations: !generationRefreshed,
   });
   nodes.push(...rebuilt.nodes);
-  const layers: RevisionLayerDraft[] = document.layers.map((layer) => ({
-    layer: { layerId: layer.id },
-    name: layer.name,
-    z: layer.z,
-    contentNode: layer.id === layerId ? rebuilt.content : { nodeId: layer.contentNodeId },
-    maskNode: layer.id === layerId ? rebuilt.mask : { nodeId: layer.maskNodeId },
-    opacity: layer.opacity,
-    blend: layer.blend,
-    enabled: layer.enabled,
-  }));
+  const layers: RevisionLayerDraft[] = document.layers.map((layer) =>
+    layer.id === layerId
+      ? layerDraft(layer, layer.z, rebuilt.content, rebuilt.mask)
+      : layerDraft(layer, layer.z),
+  );
   const committed = await commitRevision(database, {
     outputPlan: "photographic",
     photoId: request.photoId,
@@ -459,7 +458,7 @@ async function executeGenerationRefresh(
       { matrix: [...baseToInput], w: base.w, h: base.h },
     );
     mask = effectiveMask.mask;
-  } else if (!identityMatrix(branch.generationInputMatrix)) {
+  } else if (!isIdentityMatrix(branch.generationInputMatrix)) {
     mask = {
       ...mask,
       data: await transformMaskPixels(
@@ -567,7 +566,7 @@ async function executeGenerationRefresh(
               pixel_scale: request.sourceContext.pixelScale,
               resolution_limited: request.sourceContext.resolutionLimited,
             },
-            ...(!identityMatrix(branch.generationInputMatrix)
+            ...(!isIdentityMatrix(branch.generationInputMatrix)
               ? { input_matrix: [...branch.generationInputMatrix] }
               : {}),
           },
@@ -640,10 +639,6 @@ async function executeGenerationRefresh(
       },
     )
   ).value;
-}
-
-function identityMatrix(matrix: readonly number[]): boolean {
-  return matrix.every((value, index) => value === [1, 0, 0, 1, 0, 0][index]);
 }
 
 async function executeUpscaleRefresh(
@@ -794,13 +789,5 @@ function assertGenerationAdapter(
 ): void {
   if (parameters.adapter !== dependencies.adapter.id || parameters.model !== dependencies.model) {
     throw new Error("Configured generator does not match the stored fill recipe");
-  }
-}
-
-function appendWarnings(target: Warning[], additions: readonly Warning[]): void {
-  for (const warning of additions) {
-    if (!target.some(({ code, message }) => code === warning.code && message === warning.message)) {
-      target.push(warning);
-    }
   }
 }

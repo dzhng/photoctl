@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import { parseXmp } from "./read.js";
-import { XmpChangedError } from "./errors.js";
-import { InvalidXmpError, mergeXmp, writeXmpSidecar } from "./write.js";
+import { InvalidXmpError, XmpChangedError } from "./errors.js";
+import { mergeXmp, writeXmpSidecar } from "./write.js";
 
 test("parse-merge replaces owned cull fields without changing foreign nodes", () => {
   const foreign = `<crs:ToneCurvePV2012>

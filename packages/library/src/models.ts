@@ -1,18 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { basename, join } from "node:path";
+import { hasCode } from "./fs-errors.js";
 
 export interface ModelManifest {
   schema: 1;
   source: { repository: string; revision: string };
   artifacts: Array<{ file: string; sha256: string; opset: number }>;
-}
-
-export interface ModelReleaseManifest {
-  schema: 1;
-  status: "awaiting_export" | "ready";
-  source: { repository: string; revision: string };
-  artifacts: Array<{ file: string; sha256: string | null; opset: number }>;
 }
 
 export interface ModelFetchResult {
@@ -73,81 +67,43 @@ export async function fetchPinnedModels(options: {
 export async function inspectPinnedModels(
   manifest: ModelManifest,
   directory: string,
-): Promise<ModelFetchResult[]> {
+): Promise<Array<ModelFetchResult & { opset: number }>> {
   assertManifest(manifest);
   return await Promise.all(
     manifest.artifacts.map(async (artifact) => ({
-      file: artifact.file,
-      sha256: artifact.sha256,
+      ...artifact,
       cached: (await fileHash(join(directory, artifact.file))) === artifact.sha256,
     })),
   );
 }
 
-export function parseModelReleaseManifest(value: unknown): ModelReleaseManifest {
+export function parseModelReleaseManifest(value: unknown): ModelManifest {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error("Invalid model release manifest");
   }
-  const candidate = value as Partial<ModelReleaseManifest>;
+  const candidate = value as Partial<ModelManifest>;
   if (
     candidate.schema !== 1 ||
-    (candidate.status !== "awaiting_export" && candidate.status !== "ready") ||
     typeof candidate.source !== "object" ||
     candidate.source === null ||
     typeof candidate.source.repository !== "string" ||
     candidate.source.repository.length === 0 ||
-    !/^[0-9a-f]{40}$/u.test(candidate.source.revision ?? "") ||
+    typeof candidate.source.revision !== "string" ||
     !Array.isArray(candidate.artifacts) ||
-    candidate.artifacts.length === 0
+    candidate.artifacts.some(
+      (artifact) =>
+        typeof artifact !== "object" ||
+        artifact === null ||
+        typeof artifact.file !== "string" ||
+        typeof artifact.sha256 !== "string" ||
+        typeof artifact.opset !== "number",
+    )
   ) {
     throw new Error("Invalid model release manifest");
   }
-  const files = new Set<string>();
-  for (const artifact of candidate.artifacts) {
-    if (
-      typeof artifact !== "object" ||
-      artifact === null ||
-      typeof artifact.file !== "string" ||
-      artifact.file !== basename(artifact.file) ||
-      !artifact.file.endsWith(".onnx") ||
-      (artifact.sha256 !== null &&
-        (typeof artifact.sha256 !== "string" || !/^[0-9a-f]{64}$/u.test(artifact.sha256))) ||
-      !Number.isSafeInteger(artifact.opset) ||
-      artifact.opset <= 0 ||
-      files.has(artifact.file)
-    ) {
-      throw new Error("Invalid model release artifact");
-    }
-    files.add(artifact.file);
-  }
-  if (
-    candidate.status === "ready" &&
-    candidate.artifacts.some(({ sha256: hash }) => hash === null)
-  ) {
-    throw new Error("Ready model release manifest is missing an artifact hash");
-  }
-  return candidate as ModelReleaseManifest;
-}
-
-export function completeModelManifest(release: ModelReleaseManifest): ModelManifest | null {
-  if (release.status !== "ready" || release.artifacts.some(({ sha256: hash }) => hash === null)) {
-    return null;
-  }
-  return release as ModelManifest;
-}
-
-export async function inspectModelRelease(
-  release: ModelReleaseManifest,
-  directory: string,
-): Promise<Array<{ file: string; sha256: string | null; opset: number; cached: boolean }>> {
-  return await Promise.all(
-    release.artifacts.map(async (artifact) => ({
-      ...artifact,
-      cached:
-        artifact.sha256 !== null &&
-        (await fileHash(join(directory, artifact.file))) === artifact.sha256,
-    })),
-  );
+  const manifest = candidate as ModelManifest;
+  assertManifest(manifest);
+  return manifest;
 }
 
 function assertManifest(manifest: ModelManifest): void {
@@ -182,8 +138,4 @@ async function fileHash(path: string): Promise<string | null> {
 
 function sha256(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === code;
 }

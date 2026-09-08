@@ -88,6 +88,10 @@ export function invertTransformMatrix(matrix: TransformMatrix): TransformMatrix 
   ];
 }
 
+export function isIdentityMatrix(matrix: readonly number[]): boolean {
+  return matrix.every((value, index) => value === [1, 0, 0, 1, 0, 0][index]);
+}
+
 export function transformPoint(matrix: TransformMatrix, point: TransformPoint): TransformPoint {
   return {
     x: cleanZero(matrix[0] * point.x + matrix[2] * point.y + matrix[4]),

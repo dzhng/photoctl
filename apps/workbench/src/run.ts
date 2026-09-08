@@ -16,6 +16,23 @@ import { buildLayersReport } from "./layers.js";
 import { buildFillReport } from "./fill.js";
 import { buildMasksReport } from "./masks.js";
 
+const COMMANDS = [
+  "envelope",
+  "race",
+  "library",
+  "oracle",
+  "sheet",
+  "graph",
+  "layers",
+  "fill",
+  "masks",
+  "export",
+  "presets",
+  "ab",
+  "upscale-spike",
+];
+const USAGE = `usage: wb ${COMMANDS.join("|")}`;
+
 export async function runWorkbench(
   args: string[],
   cwd: string,
@@ -23,27 +40,7 @@ export async function runWorkbench(
   dependencies: UpscaleSpikeDependencies = {},
 ): Promise<string> {
   const [command, ...rest] = args;
-  if (
-    !command ||
-    ![
-      "envelope",
-      "race",
-      "library",
-      "oracle",
-      "sheet",
-      "graph",
-      "export",
-      "presets",
-      "ab",
-      "upscale-spike",
-      "layers",
-      "fill",
-      "masks",
-    ].includes(command)
-  )
-    throw new Error(
-      "usage: wb envelope|race|library|oracle|sheet|graph|layers|fill|masks|export|presets|ab|upscale-spike",
-    );
+  if (!command || !COMMANDS.includes(command)) throw new Error(USAGE);
   if (command === "fill") {
     if (rest.length !== 3 || rest[1] !== "--layer") {
       throw new Error("usage: wb fill <photo-id> --layer <layer-id>");
@@ -141,8 +138,7 @@ export async function runWorkbench(
     await writeFile(output, await buildSheetReport(resolve(cwd, library), filter, cwd), "utf8");
     return output;
   }
-  if (rest.length > 0)
-    throw new Error("usage: wb envelope|race|library|oracle|graph <photo-id>|presets");
+  if (rest.length > 0) throw new Error(`usage: wb ${command}`);
 
   const outputDirectory = join(cwd, "out", "wb");
   await mkdir(outputDirectory, { recursive: true });

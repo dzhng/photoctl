@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { link, rename, rm } from "node:fs/promises";
 import { XmpChangedError, XmpFilesystemError } from "./errors.js";
 import { readFileSnapshot } from "./snapshot.js";
+import { hasCode } from "../fs-errors.js";
+import { filesystem } from "./filesystem.js";
 
 export async function publishXmpSnapshot(
   path: string,
@@ -93,20 +95,4 @@ async function restoreDisplaced(displaced: string, path: string): Promise<void> 
     path,
     async () => await rm(displaced, { force: true }),
   );
-}
-
-async function filesystem<T>(
-  operation: string,
-  path: string,
-  action: () => Promise<T>,
-): Promise<T> {
-  try {
-    return await action();
-  } catch (error) {
-    throw new XmpFilesystemError(operation, path, error);
-  }
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
 }

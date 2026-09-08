@@ -15,6 +15,7 @@ import {
 import { PhotoctlError, type Envelope } from "@photoctl/protocol";
 import { parseArguments } from "../arguments.js";
 import { openRequestLibrary, type RequestEnv } from "../context.js";
+import { errorMessage } from "../errors.js";
 import { loadPhoto } from "../photo.js";
 import {
   executeFillRefresh,
@@ -298,7 +299,7 @@ export async function layerCommand(
           reason: "revision_conflict",
         });
       }
-      const message = error instanceof Error ? error.message : String(error);
+      const message = errorMessage(error);
       if (message.includes("not present")) {
         throw new PhotoctlError("not_found", message, { id: photoId, layer: target.layer });
       }
@@ -310,8 +311,7 @@ export async function layerCommand(
         message.startsWith("Transform scale") ||
         message.startsWith("Transform values") ||
         message.startsWith("--from must name") ||
-        message.startsWith("Ambiguous refresh node prefix") ||
-        message === "Layer does not contain a refreshable fill branch"
+        message.startsWith("Ambiguous refresh node prefix")
       ) {
         throw new PhotoctlError("usage", message, { id: photoId, layer: target.layer });
       }

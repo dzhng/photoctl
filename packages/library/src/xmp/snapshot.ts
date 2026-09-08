@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { open, stat, type FileHandle } from "node:fs/promises";
 import type { BigIntStats } from "node:fs";
 import { XmpChangedError, XmpFilesystemError } from "./errors.js";
+import { hasCode } from "../fs-errors.js";
 
 const MAX_SNAPSHOT_ATTEMPTS = 3;
 
@@ -109,8 +110,4 @@ async function pathStat(path: string): Promise<BigIntStats | undefined> {
     if (hasCode(error, "ENOENT")) return undefined;
     throw new XmpFilesystemError("inspect", path, error);
   }
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
 }
