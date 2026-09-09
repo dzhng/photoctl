@@ -148,6 +148,13 @@ interface NativeBinding {
     outputWidth: number,
     outputHeight: number,
   ): Uint8Array;
+  resampleRgb8Antialiased(
+    data: Uint8Array,
+    sourceWidth: number,
+    sourceHeight: number,
+    outputWidth: number,
+    outputHeight: number,
+  ): Uint8Array;
   resampleDisplaySrgbRegion(
     data: Uint16Array,
     sourceWidth: number,
@@ -544,6 +551,23 @@ export function resampleDisplaySrgb8(
   outputHeight: number,
 ): Uint8Array {
   const result = requiredBinding().resampleDisplaySrgb8(
+    data,
+    sourceWidth,
+    sourceHeight,
+    outputWidth,
+    outputHeight,
+  );
+  return result instanceof Uint8Array ? result : new Uint8Array(result);
+}
+
+export function resampleRgb8Antialiased(
+  data: Uint8Array,
+  sourceWidth: number,
+  sourceHeight: number,
+  outputWidth: number,
+  outputHeight: number,
+): Uint8Array {
+  const result = requiredBinding().resampleRgb8Antialiased(
     data,
     sourceWidth,
     sourceHeight,

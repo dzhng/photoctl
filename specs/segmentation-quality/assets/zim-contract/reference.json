@@ -1,0 +1,418 @@
+{
+  "policy": "signed points then box corner tokens 2,3; no sentinel with box; original point attention when points present; candidate selection score argmax",
+  "box_role": "authored diagnostic only; not automatic semantic acceptance",
+  "box_xyxy": [
+    575,
+    20,
+    1614,
+    1080
+  ],
+  "python": "3.12.14",
+  "torch": "2.14.0",
+  "onnxruntime": "1.29.0",
+  "threads": 4,
+  "git_commit": "392e613c8a3d395ce4dda3b51edb6dabc1fd0004",
+  "hf_commit": "667e2d7c233f6f1cacd12ccc64bdf6cc7b5aa16d",
+  "license": "CC BY-NC 4.0 upstream repository; conflicting HF BY metadata not treated as commercial permission",
+  "variants": {
+    "points-official": {
+      "scores": [
+        0.8829139471054077,
+        0.8717930316925049,
+        0.23029133677482605,
+        0.9036489725112915
+      ],
+      "selected_index": 3,
+      "decode_seconds": 0.1958672080654651,
+      "alpha_range": [
+        5.188670049172117e-10,
+        0.9999998807907104
+      ],
+      "point_alpha": [
+        0.9554399251937866,
+        0.9999967813491821,
+        0.9999992847442627,
+        0.9999983310699463,
+        0.9999979734420776,
+        2.78967377198569e-07,
+        4.9638050114708676e-08,
+        8.922918937059876e-08,
+        1.1446065428799557e-08,
+        1.1347703221531447e-08,
+        2.5598680508664984e-07,
+        1.2274806238110614e-07
+      ],
+      "accepted_reference_comparison": {
+        "path": "/tmp/openphoto-zim.gDAkjs/original12/alpha.f32",
+        "sha256": "86e8d25acd9293948328199008e9a0ab8a979366bbeb8bb53b584cdb35f44215",
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "exact_equal": true
+      }
+    },
+    "box-official": {
+      "scores": [
+        0.8205431699752808,
+        0.8252205848693848,
+        0.24325603246688843,
+        0.8470768332481384
+      ],
+      "selected_index": 3,
+      "decode_seconds": 0.2077127080410719,
+      "alpha_range": [
+        5.799123847793908e-09,
+        0.9999881982803345
+      ],
+      "point_alpha": [
+        0.9528290629386902,
+        0.999931812286377,
+        0.9999769926071167,
+        0.9999778270721436,
+        0.9999611377716064,
+        0.152133047580719,
+        0.010972102172672749,
+        1.4844192719465354e-06,
+        3.4112096614080656e-07,
+        1.7081647740724293e-07,
+        0.09619447588920593,
+        2.818404254867346e-06
+      ]
+    },
+    "combined-official": {
+      "scores": [
+        0.8683235049247742,
+        0.8613301515579224,
+        0.2214401662349701,
+        0.8924002051353455
+      ],
+      "selected_index": 3,
+      "decode_seconds": 0.1215706670191139,
+      "alpha_range": [
+        2.2578743319456862e-09,
+        0.9999979734420776
+      ],
+      "point_alpha": [
+        0.9554275274276733,
+        0.9999783039093018,
+        0.9999946355819702,
+        0.9999912977218628,
+        0.9999904632568359,
+        0.08670719712972641,
+        0.013743431307375431,
+        2.2502855756556528e-07,
+        1.3927189002060913e-07,
+        7.668320023412889e-08,
+        0.004971016198396683,
+        1.1115478173451265e-06
+      ]
+    },
+    "combined-adapter": {
+      "scores": [
+        0.8888759613037109,
+        0.8785028457641602,
+        0.22225750982761383,
+        0.9108573794364929
+      ],
+      "selected_index": 3,
+      "decode_seconds": 0.12536299997009337,
+      "alpha_range": [
+        4.126995967190794e-10,
+        0.9999998807907104
+      ],
+      "point_alpha": [
+        0.9698052406311035,
+        0.9999970197677612,
+        0.9999992847442627,
+        0.9999985694885254,
+        0.9999982118606567,
+        2.2741224370292912e-07,
+        4.697780653373229e-08,
+        2.9628193232156264e-08,
+        1.8053787798066878e-08,
+        1.568031748888643e-08,
+        2.418139501969563e-07,
+        1.5212057746794017e-07
+      ]
+    }
+  },
+  "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+  "points": [
+    [
+      968.0,
+      108.0
+    ],
+    [
+      1323.0,
+      346.0
+    ],
+    [
+      1469.0,
+      594.0
+    ],
+    [
+      1291.0,
+      886.0
+    ],
+    [
+      1130.0,
+      648.0
+    ],
+    [
+      888.0,
+      572.0
+    ],
+    [
+      807.0,
+      810.0
+    ],
+    [
+      484.0,
+      432.0
+    ],
+    [
+      646.0,
+      54.0
+    ],
+    [
+      161.0,
+      540.0
+    ],
+    [
+      1372.0,
+      1058.0
+    ],
+    [
+      484.0,
+      994.0
+    ]
+  ],
+  "labels": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "models": {
+    "encoder.onnx": {
+      "sha256": "6b0360b3c32dfa11555fb1de27cd3533cec1e932204da0dec2b3772045dc7db3",
+      "bytes": 1235692110,
+      "opsets": [
+        {
+          "domain": "",
+          "version": 15
+        }
+      ],
+      "inputs": [
+        {
+          "name": "image",
+          "dtype": "tensor(float)",
+          "shape": [
+            "batch_size",
+            3,
+            1024,
+            1024
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_embeddings",
+          "dtype": "tensor(float)",
+          "shape": [
+            "Addimage_embeddings_dim_0",
+            256,
+            64,
+            64
+          ]
+        },
+        {
+          "name": "feat_D0",
+          "dtype": "tensor(float)",
+          "shape": [
+            "Mulfeat_D0_dim_0",
+            64,
+            512,
+            512
+          ]
+        },
+        {
+          "name": "feat_D1",
+          "dtype": "tensor(float)",
+          "shape": [
+            "Mulfeat_D1_dim_0",
+            128,
+            256,
+            256
+          ]
+        },
+        {
+          "name": "feat_D2",
+          "dtype": "tensor(float)",
+          "shape": [
+            "Mulfeat_D2_dim_0",
+            256,
+            128,
+            128
+          ]
+        }
+      ]
+    },
+    "decoder.onnx": {
+      "sha256": "c24a42d79053d20594760ad9afdef9cca985f29493f3e1e0fe3462ca291b57f7",
+      "bytes": 19330176,
+      "opsets": [
+        {
+          "domain": "",
+          "version": 15
+        }
+      ],
+      "inputs": [
+        {
+          "name": "feat_D0",
+          "dtype": "tensor(float)",
+          "shape": [
+            1,
+            64,
+            512,
+            512
+          ]
+        },
+        {
+          "name": "feat_D1",
+          "dtype": "tensor(float)",
+          "shape": [
+            1,
+            128,
+            256,
+            256
+          ]
+        },
+        {
+          "name": "feat_D2",
+          "dtype": "tensor(float)",
+          "shape": [
+            1,
+            256,
+            128,
+            128
+          ]
+        },
+        {
+          "name": "image_embeddings",
+          "dtype": "tensor(float)",
+          "shape": [
+            1,
+            256,
+            64,
+            64
+          ]
+        },
+        {
+          "name": "point_coords",
+          "dtype": "tensor(float)",
+          "shape": [
+            "batch_size",
+            "num_points",
+            2
+          ]
+        },
+        {
+          "name": "point_labels",
+          "dtype": "tensor(float)",
+          "shape": [
+            "batch_size",
+            "num_points"
+          ]
+        },
+        {
+          "name": "attn_mask",
+          "dtype": "tensor(float)",
+          "shape": [
+            "batch_size",
+            64,
+            64
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "masks",
+          "dtype": "tensor(float)",
+          "shape": [
+            "Convmasks_dim_0",
+            4,
+            "Convmasks_dim_2",
+            "Convmasks_dim_3"
+          ]
+        },
+        {
+          "name": "iou_predictions",
+          "dtype": "tensor(float)",
+          "shape": [
+            "Gemmiou_predictions_dim_0",
+            4
+          ]
+        }
+      ]
+    }
+  },
+  "load_seconds": 0.8027178749907762,
+  "features": [
+    {
+      "name": "image_embeddings",
+      "shape": [
+        1,
+        256,
+        64,
+        64
+      ],
+      "bytes": 4194304
+    },
+    {
+      "name": "feat_D0",
+      "shape": [
+        1,
+        64,
+        512,
+        512
+      ],
+      "bytes": 67108864
+    },
+    {
+      "name": "feat_D1",
+      "shape": [
+        1,
+        128,
+        256,
+        256
+      ],
+      "bytes": 33554432
+    },
+    {
+      "name": "feat_D2",
+      "shape": [
+        1,
+        256,
+        128,
+        128
+      ],
+      "bytes": 16777216
+    }
+  ],
+  "feature_bytes": 121634816,
+  "encode_seconds": 3.1520499169128016,
+  "maxrss_bytes": 6403784704,
+  "script_hashes": {
+    "test_feed.py": "f9fa60c5dd0a6cc7ff0649049c97838ce73ab5069529a06421b108cb74a458b9",
+    "probe.py": "4f3074fd25bde36b971489bc93d69d3b9ea9a9c605e6a1cab9f67dd1e1e46765",
+    "combined.py": "3634b51a0fada91ba539da742f1ec684a80ecfc531ba3a8b6fa492ea9886996c"
+  }
+}

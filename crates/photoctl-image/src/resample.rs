@@ -200,6 +200,25 @@ pub fn resample_display_srgb8(
     .into())
 }
 
+#[napi]
+pub fn resample_rgb8_antialiased(
+    data: Uint8Array,
+    source_width: u32,
+    source_height: u32,
+    output_width: u32,
+    output_height: u32,
+) -> napi::Result<Uint8Array> {
+    Ok(resize_rgb8_antialiased(
+        &data,
+        source_width,
+        source_height,
+        output_width,
+        output_height,
+    )
+    .map_err(invalid_argument)?
+    .into())
+}
+
 #[allow(clippy::too_many_arguments)]
 #[napi]
 pub fn resample_display_srgb_region(
@@ -702,6 +721,89 @@ impl IntegerSample for u16 {
     fn from_f64(value: f64) -> Self {
         value.round().clamp(0.0, <Self as IntegerSample>::MAX) as Self
     }
+}
+
+fn resize_rgb8_antialiased(
+    input: &[u8],
+    source_width: u32,
+    source_height: u32,
+    output_width: u32,
+    output_height: u32,
+) -> Result<Vec<u8>, String> {
+    let output_len = validate_len(
+        input.len(),
+        source_width,
+        source_height,
+        3,
+        output_width,
+        output_height,
+    )?;
+    let horizontal_len = validate_len(
+        input.len(),
+        source_width,
+        source_height,
+        3,
+        output_width,
+        source_height,
+    )?;
+    let columns = byte_bilinear_weights(source_width, output_width);
+    let rows = byte_bilinear_weights(source_height, output_height);
+    let mut horizontal = vec![0; horizontal_len];
+    for y in 0..source_height as usize {
+        for (x, (start, weights)) in columns.iter().enumerate() {
+            for channel in 0..3 {
+                let sum = weights
+                    .iter()
+                    .enumerate()
+                    .fold(1_i64 << 21, |sum, (offset, weight)| {
+                        sum + i64::from(
+                            input[(y * source_width as usize + start + offset) * 3 + channel],
+                        ) * weight
+                    });
+                horizontal[(y * output_width as usize + x) * 3 + channel] =
+                    (sum >> 22).clamp(0, 255) as u8;
+            }
+        }
+    }
+    let stride = output_width as usize * 3;
+    let mut output = vec![0; output_len];
+    for (y, (start, weights)) in rows.iter().enumerate() {
+        for x in 0..stride {
+            let sum = weights
+                .iter()
+                .enumerate()
+                .fold(1_i64 << 21, |sum, (offset, weight)| {
+                    sum + i64::from(horizontal[(start + offset) * stride + x]) * weight
+                });
+            output[y * stride + x] = (sum >> 22).clamp(0, 255) as u8;
+        }
+    }
+    Ok(output)
+}
+
+// PIL-compatible RGB resizing rounds each separable pass using 22-bit weights.
+// The widened triangle when shrinking is essential to the model's input contract.
+fn byte_bilinear_weights(source: u32, output: u32) -> Vec<(usize, Vec<i64>)> {
+    let scale = f64::from(source) / f64::from(output);
+    let support = scale.max(1.0);
+    (0..output)
+        .map(|position| {
+            let center = (f64::from(position) + 0.5) * scale;
+            let start = ((center - support + 0.5) as i64).max(0) as usize;
+            let end = ((center + support + 0.5) as usize).min(source as usize);
+            let weights: Vec<_> = (start..end)
+                .map(|index| (1.0 - ((index as f64 + 0.5 - center) / support).abs()).max(0.0))
+                .collect();
+            let total: f64 = weights.iter().sum();
+            (
+                start,
+                weights
+                    .into_iter()
+                    .map(|weight| (weight / total * f64::from(1 << 22) + 0.5) as i64)
+                    .collect(),
+            )
+        })
+        .collect()
 }
 
 fn resize_integer_bilinear<T: IntegerSample>(
@@ -1277,6 +1379,22 @@ mod tests {
         assert_eq!(
             sample_integer_affine(&input, 3, 1, 1, 5, 1, [1.0, 0.0, 0.0, 1.0, -1.0, 0.0]).unwrap(),
             [0, 10, 20, 30, 0]
+        );
+    }
+
+    #[test]
+    fn antialiased_rgb8_matches_integer_reference_downsampling() {
+        // PIL RGB bilinear: separable, antialiased, with byte rounding after each axis.
+        let input = [
+            0, 12, 250, 255, 31, 0, 17, 88, 42, 194, 0, 157, 66, 245, 101, 92, 7, 39, 4, 220, 150,
+            255, 19, 85, 0, 170, 221, 135, 42, 9, 255, 255, 1, 13, 97, 200, 62, 5, 179, 218, 134,
+            0, 8, 233, 77,
+        ];
+        assert_eq!(
+            super::resize_rgb8_antialiased(&input, 5, 3, 3, 2).unwrap(),
+            [
+                88, 49, 122, 122, 71, 85, 105, 124, 116, 115, 154, 86, 107, 70, 139, 90, 156, 65
+            ],
         );
     }
 
