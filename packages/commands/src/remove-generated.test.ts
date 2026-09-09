@@ -1,5 +1,6 @@
 import { initializeLibrary } from "@photoctl/library";
 import { generateDataSchema } from "@photoctl/protocol";
+import { FAKE_IMAGE_EDIT_MODEL } from "@photoctl/providers";
 import { retainedArtifacts } from "@photoctl/render";
 import { startGatewayFixture } from "@photoctl/test-harness/gateway-fixture";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -33,11 +34,28 @@ test("removing one generated photo preserves shared originals and the other phot
     );
     const command = async (verb: string, args: string[]) =>
       await dispatch({ verb, args, cwd: directory, env }, { version: "test", library: handle });
-    const first = generateDataSchema.parse(
-      (await command("generate", ["--prompt", "a blue vase", "--size", "8x8"])).data,
-    );
+    const firstResult = await command("generate", [
+      "--prompt",
+      "a blue vase",
+      "--size",
+      "8x8",
+      "--model",
+      FAKE_IMAGE_EDIT_MODEL,
+    ]);
+    expect(firstResult, JSON.stringify(firstResult)).toMatchObject({ ok: true });
+    const first = generateDataSchema.parse(firstResult.data);
     const second = generateDataSchema.parse(
-      (await command("generate", ["--prompt", "a blue vase", "--size", "8x8", "--upscale"])).data,
+      (
+        await command("generate", [
+          "--prompt",
+          "a blue vase",
+          "--size",
+          "8x8",
+          "--model",
+          FAKE_IMAGE_EDIT_MODEL,
+          "--upscale",
+        ])
+      ).data,
     );
     expect(second.id).not.toBe(first.id);
     const originals = (
