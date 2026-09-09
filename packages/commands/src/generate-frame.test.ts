@@ -37,7 +37,7 @@ test.each([
             "--prompt",
             "a complete colorful vase",
             "--model",
-            "openai/gpt-image-2",
+            "openai/gpt-image-2.5-flare",
             "--size",
             `${w}x${h}`,
             "--no-upscale",

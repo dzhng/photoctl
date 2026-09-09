@@ -107,13 +107,14 @@ test("reference-only generation sends variation intent and retains its source wi
 });
 
 test.each([false, true])(
-  "generation refuses an unsupported required reference before buying an unrelated image (strength=%s)",
+  "generation forwards a required reference to an arbitrary model (strength=%s)",
   async (strength) => {
-    const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-unsupported-reference-"));
+    const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-custom-reference-"));
     const handle = await generationLibrary(parent);
-    const requests: string[] = [];
+    const requests: Array<{ path: string; model: unknown; reference: boolean }> = [];
     const gateway = await startGatewayFixture(0, {
-      onImageRequest: ({ path }) => requests.push(path),
+      onImageRequest: ({ path, fields, files }) =>
+        requests.push({ path, model: fields.model, reference: files.has("image[]") }),
     });
     cleanups.push(
       async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
@@ -136,7 +137,7 @@ test.each([false, true])(
           "--ref",
           reference,
           "--model",
-          "example/text-only",
+          "example/custom-image",
           "--size",
           "4x4",
           ...(strength ? ["--prompt", "a vase", "--strength", "0.5"] : []),
@@ -151,10 +152,14 @@ test.each([false, true])(
       },
       { version: "test", library: handle },
     );
-    expect(result).toMatchObject({ ok: false, code: "usage" });
-    expect(requests).toEqual([]);
-    expect((await handle.query("SELECT id FROM photos")).rows).toEqual([]);
-    expect((await handle.query("SELECT id FROM provider_image_attempts")).rows).toEqual([]);
+    expect(result).toMatchObject({ ok: true });
+    const generated = generateDataSchema.parse(result.data);
+    expect(generated.reference.used).toBe(true);
+    expect(generated.generation.model).toBe("example/custom-image");
+    expect(requests).toEqual([
+      { path: "/v1/images/edits", model: "example/custom-image", reference: true },
+    ]);
+    expect((await handle.query("SELECT id FROM photos")).rows).toEqual([{ id: generated.id }]);
   },
 );
 

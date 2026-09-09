@@ -126,6 +126,28 @@ gateway model. Follow the root guide's
 credential boundary. Image generation, semantic search and automatic analysis
 also depend on configured providers; their supported controls vary by model.
 
+## Choose an image model
+
+Image commands use the [release defaults](../packages/providers/src/table.ts)
+unless overridden by library settings or a command's `--model`. A command override
+wins for that request; changing defaults does not rewrite saved choices or past
+executions. Any concrete model ID can be sent through the gateway; accepting the
+ID is not a promise that its provider supports every operation.
+
+Masked edits normally ask the model to edit a context crop, then composite its
+result locally through the effective selection. Pixels outside that coverage
+stay unchanged; expansion and feathering deliberately change the coverage.
+The model does not receive the exact selection outline on this path, so clipping
+can discard useful details even when protection is exact. Reference images are
+forwarded when requested; provider errors are surfaced rather than silently
+dropping the reference or switching models.
+
+The [size planner](../packages/providers/src/image-frame.ts) owns known model
+constraints. Supported dimensions go through directly; unsupported dimensions
+can require enlargement and declared padding, not an arbitrary crop afterward.
+Recorded execution metadata distinguishes the requested canvas from its retained
+content. Models without a known size policy receive the requested dimensions.
+
 ## Select the intended subject
 
 A point says where to select. Text says what to select. Combining them lets a

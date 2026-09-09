@@ -100,7 +100,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
   constructor(options: GatewayImageModelAdapterOptions) {
     this.id =
       options.mask === "native" ? "gateway-image-v1" : "gateway-image-instruction-composite-v1";
-    this.version = options.model === "openai/gpt-image-2" ? "4" : "3";
+    this.version = "5";
     this.model = options.model;
     this.mask = options.mask;
     this.maskPolarity = options.maskPolarity;
@@ -204,8 +204,6 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     const output = planImageOutput(this.model, dimensions);
     prepared.warnings.push(...output.warnings);
     const strength = reference?.strength;
-    if (strength !== undefined && !prepared.reference)
-      throw new PhotoctlError("usage", `Reference strength is unsupported by ${this.model}`);
     if (negativePrompt !== undefined) prompt = buildNegativeGuidancePrompt(prompt, negativePrompt);
     if (strength !== undefined) prompt = buildReferenceStrengthPrompt(prompt, strength);
     prompt = buildImageFramePrompt(prompt, output);
@@ -254,15 +252,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
   private prepareControls(controls: ImageEditControls) {
     const warnings: Warning[] = [];
     const fixture = this.model === FAKE_IMAGE_EDIT_MODEL;
-    const reference =
-      controls.reference && (this.model === "openai/gpt-image-2" || fixture)
-        ? controls.reference
-        : undefined;
-    if (controls.reference && !reference)
-      warnings.push({
-        code: "provider_warning",
-        message: `Reference images are unsupported by ${this.model}; the reference was not sent`,
-      });
+    const reference = controls.reference;
     if (!fixture && controls.init && controls.init !== "original")
       warnings.push({
         code: "provider_warning",
@@ -321,17 +311,11 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
 export function createGatewayImageModelAdapter(
   options: Omit<GatewayImageModelAdapterOptions, "mask" | "maskPolarity">,
 ): GatewayImageModelAdapter {
-  return options.model === FAKE_IMAGE_EDIT_MODEL || options.model === "openai/gpt-image-2"
-    ? new GatewayImageModelAdapter({
-        ...options,
-        mask: "instruction+composite",
-        maskPolarity: "unverified",
-      })
-    : new GatewayImageModelAdapter({
-        ...options,
-        mask: "native",
-        maskPolarity: "unverified",
-      });
+  return new GatewayImageModelAdapter({
+    ...options,
+    mask: "instruction+composite",
+    maskPolarity: "unverified",
+  });
 }
 
 async function downloadImage(

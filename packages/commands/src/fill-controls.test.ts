@@ -15,7 +15,7 @@ import { dispatch } from "./dispatch.js";
 
 test.each([
   { model: FAKE_IMAGE_EDIT_MODEL, supported: true },
-  { model: "fixture/unsupported-controls", supported: false },
+  { model: "fixture/unsupported-init", supported: false },
 ])(
   "fill repeat and refresh retain immutable reference/init intent ($model)",
   async ({ model, supported }) => {
@@ -98,7 +98,6 @@ test.each([
             supported
               ? []
               : [
-                  `Reference images are unsupported by ${model}; the reference was not sent`,
                   `Initialization ${requestedInit} is unsupported by ${model}; original initialization was used`,
                 ],
           );
@@ -132,7 +131,7 @@ test.each([
       expect(sent).toMatchObject([
         {
           init: supported ? "noise" : null,
-          references: supported ? [Array.from({ length: 6 }, () => [255, 0, 0, 128]).flat()] : [],
+          references: [Array.from({ length: 6 }, () => [255, 0, 0, 128]).flat()],
         },
       ]);
       const node = (await command("graph", ["node", id, first.generation.node])) as {
@@ -144,7 +143,7 @@ test.each([
         controls: {
           requested_init: "noise",
           applied_init: supported ? "noise" : "original",
-          reference_used: supported,
+          reference_used: true,
         },
       });
       await sharp({ create: { width: 3, height: 2, channels: 4, background: "#0000ff80" } })
@@ -155,7 +154,7 @@ test.each([
       expect(sent).toHaveLength(2);
       expect(sent[1]).toMatchObject({
         init: supported ? "noise" : null,
-        references: supported ? [Array.from({ length: 6 }, () => [0, 0, 255, 128]).flat()] : [],
+        references: [Array.from({ length: 6 }, () => [0, 0, 255, 128]).flat()],
       });
       const changedInit = fillStrictDataSchema.parse(
         await command("fill", [...args.slice(0, -1), "fill"]),
@@ -173,7 +172,7 @@ test.each([
       expect(sent).toHaveLength(4);
       expect(sent[3]).toMatchObject({
         init: supported ? "fill" : null,
-        references: supported ? [Array.from({ length: 6 }, () => [0, 0, 255, 64]).flat()] : [],
+        references: [Array.from({ length: 6 }, () => [0, 0, 255, 64]).flat()],
       });
       await rm(reference);
       await command("layer", ["refresh", id, layer]);

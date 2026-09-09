@@ -16,7 +16,8 @@ export function planImageOutput(
   model: string,
   { w, h }: { w: number; h: number },
 ): ImageOutputPlan {
-  if (model !== "openai/gpt-image-2") return { outputDimensions: { w, h }, warnings: [] };
+  if (model !== "openai/gpt-image-2.5-flare" && model !== "openai/gpt-image-2.5-sunburst")
+    return { outputDimensions: { w, h }, warnings: [] };
   const unsupported = () =>
     new PhotoctlError(
       "usage",
@@ -27,10 +28,10 @@ export function planImageOutput(
     !Number.isSafeInteger(h) ||
     w < 1 ||
     h < 1 ||
-    Math.max(w, h) >= 3840
+    Math.max(w, h) > 3840
   )
     throw unsupported();
-  // https://developers.openai.com/cookbook/examples/multimodal/image-gen-models-prompting-guide
+  // https://developers.openai.com/api/docs/guides/image-generation
   // Integer scaling keeps the entire source rectangle exactly representable after unpadding.
   const maxScale = Math.max(1, Math.ceil(Math.sqrt(655_360 / (w * h))));
   for (let scale = 1; scale <= maxScale; scale += 1) {
@@ -40,7 +41,7 @@ export function planImageOutput(
     let canvasH = Math.ceil(contentH / 16) * 16;
     if (canvasW > canvasH * 3) canvasH = Math.ceil(canvasW / 3 / 16) * 16;
     if (canvasH > canvasW * 3) canvasW = Math.ceil(canvasH / 3 / 16) * 16;
-    if (Math.max(canvasW, canvasH) >= 3840 || canvasW * canvasH > 8_294_400) throw unsupported();
+    if (Math.max(canvasW, canvasH) > 3840 || canvasW * canvasH > 8_294_400) throw unsupported();
     if (canvasW * canvasH < 655_360) continue;
     const outputDimensions = { w: canvasW, h: canvasH };
     if (canvasW === w && canvasH === h) return { outputDimensions, warnings: [] };

@@ -4,6 +4,7 @@ import { withLibrary } from "@photoctl/test-harness";
 import { dispatch } from "./dispatch.js";
 import { join } from "node:path";
 import { doctorDataSchema } from "@photoctl/protocol";
+import { DEFAULT_MODELS } from "@photoctl/providers";
 
 let handle: LibraryHandle | undefined;
 afterEach(async () => {
@@ -38,7 +39,7 @@ test("doctor reports fixed and library-overridden provider ids without exposing 
           gateway: {
             configured: true,
             models: {
-              edit: "openai/gpt-image-2",
+              edit: DEFAULT_MODELS.edit,
               structured: "company/vision-v1",
               embed: "google/gemini-embedding-2",
             },

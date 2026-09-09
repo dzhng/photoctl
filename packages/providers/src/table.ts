@@ -1,8 +1,8 @@
 import { concreteModelIdSchema, type UserSettings } from "@photoctl/protocol";
 
 export const DEFAULT_MODELS = {
-  edit: "openai/gpt-image-2",
-  generate: "openai/gpt-image-2",
+  edit: "openai/gpt-image-2.5-flare",
+  generate: "openai/gpt-image-2.5-flare",
   structured: "google/gemini-3-flash",
   embed: "google/gemini-embedding-2",
   upscale: "photoctl/fake-upscale-v1",

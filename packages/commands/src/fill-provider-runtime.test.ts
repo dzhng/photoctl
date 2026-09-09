@@ -20,10 +20,17 @@ afterEach(async () => {
 test.each([
   [FAKE_IMAGE_EDIT_MODEL, { w: 383, h: 384 }, null],
   [
-    "openai/gpt-image-2",
+    "openai/gpt-image-2.5-flare",
     { w: 1149, h: 1152 },
     { source: [0, 0, 383, 384], output: [0, 0, 1149, 1152] },
   ],
+  [
+    "openai/gpt-image-2.5-sunburst",
+    { w: 1149, h: 1152 },
+    { source: [0, 0, 383, 384], output: [0, 0, 1149, 1152] },
+  ],
+  ["vendor/custom-image", { w: 383, h: 384 }, null],
+  ["openai/gpt-image-2", { w: 383, h: 384 }, null],
 ] as const)(
   "the built CLI uses %s with instruction-composite through real HTTP",
   async (model, returned, frameMapping) => {
@@ -128,20 +135,6 @@ test.each([
   },
   30_000,
 );
-
-test("a fixture URL alone cannot bypass unverified native-mask safety", async () => {
-  let requests = 0;
-  const fixture = await cliFixture({ onRequest: () => (requests += 1) });
-
-  const filled = await spawnPhotoctl(fillArgs(fixture, "fixture/unverified-image-model"), {
-    libraryDir: fixture.library,
-    env: fixture.env,
-  });
-
-  expect(filled.code).toBe(69);
-  expect(filled.json).toMatchObject({ ok: false, code: "provider_unverified_mask" });
-  expect(requests).toBe(0);
-}, 30_000);
 
 test.each([
   ["wrong-aspect", "wrongaspect"],

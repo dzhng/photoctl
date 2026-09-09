@@ -52,27 +52,46 @@ async function png(background: string): Promise<Buffer> {
     .toBuffer();
 }
 
-test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
-  "%s reference-guided generation preserves its prompt without a mask",
-  async (model) => {
-    const adapter = createGatewayImageModelAdapter({ model });
-    const reference = await png("#00ff00");
-    const prepared = adapter.buildGeneration("a ceramic vase", { w: 1024, h: 1024 }, 11, {
-      png: reference,
-    });
-    expect(prepared.route).toBe("edits");
-    if (prepared.route !== "edits") throw new Error("Expected reference edit request");
-    const wire = await new Request("https://gateway.test/v1/images/edits", {
-      method: "POST",
-      body: prepared.body,
-    }).formData();
-    expect(Buffer.from(await (wire.get("image[]") as File).arrayBuffer())).toEqual(reference);
-    expect(wire.has("mask")).toBe(false);
-    expect(wire.get("size")).toBe("1024x1024");
-    expect(wire.get("prompt")).toBe("a ceramic vase");
-    expect(prepared.appliedControls.reference).toBe(true);
-  },
-);
+test("an arbitrary image model can attempt a masked edit without a native mask contract", async () => {
+  const adapter = createGatewayImageModelAdapter({ model: "vendor/custom-image" });
+  const crop = await png("#ff0000");
+  const prepared = await adapter.buildEdit(
+    "replace",
+    { png: crop, w: 2, h: 2 },
+    await png("#ffffff"),
+    "make it blue",
+  );
+  expect(prepared.body.get("model")).toBe("vendor/custom-image");
+  expect(prepared.body.has("mask")).toBe(false);
+  expect(prepared.body.get("prompt")).toContain("make it blue");
+  expect(Buffer.from(await (prepared.body.get("image") as Blob).arrayBuffer())).toEqual(crop);
+  expect(adapter.mask).toBe("instruction+composite");
+});
+
+test.each([
+  FAKE_IMAGE_EDIT_MODEL,
+  "openai/gpt-image-2.5-flare",
+  "openai/gpt-image-2.5-sunburst",
+  "vendor/custom-image",
+  "openai/gpt-image-2",
+])("%s reference-guided generation preserves its prompt without a mask", async (model) => {
+  const adapter = createGatewayImageModelAdapter({ model });
+  const reference = await png("#00ff00");
+  const prepared = adapter.buildGeneration("a ceramic vase", { w: 1024, h: 1024 }, 11, {
+    png: reference,
+  });
+  expect(prepared.route).toBe("edits");
+  if (prepared.route !== "edits") throw new Error("Expected reference edit request");
+  const wire = await new Request("https://gateway.test/v1/images/edits", {
+    method: "POST",
+    body: prepared.body,
+  }).formData();
+  expect(Buffer.from(await (wire.get("image[]") as File).arrayBuffer())).toEqual(reference);
+  expect(wire.has("mask")).toBe(false);
+  expect(wire.get("size")).toBe("1024x1024");
+  expect(wire.get("prompt")).toBe("a ceramic vase");
+  expect(prepared.appliedControls.reference).toBe(true);
+});
 
 test("the fixture consumes delegated initialization instead of silently ignoring it", async () => {
   const server = await startGatewayFixture();
