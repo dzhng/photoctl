@@ -145,3 +145,53 @@ authored points, while fine wires and foliage still require their visual gates.
 
 Verdict: sound. Preserves selection intent without imposing deleted binary
 semantics. Confidence: high.
+
+## Selection: validate clicks with the prepared frame owner
+
+When: slice 05, 2026-09-09; clarified and approved during the pass.
+
+The choice: configured segmentation receives the user's base-image points
+alongside whether text grounding is needed. If a click lies outside the current
+crop, that existing frame owner rejects it before the gateway call. The click
+then chooses among finished masks; it never becomes automatic decoder guidance.
+
+The gap: clicks previously reached the local decoder, where crop validation
+occurred. Separating instance selection from mask prompting would otherwise
+bypass that check. A new callback or service could restore it, but would create
+another boundary for geometry already owned by configured segmentation.
+
+The reach: the internal setup request changes from a text boolean to a small
+text-and-points request. Text click validation maps the center of the floored
+base pixel, matching the projected alpha sample. Mapping a raw integer click
+at a rotated crop edge can incorrectly place it outside the render even though
+that pixel is covered. Explicit decoder points keep their original coordinate
+semantics. Signed decoder requests independently declare one base
+or render space for all their geometry. No new public flag or coordinate owner
+is needed.
+
+Verdict: sound. An independent review found the rotated integer-edge mismatch;
+the new case failed before centering and passed afterward. The rotated-crop
+consumer test also detects a second conversion
+of render guidance and a click that incorrectly reaches the gateway from outside
+the crop. Confidence: high.
+
+## Selection: report unresolved clicks in the existing error envelope
+
+When: slice 05, 2026-09-09.
+
+The choice: a click that hits no mask returns `usage` with reason `no_match`;
+a click that hits several masks returns `ambiguous_match`. Error data includes
+the original base point and a readable message. For example, when a user's
+second click misses after the first succeeds, the response identifies that
+second point and no revision is created.
+
+The gap: the plan required clear errors but did not name their structured data.
+The command dispatcher emits explicit error data instead of the exception
+message when data is present. Returning only the photo id would conceal why
+selection failed.
+
+The reach: callers can distinguish the two failure cases inside the existing
+envelope. Saved mask bytes and the nonzero-support summary remain unchanged.
+
+Verdict: sound. The error describes the unresolved selection without silently
+choosing an instance or adding a separate response API. Confidence: high.

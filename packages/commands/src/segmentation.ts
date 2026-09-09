@@ -62,12 +62,12 @@ export async function configuredSegmentation(
   env: RequestEnv,
   cwd: string,
   photo: StoredPhoto,
-  text: boolean,
+  selection: { text: boolean; points: Array<[number, number]> },
   segmenter = createLibrarySegmenter(handle.path),
   emit?: (event: StderrEvent) => void | Promise<void>,
 ): Promise<SegmentationDependencies> {
   await withRuntimeDiagnostics((diagnostics) => segmenter.ready(diagnostics), emit);
-  if (text && !env.gatewayApiKey)
+  if (selection.text && !env.gatewayApiKey)
     throw new PhotoctlError("provider_unconfigured", "AI_GATEWAY_API_KEY is not configured");
   const document = await loadActiveDocument(handle, photo.id);
   const state = document
@@ -101,7 +101,7 @@ export async function configuredSegmentation(
         canvas,
       );
       let groundingImage;
-      if (text) {
+      if (selection.text) {
         const pixels = segmentationGroundingPixels(frame.image);
         groundingImage = {
           bytes: await sharp(pixels.data, {
@@ -127,28 +127,45 @@ export async function configuredSegmentation(
       };
     },
   );
+  const assertInFrame = (points: Array<[number, number]>) => {
+    if (
+      points.some(
+        ([x, y]) =>
+          !Number.isFinite(x) ||
+          !Number.isFinite(y) ||
+          x < 0 ||
+          y < 0 ||
+          x >= prepared.dimensions.w ||
+          y >= prepared.dimensions.h,
+      )
+    )
+      throw new PhotoctlError("usage", "Segment point is outside the current develop crop", {
+        id: photo.id,
+      });
+  };
+  // Text clicks identify a sampled base pixel; its center must use the same frame as projected alpha.
+  assertInFrame(
+    selection.points.map(([x, y]) =>
+      point(selection.text ? [Math.floor(x) + 0.5, Math.floor(y) + 0.5] : [x, y]),
+    ),
+  );
   const sourceWarning = graphSourceWarning(photo.id, fallback);
   const dependencies: SegmentationDependencies = {
-    groundingSpace: "render",
     warnings: sourceWarning ? [sourceWarning] : [],
     local: {
-      segment: async ({ points, box, boxSpace }) => {
-        const mappedPoints = points.map(point);
-        if (
-          mappedPoints.some(
-            ([x, y]) => x < 0 || y < 0 || x >= prepared.dimensions.w || y >= prepared.dimensions.h,
-          )
-        )
-          throw new PhotoctlError("usage", "Segment point is outside the current develop crop", {
-            id: photo.id,
-          });
+      segment: async ({ points, box, space }) => {
+        const mappedPoints = points.map(({ at, label }) => ({
+          at: space === "base" ? point(at) : at,
+          label,
+        }));
+        assertInFrame(mappedPoints.map(({ at }) => at));
         return await withRuntimeDiagnostics(
           (diagnostics) =>
             prepared.segment(
               {
                 projection: { dimensions: { w: photo.w, h: photo.h }, baseToImage: matrix },
-                points: mappedPoints.map((at) => ({ at, label: 1 })),
-                ...(box ? { box: boxSpace === "render" ? box : mapBox(box) } : {}),
+                points: mappedPoints,
+                ...(box ? { box: space === "render" ? box : mapBox(box) } : {}),
               },
               diagnostics,
             ),
@@ -157,7 +174,7 @@ export async function configuredSegmentation(
       },
     },
   };
-  if (text) {
+  if (selection.text) {
     dependencies.image = grounding;
     dependencies.structured = new GatewayStructuredModelAdapter({
       gateway: new GatewayClient({ apiKey: env.gatewayApiKey, baseUrl: env.gatewayUrl }),

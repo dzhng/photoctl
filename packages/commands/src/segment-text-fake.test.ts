@@ -4,7 +4,8 @@ import {
   loadActiveDocument,
   rasterizeManualMask,
   ZimSegmenter,
-  type MaskImage,
+  readArtifactMask,
+  artifactPath,
 } from "@photoctl/render";
 import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import sharp from "sharp";
@@ -23,9 +24,14 @@ const groundingPoints: GroundedInstance["points"] = Array.from({ length: 12 }, (
   label: index < 5 ? 1 : 0,
 }));
 
-test.each([false, true])(
-  "segmentation rejects a revision changed during inference through a shared handle (existing=%s)",
-  async (existing) => {
+test.each([
+  { existing: false, text: false },
+  { existing: true, text: false },
+  { existing: false, text: true },
+  { existing: true, text: true },
+])(
+  "segmentation rejects a revision changed during inference through a shared handle (%j)",
+  async ({ existing, text }) => {
     const fixture = await fixtureLibrary("stale-inference");
     const request = (verb: string, args: string[]) => ({
       verb,
@@ -46,17 +52,33 @@ test.each([false, true])(
     };
     try {
       if (existing) await addManual("0,0,2,2");
-      const response = await dispatch(request("segment", [fixture.id, "--at", "3,2"]), {
-        ...context,
-        segmentation: {
-          local: {
-            segment: async ({ dimensions }) => {
-              await addManual("4,2,2,2");
-              return { ...dimensions, data: new Float32Array(dimensions.w * dimensions.h).fill(1) };
+      const response = await dispatch(
+        request("segment", [fixture.id, "--at", "3,2", ...(text ? ["--text", "person"] : [])]),
+        {
+          ...context,
+          segmentation: {
+            ...(text
+              ? {
+                  structured: cannedGrounding([{ label: "person", box_2d: [0, 0, 8, 6] }]),
+                  image: {
+                    bytes: Buffer.from("jpeg"),
+                    mediaType: "image/jpeg" as const,
+                    dimensions: { w: 8, h: 6 },
+                  },
+                }
+              : {}),
+            local: {
+              segment: async ({ dimensions }) => {
+                await addManual("4,2,2,2");
+                return {
+                  ...dimensions,
+                  data: new Float32Array(dimensions.w * dimensions.h).fill(1),
+                };
+              },
             },
           },
         },
-      });
+      );
       expect(response).toMatchObject({
         ok: false,
         code: "library_locked",
@@ -286,9 +308,11 @@ test("empty production grounding preserves JPEG bytes without encoding or evicti
   }
 });
 
-test("production text grounding uses the cropped render box and commits masks in base coordinates", async () => {
+test("production text guidance preserves polarity through a rotated crop and click-tests projected base alpha", async () => {
   const fixture = await fixtureLibrary("grounded-production");
+  let groundingCalls = 0;
   const server = createServer((_request, response) => {
+    groundingCalls += 1;
     response.setHeader("content-type", "application/json");
     response.end(
       JSON.stringify({
@@ -297,7 +321,14 @@ test("production text grounding uses the cropped render box and commits masks in
             message: {
               content: JSON.stringify({
                 instances: [
-                  { label: "person", box_2d: [0, 0, 1000, 1000], points: groundingPoints },
+                  {
+                    label: "person",
+                    box_2d: [0, 0, 1000, 1000],
+                    points: groundingPoints.map(({ label }) => ({
+                      label,
+                      at: label ? [333, 250] : [667, 750],
+                    })),
+                  },
                 ],
               }),
             },
@@ -335,10 +366,13 @@ test("production text grounding uses the cropped render box and commits masks in
           })),
         runDecoder: async (inputs) => {
           expect([...inputs.find((input) => input.name === "point_labels")!.f32Data!]).toEqual([
-            2, 3,
+            1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, -1,
           ]);
           expect([...inputs.find((input) => input.name === "point_coords")!.f32Data!]).toEqual([
-            0, 0, 768, 1024,
+            ...Array.from({ length: 5 }, () => [256, 256]).flat(),
+            ...Array.from({ length: 7 }, () => [512, 768]).flat(),
+            -0.5,
+            -0.5,
           ]);
           return [
             { dimensions: [1, 4, 512, 512], data: new Float32Array(4 * 512 * 512).fill(1000) },
@@ -368,7 +402,12 @@ test("production text grounding uses the cropped render box and commits masks in
     let result;
     try {
       result = await dispatch(
-        { verb: "segment", args: [fixture.id, "--text", "person"], cwd: fixture.parent, env },
+        {
+          verb: "segment",
+          args: [fixture.id, "--text", "person", "--at", "3,1"],
+          cwd: fixture.parent,
+          env,
+        },
         context,
       );
     } finally {
@@ -381,6 +420,20 @@ test("production text grounding uses the cropped render box and commits masks in
         instances: [{ label: "person", bbox: [2, 1, 4, 3], mask: { pixels: 12 } }],
       },
     });
+    const revision = (await loadActiveDocument(fixture.handle, fixture.id))!.revisionId;
+    expect(
+      await dispatch(
+        {
+          verb: "segment",
+          args: [fixture.id, "--text", "person", "--at", "0,0"],
+          cwd: fixture.parent,
+          env,
+        },
+        context,
+      ),
+    ).toMatchObject({ ok: false, code: "usage" });
+    expect(groundingCalls).toBe(1);
+    expect((await loadActiveDocument(fixture.handle, fixture.id))!.revisionId).toBe(revision);
     expect(
       await dispatch({ verb: "show", args: [fixture.id], cwd: fixture.parent, env }, context),
     ).toMatchObject({ ok: true });
@@ -525,6 +578,195 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
 });
 
+test("text preserves each instance's signed guidance and saves fractional coverage without its locating box", async () => {
+  const fixture = await fixtureLibrary("signed-text");
+  const points: GroundedInstance["points"] = [
+    { at: [1, 1], label: 1 },
+    { at: [2, 1], label: 1 },
+    { at: [1, 2], label: 1 },
+    { at: [2, 2], label: 1 },
+    { at: [3, 2], label: 1 },
+    { at: [0, 0], label: 0 },
+    { at: [3, 1], label: 0 },
+    { at: [4, 1], label: 0 },
+    { at: [4, 2], label: 0 },
+    { at: [5, 3], label: 0 },
+    { at: [6, 4], label: 0 },
+    { at: [7, 5], label: 0 },
+  ];
+  try {
+    const response = await dispatch(
+      {
+        verb: "segment",
+        args: [fixture.id, "--text", "patterned fabric"],
+        cwd: fixture.parent,
+        env: { noDaemon: true },
+      },
+      {
+        version: "test",
+        library: fixture.handle,
+        segmentation: {
+          structured: cannedGrounding([{ label: "fabric", box_2d: [0, 0, 8, 6], points }]),
+          image: {
+            bytes: Buffer.from("jpeg"),
+            mediaType: "image/jpeg",
+            dimensions: { w: 8, h: 6 },
+          },
+          local: {
+            segment: async ({ dimensions, points: guidance, box }) => {
+              if (box) return rasterizeManualMask(dimensions, { kind: "box", bbox: box }).mask;
+              const data = new Float32Array(dimensions.w * dimensions.h);
+              for (const {
+                at: [x, y],
+                label,
+              } of guidance)
+                data[y * dimensions.w + x] = label ? 0.75 : 0;
+              return { ...dimensions, data };
+            },
+          },
+        },
+      },
+    );
+    expect(response).toMatchObject({
+      ok: true,
+      data: { instances: [{ label: "fabric", mask: { pixels: 5, bbox: [1, 1, 3, 2] } }] },
+    });
+    if (!response.ok) throw new Error("segment failed");
+    const hash = segmentInstancesDataSchema.parse(response.data).instances[0]!.mask.artifact_hash!;
+    const saved = await readArtifactMask(artifactPath(fixture.handle.path, hash, "tif"), hash);
+    expect(saved.data[1 * 8 + 1]).toBe(0.75);
+    expect(saved.data[1 * 8 + 3]).toBe(0);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("text clicks select actual alpha at the floored base pixel despite overlapping instance boxes", async () => {
+  const left = new Float32Array(48).fill(0.1);
+  const right = new Float32Array(48).fill(0.1);
+  left[1 * 8 + 1] = 0.9;
+  left[3 * 8 + 6] = 0.49;
+  right[3 * 8 + 6] = 0.5;
+  const fixture = await groundedMaskFixture("alpha-click", [left, right]);
+  try {
+    const response = await fixture.select(["--at", "6.9,3.1"]);
+    expect(response).toMatchObject({
+      ok: true,
+      data: { instances: [{ i: 0, label: "subject 2", mask: { pixels: 48 } }] },
+    });
+    if (!response.ok) throw new Error("segment failed");
+    expect(
+      segmentInstancesDataSchema.parse(response.data).instances.map((instance) => instance.label),
+    ).toEqual(["subject 2"]);
+    const hash = segmentInstancesDataSchema.parse(response.data).instances[0]!.mask.artifact_hash!;
+    expect(
+      (await readArtifactMask(artifactPath(fixture.handle.path, hash, "tif"), hash)).data,
+    ).toEqual(right);
+    expect(
+      (await fixture.handle.query("SELECT name FROM document_revision_layers ORDER BY z")).rows,
+    ).toEqual([{ name: "subject 2" }]);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test.each([false, true])(
+  "text rejects an ambiguous actual mask hit without a revision (dryRun=%s)",
+  async (dryRun) => {
+    const first = new Float32Array(48);
+    const second = new Float32Array(48);
+    first[2 * 8 + 3] = 0.8;
+    second[2 * 8 + 3] = 0.5;
+    const fixture = await groundedMaskFixture("ambiguous-click", [first, second]);
+    try {
+      const response = await fixture.select(["--at", "3,2", ...(dryRun ? ["--dry-run"] : [])]);
+      expect(response).toMatchObject({
+        ok: false,
+        code: "usage",
+        data: {
+          reason: "ambiguous_match",
+          point: [3, 2],
+          message: expect.stringContaining("multiple"),
+        },
+      });
+      expect((await fixture.handle.query("SELECT id FROM document_revisions")).rows).toEqual([]);
+      expect((await fixture.handle.query("SELECT id FROM layers")).rows).toEqual([]);
+    } finally {
+      await fixture.handle.close();
+    }
+  },
+);
+
+test.each([false, true])(
+  "every text click must hit a mask before any revision commits (dryRun=%s)",
+  async (dryRun) => {
+    const mask = new Float32Array(48).fill(0.49);
+    mask[1 * 8 + 1] = 1;
+    const fixture = await groundedMaskFixture("missed-click", [mask]);
+    try {
+      const response = await fixture.select([
+        "--at",
+        "1,1",
+        "--at",
+        "6,3",
+        ...(dryRun ? ["--dry-run"] : []),
+      ]);
+      expect(response).toMatchObject({
+        ok: false,
+        code: "usage",
+        data: { reason: "no_match", point: [6, 3] },
+      });
+      expect((await fixture.handle.query("SELECT id FROM document_revisions")).rows).toEqual([]);
+      expect((await fixture.handle.query("SELECT id FROM layers")).rows).toEqual([]);
+    } finally {
+      await fixture.handle.close();
+    }
+  },
+);
+
+test("repeated text clicks choose each hit instance once in grounding order", async () => {
+  const masks = [new Float32Array(48), new Float32Array(48), new Float32Array(48)];
+  masks[0]![1 * 8 + 1] = 1;
+  masks[1]![2 * 8 + 4] = 1;
+  masks[2]![3 * 8 + 6] = 1;
+  const fixture = await groundedMaskFixture("repeated-clicks", masks);
+  try {
+    const response = await fixture.select(["--at", "6,3", "--at", "1,1", "--at", "6,3"]);
+    expect(response).toMatchObject({ ok: true });
+    if (!response.ok) throw new Error("segment failed");
+    expect(
+      segmentInstancesDataSchema
+        .parse(response.data)
+        .instances.map(({ i, label }) => ({ i, label })),
+    ).toEqual([
+      { i: 0, label: "subject 1" },
+      { i: 1, label: "subject 3" },
+    ]);
+    expect(
+      (await fixture.handle.query("SELECT name, z FROM document_revision_layers ORDER BY z")).rows,
+    ).toEqual([
+      { name: "subject 1", z: 0 },
+      { name: "subject 3", z: 1 },
+    ]);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
+test("a text click with no grounded instances reports no match", async () => {
+  const fixture = await groundedMaskFixture("empty-click", []);
+  try {
+    expect(await fixture.select(["--at", "1,1"])).toMatchObject({
+      ok: false,
+      code: "usage",
+      data: { reason: "no_match", point: [1, 1] },
+    });
+    expect((await fixture.handle.query("SELECT id FROM document_revisions")).rows).toEqual([]);
+  } finally {
+    await fixture.handle.close();
+  }
+});
+
 test("text grounding creates one base-coordinate mask layer per returned instance", async () => {
   const fixture = await fixtureLibrary("text");
   try {
@@ -532,7 +774,10 @@ test("text grounding creates one base-coordinate mask layer per returned instanc
       { box_2d: [1, 1, 2, 2], label: "left person" },
       { box_2d: [4, 2, 3, 2], label: "right person" },
     ]);
-    const segmenter = boxSegmenter();
+    const segmenter = fixtureSegmenter([
+      [1, 1, 2, 2],
+      [4, 2, 3, 2],
+    ]);
     const response = await dispatch(
       {
         verb: "segment",
@@ -569,8 +814,8 @@ test("text grounding creates one base-coordinate mask layer per returned instanc
     if (!response.ok) throw new Error("segment failed");
     segmentInstancesDataSchema.parse(response.data);
     expect(segmenter.prompts).toEqual([
-      { points: [], box: [1, 1, 2, 2] },
-      { points: [], box: [4, 2, 3, 2] },
+      { points: groundingPoints, space: "render" },
+      { points: groundingPoints, space: "render" },
     ]);
     const rows = await fixture.handle.query<{ name: string; z: number }>(
       "SELECT name, z FROM document_revision_layers ORDER BY z",
@@ -598,7 +843,7 @@ test("text dry-run returns grounded masks without creating graph or layer rows",
         version: "test",
         library: fixture.handle,
         segmentation: {
-          local: boxSegmenter(),
+          local: fixtureSegmenter([[2, 1, 3, 4]]),
           structured: cannedGrounding([{ box_2d: [2, 1, 3, 4], label: "person" }]),
           image: {
             bytes: Buffer.from("jpeg"),
@@ -631,13 +876,12 @@ test("text dry-run returns grounded masks without creating graph or layer rows",
 test("point segmentation preserves every point and an optional box in base coordinates", async () => {
   const fixture = await fixtureLibrary("points");
   try {
-    const prompts: Array<{
-      points: Array<[number, number]>;
-      box?: [number, number, number, number];
-    }> = [];
+    const prompts: Array<
+      Pick<Parameters<SegmentationAdapter["segment"]>[0], "points" | "box" | "space">
+    > = [];
     const local: SegmentationAdapter = {
-      segment: async ({ dimensions, points, box }) => {
-        prompts.push({ points, ...(box ? { box } : {}) });
+      segment: async ({ dimensions, points, box, space }) => {
+        prompts.push({ points, space, ...(box ? { box } : {}) });
         return rasterizeManualMask(dimensions, { kind: "box", bbox: [1, 1, 4, 3] }).mask;
       },
     };
@@ -667,9 +911,10 @@ test("point segmentation preserves every point and an optional box in base coord
     expect(prompts).toEqual([
       {
         points: [
-          [2, 3],
-          [4, 3],
+          { at: [2, 3], label: 1 },
+          { at: [4, 3], label: 1 },
         ],
+        space: "base",
         box: [1, expect.closeTo(1), 4, 3],
       },
     ]);
@@ -692,7 +937,7 @@ test("text with no grounded matches succeeds without creating a revision", async
         version: "test",
         library: fixture.handle,
         segmentation: {
-          local: boxSegmenter(),
+          local: fixtureSegmenter(),
           structured: cannedGrounding([]),
           image: {
             bytes: Buffer.from("jpeg"),
@@ -743,14 +988,17 @@ test("a non-positive segmentation box is rejected before local segmentation", as
 });
 
 function cannedGrounding(
-  instances: Array<Omit<GroundedInstance, "points">>,
+  instances: Array<Omit<GroundedInstance, "points"> & Partial<Pick<GroundedInstance, "points">>>,
 ): StructuredModelAdapter {
   return {
     id: "fake-grounding",
     version: "1",
     ask: async <Value>(schema: { parse(value: unknown): Value }) => ({
       value: schema.parse({
-        instances: instances.map((instance) => ({ ...instance, points: groundingPoints })),
+        instances: instances.map((instance) => ({
+          ...instance,
+          points: instance.points ?? groundingPoints,
+        })),
       }),
       model: "fake/grounding-v1",
       requestId: "fixture-request",
@@ -759,19 +1007,65 @@ function cannedGrounding(
   };
 }
 
-function boxSegmenter(): SegmentationAdapter & {
-  prompts: Array<{ points: Array<[number, number]>; box?: [number, number, number, number] }>;
+async function groundedMaskFixture(suffix: string, masks: Float32Array[]) {
+  const fixture = await fixtureLibrary(suffix);
+  const structured = cannedGrounding(
+    masks.map((_, index) => ({
+      label: `subject ${index + 1}`,
+      box_2d: [0, 0, 8, 6],
+      points: groundingPoints.map((point, pointIndex) =>
+        pointIndex === 0 ? { label: point.label, at: [index + 1, 1] } : point,
+      ),
+    })),
+  );
+  return {
+    ...fixture,
+    select: (args: string[]) =>
+      dispatch(
+        {
+          verb: "segment",
+          args: [fixture.id, "--text", "matching subjects", ...args],
+          cwd: fixture.parent,
+          env: { noDaemon: true },
+        },
+        {
+          version: "test",
+          library: fixture.handle,
+          segmentation: {
+            structured,
+            image: {
+              bytes: Buffer.from("jpeg"),
+              mediaType: "image/jpeg",
+              dimensions: { w: 8, h: 6 },
+            },
+            local: {
+              segment: async ({ dimensions, points }) => {
+                const data = masks[points[0]!.at[0] - 1];
+                if (!data) throw new Error("Missing fixture guidance");
+                return { ...dimensions, data };
+              },
+            },
+          },
+        },
+      ),
+  };
+}
+
+function fixtureSegmenter(
+  boxes: Array<[number, number, number, number]> = [],
+): SegmentationAdapter & {
+  prompts: Array<Pick<Parameters<SegmentationAdapter["segment"]>[0], "points" | "box" | "space">>;
 } {
-  const prompts: Array<{
-    points: Array<[number, number]>;
-    box?: [number, number, number, number];
-  }> = [];
+  const prompts: Array<
+    Pick<Parameters<SegmentationAdapter["segment"]>[0], "points" | "box" | "space">
+  > = [];
   return {
     prompts,
-    segment: async ({ dimensions, points, box }) => {
-      prompts.push({ points, ...(box ? { box } : {}) });
-      if (!box) throw new Error("fixture expects a box prompt");
-      return rasterizeManualMask(dimensions, { kind: "box", bbox: box }).mask as MaskImage;
+    segment: async ({ dimensions, points, box, space }) => {
+      const bounds = boxes[prompts.length];
+      prompts.push({ points, space, ...(box ? { box } : {}) });
+      if (!bounds) throw new Error("No fixture mask for this prompt");
+      return rasterizeManualMask(dimensions, { kind: "box", bbox: bounds }).mask;
     },
   };
 }

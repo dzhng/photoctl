@@ -25,22 +25,23 @@ hard-coded object classes. CLI and UI should submit the same typed request.
 Candidate selection must be tied to the source revision; a candidate identifier
 from an earlier render cannot silently refer to a different object.
 
-The exact new flags, defaults, response metadata and candidate-selection lifetime
-remain design proposals, not implemented interfaces. Existing geometry projection,
-layer storage and revision ownership must remain authoritative.
+Instance selection belongs to the current command and source revision; it does
+not create reusable candidate identifiers. Existing geometry projection, layer
+storage and revision ownership remain authoritative.
 
-## Existing seam and required change
+## Text and instance selection
 
 The current [segment command](../../packages/commands/src/handlers/segment.ts)
-asks a structured vision model for every matching instance, then forwards only
-boxes and positive points to the local segmenter. Text no longer reaches the
-mask-producing model. Combining text with points currently applies the same
-points to every returned candidate; it is not an instance hit-test.
+asks a structured vision model for signed guidance for every matching instance.
+Each instance's positive and negative points drive its own local mask. A locating
+box is not a decoder prompt for text selection.
 
-The user has now approved changing that combination: text describes the kind
-of thing and `--at` chooses which matching instance. No-match and ambiguity must
-be explicit errors rather than broadcasting the click or guessing. The command
-slice in the [implementation ladder](implementation.md) owns that cutover.
+Text describes what to select. Adding `--at` chooses which instances by testing
+the actual projected masks, so overlapping locating boxes cannot decide the
+answer. Every click must hit exactly one mask. Repeated clicks select each hit
+instance once, retaining grounding order; no-match or ambiguity creates no
+revision. Without clicks, text returns all matching instances. Clicks select
+among automatic masks without changing their guidance.
 
 Preserve target intent through that seam. Grounding may help locate an object,
 but a bounding box must not become the entire definition of "hair" or "person".

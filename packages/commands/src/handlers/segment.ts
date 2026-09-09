@@ -12,6 +12,7 @@ import {
 } from "@photoctl/render";
 import {
   groundedInstancesSchema,
+  type GroundedInstance,
   type StructuredImage,
   type StructuredModelAdapter,
 } from "@photoctl/providers";
@@ -30,9 +31,9 @@ export interface SegmentationAdapter {
   segment(request: {
     photoId: string;
     dimensions: { w: number; h: number };
-    points: Array<[number, number]>;
+    points: GroundedInstance["points"];
     box?: [number, number, number, number];
-    boxSpace?: "base" | "render";
+    space: "base" | "render";
   }): Promise<MaskImage>;
 }
 
@@ -40,7 +41,6 @@ export interface SegmentationDependencies {
   local: SegmentationAdapter;
   structured?: StructuredModelAdapter;
   image?: StructuredImage;
-  groundingSpace?: "render";
   warnings?: import("@photoctl/protocol").Warning[];
 }
 
@@ -105,12 +105,17 @@ export async function segmentCommand(
         env,
         cwd,
         photo,
-        parsed.text !== undefined,
+        { text: parsed.text !== undefined, points },
         segmenter,
         emit,
       );
       let gatewayCalls = 0;
-      let candidates: Array<{ label: string; box?: [number, number, number, number] }>;
+      let candidates: Array<
+        { label: string } & Pick<
+          Parameters<SegmentationAdapter["segment"]>[0],
+          "points" | "box" | "space"
+        >
+      >;
       if (parsed.text !== undefined) {
         if (!dependencies.structured || !dependencies.image) {
           throw new PhotoctlError(
@@ -127,33 +132,65 @@ export async function segmentCommand(
         gatewayCalls = 1;
         candidates = answer.value.instances.map((instance) => ({
           label: instance.label,
-          box: instance.box_2d,
+          points: instance.points,
+          space: "render",
         }));
       } else {
-        candidates = [{ label: "Segment", ...(explicitBox ? { box: explicitBox } : {}) }];
+        candidates = [
+          {
+            label: "Segment",
+            points: points.map((at) => ({ at, label: 1 })),
+            space: "base",
+            ...(explicitBox ? { box: explicitBox } : {}),
+          },
+        ];
       }
       const masks: Array<{ label: string }> = [];
       const summaries: ReturnType<typeof summarizeMask>[] = [];
       const prepared: Awaited<ReturnType<typeof prepareMaskLayer>>[] = [];
+      const selectionClicks =
+        parsed.text === undefined
+          ? []
+          : points.map(([x, y]) => ({
+              offset: Math.floor(y) * dimensions.w + Math.floor(x),
+              hits: 0,
+            }));
       for (const candidate of candidates) {
         const mask = await dependencies.local.segment({
           photoId,
           dimensions,
-          points,
-          box: candidate.box ?? explicitBox,
-          ...(parsed.text !== undefined && dependencies.groundingSpace
-            ? { boxSpace: dependencies.groundingSpace }
-            : {}),
+          points: candidate.points,
+          box: candidate.box,
+          space: candidate.space,
         });
         if (mask.w !== dimensions.w || mask.h !== dimensions.h) {
           throw usageError(geometry, "Mask must use oriented base-image dimensions");
         }
+        let selected = selectionClicks.length === 0;
+        for (const click of selectionClicks) {
+          if (mask.data[click.offset]! >= 0.5) {
+            click.hits += 1;
+            selected = true;
+          }
+        }
+        if (!selected) continue;
         masks.push({ label: candidate.label });
         if (parsed.dryRun) summaries.push(summarizeMask(mask));
         else {
           const layer = await prepareMaskLayer(lease.handle.path, { name: candidate.label, mask });
           prepared.push(layer);
           summaries.push(layer);
+        }
+      }
+      for (const [index, click] of selectionClicks.entries()) {
+        if (click.hits !== 1) {
+          const message = `Segment click ${index + 1} matches ${click.hits === 0 ? "no instance" : "multiple instances"}`;
+          throw new PhotoctlError("usage", message, {
+            id: photoId,
+            reason: click.hits === 0 ? "no_match" : "ambiguous_match",
+            point: points[index],
+            message,
+          });
         }
       }
       if (masks.length === 0) {
