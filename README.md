@@ -64,6 +64,7 @@ while iterating.
 ## Where things live
 
 - [Installation and live-provider plan](specs/openphoto/README.md) — current verification work and credential boundaries.
+- [Segmentation quality research](specs/segmentation-quality/README.md) — the PhotoLab target, measured candidates and remaining quality gaps.
 - [v1 record](specs/done/photoctl/README.md) — why the product has this shape, the invariants it keeps, and the decisions made along the way.
 - [Reference fixtures](fixtures/README.md) — retained inputs and the facts they establish.
 - [Native build guide](crates/photoctl-image/ort/README.md) — runtime acquisition and platform constraints.
