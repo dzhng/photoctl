@@ -1,5 +1,21 @@
 # Implementation choices
 
+## Sound — separate fixture watchdog from response deadline (medium confidence)
+
+**When:** full closeout. The foreground-tag test already asserts that the tag
+operation finishes within two seconds. Vitest's implicit five-second watchdog
+also included library creation, RAW import, worker settlement and database
+verification, and expired during the full run. Its explicit fixture watchdog is
+now twenty seconds; the two-second operation assertion and all persisted-result
+checks remain unchanged.
+
+**Gap:** the existing test conflated fixture lifetime with its responsiveness
+contract. **Reach:** only this test's total lifetime allowance changes; no
+product timeout, general runner default or tagging requirement is relaxed.
+**Verdict:** sound; the whole-run red was a harness deadline, and the focused
+retry passes the existing response and recovery assertions. **Confidence:**
+medium; twenty seconds is a conservative watchdog, not a measured product bound.
+
 ## Sound — direct typed-buffer quantization (high confidence)
 
 **When:** memory fix. A full-resolution image is already a compact floating-point

@@ -180,7 +180,8 @@ test("a foreground tag quiesces an in-flight worker and then resumes it", async 
     (await handle.query<{ tag: string }>("SELECT tag FROM tags WHERE photo_id = $1", [id])).rows,
   ).toEqual([{ tag: "foreground" }]);
   await handle.close();
-});
+  // Fixture startup and persisted-state checks are outside the two-second tag budget.
+}, 20_000);
 
 test("a foreground embed emits progress while one provider request is still in flight", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-embed-progress-"));

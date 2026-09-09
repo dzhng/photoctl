@@ -54,6 +54,15 @@ Run the final evidence audit and whole-change review, then `bun run verify` once
 with CMake/Ninja on PATH and the pinned model directory supplied. The local model
 server exposes only the two verified weights on loopback for Docker build.
 
+Final-gate progress: format/lint/typecheck and all builds pass. The complete
+TypeScript stage passed 1,169 of 1,170 tests across 214 files; one foreground-tag
+test hit its implicit five-second whole-fixture timeout. It retains its explicit
+two-second operation assertion and now has a twenty-second fixture watchdog.
+The focused retry passes in 2.61 seconds, including worker recovery and persisted
+tag/embedding assertions. Continue the already-running remaining Rust/Docker/Mac
+stages rather than restart the whole gate. Record the resumed-stage evidence
+honestly instead of calling the original invocation a single clean pass.
+
 ## Owners and boundaries
 
 One command inventory must own dispatch and discovery: no second roster that
