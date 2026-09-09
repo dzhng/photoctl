@@ -17,6 +17,8 @@ auto-enhance and live-gateway edits belong to another task and must remain intac
 - [x] [Memory](slices/02-memory.md): reproduce and remove unnecessary heap inflation;
       verify the failed Docker real-model workload.
 - [ ] [Live evidence](slices/03-live.md): automatic whole-person capture and retained review.
+- [x] [Grounding axes](slices/04-grounding-axes.md): remove ambiguous provider point ordering
+      exposed by the first real person capture; then repeat the live gate.
 - [ ] Whole-change review, choices consolidation, final closeout and archive.
 
 Memory checkpoint: both isolated pixel consumers failed by heap exhaustion before
@@ -26,6 +28,21 @@ in 63.76 seconds using unchanged Node heap defaults (reported limit 2,348,810,24
 bytes). Independent Codex review found no actionable issues. The final rebuilt
 full gate still remains; this targeted run mounted the rebuilt render output
 into the existing test image. Continue discovery and the live person capture.
+
+Live checkpoint: the first actual person request succeeded mechanically but
+selected flowers and omitted most person pixels. Its automatic coordinates align
+with intended targets when read as y/x, despite the schema description requesting
+x/y. Preserve this failed capture. Named axes at the external provider boundary
+replace ambiguous tuples; internal pixel points and public CLI coordinates stay
+x/y. This is a production wire-contract repair, not manual point rescue.
+
+Named-axis checkpoint: the real structured adapter and rotated-crop consumer
+pass all 52 tests; the rejection of ambiguous ordered pairs was falsified
+against the old conversion. Independent Codex review found no actionable issues.
+The second real person request and a separate hair control each use one gateway
+call. Independent visual reviews retain person coverage failure and hair edge
+limitations. Finish retaining their captures, integrate discovery, then run the
+whole closeout once. No additional model search is required.
 
 ## Owners and boundaries
 

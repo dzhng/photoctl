@@ -326,7 +326,7 @@ test("production text guidance preserves polarity through a rotated crop and cli
                     box_2d: [0, 0, 1000, 1000],
                     points: groundingPoints.map(({ label }) => ({
                       label,
-                      at: label ? [333, 250] : [667, 750],
+                      at: label ? { x: 333, y: 250 } : { x: 667, y: 750 },
                     })),
                   },
                 ],

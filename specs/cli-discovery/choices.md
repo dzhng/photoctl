@@ -16,3 +16,21 @@ memory control changes. The small-heap regression setting is an instrument that
 detects accidental boxed allocation, not a product memory requirement.
 **Verdict:** sound; the exact failed Docker workload passes without raising its
 heap limit. **Confidence:** high.
+
+## Sound — named axes on the provider wire (high confidence)
+
+**When:** first live whole-person capture. The provider returned sensible
+normalized coordinates in vertical/horizontal order, although a schema
+description requested horizontal/vertical order. Reading the pair as instructed
+put positive points on flowers and negative points on the person. The wire now
+requires `at: { x, y }`; the adapter converts these to the existing pixel pair.
+
+**Gap:** the earlier contract assumed a tuple description would disambiguate
+axes reliably. **Reach:** only segmentation's external structured response
+changes. CLI coordinates, internal signed points, boxes, saved masks and other
+structured schemas keep their meanings. Ordered wire pairs fail instead of
+triggering a heuristic transpose; no compatibility parser can reintroduce the
+ambiguity. **Verdict:** sound; the fresh live response uses named axes correctly,
+although the score-selected model still misses hair/clothing for the person
+request. Wire correctness is not a promise of semantic completeness.
+**Confidence:** high.

@@ -77,12 +77,24 @@ export const groundedInstancesSchema: StructuredSchema<{ instances: GroundedInst
                 additionalProperties: false,
                 properties: {
                   at: {
-                    type: "array",
-                    items: { type: "number", minimum: 0, maximum: 1000 },
-                    minItems: 2,
-                    maxItems: 2,
-                    description:
-                      "Normalized [x,y] from 0 to 1000: x left-to-right, y top-to-bottom.",
+                    type: "object",
+                    additionalProperties: false,
+                    properties: {
+                      x: {
+                        type: "number",
+                        minimum: 0,
+                        maximum: 1000,
+                        description: "Horizontal position: 0 at the left edge, 1000 at the right.",
+                      },
+                      y: {
+                        type: "number",
+                        minimum: 0,
+                        maximum: 1000,
+                        description: "Vertical position: 0 at the top edge, 1000 at the bottom.",
+                      },
+                    },
+                    required: ["x", "y"],
+                    description: "Named normalized axes, not an ordered coordinate pair.",
                   },
                   label: { type: "integer", enum: [0, 1], description: "1 includes; 0 excludes." },
                 },
@@ -207,11 +219,11 @@ function convertPoints(value: unknown, dimensions: { w: number; h: number }): un
   return z
     .array(
       groundedPointSchema.extend({
-        at: z.tuple([z.number().min(0).max(1000), z.number().min(0).max(1000)]),
+        at: z.object({ x: z.number().min(0).max(1000), y: z.number().min(0).max(1000) }).strict(),
       }),
     )
     .parse(value)
-    .map(({ at: [x, y], label }) => ({
+    .map(({ at: { x, y }, label }) => ({
       // Provider edge coordinates rasterize to the last sample without changing interior scaling.
       at: [
         Math.min(dimensions.w - 1, Math.round((x * dimensions.w) / 1000)),

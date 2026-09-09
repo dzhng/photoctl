@@ -344,6 +344,11 @@ const signedGroundingPoints = [
   { at: [999, 999], label: 0 },
 ];
 
+const providerGroundingPoints = signedGroundingPoints.map(({ at: [x, y], label }) => ({
+  at: { x, y },
+  label,
+}));
+
 test("segment grounding preserves signed points and converts provider coordinates once", async () => {
   const adapter = new GatewayStructuredModelAdapter({
     gateway: new GatewayClient({
@@ -358,9 +363,13 @@ test("segment grounding preserves signed points and converts provider coordinate
                     {
                       box_2d: [100, 200, 600, 700],
                       label: "person",
-                      points: signedGroundingPoints,
+                      points: providerGroundingPoints,
                     },
-                    { box_2d: [0, 0, 1_000, 1_000], label: "frame", points: signedGroundingPoints },
+                    {
+                      box_2d: [0, 0, 1_000, 1_000],
+                      label: "frame",
+                      points: providerGroundingPoints,
+                    },
                   ],
                 }),
               },
@@ -435,6 +444,36 @@ test("segment grounding bounds provider-controlled instance fan-out", () => {
   ).toThrow();
 });
 
+test("segment grounding refuses ambiguous ordered point pairs from a provider", async () => {
+  const adapter = new GatewayStructuredModelAdapter({
+    gateway: new GatewayClient({
+      apiKey: "fixture-key",
+      fetch: async () =>
+        Response.json({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  instances: [
+                    { label: "person", box_2d: [0, 0, 1000, 1000], points: signedGroundingPoints },
+                  ],
+                }),
+              },
+            },
+          ],
+        }),
+    }),
+    model: "fake/grounding-v1",
+  });
+  await expect(
+    adapter.ask(
+      groundedInstancesSchema,
+      [{ bytes: Buffer.from("jpeg"), mediaType: "image/jpeg", dimensions: { w: 800, h: 600 } }],
+      "Find people",
+    ),
+  ).rejects.toThrow();
+});
+
 test.each([
   [-1, 500],
   [1000.01, 500],
@@ -456,7 +495,7 @@ test.each([
                       {
                         label: "target",
                         box_2d: [0, 0, 1000, 1000],
-                        points: [{ at: [x, y], label: 1 }, ...signedGroundingPoints.slice(1)],
+                        points: [{ at: { x, y }, label: 1 }, ...providerGroundingPoints.slice(1)],
                       },
                     ],
                   }),
