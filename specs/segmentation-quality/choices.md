@@ -124,3 +124,24 @@ Verdict: sound. This follows the plan's single-owner rule. Confidence: high.
 Delegated implementation details: keep notices in the library's packaged assets;
 use named mirror/manifest options on the developer acquisition script; update
 all live script callers together. Public OpenPhoto command shapes are unchanged.
+
+## Photographic smoke: test confident coverage, not binary pixels
+
+When: acceptance harness, 2026-09-09.
+
+The choice: an independently authored interior point must have more than 95%
+alpha coverage, and an exterior point less than 5%. For example, the sky probe
+returned 0.99999994: fully selected for practical purposes, but rejected by the
+old exact-equality check. Keeping that check would require throwing away soft
+edges or rejecting the accepted fractional-mask contract. The original authored
+area limits are unchanged and this test still cannot certify thin-edge quality.
+
+The gap: the plan required soft alpha but did not define the old binary smoke
+test's numerical confidence tolerance. These limits were chosen before rerunning
+the fixture, not fitted to its measured outputs.
+
+The reach: future engines must confidently retain/exclude those independently
+authored points, while fine wires and foliage still require their visual gates.
+
+Verdict: sound. Preserves selection intent without imposing deleted binary
+semantics. Confidence: high.

@@ -64,12 +64,12 @@ prepare models before testing and pass them directly to native-runtime jobs; the
 not depend on a pre-existing public URL or repository variable. Ordinary smoke CI
 does not run the full model suite. See [release ownership](../specs/done/photoctl/README.md#release).
 
-On a host, set `PHOTOCTL_SAM_MODELS_DIR` to an existing model directory. To provision from a
+On a host, set `PHOTOCTL_SEGMENT_MODELS_DIR` to an existing model directory. To provision from a
 configured base URL, build the TypeScript packages and use the same fetch owner as Docker:
 
 ```sh
 node scripts/fetch-models.mjs /path/to/models --base-url "$PHOTOCTL_MODELS_BASE_URL"
-PHOTOCTL_SAM_MODELS_DIR=/path/to/models bun run test:macos
+PHOTOCTL_SEGMENT_MODELS_DIR=/path/to/models bun run test:macos
 ```
 
 The library's [pinned model manifest](../packages/library/src/pinned-model-manifest.ts)

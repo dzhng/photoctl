@@ -6,11 +6,11 @@ import { artifactPath, readArtifactMask } from "@photoctl/render";
 import { spawnPhotoctl, withLibrary } from "@photoctl/test-harness";
 import fixture from "../../fixtures/a7c2.json";
 
-test("real SAM selects the clicked photographic subject within independently authored bands", async () => {
-  const models = process.env.PHOTOCTL_SAM_MODELS_DIR;
+test("real segmentation selects the clicked photographic subject within independently authored bands", async () => {
+  const models = process.env.PHOTOCTL_SEGMENT_MODELS_DIR;
   expect(
     models,
-    "Set PHOTOCTL_SAM_MODELS_DIR to the hash-pinned exported ONNX directory",
+    "Set PHOTOCTL_SEGMENT_MODELS_DIR to the hash-pinned official ONNX directory",
   ).toBeTruthy();
   await withLibrary(async (parent) => {
     const library = join(parent, "library");
@@ -43,9 +43,13 @@ test("real SAM selects the clicked photographic subject within independently aut
       const area = (selected / (mask.w * mask.h)) * 100;
       expect(area, probe.label).toBeGreaterThanOrEqual(probe.min_area_pct);
       expect(area, probe.label).toBeLessThanOrEqual(probe.max_area_pct);
-      expect(mask.data[probe.at[1]! * mask.w + probe.at[0]!], probe.label).toBe(1);
+      // ZIM preserves fractional alpha. Authored interior/exterior probes must
+      // remain confidently selected/excluded; they need not be binary pixels.
+      expect(mask.data[probe.at[1]! * mask.w + probe.at[0]!], probe.label).toBeGreaterThan(0.95);
       for (const [x, y] of probe.outside) {
-        expect(mask.data[y! * mask.w + x!], `${probe.label}: excluded ${x},${y}`).toBe(0);
+        expect(mask.data[y! * mask.w + x!], `${probe.label}: excluded ${x},${y}`).toBeLessThan(
+          0.05,
+        );
       }
     }
   });

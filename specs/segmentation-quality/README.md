@@ -8,11 +8,13 @@ of coarse SAM plus manual correction does not satisfy this new goal.
 ## Next Agent Prompt
 
 Updated 2026-09-09. Execute the [implementation ladder](implementation.md),
-starting with model-acquisition integration and the command slice. Signed
-grounding and the pixel library are committed. The engine matches the accepted
+starting with command-slice integration, then production acceptance. Signed
+grounding, model acquisition and the pixel library are committed. The engine matches the accepted
 portrait appearance, its native/geometry tests pass, and its reviewed 16-encode
-probe passes the measured 10 GB canary. Acquisition is ready on its independent
-branch; do not release these partial checkpoints. The three planning drafts have been synthesized;
+probe passes the measured 10 GB canary. The real CLI photographic smoke test
+passes its unchanged authored area bands with fractional-alpha interior/exterior
+checks. Fine-detail holdouts remain open; do not release these partial checkpoints.
+The three planning drafts have been synthesized;
 do not restart the interview or model search. The full quality goal remains open.
 The user approved `--text` plus `--at` choosing the clicked matching instance;
 wire that in the command slice. The actual whole-person automatic trial still

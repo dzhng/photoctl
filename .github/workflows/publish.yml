@@ -100,7 +100,7 @@ jobs:
       - name: Verify native runtime with release models
         if: matrix.package == 'img-darwin-arm64'
         env:
-          PHOTOCTL_SAM_MODELS_DIR: ${{ github.workspace }}/out/models
+          PHOTOCTL_SEGMENT_MODELS_DIR: ${{ github.workspace }}/out/models
         run: bun run test:models
 
       - name: Build macOS helper

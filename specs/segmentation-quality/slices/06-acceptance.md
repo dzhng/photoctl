@@ -27,3 +27,10 @@ scope and quality obligations have honest acceptance evidence.
 Delegated: capture presentation and test harness details. Not quality thresholds,
 scope, omission of failing cases, or goal completion. Open review shots with
 preview-shots while continuing non-blocked cleanup; silence is not visual proof.
+
+Engineering checkpoint, 2026-09-09: the built CLI passes the original sky/road
+photographic smoke test through actual native ZIM and persisted mask artifacts
+(36 seconds). Area bands remain unchanged. Interior/exterior probes now require
+alpha above 0.95 / below 0.05, because the accepted fractional-mask contract
+does not guarantee exact binary values. This is not a fine-detail visual verdict.
+All eight integrated acquisition/manifest/release-verification tests also pass.

@@ -41,5 +41,5 @@ RUN test -n "${PHOTOCTL_MODELS_BASE_URL}" \
  && node scripts/fetch-models.mjs /opt/photoctl/models --base-url "${PHOTOCTL_MODELS_BASE_URL}"
 
 FROM models AS functional
-ENV PHOTOCTL_SAM_MODELS_DIR=/opt/photoctl/models
+ENV PHOTOCTL_SEGMENT_MODELS_DIR=/opt/photoctl/models
 CMD ["sh","-c","bun run test:ts && bun run test:models"]
