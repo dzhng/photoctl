@@ -43,7 +43,14 @@ test.each([
       const result = await dispatch(
         {
           verb: "generate",
-          args: ["--prompt", "a blue vase", "--size", "4x4"],
+          args: [
+            "--prompt",
+            "a blue vase",
+            "--size",
+            "4x4",
+            "--model",
+            "photoctl/fake-image-edit-v1",
+          ],
           cwd: directory,
           env: {
             noDaemon: true,
@@ -185,7 +192,14 @@ test.each([
         const second = await dispatch(
           {
             verb: "generate",
-            args: ["--prompt", "a blue vase", "--size", "4x4"],
+            args: [
+              "--prompt",
+              "a blue vase",
+              "--size",
+              "4x4",
+              "--model",
+              "photoctl/fake-image-edit-v1",
+            ],
             cwd: directory,
             env: {
               noDaemon: true,
