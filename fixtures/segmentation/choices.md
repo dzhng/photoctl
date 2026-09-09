@@ -31,7 +31,7 @@ of experiment directories would bring gigabytes unrelated to viewing the result.
 
 The reach: sources and observations remain viewable offline. Alpha16 is openly
 quantized and is not offered as a lossless replay substitute. Verdict: sound;
-the user explicitly requested durable source/result retention and bounded copies.
+the requested sources and results remain durable without duplicating large intermediates.
 Confidence: high.
 
 ## Separate visual targets from observed model outputs
