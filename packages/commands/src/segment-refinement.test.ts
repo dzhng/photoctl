@@ -17,7 +17,7 @@ import { join } from "node:path";
 import { expect, test } from "vitest";
 import { dispatch } from "./dispatch.js";
 
-test("manual addition corrects the same SAM selection and preserves soft coverage and other layers", async () => {
+test("manual addition corrects the same selection and preserves soft coverage and other layers", async () => {
   const fixture = await selectionFixture();
   try {
     const before = await loadActiveDocument(fixture.handle, fixture.id);

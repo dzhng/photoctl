@@ -3,9 +3,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
+import { doctorDataSchema } from "@photoctl/protocol";
 import { dispatch } from "./dispatch.js";
 
-test("public settings persists a model mirror consumed by doctor and resets to the release", async () => {
+test("public settings persists a model mirror consumed by doctor and restores its default", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-settings-"));
   const libraryPath = join(parent, "library");
   const { handle } = await initializeLibrary(libraryPath);
@@ -16,6 +17,8 @@ test("public settings persists a model mirror consumed by doctor and resets to t
     );
   try {
     const mirror = "https://models.example.test/pinned/";
+    const defaultUrl = doctorDataSchema.parse((await request("doctor", [])).data).models.base_url;
+    expect(defaultUrl).not.toBe(mirror);
     expect(
       await request("settings", ["set", "models_base_url", JSON.stringify(mirror)]),
     ).toMatchObject({ ok: true, data: { settings: { models_base_url: mirror } } });
@@ -33,7 +36,7 @@ test("public settings persists a model mirror consumed by doctor and resets to t
     });
     expect(await request("doctor", [])).toMatchObject({
       ok: true,
-      data: { models: { base_url: "https://github.com/dzhng/photoctl/releases/download/v1.2.3/" } },
+      data: { models: { base_url: defaultUrl } },
     });
   } finally {
     await handle.close();

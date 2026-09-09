@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import { spawnPhotoctl } from "@photoctl/test-harness";
-import { settingsDataSchema } from "@photoctl/protocol";
+import { doctorDataSchema, settingsDataSchema } from "@photoctl/protocol";
 
 export function registerSettingsJourney(
   invoke: typeof spawnPhotoctl = spawnPhotoctl,
@@ -23,8 +23,9 @@ export function registerSettingsJourney(
       return result.json;
     };
     try {
-      const version = (await run(["version"])).data as { version: string };
       await run(["init", "--path", libraryDir]);
+      const defaultUrl = doctorDataSchema.parse((await run(["doctor"])).data).models.base_url;
+      expect(defaultUrl).not.toBe("https://models.example.test/pinned/");
       await run(["settings", "set", "models", '{"edit":"test/persisted"}']);
       await run([
         "settings",
@@ -44,7 +45,7 @@ export function registerSettingsJourney(
       expect(await run(["doctor"])).toMatchObject({
         data: {
           models: {
-            base_url: `https://github.com/dzhng/photoctl/releases/download/v${version.version}/`,
+            base_url: defaultUrl,
           },
         },
       });

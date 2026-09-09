@@ -195,3 +195,26 @@ envelope. Saved mask bytes and the nonzero-support summary remain unchanged.
 
 Verdict: sound. The error describes the unresolved selection without silently
 choosing an instance or adding a separate response API. Confidence: high.
+
+## Verification: bound test-file parallelism, not product work
+
+When: practical closeout, 2026-09-09.
+
+The choice: run at most two Vitest files concurrently. Each file may launch real
+CLI processes and embedded databases, so starting one file worker per available
+CPU does not bound the actual nested work. On this host the automatic setting
+started seventeen workers and many otherwise-correct tests exhausted their
+unchanged deadlines. The explicit budget schedules the same files in smaller
+batches; concurrency tests still create their own simultaneous clients.
+
+The gap: the gate inherited the test runner's CPU-based default without accounting
+for subprocess-heavy tests. Raising every timeout or skipping slow files would
+change what the checks prove instead of correcting their scheduling.
+
+The reach: ordinary test commands and CI inherit the same bounded file-worker
+budget. A deliberate command-line override remains possible. Product runtime
+threading, timeouts and selection quality are unaffected.
+
+Verdict: sound. The unchanged daemon and render cases pass under bounded
+scheduling, as does the complete failed-file retry. Confidence: medium; the
+worker budget is conservative rather than a proven throughput optimum.
