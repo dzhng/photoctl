@@ -7,43 +7,31 @@ of coarse SAM plus manual correction does not satisfy this new goal.
 
 ## Next Agent Prompt
 
-Updated 2026-09-09. Execute the [implementation ladder](implementation.md),
-starting with command-slice integration, then production acceptance. Signed
-grounding, model acquisition and the pixel library are committed. The engine matches the accepted
-portrait appearance, its native/geometry tests pass, and its reviewed 16-encode
-probe passes the measured 10 GB canary. The real CLI photographic smoke test
-passes its unchanged authored area bands with fractional-alpha interior/exterior
-checks. Fine-detail holdouts remain open; do not release these partial checkpoints.
-The three planning drafts have been synthesized;
-do not restart the interview or model search. The full quality goal remains open.
-The user approved `--text` plus `--at` choosing the clicked matching instance;
-wire that in the command slice. The actual whole-person automatic trial still
-needs a saved or environment gateway key. Neither is configured on this host.
-Start with the
-[reference-framing acceptance audit](assets/reference-audit/critique.md): direct
-ZIM is comparable to the supplied PhotoLab screenshot at its visible viewport,
-with a lower-strand limitation in the supplementary full-video crop. Carry it as
-a portrait planning candidate, not a proven generic backend. The user explicitly
-authorized ZIM adoption for OpenPhoto's intended noncommercial use. Retain the
-repository's noncommercial terms and notices; do not treat the conflicting model
-card as permission for commercial use. Do not keep demanding an ideal matte from this
-compressed overlay reference. The [research gap synthesis](research-gaps.md)
-and [spike ledger](spikes.md) own completed/rejected approaches and remaining
-generic holdouts. Do not repeat those baselines or silently relax selection
-intent. The [candidate research](refinement-candidates.md) owns frozen inputs
-and runtime requirements. Do not infer permission to adopt noncommercial
-dependencies from research use.
+Updated 2026-09-09. Finish the [reference collection](slices/07-references.md),
+then run the [practical closeout](slices/06-acceptance.md). The user explicitly
+permits stopping without an exact PhotoLab match after the practical levers
+have been explored and the best result, references and limitations are retained.
+Do not restart the model search or turn known quality defects into parity claims.
 
-Follow the implementation ladder, preserving `--text` selection for both hair
-and entire-person requests. The user explicitly rejected MGMatting's eyebrow
-selection despite its lower-hair improvement; do not include that refinement.
-Existing CLI commands and saved fractional masks must survive the internal model
-cutover. Publication remains a separate authorization.
+The ZIM engine, acquisition and signed grounding are integrated. Text plus click
+now chooses an instance by projected mask coverage; all 31 integrated selection
+and refinement tests pass. Whole-cutover independent review found no actionable
+regressions; some reviewer tests were sandbox-blocked. The full closeout gate
+has not run. The actual automatic whole-person trial still needs a gateway key;
+neither the saved configuration nor environment provides one. Report that missing
+verification rather than substituting a mocked live result.
 
-The [native SAM 3 baseline](assets/sam3-native/critique.md) is complete and shows
-scope feasibility, not boundary parity. Its access prerequisite is resolved.
-Keep [selection scope](scope.md) separate from quality and preserve target intent
-through the backend seam. Update this handoff after the next measured result.
+The [reference-framing audit](assets/reference-audit/critique.md) supports
+comparable portrait appearance, and the native port preserves it. The
+[actual CLI holdout review](assets/cli-holdout/critique.md) records coarse smoke
+success but visible wire, foliage and fence exclusions that still fail. The
+[research gaps](research-gaps.md), [spike ledger](spikes.md) and
+[candidate research](refinement-candidates.md) retain the explored levers.
+
+Preserve [selection scope](scope.md), fractional saved masks and the existing
+projection/revision owners. ZIM's noncommercial adoption is explicitly authorized;
+retain its notices. MGMatting refinement was rejected because of eyebrow
+selection. No release publication or broader commercial-use permission is implied.
 
 ## Evidence and acceptance
 
@@ -79,13 +67,13 @@ telemetry from `compare-screenshots`, and an unprimed `screenshot-critique`.
 Do not accept a coarse mask because its area overlaps the subject, a blurred
 boundary because it hides errors, or a hair-specific path as generic segmentation.
 
-## Remaining contracts
+## Practical closeout
 
-- [ ] Hair requests exclude face, flowers and unrelated objects; person requests
-      retain their explicitly broader scope.
-- [ ] Refinement recovers curls and holes without reopening semantic exclusions.
-- [ ] Independent full-frame/crop review, plus existing wire and foliage holdouts.
+- [x] Preserve separate hair/person intent and signed guidance through the command seam.
+- [x] Record detail recovery and semantic exclusions honestly, including rejected refinements.
+- [x] Independent full-frame/crop review, plus actual CLI wire and foliage holdouts.
 - [x] Synthesize the [implementation ladder](implementation.md) after a defensible quality candidate.
-- [ ] Implement through existing projection, mask storage and CLI owners with
+- [x] Implement through existing projection, mask storage and CLI owners with
       red/green tests; no parallel segmentation API or manual rescue requirement.
-- [ ] Verify actual production output and run the final closeout gate once.
+- [ ] Retain the organized reference collection and observed outputs.
+- [ ] Run the final closeout gate once and record unavailable live-provider verification.

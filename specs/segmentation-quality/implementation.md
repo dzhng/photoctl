@@ -1,8 +1,11 @@
 # ZIM cutover: one engine, preserved selection intent
 
-This ladder implements the authorized noncommercial ZIM adoption. It does not
-declare the broader PhotoLab-quality objective complete: the generic holdouts
-in [research-gaps](research-gaps.md) remain an acceptance obligation.
+This ladder implements the authorized noncommercial ZIM adoption and preserves
+the evidence needed to improve it later. On 2026-09-09 the user clarified the
+stopping condition: exhaust the practical levers, retain the best defensible
+result and organized references, and stop without requiring an exact PhotoLab
+match. The generic defects in [research-gaps](research-gaps.md) remain recorded
+limitations, not permission to claim parity or an obligation to search forever.
 
 ## Contracts and ownership
 
@@ -36,6 +39,7 @@ The [choices ledger](choices.md) records decisions made while implementing.
 | [04 engine](slices/04-engine.md) | 03 | One native runtime and bounded cached features |
 | [05 command](slices/05-command.md) | 01, 02, 04 | Actual CLI selection, revision-safe persisted masks |
 | [06 acceptance](slices/06-acceptance.md) | 05 | Hair, entire person, generic holdouts, closeout |
+| [07 references](slices/07-references.md) | existing evidence | Durable scene index, visual targets and observed outputs |
 
 Acquisition and grounding can proceed independently of the pixel/engine chain.
 Run independent implementation passes in separate worktrees. Review and commit

@@ -13,16 +13,18 @@ screenshot-critique as the final visual check on the complete capture set.
 Record a failed quality gate as failed. No cropped best-of composite, manually
 rescued prompts, changed class scope or alternate backend to hide it.
 
-If a generic quality gate still fails, the cutover can be a verified engineering
-checkpoint but the overall user goal remains unfinished. Reslice only the
-observed gap with one variable and one next evidence gate; do not pretend the
-whole objective was portrait-only or start an unbounded repeat of rejected
-spikes. A genuine unavailable input or user-only decision is reported precisely.
+The user clarified that exact reference matching is not required for this run:
+stop once the practical levers have been tried and the best defensible result,
+references and limitations are preserved. A failed generic quality gate remains
+a failed quality claim, but can become a documented future improvement rather
+than force unbounded research. Do not hide failing cases or pretend the work
+was portrait-only. A genuine unavailable input is reported precisely.
 
 Before calling implementation complete: run whole-pass review and audit-choices,
 reconcile every decision against code, run `bun run verify` once and the actual
-model gate, and update the handoff. No release publication. Archive only when all
-scope and quality obligations have honest acceptance evidence.
+model gate, and update the handoff. No release publication. Archive only when
+the revised practical closeout obligations have honest evidence, including any
+unavailable live-provider verification.
 
 Delegated: capture presentation and test harness details. Not quality thresholds,
 scope, omission of failing cases, or goal completion. Open review shots with
