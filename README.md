@@ -68,6 +68,7 @@ while iterating.
 ## Where things live
 
 - [Installation and live-provider plan](specs/openphoto/README.md) — current verification work and credential boundaries.
+- [CLI discovery record](specs/done/cli-discovery/README.md) — why help works before setup, segmentation memory boundaries and completed follow-up verification.
 - [Segmentation quality record](specs/done/segmentation-quality/README.md) — why ZIM was chosen, the PhotoLab target and remaining quality gaps.
 - [v1 record](specs/done/photoctl/README.md) — why the product has this shape, the invariants it keeps, and the decisions made along the way.
 - [Reference fixtures](fixtures/README.md) — retained inputs and the facts they establish.

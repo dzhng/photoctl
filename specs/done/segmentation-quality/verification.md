@@ -3,7 +3,8 @@
 This is the earlier closeout record. The subsequent [live evaluations](../../../fixtures/segmentation/portrait/photolab/live/README.md)
 resolve the unavailable credential/capture item while retaining visual failures.
 The follow-up CLI-discovery work also repairs the boxed-pixel allocation that
-caused the Docker heap failure below; its final gate has a separate record.
+caused the Docker heap failure below; its [completed follow-up verification](../cli-discovery/verification.md)
+records the successful rebuilt Docker and remaining engineering checks.
 
 This closes the practical research-and-implementation scope, not a claim of
 PhotoLab parity or universal platform compatibility. The accepted platform is
