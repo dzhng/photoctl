@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "model": "openai/gpt-image-2",
+  "adapter": "gateway-image-v1",
+  "adapterVersion": "3",
+  "candidatePolarity": "transparent-edits",
+  "verifiedPolarity": null,
+  "endpoint": "https://ai-gateway.vercel.sh/v1/images/edits",
+  "prompt": "Repaint every colored rectangle bright green. Keep the gray background gray.",
+  "seed": 7,
+  "artifacts": [
+    {
+      "file": "input.png",
+      "sha256": "9738fd2bc9c855f5bff9055da04a06a4078bc85b362f1e5cfe3ea501bdaba5a1"
+    },
+    {
+      "file": "coverage.png",
+      "sha256": "028e77bd35b2f77ed4de88e86ab2c9102031281c40c7802e3ddf4ce0126a8e8f"
+    },
+    {
+      "file": "wire-mask.png",
+      "sha256": "e7cf63ea09648125188d25c9a7052d275d8cdd26159557aa64a96a428eb89392"
+    },
+    {
+      "file": "returned.png",
+      "sha256": "e8a0210bf4217e7fb084b4eb289bc572d81155030cbbbe2f96a3cf598cb5677f"
+    }
+  ],
+  "review": "The prompt requests BOTH rectangles change; only the mask protects the right blue rectangle. Inspect the raw return: left should become green, right and gray background should remain unchanged. Both changing suggests an ignored mask; right-only changing suggests reversed polarity. A successful request does not verify polarity. Record independent visual review before changing the production adapter table.",
+  "status": "captured_needs_review",
+  "requestId": null,
+  "returnedDimensions": {
+    "w": 1024,
+    "h": 1024
+  },
+  "wholeFrame": false
+}

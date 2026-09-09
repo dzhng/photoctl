@@ -1,0 +1,44 @@
+{
+  "result": {
+    "schema": 1,
+    "ok": true,
+    "data": {
+      "id": "01a08623-110f-761a-9cce-c6d5b56274c7",
+      "revision_id": "080c164d-9525-4453-a96a-3f591a79049d",
+      "render_hash": "r_a84eab9f2b28879b36eb08faca82a946a1c8451db1462af29843d45474f01644",
+      "gateway_calls": 1,
+      "instances": [
+        {
+          "i": 0,
+          "label": "red circle",
+          "bbox": [
+            0,
+            0,
+            1024,
+            1024
+          ],
+          "layer_id": "ae9374b6-9fb2-41ed-8e30-f5a170b4426e",
+          "mask": {
+            "artifact_hash": "a_e1ed5b5293b2a312287d6eaa1d98fb4f51734fc71023a6ac7c42458d07cbb4b9",
+            "bbox": [
+              0,
+              0,
+              1024,
+              1024
+            ],
+            "pixels": 1048576
+          }
+        }
+      ]
+    },
+    "warnings": []
+  },
+  "dimensions": {
+    "w": 1024,
+    "h": 1024
+  },
+  "nonzero": 1048576,
+  "selected": 246122,
+  "insideSelectedFraction": 1,
+  "outsideSelectedFraction": 0
+}

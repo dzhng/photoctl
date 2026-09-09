@@ -3,7 +3,7 @@ import { concreteModelIdSchema, type UserSettings } from "@photoctl/protocol";
 export const DEFAULT_MODELS = {
   edit: "openai/gpt-image-2",
   generate: "openai/gpt-image-2",
-  structured: "google/gemini-3.1-flash",
+  structured: "google/gemini-3-flash",
   embed: "google/gemini-embedding-2",
   upscale: "photoctl/fake-upscale-v1",
 } as const satisfies Required<UserSettings["models"]>;

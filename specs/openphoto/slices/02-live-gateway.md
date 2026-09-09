@@ -19,7 +19,7 @@ against its input/contract and an unprimed screenshot-critique before accepting 
 No speculative provider compatibility or new platform work; reproduce an actual
 failure before changing transport. Finish with the existing full local gate once.
 
-## Remaining verification boundaries
+## Verification boundaries
 
 The opt-in runner must not inherit ambient credentials, and normal interruption
 must terminate its active CLI child, remove its disposable saved key and retain

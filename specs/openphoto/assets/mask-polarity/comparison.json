@@ -1,0 +1,18 @@
+{
+  "target": "Only the left rectangle becomes green; right blue rectangle remains protected.",
+  "regions": {
+    "left": {
+      "changedFraction": 1,
+      "meanChannelAbsoluteDelta": 143.3026377360026
+    },
+    "right": {
+      "changedFraction": 1,
+      "meanChannelAbsoluteDelta": 143.3967514038086
+    },
+    "background": {
+      "changedFraction": 1,
+      "meanChannelAbsoluteDelta": 1.8564697265625
+    }
+  },
+  "verdict": "rejected: protected right rectangle changed"
+}

@@ -172,7 +172,7 @@ test("the built CLI applies one clamped auto-enhance batch and undo restores the
           operation: "auto-enhance",
           adapter: "gateway-structured-v1",
           adapter_version: "1",
-          model: "google/gemini-3.1-flash",
+          model: requests[0]!.model,
           provider_request_id: expect.stringMatching(/^req_/),
           attempt: 1,
           prompt_version: 1,

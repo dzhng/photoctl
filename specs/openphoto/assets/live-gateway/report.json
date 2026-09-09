@@ -1,0 +1,748 @@
+{
+  "schema": 1,
+  "status": "failed",
+  "reason": null,
+  "models": {
+    "edit": "openai/gpt-image-2",
+    "generate": "openai/gpt-image-2",
+    "structured": "google/gemini-3-flash",
+    "embed": "google/gemini-embedding-2",
+    "upscale": "photoctl/fake-upscale-v1"
+  },
+  "stages": [
+    {
+      "name": "image-embedding",
+      "status": "passed",
+      "durationMs": 1870.076125,
+      "schema": 1,
+      "ok": true,
+      "summary": {
+        "ok": 1,
+        "failed": 0
+      },
+      "results": [
+        {
+          "id": "01a0861c-0394-701c-9061-73fc29e68656",
+          "ok": true,
+          "model": "google/gemini-embedding-2"
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "name": "vector-search",
+      "status": "passed",
+      "durationMs": 1140.8319999999999,
+      "schema": 1,
+      "ok": true,
+      "data": {
+        "hits": [
+          {
+            "id": "01a0861c-0394-701c-9061-73fc29e68656",
+            "score": 0.01639344262295082,
+            "sources": [
+              "vector"
+            ],
+            "file": "input.jpg"
+          }
+        ]
+      },
+      "warnings": []
+    },
+    {
+      "name": "text-grounding",
+      "status": "failed",
+      "durationMs": 10575.692583,
+      "error": {
+        "code": "verification_failed",
+        "message": "Grounding did not select one nonempty, non-full-frame instance"
+      }
+    },
+    {
+      "name": "auto-enhance",
+      "status": "failed",
+      "durationMs": 30759.608792,
+      "error": {
+        "code": "provider_busy",
+        "message": "CLI command failed",
+        "envelope": {
+          "schema": 1,
+          "ok": false,
+          "code": "provider_busy",
+          "summary": {
+            "ok": 0,
+            "failed": 1
+          },
+          "results": [
+            {
+              "attempts": 1,
+              "message": "The operation was aborted due to timeout",
+              "id": "01a0861c-0394-701c-9061-73fc29e68656",
+              "ok": false,
+              "code": "provider_busy"
+            }
+          ],
+          "warnings": []
+        }
+      }
+    },
+    {
+      "name": "generate",
+      "status": "passed",
+      "durationMs": 15471.422583,
+      "schema": 1,
+      "ok": true,
+      "data": {
+        "id": "01a0861c-ed34-7704-bbed-60cd0a145641",
+        "revision_id": "a330d210-28f2-4bfd-9997-acb99a8d62cf",
+        "render_hash": "r_e749695e71d07a5c17f44e1a0a5878cd07763e617de7a302c9244f2b71141775",
+        "output_node": "node_7e9a27b56a9e5cd9ee3334ae8a859c8299e5a18574d2be29c608ca169a9309c8",
+        "tag": "generated",
+        "requested": {
+          "w": 1024,
+          "h": 1024
+        },
+        "reference": {
+          "used": false
+        },
+        "artifact": {
+          "hash": "a_a2205a31b112496df8527c70f84bc09a1028372f3a1428588894d4ecafbf5421",
+          "media_type": "image/tiff",
+          "w": 1024,
+          "h": 1024
+        },
+        "generation": {
+          "node": "node_321d54e56558a1728d8e90ed937fcce97abbc9bfe6423947bf35df698d3db9e9",
+          "adapter": "gateway-image-v1",
+          "model": "openai/gpt-image-2",
+          "returned": {
+            "w": 1024,
+            "h": 1024
+          }
+        },
+        "upscale": {
+          "enabled": false,
+          "executed": false,
+          "node": null,
+          "adapter": null,
+          "model": "photoctl/fake-upscale-v1",
+          "input": {
+            "w": 1024,
+            "h": 1024
+          },
+          "target": {
+            "w": 1024,
+            "h": 1024
+          },
+          "generated": {
+            "w": 1024,
+            "h": 1024
+          },
+          "final": {
+            "w": 1024,
+            "h": 1024
+          },
+          "density_satisfied": true,
+          "warnings": []
+        },
+        "executions": [
+          {
+            "kind": "generate",
+            "node": "node_321d54e56558a1728d8e90ed937fcce97abbc9bfe6423947bf35df698d3db9e9",
+            "adapter": "gateway-image-v1",
+            "model": "openai/gpt-image-2",
+            "duration_ms": 15142,
+            "cost_usd": 0,
+            "reused": false
+          }
+        ]
+      },
+      "warnings": []
+    },
+    {
+      "name": "generated-preview",
+      "status": "passed",
+      "durationMs": 736.6022920000032,
+      "file": "generated.jpg",
+      "dimensions": {
+        "w": 1024,
+        "h": 1024
+      },
+      "pixelSha256": "7214393081014553dae2895121baa24381e562e763ded3158bc74f75af78ee10",
+      "executions": [
+        {
+          "execution_id": "exec_35cdf4d68dd7377467e2869750ebaa4abd6be5e0302c4e40b056212d6d6dfc54",
+          "provider_image_attempt_id": "9d04dcd4-45f9-48d9-b7ca-b9906ddb9f0e",
+          "evaluation_hash": "eval_e1de97691d0c27ad6d666e75b7c80cc943f6f59c387aee268338a150358ac569",
+          "deterministic": false,
+          "output_artifact_hash": "a_a2205a31b112496df8527c70f84bc09a1028372f3a1428588894d4ecafbf5421",
+          "artifact_available": true,
+          "source_provenance": null,
+          "source_treatment": null,
+          "provider_provenance": {
+            "parameters": {
+              "model": "openai/gpt-image-2",
+              "prompt": "A studio photograph of a single red apple on a blue background, no text",
+              "adapter": "gateway-image-v1",
+              "request": {
+                "scope": "standalone",
+                "returned": [
+                  1024,
+                  1024
+                ],
+                "requested": [
+                  1024,
+                  1024
+                ],
+                "execution_id": "exec_35cdf4d68dd7377467e2869750ebaa4abd6be5e0302c4e40b056212d6d6dfc54",
+                "reference_used": false
+              },
+              "model_version": null,
+              "prompt_version": 1,
+              "adapter_version": "3"
+            },
+            "parameters_truncated": false,
+            "input_node_ids": [],
+            "input_artifact_hashes": [],
+            "recipe_version": 2,
+            "execution_id": "exec_35cdf4d68dd7377467e2869750ebaa4abd6be5e0302c4e40b056212d6d6dfc54",
+            "seed": null,
+            "model": "openai/gpt-image-2",
+            "adapter": "gateway-image-v1",
+            "attempt": 1,
+            "service": "gateway",
+            "cost_usd": 0,
+            "input_px": 0,
+            "warnings": [],
+            "target_px": 1048576,
+            "duration_ms": 15142,
+            "model_version": null,
+            "adapter_version": "3",
+            "density_verdict": "not-applicable",
+            "provider_request_id": null,
+            "output": {
+              "dimensions": {
+                "w": 1024,
+                "h": 1024
+              },
+              "artifact_hash": "a_a2205a31b112496df8527c70f84bc09a1028372f3a1428588894d4ecafbf5421",
+              "available": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "reimagine",
+      "status": "passed",
+      "durationMs": 22930.136083000005,
+      "schema": 1,
+      "ok": true,
+      "data": {
+        "id": "01a0861c-0394-701c-9061-73fc29e68656",
+        "layer_id": "3ed2771f-4765-41ce-ac10-22e3ee60308e",
+        "revision_id": "36ad3ea7-572e-4f93-a0cb-7b9e6a56e735",
+        "render_hash": "r_eb5dff8cce5dc405696bca9c45948a4273284de44d25f407f1e6fc871a33aee9",
+        "output_node": "node_d47c6c5e4d2aa0c0bd65bdf6b499fd3abf8d4ee0615d3c76cc9c1ec0da439e76",
+        "drift": "full-frame",
+        "strength": 1,
+        "generation": {
+          "node": "node_96927f4cc9a59eb05c586e42c28686e01abdd55a62bf039f4794d713c8a5fbbc",
+          "adapter": "gateway-image-v1",
+          "model": "openai/gpt-image-2",
+          "returned": {
+            "w": 1024,
+            "h": 1024
+          }
+        },
+        "source_context": {
+          "tier": "online-file",
+          "pixel_scale": 1,
+          "resolution_limited": false
+        },
+        "upscale": {
+          "enabled": false,
+          "executed": false,
+          "node": null,
+          "adapter": null,
+          "model": "photoctl/fake-upscale-v1",
+          "input": {
+            "w": 1024,
+            "h": 1024
+          },
+          "target": {
+            "w": 1024,
+            "h": 1024
+          },
+          "generated": {
+            "w": 1024,
+            "h": 1024
+          },
+          "final": {
+            "w": 1024,
+            "h": 1024
+          },
+          "density_satisfied": true,
+          "warnings": []
+        },
+        "executions": [
+          {
+            "kind": "generate",
+            "node": "node_96927f4cc9a59eb05c586e42c28686e01abdd55a62bf039f4794d713c8a5fbbc",
+            "adapter": "gateway-image-v1",
+            "model": "openai/gpt-image-2",
+            "duration_ms": 22459,
+            "cost_usd": 0,
+            "reused": false
+          }
+        ]
+      },
+      "warnings": []
+    },
+    {
+      "name": "reimagined-preview",
+      "status": "passed",
+      "durationMs": 1002.015000000014,
+      "file": "reimagined.jpg",
+      "dimensions": {
+        "w": 1024,
+        "h": 1024
+      },
+      "pixelSha256": "fe09fcb68124aa93c5ba2f18c35a55e76c62c92024c0f7698a81f818dc088f48",
+      "executions": [
+        {
+          "execution_id": "exec_6fc54a0c47862e4a904751379149dda1f612541a7305564cdd5b7149fceb0c78",
+          "provider_image_attempt_id": "2d3648cd-6c6f-48b5-9224-0b4e22d873fa",
+          "evaluation_hash": "eval_860c7edf3209ebb97d1b1f279de8f2b28b4fc94d2642f001a2a9e96082f48a77",
+          "deterministic": false,
+          "output_artifact_hash": "a_18c20d2ec37cc3f8b73d94b38c465e7d0e07c31abf6ae23eed725dd87926c46e",
+          "artifact_available": true,
+          "source_provenance": null,
+          "source_treatment": null,
+          "provider_provenance": {
+            "parameters": {
+              "model": "openai/gpt-image-2",
+              "prompt": "Make the red circle look like a red glass sphere. Keep the blue background.",
+              "adapter": "gateway-image-v1",
+              "request": {
+                "sent": [
+                  1024,
+                  1024
+                ],
+                "drift": "full-frame",
+                "scope": "full-frame",
+                "upscale": {
+                  "model": "photoctl/fake-upscale-v1",
+                  "adapter": "photoctl/fake-upscale-v1",
+                  "enabled": false,
+                  "prompt_id": "photoctl/upscale-balanced-v1",
+                  "derived_prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
+                  "prompt_version": 1,
+                  "adapter_version": "1",
+                  "original_prompt": "Make the red circle look like a red glass sphere. Keep the blue background."
+                },
+                "controls": {
+                  "applied_init": "original",
+                  "reference_used": false,
+                  "requested_init": "original"
+                },
+                "returned": [
+                  1024,
+                  1024
+                ],
+                "strength": 1,
+                "full_frame": {
+                  "input_frame": {
+                    "raster": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "source": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "catalog": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "sourceToRaster": [
+                      1,
+                      0,
+                      0,
+                      1,
+                      0,
+                      0
+                    ]
+                  },
+                  "input_policy": "photographic-composite",
+                  "authored_frame": {
+                    "raster": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "source": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "catalog": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "sourceToRaster": [
+                      1,
+                      0,
+                      0,
+                      1,
+                      0,
+                      0
+                    ]
+                  },
+                  "input_execution_id": "exec_da8ee1c2bd1d62428510c1bdf18c55be39e0dbf3a329c216f5215fce75b83e21",
+                  "predecessor_layer_ids": []
+                },
+                "execution_id": "exec_6fc54a0c47862e4a904751379149dda1f612541a7305564cdd5b7149fceb0c78",
+                "blend_coverage": 1,
+                "source_context": {
+                  "tier": "online-file",
+                  "pixel_scale": 1,
+                  "resolution_limited": false
+                },
+                "provider_prompt": "Make the red circle look like a red glass sphere. Keep the blue background.\n[photoctl:reimagine:v1]\nTransform the full frame while preserving approximately 0% of the source composition and identity."
+              },
+              "model_version": null,
+              "prompt_version": 1,
+              "adapter_version": "3"
+            },
+            "parameters_truncated": false,
+            "input_node_ids": [
+              "node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594"
+            ],
+            "input_artifact_hashes": [
+              "a_022e23e8d8e901fb5bd557d5f265254422580272a83848eda12f998079d607d0"
+            ],
+            "recipe_version": 1,
+            "execution_id": "exec_6fc54a0c47862e4a904751379149dda1f612541a7305564cdd5b7149fceb0c78",
+            "seed": null,
+            "model": "openai/gpt-image-2",
+            "adapter": "gateway-image-v1",
+            "attempt": 1,
+            "service": "gateway",
+            "cost_usd": 0,
+            "input_px": 1048576,
+            "warnings": [],
+            "target_px": 1048576,
+            "duration_ms": 22459,
+            "model_version": null,
+            "adapter_version": "3",
+            "density_verdict": "not-applicable",
+            "provider_request_id": null,
+            "output": {
+              "dimensions": {
+                "w": 1024,
+                "h": 1024
+              },
+              "artifact_hash": "a_18c20d2ec37cc3f8b73d94b38c465e7d0e07c31abf6ae23eed725dd87926c46e",
+              "available": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "relight",
+      "status": "passed",
+      "durationMs": 19059.794958,
+      "schema": 1,
+      "ok": true,
+      "data": {
+        "id": "01a0861c-0394-701c-9061-73fc29e68656",
+        "layer_id": "f8e91805-fc66-4f8d-9a9e-92334d5b490d",
+        "revision_id": "00c3c31c-3a98-4ca4-bae1-ee33d329af14",
+        "render_hash": "r_6c6de4b48c7749bc0d5549e2a037bc911802b3a68b3f3976c71af0da7b041806",
+        "output_node": "node_19c5e5e46e6072915aa02be5c315e2645fed9ecdcf71b17cf23e60972df4e2b6",
+        "drift": "full-frame",
+        "azimuth": 45,
+        "elevation": 30,
+        "intensity": 0.3,
+        "generation": {
+          "node": "node_403367b5522a74c0bd99883c795160eec89251897748a32d9c4783ea80ac6fed",
+          "adapter": "gateway-image-v1",
+          "model": "openai/gpt-image-2",
+          "returned": {
+            "w": 1024,
+            "h": 1024
+          }
+        },
+        "source_context": {
+          "tier": "online-file",
+          "pixel_scale": 1,
+          "resolution_limited": false
+        },
+        "upscale": {
+          "enabled": false,
+          "executed": false,
+          "node": null,
+          "adapter": null,
+          "model": "photoctl/fake-upscale-v1",
+          "input": {
+            "w": 1024,
+            "h": 1024
+          },
+          "target": {
+            "w": 1024,
+            "h": 1024
+          },
+          "generated": {
+            "w": 1024,
+            "h": 1024
+          },
+          "final": {
+            "w": 1024,
+            "h": 1024
+          },
+          "density_satisfied": true,
+          "warnings": []
+        },
+        "executions": [
+          {
+            "kind": "generate",
+            "node": "node_403367b5522a74c0bd99883c795160eec89251897748a32d9c4783ea80ac6fed",
+            "adapter": "gateway-image-v1",
+            "model": "openai/gpt-image-2",
+            "duration_ms": 18484,
+            "cost_usd": 0,
+            "reused": false
+          }
+        ]
+      },
+      "warnings": []
+    },
+    {
+      "name": "relit-preview",
+      "status": "passed",
+      "durationMs": 1028.7199160000018,
+      "file": "relit.jpg",
+      "dimensions": {
+        "w": 1024,
+        "h": 1024
+      },
+      "pixelSha256": "776076b4f91ba9671ad0bdc8d1f3efe897d584eba690235c43cb31a072596e5f",
+      "executions": [
+        {
+          "execution_id": "exec_94a610a2ed8054e4ee27b727f21f0eb94626fdfd7def96147ab8788f346a2204",
+          "provider_image_attempt_id": "ef8800ab-74f8-4ac8-b1b6-349086b6149d",
+          "evaluation_hash": "eval_04bf858c4c3af6ada62f495c5014e06b9c92c0437ac09daa2a9dd7f364f6fb35",
+          "deterministic": false,
+          "output_artifact_hash": "a_73606ed2cfc820bfa0150982822c43fd7533e15f5ef660131ee375c7cb858c26",
+          "artifact_available": true,
+          "source_provenance": null,
+          "source_treatment": null,
+          "provider_provenance": {
+            "parameters": {
+              "model": "openai/gpt-image-2",
+              "prompt": "Relight with a soft studio key light at 45° azimuth, 30° elevation, intensity 0.3.",
+              "adapter": "gateway-image-v1",
+              "request": {
+                "sent": [
+                  1024,
+                  1024
+                ],
+                "drift": "full-frame",
+                "scope": "full-frame",
+                "upscale": {
+                  "model": "photoctl/fake-upscale-v1",
+                  "adapter": "photoctl/fake-upscale-v1",
+                  "enabled": false,
+                  "prompt_id": "photoctl/upscale-balanced-v1",
+                  "derived_prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
+                  "prompt_version": 1,
+                  "adapter_version": "1",
+                  "original_prompt": "Relight with a soft studio key light at 45° azimuth, 30° elevation, intensity 0.3."
+                },
+                "controls": {
+                  "applied_init": "original",
+                  "reference_used": false,
+                  "requested_init": "original"
+                },
+                "returned": [
+                  1024,
+                  1024
+                ],
+                "strength": 0.3,
+                "full_frame": {
+                  "input_frame": {
+                    "raster": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "source": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "catalog": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "sourceToRaster": [
+                      1,
+                      0,
+                      0,
+                      1,
+                      0,
+                      0
+                    ]
+                  },
+                  "input_policy": "photographic-composite",
+                  "authored_frame": {
+                    "raster": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "source": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "catalog": {
+                      "h": 1024,
+                      "w": 1024
+                    },
+                    "sourceToRaster": [
+                      1,
+                      0,
+                      0,
+                      1,
+                      0,
+                      0
+                    ]
+                  },
+                  "input_execution_id": "exec_6c01fcc7c26df3df2db08e7bdbd0e08a112f18d907b50789e76a03c039d458cc",
+                  "predecessor_layer_ids": [
+                    "3ed2771f-4765-41ce-ac10-22e3ee60308e"
+                  ]
+                },
+                "execution_id": "exec_94a610a2ed8054e4ee27b727f21f0eb94626fdfd7def96147ab8788f346a2204",
+                "blend_coverage": 0.3,
+                "source_context": {
+                  "tier": "online-file",
+                  "pixel_scale": 1,
+                  "resolution_limited": false
+                },
+                "provider_prompt": "Relight this portrait as if a single soft studio key light were placed at 45° azimuth (0 = camera-right, 90 = directly above) and 30° elevation with intensity 0.3 of 1. Keep the person's identity, expression, pose, clothing, and the background unchanged. Adjust only illumination, shadow direction, and specular highlights.\n[photoctl:relight:v1]"
+              },
+              "model_version": null,
+              "prompt_version": 1,
+              "adapter_version": "3"
+            },
+            "parameters_truncated": false,
+            "input_node_ids": [
+              "node_d47c6c5e4d2aa0c0bd65bdf6b499fd3abf8d4ee0615d3c76cc9c1ec0da439e76"
+            ],
+            "input_artifact_hashes": [
+              "a_18c20d2ec37cc3f8b73d94b38c465e7d0e07c31abf6ae23eed725dd87926c46e"
+            ],
+            "recipe_version": 1,
+            "execution_id": "exec_94a610a2ed8054e4ee27b727f21f0eb94626fdfd7def96147ab8788f346a2204",
+            "seed": null,
+            "model": "openai/gpt-image-2",
+            "adapter": "gateway-image-v1",
+            "attempt": 1,
+            "service": "gateway",
+            "cost_usd": 0,
+            "input_px": 1048576,
+            "warnings": [],
+            "target_px": 1048576,
+            "duration_ms": 18484,
+            "model_version": null,
+            "adapter_version": "3",
+            "density_verdict": "not-applicable",
+            "provider_request_id": null,
+            "output": {
+              "dimensions": {
+                "w": 1024,
+                "h": 1024
+              },
+              "artifact_hash": "a_73606ed2cfc820bfa0150982822c43fd7533e15f5ef660131ee375c7cb858c26",
+              "available": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "offline-replay",
+      "status": "passed",
+      "durationMs": 4038.840583000012,
+      "samePixels": true,
+      "pixelSha256": "776076b4f91ba9671ad0bdc8d1f3efe897d584eba690235c43cb31a072596e5f",
+      "purchaseIds": [
+        "exec_94a610a2ed8054e4ee27b727f21f0eb94626fdfd7def96147ab8788f346a2204"
+      ],
+      "beforeRevision": "00c3c31c-3a98-4ca4-bae1-ee33d329af14",
+      "undoRevision": "36ad3ea7-572e-4f93-a0cb-7b9e6a56e735",
+      "afterRevision": "00c3c31c-3a98-4ca4-bae1-ee33d329af14"
+    },
+    {
+      "name": "masked-edit",
+      "status": "failed",
+      "durationMs": 897.6486250000016,
+      "error": {
+        "code": "provider_unverified_mask",
+        "message": "Mask polarity is unverified for openai/gpt-image-2",
+        "envelope": {
+          "schema": 1,
+          "ok": false,
+          "code": "provider_unverified_mask",
+          "data": {
+            "message": "Mask polarity is unverified for openai/gpt-image-2"
+          }
+        }
+      }
+    },
+    {
+      "name": "attempt-journal",
+      "status": "passed",
+      "durationMs": 286.40699999999197,
+      "schema": 1,
+      "ok": true,
+      "data": {
+        "attempts": [
+          {
+            "id": "ef8800ab-74f8-4ac8-b1b6-349086b6149d",
+            "state": "committed",
+            "created_at": "2026-09-09T12:21:03.038Z",
+            "operation": "edit",
+            "model": "openai/gpt-image-2",
+            "original": {
+              "artifact_hash": "a_213f821c97a3126091a0c0cc083a4464bdd515985b92c15bc7c429aec65a22a2",
+              "recorded_available": true
+            }
+          },
+          {
+            "id": "2d3648cd-6c6f-48b5-9224-0b4e22d873fa",
+            "state": "committed",
+            "created_at": "2026-09-09T12:20:38.997Z",
+            "operation": "edit",
+            "model": "openai/gpt-image-2",
+            "original": {
+              "artifact_hash": "a_ba4e721823070a7d668aff4dea9228c3f0620721b350f19fe2d1db795e0eb4f3",
+              "recorded_available": true
+            }
+          },
+          {
+            "id": "9d04dcd4-45f9-48d9-b7ca-b9906ddb9f0e",
+            "state": "committed",
+            "created_at": "2026-09-09T12:20:22.646Z",
+            "operation": "generate",
+            "model": "openai/gpt-image-2",
+            "original": {
+              "artifact_hash": "a_52c4409c43ec428e35a9009f9c27b8ddebb77b36ca33608e92b845dab852737c",
+              "recorded_available": true
+            }
+          }
+        ],
+        "next_cursor": null
+      },
+      "warnings": []
+    }
+  ]
+}

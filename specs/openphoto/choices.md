@@ -2,6 +2,42 @@
 
 ## Sound — medium confidence
 
+### Use a catalogued structured-model identifier
+
+**When:** live CLI verification checkpoint.
+
+When OpenPhoto analyzes a photo without a library override, it selects the fixed
+structured-model default. The public Gateway catalog lists
+`google/gemini-3-flash` with image input but has no exact
+`google/gemini-3.1-flash` entry. The default now uses the listed identifier;
+saved library settings and command overrides retain their precedence. The
+alternative was to keep sending an identifier the catalog does not expose, or
+introduce runtime model discovery that changes selection without the user's say.
+
+**Gap:** the plan did not establish a verified structured-model identifier.
+**Reach:** default auto-enhance and text-grounding requests use the corrected ID;
+no stored schema or override migration changes. **Verdict:** sound, supported by
+the [official catalog](https://ai-gateway.vercel.sh/v1/models) and a successful
+targeted live grounding request. **Confidence:** medium; model availability and
+provider latency remain external dependencies.
+
+### Treat explicit rate-limit rejection differently from an ambiguous purchase
+
+**When:** live CLI verification checkpoint.
+
+If the provider replies HTTP 429, it has explicitly refused the request, so the
+existing transport may retry within its finite attempt bound. If a successful
+image response is received, or a request times out without a conclusive response,
+the script does not restart that paid mutation. A strict one-network-attempt
+interpretation would instead disable even the existing rate-limit handling.
+
+**Gap:** “never automatically rerun paid mutations” did not specify whether a
+provider's explicit refusal counted as a purchase attempt to suppress.
+**Reach:** the live runner uses the normal CLI transport rather than introducing
+a verification-only retry control. **Verdict:** sound because only explicit 429
+rejections are retried; successful or ambiguous image purchases are not replayed.
+**Confidence:** medium; this does not create a hard spending ceiling.
+
 ### Image embeddings use the gateway's native Google content protocol
 
 **When:** installation/live-provider checkpoint.

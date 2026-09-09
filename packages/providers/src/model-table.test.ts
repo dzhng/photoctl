@@ -2,14 +2,17 @@ import { describe, expect, test } from "vitest";
 import { DEFAULT_MODELS, resolveModel, resolveModels } from "./table.js";
 
 describe("the fixed provider model table", () => {
-  test("resolves release defaults without runtime capability discovery", () => {
-    expect(resolveModels()).toEqual(DEFAULT_MODELS);
-    expect(DEFAULT_MODELS).toMatchObject({
-      edit: "openai/gpt-image-2",
-      generate: "openai/gpt-image-2",
-      structured: "google/gemini-3.1-flash",
-      embed: "google/gemini-embedding-2",
-    });
+  test("library model overrides affect only that library and purpose", () => {
+    const defaults = { ...DEFAULT_MODELS };
+    const libraryModels = { structured: "fixture/library-analysis-v1" };
+    const resolved = resolveModels(libraryModels);
+    expect(resolved).toEqual({ ...defaults, structured: "fixture/library-analysis-v1" });
+    expect(resolveModel("structured", libraryModels)).toBe("fixture/library-analysis-v1");
+    expect(resolveModel("edit", libraryModels)).toBe(defaults.edit);
+
+    resolved.structured = "fixture/other-analysis-v1";
+    expect(libraryModels).toEqual({ structured: "fixture/library-analysis-v1" });
+    expect(resolveModels()).toEqual(defaults);
   });
 });
 

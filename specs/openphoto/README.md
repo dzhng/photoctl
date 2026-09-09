@@ -7,24 +7,23 @@ from photo catalogs, with a CLI configuration command instead of shell setup.
 
 ## Next Agent Prompt
 
-Updated 2026-09-09. Finish [live integration](slices/02-live-gateway.md), then
-review and close this spec. Publication is explicitly paused: no release or tag
-was created. Installation, saved credentials and packed-install checks already
-pass; the [CLI follow-up](../done/cli-discovery/verification.md) records the
-completed engineering gate and retained live segmentation limitations.
+Updated 2026-09-09. The hardened runner and real execution are recorded in
+[verification](verification.md). Publication is paused; no tag, release or push
+was performed. Installation, saved credentials and packed-install checks pass.
 
-The existing uncommitted live-runner draft is in scope now. Harden it before
-spending: interruption must remove its saved key, failed batch items must remain
-failures, each purchased output needs its own capture, and offline replay must
-prove revision/execution identity rather than just a cached preview. Add the
-missing grounding and masked-edit checks, keeping native polarity evidence
-separate from application-enforced outside-mask preservation. Reuse the existing
-mask-polarity smoke; do not mark a production profile verified without its gate.
-The main agent owns live credentials and captures. A separate worktree owns the
-structured-model default correction and its config-independent tests.
+The next decision is masked editing: the real native-mask probe changed the
+protected region, so production still refuses it. The user has been asked whether
+to explicitly adopt the existing local-compositing strategy for GPT Image 2 or
+keep native masked editing unavailable. Do not mark native polarity verified.
+If adopting local compositing, first prove exact zero-coverage linear pixels in
+the live runner; it currently marks a returned masked output as needing review.
+Auto-enhance also needs a targeted follow-up: its sole live request timed out
+after 30 seconds. Do not replay successful paid image stages to investigate it.
+Then run the full local gate once, consolidate choices and close the spec.
 
 - [x] Installed name and private saved credentials, including terminal input.
-- [ ] Explicit live-provider integration script and authorized real execution.
+- [x] Explicit live-provider integration script and authorized real execution.
+- [ ] Resolve masked-edit acceptance and live auto-enhance timeout.
 - [ ] Review, documentation and one full local closeout gate.
 
 The prior review also fixed the CLI test driver's implicit use of developer
@@ -38,8 +37,9 @@ cancellation and foreground latency during a 1,500-photo drain. The retained
 [live embedding report](assets/embed-shape.json) uses the production adapter and
 synthetic images, without a saved real-home credential. This establishes image
 consumption and transport, not search quality or photographic segmentation.
-Other real-provider boundaries still need the CLI journey. The
-[choices ledger](choices.md) records decisions not specified by the user.
+The [live CLI evidence](verification.md) separates accepted transport/replay
+from native-mask failure and visual limitations. The [choices ledger](choices.md)
+records decisions not specified by the user.
 
 ## Contracts and boundaries
 

@@ -1,0 +1,26 @@
+[
+  {
+    "a": "input",
+    "b": "reimagined",
+    "changedChannelFraction": 0.9885330200195312,
+    "meanChannelAbsoluteDelta": 33.85185877482096,
+    "shaA": "d14b962e7d872797b91535defda9902cbac15d1fd381b1d6bc478b6ac4175162",
+    "shaB": "fe09fcb68124aa93c5ba2f18c35a55e76c62c92024c0f7698a81f818dc088f48"
+  },
+  {
+    "a": "reimagined",
+    "b": "relit",
+    "changedChannelFraction": 0.8071893056233724,
+    "meanChannelAbsoluteDelta": 3.446467081705729,
+    "shaA": "fe09fcb68124aa93c5ba2f18c35a55e76c62c92024c0f7698a81f818dc088f48",
+    "shaB": "776076b4f91ba9671ad0bdc8d1f3efe897d584eba690235c43cb31a072596e5f"
+  },
+  {
+    "a": "edited",
+    "b": "replayed",
+    "changedChannelFraction": 0,
+    "meanChannelAbsoluteDelta": 0,
+    "shaA": "776076b4f91ba9671ad0bdc8d1f3efe897d584eba690235c43cb31a072596e5f",
+    "shaB": "776076b4f91ba9671ad0bdc8d1f3efe897d584eba690235c43cb31a072596e5f"
+  }
+]
