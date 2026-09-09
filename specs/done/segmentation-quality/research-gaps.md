@@ -55,7 +55,7 @@ confidence as physical coverage. Defer a run until a concrete seed defect makes
 that separate question useful.
 
 ZIM adoption for the intended noncommercial use is explicitly authorized in the
-[implementation contract](implementation.md). Published research code and
+[implementation rationale](README.md). Published research code and
 downloadable weights do not establish permission for unrelated commercial use.
 Training a replacement or acquiring private data would be a new, explicitly
 scoped project, not an unannounced continuation of checkpoint evaluation.
