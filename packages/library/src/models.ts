@@ -1,11 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { copyFile, mkdir, open, rename, rm } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { hasCode } from "./fs-errors.js";
 
 export interface ModelManifest {
   schema: 1;
-  source: { repository: string; revision: string };
+  source: { repository: string; revision: string; directory?: string };
   artifacts: Array<{ file: string; sha256: string; opset: number }>;
 }
 
@@ -13,6 +14,11 @@ export interface ModelFetchResult {
   file: string;
   sha256: string;
   cached: boolean;
+}
+
+export function modelSourceBaseUrl(manifest: ModelManifest): string {
+  const { repository, revision, directory } = manifest.source;
+  return `https://huggingface.co/${repository}/resolve/${revision}/${directory ? `${encodeURIComponent(directory)}/` : ""}`;
 }
 
 export async function fetchPinnedModels(options: {
@@ -29,38 +35,66 @@ export async function fetchPinnedModels(options: {
   if (!baseUrl.pathname.endsWith("/")) baseUrl.pathname += "/";
   await mkdir(options.directory, { recursive: true });
   const request = options.fetch ?? fetch;
-  return await Promise.all(
-    options.manifest.artifacts.map(async (artifact) => {
-      const destination = join(options.directory, artifact.file);
-      if ((await fileHash(destination)) === artifact.sha256) {
-        return { file: artifact.file, sha256: artifact.sha256, cached: true };
-      }
-      const response = await request(new URL(artifact.file, baseUrl));
-      if (!response.ok) {
-        throw new Error(`Model download failed for ${artifact.file}: HTTP ${response.status}`);
-      }
-      const bytes = new Uint8Array(await response.arrayBuffer());
-      const actual = sha256(bytes);
-      if (actual !== artifact.sha256) {
-        throw new Error(
-          `SHA-256 mismatch for ${artifact.file}: expected ${artifact.sha256}, received ${actual}`,
-        );
-      }
-      const temporary = join(options.directory, `.${artifact.file}.${randomUUID()}.tmp`);
+  const cancellation = new AbortController();
+  const pending = options.manifest.artifacts.map(async (artifact) => {
+    const destination = join(options.directory, artifact.file);
+    if ((await fileHash(destination)) === artifact.sha256) {
+      return { file: artifact.file, sha256: artifact.sha256, cached: true };
+    }
+    const response = await request(new URL(artifact.file, baseUrl), {
+      signal: cancellation.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Model download failed for ${artifact.file}: HTTP ${response.status}`);
+    }
+    const body = response.body;
+    if (!body) throw new Error(`Model download has no body for ${artifact.file}`);
+    const temporary = join(options.directory, `.${artifact.file}.${randomUUID()}.tmp`);
+    try {
+      const handle = await open(temporary, "wx", 0o600);
       try {
-        const handle = await open(temporary, "wx", 0o600);
-        try {
-          await handle.writeFile(bytes);
-          await handle.sync();
-        } finally {
-          await handle.close();
+        const hash = createHash("sha256");
+        await handle.writeFile(
+          (async function* () {
+            for await (const chunk of body) {
+              hash.update(chunk);
+              yield chunk;
+            }
+          })(),
+        );
+        const actual = hash.digest("hex");
+        if (actual !== artifact.sha256) {
+          throw new Error(
+            `SHA-256 mismatch for ${artifact.file}: expected ${artifact.sha256}, received ${actual}`,
+          );
         }
-        await rename(temporary, destination);
+        await handle.sync();
       } finally {
-        await rm(temporary, { force: true });
+        await handle.close();
       }
-      return { file: artifact.file, sha256: artifact.sha256, cached: false };
-    }),
+      await rename(temporary, destination);
+    } finally {
+      await rm(temporary, { force: true });
+    }
+    return { file: artifact.file, sha256: artifact.sha256, cached: false };
+  });
+  let results: ModelFetchResult[];
+  try {
+    results = await Promise.all(pending);
+  } catch (error) {
+    cancellation.abort(error);
+    await Promise.allSettled(pending);
+    throw error;
+  }
+  await copyModelNotices(options.directory);
+  return results;
+}
+
+export async function copyModelNotices(directory: string): Promise<void> {
+  await Promise.all(
+    ["ZIM-LICENSE", "ZIM-NOTICE"].map((file) =>
+      copyFile(new URL(`../assets/${file}`, import.meta.url), join(directory, file)),
+    ),
   );
 }
 
@@ -89,6 +123,7 @@ export function parseModelReleaseManifest(value: unknown): ModelManifest {
     typeof candidate.source.repository !== "string" ||
     candidate.source.repository.length === 0 ||
     typeof candidate.source.revision !== "string" ||
+    (candidate.source.directory !== undefined && typeof candidate.source.directory !== "string") ||
     !Array.isArray(candidate.artifacts) ||
     candidate.artifacts.some(
       (artifact) =>
@@ -129,13 +164,11 @@ function assertManifest(manifest: ModelManifest): void {
 
 async function fileHash(path: string): Promise<string | null> {
   try {
-    return sha256(await readFile(path));
+    const hash = createHash("sha256");
+    for await (const chunk of createReadStream(path)) hash.update(chunk);
+    return hash.digest("hex");
   } catch (error) {
     if (hasCode(error, "ENOENT")) return null;
     throw error;
   }
-}
-
-function sha256(bytes: Uint8Array): string {
-  return createHash("sha256").update(bytes).digest("hex");
 }

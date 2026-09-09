@@ -4,6 +4,7 @@ import {
   databaseDescription,
   fetchPinnedModels,
   inspectPinnedModels,
+  modelSourceBaseUrl,
   PINNED_MODEL_RELEASE,
   readLibraryDiagnostics,
   type LibraryHandle,
@@ -30,7 +31,6 @@ export async function doctorCommand(
   args: string[],
   env: RequestEnv,
   cwd: string,
-  version: string,
   provided?: LibraryHandle,
 ): Promise<Envelope> {
   const parsed = parseArguments(args, { flags: ["--fetch-models"] });
@@ -57,9 +57,7 @@ export async function doctorCommand(
         reason: "models_base_url_invalid",
       });
     }
-    const modelBaseUrl =
-      parsedModelBaseUrl.data ??
-      `https://github.com/dzhng/photoctl/releases/download/v${encodeURIComponent(version)}/`;
+    const modelBaseUrl = parsedModelBaseUrl.data ?? modelSourceBaseUrl(PINNED_MODEL_RELEASE);
     const modelDirectory = join(handle.path, "models");
     if (parsed.flags.has("--fetch-models")) {
       try {

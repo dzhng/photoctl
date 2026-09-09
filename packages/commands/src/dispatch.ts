@@ -247,13 +247,7 @@ export async function dispatch(
       return await migrateCommand(request.args, request.env, request.cwd, context.library);
     if (request.verb === "init") return await initCommand(request.args, request.env, request.cwd);
     if (request.verb === "doctor")
-      return await doctorCommand(
-        request.args,
-        request.env,
-        request.cwd,
-        context.version,
-        context.library,
-      );
+      return await doctorCommand(request.args, request.env, request.cwd, context.library);
     throw new PhotoctlError("usage", `Unknown command: ${request.verb}`);
   } catch (error) {
     if (error instanceof PhotoctlError)

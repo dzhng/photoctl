@@ -1,0 +1,17 @@
+ZIM: Zero-Shot Image Matting for Anything
+Copyright (c) 2024-present Naver Cloud Corp.
+
+Source: https://github.com/naver-ai/ZIM
+Source revision: 392e613c8a3d395ce4dda3b51edb6dabc1fd0004
+Official models: https://huggingface.co/naver-iv/zim-anything-vitl
+Model revision: 667e2d7c233f6f1cacd12ccc64bdf6cc7b5aa16d
+
+The upstream repository is licensed under Creative Commons
+Attribution-NonCommercial 4.0 International. See ZIM-LICENSE.
+OpenPhoto adopts these models for noncommercial use. The model card's
+conflicting CC BY 4.0 metadata is not relied on for commercial permission.
+This notice applies to ZIM artifacts and derived implementation, not unrelated
+OpenPhoto code. Official ONNX model files are distributed without modification.
+
+ZIM source acknowledges code based on Meta's Segment Anything Model (SAM):
+https://github.com/facebookresearch/segment-anything

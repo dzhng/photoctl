@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { expect, test } from "vitest";
 import { dispatch } from "./dispatch.js";
 
-test("doctor defaults to this CLI release's models and honors an explicit mirror", async () => {
+test("doctor defaults to the pinned upstream models and honors an explicit mirror", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-model-doctor-"));
   const libraryPath = join(parent, "library");
   const initialized = await initializeLibrary(libraryPath);
@@ -22,7 +22,7 @@ test("doctor defaults to this CLI release's models and honors an explicit mirror
       ok: true,
       data: {
         models: {
-          base_url: "https://github.com/dzhng/photoctl/releases/download/v1.2.3/",
+          base_url: `https://huggingface.co/${PINNED_MODEL_RELEASE.source.repository}/resolve/${PINNED_MODEL_RELEASE.source.revision}/${PINNED_MODEL_RELEASE.source.directory}/`,
           manifest_ready: true,
           directory: join(libraryPath, "models"),
           artifacts: PINNED_MODEL_RELEASE.artifacts.map(({ file, sha256, opset }) => ({

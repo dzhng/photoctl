@@ -1,11 +1,21 @@
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { fetchPinnedModels, type ModelManifest } from "./models.js";
+import { fetchPinnedModels, modelSourceBaseUrl, type ModelManifest } from "./models.js";
 
 const temporaryDirectories: string[] = [];
+
+test("upstream acquisition resolves the pinned model subdirectory", () => {
+  expect(
+    modelSourceBaseUrl({
+      schema: 1,
+      source: { repository: "author/model", revision: "a".repeat(40), directory: "released_pair" },
+      artifacts: [],
+    }),
+  ).toBe(`https://huggingface.co/author/model/resolve/${"a".repeat(40)}/released_pair/`);
+});
 
 afterEach(async () => {
   await Promise.all(
@@ -83,6 +93,86 @@ test("model fetch leaves no published file when downloaded bytes fail the manife
     }),
   ).rejects.toThrow("SHA-256 mismatch");
   await expect(readFile(join(root, "encoder.onnx"))).rejects.toMatchObject({ code: "ENOENT" });
+});
+
+test("a failed model cancels the other download and settles its temporary-file cleanup", async () => {
+  const root = await mkdtemp(join(tmpdir(), "photoctl-models-batch-failed-"));
+  temporaryDirectories.push(root);
+  const manifest: ModelManifest = {
+    schema: 1,
+    source: { repository: "test/model", revision: "a".repeat(40) },
+    artifacts: [
+      artifact("encoder.onnx", Buffer.from("encoder")),
+      artifact("decoder.onnx", Buffer.from("decoder")),
+    ],
+  };
+  let cancelled = false;
+  const started = Promise.withResolvers<void>();
+  let controller: ReadableStreamDefaultController<Uint8Array>;
+  try {
+    await expect(
+      fetchPinnedModels({
+        manifest,
+        baseUrl: "https://mirror.example.test/",
+        directory: root,
+        fetch: async (url, options) => {
+          if (String(url).endsWith("decoder.onnx")) {
+            await started.promise;
+            return new Response("failed", { status: 500 });
+          }
+          return new Response(
+            new ReadableStream<Uint8Array>({
+              start(value) {
+                controller = value;
+                value.enqueue(Buffer.from("partial encoder"));
+                options?.signal?.addEventListener(
+                  "abort",
+                  () => {
+                    cancelled = true;
+                    value.error(options.signal!.reason);
+                  },
+                  { once: true },
+                );
+                started.resolve();
+              },
+            }),
+          );
+        },
+      }),
+    ).rejects.toThrow("decoder.onnx: HTTP 500");
+    expect(cancelled).toBe(true);
+    expect(await readdir(root)).toEqual([]);
+  } finally {
+    if (!cancelled) controller!.error(new Error("test cleanup"));
+  }
+});
+
+test("interrupted replacement preserves the previous model and leaves no partial artifacts", async () => {
+  const root = await mkdtemp(join(tmpdir(), "photoctl-models-interrupted-"));
+  temporaryDirectories.push(root);
+  const previous = Buffer.from("previous verified release");
+  await writeFile(join(root, "encoder.onnx"), previous);
+  const manifest: ModelManifest = {
+    schema: 1,
+    source: { repository: "test/model", revision: "a".repeat(40) },
+    artifacts: [artifact("encoder.onnx", Buffer.from("complete next release"))],
+  };
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(Buffer.from("partial next release"));
+      controller.error(new Error("connection interrupted"));
+    },
+  });
+  await expect(
+    fetchPinnedModels({
+      manifest,
+      baseUrl: "https://mirror.example.test/",
+      directory: root,
+      fetch: async () => new Response(body),
+    }),
+  ).rejects.toThrow("connection interrupted");
+  expect(await readFile(join(root, "encoder.onnx"))).toEqual(previous);
+  expect(await readdir(root)).toEqual(["encoder.onnx"]);
 });
 
 function artifact(file: string, bytes: Uint8Array) {

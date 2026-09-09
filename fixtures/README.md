@@ -10,7 +10,6 @@ Every file here has one line saying what it proves. Add a line when you add a fi
 | `a7c2-lossy.ARW` | known-good, CC0 | Sony lossy compressed RAW (Compression=32767) preserves the same camera-space decoder contract. |
 | `corrupt/a7c2-truncated.ARW` | known-bad | A genuine TIFF header and truncated first directory are skipped by public import without a crash or catalog photo. Its adjacent JSON records the exact source prefix and hash. |
 | `libraries/` | historical evidence | Frozen pre-pairing catalogs document historical writer behavior; they are not supported input to the clean-start catalog model. |
-| `models.json` | release contract | Pins the SAM 2.1 source revision, real CPU-parity-verified ONNX hashes, and opsets. Distribution location is configured separately; hashes do not assert model quality or runtime performance. |
 | `xmp/classic.xmp` | known-good | A Classic-style sidecar exercises rating, label, flat and hierarchical keywords, and photoctl's namespaced flag. |
 | `tools/drive.mjs` | generator | `fixtures:drive -- --count N --out DIR` creates deterministic tail-distinct ARW copies and matching Classic-style sidecars. |
 | `tools/volume.mjs` | host generator | `fixtures:volume -- --path FILE --mount DIR` creates and attaches a macOS APFS disk image for real offline-volume checks. |
@@ -60,17 +59,20 @@ not a replacement for those defaults.
 Docker takes an explicit `PHOTOCTL_MODELS_BASE_URL`, fetches and verifies the manifest's files during
 the functional image build, and exposes that directory to the tests. The gateway fixture uses the
 built application image without fetching models. Use a published release's model URL
-or a reachable local HTTP server serving the frozen exports. Tag-triggered releases
+or a reachable local HTTP server serving the pinned official files. Tag-triggered releases
 prepare models before testing and pass them directly to native-runtime jobs; they do
 not depend on a pre-existing public URL or repository variable. Ordinary smoke CI
 does not run the full model suite. See [release ownership](../specs/done/photoctl/README.md#release).
 
-On a host, set `PHOTOCTL_SAM_MODELS_DIR` to an existing exported directory. To provision from a
+On a host, set `PHOTOCTL_SAM_MODELS_DIR` to an existing model directory. To provision from a
 configured base URL, build the TypeScript packages and use the same fetch owner as Docker:
 
 ```sh
-node scripts/fetch-models.mjs "$PHOTOCTL_MODELS_BASE_URL" /path/to/models
+node scripts/fetch-models.mjs /path/to/models --base-url "$PHOTOCTL_MODELS_BASE_URL"
 PHOTOCTL_SAM_MODELS_DIR=/path/to/models bun run test:macos
 ```
 
-Generate the pinned segmentation artifacts with `scripts/export-sam2.py`; it writes real hashes only after both ONNX files pass CPU parity and opset checks. [Reproduction and evidence](../specs/done/photoctl/assets/sam-export/README.md) document the isolated export environment.
+The library's [pinned model manifest](../packages/library/src/pinned-model-manifest.ts)
+owns artifact identity. Omit `--base-url` to acquire official ONNX files directly
+from the pinned upstream revision. Acquisition retains the bundled noncommercial
+license and attribution; hash checks establish artifact identity, not visual quality.

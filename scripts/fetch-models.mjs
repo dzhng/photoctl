@@ -1,18 +1,30 @@
-import { fetchPinnedModels, parseModelReleaseManifest } from "../packages/library/dist/index.js";
+import {
+  fetchPinnedModels,
+  parseModelReleaseManifest,
+  modelSourceBaseUrl,
+  PINNED_MODEL_RELEASE,
+} from "../packages/library/dist/index.js";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { parseArgs } from "node:util";
 
-const [baseUrl, directory, manifestPath = "fixtures/models.json"] = process.argv.slice(2);
-if (!baseUrl || !directory) {
-  throw new Error("usage: fetch-models.mjs BASE_URL DIRECTORY [MANIFEST]");
+const { positionals, values } = parseArgs({
+  allowPositionals: true,
+  options: {
+    "base-url": { type: "string" },
+    manifest: { type: "string" },
+  },
+});
+if (positionals.length !== 1) {
+  throw new Error("usage: fetch-models.mjs DIRECTORY [--base-url URL] [--manifest PATH]");
 }
-const manifest = parseModelReleaseManifest(
-  JSON.parse(await readFile(resolve(manifestPath), "utf8")),
-);
+const manifest = values.manifest
+  ? parseModelReleaseManifest(JSON.parse(await readFile(resolve(values.manifest), "utf8")))
+  : PINNED_MODEL_RELEASE;
 const results = await fetchPinnedModels({
   manifest,
-  baseUrl,
-  directory: resolve(directory),
+  baseUrl: values["base-url"] ?? modelSourceBaseUrl(manifest),
+  directory: resolve(positionals[0]),
 });
 for (const result of results)
   console.log(`${result.cached ? "cached" : "fetched"} ${result.file} ${result.sha256}`);

@@ -1,0 +1,47 @@
+{
+  "date": "2026-09-09",
+  "slice": "01-acquisition",
+  "worktree": "/tmp/openphoto-zim-acquisition.rHUwWV",
+  "real_download": {
+    "directory": "/tmp/openphoto-zim-acquired.UiGfNN",
+    "source": "https://huggingface.co/naver-iv/zim-anything-vitl/resolve/667e2d7c233f6f1cacd12ccc64bdf6cc7b5aa16d/zim_vit_l_2092/",
+    "sha256_verified": true,
+    "artifact_bytes": { "encoder.onnx": 1235692110, "decoder.onnx": 19330176 },
+    "seconds": 124.82,
+    "peak_rss_before_streaming_bytes": 3872522240
+  },
+  "streaming": {
+    "fixture_bytes": 134217728,
+    "red_additional_rss_bytes": 275431424,
+    "fixed_additional_rss_limit_bytes": 100663296,
+    "green": true,
+    "real_pair_streamed_hash_seconds": 0.66,
+    "real_pair_streamed_hash_peak_rss_bytes": 179650560,
+    "real_pair_cached_fetch_seconds": 0.58,
+    "real_pair_cached_fetch_peak_rss_bytes": 157499392
+  },
+  "red_green": [
+    "doctor returned CLI-tag release URL before switching to immutable upstream URL; explicit mirror stayed unchanged",
+    "acquisition script rejected named mirror/manifest arguments before its direct contract update; afterward downloaded verified fixture bytes and copied notices",
+    "source subdirectory resolution omitted released_pair before adding the manifest location field; afterward resolved the exact URL",
+    "interrupted download fault injection truncated the existing file and failed byte preservation; removing the injected fault restored green",
+    "128 MiB fetch and cache inspection exceeded memory allowance with whole-body buffering; streamed processing passes",
+    "one failed model initially left the companion request alive; batch cancellation and awaited cleanup now preserve the original error and leave no temporary files"
+  ],
+  "review": {
+    "independent_codex": "P1: this isolated manifest cutover requires the planned ZIM runtime integration before release",
+    "disposition": "confirmed dependency on slices 04 and 05; no compatibility backend added and no standalone release claimed",
+    "acquisition_followup": "no actionable acquisition defects; seven tests passed in reviewer sandbox, HTTP fixture blocked by listen EPERM; same fixture passes outside sandbox",
+    "cancellation_followup": "confirms companion streams and temporary cleanup settle before original error is rethrown"
+  },
+  "verification": {
+    "focused_tests_passed": 9,
+    "focused_changed_tests_passed": 11,
+    "typescript_build": "passed",
+    "targeted_lint": "passed",
+    "doc_links": "passed",
+    "library_package_dry_run": "includes assets/ZIM-LICENSE and assets/ZIM-NOTICE"
+  },
+  "published": false,
+  "full_verify_run": false
+}

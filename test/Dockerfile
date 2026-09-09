@@ -38,7 +38,7 @@ RUN bun run build
 FROM built AS models
 ARG PHOTOCTL_MODELS_BASE_URL
 RUN test -n "${PHOTOCTL_MODELS_BASE_URL}" \
- && node scripts/fetch-models.mjs "${PHOTOCTL_MODELS_BASE_URL}" /opt/photoctl/models
+ && node scripts/fetch-models.mjs /opt/photoctl/models --base-url "${PHOTOCTL_MODELS_BASE_URL}"
 
 FROM models AS functional
 ENV PHOTOCTL_SAM_MODELS_DIR=/opt/photoctl/models

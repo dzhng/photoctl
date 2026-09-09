@@ -74,7 +74,10 @@ while iterating.
 ## Releases
 
 Version tags drive package and model publication together. A CLI release downloads
-its own verified model files, never a moving “latest” model. Libraries can explicitly
+its verified ZIM ONNX files from an immutable upstream revision, never a moving
+“latest” model. The bundled [ZIM notice](packages/library/assets/ZIM-NOTICE) and
+[noncommercial license](packages/library/assets/ZIM-LICENSE) govern those artifacts.
+Libraries can explicitly
 select a mirror through `openphoto settings set models_base_url`, validated by
 [the settings registry](packages/protocol/src/verbs/settings.ts). The
 [release workflow](.github/workflows/publish.yml) owns the publication boundary; the
