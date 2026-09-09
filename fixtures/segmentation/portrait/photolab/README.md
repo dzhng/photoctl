@@ -1,9 +1,10 @@
-# PhotoLab portrait: hair selection
+# PhotoLab portrait: hair and person selection
 
 The intended target is the woman's hair, including visible curls and strands,
 while excluding face, exposed skin, flowers, clothing and background. Hair and
-entire-person requests have different scope; no completed automatic whole-person
-result is recorded in this case.
+entire-person requests have different scope. The [integrated live evaluations](live/README.md)
+retain actual whole-person failures and a fresh hair-only control separately
+from the historical upstream result below.
 
 ## Inputs and visual targets
 

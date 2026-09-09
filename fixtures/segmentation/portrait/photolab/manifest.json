@@ -55,7 +55,7 @@
     "human_point_editing": false,
     "grounding_input": "source.png only; no target overlay or mask",
     "calls": 1,
-    "missing_result": "Automatic whole-person selection has not completed."
+    "subsequent_live_evaluations": "live/README.md"
   },
   "observed": [
     {

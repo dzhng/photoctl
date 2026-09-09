@@ -34,3 +34,38 @@ ambiguity. **Verdict:** sound; the fresh live response uses named axes correctly
 although the score-selected model still misses hair/clothing for the person
 request. Wire correctness is not a promise of semantic completeness.
 **Confidence:** high.
+
+## Sound — one executable discovery inventory (high confidence)
+
+**When:** CLI help. A fresh agent can ask for help before any library exists.
+Each command entry now couples its existing execution adapter with its usage,
+description and examples; the same entries generate root discovery. Existing
+handlers still validate execution. This replaces the dispatch ladder rather
+than adding a separate list that could advertise commands the CLI cannot run.
+
+**Gap:** the request required comprehensive discovery but did not dictate its
+owner or output format. **Reach:** help uses the existing JSON envelope by
+default, with readable `--human` rendering. Help is intercepted before library,
+credential or daemon work; the existing configure/settings help bodies remain
+authoritative for their special details. Daemon control keeps its execution
+transport owner and contributes a descriptive entry. The root-linked guide owns
+workflow concepts, not another exhaustive command roster. **Verdict:** sound;
+the actual CLI exposes every advertised command without creating runtime state.
+**Confidence:** high.
+
+## Sound — retain live failures alongside controls (high confidence)
+
+**When:** live verification. The first person request selected flowers; the
+named-axis request corrected that misinterpretation but omitted hair/clothing.
+Both results remain in the scene collection, alongside a separate hair control,
+instead of keeping only the result that looks strongest.
+
+**Gap:** the user requested reusable references, while these follow-up captures
+exposed both an implementation defect and remaining model limits. **Reach:**
+future evaluations can distinguish wire-contract correctness from semantic
+coverage and reuse exact developed pixels, automatic guidance, scores and masks.
+Source crops are shared; no duplicate RAWs, model weights, scratch libraries or
+credentials are committed. Quantized alpha remains an observation, never an
+ideal target. **Verdict:** sound; it preserves the failure cases without
+inflating scene diversity or pretending a successful command proves quality.
+**Confidence:** high.

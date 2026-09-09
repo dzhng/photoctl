@@ -1,0 +1,11 @@
+{
+  "maxRssBytes": 6626082816,
+  "final": {
+    "rss": 6626099200,
+    "heapTotal": 66830336,
+    "heapUsed": 42458096,
+    "external": 346212026,
+    "arrayBuffers": 16060602
+  },
+  "heapLimitBytes": 4496293888
+}

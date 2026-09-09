@@ -1,5 +1,10 @@
 # Verification record — 2026-09-09
 
+This is the earlier closeout record. The subsequent [live evaluations](../../../fixtures/segmentation/portrait/photolab/live/README.md)
+resolve the unavailable credential/capture item while retaining visual failures.
+The follow-up CLI-discovery work also repairs the boxed-pixel allocation that
+caused the Docker heap failure below; its final gate has a separate record.
+
 This closes the practical research-and-implementation scope, not a claim of
 PhotoLab parity or universal platform compatibility. The accepted platform is
 the owner's Apple Silicon Mac; Linux validation is not a release-acceptance

@@ -1,0 +1,102 @@
+{
+  "source": "fixtures/segmentation/portrait/photolab/source.png",
+  "sourceSha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+  "steps": [
+    {
+      "name": "init",
+      "args": [
+        "init",
+        "--path",
+        "/tmp/openphoto-hair-named.YNXi3o/library"
+      ],
+      "code": 0,
+      "signal": null,
+      "seconds": 1.155402
+    },
+    {
+      "name": "import",
+      "args": [
+        "import",
+        "/Users/david/dev/photoctl/fixtures/segmentation/portrait/photolab/source.png",
+        "--link"
+      ],
+      "code": 0,
+      "signal": null,
+      "seconds": 0.4694828749999999
+    },
+    {
+      "name": "export",
+      "args": [
+        "export",
+        "01a085ac-99c9-7421-9590-d7c1db807023",
+        "--to",
+        "/tmp/openphoto-hair-named.YNXi3o/export",
+        "--format",
+        "png"
+      ],
+      "code": 0,
+      "signal": null,
+      "seconds": 0.775187417
+    },
+    {
+      "name": "person",
+      "args": [
+        "segment",
+        "01a085ac-99c9-7421-9590-d7c1db807023",
+        "--text",
+        "The woman's hair, including visible curls and strands; exclude face, exposed skin, flowers, clothing and background."
+      ],
+      "code": 0,
+      "signal": null,
+      "seconds": 15.767264749999999
+    }
+  ],
+  "scope": "The woman's hair, including visible curls and strands; exclude face, exposed skin, flowers, clothing and background.",
+  "humanGuidanceEdits": false,
+  "photoId": "01a085ac-99c9-7421-9590-d7c1db807023",
+  "developedSourceSha256": "06fc6ae78455b6141ccb69bf134bbd198b973157fc2f79b192b1056d4a131549",
+  "response": {
+    "id": "01a085ac-99c9-7421-9590-d7c1db807023",
+    "revision_id": "f2cbb365-9e6b-4506-a1aa-d9226bd1518b",
+    "render_hash": "r_bed203f3f292d98a13b65dea437033c867ec3e15fce5fd858af913cd721a8c08",
+    "gateway_calls": 1,
+    "instances": [
+      {
+        "i": 0,
+        "label": "the woman's hair",
+        "bbox": [
+          0,
+          0,
+          1614,
+          1080
+        ],
+        "layer_id": "2a74a8bc-ff8f-453e-a3c9-1922aa733f56",
+        "mask": {
+          "artifact_hash": "a_6a12cc65744bf643fcb2b778a498dbd961dd766e67b4b60e8226efaedb96ab7e",
+          "bbox": [
+            0,
+            0,
+            1614,
+            1080
+          ],
+          "pixels": 1743120
+        }
+      }
+    ]
+  },
+  "observed": [
+    {
+      "index": 0,
+      "label": "the woman's hair",
+      "dimensions": {
+        "w": 1614,
+        "h": 1080
+      },
+      "artifactHash": "a_6a12cc65744bf643fcb2b778a498dbd961dd766e67b4b60e8226efaedb96ab7e",
+      "rawAlphaSha256": "e9d944c12feffb929996affd9811eadbef8a121badea74d5d9d50cf3254655b4",
+      "meanAlpha": 0.26388091864552937,
+      "confidentShare": 0.26625590894488044,
+      "fractionalShare": 1
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "url": "https://ai-gateway.vercel.sh/v1/chat/completions",
+  "body": {
+    "model": "google/gemini-3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "Locate every instance matching this selection: The woman's hair, including visible curls and strands; exclude face, exposed skin, flowers, clothing and background."
+          },
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": {
+                "retainedImage": "request-0-image-0.jpg",
+                "sha256": "c018990fd2289ddf6298dacc7cb0174beb0fc32ab0483a3f9ada654cd3d0909d",
+                "bytes": 108306
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "photoctl_segment_instances",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "instances": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "box_2d": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "points": {
+                    "type": "array",
+                    "minItems": 12,
+                    "maxItems": 12,
+                    "description": "Exactly 5 positive points confidently inside different parts of the requested target and 7 negative points in distributed adjacent non-target regions. Avoid ambiguous boundaries. Preserve the requested selection and exclusions for each instance.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "at": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "x": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1000,
+                              "description": "Horizontal position: 0 at the left edge, 1000 at the right."
+                            },
+                            "y": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1000,
+                              "description": "Vertical position: 0 at the top edge, 1000 at the bottom."
+                            }
+                          },
+                          "required": [
+                            "x",
+                            "y"
+                          ],
+                          "description": "Named normalized axes, not an ordered coordinate pair."
+                        },
+                        "label": {
+                          "type": "integer",
+                          "enum": [
+                            0,
+                            1
+                          ],
+                          "description": "1 includes; 0 excludes."
+                        }
+                      },
+                      "required": [
+                        "at",
+                        "label"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "box_2d",
+                  "label",
+                  "points"
+                ]
+              }
+            }
+          },
+          "required": [
+            "instances"
+          ]
+        }
+      }
+    }
+  }
+}

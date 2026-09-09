@@ -9,7 +9,7 @@ promoted to ground-truth alpha.
 
 | Scene | Selections and evidence | Current interpretation |
 |---|---|---|
-| [PhotoLab portrait](portrait/photolab/README.md) | Clean video frame, user screenshot and video hair overlay; automatic signed hair prompts, upstream ZIM alpha and native display result. | Comparable hair appearance at the supplied viewport; documented missed strands and leakage remain. Entire-person selection has no completed automatic result here. |
+| [PhotoLab portrait](portrait/photolab/README.md) | Clean video frame, user screenshot and video hair overlay; historical hair results plus [live CLI person/hair evaluations](portrait/photolab/live/README.md). | Comparable historical hair appearance at the supplied viewport, with retained defects. Live person requests execute but fail complete hair/clothing coverage; the fresh hair control retains broad scope with edge errors. |
 | [A7C II landscape](landscape/a7c2/README.md) | Exact developed CLI source, historical embedded-JPEG source; sky and paved-path masks; wire, foliage and path detail crops. | Broad selection passes coarse checks; the recorded wire, foliage and path detail review fails. |
 
 These are two distinct photographed scenes. Different crops, developed exports,

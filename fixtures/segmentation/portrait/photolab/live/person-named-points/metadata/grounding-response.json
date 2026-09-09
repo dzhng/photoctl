@@ -1,0 +1,128 @@
+{
+  "httpStatus": 200,
+  "seconds": 7.977519958,
+  "model": "google/gemini-3-flash",
+  "requestId": "gen_01M22THBVZ73JYEF87NR1B37HT",
+  "instances": [
+    {
+      "box_2d": [
+        43,
+        54,
+        1000,
+        1000
+      ],
+      "label": "entire visible woman",
+      "points": [
+        {
+          "at": {
+            "x": 750,
+            "y": 350
+          },
+          "label": 1
+        },
+        {
+          "at": {
+            "x": 600,
+            "y": 480
+          },
+          "label": 1
+        },
+        {
+          "at": {
+            "x": 290,
+            "y": 850
+          },
+          "label": 1
+        },
+        {
+          "at": {
+            "x": 820,
+            "y": 960
+          },
+          "label": 1
+        },
+        {
+          "at": {
+            "x": 500,
+            "y": 360
+          },
+          "label": 1
+        },
+        {
+          "at": {
+            "x": 210,
+            "y": 440
+          },
+          "label": 0
+        },
+        {
+          "at": {
+            "x": 510,
+            "y": 720
+          },
+          "label": 0
+        },
+        {
+          "at": {
+            "x": 100,
+            "y": 150
+          },
+          "label": 0
+        },
+        {
+          "at": {
+            "x": 900,
+            "y": 100
+          },
+          "label": 0
+        },
+        {
+          "at": {
+            "x": 390,
+            "y": 300
+          },
+          "label": 0
+        },
+        {
+          "at": {
+            "x": 210,
+            "y": 690
+          },
+          "label": 0
+        },
+        {
+          "at": {
+            "x": 950,
+            "y": 600
+          },
+          "label": 0
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1110,
+    "completion_tokens": 1566,
+    "total_tokens": 2676,
+    "cost": 0.005253,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": null,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1225,
+      "image_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "market_cost": 0.005253,
+    "gateway_cost": 0.005253
+  },
+  "retention": "Semantic response and usage only; headers and encrypted reasoning payload omitted."
+}

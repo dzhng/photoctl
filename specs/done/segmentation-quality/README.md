@@ -88,9 +88,10 @@ The [reference-framing audit](assets/reference-audit/critique.md) explains the
 bounded portrait comparison. The [native comparison](assets/native-zim/critique.md)
 records preservation of that appearance. The [actual CLI holdout review](assets/cli-holdout/critique.md)
 records the remaining generic defects despite passing coarse area probes.
-An actual automatic whole-person ZIM trial was unavailable at closeout because
-no gateway key was configured; deterministic routing tests do not replace that
-missing live evidence.
+An actual automatic whole-person ZIM trial was unavailable at this closeout
+because no gateway key was configured. Subsequent [live CLI evaluations](../../../fixtures/segmentation/portrait/photolab/live/README.md)
+retain the now-completed person trials and hair control, including their failures;
+deterministic routing tests never replaced that evidence.
 
 ## Explored levers and rejected shortcuts
 

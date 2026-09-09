@@ -1,0 +1,70 @@
+{
+  "seconds": 0.21511954200000036,
+  "inputs": [
+    {
+      "name": "point_coords",
+      "dimensions": [
+        1,
+        13,
+        2
+      ],
+      "dtype": "Float32Array",
+      "file": "decoder-0-input-0.f32",
+      "sha256": "7d1eabcfe0613ae1708396b84bd90f63feb608ef3aeabe6d5a6c875e205d5896"
+    },
+    {
+      "name": "point_labels",
+      "dimensions": [
+        1,
+        13
+      ],
+      "dtype": "Float32Array",
+      "file": "decoder-0-input-1.f32",
+      "sha256": "85e6be90e2bbd6db2c8ce89a679bd77b0c3749475ab4891b85b29005982817c4"
+    },
+    {
+      "name": "attn_mask",
+      "dimensions": [
+        1,
+        64,
+        64
+      ],
+      "dtype": "Float32Array",
+      "file": "decoder-0-input-2.f32",
+      "sha256": "54bfdfde961cbff7b8b53d332ddcac29f357fbc41f062ad12037008fc489cbf2"
+    }
+  ],
+  "outputs": [
+    {
+      "dimensions": [
+        1,
+        4,
+        512,
+        512
+      ],
+      "dtype": "Float32Array",
+      "file": "decoder-0-output-0.f32",
+      "sha256": "929e2e29fd218643c59ba19b9dcd21c7d29be75e9791c2b11e446530d7a0489a"
+    },
+    {
+      "dimensions": [
+        1,
+        4
+      ],
+      "dtype": "Float32Array",
+      "file": "decoder-0-output-1.f32",
+      "sha256": "5fb743f2ad352c0a399a88ff1cbf4c05e1f8008d393a98b25da4e5e67bf34308"
+    }
+  ],
+  "scores": [
+    0.8851801156997681,
+    0.8733470439910889,
+    0.22596408426761627,
+    0.9043720364570618
+  ],
+  "selectedIndex": 3,
+  "diagnostics": {
+    "diagnostics": [],
+    "droppedDiagnostics": 0
+  }
+}

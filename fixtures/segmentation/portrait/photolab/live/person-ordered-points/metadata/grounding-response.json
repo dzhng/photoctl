@@ -1,0 +1,128 @@
+{
+  "httpStatus": 200,
+  "seconds": 5.303449124999999,
+  "model": "google/gemini-3-flash",
+  "requestId": "gen_01M22T3X150AEGD0GDDXVJJ4F4",
+  "instances": [
+    {
+      "box_2d": [
+        38,
+        59,
+        1000,
+        999
+      ],
+      "label": "woman",
+      "points": [
+        {
+          "at": [
+            270,
+            750
+          ],
+          "label": 1
+        },
+        {
+          "at": [
+            460,
+            580
+          ],
+          "label": 1
+        },
+        {
+          "at": [
+            920,
+            300
+          ],
+          "label": 1
+        },
+        {
+          "at": [
+            960,
+            800
+          ],
+          "label": 1
+        },
+        {
+          "at": [
+            330,
+            550
+          ],
+          "label": 1
+        },
+        {
+          "at": [
+            710,
+            520
+          ],
+          "label": 0
+        },
+        {
+          "at": [
+            440,
+            210
+          ],
+          "label": 0
+        },
+        {
+          "at": [
+            470,
+            410
+          ],
+          "label": 0
+        },
+        {
+          "at": [
+            250,
+            300
+          ],
+          "label": 0
+        },
+        {
+          "at": [
+            200,
+            100
+          ],
+          "label": 0
+        },
+        {
+          "at": [
+            500,
+            950
+          ],
+          "label": 0
+        },
+        {
+          "at": [
+            50,
+            530
+          ],
+          "label": 0
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1110,
+    "completion_tokens": 589,
+    "total_tokens": 1699,
+    "cost": 0.002322,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": null,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 392,
+      "image_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "market_cost": 0.002322,
+    "gateway_cost": 0.002322
+  },
+  "retention": "Semantic response and usage only; headers and encrypted reasoning payload omitted."
+}

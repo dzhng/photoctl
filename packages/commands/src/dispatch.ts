@@ -77,6 +77,7 @@ const commands: Record<string, CommandDefinition> = {
   settings: {
     description: "Inspect or replace library settings",
     usage: "openphoto settings get [key] | set <key> <json> | reset <key>",
+    notes: ["Use openphoto settings --help for supported keys and setting lifecycle details."],
     subcommands: {
       get: "get [key]: inspect one key or every setting",
       set: "set <key> <json>: replace the entire value with shell-quoted JSON",
@@ -94,7 +95,9 @@ const commands: Record<string, CommandDefinition> = {
   white_balance: {
     description: "Sample a neutral point or region to set white balance",
     usage: "openphoto white_balance PHOTO (--point x,y | --region x,y,w,h) [--norm]",
-    notes: ["Provide exactly one sample. --norm uses fractions of the command's coordinate frame."],
+    notes: [
+      "Provide exactly one sample in oriented, uncropped base-image coordinates. --norm uses fractions of that frame.",
+    ],
     examples: ["openphoto white_balance PHOTO --point 0.5,0.5 --norm"],
     run: async (request, context) =>
       whiteBalanceCommand(request.args, request.env, request.cwd, context.library, context.emit),
@@ -331,7 +334,7 @@ const commands: Record<string, CommandDefinition> = {
       transform:
         "transform PHOTO LAYER [--dx X] [--dy Y] [--scale N] [--rotate DEGREES] [--flip h|v|both|none] [--anchor centroid|x,y] [--relative] [--norm]",
       reorder: "reorder PHOTO LAYER (--up | --down | --front | --back | --to INDEX)",
-      set: "set PHOTO LAYER [--name NAME] [--opacity N] [--blend MODE] [--enabled true|false]",
+      set: "set PHOTO LAYER [--name NAME] [--opacity N] [--blend normal] [--enabled true|false]",
       duplicate: "duplicate PHOTO LAYER: duplicate a layer",
       remove: "remove PHOTO LAYER: remove a layer",
       clear: "clear PHOTO: remove all layers",
@@ -369,6 +372,9 @@ const commands: Record<string, CommandDefinition> = {
   retouch: {
     description: "Apply local deterministic spot repair",
     usage: "openphoto retouch PHOTO --at x,y [--radius N] [--norm]",
+    notes: [
+      "--norm scales point coordinates by the image dimensions and an explicit radius by the image's long edge. Without --norm, radius is in pixels. If omitted, radius is 2% of the long edge in either mode.",
+    ],
     examples: ["openphoto retouch PHOTO --at 100,120 --radius 8"],
     run: async (request, context) =>
       retouchCommand(request.args, request.env, request.cwd, context.library),

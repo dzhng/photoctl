@@ -1,0 +1,1046 @@
+{
+  "scene": "photolab-portrait",
+  "date": "2026-09-09",
+  "independentSceneCount": 1,
+  "captureRoute": "Built production CLI, no daemon; instrumented fetch and native boundary only retain unchanged inputs/results.",
+  "source": {
+    "imported": "../source.png",
+    "developed": "source-developed.png",
+    "note": "Live CLI development changes decoded RGB slightly from the historical upstream source; all three live runs use identical developed pixels."
+  },
+  "implementationEquivalentCommits": {
+    "orderedPoints": "0c0a2fc963c9060dc4e053b8045904f238f3ff03",
+    "namedPoints": "8d3e4408e804b3c18f18c943138c246d2c3844db",
+    "note": "Captures ran from the working tree; these commits retain equivalent model/grounding code. Named-point compiled files are hashed below, not claimed as the older ordered-point build."
+  },
+  "namedPointImplementationHashes": {
+    "packages/providers/dist/adapters/structured.js": "c03eb2aece95e85aa3e377372831ad56f9a9dac3b9606d57c52a25458e5a32bb",
+    "packages/commands/dist/handlers/segment.js": "e9e621096d3028968bf207a48eb4687f824e9f7f80529047a160f1b117d3eae8",
+    "packages/render/dist/zim.js": "f2b29fc33e07bc92a433d285ce4bd0cc65bb7202cdfecbc75c8e06a89e049706",
+    "packages/render/dist/segmentation-runtime.js": "f743476ce6a5f2deee9ca790683d13e904d05377f14934cec5142573e0d00274",
+    "packages/render/dist/segmentation-frame.js": "f7114466494bb7379a758618217d7d2b8336e352525bec99b940c75c248ad778"
+  },
+  "modelIdentity": {
+    "schema": 1,
+    "source": {
+      "repository": "naver-iv/zim-anything-vitl",
+      "revision": "667e2d7c233f6f1cacd12ccc64bdf6cc7b5aa16d",
+      "directory": "zim_vit_l_2092"
+    },
+    "artifacts": [
+      {
+        "file": "encoder.onnx",
+        "sha256": "6b0360b3c32dfa11555fb1de27cd3533cec1e932204da0dec2b3772045dc7db3",
+        "opset": 15
+      },
+      {
+        "file": "decoder.onnx",
+        "sha256": "c24a42d79053d20594760ad9afdef9cca985f29493f3e1e0fe3462ca291b57f7",
+        "opset": 15
+      }
+    ]
+  },
+  "alphaEncoding": "Selected canonical f32 mask quantized by round(alpha*65535) into 16-bit PNG, not ideal ground truth.",
+  "presentation": {
+    "overlay": "green [0,255,0], fixed opacity 0.6 times persisted alpha",
+    "cropScale": 2,
+    "cropSampling": "nearest",
+    "cropBounds": {
+      "face": [
+        680,
+        300,
+        1140,
+        870
+      ],
+      "bouquet-hand": [
+        210,
+        390,
+        860,
+        1080
+      ],
+      "hair": [
+        930,
+        40,
+        1614,
+        900
+      ],
+      "clothing": [
+        420,
+        870,
+        1460,
+        1080
+      ]
+    }
+  },
+  "omissions": "Raw model tensors, canonical f32 TIFFs, libraries and weights remain local research intermediates. Tensor metadata and hashes identify them but cannot reconstruct omitted bytes.",
+  "rights": "Local evaluation retention only; parent source provenance and model noncommercial terms apply. No publication permission.",
+  "runs": [
+    {
+      "id": "person-ordered-points",
+      "scope": "Entire visible woman including hair, face, skin, hands and clothing; exclude bouquet, flowers and background.",
+      "verdict": "fails: bouquet selected, most person pixels missing",
+      "gatewayCalls": 1,
+      "report": "person-ordered-points/metadata/capture.json",
+      "modelResponse": "person-ordered-points/metadata/grounding-response.json",
+      "observedAlpha": "person-ordered-points/alpha16.png",
+      "referenceAlpha": false
+    },
+    {
+      "id": "person-named-points",
+      "scope": "Entire visible woman including hair, face, skin, hands and clothing; exclude bouquet, flowers and background.",
+      "verdict": "fails: skin retained and bouquet excluded, but hair and clothing missing",
+      "gatewayCalls": 1,
+      "report": "person-named-points/metadata/capture.json",
+      "modelResponse": "person-named-points/metadata/grounding-response.json",
+      "observedAlpha": "person-named-points/alpha16.png",
+      "referenceAlpha": false
+    },
+    {
+      "id": "hair-named-points",
+      "scope": "The woman's hair, including visible curls and strands; exclude face, exposed skin, flowers, clothing and background.",
+      "verdict": "broad hair scope retained; halo, background gaps and local skin/flower residue remain",
+      "gatewayCalls": 1,
+      "report": "hair-named-points/metadata/capture.json",
+      "modelResponse": "hair-named-points/metadata/grounding-response.json",
+      "observedAlpha": "hair-named-points/alpha16.png",
+      "referenceAlpha": false
+    }
+  ],
+  "files": [
+    {
+      "file": "source-developed.png",
+      "bytes": 2733548,
+      "sha256": "06fc6ae78455b6141ccb69bf134bbd198b973157fc2f79b192b1056d4a131549",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "review/bouquet-hand-source-2x.png",
+      "bytes": 656872,
+      "sha256": "e9ff7b4a9d943b95093418665411ee73fd57838997c6067c1f8e1d125776c800",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "review/clothing-source-2x.png",
+      "bytes": 281459,
+      "sha256": "c6fb93889b19078f70f6f317bd326a360f76f9191be7c74deafdade4f7d7bbea",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "review/face-source-2x.png",
+      "bytes": 414936,
+      "sha256": "976ce7e94e21e043f794e841012393a9e0acf75295f6c147f307bdc925a6a7cc",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "review/hair-source-2x.png",
+      "bytes": 924116,
+      "sha256": "eac024642087a2ea7a97409e46a993bb61a849469433cbdb910abdd1be4014ae",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/alpha16.png",
+      "bytes": 724914,
+      "sha256": "14a5193180ca50a6ad3a1810e210fa1ae5b9788344af49c22402bd528949819d",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "ushort",
+        "channels": 1
+      }
+    },
+    {
+      "file": "person-ordered-points/review/alpha.png",
+      "bytes": 237183,
+      "sha256": "6d7d0eddf7c3f18227b0a67a8ae19a212170507ecdc41bf08c1c89a109ae888e",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/black.png",
+      "bytes": 801236,
+      "sha256": "2e0f7d14e5fb8db2015a110e692ca8c7b67e9b9d4016fa499c1ec81b5e5e6151",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/bouquet-hand-alpha-2x.png",
+      "bytes": 81498,
+      "sha256": "609a208b33770bcce74f38bae9de0e9b4f0e3cbb137f2b6a42284f84b8ad6ed0",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/bouquet-hand-black-2x.png",
+      "bytes": 524358,
+      "sha256": "8cf63b97a941cbbc624b29f17ad9d60a8b1475240b825ed5e483f093db234d89",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/bouquet-hand-overlay-2x.png",
+      "bytes": 661984,
+      "sha256": "08223334d37dbe58c408646b45617a89c2b43bda76a1f4afd4393e7870bf3237",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/bouquet-hand-white-2x.png",
+      "bytes": 536186,
+      "sha256": "74e37339bec75f175ddb3965ad35dab8e72ca09106133e78b3987896febfa66b",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/clothing-alpha-2x.png",
+      "bytes": 36270,
+      "sha256": "b1cbafca9d57e8437a8c6f46f9c7ff5f1358ca13676e2e1ada94c10ed80f7c95",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/clothing-black-2x.png",
+      "bytes": 77134,
+      "sha256": "d123a0755926f1b8b34e442b2c5f054c8ca41f953700034a1f9b901f5ea116cf",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/clothing-overlay-2x.png",
+      "bytes": 301257,
+      "sha256": "12680f672c28f31be5ff5f8a0ac3846c387c44ac77f4722a9a22433682e5efbc",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/clothing-white-2x.png",
+      "bytes": 86939,
+      "sha256": "a643568fff03fc559c844481a9a29ab64eb981ffd5f02672435125c77ff6bf3e",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/face-alpha-2x.png",
+      "bytes": 35831,
+      "sha256": "6a02c031328dbd0cdcc6f55ae1f5d3cf8d772ef2059d9ed5b5e30856043edb72",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/face-black-2x.png",
+      "bytes": 206595,
+      "sha256": "4fc8db346eeb08c14c4c611902be7f2e53634a63cdcd03a112923263e971f651",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/face-overlay-2x.png",
+      "bytes": 421591,
+      "sha256": "66b5336301d008b721463d6d403fba1a74d049ec649604ec65da4b0876680452",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/face-white-2x.png",
+      "bytes": 210101,
+      "sha256": "f40448045b9389d94f6b6980554f253fa77e8bea3a2dddf3a0d498a8ed3f496e",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/guidance-xy.png",
+      "bytes": 1770465,
+      "sha256": "03740ee43fafb1977e28b136511df6d018a9c1ddc1d1e42778d065fe0c1157bb",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/guidance-yx.png",
+      "bytes": 1769931,
+      "sha256": "c49343070c51ccffae4ed880e0373484e6916ffa26a2623760d886eea5b34caa",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/hair-alpha-2x.png",
+      "bytes": 147813,
+      "sha256": "32c3fbe7b21242e1d58930d5e0be38fa2b3a235ffdc14475a8a525a0aa4c57cb",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/hair-black-2x.png",
+      "bytes": 332556,
+      "sha256": "84766bec70789f1e09cbd2d88b4a102380777bac7af3601986cf0d083eff6ff7",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/hair-overlay-2x.png",
+      "bytes": 1039403,
+      "sha256": "8a521861a7aec3cbf76ec2fec611742b139c46f3fafa1bc364b1268f672f8001",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/hair-white-2x.png",
+      "bytes": 347760,
+      "sha256": "6b6fe0a67e8eed2b20b39b325ff63363157c7fd320ed287e248aa2036e88f2bb",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/overlay.png",
+      "bytes": 1886580,
+      "sha256": "14502bdcee77986181a21e4c9f3facbde5516d4ed9fcefebc486fdffc06ad405",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/review/white.png",
+      "bytes": 821136,
+      "sha256": "2027afe3876c80612bbf4f509365c0e598ba5e443b28b365be63fc4c6173ac07",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/metadata/request-0.json",
+      "bytes": 3508,
+      "sha256": "3593aae61c820c49ff010adeea8d1a03f8a1a94f06f2ade1d0b230e39f5f4cb5"
+    },
+    {
+      "file": "person-ordered-points/metadata/request-0-image-0.jpg",
+      "bytes": 108306,
+      "sha256": "c018990fd2289ddf6298dacc7cb0174beb0fc32ab0483a3f9ada654cd3d0909d",
+      "dimensions": {
+        "width": 1024,
+        "height": 685,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-ordered-points/metadata/native-load.json",
+      "bytes": 103,
+      "sha256": "7a141f246f0f4331d373539cc017e37613e3a15cf3535bd5b36d11014786b4bf"
+    },
+    {
+      "file": "person-ordered-points/metadata/encoder.json",
+      "bytes": 487,
+      "sha256": "c0734d4429a60d14509da5c5e76063ecb835afba91f6ce08f4457064afe420f7"
+    },
+    {
+      "file": "person-ordered-points/metadata/decoder-0.json",
+      "bytes": 1515,
+      "sha256": "a1298af45ce92537c8feb5c6fae57646c4086c07f6b01a036c94da8e749448ef"
+    },
+    {
+      "file": "person-ordered-points/metadata/process-memory.json",
+      "bytes": 213,
+      "sha256": "4cb8757ec755f99b1da4892375f5d2e3fd102b53112ff5f9cc8b1ad188b7cb6c"
+    },
+    {
+      "file": "person-ordered-points/metadata/grounding-response.json",
+      "bytes": 2282,
+      "sha256": "2d1384f51bc2f92de4585b09ab3b4ae5268adde556ee8207d4f88f094046d60b"
+    },
+    {
+      "file": "person-ordered-points/metadata/capture.json",
+      "bytes": 2757,
+      "sha256": "6ba7506096e6d886975da26cded2f4bb2ae8a68c4bb331491b7e8926f212658f"
+    },
+    {
+      "file": "person-named-points/alpha16.png",
+      "bytes": 322506,
+      "sha256": "b97107c56c29b28c99ce03e953d4683ca54ce7d6407180fd4881da210a5b85a0",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "ushort",
+        "channels": 1
+      }
+    },
+    {
+      "file": "person-named-points/review/alpha.png",
+      "bytes": 107398,
+      "sha256": "45593e6fbcf8da76ca327cc7c1b0b5b38e6c27b0657e90e512ad3ab062803afe",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/black.png",
+      "bytes": 364690,
+      "sha256": "8795fd360b563b3f6970076ce63347cf4594c27e9b949cae480dbad1e31f018d",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/bouquet-hand-alpha-2x.png",
+      "bytes": 45825,
+      "sha256": "28ee92a214fa86e2effb44ecfa0f816c562860f8d73be26a195bd11310adf463",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/bouquet-hand-black-2x.png",
+      "bytes": 145161,
+      "sha256": "885db69c53cfa06f0ffec974877a38f6f4c6ba4f17178779d9bf1b1d7c57d227",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/bouquet-hand-overlay-2x.png",
+      "bytes": 681189,
+      "sha256": "3f8117afa5076d66934f9fbbf8f989cecfeabfb9c5e55d4a179c376767c0cf7c",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/bouquet-hand-white-2x.png",
+      "bytes": 147908,
+      "sha256": "17f29d3b2c34c71bdc80f34ec1468dfee1bc8eab2fb728b55e650e1d75a71faf",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/clothing-alpha-2x.png",
+      "bytes": 41576,
+      "sha256": "d1036090842bf0424ac485f1ce7df26f426561389157007c0c46f310207067ae",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/clothing-black-2x.png",
+      "bytes": 175874,
+      "sha256": "9321d78eb9e4987f5a50ee4fb44debf9219e027687d54051932a46b3a8f41056",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/clothing-overlay-2x.png",
+      "bytes": 306404,
+      "sha256": "ca2c084cdb54b8075b05d9d36d491155c2da45bc6f18480028e888aa4b2dfc44",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/clothing-white-2x.png",
+      "bytes": 177071,
+      "sha256": "4e7df0a25553a93064977922f2c3d3db0f4a2333174d0ee99fed52f7da7e31d6",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/face-alpha-2x.png",
+      "bytes": 49464,
+      "sha256": "7530df6f11c1a0ba8b986e62fc0eb7fb3fbc7bd9dfd9eee777b0d307b1e5ad9e",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/face-black-2x.png",
+      "bytes": 218767,
+      "sha256": "1125e942f30fbf41d28e43184f041f7dd8b7203b447b39bb300de7ffd9884481",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/face-overlay-2x.png",
+      "bytes": 438507,
+      "sha256": "0638a999449bbfe580ab32508461764935a4be5e81e5aabb581a5bf10ad6a6fd",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/face-white-2x.png",
+      "bytes": 223130,
+      "sha256": "d8e815d5efe0e6640d94a9e007643fb5007d41fd9d2f4ae590f0a68ea5fd31eb",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/guidance-xy.png",
+      "bytes": 1770667,
+      "sha256": "b509fba4b76b325c57c4a38aab38554c306790bf9229c3eb2f6e5bb29f808ff9",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/hair-alpha-2x.png",
+      "bytes": 55095,
+      "sha256": "d53cdd097b8b93d290d42d055adc49cad3708ee0c1075e0c42c8e37e0360bbb6",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/hair-black-2x.png",
+      "bytes": 168299,
+      "sha256": "1920ab33b6852d7daf1d16bd9bb802eb57870bf201cd7e4bb9d0f2f17c8eeb0d",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/hair-overlay-2x.png",
+      "bytes": 953070,
+      "sha256": "8d7776d2c19c3d691677c6d49e5def953d18887acd20d5dbab333b62946c6cb3",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/hair-white-2x.png",
+      "bytes": 172278,
+      "sha256": "eec12235a82c5206af707d4aa657388fe516b7dc8be16759b2b9c1a7bdd29883",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/overlay.png",
+      "bytes": 1833703,
+      "sha256": "ed20534de58a2b481123c8a05721aa3121e32d77084be6cfc54d675c3d1db438",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/review/white.png",
+      "bytes": 369399,
+      "sha256": "83d765f20fbcaf98c2aa992d6b43f633b9510fe98fc9e200dbbb74432daadb35",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/metadata/request-0.json",
+      "bytes": 4100,
+      "sha256": "38a5059d22f54aa840b3ff773c561dd1391cbc297f694913ca41c9bb7f5de24d"
+    },
+    {
+      "file": "person-named-points/metadata/request-0-image-0.jpg",
+      "bytes": 108306,
+      "sha256": "c018990fd2289ddf6298dacc7cb0174beb0fc32ab0483a3f9ada654cd3d0909d",
+      "dimensions": {
+        "width": 1024,
+        "height": 685,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "person-named-points/metadata/native-load.json",
+      "bytes": 103,
+      "sha256": "5e2144dc1527e7e3367de2f5f8c815524da824d8c2cc9f8ec26fab848b5fea6e"
+    },
+    {
+      "file": "person-named-points/metadata/encoder.json",
+      "bytes": 487,
+      "sha256": "51c7dd8906fdfd0989ec617c4e7cc5fdaf9f7947f773ae6502cbb7f18205c021"
+    },
+    {
+      "file": "person-named-points/metadata/decoder-0.json",
+      "bytes": 1515,
+      "sha256": "5b75018bed5f1caa7b5b75bd5d7041b23025d1974f93719b28ea280856a6c4ac"
+    },
+    {
+      "file": "person-named-points/metadata/process-memory.json",
+      "bytes": 213,
+      "sha256": "f251e8916b9d9545bb654a6ccc628dd5e72feb766b3708c1a029c192a2d268ad"
+    },
+    {
+      "file": "person-named-points/metadata/grounding-response.json",
+      "bytes": 2415,
+      "sha256": "561a6e181fac47e4b8408c4a124c53528ecb64ba291187d67211331efc20a535"
+    },
+    {
+      "file": "person-named-points/metadata/capture.json",
+      "bytes": 2807,
+      "sha256": "ce532ac6cdac682c7a143932bcfc6442838ab56c17080ddc5aa698bca5d57ff6"
+    },
+    {
+      "file": "hair-named-points/alpha16.png",
+      "bytes": 401933,
+      "sha256": "92597d4708ec8f75adba756dac05585b7dbd470010056f4ffd0609c7bfe73eac",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "ushort",
+        "channels": 1
+      }
+    },
+    {
+      "file": "hair-named-points/review/alpha.png",
+      "bytes": 164314,
+      "sha256": "09be75c2a3f110d58de28abe4b4dc8857f340d2c828599f1661356cd6d2ac868",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/black.png",
+      "bytes": 835610,
+      "sha256": "23e126c3aee00ee1172955d6dc98904398b323df4304d6dea04f8422884995bf",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/bouquet-hand-alpha-2x.png",
+      "bytes": 12500,
+      "sha256": "d33c0b58beef13c008a164076d13e3061a4002bab78b4aa820f41e60b161546d",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/bouquet-hand-black-2x.png",
+      "bytes": 16213,
+      "sha256": "ca8a663344a25c2180176bc3fb34f1def745e9a2b9eb1a0195f22dc3dae3b885",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/bouquet-hand-overlay-2x.png",
+      "bytes": 660342,
+      "sha256": "b439ddfc27d35ee4f080ac7405e3c14e6498ada51215284efa63c6c0f500ce76",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/bouquet-hand-white-2x.png",
+      "bytes": 21512,
+      "sha256": "8e0a99b79f5c54b44b8e4d39ee6b85f68c4610d46054a3ebbc69baf5a9659662",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/clothing-alpha-2x.png",
+      "bytes": 22893,
+      "sha256": "8932b235068251f048c426e1d1e139576bbb61a6e94ae837d0d8b7e65a0978ba",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/clothing-black-2x.png",
+      "bytes": 56502,
+      "sha256": "19acd120d6974b7aff20b2b83dc51ce8a79ee13f55d69ecc0b1b0c09e37bdee1",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/clothing-overlay-2x.png",
+      "bytes": 293292,
+      "sha256": "455de9245467157b48f40e1bebe4420622640ce8df8e9196d79fa39049fb835d",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/clothing-white-2x.png",
+      "bytes": 61320,
+      "sha256": "669b96bc69444e1aead97d1a0e07b86d8b36a5caeb1509d3e95d80c26937d09c",
+      "dimensions": {
+        "width": 2080,
+        "height": 420,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/face-alpha-2x.png",
+      "bytes": 36707,
+      "sha256": "5989669439c7ac55d439b4ffff549b4d7151b0942e5dd74cd1e0869705dad2e4",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/face-black-2x.png",
+      "bytes": 134692,
+      "sha256": "cccdfc6a9a8dfa427cf4de1ed3882cf5d18810f35069dcf4d803998d92ddb9e9",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/face-overlay-2x.png",
+      "bytes": 437183,
+      "sha256": "beb8a75487c071a2fae9d6c64236a7655d3d1ac580a8101d610c907062833313",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/face-white-2x.png",
+      "bytes": 144291,
+      "sha256": "022b23d1ce7c4c649189cda61aef8ec2d24ffcb92277c6a6ec195aeb4352a0b1",
+      "dimensions": {
+        "width": 920,
+        "height": 1140,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/guidance-xy.png",
+      "bytes": 1769680,
+      "sha256": "0231e8e24d50fff930248c0f877a087abd7f1621897f31cdf5d3e5615b542700",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/hair-alpha-2x.png",
+      "bytes": 128938,
+      "sha256": "3d8eeabf48cdd2774d41d4f987e91efe9af140d9207c1184deefd6ce9696492b",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/hair-black-2x.png",
+      "bytes": 836969,
+      "sha256": "f6081ae12e07ff7a197baa5093eaa538b49e6798f1a6af2f650ead9b32a10730",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/hair-overlay-2x.png",
+      "bytes": 962851,
+      "sha256": "628298dfc960ca4222b7ac6c77f954102aca19a36485809d86e10bab756c60e0",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/hair-white-2x.png",
+      "bytes": 843303,
+      "sha256": "6cc6babcd3811994b5deb0c9c0a48c1d4875c587db1d173ec33947873f8a4c6c",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/overlay.png",
+      "bytes": 1829838,
+      "sha256": "5decb1361e2d27ed799c90647dab5974d5bc480ff2d7b5ff2f99d7f46b618d2a",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/review/white.png",
+      "bytes": 843679,
+      "sha256": "d7ab34db9d730bafa7c7644e03d294c599b58989c096ea5691f20e05e3749fd9",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/metadata/request-0.json",
+      "bytes": 4107,
+      "sha256": "0e92380acb6c43d0552fb9ff9b0d60e66278262d1cdc08ca5797d33f53e378e2"
+    },
+    {
+      "file": "hair-named-points/metadata/request-0-image-0.jpg",
+      "bytes": 108306,
+      "sha256": "c018990fd2289ddf6298dacc7cb0174beb0fc32ab0483a3f9ada654cd3d0909d",
+      "dimensions": {
+        "width": 1024,
+        "height": 685,
+        "depth": "uchar",
+        "channels": 3
+      }
+    },
+    {
+      "file": "hair-named-points/metadata/native-load.json",
+      "bytes": 110,
+      "sha256": "799129d8ee566ac2762ab6d27f352de28a59cb8aa79aef3cbc85d86a3ec9a485"
+    },
+    {
+      "file": "hair-named-points/metadata/encoder.json",
+      "bytes": 480,
+      "sha256": "7456e6f6d1de80049b5bab3b44bbfc232067db0bb9336c51dc936d0f88603383"
+    },
+    {
+      "file": "hair-named-points/metadata/decoder-0.json",
+      "bytes": 1516,
+      "sha256": "b62f38444cf79d468a85f61fee7071f7b22b85b665065335dd874006588bcea7"
+    },
+    {
+      "file": "hair-named-points/metadata/process-memory.json",
+      "bytes": 213,
+      "sha256": "3d0d28d146dc5718ce833a06dc567cbac1eac12bd0d50d5802627953e1414e13"
+    },
+    {
+      "file": "hair-named-points/metadata/grounding-response.json",
+      "bytes": 2417,
+      "sha256": "acadbfa5d5906496b1385b2830974aeedcd6fb6a30197ba6b164e74a23522c2f"
+    },
+    {
+      "file": "hair-named-points/metadata/capture.json",
+      "bytes": 2782,
+      "sha256": "08e44404986d289b388d5921d5a53e8ad482458fd6daa05f30a2aae6123321fb"
+    },
+    {
+      "file": "measurements.json",
+      "bytes": 52357,
+      "sha256": "adbab0dd60ebd25337c3c2560efe54695f95a49cbaedeaf699e250cacb524b51"
+    }
+  ]
+}

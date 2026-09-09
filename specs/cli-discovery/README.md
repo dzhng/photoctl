@@ -13,10 +13,10 @@ pixel allocation can proceed independently; the main agent owns secrets, live
 capture, integration and final verification. Existing unrelated provider-table,
 auto-enhance and live-gateway edits belong to another task and must remain intact.
 
-- [ ] [Discovery](slices/01-discovery.md): library-independent help and root-linked usage.
+- [x] [Discovery](slices/01-discovery.md): library-independent help and root-linked usage.
 - [x] [Memory](slices/02-memory.md): reproduce and remove unnecessary heap inflation;
       verify the failed Docker real-model workload.
-- [ ] [Live evidence](slices/03-live.md): automatic whole-person capture and retained review.
+- [x] [Live evidence](slices/03-live.md): automatic whole-person capture and retained review.
 - [x] [Grounding axes](slices/04-grounding-axes.md): remove ambiguous provider point ordering
       exposed by the first real person capture; then repeat the live gate.
 - [ ] Whole-change review, choices consolidation, final closeout and archive.
@@ -43,6 +43,16 @@ The second real person request and a separate hair control each use one gateway
 call. Independent visual reviews retain person coverage failure and hair edge
 limitations. Finish retaining their captures, integrate discovery, then run the
 whole closeout once. No additional model search is required.
+
+Current pickup: all implementation and captures are integrated. The [portable
+live record](../../fixtures/segmentation/portrait/photolab/live/README.md) retains
+three runs and complete review views, with separate observed failures. Discovery
+passes built-CLI tests for all 41 advertised commands, nested help, absent
+libraries, unreadable credential paths and human shell quoting. Independent
+reviews corrected the graph-attempt syntax and several small usage details.
+Run the final evidence audit and whole-change review, then `bun run verify` once
+with CMake/Ninja on PATH and the pinned model directory supplied. The local model
+server exposes only the two verified weights on loopback for Docker build.
 
 ## Owners and boundaries
 

@@ -1,0 +1,1853 @@
+{
+  "note": "Distances locate changed coverage, not parity or acceptance. Person sources are identical; hair has a different target and is not compared as person ground truth.",
+  "personComparison": [
+    {
+      "id": "face-alpha-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "distance": 0.66194,
+      "grayscale": {
+        "mae": 203.58763,
+        "rmse": 225.75604,
+        "diffRatio16": 0.83262,
+        "diffRatio32": 0.82614,
+        "diffRatio64": 0.81617,
+        "pixelmatchRatio": 0.83016
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.58709,
+        "blackRatioCandidate": 0.56875,
+        "terrainLikeRatioCurrent": 0.40797,
+        "terrainLikeRatioCandidate": 0.41543,
+        "avgLuminanceCurrent": 102.81301,
+        "avgLuminanceCandidate": 103.13883,
+        "avgLuminanceDelta": 0.32583,
+        "edgeEnergyCurrent": 0.01487,
+        "edgeEnergyCandidate": 0.03126,
+        "edgeEnergyRatio": 2.10231,
+        "edgeDiffRatio32": 0.06101
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 1.18539,
+          "edgeDensity": 0.03889,
+          "dominantColorShare": 0.58501,
+          "transparentShare": 0,
+          "luminanceMean": 102.75744,
+          "luminanceP5": 0,
+          "luminanceP95": 255,
+          "luminanceContrast": 255
+        },
+        "candidate": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 1.47965,
+          "edgeDensity": 0.09499,
+          "dominantColorShare": 0.56516,
+          "transparentShare": 0,
+          "luminanceMean": 102.77397,
+          "luminanceP5": 0,
+          "luminanceP95": 255,
+          "luminanceContrast": 255
+        }
+      }
+    },
+    {
+      "id": "bouquet-hand-white-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "distance": 0.65231,
+      "grayscale": {
+        "mae": 120.16491,
+        "rmse": 143.72377,
+        "diffRatio16": 0.7579,
+        "diffRatio32": 0.75225,
+        "diffRatio64": 0.74102,
+        "pixelmatchRatio": 0.75568
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.03903,
+        "blackRatioCandidate": 0,
+        "terrainLikeRatioCurrent": 0.47016,
+        "terrainLikeRatioCandidate": 0.96016,
+        "avgLuminanceCurrent": 154.3116,
+        "avgLuminanceCandidate": 234.7701,
+        "avgLuminanceDelta": 80.4585,
+        "edgeEnergyCurrent": 0.07454,
+        "edgeEnergyCandidate": 0.01455,
+        "edgeEnergyRatio": 0.19519,
+        "edgeDiffRatio32": 0.20039
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 452,
+          "colorEntropyBits": 5.17985,
+          "edgeDensity": 0.43874,
+          "dominantColorShare": 0.39285,
+          "transparentShare": 0,
+          "luminanceMean": 154.02285,
+          "luminanceP5": 27.0002,
+          "luminanceP95": 255,
+          "luminanceContrast": 227.9998
+        },
+        "candidate": {
+          "colorBuckets": 165,
+          "colorEntropyBits": 1.60904,
+          "edgeDensity": 0.04996,
+          "dominantColorShare": 0.83702,
+          "transparentShare": 0,
+          "luminanceMean": 235.0657,
+          "luminanceP5": 108.217,
+          "luminanceP95": 255,
+          "luminanceContrast": 146.783
+        }
+      }
+    },
+    {
+      "id": "bouquet-hand-black-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "distance": 0.6176,
+      "grayscale": {
+        "mae": 68.60868,
+        "rmse": 86.89654,
+        "diffRatio16": 0.74377,
+        "diffRatio32": 0.68048,
+        "diffRatio64": 0.53221,
+        "pixelmatchRatio": 0.72351
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.4416,
+        "blackRatioCandidate": 0.8397,
+        "terrainLikeRatioCurrent": 0.04492,
+        "terrainLikeRatioCandidate": 0.11189,
+        "avgLuminanceCurrent": 49.03931,
+        "avgLuminanceCandidate": 20.09005,
+        "avgLuminanceDelta": -28.94927,
+        "edgeEnergyCurrent": 0.06887,
+        "edgeEnergyCandidate": 0.01262,
+        "edgeEnergyRatio": 0.18328,
+        "edgeDiffRatio32": 0.19424
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 368,
+          "colorEntropyBits": 5.04895,
+          "edgeDensity": 0.43444,
+          "dominantColorShare": 0.39674,
+          "transparentShare": 0,
+          "luminanceMean": 49.15752,
+          "luminanceP5": 0,
+          "luminanceP95": 136.6962,
+          "luminanceContrast": 136.6962
+        },
+        "candidate": {
+          "colorBuckets": 144,
+          "colorEntropyBits": 1.60981,
+          "edgeDensity": 0.04832,
+          "dominantColorShare": 0.83595,
+          "transparentShare": 0,
+          "luminanceMean": 19.83866,
+          "luminanceP5": 0,
+          "luminanceP95": 155.9454,
+          "luminanceContrast": 155.9454
+        }
+      }
+    },
+    {
+      "id": "bouquet-hand-alpha-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "distance": 0.61121,
+      "grayscale": {
+        "mae": 188.76373,
+        "rmse": 217.61695,
+        "diffRatio16": 0.76549,
+        "diffRatio32": 0.75849,
+        "diffRatio64": 0.75237,
+        "pixelmatchRatio": 0.76207
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.39471,
+        "blackRatioCandidate": 0.83492,
+        "terrainLikeRatioCurrent": 0.59652,
+        "terrainLikeRatioCandidate": 0.15984,
+        "avgLuminanceCurrent": 149.71881,
+        "avgLuminanceCandidate": 40.32429,
+        "avgLuminanceDelta": -109.39452,
+        "edgeEnergyCurrent": 0.02761,
+        "edgeEnergyCandidate": 0.01432,
+        "edgeEnergyRatio": 0.51882,
+        "edgeDiffRatio32": 0.05286
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 1.3446,
+          "edgeDensity": 0.08621,
+          "dominantColorShare": 0.56669,
+          "transparentShare": 0,
+          "luminanceMean": 150.12634,
+          "luminanceP5": 0,
+          "luminanceP95": 255,
+          "luminanceContrast": 255
+        },
+        "candidate": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 0.81408,
+          "edgeDensity": 0.03938,
+          "dominantColorShare": 0.83253,
+          "transparentShare": 0,
+          "luminanceMean": 39.77852,
+          "luminanceP5": 0,
+          "luminanceP95": 255,
+          "luminanceContrast": 255
+        }
+      }
+    },
+    {
+      "id": "face-white-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "distance": 0.56123,
+      "grayscale": {
+        "mae": 117.41138,
+        "rmse": 134.4372,
+        "diffRatio16": 0.83063,
+        "diffRatio32": 0.82272,
+        "diffRatio64": 0.80607,
+        "pixelmatchRatio": 0.82743
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.01554,
+        "blackRatioCandidate": 0.00328,
+        "terrainLikeRatioCurrent": 0.66031,
+        "terrainLikeRatioCandidate": 0.91911,
+        "avgLuminanceCurrent": 192.53229,
+        "avgLuminanceCandidate": 198.87695,
+        "avgLuminanceDelta": 6.34466,
+        "edgeEnergyCurrent": 0.04075,
+        "edgeEnergyCandidate": 0.04527,
+        "edgeEnergyRatio": 1.11073,
+        "edgeDiffRatio32": 0.17478
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 345,
+          "colorEntropyBits": 3.6093,
+          "edgeDensity": 0.23555,
+          "dominantColorShare": 0.58598,
+          "transparentShare": 0,
+          "luminanceMean": 192.47244,
+          "luminanceP5": 51.895,
+          "luminanceP95": 255,
+          "luminanceContrast": 203.105
+        },
+        "candidate": {
+          "colorBuckets": 234,
+          "colorEntropyBits": 3.80612,
+          "edgeDensity": 0.16643,
+          "dominantColorShare": 0.5663,
+          "transparentShare": 0,
+          "luminanceMean": 199.09897,
+          "luminanceP5": 66.7816,
+          "luminanceP95": 255,
+          "luminanceContrast": 188.2184
+        }
+      }
+    },
+    {
+      "id": "clothing-black-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "distance": 0.5398,
+      "grayscale": {
+        "mae": 60.66652,
+        "rmse": 80.07122,
+        "diffRatio16": 0.66027,
+        "diffRatio32": 0.61502,
+        "diffRatio64": 0.49725,
+        "pixelmatchRatio": 0.6446
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.88207,
+        "blackRatioCandidate": 0.47867,
+        "terrainLikeRatioCurrent": 0.00148,
+        "terrainLikeRatioCandidate": 0.27772,
+        "avgLuminanceCurrent": 8.96639,
+        "avgLuminanceCandidate": 51.85456,
+        "avgLuminanceDelta": 42.88817,
+        "edgeEnergyCurrent": 0.01201,
+        "edgeEnergyCandidate": 0.03033,
+        "edgeEnergyRatio": 2.52532,
+        "edgeDiffRatio32": 0.05357
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 117,
+          "colorEntropyBits": 1.26538,
+          "edgeDensity": 0.06453,
+          "dominantColorShare": 0.8681,
+          "transparentShare": 0,
+          "luminanceMean": 9.03073,
+          "luminanceP5": 0,
+          "luminanceP95": 77.2934,
+          "luminanceContrast": 77.2934
+        },
+        "candidate": {
+          "colorBuckets": 150,
+          "colorEntropyBits": 3.9925,
+          "edgeDensity": 0.09005,
+          "dominantColorShare": 0.46012,
+          "transparentShare": 0,
+          "luminanceMean": 52.26663,
+          "luminanceP5": 0,
+          "luminanceP95": 159.6326,
+          "luminanceContrast": 159.6326
+        }
+      }
+    },
+    {
+      "id": "face-black-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "distance": 0.51093,
+      "grayscale": {
+        "mae": 86.19821,
+        "rmse": 102.37977,
+        "diffRatio16": 0.80016,
+        "diffRatio32": 0.76828,
+        "diffRatio64": 0.66584,
+        "pixelmatchRatio": 0.78855
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.60813,
+        "blackRatioCandidate": 0.59765,
+        "terrainLikeRatioCurrent": 0.0575,
+        "terrainLikeRatioCandidate": 0.303,
+        "avgLuminanceCurrent": 40.36078,
+        "avgLuminanceCandidate": 47.01626,
+        "avgLuminanceDelta": 6.65548,
+        "edgeEnergyCurrent": 0.04008,
+        "edgeEnergyCandidate": 0.04105,
+        "edgeEnergyRatio": 1.02396,
+        "edgeDiffRatio32": 0.15909
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 294,
+          "colorEntropyBits": 3.54076,
+          "edgeDensity": 0.23131,
+          "dominantColorShare": 0.5905,
+          "transparentShare": 0,
+          "luminanceMean": 40.24301,
+          "luminanceP5": 0,
+          "luminanceP95": 141.809,
+          "luminanceContrast": 141.809
+        },
+        "candidate": {
+          "colorBuckets": 176,
+          "colorEntropyBits": 3.54925,
+          "edgeDensity": 0.1551,
+          "dominantColorShare": 0.58576,
+          "transparentShare": 0,
+          "luminanceMean": 46.86982,
+          "luminanceP5": 0,
+          "luminanceP95": 160.5254,
+          "luminanceContrast": 160.5254
+        }
+      }
+    },
+    {
+      "id": "bouquet-hand-overlay-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "distance": 0.49683,
+      "grayscale": {
+        "mae": 39.93815,
+        "rmse": 51.1906,
+        "diffRatio16": 0.68445,
+        "diffRatio32": 0.56827,
+        "diffRatio64": 0.27546,
+        "pixelmatchRatio": 0.64601
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.00012,
+        "blackRatioCandidate": 0.04023,
+        "terrainLikeRatioCurrent": 0.3679,
+        "terrainLikeRatioCandidate": 0.35488,
+        "avgLuminanceCurrent": 147.81292,
+        "avgLuminanceCandidate": 118.22446,
+        "avgLuminanceDelta": -29.58846,
+        "edgeEnergyCurrent": 0.04577,
+        "edgeEnergyCandidate": 0.07809,
+        "edgeEnergyRatio": 1.70591,
+        "edgeDiffRatio32": 0.08343
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 473,
+          "colorEntropyBits": 6.30213,
+          "edgeDensity": 0.27746,
+          "dominantColorShare": 0.06515,
+          "transparentShare": 0,
+          "luminanceMean": 147.8618,
+          "luminanceP5": 92.073,
+          "luminanceP95": 214.8476,
+          "luminanceContrast": 122.7746
+        },
+        "candidate": {
+          "colorBuckets": 569,
+          "colorEntropyBits": 7.28773,
+          "edgeDensity": 0.46584,
+          "dominantColorShare": 0.041,
+          "transparentShare": 0,
+          "luminanceMean": 118.08598,
+          "luminanceP5": 26.8164,
+          "luminanceP95": 214.4488,
+          "luminanceContrast": 187.6324
+        }
+      }
+    },
+    {
+      "id": "clothing-alpha-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "distance": 0.48799,
+      "grayscale": {
+        "mae": 148.93972,
+        "rmse": 189.18964,
+        "diffRatio16": 0.69639,
+        "diffRatio32": 0.66395,
+        "diffRatio64": 0.61945,
+        "pixelmatchRatio": 0.68475
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.85233,
+        "blackRatioCandidate": 0.46445,
+        "terrainLikeRatioCurrent": 0.12314,
+        "terrainLikeRatioCandidate": 0.48644,
+        "avgLuminanceCurrent": 26.73488,
+        "avgLuminanceCandidate": 122.69855,
+        "avgLuminanceDelta": 95.96367,
+        "edgeEnergyCurrent": 0.01842,
+        "edgeEnergyCandidate": 0.0251,
+        "edgeEnergyRatio": 1.36271,
+        "edgeDiffRatio32": 0.06977
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 1.05687,
+          "edgeDensity": 0.07184,
+          "dominantColorShare": 0.84571,
+          "transparentShare": 0,
+          "luminanceMean": 26.93958,
+          "luminanceP5": 0,
+          "luminanceP95": 253,
+          "luminanceContrast": 253
+        },
+        "candidate": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 1.66145,
+          "edgeDensity": 0.06277,
+          "dominantColorShare": 0.45363,
+          "transparentShare": 0,
+          "luminanceMean": 123.22298,
+          "luminanceP5": 0,
+          "luminanceP95": 255,
+          "luminanceContrast": 255
+        }
+      }
+    },
+    {
+      "id": "clothing-white-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "distance": 0.48091,
+      "grayscale": {
+        "mae": 88.27658,
+        "rmse": 116.38627,
+        "diffRatio16": 0.62895,
+        "diffRatio32": 0.60354,
+        "diffRatio64": 0.5711,
+        "pixelmatchRatio": 0.61761
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0,
+        "blackRatioCandidate": 0,
+        "terrainLikeRatioCurrent": 0.92342,
+        "terrainLikeRatioCandidate": 0.81195,
+        "avgLuminanceCurrent": 237.23056,
+        "avgLuminanceCandidate": 184.16759,
+        "avgLuminanceDelta": -53.06297,
+        "edgeEnergyCurrent": 0.0201,
+        "edgeEnergyCandidate": 0.03157,
+        "edgeEnergyRatio": 1.57095,
+        "edgeDiffRatio32": 0.0701
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 185,
+          "colorEntropyBits": 1.51655,
+          "edgeDensity": 0.09422,
+          "dominantColorShare": 0.84833,
+          "transparentShare": 0,
+          "luminanceMean": 237.09149,
+          "luminanceP5": 100.7206,
+          "luminanceP95": 255,
+          "luminanceContrast": 154.2794
+        },
+        "candidate": {
+          "colorBuckets": 174,
+          "colorEntropyBits": 3.6772,
+          "edgeDensity": 0.08472,
+          "dominantColorShare": 0.5103,
+          "transparentShare": 0,
+          "luminanceMean": 184.05388,
+          "luminanceP5": 65.616,
+          "luminanceP95": 255,
+          "luminanceContrast": 189.384
+        }
+      }
+    },
+    {
+      "id": "white",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "distance": 0.42431,
+      "grayscale": {
+        "mae": 55.99347,
+        "rmse": 94.3448,
+        "diffRatio16": 0.40356,
+        "diffRatio32": 0.38046,
+        "diffRatio64": 0.35124,
+        "pixelmatchRatio": 0.39421
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.01079,
+        "blackRatioCandidate": 0.00052,
+        "terrainLikeRatioCurrent": 0.82485,
+        "terrainLikeRatioCandidate": 0.95951,
+        "avgLuminanceCurrent": 217.79695,
+        "avgLuminanceCandidate": 235.84683,
+        "avgLuminanceDelta": 18.04988,
+        "edgeEnergyCurrent": 0.05805,
+        "edgeEnergyCandidate": 0.02024,
+        "edgeEnergyRatio": 0.34858,
+        "edgeDiffRatio32": 0.17038
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 393,
+          "colorEntropyBits": 2.84246,
+          "edgeDensity": 0.24803,
+          "dominantColorShare": 0.72553,
+          "transparentShare": 0,
+          "luminanceMean": 217.6615,
+          "luminanceP5": 57.8106,
+          "luminanceP95": 255,
+          "luminanceContrast": 197.1894
+        },
+        "candidate": {
+          "colorBuckets": 182,
+          "colorEntropyBits": 1.4712,
+          "edgeDensity": 0.08279,
+          "dominantColorShare": 0.86066,
+          "transparentShare": 0,
+          "luminanceMean": 235.95904,
+          "luminanceP5": 99.157,
+          "luminanceP95": 255,
+          "luminanceContrast": 155.843
+        }
+      }
+    },
+    {
+      "id": "alpha",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "distance": 0.41393,
+      "grayscale": {
+        "mae": 91.22666,
+        "rmse": 147.89699,
+        "diffRatio16": 0.4261,
+        "diffRatio32": 0.4072,
+        "diffRatio64": 0.37939,
+        "pixelmatchRatio": 0.41926
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.72496,
+        "blackRatioCandidate": 0.85375,
+        "terrainLikeRatioCurrent": 0.24009,
+        "terrainLikeRatioCandidate": 0.13667,
+        "avgLuminanceCurrent": 57.69745,
+        "avgLuminanceCandidate": 34.1973,
+        "avgLuminanceDelta": -23.50015,
+        "edgeEnergyCurrent": 0.03176,
+        "edgeEnergyCandidate": 0.01598,
+        "edgeEnergyRatio": 0.50304,
+        "edgeDiffRatio32": 0.07162
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 1.44221,
+          "edgeDensity": 0.11847,
+          "dominantColorShare": 0.71601,
+          "transparentShare": 0,
+          "luminanceMean": 57.79358,
+          "luminanceP5": 0,
+          "luminanceP95": 255,
+          "luminanceContrast": 255
+        },
+        "candidate": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 0.77918,
+          "edgeDensity": 0.046,
+          "dominantColorShare": 0.85273,
+          "transparentShare": 0,
+          "luminanceMean": 33.93644,
+          "luminanceP5": 0,
+          "luminanceP95": 255,
+          "luminanceContrast": 255
+        }
+      }
+    },
+    {
+      "id": "black",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "distance": 0.40959,
+      "grayscale": {
+        "mae": 35.22871,
+        "rmse": 61.30849,
+        "diffRatio16": 0.3946,
+        "diffRatio32": 0.35306,
+        "diffRatio64": 0.2669,
+        "pixelmatchRatio": 0.3801
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.76276,
+        "blackRatioCandidate": 0.8611,
+        "terrainLikeRatioCurrent": 0.02787,
+        "terrainLikeRatioCandidate": 0.0876,
+        "avgLuminanceCurrent": 20.48607,
+        "avgLuminanceCandidate": 15.04055,
+        "avgLuminanceDelta": -5.44552,
+        "edgeEnergyCurrent": 0.05387,
+        "edgeEnergyCandidate": 0.01828,
+        "edgeEnergyRatio": 0.33924,
+        "edgeDiffRatio32": 0.16398
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 319,
+          "colorEntropyBits": 2.67945,
+          "edgeDensity": 0.23848,
+          "dominantColorShare": 0.7352,
+          "transparentShare": 0,
+          "luminanceMean": 20.44509,
+          "luminanceP5": 0,
+          "luminanceP95": 117.7882,
+          "luminanceContrast": 117.7882
+        },
+        "candidate": {
+          "colorBuckets": 141,
+          "colorEntropyBits": 1.47677,
+          "edgeDensity": 0.08223,
+          "dominantColorShare": 0.85769,
+          "transparentShare": 0,
+          "luminanceMean": 14.89192,
+          "luminanceP5": 0,
+          "luminanceP95": 123.4926,
+          "luminanceContrast": 123.4926
+        }
+      }
+    },
+    {
+      "id": "face-overlay-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "distance": 0.38387,
+      "grayscale": {
+        "mae": 35.71981,
+        "rmse": 44.61098,
+        "diffRatio16": 0.73469,
+        "diffRatio32": 0.5226,
+        "diffRatio64": 0.16406,
+        "pixelmatchRatio": 0.67133
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.08328,
+        "blackRatioCandidate": 0.08966,
+        "terrainLikeRatioCurrent": 0.32169,
+        "terrainLikeRatioCandidate": 0.16636,
+        "avgLuminanceCurrent": 113.86583,
+        "avgLuminanceCandidate": 110.00536,
+        "avgLuminanceDelta": -3.86047,
+        "edgeEnergyCurrent": 0.07314,
+        "edgeEnergyCandidate": 0.07938,
+        "edgeEnergyRatio": 1.08531,
+        "edgeDiffRatio32": 0.06163
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 379,
+          "colorEntropyBits": 6.42526,
+          "edgeDensity": 0.30014,
+          "dominantColorShare": 0.09794,
+          "transparentShare": 0,
+          "luminanceMean": 113.76367,
+          "luminanceP5": 17.5852,
+          "luminanceP95": 170.766,
+          "luminanceContrast": 153.1808
+        },
+        "candidate": {
+          "colorBuckets": 503,
+          "colorEntropyBits": 6.63097,
+          "edgeDensity": 0.38745,
+          "dominantColorShare": 0.05847,
+          "transparentShare": 0,
+          "luminanceMean": 109.78526,
+          "luminanceP5": 17.1628,
+          "luminanceP95": 173.9476,
+          "luminanceContrast": 156.7848
+        }
+      }
+    },
+    {
+      "id": "hair-alpha-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "distance": 0.35616,
+      "grayscale": {
+        "mae": 53.02347,
+        "rmse": 103.88349,
+        "diffRatio16": 0.34729,
+        "diffRatio32": 0.30795,
+        "diffRatio64": 0.24852,
+        "pixelmatchRatio": 0.33291
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.79257,
+        "blackRatioCandidate": 0.87435,
+        "terrainLikeRatioCurrent": 0.12201,
+        "terrainLikeRatioCandidate": 0.11963,
+        "avgLuminanceCurrent": 24.1418,
+        "avgLuminanceCandidate": 29.70607,
+        "avgLuminanceDelta": 5.56427,
+        "edgeEnergyCurrent": 0.02355,
+        "edgeEnergyCandidate": 0.01005,
+        "edgeEnergyRatio": 0.42653,
+        "edgeDiffRatio32": 0.06058
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 1.57257,
+          "edgeDensity": 0.14739,
+          "dominantColorShare": 0.77206,
+          "transparentShare": 0,
+          "luminanceMean": 24.00071,
+          "luminanceP5": 0,
+          "luminanceP95": 155,
+          "luminanceContrast": 155
+        },
+        "candidate": {
+          "colorBuckets": 16,
+          "colorEntropyBits": 0.6968,
+          "edgeDensity": 0.03741,
+          "dominantColorShare": 0.87563,
+          "transparentShare": 0,
+          "luminanceMean": 29.04893,
+          "luminanceP5": 0,
+          "luminanceP95": 255,
+          "luminanceContrast": 255
+        }
+      }
+    },
+    {
+      "id": "clothing-overlay-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "distance": 0.31309,
+      "grayscale": {
+        "mae": 28.24346,
+        "rmse": 38.98652,
+        "diffRatio16": 0.52843,
+        "diffRatio32": 0.45391,
+        "diffRatio64": 0.13995,
+        "pixelmatchRatio": 0.50147
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.01717,
+        "blackRatioCandidate": 0.02018,
+        "terrainLikeRatioCurrent": 0.64381,
+        "terrainLikeRatioCandidate": 0.43352,
+        "avgLuminanceCurrent": 129.32424,
+        "avgLuminanceCandidate": 144.75541,
+        "avgLuminanceDelta": 15.43117,
+        "edgeEnergyCurrent": 0.06003,
+        "edgeEnergyCandidate": 0.05399,
+        "edgeEnergyRatio": 0.89947,
+        "edgeDiffRatio32": 0.02372
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 403,
+          "colorEntropyBits": 6.82096,
+          "edgeDensity": 0.20997,
+          "dominantColorShare": 0.04298,
+          "transparentShare": 0,
+          "luminanceMean": 129.76934,
+          "luminanceP5": 54.44,
+          "luminanceP95": 219.2808,
+          "luminanceContrast": 164.8408
+        },
+        "candidate": {
+          "colorBuckets": 464,
+          "colorEntropyBits": 6.20174,
+          "edgeDensity": 0.21499,
+          "dominantColorShare": 0.09708,
+          "transparentShare": 0,
+          "luminanceMean": 145.13052,
+          "luminanceP5": 47.5646,
+          "luminanceP95": 215.2992,
+          "luminanceContrast": 167.7346
+        }
+      }
+    },
+    {
+      "id": "hair-black-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "distance": 0.27089,
+      "grayscale": {
+        "mae": 21.73307,
+        "rmse": 45.41744,
+        "diffRatio16": 0.28377,
+        "diffRatio32": 0.22863,
+        "diffRatio64": 0.13996,
+        "pixelmatchRatio": 0.26276
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.85619,
+        "blackRatioCandidate": 0.88659,
+        "terrainLikeRatioCurrent": 0.02012,
+        "terrainLikeRatioCandidate": 0.06754,
+        "avgLuminanceCurrent": 10.41068,
+        "avgLuminanceCandidate": 11.73838,
+        "avgLuminanceDelta": 1.3277,
+        "edgeEnergyCurrent": 0.01817,
+        "edgeEnergyCandidate": 0.01079,
+        "edgeEnergyRatio": 0.59374,
+        "edgeDiffRatio32": 0.04945
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 119,
+          "colorEntropyBits": 1.6209,
+          "edgeDensity": 0.11864,
+          "dominantColorShare": 0.81572,
+          "transparentShare": 0,
+          "luminanceMean": 10.42566,
+          "luminanceP5": 0,
+          "luminanceP95": 68.1714,
+          "luminanceContrast": 68.1714
+        },
+        "candidate": {
+          "colorBuckets": 122,
+          "colorEntropyBits": 1.21636,
+          "edgeDensity": 0.05605,
+          "dominantColorShare": 0.88434,
+          "transparentShare": 0,
+          "luminanceMean": 11.57613,
+          "luminanceP5": 0,
+          "luminanceP95": 111.9442,
+          "luminanceContrast": 111.9442
+        }
+      }
+    },
+    {
+      "id": "hair-white-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "distance": 0.26728,
+      "grayscale": {
+        "mae": 31.26407,
+        "rmse": 63.30795,
+        "diffRatio16": 0.31199,
+        "diffRatio32": 0.25857,
+        "diffRatio64": 0.19486,
+        "pixelmatchRatio": 0.29059
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0,
+        "blackRatioCandidate": 0.00155,
+        "terrainLikeRatioCurrent": 0.97627,
+        "terrainLikeRatioCandidate": 0.95893,
+        "avgLuminanceCurrent": 241.30248,
+        "avgLuminanceCandidate": 237.03727,
+        "avgLuminanceDelta": -4.26522,
+        "edgeEnergyCurrent": 0.01993,
+        "edgeEnergyCandidate": 0.01325,
+        "edgeEnergyRatio": 0.66465,
+        "edgeDiffRatio32": 0.06291
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 142,
+          "colorEntropyBits": 1.85594,
+          "edgeDensity": 0.12445,
+          "dominantColorShare": 0.79545,
+          "transparentShare": 0,
+          "luminanceMean": 241.4568,
+          "luminanceP5": 164.427,
+          "luminanceP95": 255,
+          "luminanceContrast": 90.573
+        },
+        "candidate": {
+          "colorBuckets": 163,
+          "colorEntropyBits": 1.32911,
+          "edgeDensity": 0.06147,
+          "dominantColorShare": 0.87635,
+          "transparentShare": 0,
+          "luminanceMean": 237.53351,
+          "luminanceP5": 99.275,
+          "luminanceP95": 255,
+          "luminanceContrast": 155.725
+        }
+      }
+    },
+    {
+      "id": "overlay",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "distance": 0.22934,
+      "grayscale": {
+        "mae": 18.15528,
+        "rmse": 32.75907,
+        "diffRatio16": 0.33505,
+        "diffRatio32": 0.25769,
+        "diffRatio64": 0.10327,
+        "pixelmatchRatio": 0.30965
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.04904,
+        "blackRatioCandidate": 0.06061,
+        "terrainLikeRatioCurrent": 0.59068,
+        "terrainLikeRatioCandidate": 0.55474,
+        "avgLuminanceCurrent": 139.69258,
+        "avgLuminanceCandidate": 132.87633,
+        "avgLuminanceDelta": -6.81625,
+        "edgeEnergyCurrent": 0.10712,
+        "edgeEnergyCandidate": 0.12845,
+        "edgeEnergyRatio": 1.19912,
+        "edgeDiffRatio32": 0.08976
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 570,
+          "colorEntropyBits": 7.14914,
+          "edgeDensity": 0.46081,
+          "dominantColorShare": 0.14272,
+          "transparentShare": 0,
+          "luminanceMean": 140.00937,
+          "luminanceP5": 24.446,
+          "luminanceP95": 251,
+          "luminanceContrast": 226.554
+        },
+        "candidate": {
+          "colorBuckets": 616,
+          "colorEntropyBits": 7.2999,
+          "edgeDensity": 0.50506,
+          "dominantColorShare": 0.14306,
+          "transparentShare": 0,
+          "luminanceMean": 133.10306,
+          "luminanceP5": 20.3804,
+          "luminanceP95": 251,
+          "luminanceContrast": 230.6196
+        }
+      }
+    },
+    {
+      "id": "hair-overlay-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "distance": 0.0974,
+      "grayscale": {
+        "mae": 9.78926,
+        "rmse": 21.26038,
+        "diffRatio16": 0.2001,
+        "diffRatio32": 0.11891,
+        "diffRatio64": 0.03531,
+        "pixelmatchRatio": 0.17193
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.14041,
+        "blackRatioCandidate": 0.14079,
+        "terrainLikeRatioCurrent": 0.5112,
+        "terrainLikeRatioCandidate": 0.47403,
+        "avgLuminanceCurrent": 107.91899,
+        "avgLuminanceCandidate": 109.52533,
+        "avgLuminanceDelta": 1.60634,
+        "edgeEnergyCurrent": 0.11109,
+        "edgeEnergyCandidate": 0.11556,
+        "edgeEnergyRatio": 1.04019,
+        "edgeDiffRatio32": 0.01708
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 486,
+          "colorEntropyBits": 7.06137,
+          "edgeDensity": 0.55254,
+          "dominantColorShare": 0.09825,
+          "transparentShare": 0,
+          "luminanceMean": 108.79421,
+          "luminanceP5": 10.1376,
+          "luminanceP95": 251,
+          "luminanceContrast": 240.8624
+        },
+        "candidate": {
+          "colorBuckets": 365,
+          "colorEntropyBits": 6.68638,
+          "edgeDensity": 0.57284,
+          "dominantColorShare": 0.09929,
+          "transparentShare": 0,
+          "luminanceMean": 110.28379,
+          "luminanceP5": 9.7112,
+          "luminanceP95": 251,
+          "luminanceContrast": 241.2888
+        }
+      }
+    },
+    {
+      "id": "guidance-xy",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "distance": 0.00414,
+      "grayscale": {
+        "mae": 0.5401,
+        "rmse": 9.04499,
+        "diffRatio16": 0.00471,
+        "diffRatio32": 0.00426,
+        "diffRatio64": 0.00324,
+        "pixelmatchRatio": 0.00455
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.06388,
+        "blackRatioCandidate": 0.06374,
+        "terrainLikeRatioCurrent": 0.61565,
+        "terrainLikeRatioCandidate": 0.6158,
+        "avgLuminanceCurrent": 127.06029,
+        "avgLuminanceCandidate": 127.04686,
+        "avgLuminanceDelta": -0.01343,
+        "edgeEnergyCurrent": 0.13452,
+        "edgeEnergyCandidate": 0.13461,
+        "edgeEnergyRatio": 1.00071,
+        "edgeDiffRatio32": 0.00543
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 506,
+          "colorEntropyBits": 7.36441,
+          "edgeDensity": 0.53834,
+          "dominantColorShare": 0.14286,
+          "transparentShare": 0,
+          "luminanceMean": 127.28448,
+          "luminanceP5": 19.7032,
+          "luminanceP95": 251,
+          "luminanceContrast": 231.2968
+        },
+        "candidate": {
+          "colorBuckets": 505,
+          "colorEntropyBits": 7.36554,
+          "edgeDensity": 0.53904,
+          "dominantColorShare": 0.14272,
+          "transparentShare": 0,
+          "luminanceMean": 127.29098,
+          "luminanceP5": 19.714,
+          "luminanceP95": 251,
+          "luminanceContrast": 231.286
+        }
+      }
+    },
+    {
+      "id": "bouquet-hand-source-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "distance": 0,
+      "grayscale": {
+        "mae": 0,
+        "rmse": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0,
+        "pixelmatchRatio": 0
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.04043,
+        "blackRatioCandidate": 0.04043,
+        "terrainLikeRatioCurrent": 0.41094,
+        "terrainLikeRatioCandidate": 0.41094,
+        "avgLuminanceCurrent": 112.98128,
+        "avgLuminanceCandidate": 112.98128,
+        "avgLuminanceDelta": 0,
+        "edgeEnergyCurrent": 0.08191,
+        "edgeEnergyCandidate": 0.08191,
+        "edgeEnergyRatio": 1,
+        "edgeDiffRatio32": 0
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 473,
+          "colorEntropyBits": 7.45579,
+          "edgeDensity": 0.48085,
+          "dominantColorShare": 0.02469,
+          "transparentShare": 0,
+          "luminanceMean": 112.9268,
+          "luminanceP5": 26.7876,
+          "luminanceP95": 214.866,
+          "luminanceContrast": 188.0784
+        },
+        "candidate": {
+          "colorBuckets": 473,
+          "colorEntropyBits": 7.45579,
+          "edgeDensity": 0.48085,
+          "dominantColorShare": 0.02469,
+          "transparentShare": 0,
+          "luminanceMean": 112.9268,
+          "luminanceP5": 26.7876,
+          "luminanceP95": 214.866,
+          "luminanceContrast": 188.0784
+        }
+      }
+    },
+    {
+      "id": "clothing-source-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "distance": 0,
+      "grayscale": {
+        "mae": 0,
+        "rmse": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0,
+        "pixelmatchRatio": 0
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.0217,
+        "blackRatioCandidate": 0.0217,
+        "terrainLikeRatioCurrent": 0.65312,
+        "terrainLikeRatioCandidate": 0.65312,
+        "avgLuminanceCurrent": 123.23125,
+        "avgLuminanceCandidate": 123.23125,
+        "avgLuminanceDelta": 0,
+        "edgeEnergyCurrent": 0.06535,
+        "edgeEnergyCandidate": 0.06535,
+        "edgeEnergyRatio": 1,
+        "edgeDiffRatio32": 0
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 332,
+          "colorEntropyBits": 6.77567,
+          "edgeDensity": 0.24794,
+          "dominantColorShare": 0.04292,
+          "transparentShare": 0,
+          "luminanceMean": 123.62675,
+          "luminanceP5": 44.8368,
+          "luminanceP95": 219.2808,
+          "luminanceContrast": 174.444
+        },
+        "candidate": {
+          "colorBuckets": 332,
+          "colorEntropyBits": 6.77567,
+          "edgeDensity": 0.24794,
+          "dominantColorShare": 0.04292,
+          "transparentShare": 0,
+          "luminanceMean": 123.62675,
+          "luminanceP5": 44.8368,
+          "luminanceP95": 219.2808,
+          "luminanceContrast": 174.444
+        }
+      }
+    },
+    {
+      "id": "face-source-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "distance": 0,
+      "grayscale": {
+        "mae": 0,
+        "rmse": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0,
+        "pixelmatchRatio": 0
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.1017,
+        "blackRatioCandidate": 0.1017,
+        "terrainLikeRatioCurrent": 0.37756,
+        "terrainLikeRatioCandidate": 0.37756,
+        "avgLuminanceCurrent": 93.95761,
+        "avgLuminanceCandidate": 93.95761,
+        "avgLuminanceDelta": 0,
+        "edgeEnergyCurrent": 0.09266,
+        "edgeEnergyCandidate": 0.09266,
+        "edgeEnergyRatio": 1,
+        "edgeDiffRatio32": 0
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 384,
+          "colorEntropyBits": 7.1287,
+          "edgeDensity": 0.4396,
+          "dominantColorShare": 0.03427,
+          "transparentShare": 0,
+          "luminanceMean": 93.80861,
+          "luminanceP5": 15.992,
+          "luminanceP95": 163.9454,
+          "luminanceContrast": 147.9534
+        },
+        "candidate": {
+          "colorBuckets": 384,
+          "colorEntropyBits": 7.1287,
+          "edgeDensity": 0.4396,
+          "dominantColorShare": 0.03427,
+          "transparentShare": 0,
+          "luminanceMean": 93.80861,
+          "luminanceP5": 15.992,
+          "luminanceP95": 163.9454,
+          "luminanceContrast": 147.9534
+        }
+      }
+    },
+    {
+      "id": "hair-source-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "distance": 0,
+      "grayscale": {
+        "mae": 0,
+        "rmse": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0,
+        "pixelmatchRatio": 0
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.14696,
+        "blackRatioCandidate": 0.14696,
+        "terrainLikeRatioCurrent": 0.52993,
+        "terrainLikeRatioCandidate": 0.52993,
+        "avgLuminanceCurrent": 103.82405,
+        "avgLuminanceCandidate": 103.82405,
+        "avgLuminanceDelta": 0,
+        "edgeEnergyCurrent": 0.1184,
+        "edgeEnergyCandidate": 0.1184,
+        "edgeEnergyRatio": 1,
+        "edgeDiffRatio32": 0
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 301,
+          "colorEntropyBits": 6.66608,
+          "edgeDensity": 0.58724,
+          "dominantColorShare": 0.09935,
+          "transparentShare": 0,
+          "luminanceMean": 104.76811,
+          "luminanceP5": 9.4408,
+          "luminanceP95": 251,
+          "luminanceContrast": 241.5592
+        },
+        "candidate": {
+          "colorBuckets": 301,
+          "colorEntropyBits": 6.66608,
+          "edgeDensity": 0.58724,
+          "dominantColorShare": 0.09935,
+          "transparentShare": 0,
+          "luminanceMean": 104.76811,
+          "luminanceP5": 9.4408,
+          "luminanceP95": 251,
+          "luminanceContrast": 241.5592
+        }
+      }
+    },
+    {
+      "id": "source",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "distance": 0,
+      "grayscale": {
+        "mae": 0,
+        "rmse": 0,
+        "diffRatio16": 0,
+        "diffRatio32": 0,
+        "diffRatio64": 0,
+        "pixelmatchRatio": 0
+      },
+      "contentProxies": {
+        "blackRatioCurrent": 0.06291,
+        "blackRatioCandidate": 0.06291,
+        "terrainLikeRatioCurrent": 0.61718,
+        "terrainLikeRatioCandidate": 0.61718,
+        "avgLuminanceCurrent": 127.2294,
+        "avgLuminanceCandidate": 127.2294,
+        "avgLuminanceDelta": 0,
+        "edgeEnergyCurrent": 0.13319,
+        "edgeEnergyCandidate": 0.13319,
+        "edgeEnergyRatio": 1,
+        "edgeDiffRatio32": 0
+      },
+      "sceneMetrics": {
+        "current": {
+          "colorBuckets": 504,
+          "colorEntropyBits": 7.36361,
+          "edgeDensity": 0.53659,
+          "dominantColorShare": 0.14306,
+          "transparentShare": 0,
+          "luminanceMean": 127.47976,
+          "luminanceP5": 19.8556,
+          "luminanceP95": 251,
+          "luminanceContrast": 231.1444
+        },
+        "candidate": {
+          "colorBuckets": 504,
+          "colorEntropyBits": 7.36361,
+          "edgeDensity": 0.53659,
+          "dominantColorShare": 0.14306,
+          "transparentShare": 0,
+          "luminanceMean": 127.47976,
+          "luminanceP5": 19.8556,
+          "luminanceP95": 251,
+          "luminanceContrast": 231.1444
+        }
+      }
+    }
+  ],
+  "hairSingleImage": [
+    {
+      "id": "alpha",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "sceneMetrics": {
+        "colorBuckets": 16,
+        "colorEntropyBits": 1.30785,
+        "edgeDensity": 0.09024,
+        "dominantColorShare": 0.70856,
+        "transparentShare": 0,
+        "luminanceMean": 67.42843,
+        "luminanceP5": 0,
+        "luminanceP95": 255,
+        "luminanceContrast": 255
+      }
+    },
+    {
+      "id": "black",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "sceneMetrics": {
+        "colorBuckets": 155,
+        "colorEntropyBits": 2.46574,
+        "edgeDensity": 0.24691,
+        "dominantColorShare": 0.73692,
+        "transparentShare": 0,
+        "luminanceMean": 19.18063,
+        "luminanceP5": 0,
+        "luminanceP95": 114.7318,
+        "luminanceContrast": 114.7318
+      }
+    },
+    {
+      "id": "bouquet-hand-alpha-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "sceneMetrics": {
+        "colorBuckets": 16,
+        "colorEntropyBits": 0.07541,
+        "edgeDensity": 0.00587,
+        "dominantColorShare": 0.99316,
+        "transparentShare": 0,
+        "luminanceMean": 1.3589,
+        "luminanceP5": 0,
+        "luminanceP95": 0,
+        "luminanceContrast": 0
+      }
+    },
+    {
+      "id": "bouquet-hand-black-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "sceneMetrics": {
+        "colorBuckets": 15,
+        "colorEntropyBits": 0.0704,
+        "edgeDensity": 0.0043,
+        "dominantColorShare": 0.9941,
+        "transparentShare": 0,
+        "luminanceMean": 0.14155,
+        "luminanceP5": 0,
+        "luminanceP95": 0,
+        "luminanceContrast": 0
+      }
+    },
+    {
+      "id": "bouquet-hand-overlay-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "sceneMetrics": {
+        "colorBuckets": 489,
+        "colorEntropyBits": 7.46349,
+        "edgeDensity": 0.47949,
+        "dominantColorShare": 0.02469,
+        "transparentShare": 0,
+        "luminanceMean": 113.42371,
+        "luminanceP5": 27.6772,
+        "luminanceP95": 214.866,
+        "luminanceContrast": 187.1888
+      }
+    },
+    {
+      "id": "bouquet-hand-source-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "sceneMetrics": {
+        "colorBuckets": 473,
+        "colorEntropyBits": 7.45579,
+        "edgeDensity": 0.48085,
+        "dominantColorShare": 0.02469,
+        "transparentShare": 0,
+        "luminanceMean": 112.9268,
+        "luminanceP5": 26.7876,
+        "luminanceP95": 214.866,
+        "luminanceContrast": 188.0784
+      }
+    },
+    {
+      "id": "bouquet-hand-white-2x",
+      "dimensions": {
+        "width": 1300,
+        "height": 1380
+      },
+      "sceneMetrics": {
+        "colorBuckets": 40,
+        "colorEntropyBits": 0.08667,
+        "edgeDensity": 0.00669,
+        "dominantColorShare": 0.99342,
+        "transparentShare": 0,
+        "luminanceMean": 253.78445,
+        "luminanceP5": 255,
+        "luminanceP95": 255,
+        "luminanceContrast": 0
+      }
+    },
+    {
+      "id": "clothing-alpha-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "sceneMetrics": {
+        "colorBuckets": 16,
+        "colorEntropyBits": 0.81561,
+        "edgeDensity": 0.05449,
+        "dominantColorShare": 0.89071,
+        "transparentShare": 0,
+        "luminanceMean": 21.84268,
+        "luminanceP5": 0,
+        "luminanceP95": 247,
+        "luminanceContrast": 247
+      }
+    },
+    {
+      "id": "clothing-black-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "sceneMetrics": {
+        "colorBuckets": 47,
+        "colorEntropyBits": 0.84638,
+        "edgeDensity": 0.05074,
+        "dominantColorShare": 0.90536,
+        "transparentShare": 0,
+        "luminanceMean": 4.55072,
+        "luminanceP5": 0,
+        "luminanceP95": 43.3462,
+        "luminanceContrast": 43.3462
+      }
+    },
+    {
+      "id": "clothing-overlay-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "sceneMetrics": {
+        "colorBuckets": 411,
+        "colorEntropyBits": 6.86451,
+        "edgeDensity": 0.207,
+        "dominantColorShare": 0.04292,
+        "transparentShare": 0,
+        "luminanceMean": 130.26918,
+        "luminanceP5": 62.4094,
+        "luminanceP95": 219.2808,
+        "luminanceContrast": 156.8714
+      }
+    },
+    {
+      "id": "clothing-source-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "sceneMetrics": {
+        "colorBuckets": 332,
+        "colorEntropyBits": 6.77567,
+        "edgeDensity": 0.24794,
+        "dominantColorShare": 0.04292,
+        "transparentShare": 0,
+        "luminanceMean": 123.62675,
+        "luminanceP5": 44.8368,
+        "luminanceP95": 219.2808,
+        "luminanceContrast": 174.444
+      }
+    },
+    {
+      "id": "clothing-white-2x",
+      "dimensions": {
+        "width": 2080,
+        "height": 420
+      },
+      "sceneMetrics": {
+        "colorBuckets": 111,
+        "colorEntropyBits": 1.11227,
+        "edgeDensity": 0.07384,
+        "dominantColorShare": 0.89196,
+        "transparentShare": 0,
+        "luminanceMean": 237.70748,
+        "luminanceP5": 63.5508,
+        "luminanceP95": 255,
+        "luminanceContrast": 191.4492
+      }
+    },
+    {
+      "id": "face-alpha-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "sceneMetrics": {
+        "colorBuckets": 16,
+        "colorEntropyBits": 1.19308,
+        "edgeDensity": 0.07557,
+        "dominantColorShare": 0.76133,
+        "transparentShare": 0,
+        "luminanceMean": 53.35812,
+        "luminanceP5": 0,
+        "luminanceP95": 255,
+        "luminanceContrast": 255
+      }
+    },
+    {
+      "id": "face-black-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "sceneMetrics": {
+        "colorBuckets": 58,
+        "colorEntropyBits": 1.58472,
+        "edgeDensity": 0.12853,
+        "dominantColorShare": 0.79949,
+        "transparentShare": 0,
+        "luminanceMean": 7.35456,
+        "luminanceP5": 0,
+        "luminanceP95": 44.8356,
+        "luminanceContrast": 44.8356
+      }
+    },
+    {
+      "id": "face-overlay-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "sceneMetrics": {
+        "colorBuckets": 494,
+        "colorEntropyBits": 7.01255,
+        "edgeDensity": 0.35967,
+        "dominantColorShare": 0.09577,
+        "transparentShare": 0,
+        "luminanceMean": 112.29018,
+        "luminanceP5": 42.9364,
+        "luminanceP95": 163.9454,
+        "luminanceContrast": 121.009
+      }
+    },
+    {
+      "id": "face-source-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "sceneMetrics": {
+        "colorBuckets": 384,
+        "colorEntropyBits": 7.1287,
+        "edgeDensity": 0.4396,
+        "dominantColorShare": 0.03427,
+        "transparentShare": 0,
+        "luminanceMean": 93.80861,
+        "luminanceP5": 15.992,
+        "luminanceP95": 163.9454,
+        "luminanceContrast": 147.9534
+      }
+    },
+    {
+      "id": "face-white-2x",
+      "dimensions": {
+        "width": 920,
+        "height": 1140
+      },
+      "sceneMetrics": {
+        "colorBuckets": 93,
+        "colorEntropyBits": 1.96166,
+        "edgeDensity": 0.16603,
+        "dominantColorShare": 0.7635,
+        "transparentShare": 0,
+        "luminanceMean": 208.99638,
+        "luminanceP5": 18.4356,
+        "luminanceP95": 255,
+        "luminanceContrast": 236.5644
+      }
+    },
+    {
+      "id": "guidance-xy",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "sceneMetrics": {
+        "colorBuckets": 507,
+        "colorEntropyBits": 7.36531,
+        "edgeDensity": 0.53771,
+        "dominantColorShare": 0.14306,
+        "transparentShare": 0,
+        "luminanceMean": 127.33585,
+        "luminanceP5": 19.714,
+        "luminanceP95": 251,
+        "luminanceContrast": 231.286
+      }
+    },
+    {
+      "id": "hair-alpha-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "sceneMetrics": {
+        "colorBuckets": 16,
+        "colorEntropyBits": 1.79404,
+        "edgeDensity": 0.15109,
+        "dominantColorShare": 0.58882,
+        "transparentShare": 0,
+        "luminanceMean": 167.7011,
+        "luminanceP5": 0,
+        "luminanceP95": 255,
+        "luminanceContrast": 255
+      }
+    },
+    {
+      "id": "hair-black-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "sceneMetrics": {
+        "colorBuckets": 175,
+        "colorEntropyBits": 4.84056,
+        "edgeDensity": 0.53688,
+        "dominantColorShare": 0.36569,
+        "transparentShare": 0,
+        "luminanceMean": 45.87216,
+        "luminanceP5": 0,
+        "luminanceP95": 136.9078,
+        "luminanceContrast": 136.9078
+      }
+    },
+    {
+      "id": "hair-overlay-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "sceneMetrics": {
+        "colorBuckets": 435,
+        "colorEntropyBits": 5.86713,
+        "edgeDensity": 0.3002,
+        "dominantColorShare": 0.13762,
+        "transparentShare": 0,
+        "luminanceMean": 149.20665,
+        "luminanceP5": 93.0026,
+        "luminanceP95": 251,
+        "luminanceContrast": 157.9974
+      }
+    },
+    {
+      "id": "hair-source-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "sceneMetrics": {
+        "colorBuckets": 301,
+        "colorEntropyBits": 6.66608,
+        "edgeDensity": 0.58724,
+        "dominantColorShare": 0.09935,
+        "transparentShare": 0,
+        "luminanceMean": 104.76811,
+        "luminanceP5": 9.4408,
+        "luminanceP95": 251,
+        "luminanceContrast": 241.5592
+      }
+    },
+    {
+      "id": "hair-white-2x",
+      "dimensions": {
+        "width": 1368,
+        "height": 1720
+      },
+      "sceneMetrics": {
+        "colorBuckets": 205,
+        "colorEntropyBits": 5.24039,
+        "edgeDensity": 0.54171,
+        "dominantColorShare": 0.30643,
+        "transparentShare": 0,
+        "luminanceMean": 133.16898,
+        "luminanceP5": 9.5852,
+        "luminanceP95": 255,
+        "luminanceContrast": 245.4148
+      }
+    },
+    {
+      "id": "overlay",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "sceneMetrics": {
+        "colorBuckets": 654,
+        "colorEntropyBits": 7.18736,
+        "edgeDensity": 0.42669,
+        "dominantColorShare": 0.14072,
+        "transparentShare": 0,
+        "luminanceMean": 144.90453,
+        "luminanceP5": 54.0994,
+        "luminanceP95": 251,
+        "luminanceContrast": 196.9006
+      }
+    },
+    {
+      "id": "source",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "sceneMetrics": {
+        "colorBuckets": 504,
+        "colorEntropyBits": 7.36361,
+        "edgeDensity": 0.53659,
+        "dominantColorShare": 0.14306,
+        "transparentShare": 0,
+        "luminanceMean": 127.47976,
+        "luminanceP5": 19.8556,
+        "luminanceP95": 251,
+        "luminanceContrast": 231.1444
+      }
+    },
+    {
+      "id": "white",
+      "dimensions": {
+        "width": 1614,
+        "height": 1080
+      },
+      "sceneMetrics": {
+        "colorBuckets": 188,
+        "colorEntropyBits": 2.67649,
+        "edgeDensity": 0.25154,
+        "dominantColorShare": 0.71705,
+        "transparentShare": 0,
+        "luminanceMean": 206.75081,
+        "luminanceP5": 23.866,
+        "luminanceP95": 255,
+        "luminanceContrast": 231.134
+      }
+    }
+  ]
+}
