@@ -11,7 +11,7 @@ from the historical upstream result below.
 | Asset | Meaning |
 |---|---|
 | [Clean source](source.png) | Complete 1614×1080 unmasked video frame requested at 14.5 seconds. This is the actual upstream ZIM input. |
-| [User screenshot](references/user-screenshot.png) | The supplied PhotoLab quality target at its clipped webpage viewport. |
+| [Cropped user reference](references/user-screenshot.png) | Only the PhotoLab photograph area from the supplied screenshot; no Chrome tabs, toolbar or surrounding browser window. |
 | [Video overlay](references/video-hair-overlay.png) | Complete frame requested at 8.5 seconds, including the green hair overlay, cursor and tool marker. |
 | [Acquisition provenance](source-provenance.md) | Recorded source pages, timestamps and limits of the compressed video extraction. |
 
@@ -21,6 +21,13 @@ portrait still/RAW and PhotoLab's exported mask are unavailable. The retained
 [registration report](metadata/reference-audit.json) describes how the screenshot
 viewport was related to the video; do not compare unregistered pixels or infer
 alpha by subtracting the differently graded frames.
+
+The [case manifest](manifest.json) records the crop bounds in the original
+screenshot and its pixel identity. Historical registration still uses that
+original coordinate frame; subtract the crop origin to map into this retained
+reference. The original full-browser screenshot is excluded from published Git
+history. The crop retains the encoded RGB samples, not the original alpha or
+display-profile metadata; it is not a color-managed screenshot equivalence claim.
 
 ## Observed results
 
@@ -46,7 +53,8 @@ The alpha PNG quantizes the upstream f32 output to 16 bits. The native overlay i
 a display composite from a separate native run; it is not an encoded alpha mask
 and must not be used as one. Model weights and raw candidate tensors are omitted.
 
-Owner authorization permits this local collection. The acquisition note's older
-research-only wording records the circumstances of extraction; it does not grant
-redistribution rights. DxO/source-photographer rights remain unresolved for
-publication, and ZIM's retained noncommercial terms still apply to its artifacts.
+The user authorized the repository push with this crop instead of the full
+browser screenshot. The acquisition note's research-only wording records the
+earlier extraction; neither that history nor the user's instruction establishes
+third-party redistribution rights. DxO/source-photographer rights remain
+unverified, and ZIM's retained noncommercial terms still apply to its artifacts.

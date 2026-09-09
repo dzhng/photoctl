@@ -8,7 +8,7 @@ then the named-axis wire contract that future grounding work inherits.
 
 ### Separate fixture lifetime from the response requirement
 
-**When:** full closeout, `2124096`.
+**When:** full closeout, `3e25133`.
 
 **Choice and scenario:** The foreground-tag test measures the actual tag call
 against an explicit two-second response requirement. Its implicit five-second
@@ -30,7 +30,7 @@ checks; twenty seconds is a conservative harness allowance, not a product bound.
 
 ### Name external point axes instead of guessing tuple order
 
-**When:** grounding repair, `8d3e440`.
+**When:** grounding repair, `070b820`.
 
 **Choice and scenario:** A live provider placed plausible coordinates in
 vertical/horizontal order despite an instruction requesting horizontal/vertical
@@ -53,7 +53,7 @@ failure. **Confidence:** high.
 
 ### Fill typed pixel storage directly
 
-**When:** segmentation memory fix, `0c0a2fc`.
+**When:** segmentation memory fix, `63eebbb`.
 
 **Choice and scenario:** A full-resolution image already occupies a compact
 floating-point buffer. Iterable conversion expanded its samples into temporary
@@ -73,7 +73,7 @@ its heap limit. **Confidence:** high.
 
 ### Couple discovery to the existing command inventory
 
-**When:** CLI help, `99d361d`.
+**When:** CLI help, `3c4a65a`.
 
 **Choice and scenario:** An agent needs to learn how to initialize and operate
 a library before one exists. Execution command entries join their existing
@@ -95,7 +95,7 @@ creating runtime state; this does not add another parser framework.
 
 ### Retain failed live cases alongside the hair control
 
-**When:** live evaluation record, `9987eb3`.
+**When:** live evaluation record, `1a2dafa`.
 
 **Choice and scenario:** The first person request selected flowers. The
 named-axis request corrected that interpretation but still missed hair and

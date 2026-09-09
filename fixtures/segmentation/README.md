@@ -60,7 +60,8 @@ and scratch libraries. Existing 16-bit result PNGs are quantized records for
 review, not byte-identical replacements for canonical f32 mask TIFFs. The case
 manifests record what was retained and what was omitted.
 
-The owner authorized retaining these evaluation references locally. This does
-not establish public redistribution rights for the DxO extracts or transfer
-rights in the owner's camera photographs. Nothing here is a publication grant.
+The owner's publication instruction and screenshot privacy boundary are recorded
+with the [PhotoLab case](portrait/photolab/README.md). They do not establish
+third-party redistribution rights for the DxO extracts or transfer rights in
+the owner's camera photographs.
 The [collection choices](choices.md) explain the retention boundaries.

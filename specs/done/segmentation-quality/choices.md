@@ -31,7 +31,7 @@ support a large working set without observed growth across photo history.
 
 ### Run at most two test files concurrently
 
-**When:** practical closeout, `f254918`.
+**When:** practical closeout, `b68bb61`.
 
 **Choice and scenario:** One test file can start several real CLI processes and
 databases. Starting seventeen file workers based on CPU availability consequently

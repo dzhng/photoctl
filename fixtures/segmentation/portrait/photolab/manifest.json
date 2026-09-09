@@ -19,9 +19,24 @@
   "visual_targets": [
     {
       "file": "references/user-screenshot.png",
-      "kind": "user-supplied screenshot",
+      "kind": "cropped user-supplied screenshot",
       "ground_truth_alpha": false,
-      "limitations": "Webpage clips the full video vertically; grading and unknown overlay opacity differ."
+      "limitations": "Webpage clips the full video vertically; grading and unknown overlay opacity differ.",
+      "crop": {
+        "original_sha256": "e431240085f8c1025f4a568729e75ab7af18ea22d2ff32d1a03e4d7400667665",
+        "original_dimensions": [
+          3248,
+          2122
+        ],
+        "xywh": [
+          1588,
+          592,
+          1379,
+          777
+        ],
+        "pixel_identity": "Exact encoded RGB crop, zero changed RGB samples; original alpha and display-profile metadata omitted.",
+        "privacy": "Only the photograph viewport is retained; original full-browser bytes are excluded from published history."
+      }
     },
     {
       "file": "references/video-hair-overlay.png",
@@ -99,7 +114,7 @@
   ],
   "rights": {
     "retention": "Owner authorized local project collection on 2026-09-09.",
-    "public_redistribution": "Not established for source/reference imagery; no publication authorized.",
+    "public_redistribution": "User authorized repository push with the cropped reference on 2026-09-09; third-party rights remain unverified and no new license is asserted.",
     "model_terms": "ZIM repository CC BY-NC 4.0 retained; conflicting HF BY4 metadata does not expand permission."
   },
   "omitted": [
@@ -172,16 +187,16 @@
     },
     {
       "file": "references/user-screenshot.png",
-      "bytes": 3231312,
-      "sha256": "e431240085f8c1025f4a568729e75ab7af18ea22d2ff32d1a03e4d7400667665",
-      "copied_from": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/photolab-reference.png",
+      "bytes": 1363028,
+      "sha256": "f6834b90819d076a3d1f5b2f69346b4564073dceeccf8d29451421af2127ad5a",
       "png": {
-        "width": 3248,
-        "height": 2122,
+        "width": 1379,
+        "height": 777,
         "bit_depth": 8,
-        "color_type": 6
+        "color_type": 2
       },
-      "role": "visual_target"
+      "role": "visual_target",
+      "derivation": "#/visual_targets/0/crop"
     },
     {
       "file": "references/video-hair-overlay.png",
@@ -216,5 +231,22 @@
       },
       "role": "evaluated_input"
     }
-  ]
+  ],
+  "history_redaction": {
+    "reason": "The unpushed full-browser screenshot was replaced with the photograph crop in every outgoing commit. Historical capture IDs below map to content-equivalent implementation commits.",
+    "commits": {
+      "0c0a2fc963c9060dc4e053b8045904f238f3ff03": "63eebbba9085e3e37fe0174226a33380e68308f5",
+      "0d07359ced904818191b6acfbc2217acb7eadfcd": "8f018f07f57e921eb42ce01fe5eee1758e1d4e71",
+      "0fe27abd798d82b41e6aa22f0ab533fca67391df": "4abc648ce129251d6f34b410b20692762e0322b1",
+      "207309225368bb71a1d1bdafac04814c14011fcc": "b491b105ceb4b95e6de64693d9656a64fa0d34ab",
+      "2124096dd40aa8eebc154303e195570eacbe76da": "3e251339feef868ab4dbf86f3e9cf899e8e94450",
+      "2fa9248b572859a80cc35a8f5b6585a27c45aa96": "8894e4f31618c51fdb4d668d213c40353d88bac8",
+      "8d3e4408e804b3c18f18c943138c246d2c3844db": "070b8207ce97117dc5a2cad8b754a2ca6fd32044",
+      "9577bdb84d4c9286b4521fac3dece73a19a84cab": "f7e71a3e177e2cbfcf9d3514949c3992c87a51c0",
+      "9987eb32d933eaf6e28fb25530fbf71514dd7d2a": "1a2dafabe0b01f03dc911fb3c34799511969206b",
+      "99d361dcdd605b677db0614befdcc1f26fa3969b": "3c4a65a3dcf001fc0e50675d31435ffb6e16905a",
+      "e953e01ec8116f5567ca9f6444f0d2e0096aaaae": "b487f28d577e1a521d167cc2aea056c7f142df4e",
+      "f2549187bc7756e3be9fc907c73a1b61815315ea": "b68bb615dedff238081bc248d2a451316371efb0"
+    }
+  }
 }

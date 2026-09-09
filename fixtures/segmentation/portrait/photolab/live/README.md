@@ -69,3 +69,7 @@ The PNG masks quantize canonical floating-point alpha to 16 bits. Tensor records
 retain hashes, but raw tensors, canonical mask TIFFs, model weights and scratch
 libraries are not part of this portable collection. No credential values or
 request authorization headers are retained.
+
+Historical commit IDs in these captures precede the screenshot privacy rewrite.
+The [case manifest](../manifest.json) maps them to equivalent published commits;
+the captured requests, model bytes and observed masks are unchanged.
