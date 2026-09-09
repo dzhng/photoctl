@@ -100,7 +100,7 @@ test("strict fill commits generated pixels through a mask composite without chan
       },
       generation: {
         adapter: "gateway-image-v1",
-        model: "openai/gpt-image-2",
+        model: "fixture/native-image-v1",
       },
       composite: {
         unmasked_bit_exact: true,
@@ -955,12 +955,12 @@ async function fillFixture(mode?: "wrongdims" | "smallerdims" | "wholeframe" | "
     id: imported.ids[0]!,
     fill: {
       adapter: new GatewayImageModelAdapter({
-        model: "openai/gpt-image-2",
+        model: "fixture/native-image-v1",
         mask: "native",
         maskPolarity: "transparent-edits",
       }),
       gateway,
-      model: "openai/gpt-image-2",
+      model: "fixture/native-image-v1",
       source: sourceProducer,
     },
     sourceProducer,

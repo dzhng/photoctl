@@ -109,11 +109,9 @@ export async function refreshFullFrameLayer(
       ? await executeFreshGeneration(database, libraryPath, {
           inputNodeId,
           inputArtifactHash: evaluated.artifact.artifactHash,
-          sentDimensions: { w: pixels.w, h: pixels.h },
           prompt: branch.parameters.prompt,
           promptVersion: branch.parameters.prompt_version,
           dependencies: request.dependencies,
-          targetPixels: authored.raster.w * authored.raster.h,
           buildRequest: async () =>
             request.dependencies.adapter.buildFullFrameEdit(
               { png: await image16Png(pixels), w: pixels.w, h: pixels.h },
@@ -123,7 +121,6 @@ export async function refreshFullFrameLayer(
             ({
               ...branch.parameters.request,
               execution_id: executionId,
-              sent: [pixels.w, pixels.h],
               returned: [returned.w, returned.h],
               full_frame: {
                 ...branch.parameters.request.full_frame,

@@ -441,7 +441,6 @@ export async function prepareFillGeneration(
       inputArtifactHash,
       ...(reference ? { reference } : {}),
       requestedInit: request.init,
-      sentDimensions: sent.image,
       prompt: request.prompt,
       promptVersion: request.promptVersion,
       ...(request.seed === undefined ? {} : { seed: request.seed }),
@@ -471,7 +470,6 @@ export async function prepareFillGeneration(
         operation: request.operation,
         fit,
         crop: [crop.x, crop.y, crop.w, crop.h],
-        sent: [sent.image.w, sent.image.h],
         full_res: request.fullResolution ?? false,
         pad: request.pad ?? 64,
         sampling: {
@@ -498,7 +496,6 @@ export async function prepareFillGeneration(
         ...(request.seed === undefined ? {} : { seed: request.seed }),
         ...intent,
       }),
-      targetPixels: crop.w * crop.h,
     });
   }
   const cachedUpscale = reusable?.cachedUpscale;

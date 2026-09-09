@@ -10,7 +10,7 @@ import { startGatewayFixture } from "@photoctl/test-harness/gateway-fixture";
 
 test("referenced edits serialize the masked image first and reference second", async () => {
   const adapter = new GatewayImageModelAdapter({
-    model: "openai/gpt-image-2",
+    model: FAKE_IMAGE_EDIT_MODEL,
     mask: "native",
     maskPolarity: "transparent-edits",
   });
@@ -57,7 +57,7 @@ test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
   async (model) => {
     const adapter = createGatewayImageModelAdapter({ model });
     const reference = await png("#00ff00");
-    const prepared = adapter.buildGeneration("a ceramic vase", { w: 4, h: 4 }, 11, {
+    const prepared = adapter.buildGeneration("a ceramic vase", { w: 1024, h: 1024 }, 11, {
       png: reference,
     });
     expect(prepared.route).toBe("edits");
@@ -68,7 +68,7 @@ test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
     }).formData();
     expect(Buffer.from(await (wire.get("image[]") as File).arrayBuffer())).toEqual(reference);
     expect(wire.has("mask")).toBe(false);
-    expect(wire.get("size")).toBe("4x4");
+    expect(wire.get("size")).toBe("1024x1024");
     expect(wire.get("prompt")).toBe("a ceramic vase");
     expect(prepared.appliedControls.reference).toBe(true);
   },

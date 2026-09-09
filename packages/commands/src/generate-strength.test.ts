@@ -42,7 +42,7 @@ test.each([0, 0.25, 1])(
             "--size",
             "4x4",
             "--model",
-            "openai/gpt-image-2",
+            "photoctl/fake-image-edit-v1",
             ...(strength === 1 ? ["--neg", "text"] : []),
           ],
           cwd: parent,

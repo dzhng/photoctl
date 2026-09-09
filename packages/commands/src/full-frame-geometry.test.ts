@@ -54,8 +54,12 @@ async function fixture(flat = false) {
   const sent: Buffer[] = [];
   const hooks: { afterResponse?: () => Promise<void> } = {};
   const fill = {
-    model: "openai/gpt-image-2",
-    adapter: new GatewayImageModelAdapter({ model: "openai/gpt-image-2" }),
+    model: "fixture/native-image-v1",
+    adapter: new GatewayImageModelAdapter({
+      model: "fixture/native-image-v1",
+      mask: "native",
+      maskPolarity: "transparent-edits",
+    }),
     gateway: {
       imageEdits: async (body: FormData) => {
         const image = body.get("image");

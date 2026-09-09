@@ -26,6 +26,7 @@ export interface ProviderImageRequest {
   negative_prompt?: PreparedImageGeneration["negativePrompt"];
   reference_strength?: PreparedImageGeneration["referenceStrength"];
   dimensions: { w: number; h: number };
+  frame_mapping?: PreparedImageEdit["frameMapping"] | null;
   input_artifact_hashes: string[];
 }
 
@@ -59,6 +60,7 @@ export function imageAttemptRequestDetails(prepared: PreparedImageEdit | Prepare
       reference: prepared.appliedControls.reference,
       init: prepared.appliedControls.init,
     },
+    frame_mapping: prepared.frameMapping ? { ...prepared.frameMapping } : null,
   };
 }
 

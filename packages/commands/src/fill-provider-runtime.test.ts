@@ -17,13 +17,20 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
 });
 
-test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
+test.each([
+  [FAKE_IMAGE_EDIT_MODEL, { w: 383, h: 384 }, null],
+  [
+    "openai/gpt-image-2",
+    { w: 1149, h: 1152 },
+    { source: [0, 0, 383, 384], output: [0, 0, 1149, 1152] },
+  ],
+] as const)(
   "the built CLI uses %s with instruction-composite through real HTTP",
-  async (model) => {
-    const requests: Array<{ model: unknown; mask: boolean }> = [];
+  async (model, returned, frameMapping) => {
+    const requests: Array<{ model: unknown; mask: boolean; size: string }> = [];
     const fixture = await cliFixture({
       onImageRequest: ({ fields, files }) =>
-        requests.push({ model: fields.model, mask: files.has("mask") }),
+        requests.push({ model: fields.model, mask: files.has("mask"), size: String(fields.size) }),
     });
 
     const filled = await spawnPhotoctl(fillArgs(fixture, model), {
@@ -38,6 +45,7 @@ test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
         generation: {
           adapter: "gateway-image-instruction-composite-v1",
           model,
+          returned,
         },
         composite: { unmasked_bit_exact: true },
         executions: [
@@ -49,29 +57,74 @@ test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
         ],
       },
     });
-    expect(requests).toEqual([{ model, mask: false }]);
+    expect(requests).toEqual([{ model, mask: false, size: expect.any(String) }]);
     const generationNode = (filled.json as { data: { generation: { node: string } } }).data
       .generation.node;
-    const inspected = await spawnPhotoctl(["graph", "node", fixture.id, generationNode], {
-      libraryDir: fixture.library,
-      env: fixture.env,
-    });
-    expect(inspected.code, JSON.stringify(inspected.json)).toBe(0);
-    expect(inspected.json).toMatchObject({
-      ok: true,
-      data: {
-        kind: "generate",
-        executions: [
-          {
-            provider_provenance: {
-              adapter: "gateway-image-instruction-composite-v1",
-              adapter_version: createGatewayImageModelAdapter({ model }).version,
-              model,
+    const refreshed = await spawnPhotoctl(
+      ["layer", "refresh", fixture.id, fixture.layer, "--from", generationNode],
+      {
+        libraryDir: fixture.library,
+        env: fixture.env,
+      },
+    );
+    expect(refreshed.code, JSON.stringify(refreshed.json)).toBe(0);
+    const refreshedNode = (refreshed.json as { data: { generation: { node: string } } }).data
+      .generation.node;
+    expect(requests.map(({ model, mask }) => ({ model, mask }))).toEqual([
+      { model, mask: false },
+      { model, mask: false },
+    ]);
+    for (const [index, node] of [generationNode, refreshedNode].entries()) {
+      const [w, h] = requests[index]!.size.split("x").map(Number) as [number, number];
+      const inspected = await spawnPhotoctl(["graph", "node", fixture.id, node], {
+        libraryDir: fixture.library,
+        env: fixture.env,
+      });
+      expect(inspected.code, JSON.stringify(inspected.json)).toBe(0);
+      expect(inspected.json).toMatchObject({
+        ok: true,
+        data: {
+          kind: "generate",
+          executions: [
+            {
+              provider_provenance: {
+                adapter: "gateway-image-instruction-composite-v1",
+                adapter_version: createGatewayImageModelAdapter({ model }).version,
+                model,
+                target_px: w * h,
+                input_px: w * h,
+              },
+            },
+          ],
+        },
+      });
+      expect(inspected.json).toMatchObject({
+        data: {
+          parameters: {
+            request: {
+              provider_output: { w, h },
+              sent: [w, h],
+              returned: [returned.w, returned.h],
+              frame_mapping: frameMapping,
             },
           },
-        ],
-      },
-    });
+        },
+      });
+      const attemptId = (
+        inspected.json as { data: { executions: Array<{ provider_image_attempt_id: string }> } }
+      ).data.executions[0]!.provider_image_attempt_id;
+      const attempt = await spawnPhotoctl(["graph", "attempt", attemptId], {
+        libraryDir: fixture.library,
+        env: fixture.env,
+      });
+      expect(attempt.json).toMatchObject({
+        ok: true,
+        data: {
+          request: { dimensions: { w, h }, frame_mapping: frameMapping },
+          original: { w, h },
+        },
+      });
+    }
   },
   30_000,
 );
@@ -117,7 +170,7 @@ async function cliFixture(options: Parameters<typeof startGatewayFixture>[1] = {
   const library = join(directory, "library");
   const source = join(directory, "source.png");
   await sharp({
-    create: { width: 40, height: 30, channels: 3, background: "#887766" },
+    create: { width: 383, height: 384, channels: 3, background: "#887766" },
   })
     .png()
     .toFile(source);
@@ -133,7 +186,7 @@ async function cliFixture(options: Parameters<typeof startGatewayFixture>[1] = {
   const imported = await spawnPhotoctl(["import", source, "--copy"], { libraryDir: library, env });
   expect(imported.code, JSON.stringify(imported.json)).toBe(0);
   const id = (imported.json as { data: { ids: string[] } }).data.ids[0]!;
-  const segmented = await spawnPhotoctl(["segment", id, "--box", "8,6,8,8"], {
+  const segmented = await spawnPhotoctl(["segment", id, "--box", "64,64,255,256"], {
     libraryDir: library,
     env,
   });

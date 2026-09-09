@@ -58,9 +58,9 @@ test.each([false, true])(
             "text, logos",
             "--size",
             "4x4",
-            ...(reference
-              ? ["--ref", referencePath, "--model", "photoctl/fake-image-edit-v1"]
-              : []),
+            "--model",
+            "photoctl/fake-image-edit-v1",
+            ...(reference ? ["--ref", referencePath] : []),
           ],
           cwd: parent,
           env: {

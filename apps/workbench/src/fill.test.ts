@@ -153,6 +153,7 @@ test("fill renders one self-contained native crop from the immutable before, gen
         version: "1",
         buildEdit: async () => ({
           body: new FormData(),
+          outputDimensions: { w: 16, h: 16 },
           appliedControls: { init: "original", reference: false },
           warnings: [],
         }),

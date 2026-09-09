@@ -6,6 +6,52 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { expect, test } from "vitest";
 import { prepareStandaloneGeneratedPhoto } from "../generate.js";
+import { executeFreshGeneration } from "../fill/generation.js";
+
+test("a new unmapped execution clears the previous frame mapping inherited by refresh", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-attempt-frame-refresh-"));
+  const handle = (await initializeLibrary(join(directory, "library"))).handle;
+  try {
+    const png = await sharp({ create: { width: 4, height: 4, channels: 3, background: "red" } })
+      .png()
+      .toBuffer();
+    const adapter = new GatewayImageModelAdapter({
+      model: "fixture",
+      mask: "native",
+      maskPolarity: "unverified",
+    });
+    const generation = await executeFreshGeneration(handle, handle.path, {
+      inputNodeId: `node_${"a".repeat(64)}`,
+      inputArtifactHash: `a_${"b".repeat(64)}`,
+      prompt: "red",
+      promptVersion: 1,
+      dependencies: {
+        model: "fixture",
+        adapter,
+        gateway: {
+          imageEdits: async () => ({
+            data: { data: [{ b64_json: png.toString("base64") }] },
+            requestId: "fixture",
+            attempts: 1,
+          }),
+        },
+      },
+      buildRequest: () => adapter.buildFullFrameEdit({ png, w: 4, h: 4 }, "red"),
+      request: () => ({ frame_mapping: { source: [0, 0, 2, 2], output: [0, 0, 4, 4] } }),
+    });
+    expect(generation.nodes[0]!.parameters).toMatchObject({ request: { frame_mapping: null } });
+    expect(
+      (
+        await handle.query(
+          "SELECT request->'frame_mapping' AS mapping FROM provider_image_attempts",
+        )
+      ).rows,
+    ).toEqual([{ mapping: null }]);
+  } finally {
+    await handle.close();
+    await rm(directory, { recursive: true });
+  }
+});
 
 test("valid PNG headers with corrupt compressed pixels never create an original artifact", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-attempt-invalid-pixels-"));
@@ -36,6 +82,7 @@ test("valid PNG headers with corrupt compressed pixels never create an original 
         preparedRequest: {
           route: "generations",
           body: {},
+          outputDimensions: { w: 4, h: 4 },
           warnings: [],
           appliedControls: { reference: false, init: "original" },
         },
@@ -87,6 +134,7 @@ test("a rate-limit retry followed by transport rejection records observed reques
         preparedRequest: {
           route: "generations",
           body: {},
+          outputDimensions: { w: 4, h: 4 },
           warnings: [],
           appliedControls: { reference: false, init: "original" },
         },
@@ -140,6 +188,7 @@ test("working conversion failure keeps the valid original and records a failed a
         preparedRequest: {
           route: "generations",
           body: {},
+          outputDimensions: { w: 4, h: 4 },
           warnings: [],
           appliedControls: { reference: false, init: "original" },
         },
@@ -196,6 +245,7 @@ test("an adapter that omits original capture cannot return a prepared paid succe
         preparedRequest: {
           route: "generations",
           body: {},
+          outputDimensions: { w: 4, h: 4 },
           warnings: [],
           appliedControls: { reference: false, init: "original" },
         },
@@ -257,6 +307,7 @@ test("original registration failure stops normalization with a non-retryable ret
         preparedRequest: {
           route: "generations",
           body: {},
+          outputDimensions: { w: 4, h: 4 },
           warnings: [],
           appliedControls: { reference: false, init: "original" },
         },

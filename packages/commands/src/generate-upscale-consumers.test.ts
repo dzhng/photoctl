@@ -66,6 +66,8 @@ test.each([8, 9])(
           await command("generate", [
             "--prompt",
             "a blue vase",
+            "--model",
+            "photoctl/fake-image-edit-v1",
             "--size",
             `${edge}x${edge}`,
             "--upscale",

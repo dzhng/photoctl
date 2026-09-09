@@ -6,8 +6,10 @@ import {
 } from "@photoctl/protocol";
 import sharp from "sharp";
 import { z } from "zod";
+import { padImageToFrame, planImageOutput, type ImageOutputPlan } from "../image-frame.js";
 import {
   buildInstructionCompositePrompt,
+  buildImageFramePrompt,
   buildNegativeGuidancePrompt,
   NEGATIVE_GUIDANCE_PROMPT_VERSION,
   buildReferenceStrengthPrompt,
@@ -31,9 +33,8 @@ export interface ImageEditControls {
   init?: ImageInit;
 }
 
-export interface PreparedImageEdit {
+export interface PreparedImageEdit extends ImageOutputPlan {
   body: FormData;
-  warnings: Warning[];
   appliedControls: { reference: boolean; init: ImageInit };
 }
 
@@ -62,7 +63,7 @@ export interface ImageModelAdapter {
     seed?: number,
     controls?: ImageEditControls,
   ): Promise<PreparedImageEdit>;
-  buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): PreparedImageEdit;
+  buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): Promise<PreparedImageEdit>;
   buildGeneration(
     prompt: string,
     dimensions: { w: number; h: number },
@@ -99,7 +100,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
   constructor(options: GatewayImageModelAdapterOptions) {
     this.id =
       options.mask === "native" ? "gateway-image-v1" : "gateway-image-instruction-composite-v1";
-    this.version = "3";
+    this.version = options.model === "openai/gpt-image-2" ? "4" : "3";
     this.model = options.model;
     this.mask = options.mask;
     this.maskPolarity = options.maskPolarity;
@@ -130,17 +131,20 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     }
     const form = new FormData();
     const { reference, warnings, appliedControls } = this.prepareControls(controls);
+    const output = planImageOutput(this.model, crop);
+    const image = await padImageToFrame(crop.png, output);
+    warnings.push(...output.warnings);
     form.set("model", this.model);
     if (reference) {
       // The image-edit API applies the mask to the first image in this ordered array.
-      form.append("image[]", pngBlob(crop.png), "crop.png");
+      form.append("image[]", pngBlob(image), "crop.png");
       form.append("image[]", pngBlob(reference.png), "reference.png");
-    } else form.set("image", pngBlob(crop.png), "crop.png");
+    } else form.set("image", pngBlob(image), "crop.png");
     if (this.mask === "native") {
-      let wireMask = mask;
+      let wireMask = await padImageToFrame(mask, output);
       if (this.maskPolarity === "transparent-edits") {
         // Internal PNG coverage is white=edit; this provider expresses edit coverage as transparency.
-        const { data, info } = await sharp(mask)
+        const { data, info } = await sharp(wireMask)
           .extractChannel(0)
           .raw()
           .toBuffer({ resolveWithObject: true });
@@ -161,24 +165,32 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     }
     form.set(
       "prompt",
-      this.mask === "native" ? prompt : buildInstructionCompositePrompt(operation, prompt),
+      buildImageFramePrompt(
+        this.mask === "native" ? prompt : buildInstructionCompositePrompt(operation, prompt),
+        output,
+      ),
     );
-    form.set("size", `${crop.w}x${crop.h}`);
+    form.set("size", `${output.outputDimensions.w}x${output.outputDimensions.h}`);
     form.set("output_format", "png");
     if (seed !== undefined) form.set("seed", String(seed));
     if (this.model === FAKE_IMAGE_EDIT_MODEL) form.set("init", appliedControls.init);
-    return { body: form, warnings, appliedControls };
+    return { body: form, ...output, warnings, appliedControls };
   }
 
-  buildFullFrameEdit(crop: SentImage, prompt: string, seed?: number): PreparedImageEdit {
+  async buildFullFrameEdit(
+    crop: SentImage,
+    prompt: string,
+    seed?: number,
+  ): Promise<PreparedImageEdit> {
+    const output = planImageOutput(this.model, crop);
     const form = new FormData();
     form.set("model", this.model);
-    form.set("image", pngBlob(crop.png), "image.png");
-    form.set("prompt", prompt);
-    form.set("size", `${crop.w}x${crop.h}`);
+    form.set("image", pngBlob(await padImageToFrame(crop.png, output)), "image.png");
+    form.set("prompt", buildImageFramePrompt(prompt, output));
+    form.set("size", `${output.outputDimensions.w}x${output.outputDimensions.h}`);
     form.set("output_format", "png");
     if (seed !== undefined) form.set("seed", String(seed));
-    return { body: form, warnings: [], appliedControls: { reference: false, init: "original" } };
+    return { body: form, ...output, appliedControls: { reference: false, init: "original" } };
   }
 
   buildGeneration(
@@ -189,22 +201,26 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     negativePrompt?: string,
   ): PreparedImageGeneration {
     const prepared = this.prepareControls(reference ? { reference } : {});
+    const output = planImageOutput(this.model, dimensions);
+    prepared.warnings.push(...output.warnings);
     const strength = reference?.strength;
     if (strength !== undefined && !prepared.reference)
       throw new PhotoctlError("usage", `Reference strength is unsupported by ${this.model}`);
     if (negativePrompt !== undefined) prompt = buildNegativeGuidancePrompt(prompt, negativePrompt);
     if (strength !== undefined) prompt = buildReferenceStrengthPrompt(prompt, strength);
+    prompt = buildImageFramePrompt(prompt, output);
     // Multipart normalizes field line endings; retain the actual transmitted guidance text.
     if ((negativePrompt !== undefined || strength !== undefined) && prepared.reference)
       prompt = prompt.replace(/\r\n|\r|\n/g, "\r\n");
     const fields = {
       model: this.model,
       prompt,
-      size: `${dimensions.w}x${dimensions.h}`,
+      size: `${output.outputDimensions.w}x${output.outputDimensions.h}`,
       output_format: "png",
       ...(seed === undefined ? {} : { seed }),
     };
     const metadata = {
+      ...output,
       warnings: prepared.warnings,
       appliedControls: prepared.appliedControls,
       ...(strength === undefined

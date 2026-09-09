@@ -1,3 +1,5 @@
+import type { ImageFrameMapping } from "../image-frame.js";
+
 export interface UpscaleArtifact {
   bytes: Buffer;
   mediaType: "image/png";
@@ -36,10 +38,7 @@ export interface UpscaleProvenance {
 export interface UpscaleResult {
   artifact: UpscaleArtifact;
   dimensions: { w: number; h: number };
-  frameMapping?: {
-    source: [number, number, number, number];
-    output: [number, number, number, number];
-  };
+  frameMapping?: ImageFrameMapping;
   provenance: UpscaleProvenance;
 }
 

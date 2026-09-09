@@ -48,7 +48,7 @@ test("the image adapter preserves the provider's intrinsic same-ratio raster", a
     baseUrl: `http://127.0.0.1:${address.port}/v1`,
   });
   const adapter = new GatewayImageModelAdapter({
-    model: "openai/gpt-image-2",
+    model: "fixture/native-image-v1",
     mask: "native",
     maskPolarity: "transparent-edits",
   });
@@ -104,7 +104,7 @@ test("whole-frame fake responses surface the adapter warning", async () => {
     baseUrl: `http://127.0.0.1:${address.port}/v1`,
   });
   const adapter = new GatewayImageModelAdapter({
-    model: "openai/gpt-image-2",
+    model: FAKE_IMAGE_EDIT_MODEL,
     mask: "instruction+composite",
     maskPolarity: "unverified",
   });
@@ -167,14 +167,13 @@ test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
     const adapter = createGatewayImageModelAdapter({ model });
     const { body: form } = await adapter.buildEdit(
       "remove",
-      { png: Buffer.from("crop"), w: 10, h: 8 },
+      { png: Buffer.from("crop"), w: 1024, h: 1024 },
       Buffer.from("mask"),
       "remove the distraction",
     );
 
     expect(adapter).toMatchObject({
       id: "gateway-image-instruction-composite-v1",
-      version: "3",
       mask: "instruction+composite",
       maskPolarity: "unverified",
     });
@@ -191,13 +190,13 @@ test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
   async (model) => {
     const adapter = createGatewayImageModelAdapter({ model });
     const input = await sharp({
-      create: { width: 10, height: 8, channels: 3, background: "#204060" },
+      create: { width: 1024, height: 1024, channels: 3, background: "#204060" },
     })
       .png()
       .toBuffer();
 
-    const { body: form } = adapter.buildFullFrameEdit(
-      { png: input, w: 10, h: 8 },
+    const { body: form } = await adapter.buildFullFrameEdit(
+      { png: input, w: 1024, h: 1024 },
       "painted twilight",
     );
 

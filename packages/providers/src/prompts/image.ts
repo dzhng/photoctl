@@ -1,4 +1,12 @@
+import type { ImageOutputPlan } from "../image-frame.js";
+
 export const IMAGE_INSTRUCTION_PROMPT_VERSION = 1;
+
+export function buildImageFramePrompt(prompt: string, plan: ImageOutputPlan): string {
+  if (!plan.frameMapping) return prompt;
+  return `${prompt}\n[photoctl:image-frame:v1]\nCompose the entire requested image inside rectangle [${plan.frameMapping.output.join(",")}] (left, top, width, height) on the ${plan.outputDimensions.w}x${plan.outputDimensions.h} canvas. Keep all requested subjects inside this content rectangle. Leave the padding outside it blank; that padding will be removed.`;
+}
+
 export const NEGATIVE_GUIDANCE_PROMPT_VERSION = 1;
 export const REFERENCE_STRENGTH_PROMPT_VERSION = 1;
 

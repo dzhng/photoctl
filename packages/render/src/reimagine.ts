@@ -63,7 +63,6 @@ export async function createReimagineLayer(
   const generation = await executeFreshGeneration(database, libraryPath, {
     inputNodeId: state.pixelOutputNodeId,
     inputArtifactHash: inputEvaluation.artifact.artifactHash,
-    sentDimensions: { w: input.w, h: input.h },
     prompt: request.prompt,
     promptVersion: request.promptVersion,
     dependencies: request.dependencies,
@@ -76,7 +75,6 @@ export async function createReimagineLayer(
       execution_id: executionId,
       scope: "full-frame",
       drift: "full-frame",
-      sent: [input.w, input.h],
       returned: [returned.w, returned.h],
       strength: request.strength,
       blend_coverage: request.strength,
@@ -104,7 +102,6 @@ export async function createReimagineLayer(
         derived_prompt: request.upscale.prompt.derived,
       },
     }),
-    targetPixels: targetDimensions.w * targetDimensions.h,
   });
   const density = await executeGenerationDensity(database, libraryPath, {
     generation,

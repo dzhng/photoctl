@@ -45,6 +45,7 @@ import type { ExternalExecutionProvenance, JsonValue } from "../graph/types.js";
 import { layerDraft, resolveLayerId, type RevisionLayerDraft } from "../layers/model.js";
 import { describeFillBranch, type FillBranchDescriptor } from "./branch.js";
 import { fillProviderInputs, decodeExternalImage, image16Png } from "./external-pixels.js";
+import { normalizeGeneratedImage } from "../provider-images/normalization.js";
 import type { FillGenerationDependencies, FillUpscaleDependencies } from "./pipeline.js";
 import { rebuildFillBranch } from "./rebuild.js";
 import { fillPlacementDimensions, planOutputDensity } from "./density.js";
@@ -503,7 +504,7 @@ async function executeGenerationRefresh(
         ...imageAttemptRequestDetails(prepared),
         model: request.dependencies.model,
         prompt,
-        dimensions: sent.image,
+        dimensions: prepared.outputDimensions,
         input_artifact_hashes: [
           baseEvaluation.artifact.artifactHash,
           ...(reference ? [reference.workingArtifactHash] : []),
@@ -512,9 +513,10 @@ async function executeGenerationRefresh(
       },
       async (attempt) => {
         const response = await request.dependencies.gateway.imageEdits(prepared.body);
-        const normalized = await request.dependencies.adapter.normalize(
+        const normalized = await normalizeGeneratedImage(
+          request.dependencies.adapter,
           response.data,
-          sent.image,
+          prepared,
           async (bytes) =>
             await attempt.retain(bytes, {
               request_id: response.requestId,
@@ -553,7 +555,9 @@ async function executeGenerationRefresh(
             },
             execution_id: executionId,
             returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
-            sent: [sent.image.w, sent.image.h],
+            sent: [prepared.outputDimensions.w, prepared.outputDimensions.h],
+            provider_output: { ...prepared.outputDimensions },
+            frame_mapping: prepared.frameMapping ? { ...prepared.frameMapping } : null,
             full_res: storedRequest.full_res !== false,
             crop: [cropRect.x, cropRect.y, cropRect.w, cropRect.h],
             sampling: {
@@ -600,9 +604,9 @@ async function executeGenerationRefresh(
           durationMs: Math.max(0, (request.dependencies.now ?? Date.now)() - started),
           costUsd: 0,
           inputPx:
-            sent.image.w * sent.image.h +
+            prepared.outputDimensions.w * prepared.outputDimensions.h +
             (reference && prepared.appliedControls.reference ? reference.w * reference.h : 0),
-          targetPx: cropRect.w * cropRect.h,
+          targetPx: prepared.outputDimensions.w * prepared.outputDimensions.h,
           attempt: response.attempts,
           densityVerdict: "not-applicable",
           warnings: normalized.warnings,

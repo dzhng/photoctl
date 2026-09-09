@@ -38,7 +38,17 @@ test("the built CLI generates, imports, tags, and lazily previews a canonical ph
   const generated = await run(
     "generate",
     spawnPhotoctl(
-      ["generate", "--prompt", "color field study", "--size", "96x64", "--seed", "23"],
+      [
+        "generate",
+        "--prompt",
+        "color field study",
+        "--model",
+        "photoctl/fake-image-edit-v1",
+        "--size",
+        "96x64",
+        "--seed",
+        "23",
+      ],
       { libraryDir: library, env },
     ),
   );

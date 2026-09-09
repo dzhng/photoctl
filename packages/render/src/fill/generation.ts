@@ -28,6 +28,7 @@ import {
 } from "../provider-images/attempts.js";
 import type { GraphDatabase } from "../graph/store.js";
 import { executeRetainedUpscale } from "../provider-images/upscale.js";
+import { normalizeGeneratedImage } from "../provider-images/normalization.js";
 
 export interface PreparedGeneration {
   nodeId: `node_${string}`;
@@ -85,7 +86,7 @@ export async function executeStandaloneGeneration(
         prompt_version: input.promptVersion,
         model: input.dependencies.model,
         prompt: input.prompt,
-        dimensions: input.dimensions,
+        dimensions: prepared.outputDimensions,
         input_artifact_hashes: inputArtifactHashes,
         ...(input.seed === undefined ? {} : { seed: input.seed }),
       },
@@ -94,9 +95,10 @@ export async function executeStandaloneGeneration(
           prepared.route === "edits"
             ? await input.dependencies.gateway.imageEdits(prepared.body)
             : await input.dependencies.gateway.imageGenerations(prepared.body);
-        const normalized = await input.dependencies.adapter.normalize(
+        const normalized = await normalizeGeneratedImage(
+          input.dependencies.adapter,
           response.data,
-          input.dimensions,
+          prepared,
           async (bytes) =>
             await attempt.retain(bytes, {
               request_id: response.requestId,
@@ -118,6 +120,8 @@ export async function executeStandaloneGeneration(
             execution_id: executionId,
             scope: "standalone",
             requested: [input.dimensions.w, input.dimensions.h],
+            provider_output: { ...prepared.outputDimensions },
+            frame_mapping: prepared.frameMapping ? { ...prepared.frameMapping } : null,
             returned: [normalized.returnedDimensions.w, normalized.returnedDimensions.h],
             reference_used: prepared.appliedControls.reference,
             ...(prepared.negativePrompt ? { negative_prompt: prepared.negativePrompt } : {}),
@@ -145,7 +149,7 @@ export async function executeStandaloneGeneration(
             reference && prepared.appliedControls.reference
               ? reference.artifact.w * reference.artifact.h
               : 0,
-          targetPx: input.dimensions.w * input.dimensions.h,
+          targetPx: prepared.outputDimensions.w * prepared.outputDimensions.h,
           attempt: response.attempts,
           densityVerdict: "not-applicable",
           warnings: normalized.warnings,
@@ -203,7 +207,6 @@ export async function executeFreshGeneration(
     inputArtifactHash: `a_${string}`;
     reference?: Awaited<ReturnType<typeof prepareReferenceArtifact>>;
     requestedInit?: import("@photoctl/providers").ImageInit;
-    sentDimensions: { w: number; h: number };
     prompt: string;
     promptVersion: number;
     seed?: number;
@@ -214,7 +217,6 @@ export async function executeFreshGeneration(
       wholeFrame: boolean;
       returnedDimensions: { w: number; h: number };
     }) => void;
-    targetPixels: number;
   },
 ): Promise<PreparedGeneration> {
   const executionId = newExecutionId();
@@ -239,15 +241,16 @@ export async function executeFreshGeneration(
         prompt_version: input.promptVersion,
         model: input.dependencies.model,
         prompt: input.prompt,
-        dimensions: input.sentDimensions,
+        dimensions: prepared.outputDimensions,
         input_artifact_hashes: inputArtifactHashes,
         ...(input.seed === undefined ? {} : { seed: input.seed }),
       },
       async (attempt) => {
         const response = await input.dependencies.gateway.imageEdits(prepared.body);
-        const normalized = await input.dependencies.adapter.normalize(
+        const normalized = await normalizeGeneratedImage(
+          input.dependencies.adapter,
           response.data,
-          input.sentDimensions,
+          prepared,
           async (bytes) =>
             await attempt.retain(bytes, {
               request_id: response.requestId,
@@ -271,6 +274,9 @@ export async function executeFreshGeneration(
               string,
               JsonValue
             >),
+            provider_output: { ...prepared.outputDimensions },
+            sent: [prepared.outputDimensions.w, prepared.outputDimensions.h],
+            frame_mapping: prepared.frameMapping ? { ...prepared.frameMapping } : null,
             ...(reference
               ? {
                   scope: "masked",
@@ -283,7 +289,7 @@ export async function executeFreshGeneration(
               reference_used: prepared.appliedControls.reference,
             },
           },
-        } as const;
+        } satisfies JsonValue;
         const recipe = recipeHash(
           canonicalNodeRecipe({
             kind: "generate",
@@ -304,11 +310,11 @@ export async function executeFreshGeneration(
           durationMs: Math.max(0, (input.dependencies.now ?? Date.now)() - started),
           costUsd: 0,
           inputPx:
-            input.sentDimensions.w * input.sentDimensions.h +
+            prepared.outputDimensions.w * prepared.outputDimensions.h +
             (reference && prepared.appliedControls.reference
               ? reference.artifact.w * reference.artifact.h
               : 0),
-          targetPx: input.targetPixels,
+          targetPx: prepared.outputDimensions.w * prepared.outputDimensions.h,
           attempt: response.attempts,
           densityVerdict: "not-applicable",
           warnings: normalized.warnings,

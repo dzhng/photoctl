@@ -95,9 +95,9 @@ test.each([
       library: handle,
       fill: {
         source,
-        model: "openai/gpt-image-2",
+        model: "fixture/native-image-v1",
         adapter: new GatewayImageModelAdapter({
-          model: "openai/gpt-image-2",
+          model: "fixture/native-image-v1",
           mask: "native",
           maskPolarity: "white-edits",
         }),

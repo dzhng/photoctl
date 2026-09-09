@@ -111,7 +111,7 @@ export async function fillUpscaleFixture(
     },
   });
   const imageAdapter = new GatewayImageModelAdapter({
-    model: "openai/gpt-image-2",
+    model: "fixture/native-image-v1",
     mask: "native" as const,
     maskPolarity: "transparent-edits" as const,
   });
@@ -141,7 +141,7 @@ export async function fillUpscaleFixture(
         }
       : imageAdapter,
     gateway,
-    model: "openai/gpt-image-2",
+    model: "fixture/native-image-v1",
     source: sourceProducer,
     upscaleRegistry: registry,
     upscaleSettings: {

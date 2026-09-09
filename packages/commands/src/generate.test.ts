@@ -1,4 +1,5 @@
 import { initializeLibrary } from "@photoctl/library";
+import { FAKE_IMAGE_EDIT_MODEL } from "@photoctl/providers";
 import { generateDataSchema } from "@photoctl/protocol";
 import {
   artifactPath,
@@ -19,6 +20,15 @@ afterEach(async () => {
   await Promise.all(cleanups.splice(0).map(async (cleanup) => await cleanup()));
 });
 
+async function generationLibrary(parent: string) {
+  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  await handle.query(
+    "INSERT INTO settings (key, value) VALUES ('models', $1::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+    [JSON.stringify({ generate: FAKE_IMAGE_EDIT_MODEL })],
+  );
+  return handle;
+}
+
 test("generate rejects contradictory upscale flags before opening a library", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-flags-"));
   cleanups.push(async () => await rm(parent, { recursive: true }));
@@ -36,7 +46,7 @@ test("generate rejects contradictory upscale flags before opening a library", as
 
 test("reference-only generation sends variation intent and retains its source without importing it", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-variation-"));
-  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  const handle = await generationLibrary(parent);
   const requests: Array<{ path: string; fields: Readonly<Record<string, unknown>> }> = [];
   const gateway = await startGatewayFixture(0, {
     onImageRequest: ({ path, fields }) => requests.push({ path, fields }),
@@ -100,7 +110,7 @@ test.each([false, true])(
   "generation refuses an unsupported required reference before buying an unrelated image (strength=%s)",
   async (strength) => {
     const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-unsupported-reference-"));
-    const handle = (await initializeLibrary(join(parent, "library"))).handle;
+    const handle = await generationLibrary(parent);
     const requests: string[] = [];
     const gateway = await startGatewayFixture(0, {
       onImageRequest: ({ path }) => requests.push(path),
@@ -150,7 +160,7 @@ test.each([false, true])(
 
 test("reference-guided generation retains an immutable reachable image without importing another photo", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-reference-"));
-  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  const handle = await generationLibrary(parent);
   const paths: string[] = [];
   const gateway = await startGatewayFixture(0, { onImageRequest: ({ path }) => paths.push(path) });
   cleanups.push(
@@ -248,7 +258,7 @@ test.each([{ upscaleFlags: [] }, { upscaleFlags: ["--no-upscale"] }])(
   "generate imports the canonical provider artifact with durable provenance and no automatic upscale ($upscaleFlags)",
   async ({ upscaleFlags }) => {
     const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-"));
-    const handle = (await initializeLibrary(join(parent, "library"))).handle;
+    const handle = await generationLibrary(parent);
     const requests: Array<{ path: string; body?: Record<string, unknown> }> = [];
     const gateway = await startGatewayFixture(0, {
       imageMode: "smallerdims",
@@ -311,7 +321,7 @@ test.each([{ upscaleFlags: [] }, { upscaleFlags: ["--no-upscale"] }])(
       {
         path: "/v1/images/generations",
         body: {
-          model: "openai/gpt-image-2",
+          model: FAKE_IMAGE_EDIT_MODEL,
           prompt: "blue hour mountains",
           size: "40x30",
           output_format: "png",
@@ -369,7 +379,7 @@ test.each(["flag", "model"])(
   "explicit generate upscale via %s reaches the requested size and sends a normalized reference",
   async (selection) => {
     const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-upscale-"));
-    const handle = (await initializeLibrary(join(parent, "library"))).handle;
+    const handle = await generationLibrary(parent);
     const referencePath = join(parent, "reference.jpg");
     await sharp({ create: { width: 8, height: 6, channels: 3, background: "#aa7733" } })
       .jpeg()
@@ -396,7 +406,7 @@ test.each(["flag", "model"])(
       await handle.query(
         `INSERT INTO settings (key, value) VALUES ('models', $1::jsonb)
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-        [JSON.stringify({ upscale: "unavailable/library-model" })],
+        [JSON.stringify({ generate: FAKE_IMAGE_EDIT_MODEL, upscale: "unavailable/library-model" })],
       );
     }
     await handle.query(
@@ -501,7 +511,7 @@ test.each(["flag", "model"])(
 
 test("generate provider geometry failure leaves no catalog or graph state", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-failure-"));
-  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  const handle = await generationLibrary(parent);
   const gateway = await startGatewayFixture(0, { imageMode: "wrongaspect" });
   cleanups.push(
     async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
@@ -540,7 +550,7 @@ test("generate provider geometry failure leaves no catalog or graph state", asyn
 
 test("generate without gateway credentials fails before catalog mutation", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-unconfigured-"));
-  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  const handle = await generationLibrary(parent);
   cleanups.push(
     async () => await handle.close(),
     async () => await rm(parent, { recursive: true }),
@@ -561,7 +571,7 @@ test("generate without gateway credentials fails before catalog mutation", async
 
 test("explicit upscale preserves provider pixels that already cover the requested size", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-generate-covered-"));
-  const handle = (await initializeLibrary(join(parent, "library"))).handle;
+  const handle = await generationLibrary(parent);
   const gateway = await startGatewayFixture(0, { imageMode: "wrongdims" });
   cleanups.push(
     async () => await new Promise<void>((resolve) => gateway.close(() => resolve())),
