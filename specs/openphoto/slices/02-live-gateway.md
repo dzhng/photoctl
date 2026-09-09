@@ -18,3 +18,29 @@ When an output image is used to claim visual correctness, run compare-screenshot
 against its input/contract and an unprimed screenshot-critique before accepting it.
 No speculative provider compatibility or new platform work; reproduce an actual
 failure before changing transport. Finish with the existing full local gate once.
+
+## Remaining verification boundaries
+
+The opt-in runner must not inherit ambient credentials, and normal interruption
+must terminate its active CLI child, remove its disposable saved key and retain
+terminal evidence. Redact strings before JSON serialization, including failure
+details. A successful batch envelope cannot hide failed items.
+
+Each purchased stage retains a decoded image and its execution/model provenance
+before another mutation changes the photo. Replay must start from an identified
+purchased result, show undo changing the revision and redo restoring it, and
+prove identical pixels with no additional purchased execution or attempt. Use a
+fresh cache and disabled credentials for replay. Failed prerequisites cannot
+be relabeled successful evidence.
+
+Grounding and masked editing need explicit scenarios, not inference from
+auto-enhance or full-frame edits. Reuse the native mask-polarity smoke to establish
+the external mask convention before changing its unverified production profile;
+test application-enforced outside-mask fidelity separately. Do not add a fallback
+provider just to make a probe green. Preserve all actual responses and visual
+limitations honestly.
+
+Run each paid CLI mutation once. Existing transport retries of explicit HTTP 429
+rejections are not retries of a successful or ambiguous purchase; test and record
+that distinction. Never rerun an entire successful paid journey just to retry one
+failed stage. Publication remains paused while this spec is finished.

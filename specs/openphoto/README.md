@@ -7,19 +7,28 @@ from photo catalogs, with a CLI configuration command instead of shell setup.
 
 ## Next Agent Prompt
 
-Updated 2026-09-09. Drive [live integration](slices/02-live-gateway.md) next.
-The installation, saved-key, terminal and clean packed-install checks pass.
-The independent review found saved credentials missing on explicit daemon
-startup; a failing CLI regression now passes with the resolved key forwarded
-to the child environment. Image
-embedding now uses the production gateway's native multimodal protocol: the
-OpenAI-compatible image payload was rejected live. Its revised smoke passes
-with changed-image and repeated-image witnesses. Rebuild TypeScript before CLI
-tests. Do not publish or push tags.
+Updated 2026-09-09. Finish [live integration](slices/02-live-gateway.md), then
+review and close this spec. Publication is explicitly paused: no release or tag
+was created. Installation, saved credentials and packed-install checks already
+pass; the [CLI follow-up](../done/cli-discovery/verification.md) records the
+completed engineering gate and retained live segmentation limitations.
+
+The existing uncommitted live-runner draft is in scope now. Harden it before
+spending: interruption must remove its saved key, failed batch items must remain
+failures, each purchased output needs its own capture, and offline replay must
+prove revision/execution identity rather than just a cached preview. Add the
+missing grounding and masked-edit checks, keeping native polarity evidence
+separate from application-enforced outside-mask preservation. Reuse the existing
+mask-polarity smoke; do not mark a production profile verified without its gate.
+The main agent owns live credentials and captures. A separate worktree owns the
+structured-model default correction and its config-independent tests.
 
 - [x] Installed name and private saved credentials, including terminal input.
 - [ ] Explicit live-provider integration script and authorized real execution.
 - [ ] Review, documentation and one full local closeout gate.
+
+The prior review also fixed the CLI test driver's implicit use of developer
+credentials. Ordinary tests are keyless unless they opt into fixture credentials.
 
 ## Evidence
 
