@@ -1,6 +1,42 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { PhotoctlError } from "@photoctl/protocol";
 import { GatewayClient } from "./gateway.js";
+
+test("structured analysis can finish beyond the ordinary provider deadline without extending embedding work", async () => {
+  vi.useFakeTimers();
+  vi.spyOn(AbortSignal, "timeout").mockImplementation((milliseconds) => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new DOMException("deadline", "TimeoutError")), milliseconds);
+    return controller.signal;
+  });
+  try {
+    const gateway = new GatewayClient({
+      apiKey: "fixture",
+      fetch: async (_url, init) =>
+        await new Promise<Response>((resolve, reject) => {
+          const timer = setTimeout(() => resolve(new Response('{"answer":"ready"}')), 40_000);
+          init?.signal?.addEventListener(
+            "abort",
+            () => {
+              clearTimeout(timer);
+              reject(init.signal?.reason);
+            },
+            { once: true },
+          );
+        }),
+    });
+    const structured = gateway.chatCompletions({}).catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(40_000);
+    expect(await structured).toMatchObject({ data: { answer: "ready" }, attempts: 1 });
+    const embedding = gateway.embeddings({}).catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(40_000);
+    expect(await embedding).toMatchObject({ code: "provider_busy", data: { attempts: 1 } });
+  } finally {
+    vi.clearAllTimers();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  }
+});
 
 test("gateway calls fail unavailable before making a request when the key is absent", async () => {
   let requested = false;
@@ -45,22 +81,27 @@ test("rate limiting retries a bounded number of times before reporting temporary
   expect(delays).toEqual([2_000, 2_000]);
 });
 
-test("a stalled gateway attempt is aborted and reported as a temporary provider failure", async () => {
-  const gateway = new GatewayClient({
-    apiKey: "fixture-key",
-    requestTimeoutMs: 1,
-    fetch: async (_url, init) =>
-      await new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
-      }),
-  });
+test.each(["embeddings", "chatCompletions"] as const)(
+  "an explicit deadline aborts a stalled %s attempt",
+  async (operation) => {
+    const gateway = new GatewayClient({
+      apiKey: "fixture-key",
+      requestTimeoutMs: 1,
+      fetch: async (_url, init) =>
+        await new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), {
+            once: true,
+          });
+        }),
+    });
 
-  const error = await gateway
-    .embeddings({ model: "fixed", input: ["portrait"] })
-    .catch((cause) => cause);
+    const error = await gateway[operation]({ model: "fixed", input: ["portrait"] }).catch(
+      (cause) => cause,
+    );
 
-  expect(error).toMatchObject({ code: "provider_busy" });
-});
+    expect(error).toMatchObject({ code: "provider_busy" });
+  },
+);
 
 test("a caller abort cancels the gateway attempt with the existing temporary failure taxonomy", async () => {
   const controller = new AbortController();

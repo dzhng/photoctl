@@ -2,6 +2,45 @@
 
 ## Sound — medium confidence
 
+### Use the same image model with explicit local compositing
+
+**When:** masked-edit transport correction.
+
+When a user selects part of a photo, GPT Image 2 edits the supplied crop and
+OpenPhoto combines only the selected pixels with the unchanged base image. The
+provider is not trusted to protect the rest. A real request with a native mask
+changed a protected rectangle, so continuing to treat that mask as authoritative
+would make the guarantee false. Keeping the operation unavailable was the
+alternative; switching to another model or retrying a failed native purchase is
+not part of this choice.
+
+**Gap:** the plan did not specify which supported transport to choose if the
+real service ignored its native mask. **Reach:** this model uses the existing
+instruction-composite adapter; native polarity remains unverified and other
+unknown native profiles still refuse masked requests. The provider does not see
+the exact selection outline, so semantic editing inside an irregular selection
+is distinct from exact protection outside it. **Verdict:** sound because the
+application already owns the protection contract, and provenance names the
+chosen strategy. **Confidence:** medium; photographic edit quality remains
+separate from pixel preservation.
+
+### Give structured analysis its own bounded deadline
+
+**When:** auto-enhance live verification.
+
+When the photo-analysis model takes longer than an ordinary image or embedding
+request, the CLI now allows up to 120 seconds for its reply instead of stopping
+at 30. The exact previously failing request completed after 39.4 seconds, and
+the actual CLI later completed after 65 seconds. Image and embedding deadlines
+are unchanged; an explicitly supplied timeout still overrides the default.
+
+**Gap:** the plan required finite timeouts but did not establish a suitable
+bound for model reasoning. **Reach:** structured photo analysis and grounding
+may take longer before reporting a timeout, without extending background image
+indexing or adding retries. **Verdict:** sound because measured valid responses
+exceeded the original bound. **Confidence:** medium; this is a finite tolerance
+for variable latency, not a promise that every request succeeds.
+
 ### Use a catalogued structured-model identifier
 
 **When:** live CLI verification checkpoint.
@@ -73,6 +112,21 @@ because unrelated values survive and superseded secrets do not. **Confidence:**
 medium; preserving comments could be a future convenience, not a second store.
 
 ## Sound — high confidence
+
+### Version the changed instruction-composite requests
+
+**When:** masked-edit transport correction.
+
+When a purchased image is inspected later, its adapter identifier and version
+identify the request policy that produced it. Instruction-composite version 3
+keeps masked guidance on masked edits, while full-frame and reference-generation
+requests retain their original prompts. Keeping version 2 would make those
+different request bytes indistinguishable in recorded history.
+
+**Gap:** the plan did not specify the versioning consequence of the transport
+correction. **Reach:** future inspection can distinguish the policies without
+regenerating saved pixels. **Verdict:** sound because changed request semantics
+receive distinct provenance. **Confidence:** high.
 
 ### Live smoke acceptance requires evidence that image bytes matter
 

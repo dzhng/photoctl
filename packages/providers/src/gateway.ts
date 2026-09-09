@@ -22,7 +22,7 @@ export class GatewayClient {
   private readonly apiKey: string | undefined;
   private readonly fetcher: typeof fetch;
   private readonly maxAttempts: number;
-  private readonly requestTimeoutMs: number;
+  private readonly requestTimeoutMs: number | undefined;
   private readonly sleep: (milliseconds: number, signal?: AbortSignal) => Promise<void>;
 
   constructor(options: GatewayOptions) {
@@ -31,15 +31,16 @@ export class GatewayClient {
     this.baseUrl = configuredBase.endsWith("/v1") ? configuredBase : `${configuredBase}/v1`;
     this.fetcher = options.fetch ?? fetch;
     this.maxAttempts = options.maxAttempts ?? 3;
-    this.requestTimeoutMs = options.requestTimeoutMs ?? 30_000;
+    this.requestTimeoutMs = options.requestTimeoutMs;
     this.sleep = options.sleep ?? delay;
     if (!Number.isSafeInteger(this.maxAttempts) || this.maxAttempts < 1 || this.maxAttempts > 5) {
       throw new Error("Gateway maxAttempts must be between 1 and 5");
     }
     if (
-      !Number.isSafeInteger(this.requestTimeoutMs) ||
-      this.requestTimeoutMs < 1 ||
-      this.requestTimeoutMs > 120_000
+      this.requestTimeoutMs !== undefined &&
+      (!Number.isSafeInteger(this.requestTimeoutMs) ||
+        this.requestTimeoutMs < 1 ||
+        this.requestTimeoutMs > 120_000)
     ) {
       throw new Error("Gateway requestTimeoutMs must be between 1 and 120000");
     }
@@ -101,11 +102,12 @@ export class GatewayClient {
     for (let attempt = 1; attempt <= this.maxAttempts; attempt += 1) {
       let response: Response;
       try {
+        const timeout = AbortSignal.timeout(
+          this.requestTimeoutMs ?? (path === "chat/completions" ? 120_000 : 30_000),
+        );
         response = await this.fetcher(`${baseUrl}/${path}`, {
           ...init,
-          signal: signal
-            ? AbortSignal.any([signal, AbortSignal.timeout(this.requestTimeoutMs)])
-            : AbortSignal.timeout(this.requestTimeoutMs),
+          signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
           headers: {
             ...Object.fromEntries(new Headers(init.headers)),
             authorization: `Bearer ${this.apiKey}`,

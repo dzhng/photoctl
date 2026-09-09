@@ -11,19 +11,25 @@ Updated 2026-09-09. The hardened runner and real execution are recorded in
 [verification](verification.md). Publication is paused; no tag, release or push
 was performed. Installation, saved credentials and packed-install checks pass.
 
-The next decision is masked editing: the real native-mask probe changed the
-protected region, so production still refuses it. The user has been asked whether
-to explicitly adopt the existing local-compositing strategy for GPT Image 2 or
-keep native masked editing unavailable. Do not mark native polarity verified.
-If adopting local compositing, first prove exact zero-coverage linear pixels in
-the live runner; it currently marks a returned masked output as needing review.
-Auto-enhance also needs a targeted follow-up: its sole live request timed out
-after 30 seconds. Do not replay successful paid image stages to investigate it.
-Then run the full local gate once, consolidate choices and close the spec.
+Finish the provider output-size correction, then rerun only masked editing.
+The native-mask probe changed protected pixels; GPT Image 2 now explicitly uses
+the existing local-compositing strategy, within the spec's transport-correction
+scope. Native polarity remains unverified. The targeted live request reached the
+provider but requested 384×384 output, below the model's documented minimum.
+A separate worktree owns size negotiation and truthful output-size provenance.
+
+The runner now independently compares protected linear pixels and replays a
+purchased masked result offline; both pass against the fixture. Strict fit keeps
+the proof's protection boundary identical to its authored selection. Auto-enhance
+passes live after allowing longer structured analysis, without changing other
+provider deadlines. Saved-key rotation on the same daemon and invalid-input
+preservation are now directly tested. After real masked acceptance, run the full
+local gate once, consolidate choices and close the spec.
 
 - [x] Installed name and private saved credentials, including terminal input.
 - [x] Explicit live-provider integration script and authorized real execution.
-- [ ] Resolve masked-edit acceptance and live auto-enhance timeout.
+- [x] Resolve live auto-enhance timeout and credential-verification gaps.
+- [ ] Complete live masked-edit acceptance.
 - [ ] Review, documentation and one full local closeout gate.
 
 The prior review also fixed the CLI test driver's implicit use of developer

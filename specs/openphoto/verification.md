@@ -36,12 +36,16 @@ sampled exterior pixels. Independent inspection of the
 red circle, no visible holes or substantial spill, and minor boundary unevenness.
 The failed initial report is retained unchanged, not relabeled as a pass.
 
-## Open boundaries
+## Provider boundary findings
 
-Auto-enhance made one request and hit the existing 30-second provider timeout.
-No develop change was committed. The fixture test passes, but this live request
-does not establish successful auto-enhance. No successful paid image mutation
-was repeated to investigate it.
+Auto-enhance initially hit the 30-second provider timeout without committing a
+develop change. A read-only test of the exact CLI request completed in
+[39.4 seconds](assets/live-gateway/analysis-latency.json). Structured analysis now
+has a 120-second default cap; image and embedding calls retain 30 seconds, and
+explicit overrides still win. A targeted actual CLI check
+[passed in 65 seconds](assets/live-gateway/auto-enhance-report.json), with one
+[stored analysis revision](assets/live-gateway/auto-enhance-provenance.json).
+No successful paid image mutation was repeated to investigate it.
 
 The [native mask probe](assets/mask-polarity/report.json) made one request with
 transparent pixels over the left red rectangle and opaque pixels over the right
@@ -51,12 +55,21 @@ the protected-side change; [measurements](assets/mask-polarity/comparison.json)
 show every protected-rectangle pixel changed. The wire mask's sampled alpha was
 0 on the left and 255 on the right/background. Native polarity is **not verified**.
 
-Production masked editing therefore still refuses with
-`provider_unverified_mask`. Enabling the existing instruction-and-local-composite
-strategy for this real model would be a distinct product choice, not a native-mask
-verification. Before enabling it, add a live comparison of zero-coverage linear
-pixels; JPEG previews cannot establish bit-exact fidelity. The runner leaves a
-returned masked image as needing review until that proof exists.
+GPT Image 2 therefore uses the existing instruction-and-local-composite strategy
+explicitly, not an automatic fallback after a failed purchase. This is a transport
+correction within the spec, not native-mask verification. Full-frame and
+reference-generation prompts are unchanged. The runner now reads the actual
+composite/base/mask artifacts and compares every zero-coverage linear pixel,
+then verifies masked-result replay without another purchase. Its strict-fit
+fixture protects all pixels outside the authored selection; JPEG comparison is
+not substituted for this proof.
+
+The first live request on that path was
+[rejected](assets/live-gateway/masked-size-rejection.json) with HTTP 400. Its
+retained attempt requested 384×384 output. GPT Image 2 requires at least
+655,360 output pixels according to the
+[official size constraints](https://developers.openai.com/cookbook/examples/multimodal/image-gen-models-prompting-guide).
+Output-size negotiation and actual live fidelity acceptance remain open.
 
 ## Engineering checks
 
@@ -68,6 +81,9 @@ are not rerun by the script. Batch failures already set `ok: false` in the
 [shared response owner](../../packages/commands/src/batch.ts), so the runner does
 not add a second batch-status policy.
 
-The scoped independent code review found no concrete correctness or
-secret-handling defects. The final full local gate and spec closure remain
-pending the open provider decisions. Publication stays paused.
+Saved-key replacement is now tested against the same running daemon PID.
+Empty/multiline input and rejected credential arguments preserve the saved file
+byte-for-byte and print none of the synthetic secrets. The scoped independent
+code review found no concrete correctness or secret-handling defects. The final
+full local gate and spec closure remain pending real masked acceptance.
+Publication stays paused.

@@ -1,0 +1,41 @@
+{
+  "id": "01a08643-1f03-755f-a414-c8719d82afd3",
+  "develop": {
+    "exposure": 1.1,
+    "highlights": 0,
+    "shadows": 5,
+    "white_balance": {
+      "temp_offset_k": 0
+    }
+  },
+  "revisions": [
+    {
+      "metadata": {
+        "provider_execution": {
+          "model": "google/gemini-3-flash",
+          "stats": {
+            "p02": 0.08117024390474797,
+            "p50": 0.08117024390474797,
+            "p98": 0.17879102918260437,
+            "est_wb_k": 2254,
+            "mean_sat": 0.8894339311570286,
+            "clipped_hi_pct": 0,
+            "clipped_lo_pct": 0
+          },
+          "adapter": "gateway-structured-v1",
+          "attempt": 1,
+          "preview": {
+            "h": 1024,
+            "w": 1024
+          },
+          "operation": "auto-enhance",
+          "prompt_version": 1,
+          "adapter_version": "1",
+          "provider_request_id": null
+        },
+        "develop_before_auto": {},
+        "auto_enhance_version": 1
+      }
+    }
+  ]
+}

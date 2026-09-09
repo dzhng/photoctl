@@ -6,16 +6,29 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import sharp from "sharp";
 import { DEFAULT_MODELS } from "../packages/providers/dist/index.js";
-import { artifactPath, readArtifactMask } from "../packages/render/dist/index.js";
+import {
+  artifactPath,
+  readArtifactLinear,
+  readArtifactMask,
+} from "../packages/render/dist/index.js";
 
 const args = process.argv.slice(2);
-if (args.length !== 2 || args[0] !== "--out")
-  throw new Error("usage: live-gateway --out NEW_DIRECTORY");
+if (
+  args[0] !== "--out" ||
+  ![2, 4].includes(args.length) ||
+  (args.length === 4 &&
+    (args[2] !== "--only" || !["auto-enhance", "text-grounding", "masked-edit"].includes(args[3])))
+)
+  throw new Error(
+    "usage: live-gateway --out NEW_DIRECTORY [--only auto-enhance|text-grounding|masked-edit]",
+  );
+const only = args[3];
 const output = resolve(args[1]);
 await mkdir(output, { mode: 0o700 });
 const key = process.env.OPENPHOTO_LIVE_API_KEY;
 const report = {
   schema: 1,
+  scope: only ?? "full-journey",
   status: "not_run",
   reason: "explicit_live_key_required",
   models: DEFAULT_MODELS,
@@ -158,44 +171,7 @@ if (key) {
     await stage("offline-replay", async () => {
       const purchased = relit ?? reimagined;
       if (!purchased) throw new Error("No purchased edit is available to replay");
-      const before = await capture(id, "edited");
-      const graph = await command(["graph", "show", id, "--history"]);
-      const node = purchased.data.generation.node;
-      const executions = (await command(["graph", "node", id, node])).data.executions;
-      const purchaseIds = executions
-        .filter((entry) => entry.provider_image_attempt_id)
-        .map((entry) => entry.execution_id);
-      if (!purchaseIds.length) throw new Error("Purchased execution identity is missing");
-      const attempts = (await command(["graph", "attempts"])).data;
-      // A new cache forces reconstruction; an empty key suppresses saved credentials.
-      const offline = { AI_GATEWAY_API_KEY: "", PHOTOCTL_CACHE: join(output, "replay-cache") };
-      await command(["undo", id], undefined, offline);
-      const undone = (await command(["graph", "show", id], undefined, offline)).data;
-      if (undone.revision_id === graph.data.revision_id)
-        throw new Error("Undo did not change revision");
-      await command(["redo", id], undefined, offline);
-      const restored = (await command(["graph", "show", id], undefined, offline)).data;
-      if (restored.revision_id !== graph.data.revision_id)
-        throw new Error("Redo did not restore revision");
-      const after = await capture(id, "replayed", offline);
-      if (before.pixelSha256 !== after.pixelSha256)
-        throw new Error("Undo/redo changed purchased pixels");
-      const replayExecutions = (await command(["graph", "node", id, node], undefined, offline)).data
-        .executions;
-      const replayAttempts = (await command(["graph", "attempts"], undefined, offline)).data;
-      if (
-        JSON.stringify(executions) !== JSON.stringify(replayExecutions) ||
-        JSON.stringify(attempts) !== JSON.stringify(replayAttempts)
-      )
-        throw new Error("Replay changed purchased executions or attempts");
-      return {
-        samePixels: true,
-        pixelSha256: before.pixelSha256,
-        purchaseIds,
-        beforeRevision: graph.data.revision_id,
-        undoRevision: undone.revision_id,
-        afterRevision: restored.revision_id,
-      };
+      return await verifyReplay(id, purchased);
     });
     await stage("masked-edit", async () => {
       const selected = await command(["segment", id, "--box", "0.375,0.375,0.25,0.25", "--norm"]);
@@ -206,14 +182,14 @@ if (key) {
         selected.data.layer_id,
         "--prompt",
         "Replace the selected area with bright green glass",
+        "--fit",
+        "strict",
         "--no-upscale",
       ]);
-      return {
-        ...filled,
-        status: "needs_review",
-        capture: await capture(id, "masked"),
-        fidelity: "requires-linear-artifact-comparison",
-      };
+      const captured = await capturePurchased(filled, "masked");
+      const fidelity = await verifyMaskFidelity(id, filled.data.composite.node);
+      const replay = await verifyReplay(id, filled, "masked-");
+      return { ...filled, capture: captured, fidelity, replay };
     });
     await stage("attempt-journal", async () => await command(["graph", "attempts"]));
   } catch (error) {
@@ -274,6 +250,94 @@ async function capturePurchased(result, name) {
   return { ...captured, executions: node.data.executions };
 }
 
+async function verifyMaskFidelity(id, compositeId) {
+  const composite = (await command(["graph", "node", id, compositeId])).data;
+  const baseNode = (await command(["graph", "node", id, composite.input_node_ids[0]])).data;
+  const maskNode = (await command(["graph", "node", id, composite.input_node_ids[2]])).data;
+  const artifacts = await Promise.all(
+    [
+      [composite, readArtifactLinear],
+      [baseNode, readArtifactLinear],
+      [maskNode, readArtifactMask],
+    ].map(async ([node, read]) => {
+      const hash = node.executions[0].output_artifact_hash;
+      return { hash, image: await read(artifactPath(env.PHOTOCTL_LIBRARY, hash, "tif"), hash) };
+    }),
+  );
+  const [result, base, mask] = artifacts.map(({ image }) => image);
+  if (result.w !== base.w || result.h !== base.h || mask.w !== base.w || mask.h !== base.h)
+    throw new Error("Composite inputs have mismatched dimensions");
+  let outsidePixels = 0,
+    changedOutsidePixels = 0,
+    changedInsidePixels = 0;
+  for (let pixel = 0; pixel < mask.data.length; pixel++) {
+    const offset = pixel * 3;
+    const changed =
+      result.data[offset] !== base.data[offset] ||
+      result.data[offset + 1] !== base.data[offset + 1] ||
+      result.data[offset + 2] !== base.data[offset + 2];
+    if (mask.data[pixel] === 0) {
+      outsidePixels++;
+      changedOutsidePixels += Number(changed);
+    } else changedInsidePixels += Number(changed);
+  }
+  const evidence = {
+    outsidePixels,
+    changedOutsidePixels,
+    changedInsidePixels,
+    artifacts: artifacts.map(({ hash }) => hash),
+  };
+  if (!outsidePixels || changedOutsidePixels || !changedInsidePixels)
+    throw Object.assign(
+      new Error(
+        "Masked edit did not change selected pixels while preserving protected pixels exactly",
+      ),
+      { envelope: evidence },
+    );
+  return evidence;
+}
+
+async function verifyReplay(id, purchased, prefix = "") {
+  const before = await capture(id, prefix + "edited");
+  const graph = await command(["graph", "show", id, "--history"]);
+  const node = purchased.data.generation.node;
+  const executions = (await command(["graph", "node", id, node])).data.executions;
+  const purchaseIds = executions
+    .filter((entry) => entry.provider_image_attempt_id)
+    .map((entry) => entry.execution_id);
+  if (!purchaseIds.length) throw new Error("Purchased execution identity is missing");
+  const attempts = (await command(["graph", "attempts"])).data;
+  // A new cache forces reconstruction; an empty key suppresses saved credentials.
+  const offline = { AI_GATEWAY_API_KEY: "", PHOTOCTL_CACHE: join(output, prefix + "replay-cache") };
+  await command(["undo", id], undefined, offline);
+  const undone = (await command(["graph", "show", id], undefined, offline)).data;
+  if (undone.revision_id === graph.data.revision_id)
+    throw new Error("Undo did not change revision");
+  await command(["redo", id], undefined, offline);
+  const restored = (await command(["graph", "show", id], undefined, offline)).data;
+  if (restored.revision_id !== graph.data.revision_id)
+    throw new Error("Redo did not restore revision");
+  const after = await capture(id, prefix + "replayed", offline);
+  if (before.pixelSha256 !== after.pixelSha256)
+    throw new Error("Undo/redo changed purchased pixels");
+  const replayExecutions = (await command(["graph", "node", id, node], undefined, offline)).data
+    .executions;
+  const replayAttempts = (await command(["graph", "attempts"], undefined, offline)).data;
+  if (
+    JSON.stringify(executions) !== JSON.stringify(replayExecutions) ||
+    JSON.stringify(attempts) !== JSON.stringify(replayAttempts)
+  )
+    throw new Error("Replay changed purchased executions or attempts");
+  return {
+    samePixels: true,
+    pixelSha256: before.pixelSha256,
+    purchaseIds,
+    beforeRevision: graph.data.revision_id,
+    undoRevision: undone.revision_id,
+    afterRevision: restored.revision_id,
+  };
+}
+
 async function capture(id, name, overrides = {}) {
   const shown = await command(["show", id, "--preview-size", "1024"], undefined, overrides);
   const bytes = await readFile(shown.data.preview);
@@ -290,6 +354,7 @@ async function capture(id, name, overrides = {}) {
 }
 
 async function stage(name, operation) {
+  if (only && only !== name) return undefined;
   const started = performance.now();
   try {
     const result = await operation();

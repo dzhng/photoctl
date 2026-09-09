@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "scope": "auto-enhance",
+  "status": "passed",
+  "reason": null,
+  "models": {
+    "edit": "openai/gpt-image-2",
+    "generate": "openai/gpt-image-2",
+    "structured": "google/gemini-3-flash",
+    "embed": "google/gemini-embedding-2",
+    "upscale": "photoctl/fake-upscale-v1"
+  },
+  "stages": [
+    {
+      "name": "auto-enhance",
+      "status": "passed",
+      "durationMs": 65163.471417,
+      "schema": 1,
+      "ok": true,
+      "summary": {
+        "ok": 1,
+        "failed": 0
+      },
+      "results": [
+        {
+          "id": "01a08643-1f03-755f-a414-c8719d82afd3",
+          "ok": true,
+          "develop_hash": "h_6d75d4526d859d8475b6ad3e66288850480721600984ae16562aeaea47fcfa88",
+          "render_hash": "r_6f1cbb1cfce8b26e4ccc57df5a2bf2d90d634949d826055d26da953f096f9ef8",
+          "layers": {
+            "delta_applied": [],
+            "stale": []
+          }
+        }
+      ],
+      "warnings": []
+    }
+  ]
+}

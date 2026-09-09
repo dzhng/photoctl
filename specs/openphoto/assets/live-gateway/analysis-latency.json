@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "elapsedMs": 39401.716541999995,
+  "value": {
+    "exposure": 1,
+    "highlights": 0,
+    "shadows": 0,
+    "contrast": 5,
+    "black_point": 0,
+    "vibrance": 0,
+    "saturation": -5,
+    "white_balance": {
+      "temp_offset_k": 0
+    }
+  },
+  "attempts": 1,
+  "requestSha256": "285e53e407d0692c8e0ac90879f008d65873c0ad98d2a6dc09acb3ac831dad1d",
+  "requestTimeoutMs": 120000,
+  "mutationCommitted": false
+}

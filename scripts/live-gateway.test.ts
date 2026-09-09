@@ -9,6 +9,79 @@ import { startGatewayFixture } from "@photoctl/test-harness";
 
 const run = promisify(execFile);
 
+test("a targeted auto-enhance check does not repeat unrelated paid operations", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "openphoto-live-targeted-"));
+  const requests: string[] = [];
+  const gateway = await startGatewayFixture(0, {
+    structuredResponse: { exposure: 0.25 },
+    onRequest: ({ path }) => requests.push(path),
+  });
+  try {
+    const address = gateway.address();
+    if (!address || typeof address === "string") throw new Error("No gateway address");
+    const evidence = join(directory, "journey");
+    await run(
+      process.execPath,
+      ["scripts/live-gateway.mjs", "--out", evidence, "--only", "auto-enhance"],
+      {
+        env: {
+          ...process.env,
+          OPENPHOTO_LIVE_API_KEY: "targeted-fixture",
+          OPENPHOTO_LIVE_MODELS_DIRECTORY: "",
+          OPENPHOTO_LIVE_GATEWAY_URL: `http://127.0.0.1:${address.port}`,
+        },
+        timeout: 30_000,
+      },
+    );
+    const report = JSON.parse(await readFile(join(evidence, "report.json"), "utf8"));
+    expect(report).toMatchObject({ status: "passed", scope: "auto-enhance" });
+    expect(report.stages.map((entry: { name: string }) => entry.name)).toEqual(["auto-enhance"]);
+    expect(requests).toEqual(["/v1/chat/completions"]);
+    await expect(access(join(evidence, "home", ".openphoto", ".env"))).rejects.toThrow();
+  } finally {
+    await new Promise<void>((resolve) => gateway.close(() => resolve()));
+    await rm(directory, { recursive: true, force: true });
+  }
+}, 35_000);
+
+test("a targeted masked edit proves local fidelity and replays without another purchase", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "openphoto-live-mask-"));
+  const requests: string[] = [];
+  const gateway = await startGatewayFixture(0, { onRequest: ({ path }) => requests.push(path) });
+  try {
+    const address = gateway.address();
+    if (!address || typeof address === "string") throw new Error("No gateway address");
+    const evidence = join(directory, "journey");
+    const outcome = await run(
+      process.execPath,
+      ["scripts/live-gateway.mjs", "--out", evidence, "--only", "masked-edit"],
+      {
+        env: {
+          ...process.env,
+          OPENPHOTO_LIVE_API_KEY: "mask-fixture",
+          OPENPHOTO_LIVE_MODELS_DIRECTORY: "",
+          OPENPHOTO_LIVE_GATEWAY_URL: `http://127.0.0.1:${address.port}`,
+        },
+        timeout: 40_000,
+      },
+    ).catch((error: { stdout: string; stderr: string }) => error);
+    const report = JSON.parse(await readFile(join(evidence, "report.json"), "utf8"));
+    expect(report.status, JSON.stringify(report.stages) + outcome.stderr).toBe("passed");
+    const [masked] = report.stages;
+    expect(masked.fidelity).toMatchObject({ changedOutsidePixels: 0 });
+    expect(masked.fidelity.outsidePixels).toBe(1024 * 1024 - 256 * 256);
+    expect(masked.fidelity.changedInsidePixels).toBeGreaterThan(0);
+    expect(masked.replay.samePixels).toBe(true);
+    expect(masked.replay.undoRevision).not.toBe(masked.replay.beforeRevision);
+    expect(masked.replay.afterRevision).toBe(masked.replay.beforeRevision);
+    expect(requests).toEqual(["/v1/images/edits"]);
+    await expect(access(join(evidence, "home", ".openphoto", ".env"))).rejects.toThrow();
+  } finally {
+    await new Promise<void>((resolve) => gateway.close(() => resolve()));
+    await rm(directory, { recursive: true, force: true });
+  }
+}, 45_000);
+
 test("interrupting a pending provider request removes its saved credential and records interruption", async () => {
   const directory = await mkdtemp(join(tmpdir(), "openphoto-live-interrupt-"));
   let received!: () => void;
