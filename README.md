@@ -65,6 +65,10 @@ scripts in [package.json](package.json) name each stage individually;
 [contributor guidance](AGENTS.md) explains which rung of the test ladder to run
 while iterating.
 
+The [CLI test driver](packages/test-harness/src/spawn.ts) disables ambient and
+saved gateway credentials by default. Provider tests explicitly supply fixture
+credentials; ordinary tests must not spend a developer's live-provider balance.
+
 ## Where things live
 
 - [Installation and live-provider plan](specs/openphoto/README.md) — current verification work and credential boundaries.

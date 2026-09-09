@@ -23,6 +23,8 @@ export async function spawnPhotoctl(
       cwd: options.cwd,
       env: {
         ...process.env,
+        // Tests opt into fixture credentials; neither the shell nor saved user keys are implicit.
+        AI_GATEWAY_API_KEY: "",
         PHOTOCTL_NO_DAEMON: "1",
         ...(options.libraryDir ? { PHOTOCTL_LIBRARY: options.libraryDir } : {}),
         ...options.env,
