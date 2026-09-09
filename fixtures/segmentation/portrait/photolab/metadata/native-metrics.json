@@ -1,0 +1,20 @@
+{
+  "A-B": {
+    "alpha_max": 1.9758939743041992e-05,
+    "alpha_mean": 9.206530648953049e-08,
+    "overlay_changed_pixels": 31,
+    "overlay_max_channel_delta": 1
+  },
+  "D-C": {
+    "alpha_max": 1.9609928131103516e-05,
+    "alpha_mean": 9.127870725933462e-08,
+    "overlay_changed_pixels": 29,
+    "overlay_max_channel_delta": 1
+  },
+  "B-E": {
+    "alpha_max": 0.0,
+    "alpha_mean": 0.0,
+    "overlay_changed_pixels": 0,
+    "overlay_max_channel_delta": 0
+  }
+}

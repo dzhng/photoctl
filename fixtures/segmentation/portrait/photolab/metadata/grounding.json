@@ -1,0 +1,158 @@
+{
+  "provenance": "Automatic single VLM call on unmasked source only; no PhotoLab overlay or human point correction.",
+  "coordinates": "pixels_xy_in_original_image",
+  "image_size": [
+    1614,
+    1080
+  ],
+  "points": [
+    [
+      968,
+      108
+    ],
+    [
+      1323,
+      346
+    ],
+    [
+      1469,
+      594
+    ],
+    [
+      1291,
+      886
+    ],
+    [
+      1130,
+      648
+    ],
+    [
+      888,
+      572
+    ],
+    [
+      807,
+      810
+    ],
+    [
+      484,
+      432
+    ],
+    [
+      646,
+      54
+    ],
+    [
+      161,
+      540
+    ],
+    [
+      1372,
+      1058
+    ],
+    [
+      484,
+      994
+    ]
+  ],
+  "labels": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "raw": {
+    "points": [
+      {
+        "x": 600,
+        "y": 100,
+        "label": 1,
+        "region": "hair near the top center"
+      },
+      {
+        "x": 820,
+        "y": 320,
+        "label": 1,
+        "region": "thick curls on the upper right"
+      },
+      {
+        "x": 910,
+        "y": 550,
+        "label": 1,
+        "region": "curls on the far right edge"
+      },
+      {
+        "x": 800,
+        "y": 820,
+        "label": 1,
+        "region": "lower right curls"
+      },
+      {
+        "x": 700,
+        "y": 600,
+        "label": 1,
+        "region": "curls in the mid-right section"
+      },
+      {
+        "x": 550,
+        "y": 530,
+        "label": 0,
+        "region": "skin on the woman's face"
+      },
+      {
+        "x": 500,
+        "y": 750,
+        "label": 0,
+        "region": "petal of the large orange flower"
+      },
+      {
+        "x": 300,
+        "y": 400,
+        "label": 0,
+        "region": "orange flower in the main cluster"
+      },
+      {
+        "x": 400,
+        "y": 50,
+        "label": 0,
+        "region": "bright sky in the background"
+      },
+      {
+        "x": 100,
+        "y": 500,
+        "label": 0,
+        "region": "green foliage in the far background"
+      },
+      {
+        "x": 850,
+        "y": 980,
+        "label": 0,
+        "region": "white lace fabric of the garment"
+      },
+      {
+        "x": 300,
+        "y": 920,
+        "label": 0,
+        "region": "skin on the woman's arm"
+      }
+    ]
+  },
+  "prompt": "Select the woman's hair only. Return exactly 5 positive points confidently inside different parts of the target and 7 negative points confidently inside adjacent non-target regions, distributing negatives among different adjacent objects/regions rather than repeating one background area. Avoid ambiguous boundaries. Coordinates are normalized integers x and y from 0 to 1000, x left-to-right, y top-to-bottom. label=1 means selected target, label=0 means definitely not target. Describe briefly what each point lies on. Do not provide a bounding box or any mask.",
+  "model": "google/gemini-3-flash",
+  "requestId": null,
+  "durationMs": 17306.675625,
+  "budget": {
+    "positive": 5,
+    "negative": 7,
+    "inference_calls": 1
+  },
+  "selection_policy": "highest predicted IoU among all three multimask outputs; no visual candidate substitution"
+}

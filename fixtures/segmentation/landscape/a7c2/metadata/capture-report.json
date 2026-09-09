@@ -1,0 +1,314 @@
+{
+  "root": "/tmp/openphoto-zim-cli-holdout.62UaeP",
+  "library": "/tmp/openphoto-zim-cli-holdout.62UaeP/library",
+  "fixture": {
+    "file": "a7c2.ARW",
+    "size": 73400320,
+    "sha256": "55de0ff9abbd11c2d166fdd8cfa99129ef8478f2895a65105253e6fcdfdba430",
+    "content_key": "ck_3dac5c943a33dcc4",
+    "sam_probes": [
+      {
+        "label": "clear sky above the tree line",
+        "at": [
+          4000,
+          600
+        ],
+        "min_area_pct": 28,
+        "max_area_pct": 38,
+        "outside": [
+          [
+            2500,
+            1800
+          ],
+          [
+            1500,
+            3500
+          ]
+        ]
+      },
+      {
+        "label": "continuous paved path",
+        "at": [
+          4400,
+          3500
+        ],
+        "min_area_pct": 4,
+        "max_area_pct": 9,
+        "outside": [
+          [
+            4000,
+            600
+          ],
+          [
+            1500,
+            3500
+          ]
+        ]
+      }
+    ],
+    "previews": [
+      {
+        "width": 160,
+        "height": 120,
+        "offset": 44146,
+        "length": 8217
+      },
+      {
+        "width": 1616,
+        "height": 1080,
+        "offset": 192674,
+        "length": 466017
+      },
+      {
+        "width": 7008,
+        "height": 4672,
+        "offset": 659456,
+        "length": 6730200
+      }
+    ],
+    "exif": {
+      "DateTimeOriginal": "2023:10:02 18:18:37",
+      "OffsetTimeOriginal": "+02:00"
+    },
+    "libraw": {
+      "as_shot_wb": [
+        2.31640625,
+        1,
+        1.6513671875
+      ]
+    },
+    "raw": {
+      "width": 7040,
+      "height": 4688,
+      "compression": 1,
+      "sonyRawFileType": 0,
+      "defaultCrop": [
+        7008,
+        4672
+      ]
+    }
+  },
+  "source": "actual built CLI PNG export before segmentation",
+  "variants": {
+    "sky": {
+      "probe": {
+        "label": "clear sky above the tree line",
+        "at": [
+          4000,
+          600
+        ],
+        "min_area_pct": 28,
+        "max_area_pct": 38,
+        "outside": [
+          [
+            2500,
+            1800
+          ],
+          [
+            1500,
+            3500
+          ]
+        ]
+      },
+      "seconds": 18.28471125,
+      "frame": {
+        "w": 7008,
+        "h": 4672
+      },
+      "artifact_hash": "a_12b6c6f139e0a539a73ccdce3da35f4853cf0c87ab5e4873b292dc41c8cf9520",
+      "area_pct": 32.82655718275641,
+      "fractional_share": 0.993416525927316,
+      "point_alpha": 0.9999999403953552,
+      "outside_alpha": [
+        0.000030587198125431314,
+        9.604314499256361e-8
+      ],
+      "gateway_calls": 0,
+      "scores": [
+        0.9032384753227234,
+        0.8872362375259399,
+        0.2206425666809082,
+        0.9224225878715515
+      ],
+      "selected_index": 3,
+      "decoder_seconds": 0.1511296250000014,
+      "mask_f32_sha256": "f67af07fb2a68e5047efbd5d41da04850f23a7369c3cf09ed802c1b23041c691",
+      "alpha16_sha256": "8ccbd0a81c87754580bf0d0052ba2fb742d4dc0cd9863036103fe1e9106fdc35",
+      "alpha_extrema": [
+        6.90602797170925e-10,
+        1
+      ],
+      "native_files_sha256": {
+        "runtime.json": "dd1a3434571ccb7086801071b242ee66eb24fb5f865e14f706c2ee5bc4c0fede",
+        "encoder.json": "371552e66784fcb989b15713f1dc6a2d4541337aacffb0aa12730016c9017552",
+        "decoder-0-output-0.f32": "b80529ff1474fb20f5779e651028be17a013dcb02af1c454480f11d24d8ae858",
+        "decoder-0-output-1.f32": "912054eaffbe3f25fec31373789c0cdc11c79ee9879b3336666967e996131084",
+        "instrumentation.json": "59a7b72ebce014b3a348b86c226fdedef793a6dba55423ceb60e227a8837b672",
+        "decoder-0.json": "7d1e6fea333d632dff81c267babf5780b36cea840925600a0fd6381e3ecc7d7f",
+        "decoder-0-input-2.bin": "e3724cb8457c8b2d436a9bdfd01cc4258571392118bf77abaf82a46452fd4742",
+        "encoder-input-0.bin": "3fe6dd777d6d2ccee5cb7f3f746ee886a7ee7ec1064e3e2474e56e8caae71e37",
+        "decoder-0-input-1.bin": "dee9bee38d8ce139ee23552fc0ca83067114ae903518d7711ba7937b72c0d697",
+        "decoder-0-input-0.bin": "e57d05e6165f801385b4fbef748144d396f22a4f857ad27083b3a135feb8cf4a"
+      }
+    },
+    "road": {
+      "probe": {
+        "label": "continuous paved path",
+        "at": [
+          4400,
+          3500
+        ],
+        "min_area_pct": 4,
+        "max_area_pct": 9,
+        "outside": [
+          [
+            4000,
+            600
+          ],
+          [
+            1500,
+            3500
+          ]
+        ]
+      },
+      "seconds": 15.945587166999998,
+      "frame": {
+        "w": 7008,
+        "h": 4672
+      },
+      "artifact_hash": "a_7d647c3f8c77f224957a030674b8cc5d354a6a613e00b084995ffa06e4e2f843",
+      "area_pct": 5.05444752092721,
+      "fractional_share": 0.9874159228982924,
+      "point_alpha": 1,
+      "outside_alpha": [
+        2.6533197861056124e-10,
+        4.209616211170442e-9
+      ],
+      "gateway_calls": 0,
+      "scores": [
+        0.8765660524368286,
+        0.8712953329086304,
+        0.23869861662387848,
+        0.899145245552063
+      ],
+      "selected_index": 3,
+      "decoder_seconds": 0.1927669590000005,
+      "mask_f32_sha256": "cdb21c543852cb06cac2afb0be40232f55d797464a2742d1310da4dcd15c1941",
+      "alpha16_sha256": "2c7be6bcabba9cdcd4d2f4c32f8faae5788e18312b1b33ff8d786da079e94835",
+      "alpha_extrema": [
+        1.349313456106005e-13,
+        1
+      ],
+      "native_files_sha256": {
+        "runtime.json": "12b9ca821cb0e73b59fa27cbd0ccb87fa1998395db7555c23f547dfa925f8efe",
+        "encoder.json": "ae8689f3c57d7c394935dfc2c2ff39d6827b5433ba4ab609825d495b6656bcf4",
+        "decoder-0-output-0.f32": "e829e4970fd3092362b8b31b924fbc8b796c4ce18e76a560646f45d66574fa07",
+        "decoder-0-output-1.f32": "8f3802aba1ec2cedc8c27b99263350e15f9408d84074907367df4c51d6444bec",
+        "instrumentation.json": "59a7b72ebce014b3a348b86c226fdedef793a6dba55423ceb60e227a8837b672",
+        "decoder-0.json": "7dfaa0c47ccb487f7203be8f42b07a07d8f28ee06cb5da713f7f547cb8a7c18a",
+        "decoder-0-input-2.bin": "3e71149bde36529c2b977f68f3190a8a56051dd9ccb2bea47de25efaf990b7b9",
+        "encoder-input-0.bin": "3fe6dd777d6d2ccee5cb7f3f746ee886a7ee7ec1064e3e2474e56e8caae71e37",
+        "decoder-0-input-1.bin": "dee9bee38d8ce139ee23552fc0ca83067114ae903518d7711ba7937b72c0d697",
+        "decoder-0-input-0.bin": "8369fbe009ff42187f0f43197e7e45cab84545bc47b599f9695e154966c5faa3"
+      }
+    }
+  },
+  "photo_id": "01a08531-0b5c-754f-b43b-47becfd7be5f",
+  "export": {
+    "result": {
+      "schema": 1,
+      "ok": true,
+      "summary": {
+        "ok": 1,
+        "failed": 0
+      },
+      "results": [
+        {
+          "id": "01a08531-0b5c-754f-b43b-47becfd7be5f",
+          "ok": true,
+          "file": "/tmp/openphoto-zim-cli-holdout.62UaeP/export/a7c2.png",
+          "w": 7008,
+          "h": 4672,
+          "bytes": 62776170,
+          "render_hash": "r_dea69dc2ae300c05fb13e9bafec7b2242cadd76e8c2c32b918299e15202eac1a",
+          "source_original_id": "01a08531-0b5b-752f-83f4-48fed91acbac",
+          "skipped": false
+        }
+      ],
+      "warnings": []
+    },
+    "seconds": 7.315907791000001
+  },
+  "source_sha256": "2f2a76b2868823ee668d9601bf546194ff950c54c72d1f19f6b06ab8e78e8839",
+  "presentation": {
+    "overlay": "cyan [0,255,255], opacity 0.4 times persisted alpha",
+    "crops": {
+      "foliage": [
+        2900,
+        1050,
+        3600,
+        1700
+      ],
+      "wires": [
+        800,
+        650,
+        1600,
+        1300
+      ],
+      "path": [
+        2300,
+        2500,
+        3100,
+        3100
+      ]
+    },
+    "crop_scale": 2,
+    "crop_resampling": "nearest",
+    "overview_size": [
+      1402,
+      934
+    ],
+    "source": "exact pre-segmentation CLI export source.png; no source substitution",
+    "reference_comparability": "Previous embedded-JPEG research captures use different pixels. No pixel parity claim."
+  },
+  "model_sha256": {
+    "encoder.onnx": "6b0360b3c32dfa11555fb1de27cd3533cec1e932204da0dec2b3772045dc7db3",
+    "decoder.onnx": "c24a42d79053d20594760ad9afdef9cca985f29493f3e1e0fe3462ca291b57f7"
+  },
+  "provenance": {
+    "observed_after_capture_head": "ca566bab4ab55827e51022c38a82bdc50e0d5c33",
+    "note": "Built file hashes recorded after capture; repository is shared with concurrently progressing main task.",
+    "built_files": {
+      "/Users/david/dev/photoctl/apps/cli/dist/bin.js": {
+        "sha256": "a6cdad9a0c37b13d4cb81072510d2102e231af93bdb294ce1348b09a86a44aa9",
+        "mtime": "2026-09-08T18:53:39.113Z",
+        "bytes": 3000
+      },
+      "/Users/david/dev/photoctl/packages/commands/dist/segmentation.js": {
+        "sha256": "85927e4f285de5f110ad69ae4b2b2f6c44d03a465d6aafe5b6d119c81de1c701",
+        "mtime": "2026-09-09T07:39:00.220Z",
+        "bytes": 6555
+      },
+      "/Users/david/dev/photoctl/packages/render/dist/segmentation-runtime.js": {
+        "sha256": "f743476ce6a5f2deee9ca790683d13e904d05377f14934cec5142573e0d00274",
+        "mtime": "2026-09-09T07:39:00.024Z",
+        "bytes": 7673
+      },
+      "/Users/david/dev/photoctl/packages/render/dist/segmentation-frame.js": {
+        "sha256": "45908e013deac844a684e29a5ea9a6853acf23a999708f9e9115f31ed3a7a2e7",
+        "mtime": "2026-09-09T07:35:02.686Z",
+        "bytes": 2815
+      },
+      "/Users/david/dev/photoctl/packages/img/dist/index.js": {
+        "sha256": "65ea7127cdaefd02e128d6c55104d712af6f53ce109f72e35c1ef3aa05638633",
+        "mtime": "2026-09-09T07:25:50.894Z",
+        "bytes": 9714
+      },
+      "/Users/david/dev/photoctl/packages/img-darwin-arm64/photoctl-image.darwin-arm64.node": {
+        "sha256": "0a55dfa996cd7f14eb8e7991d15026e55d5697c65952f4a8a8066de9cc6a66d3",
+        "mtime": "2026-09-09T07:25:54.881Z",
+        "bytes": 29482976
+      }
+    }
+  }
+}

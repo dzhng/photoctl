@@ -1,0 +1,60 @@
+{
+  "sky": {
+    "source": {
+      "colorEntropyBits": 3.391124417375248,
+      "dominantColorShare": 0.2230377197265625,
+      "luminanceContrast": 96.510009765625,
+      "edgeDensity": 0.0394134521484375,
+      "averageLuminance": 74.84149169921875,
+      "transparentShare": 0,
+      "sampling": "256x256; RGB 3-bit bins; gradient magnitude >16; contrast p95-p5"
+    },
+    "alpha": {
+      "colorEntropyBits": 1.0281563041767836,
+      "dominantColorShare": 0.6654815673828125,
+      "luminanceContrast": 255.0,
+      "edgeDensity": 0.026123046875,
+      "averageLuminance": 83.69908142089844,
+      "transparentShare": 0,
+      "sampling": "256x256; RGB 3-bit bins; gradient magnitude >16; contrast p95-p5"
+    },
+    "overlay": {
+      "colorEntropyBits": 3.310412927139574,
+      "dominantColorShare": 0.196929931640625,
+      "luminanceContrast": 126.64598846435547,
+      "edgeDensity": 0.0428619384765625,
+      "averageLuminance": 86.72817993164062,
+      "transparentShare": 0,
+      "sampling": "256x256; RGB 3-bit bins; gradient magnitude >16; contrast p95-p5"
+    }
+  },
+  "road": {
+    "source": {
+      "colorEntropyBits": 3.391124417375248,
+      "dominantColorShare": 0.2230377197265625,
+      "luminanceContrast": 96.510009765625,
+      "edgeDensity": 0.0394134521484375,
+      "averageLuminance": 74.84149169921875,
+      "transparentShare": 0,
+      "sampling": "256x256; RGB 3-bit bins; gradient magnitude >16; contrast p95-p5"
+    },
+    "alpha": {
+      "colorEntropyBits": 0.3465512432640262,
+      "dominantColorShare": 0.9463043212890625,
+      "luminanceContrast": 139.0,
+      "edgeDensity": 0.018463134765625,
+      "averageLuminance": 12.891921997070312,
+      "transparentShare": 0,
+      "sampling": "256x256; RGB 3-bit bins; gradient magnitude >16; contrast p95-p5"
+    },
+    "overlay": {
+      "colorEntropyBits": 3.5033590656081817,
+      "dominantColorShare": 0.2230377197265625,
+      "luminanceContrast": 97.80519104003906,
+      "edgeDensity": 0.048919677734375,
+      "averageLuminance": 77.58123016357422,
+      "transparentShare": 0,
+      "sampling": "256x256; RGB 3-bit bins; gradient magnitude >16; contrast p95-p5"
+    }
+  }
+}

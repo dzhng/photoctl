@@ -1,0 +1,220 @@
+{
+  "scene": "photolab-portrait",
+  "categories": [
+    "portrait",
+    "hair"
+  ],
+  "status": "observed; bounded viewport comparison, not ground-truth alpha",
+  "source": {
+    "file": "source.png",
+    "kind": "unmasked compressed marketing-video frame",
+    "timestamp_seconds": 14.5,
+    "dimensions": [
+      1614,
+      1080
+    ],
+    "coordinate_frame": "full video frame, x right, y down",
+    "acquisition": "source-provenance.md"
+  },
+  "visual_targets": [
+    {
+      "file": "references/user-screenshot.png",
+      "kind": "user-supplied screenshot",
+      "ground_truth_alpha": false,
+      "limitations": "Webpage clips the full video vertically; grading and unknown overlay opacity differ."
+    },
+    {
+      "file": "references/video-hair-overlay.png",
+      "kind": "compressed video display overlay",
+      "timestamp_seconds": 8.5,
+      "ground_truth_alpha": false,
+      "limitations": "Includes cursor/tool marker; not an alpha mask."
+    }
+  ],
+  "registration": "metadata/reference-audit.json",
+  "selection": {
+    "target": "woman's hair",
+    "include": [
+      "hair",
+      "curls",
+      "visible strands"
+    ],
+    "exclude": [
+      "face",
+      "exposed skin",
+      "flowers",
+      "clothing",
+      "background"
+    ],
+    "guidance": "metadata/grounding.json",
+    "coordinate_conversion": "min(width-1,round(x*width/1000)), min(height-1,round(y*height/1000)); original source frame",
+    "labels": {
+      "0": "negative non-target",
+      "1": "positive target"
+    },
+    "human_point_editing": false,
+    "grounding_input": "source.png only; no target overlay or mask",
+    "calls": 1,
+    "missing_result": "Automatic whole-person selection has not completed."
+  },
+  "observed": [
+    {
+      "file": "observed/zim-upstream-alpha16.png",
+      "kind": "upstream ZIM selected alpha quantized to 16-bit PNG",
+      "report": "metadata/zim-report.json",
+      "variant": "original12",
+      "selection": "score argmax, candidate 3 of 4",
+      "ground_truth": false,
+      "encoding": "round(alpha*65535), unsigned 16-bit grayscale",
+      "note": "Grounding capture's older three-output wording does not describe the actual four ZIM outputs."
+    },
+    {
+      "file": "observed/zim-native-overlay.png",
+      "kind": "native points-only ZIM display composite",
+      "runtime": "metadata/native-runtime.json",
+      "measurements": "metadata/native-metrics.json",
+      "arm": "points",
+      "ground_truth": false,
+      "overlay": {
+        "rgb": [
+          0,
+          255,
+          0
+        ],
+        "opacity": 0.6
+      },
+      "alpha_file": null,
+      "note": "A separate native run, not a display encoding of the retained upstream alpha."
+    }
+  ],
+  "source_pixel_identity": {
+    "decoded_rgb8_sha256": "edb13458db8c3e106dec8b409b3e4ad20ea9a9e181e8e8dad8860879dcc8bfe1",
+    "native_capture_source_png_sha256": "010ba5310daaede7f9d5d3b311f9fd6144a37247cd4cfb83bcef6311d1c2886e",
+    "comparison": "Decoded RGB8 bytes match source.png; the native presentation re-encoded PNG bytes."
+  },
+  "known_limitations": [
+    "Missing lower dangling strands; some fine-hair loss and background/skin leakage.",
+    "The supplied viewport supports comparable appearance, not error-free alpha or generic quality.",
+    "Original portrait still/RAW and exported PhotoLab alpha unavailable."
+  ],
+  "rights": {
+    "retention": "Owner authorized local project collection on 2026-09-09.",
+    "public_redistribution": "Not established for source/reference imagery; no publication authorized.",
+    "model_terms": "ZIM repository CC BY-NC 4.0 retained; conflicting HF BY4 metadata does not expand permission."
+  },
+  "omitted": [
+    "Model weights",
+    "Encoder features",
+    "All raw candidate tensors",
+    "Canonical upstream f32 alpha"
+  ],
+  "assets": [
+    {
+      "file": "metadata/grounding.json",
+      "bytes": 3105,
+      "sha256": "3ea9da8d9533a523e5fd46cb1285e7b34a8855a4b3f8c2558cc9ff8db66b6b24",
+      "copied_from": "/tmp/openphoto-live.r2dGWB/hair-points.json",
+      "role": "provenance_snapshot"
+    },
+    {
+      "file": "metadata/native-metrics.json",
+      "bytes": 465,
+      "sha256": "69796b1f3ce1894b328409ef3afeebc8452836dbc6eda29417773a902f4cd30e",
+      "copied_from": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/native-zim/metrics.json",
+      "role": "provenance_snapshot"
+    },
+    {
+      "file": "metadata/native-runtime.json",
+      "bytes": 2267,
+      "sha256": "0d35bf41db60a199ac4de278dd12dbb6885122f71780fa75b2e277b3f7d7a8ca",
+      "copied_from": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/native-zim/runtime.json",
+      "role": "provenance_snapshot"
+    },
+    {
+      "file": "metadata/reference-audit.json",
+      "bytes": 1937,
+      "sha256": "2e6b72c03c5235687a9f24cd05ed458bb00e99e11d2c235b14f2f5306e984ca1",
+      "copied_from": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/reference-audit/report.json",
+      "role": "provenance_snapshot"
+    },
+    {
+      "file": "metadata/zim-report.json",
+      "bytes": 11735,
+      "sha256": "dee57671bb505afe72a1adc9f220f6bcc559a111509ef9165c038b480d9a086b",
+      "copied_from": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/zim-report.json",
+      "role": "provenance_snapshot"
+    },
+    {
+      "file": "observed/zim-native-overlay.png",
+      "bytes": 1976105,
+      "sha256": "63ad378e2eeaca932ca73327b6cb823cd2a6147605ed2d38d778140100c7d5d3",
+      "copied_from": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/native-zim/B/overlay-full.png",
+      "png": {
+        "width": 1614,
+        "height": 1080,
+        "bit_depth": 8,
+        "color_type": 2
+      },
+      "role": "observed_result"
+    },
+    {
+      "file": "observed/zim-upstream-alpha16.png",
+      "bytes": 395814,
+      "sha256": "49ed3fc1f5d5568f7ebeade1884131fd5f8682f1b5b58615ba8f6c411ffedf92",
+      "copied_from": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/zim-original12-alpha16.png",
+      "png": {
+        "width": 1614,
+        "height": 1080,
+        "bit_depth": 16,
+        "color_type": 0
+      },
+      "role": "observed_result"
+    },
+    {
+      "file": "references/user-screenshot.png",
+      "bytes": 3231312,
+      "sha256": "e431240085f8c1025f4a568729e75ab7af18ea22d2ff32d1a03e4d7400667665",
+      "copied_from": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/photolab-reference.png",
+      "png": {
+        "width": 3248,
+        "height": 2122,
+        "bit_depth": 8,
+        "color_type": 6
+      },
+      "role": "visual_target"
+    },
+    {
+      "file": "references/video-hair-overlay.png",
+      "bytes": 2151757,
+      "sha256": "5d83fbfc0a8719f7cc6dcabd3b03a84fa832ccde201b7605e361113953ca06ec",
+      "copied_from": "/tmp/openphoto-dxo-source.vH8WZH/hair-overlay-t08_5.png",
+      "png": {
+        "width": 1614,
+        "height": 1080,
+        "bit_depth": 8,
+        "color_type": 2
+      },
+      "role": "visual_target"
+    },
+    {
+      "file": "source-provenance.md",
+      "bytes": 2229,
+      "sha256": "9464bad3970145e99b57379fb4afedfcb5a1683b8190e8849d535ae5004f8b95",
+      "copied_from": "/tmp/openphoto-dxo-source.vH8WZH/PROVENANCE.md",
+      "role": "provenance_snapshot"
+    },
+    {
+      "file": "source.png",
+      "bytes": 2126617,
+      "sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+      "copied_from": "/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "png": {
+        "width": 1614,
+        "height": 1080,
+        "bit_depth": 8,
+        "color_type": 2
+      },
+      "role": "evaluated_input"
+    }
+  ]
+}

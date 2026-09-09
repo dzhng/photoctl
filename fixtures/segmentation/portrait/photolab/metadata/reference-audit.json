@@ -1,0 +1,75 @@
+{
+  "target": "Compare segmentation quality to the supplied PhotoLab reference at its actual visible viewport, supplemented by full-video-frame feature crops. Do not demand error-free alpha if the reference does not show it.",
+  "limitations": "Reference is untouched encoded green overlay, not alpha. Candidate overlays are 0.4,0.6,0.8 on a differently graded unmasked frame. Opacity is never fitted or selected. Compare semantic membership and visible curl retention, not RGB similarity. Reference cursor/tool marker is not a mask defect.",
+  "registration": {
+    "matrix": [
+      [
+        0.854655939536137,
+        -6.199432926490346e-05,
+        1588.191857258015
+      ],
+      [
+        6.199432926490346e-05,
+        0.854655939536137,
+        517.8910624675137
+      ]
+    ],
+    "matches": 20,
+    "inliers": 12,
+    "median_inlier_px": 0.25508119224454595,
+    "viewport_screenshot_pixels": [
+      1588,
+      592,
+      2967,
+      1369
+    ]
+  },
+  "labels": {
+    "R": "Unmodified PhotoLab reference",
+    "A": "ZIM",
+    "B": "ZIM-guided MGMatting raw"
+  },
+  "crops": {
+    "top": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "right": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "face": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "bottom": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "flowers": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "artifact-supplement": [
+      700,
+      60,
+      1080,
+      260
+    ]
+  },
+  "hashes": {
+    "/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+    "/tmp/openphoto-dxo-source.vH8WZH/hair-overlay-t08_5.png": "5d83fbfc0a8719f7cc6dcabd3b03a84fa832ccde201b7605e361113953ca06ec",
+    "/Users/david/dev/photoctl/specs/segmentation-quality/assets/photolab-reference.png": "e431240085f8c1025f4a568729e75ab7af18ea22d2ff32d1a03e4d7400667665"
+  }
+}

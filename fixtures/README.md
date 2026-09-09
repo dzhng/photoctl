@@ -20,6 +20,9 @@ Its adjacent manifests own exact measured dimensions; M/S mode coverage must be
 established from those facts rather than assumed from file size. Compression coverage
 and committed references do not substitute for real-drive acceptance.
 
+The [segmentation evaluation collection](segmentation/README.md) separates retained
+sources, visual targets, observed masks and unevaluated scene suggestions.
+
 The truncated fixture is the first 64 bytes of the uncompressed source, ending inside its declared
 TIFF directory before any usable preview. This proves structured truncation rejection, not rejection
 of every shortened RAW: a damaged RAW payload with an intact usable preview may still satisfy the
