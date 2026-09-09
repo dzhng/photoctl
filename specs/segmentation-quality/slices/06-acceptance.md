@@ -34,3 +34,8 @@ photographic smoke test through actual native ZIM and persisted mask artifacts
 alpha above 0.95 / below 0.05, because the accepted fractional-mask contract
 does not guarantee exact binary values. This is not a fine-detail visual verdict.
 All eight integrated acquisition/manifest/release-verification tests also pass.
+
+The [actual CLI holdout review](../assets/cli-holdout/critique.md) now records
+the complete production sky/road captures. Independent review fails fine-wire,
+foliage-gap and foreground-fence exclusion despite the coarse smoke pass.
+Keep this gate open; do not relabel the engineering port as generic parity.
