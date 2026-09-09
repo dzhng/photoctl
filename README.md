@@ -77,6 +77,7 @@ credentials; ordinary tests must not spend a developer's live-provider balance.
 
 ## Where things live
 
+- [Generation alternatives placeholder](specs/generation-alternatives.md) — product shapes to explore for comparing and selecting saved results.
 - [Installation and live-provider record](specs/done/openphoto/README.md) — credential boundaries, provider decisions and retained verification evidence.
 - [CLI discovery record](specs/done/cli-discovery/README.md) — why help works before setup, segmentation memory boundaries and completed follow-up verification.
 - [Segmentation quality record](specs/done/segmentation-quality/README.md) — why ZIM was chosen, the PhotoLab target and remaining quality gaps.
