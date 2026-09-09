@@ -52,28 +52,27 @@ async function png(background: string): Promise<Buffer> {
     .toBuffer();
 }
 
-test("reference-guided generation uses image edits without a mask", async () => {
-  const adapter = new GatewayImageModelAdapter({
-    model: "openai/gpt-image-2",
-    mask: "native",
-    maskPolarity: "unverified",
-  });
-  const reference = await png("#00ff00");
-  const prepared = adapter.buildGeneration("a ceramic vase", { w: 4, h: 4 }, 11, {
-    png: reference,
-  });
-  expect(prepared.route).toBe("edits");
-  if (prepared.route !== "edits") throw new Error("Expected reference edit request");
-  const wire = await new Request("https://gateway.test/v1/images/edits", {
-    method: "POST",
-    body: prepared.body,
-  }).formData();
-  expect(Buffer.from(await (wire.get("image[]") as File).arrayBuffer())).toEqual(reference);
-  expect(wire.has("mask")).toBe(false);
-  expect(wire.get("size")).toBe("4x4");
-  expect(wire.get("prompt")).toBe("a ceramic vase");
-  expect(prepared.appliedControls.reference).toBe(true);
-});
+test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
+  "%s reference-guided generation preserves its prompt without a mask",
+  async (model) => {
+    const adapter = createGatewayImageModelAdapter({ model });
+    const reference = await png("#00ff00");
+    const prepared = adapter.buildGeneration("a ceramic vase", { w: 4, h: 4 }, 11, {
+      png: reference,
+    });
+    expect(prepared.route).toBe("edits");
+    if (prepared.route !== "edits") throw new Error("Expected reference edit request");
+    const wire = await new Request("https://gateway.test/v1/images/edits", {
+      method: "POST",
+      body: prepared.body,
+    }).formData();
+    expect(Buffer.from(await (wire.get("image[]") as File).arrayBuffer())).toEqual(reference);
+    expect(wire.has("mask")).toBe(false);
+    expect(wire.get("size")).toBe("4x4");
+    expect(wire.get("prompt")).toBe("a ceramic vase");
+    expect(prepared.appliedControls.reference).toBe(true);
+  },
+);
 
 test("the fixture consumes delegated initialization instead of silently ignoring it", async () => {
   const server = await startGatewayFixture();

@@ -128,9 +128,12 @@ async function handleRequest(
       sendJson(response, 400, { error: "fixture image edits must not send a mask" });
       return;
     }
+    // Only masked fixture edits carry initialization controls; full-frame edits and
+    // reference generation use this endpoint without mask-specific instructions.
     if (
-      typeof fields.prompt !== "string" ||
-      !fields.prompt.split(/\r?\n/).includes("[photoctl:instruction-composite:v1]")
+      fields.init !== undefined &&
+      (typeof fields.prompt !== "string" ||
+        !fields.prompt.split(/\r?\n/).includes("[photoctl:instruction-composite:v1]"))
     ) {
       sendJson(response, 400, { error: "fixture image edits require instruction-composite v1" });
       return;

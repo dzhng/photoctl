@@ -161,46 +161,59 @@ test("an unverified native mask is refused before pixels leave the process", asy
   ).rejects.toMatchObject({ code: "provider_unverified_mask" });
 });
 
-test("the reserved image fixture uses a distinct instruction-composite adapter profile", async () => {
-  const adapter = createGatewayImageModelAdapter({ model: FAKE_IMAGE_EDIT_MODEL });
-  const { body: form } = await adapter.buildEdit(
-    "remove",
-    { png: Buffer.from("crop"), w: 10, h: 8 },
-    Buffer.from("mask"),
-    "remove the distraction",
-  );
+test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
+  "%s sends masked edits through instruction-composite",
+  async (model) => {
+    const adapter = createGatewayImageModelAdapter({ model });
+    const { body: form } = await adapter.buildEdit(
+      "remove",
+      { png: Buffer.from("crop"), w: 10, h: 8 },
+      Buffer.from("mask"),
+      "remove the distraction",
+    );
 
-  expect(adapter).toMatchObject({
-    id: "gateway-image-instruction-composite-v1",
-    version: "2",
-    mask: "instruction+composite",
-    maskPolarity: "unverified",
-  });
-  expect(form.has("mask")).toBe(false);
-  expect(form.get("prompt")).toBe(
-    "remove the distraction\n[photoctl:instruction-composite:v1]\nOnly perform the remove inside the supplied crop.",
-  );
-});
+    expect(adapter).toMatchObject({
+      id: "gateway-image-instruction-composite-v1",
+      version: "3",
+      mask: "instruction+composite",
+      maskPolarity: "unverified",
+    });
+    expect(form.has("mask")).toBe(false);
+    expect(form.get("model")).toBe(model);
+    expect(form.get("prompt")).toBe(
+      "remove the distraction\n[photoctl:instruction-composite:v1]\nOnly perform the remove inside the supplied crop.",
+    );
+  },
+);
 
-test("full-frame reimagine sends source pixels without inventing a native mask", async () => {
-  const adapter = createGatewayImageModelAdapter({ model: FAKE_IMAGE_EDIT_MODEL });
-  const input = await sharp({
-    create: { width: 10, height: 8, channels: 3, background: "#204060" },
-  })
-    .png()
-    .toBuffer();
+test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
+  "%s full-frame edits preserve the supplied prompt",
+  async (model) => {
+    const adapter = createGatewayImageModelAdapter({ model });
+    const input = await sharp({
+      create: { width: 10, height: 8, channels: 3, background: "#204060" },
+    })
+      .png()
+      .toBuffer();
 
-  const { body: form } = adapter.buildFullFrameEdit(
-    { png: input, w: 10, h: 8 },
-    "painted twilight",
-  );
+    const { body: form } = adapter.buildFullFrameEdit(
+      { png: input, w: 10, h: 8 },
+      "painted twilight",
+    );
 
-  expect(form.has("image")).toBe(true);
-  expect(form.has("mask")).toBe(false);
-  expect(form.get("prompt")).toBe(
-    "painted twilight\n[photoctl:instruction-composite:v1]\nOnly perform the reimagine inside the supplied crop.",
-  );
-});
+    expect(form.has("image")).toBe(true);
+    expect(form.has("mask")).toBe(false);
+    expect(form.get("prompt")).toBe("painted twilight");
+    server = await startGatewayFixture();
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Fixture address unavailable");
+    const response = await fetch(`http://127.0.0.1:${address.port}/v1/images/edits`, {
+      method: "POST",
+      body: form,
+    });
+    expect(response.status).toBe(200);
+  },
+);
 
 test("the fake gateway rejects a native mask for its reserved instruction-composite model", async () => {
   server = await startGatewayFixture();
@@ -239,6 +252,7 @@ test("the fake gateway requires the exact instruction-composite prompt marker", 
   form.set("model", FAKE_IMAGE_EDIT_MODEL);
   form.set("image", new Blob([Uint8Array.from(input)], { type: "image/png" }), "crop.png");
   form.set("prompt", "remove the distraction");
+  form.set("init", "original");
   form.set("size", "10x8");
   form.set("output_format", "png");
 

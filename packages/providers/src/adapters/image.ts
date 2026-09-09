@@ -99,7 +99,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
   constructor(options: GatewayImageModelAdapterOptions) {
     this.id =
       options.mask === "native" ? "gateway-image-v1" : "gateway-image-instruction-composite-v1";
-    this.version = options.mask === "native" ? "3" : "2";
+    this.version = "3";
     this.model = options.model;
     this.mask = options.mask;
     this.maskPolarity = options.maskPolarity;
@@ -174,10 +174,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
     const form = new FormData();
     form.set("model", this.model);
     form.set("image", pngBlob(crop.png), "image.png");
-    form.set(
-      "prompt",
-      this.mask === "native" ? prompt : buildInstructionCompositePrompt("reimagine", prompt),
-    );
+    form.set("prompt", prompt);
     form.set("size", `${crop.w}x${crop.h}`);
     form.set("output_format", "png");
     if (seed !== undefined) form.set("seed", String(seed));
@@ -197,8 +194,6 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
       throw new PhotoctlError("usage", `Reference strength is unsupported by ${this.model}`);
     if (negativePrompt !== undefined) prompt = buildNegativeGuidancePrompt(prompt, negativePrompt);
     if (strength !== undefined) prompt = buildReferenceStrengthPrompt(prompt, strength);
-    if (prepared.reference && this.mask === "instruction+composite")
-      prompt = buildInstructionCompositePrompt("generate", prompt);
     // Multipart normalizes field line endings; retain the actual transmitted guidance text.
     if ((negativePrompt !== undefined || strength !== undefined) && prepared.reference)
       prompt = prompt.replace(/\r\n|\r|\n/g, "\r\n");
@@ -310,7 +305,7 @@ export class GatewayImageModelAdapter implements ImageModelAdapter {
 export function createGatewayImageModelAdapter(
   options: Omit<GatewayImageModelAdapterOptions, "mask" | "maskPolarity">,
 ): GatewayImageModelAdapter {
-  return options.model === FAKE_IMAGE_EDIT_MODEL
+  return options.model === FAKE_IMAGE_EDIT_MODEL || options.model === "openai/gpt-image-2"
     ? new GatewayImageModelAdapter({
         ...options,
         mask: "instruction+composite",

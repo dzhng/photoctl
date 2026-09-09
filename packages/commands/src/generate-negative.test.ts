@@ -85,7 +85,7 @@ test.each([false, true])(
           path: reference ? "/v1/images/edits" : "/v1/images/generations",
           fields: expect.objectContaining({
             prompt: reference
-              ? "a vase\r\n[photoctl:negative-guidance:v1]\r\nAvoid these things: text, logos\r\n[photoctl:instruction-composite:v1]\r\nOnly perform the generate inside the supplied crop."
+              ? "a vase\r\n[photoctl:negative-guidance:v1]\r\nAvoid these things: text, logos"
               : "a vase\n[photoctl:negative-guidance:v1]\nAvoid these things: text, logos",
           }),
         },

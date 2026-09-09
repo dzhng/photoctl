@@ -17,65 +17,73 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(async (path) => await rm(path, { recursive: true })));
 });
 
-test("the built CLI reaches the reserved instruction-composite profile through real HTTP", async () => {
-  const fixture = await cliFixture();
+test.each([FAKE_IMAGE_EDIT_MODEL, "openai/gpt-image-2"])(
+  "the built CLI uses %s with instruction-composite through real HTTP",
+  async (model) => {
+    const requests: Array<{ model: unknown; mask: boolean }> = [];
+    const fixture = await cliFixture({
+      onImageRequest: ({ fields, files }) =>
+        requests.push({ model: fields.model, mask: files.has("mask") }),
+    });
 
-  const filled = await spawnPhotoctl(fillArgs(fixture), {
-    libraryDir: fixture.library,
-    env: fixture.env,
-  });
+    const filled = await spawnPhotoctl(fillArgs(fixture, model), {
+      libraryDir: fixture.library,
+      env: fixture.env,
+    });
 
-  expect(filled.code, JSON.stringify(filled.json)).toBe(0);
-  expect(filled.json).toMatchObject({
-    ok: true,
-    data: {
-      generation: {
-        adapter: "gateway-image-instruction-composite-v1",
-        model: FAKE_IMAGE_EDIT_MODEL,
-      },
-      composite: { unmasked_bit_exact: true },
-      executions: [
-        {
-          kind: "generate",
+    expect(filled.code, JSON.stringify(filled.json)).toBe(0);
+    expect(filled.json).toMatchObject({
+      ok: true,
+      data: {
+        generation: {
           adapter: "gateway-image-instruction-composite-v1",
-          model: FAKE_IMAGE_EDIT_MODEL,
+          model,
         },
-      ],
-    },
-  });
-  const generationNode = (filled.json as { data: { generation: { node: string } } }).data.generation
-    .node;
-  const inspected = await spawnPhotoctl(["graph", "node", fixture.id, generationNode], {
-    libraryDir: fixture.library,
-    env: fixture.env,
-  });
-  expect(inspected.code, JSON.stringify(inspected.json)).toBe(0);
-  expect(inspected.json).toMatchObject({
-    ok: true,
-    data: {
-      kind: "generate",
-      executions: [
-        {
-          provider_provenance: {
+        composite: { unmasked_bit_exact: true },
+        executions: [
+          {
+            kind: "generate",
             adapter: "gateway-image-instruction-composite-v1",
-            adapter_version: createGatewayImageModelAdapter({ model: FAKE_IMAGE_EDIT_MODEL })
-              .version,
-            model: FAKE_IMAGE_EDIT_MODEL,
+            model,
           },
-        },
-      ],
-    },
-  });
-}, 30_000);
+        ],
+      },
+    });
+    expect(requests).toEqual([{ model, mask: false }]);
+    const generationNode = (filled.json as { data: { generation: { node: string } } }).data
+      .generation.node;
+    const inspected = await spawnPhotoctl(["graph", "node", fixture.id, generationNode], {
+      libraryDir: fixture.library,
+      env: fixture.env,
+    });
+    expect(inspected.code, JSON.stringify(inspected.json)).toBe(0);
+    expect(inspected.json).toMatchObject({
+      ok: true,
+      data: {
+        kind: "generate",
+        executions: [
+          {
+            provider_provenance: {
+              adapter: "gateway-image-instruction-composite-v1",
+              adapter_version: createGatewayImageModelAdapter({ model }).version,
+              model,
+            },
+          },
+        ],
+      },
+    });
+  },
+  30_000,
+);
 
 test("a fixture URL alone cannot bypass unverified native-mask safety", async () => {
   let requests = 0;
   const fixture = await cliFixture({ onRequest: () => (requests += 1) });
 
-  const filled = await spawnPhotoctl(
-    ["fill", fixture.id, "--layer", fixture.layer, "--remove", "--no-upscale"],
-    { libraryDir: fixture.library, env: fixture.env },
-  );
+  const filled = await spawnPhotoctl(fillArgs(fixture, "fixture/unverified-image-model"), {
+    libraryDir: fixture.library,
+    env: fixture.env,
+  });
 
   expect(filled.code).toBe(69);
   expect(filled.json).toMatchObject({ ok: false, code: "provider_unverified_mask" });
@@ -143,7 +151,10 @@ async function graphRevision(fixture: Awaited<ReturnType<typeof cliFixture>>): P
   return (shown.json as { data: { revision_id: string } }).data.revision_id;
 }
 
-function fillArgs(fixture: Awaited<ReturnType<typeof cliFixture>>): string[] {
+function fillArgs(
+  fixture: Awaited<ReturnType<typeof cliFixture>>,
+  model: string = FAKE_IMAGE_EDIT_MODEL,
+): string[] {
   return [
     "fill",
     fixture.id,
@@ -151,7 +162,7 @@ function fillArgs(fixture: Awaited<ReturnType<typeof cliFixture>>): string[] {
     fixture.layer,
     "--remove",
     "--model",
-    FAKE_IMAGE_EDIT_MODEL,
+    model,
     "--no-upscale",
   ];
 }
