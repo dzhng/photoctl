@@ -1,10 +1,10 @@
 # Live-provider evidence
 
-The [opt-in CLI runner](../../scripts/live-gateway.mjs) uses a new disposable
+The [opt-in CLI runner](../../../scripts/live-gateway.mjs) uses a new disposable
 catalog and home, and removes its saved credential on completion or normal
 interruption. The explicit live key is never inferred from ambient credentials.
 Model files may be linked from an existing pinned installation; the CLI still
-checks their hashes. The [fixture tests](../../scripts/live-gateway.test.ts)
+checks their hashes. The [fixture tests](../../../scripts/live-gateway.test.ts)
 exercise the real CLI against a loopback service without developer credentials.
 
 ## Accepted boundaries
@@ -116,7 +116,7 @@ escaped-secret redaction, failed-purchase replay and missing capture provenance
 each failed before their fixes. The existing bounded-429-retry test passes:
 explicit rate-limit rejections are retried; successful/ambiguous image purchases
 are not rerun by the script. Batch failures already set `ok: false` in the
-[shared response owner](../../packages/commands/src/batch.ts), so the runner does
+[shared response owner](../../../packages/commands/src/batch.ts), so the runner does
 not add a second batch-status policy.
 
 Saved-key replacement is now tested against the same running daemon PID.
@@ -125,6 +125,37 @@ byte-for-byte and print none of the synthetic secrets. The scoped independent
 code review found no concrete correctness or secret-handling defects. The size
 pass covers asymmetric extraction, wrong-canvas raw retention, actual canvas
 provenance and clearing inherited mappings on refresh. Integration on the combined
-tree passed 52 focused tests. The final full local gate and spec closure remain
-pending.
-Publication stays paused.
+tree passed 52 focused tests.
+
+### Final local gate — 2026-09-09
+
+All required stages are covered, but `bun run verify` did **not** complete as one
+uninterrupted green invocation. The initial run passed format, lint and typecheck,
+then stopped at native build because CMake was absent from the shell PATH.
+Resuming with the existing CMake/Ninja tools completed the build. Docker later
+needed the pinned-model mirror supplied explicitly; its hash checks remained on.
+
+- Host TypeScript: the full sweep passed 1,204 of 1,211 tests. Seven failures came
+  from tiny image fixtures accidentally selecting a real model. Both owning test
+  files were corrected to request the fake model explicitly; all seven tests then
+  passed. No production behavior or assertion was weakened.
+- Rust: all 86 tests passed.
+- Docker TypeScript: the full sweep passed 1,209 of 1,211 tests. Two cases exceeded
+  their existing five-second timeout. Both unchanged owning files passed on a
+  focused rerun (seven tests); the timeout limits were not increased.
+- Docker model runtime: all three tests passed against the pinned real models.
+- Apple Silicon macOS: the full sweep passed 20 of 21 tests, including packed
+  installation, hidden terminal input, native linkage, RAW decoding and model
+  runtime. The warm-daemon benchmark measured 271.4 ms p50 against its 250 ms
+  ceiling during the concurrent suite. The unchanged benchmark passed on a
+  focused rerun, with the same ceiling.
+
+Production code was unchanged throughout these final sweeps and resumptions;
+only the two host fixture files changed after the first host sweep. No paid
+provider scenario was repeated for the engineering gate. The full sweeps and
+focused resumptions establish coverage, not a claim of pristine full-suite
+stability. Local execution logs remain in
+`/tmp/openphoto-masked-final.ySy2jI/verify*.log`; this record retains the outcomes
+without depending on those temporary paths as permanent artifacts.
+
+The spec is closed as working in-tree. Nothing was tagged, pushed or published.
