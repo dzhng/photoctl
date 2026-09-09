@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execute } from "@photoctl/commands";
+import { execute, isHelpRequest } from "@photoctl/commands";
 import {
   exitCodeFor,
   listDataSchema,
@@ -20,9 +20,10 @@ const { version } = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 ) as { version: string };
 const verb = args[0] === "--version" || args[0] === "-V" ? "version" : (args.shift() ?? "");
-const streaming = (verb === "list" || verb === "search") && args.includes("--stream");
+const help = isHelpRequest({ verb, args });
+const streaming = !help && (verb === "list" || verb === "search") && args.includes("--stream");
 let gatewayApiKey = process.env.AI_GATEWAY_API_KEY;
-if (verb === "configure") {
+if (verb === "configure" && !help) {
   try {
     gatewayApiKey = await configureInput(args);
   } catch (error) {

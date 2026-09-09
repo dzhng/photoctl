@@ -13,7 +13,9 @@ export function renderHuman(envelope: Envelope): string {
     lines.push(renderResults(envelope.results));
   } else if ("data" in envelope && envelope.ok) {
     const list = asListData(envelope.data);
-    if (list) lines.push(renderList(list.rows), `Total: ${list.total}`);
+    const help = asRecord(envelope.data);
+    if (typeof help.usage === "string") lines.push(renderHelp(help));
+    else if (list) lines.push(renderList(list.rows), `Total: ${list.total}`);
     else lines.push(renderFields(envelope.data));
   } else if ("data" in envelope) {
     const details = withoutMessage(envelope.data);
@@ -26,6 +28,35 @@ export function renderHuman(envelope: Envelope): string {
 
   for (const warning of envelope.warnings ?? []) lines.push(renderWarning(warning));
   return `${lines.join("\n")}\n`;
+}
+
+function renderHelp(data: Record<string, unknown>): string {
+  const lines = [String(data.usage), "", String(data.description ?? "")];
+  if (Array.isArray(data.commands)) {
+    lines.push("", "Commands:");
+    for (const value of data.commands) {
+      const command = asRecord(value);
+      lines.push(`  ${command.command}  ${command.description}`);
+    }
+  }
+  if (data.subcommands) {
+    lines.push("", "Subcommands:");
+    for (const usage of Object.values(asRecord(data.subcommands))) lines.push(`  ${usage}`);
+  }
+  if (Array.isArray(data.keys)) lines.push("", `Settings: ${data.keys.join(", ")}`);
+  if (Array.isArray(data.notes)) for (const note of data.notes) lines.push("", String(note));
+  if (Array.isArray(data.examples)) {
+    lines.push("", "Examples:");
+    for (const example of data.examples) lines.push(`  ${example}`);
+  }
+  return lines
+    .map((line) =>
+      line.replace(
+        /\p{Cc}/gu,
+        (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+      ),
+    )
+    .join("\n");
 }
 
 function asListData(value: unknown): { rows: unknown[]; total: number } | undefined {

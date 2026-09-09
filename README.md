@@ -4,6 +4,10 @@ A CLI-first photo library and non-destructive editor for photographers and agent
 The complete workflow must be usable without a screen. Human and machine interfaces
 share the same capabilities; a GUI must not become a separate product with exclusive features.
 
+Start with the [CLI workflow guide](docs/cli.md) for library setup, editing,
+click-based selection and model provisioning. `openphoto --help --human` lists
+commands; `openphoto COMMAND --help --human` gives complete usage without a library.
+
 ## Installation and credentials
 
 The npm package is `@dzhng/openphoto`; it installs the `openphoto` command and

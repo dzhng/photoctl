@@ -5,7 +5,7 @@ import {
   type Envelope,
   type StderrEvent,
 } from "@photoctl/protocol";
-import { dispatch, type DispatchContext } from "./dispatch.js";
+import { dispatch, isHelpRequest, type DispatchContext } from "./dispatch.js";
 import {
   DaemonConnectionError,
   ensureDaemon,
@@ -30,11 +30,7 @@ export async function execute(
   context: DispatchContext,
 ): Promise<CommandExecution> {
   try {
-    if (
-      request.verb === "version" ||
-      request.verb === "configure" ||
-      (request.verb === "settings" && request.args.length === 1 && request.args[0] === "--help")
-    ) {
+    if (isHelpRequest(request) || request.verb === "version" || request.verb === "configure") {
       return { envelope: await dispatch(request, context), events: [], stream: [] };
     }
     request = {
