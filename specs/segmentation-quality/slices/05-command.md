@@ -1,16 +1,30 @@
 # 05 — CLI cutover without saved-mask migration
 
-Seam: configured segmentation maps signed points with explicit provenance from
-base or rendered image into the prepared frame exactly once. The command passes
+Seam: SegmentationAdapter.segment carries signed `points` plus one required
+`space: "base" | "render"` for both points and an optional box; remove boxSpace.
+Configured segmentation maps base geometry into the prepared frame exactly once
+and leaves render-space guidance there. The command passes
 each instance only its own automatic points. Automatic text uses points-only;
 its box locates the instance but does not enter the decoder. Manual `--at` stays
 positive; `--at` plus explicit `--box` sends both. Box-only and brush stay manual.
 
-The user approved text-plus-click instance selection. Hit-test in the same
-render frame; return a clear usage error for no match or overlapping candidates
+The user approved text-plus-click instance selection. Hit-test each click against
+the projected alpha in oriented-base space, where both the CLI points and saved
+masks live. A sample at floor(x),floor(y) with alpha>=0.5 is a hit. Boxes cannot
+decide membership: overlapping boxes can contain disjoint actual masks. Return
+a clear usage error for no match or multiple mask hits
 instead of guessing. Never broadcast the click to all matches. Automatic points belong to the delivered
 render frame and must be in bounds; user points outside the crop retain the
 existing usage error. Never silently drop semantic negative points.
+
+Repeated clicks select the union of their uniquely hit instances, once each,
+retaining grounding order. Every click must resolve; any ambiguity/no-match
+aborts revision creation, including dry-run. Text without clicks still returns
+all matches and preserves empty-match success. Clicks with text only choose
+instances; they do not alter automatic prompts. Keep decoding sequential and
+retain prepared artifact metadata, not all full-resolution mask buffers, while
+resolving multiple candidates. Existing orphan-artifact failure behavior does
+not justify a new cleanup framework.
 
 Preserve per-instance ordering, empty-match no-op/lazy encoding, dry-run without
 commits, pre-grounding expected revision and revision-conflict errors, progress,
