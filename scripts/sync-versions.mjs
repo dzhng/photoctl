@@ -13,7 +13,8 @@ for (const root of ["apps", "packages"]) {
     for (const dependencies of [manifest.dependencies, manifest.optionalDependencies]) {
       for (const dependencyName of Object.keys(dependencies ?? {})) {
         if (
-          (dependencyName.startsWith("@photoctl/") || dependencyName.startsWith("@dzhng/openphoto-")) &&
+          (dependencyName.startsWith("@photoctl/") ||
+            dependencyName.startsWith("@dzhng/openphoto-")) &&
           !dependencies[dependencyName].startsWith("workspace:")
         )
           dependencies[dependencyName] = version;
