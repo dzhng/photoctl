@@ -92,7 +92,7 @@ test("configure saves a private gateway credential without opening a library or 
   }
 });
 
-test("CLI requests load the saved key and environment overrides win even with a running daemon", async () => {
+test("saved-key rotation and environment overrides reach the same running daemon", async () => {
   const home = mkdtempSync(join(tmpdir(), "openphoto-configure-"));
   const authorizations: Array<string | undefined> = [];
   const gateway = createServer((request, response) => {
@@ -118,6 +118,9 @@ test("CLI requests load the saved key and environment overrides win even with a 
     if (!address || typeof address === "string") throw new Error("No test gateway address");
     env.PHOTOCTL_GATEWAY_URL = `http://127.0.0.1:${address.port}`;
     await run(process.execPath, [cli, "init"], { env });
+    const before = await run(process.execPath, [cli, "daemon", "status"], { env });
+    const pid = JSON.parse(before.stdout).data.pid;
+    expect(pid).toBeGreaterThan(0);
     for (const override of [undefined, "override-secret", ""]) {
       const requestEnv = {
         ...env,
@@ -127,7 +130,25 @@ test("CLI requests load the saved key and environment overrides win even with a 
       expect(JSON.parse(result.stdout).ok).toBe(true);
       expect(result.stdout + result.stderr).not.toMatch(/saved-secret|override-secret/u);
     }
-    expect(authorizations).toEqual(["Bearer saved-secret", "Bearer override-secret"]);
+    const configured = spawnSync(process.execPath, [cli, "configure", "--key-stdin"], {
+      input: "replacement-secret\n",
+      encoding: "utf8",
+      timeout: 5_000,
+      env,
+    });
+    expect(configured.status).toBe(0);
+    const rotated = await run(process.execPath, [cli, "search", "sunset"], { env });
+    expect(JSON.parse(rotated.stdout).ok).toBe(true);
+    expect(configured.stdout + configured.stderr + rotated.stdout + rotated.stderr).not.toMatch(
+      /saved-secret|override-secret|replacement-secret/u,
+    );
+    expect(authorizations).toEqual([
+      "Bearer saved-secret",
+      "Bearer override-secret",
+      "Bearer replacement-secret",
+    ]);
+    const after = await run(process.execPath, [cli, "daemon", "status"], { env });
+    expect(JSON.parse(after.stdout)).toMatchObject({ ok: true, data: { pid } });
   } finally {
     await run(process.execPath, [cli, "daemon", "stop"], { env }).catch(() => {});
     await new Promise<void>((resolve) => gateway.close(() => resolve()));
@@ -164,3 +185,49 @@ test("configure replaces old credentials while retaining other dotenv settings",
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+test.each([
+  { name: "empty stdin", args: ["--key-stdin"], input: "\n" },
+  {
+    name: "multiline stdin",
+    args: ["--key-stdin"],
+    input: "rejected-first-secret\nrejected-second-secret\n",
+  },
+  { name: "credential argument", args: ["rejected-argument-secret"], input: "" },
+  { name: "unsupported key flag", args: ["--key", "rejected-argument-secret"], input: "" },
+])(
+  "configure rejects $name without changing the saved file or printing secrets",
+  ({ args, input }) => {
+    const home = mkdtempSync(join(tmpdir(), "openphoto-configure-invalid-"));
+    try {
+      mkdirSync(join(home, ".openphoto"));
+      const file = join(home, ".openphoto", ".env");
+      const original =
+        '# Preserve this file exactly\nAI_GATEWAY_API_KEY="existing-secret"\nOTHER=keep\n';
+      writeFileSync(file, original, { mode: 0o600 });
+      const result = spawnSync(
+        process.execPath,
+        [resolve("apps/cli/dist/bin.js"), "configure", ...args],
+        {
+          input,
+          encoding: "utf8",
+          timeout: 5_000,
+          env: {
+            ...process.env,
+            HOME: home,
+            AI_GATEWAY_API_KEY: "",
+            PHOTOCTL_LIBRARY: join(home, "absent"),
+          },
+        },
+      );
+      expect(result.status).toBe(2);
+      expect(JSON.parse(result.stdout)).toMatchObject({ ok: false, code: "usage" });
+      expect(result.stdout + result.stderr).not.toMatch(
+        /existing-secret|rejected-(?:first|second|argument)-secret/u,
+      );
+      expect(readFileSync(file, "utf8")).toBe(original);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  },
+);
