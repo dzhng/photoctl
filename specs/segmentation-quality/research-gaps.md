@@ -13,7 +13,7 @@ Success on this portrait does not imply sky or road quality.
 | Selection intent | Native SAM 3 distinguishes hair, person and separate instances. | Correct scope must survive refinement. |
 | Fine coverage | ZIM retains the most hair among measured full-frame candidates; local photographic crops can recover wires and foliage. | Complete curl continuity, clear holes and no skin/background leakage in one automatic full-frame result. |
 | Context and resolution | Higher-resolution SAM improves detail but has prediction dropout; automatic ZIM crops regress on hair. | A resolution-aware method that retains context without hand-combining regional winners. |
-| Runtime | Several official/adapted Python paths execute on this Mac. | A quality-qualified model integrated through the existing CLI, projection and fractional mask store. |
+| Runtime | The native ZIM port preserves the accepted portrait appearance; actual CLI photographic area probes pass. | Automatic text and generic fine-detail acceptance through the integrated CLI. |
 | Reference fidelity | Matched clean/overlay video frames establish the visible target. | Original photography and exported ground-truth alpha are unavailable; pixel-distance metrics cannot certify parity. |
 
 Do not repeat generic trimap widening or nearest-point guards. Their failure is
@@ -54,7 +54,8 @@ but cannot by itself satisfy the matting contract; do not reinterpret sigmoid
 confidence as physical coverage. Defer a run until a concrete seed defect makes
 that separate question useful.
 
-The pending commercial-use decision still matters before adoption. Published
-research code and downloadable weights do not establish permission to ship them.
+ZIM adoption for the intended noncommercial use is explicitly authorized in the
+[implementation contract](implementation.md). Published research code and
+downloadable weights do not establish permission for unrelated commercial use.
 Training a replacement or acquiring private data would be a new, explicitly
 scoped project, not an unannounced continuation of checkpoint evaluation.
