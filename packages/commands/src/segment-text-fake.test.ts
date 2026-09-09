@@ -8,7 +8,7 @@ import {
 } from "@photoctl/render";
 import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import sharp from "sharp";
-import type { StructuredModelAdapter } from "@photoctl/providers";
+import type { GroundedInstance, StructuredModelAdapter } from "@photoctl/providers";
 import { afterEach, expect, test } from "vitest";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -18,6 +18,10 @@ import { createHash } from "node:crypto";
 import { dispatch, type SegmentationAdapter } from "./dispatch.js";
 
 const directories: string[] = [];
+const groundingPoints: GroundedInstance["points"] = Array.from({ length: 12 }, (_, index) => ({
+  at: [1, 1],
+  label: index < 5 ? 1 : 0,
+}));
 
 test.each([false, true])(
   "segmentation rejects a revision changed during inference through a shared handle (existing=%s)",
@@ -288,7 +292,9 @@ test("production text grounding uses the cropped render box and commits masks in
           {
             message: {
               content: JSON.stringify({
-                instances: [{ label: "person", box_2d: [0, 0, 1000, 1000] }],
+                instances: [
+                  { label: "person", box_2d: [0, 0, 1000, 1000], points: groundingPoints },
+                ],
               }),
             },
           },
@@ -727,13 +733,15 @@ test("a non-positive SAM box is rejected before local segmentation", async () =>
 });
 
 function cannedGrounding(
-  instances: Array<{ box_2d: [number, number, number, number]; label: string }>,
+  instances: Array<Omit<GroundedInstance, "points">>,
 ): StructuredModelAdapter {
   return {
     id: "fake-grounding",
     version: "1",
     ask: async <Value>(schema: { parse(value: unknown): Value }) => ({
-      value: schema.parse({ instances }),
+      value: schema.parse({
+        instances: instances.map((instance) => ({ ...instance, points: groundingPoints })),
+      }),
       model: "fake/grounding-v1",
       requestId: "fixture-request",
       attempts: 1,

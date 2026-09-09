@@ -329,7 +329,22 @@ test("the structured adapter rejects reversed provider boxes", async () => {
   ).rejects.toThrow("ordered");
 });
 
-test("segment grounding validates labels and converts every normalized box to base pixels", async () => {
+const signedGroundingPoints = [
+  { at: [200, 100], label: 1 },
+  { at: [300, 200], label: 1 },
+  { at: [400, 300], label: 1 },
+  { at: [500, 400], label: 1 },
+  { at: [600, 500], label: 1 },
+  { at: [0, 0], label: 0 },
+  { at: [1000, 1000], label: 0 },
+  { at: [900, 100], label: 0 },
+  { at: [100, 900], label: 0 },
+  { at: [750, 250], label: 0 },
+  { at: [250, 750], label: 0 },
+  { at: [999, 999], label: 0 },
+];
+
+test("segment grounding preserves signed points and converts provider coordinates once", async () => {
   const adapter = new GatewayStructuredModelAdapter({
     gateway: new GatewayClient({
       apiKey: "fixture-key",
@@ -340,8 +355,12 @@ test("segment grounding validates labels and converts every normalized box to ba
               message: {
                 content: JSON.stringify({
                   instances: [
-                    { box_2d: [100, 200, 600, 700], label: "person" },
-                    { box_2d: [0, 0, 1_000, 1_000], label: "frame" },
+                    {
+                      box_2d: [100, 200, 600, 700],
+                      label: "person",
+                      points: signedGroundingPoints,
+                    },
+                    { box_2d: [0, 0, 1_000, 1_000], label: "frame", points: signedGroundingPoints },
                   ],
                 }),
               },
@@ -358,8 +377,42 @@ test("segment grounding validates labels and converts every normalized box to ba
     "Find people",
   );
   expect(answer.value.instances).toEqual([
-    { box_2d: [160, 60, 400, 300], label: "person" },
-    { box_2d: [0, 0, 800, 600], label: "frame" },
+    {
+      box_2d: [160, 60, 400, 300],
+      label: "person",
+      points: [
+        { at: [160, 60], label: 1 },
+        { at: [240, 120], label: 1 },
+        { at: [320, 180], label: 1 },
+        { at: [400, 240], label: 1 },
+        { at: [480, 300], label: 1 },
+        { at: [0, 0], label: 0 },
+        { at: [799, 599], label: 0 },
+        { at: [720, 60], label: 0 },
+        { at: [80, 540], label: 0 },
+        { at: [600, 150], label: 0 },
+        { at: [200, 450], label: 0 },
+        { at: [799, 599], label: 0 },
+      ],
+    },
+    {
+      box_2d: [0, 0, 800, 600],
+      label: "frame",
+      points: [
+        { at: [160, 60], label: 1 },
+        { at: [240, 120], label: 1 },
+        { at: [320, 180], label: 1 },
+        { at: [400, 240], label: 1 },
+        { at: [480, 300], label: 1 },
+        { at: [0, 0], label: 0 },
+        { at: [799, 599], label: 0 },
+        { at: [720, 60], label: 0 },
+        { at: [80, 540], label: 0 },
+        { at: [600, 150], label: 0 },
+        { at: [200, 450], label: 0 },
+        { at: [799, 599], label: 0 },
+      ],
+    },
   ]);
 });
 
@@ -369,12 +422,125 @@ test("segment grounding bounds provider-controlled instance fan-out", () => {
       instances: Array.from({ length: 101 }, (_, index) => ({
         box_2d: [index, 0, 1, 1],
         label: `instance ${index}`,
+        points: signedGroundingPoints,
       })),
     }),
   ).toThrow();
   expect(() =>
     groundedInstancesSchema.parse({
-      instances: [{ box_2d: [0, 0, 1, 1], label: "person", confidence: 0.9 }],
+      instances: [
+        { box_2d: [0, 0, 1, 1], label: "person", points: signedGroundingPoints, confidence: 0.9 },
+      ],
     }),
   ).toThrow();
+});
+
+test.each([
+  [-1, 500],
+  [1000.01, 500],
+  [500, -0.01],
+  [500, 1001],
+])(
+  "segment grounding rejects out-of-range provider point (%s,%s) before rasterization",
+  async (x, y) => {
+    const adapter = new GatewayStructuredModelAdapter({
+      gateway: new GatewayClient({
+        apiKey: "fixture-key",
+        fetch: async () =>
+          Response.json({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    instances: [
+                      {
+                        label: "target",
+                        box_2d: [0, 0, 1000, 1000],
+                        points: [{ at: [x, y], label: 1 }, ...signedGroundingPoints.slice(1)],
+                      },
+                    ],
+                  }),
+                },
+              },
+            ],
+          }),
+      }),
+      model: "fake/grounding-v1",
+    });
+    await expect(
+      adapter.ask(
+        groundedInstancesSchema,
+        [{ bytes: Buffer.from("jpeg"), mediaType: "image/jpeg", dimensions: { w: 800, h: 600 } }],
+        "Select the described target",
+      ),
+    ).rejects.toThrow();
+  },
+);
+
+test("segment grounding requires five inclusion and seven exclusion points per instance", () => {
+  const instance = { label: "target", box_2d: [0, 0, 800, 600] };
+  const parsePoints = (points: typeof signedGroundingPoints) =>
+    groundedInstancesSchema.parse({
+      instances: [{ ...instance, points }],
+    });
+  expect(() =>
+    parsePoints(signedGroundingPoints.map((point) => ({ ...point, label: 1 }))),
+  ).toThrow();
+  expect(() => parsePoints(signedGroundingPoints.slice(1))).toThrow();
+  expect(() => parsePoints([...signedGroundingPoints, { at: [1, 1], label: 0 }])).toThrow();
+  expect(parsePoints(signedGroundingPoints).instances[0]?.points).toEqual(signedGroundingPoints);
+});
+
+test("segment grounding accepts no matches without inventing point prompts", async () => {
+  const adapter = new GatewayStructuredModelAdapter({
+    gateway: new GatewayClient({
+      apiKey: "fixture-key",
+      fetch: async () => Response.json({ choices: [{ message: { content: '{"instances":[]}' } }] }),
+    }),
+    model: "fake/grounding-v1",
+  });
+  const answer = await adapter.ask(
+    groundedInstancesSchema,
+    [{ bytes: Buffer.from("jpeg"), mediaType: "image/jpeg", dimensions: { w: 800, h: 600 } }],
+    "Select the absent striped umbrella",
+  );
+  expect(answer.value).toEqual({ instances: [] });
+});
+
+test.each([
+  { at: [100, 100], label: 2 },
+  { at: [100, 100], label: -1 },
+  { at: [100, 100], label: 0.5 },
+  { at: [Number.NaN, 100], label: 0 },
+  { at: [100, Number.POSITIVE_INFINITY], label: 0 },
+])("segment grounding rejects malformed signed point %j", (invalid) => {
+  expect(() =>
+    groundedInstancesSchema.parse({
+      instances: [
+        {
+          label: "target",
+          box_2d: [0, 0, 800, 600],
+          points: [...signedGroundingPoints.slice(0, -1), invalid],
+        },
+      ],
+    }),
+  ).toThrow();
+});
+
+test("other structured schemas retain their own point coordinate meaning", async () => {
+  const response = { points: [{ at: [250, 750], label: 1 }] };
+  const adapter = new GatewayStructuredModelAdapter({
+    gateway: new GatewayClient({
+      apiKey: "fixture-key",
+      fetch: async () =>
+        Response.json({ choices: [{ message: { content: JSON.stringify(response) } }] }),
+    }),
+    model: "fake/structured-v1",
+  });
+  const answer = await adapter.ask(
+    { name: "annotation", jsonSchema: {}, parse: (value) => value },
+    [{ bytes: Buffer.from("jpeg"), mediaType: "image/jpeg", dimensions: { w: 800, h: 600 } }],
+    "Return annotation points",
+  );
+  expect(answer.value).toEqual(response);
 });
