@@ -1,6 +1,6 @@
 # OpenPhoto installation and live-provider verification
 
-The public product and command are OpenPhoto / `openphoto`, published as
+The public product and command are OpenPhoto / `openphoto`, packaged as
 `@dzhng/openphoto`. The repository and private implementation package names may
 remain photoctl. Credentials belong in the user's `~/.openphoto/.env`, separate
 from photo catalogs, with a CLI configuration command instead of shell setup.
@@ -11,25 +11,24 @@ Updated 2026-09-09. The hardened runner and real execution are recorded in
 [verification](verification.md). Publication is paused; no tag, release or push
 was performed. Installation, saved credentials and packed-install checks pass.
 
-Finish the provider output-size correction, then rerun only masked editing.
-The native-mask probe changed protected pixels; GPT Image 2 now explicitly uses
-the existing local-compositing strategy, within the spec's transport-correction
-scope. Native polarity remains unverified. The targeted live request reached the
-provider but requested 384×384 output, below the model's documented minimum.
-A separate worktree owns size negotiation and truthful output-size provenance.
+Complete the running Docker/Mac gate, then archive the audited record. Do not
+repeat paid scenarios: live masked editing now passes exact protected-pixel and
+cold-cache replay checks. Its retained glass result has weak material cues in
+the strict composite; native polarity remains unverified. Those are explicit
+quality/transport boundaries, not claims of native masking or photographic quality.
 
-The runner now independently compares protected linear pixels and replays a
-purchased masked result offline; both pass against the fixture. Strict fit keeps
-the proof's protection boundary identical to its authored selection. Auto-enhance
-passes live after allowing longer structured analysis, without changing other
-provider deadlines. Saved-key rotation on the same daemon and invalid-input
-preservation are now directly tested. After real masked acceptance, run the full
-local gate once, consolidate choices and close the spec.
+The canvas policy and whole feature passed independent code review. The final
+choices and rationale have also been audited against the code. Host formatting,
+lint, typecheck, builds and Rust pass. The host TypeScript sweep passed 1,204 tests;
+seven tiny-fixture cases were corrected without product changes and passed
+narrowly. Docker functional and Mac stages are still running; observe the existing
+process before restarting anything. Current log:
+`/tmp/openphoto-masked-final.ySy2jI/verify-platforms.log`.
 
 - [x] Installed name and private saved credentials, including terminal input.
 - [x] Explicit live-provider integration script and authorized real execution.
 - [x] Resolve live auto-enhance timeout and credential-verification gaps.
-- [ ] Complete live masked-edit acceptance.
+- [x] Complete live masked-edit acceptance.
 - [ ] Review, documentation and one full local closeout gate.
 
 The prior review also fixed the CLI test driver's implicit use of developer
@@ -54,9 +53,9 @@ records decisions not specified by the user.
   never a credential argument. The file is plaintext, owner-readable/writable;
   its directory is owner-only. Replacement preserves unrelated dotenv values.
 - Explicit process environment wins, including an empty value. Normal requests
-  read saved credentials anew before direct execution or daemon dispatch. Existing
-  background work is not cancelled; a daemon adopts changed credentials with its
-  next foreground request, not a filesystem watcher or restart requirement.
+  read saved credentials anew before direct execution or daemon dispatch. Saving
+  the key does not itself cancel work; a daemon adopts it on its next foreground
+  request using the existing embedding pause/resume behavior, not a watcher or restart.
 - Repo paths, existing catalog locations and `PHOTOCTL_*` controls are not renamed
   as a side effect. Separately published native dependencies use `@dzhng` too;
   installed resolvers and release artifacts must agree. No migration or alias layer.

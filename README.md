@@ -18,8 +18,9 @@ non-interactive input. Configuration makes no network request.
 Credentials are plaintext in `~/.openphoto/.env`, readable and writable only by
 the owner. They are separate from photo catalogs and backups. Each command loads
 the saved key; an explicit `AI_GATEWAY_API_KEY` environment value takes precedence,
-including an empty value. A running daemon adopts changed credentials on its next
-foreground request, without cancelling work already in progress.
+including an empty value. Saving a key does not itself cancel work. A running
+daemon adopts changed credentials on its next foreground request, using its normal
+embedding pause/resume behavior.
 
 Existing catalog locations and `PHOTOCTL_*` environment controls stay stable.
 The repository and private package names remain photoctl.
@@ -64,6 +65,11 @@ resolves; closed specs under `specs/done/` are frozen records and are exempt. Th
 scripts in [package.json](package.json) name each stage individually;
 [contributor guidance](AGENTS.md) explains which rung of the test ladder to run
 while iterating.
+
+Model-dependent gate stages require the pinned model files and a reachable download
+mirror for Docker. The [Docker build](test/Dockerfile) and
+[model-runtime suite](test/model-runtime/) define those inputs; the
+[model fetcher](scripts/fetch-models.mjs) still validates the release hashes.
 
 The [CLI test driver](packages/test-harness/src/spawn.ts) disables ambient and
 saved gateway credentials by default. Provider tests explicitly supply fixture

@@ -1,0 +1,256 @@
+{
+  "schema": 1,
+  "scope": "masked-edit",
+  "status": "passed",
+  "reason": null,
+  "models": {
+    "edit": "openai/gpt-image-2",
+    "generate": "openai/gpt-image-2",
+    "structured": "google/gemini-3-flash",
+    "embed": "google/gemini-embedding-2",
+    "upscale": "photoctl/fake-upscale-v1"
+  },
+  "stages": [
+    {
+      "name": "masked-edit",
+      "status": "passed",
+      "durationMs": 25326.014875,
+      "schema": 1,
+      "ok": true,
+      "data": {
+        "id": "01a08672-60e6-7046-a3d8-beb2774fcbfd",
+        "graph": {
+          "revision": "3253d95e-ecd2-4650-bb4f-2b15171c5feb",
+          "layer": "6867d91e-334e-4a40-ab0b-1819c5cab33a",
+          "output_node": "node_abf9ab20e3c2cce66d11f40bcd1a09fb976c4179610b60fdbd73f6e3ac1d514b",
+          "render_hash": "r_c9669b725803f5fed0dd94277d0e5e7638ef033887a44a837c25a7b781400746"
+        },
+        "generation": {
+          "node": "node_68a8d5fa280fdfaa118aae3fa0e6612d2480f493324a6f0f0b375df182d1f033",
+          "adapter": "gateway-image-instruction-composite-v1",
+          "model": "openai/gpt-image-2",
+          "returned": {
+            "w": 1152,
+            "h": 1152
+          }
+        },
+        "source_context": {
+          "tier": "online-file",
+          "pixel_scale": 1,
+          "resolution_limited": false
+        },
+        "upscale": {
+          "enabled": false,
+          "executed": false,
+          "node": null,
+          "adapter": null,
+          "model": "photoctl/fake-upscale-v1",
+          "input": {
+            "w": 1152,
+            "h": 1152
+          },
+          "target": {
+            "w": 384,
+            "h": 384
+          },
+          "generated": {
+            "w": 1152,
+            "h": 1152
+          },
+          "final": {
+            "w": 384,
+            "h": 384
+          },
+          "density_satisfied": true,
+          "warnings": []
+        },
+        "composite": {
+          "node": "node_4659efec54ffa6facc664a69c92bcce48302786b2f2c2d405c119d32cdf578ec",
+          "unmasked_bit_exact": true
+        },
+        "executions": [
+          {
+            "kind": "generate",
+            "node": "node_68a8d5fa280fdfaa118aae3fa0e6612d2480f493324a6f0f0b375df182d1f033",
+            "adapter": "gateway-image-instruction-composite-v1",
+            "model": "openai/gpt-image-2",
+            "duration_ms": 17868,
+            "cost_usd": 0,
+            "reused": false
+          }
+        ]
+      },
+      "warnings": [
+        {
+          "code": "provider_warning",
+          "message": "Provider canvas increased from 384x384 to 1152x1152 at uniform scale 3 for openai/gpt-image-2; only the declared content rectangle will be kept"
+        }
+      ],
+      "capture": {
+        "file": "masked.jpg",
+        "dimensions": {
+          "w": 1024,
+          "h": 1024
+        },
+        "pixelSha256": "7bdf29626cb7673a3e5a6c157cb45e7a09b7a0a4cd5597b39f1d5aa9f107a63c",
+        "executions": [
+          {
+            "execution_id": "exec_6eeca616354c57df72894499575230862d6c2bfa1318a33d15c603faeb84b67d",
+            "provider_image_attempt_id": "34532345-7775-4b0c-a57a-bdf88d6dfdbc",
+            "evaluation_hash": "eval_0e76a80efca20ea3e811749de1a66e28edc25e5263d9156b70c00e00380a60c0",
+            "deterministic": false,
+            "output_artifact_hash": "a_703b0b95199a81deb90517324b53a82930dcf33c8e7818578cf800208bac7c4d",
+            "artifact_available": true,
+            "source_provenance": null,
+            "source_treatment": null,
+            "provider_provenance": {
+              "parameters": {
+                "model": "openai/gpt-image-2",
+                "prompt": "Replace the selected area with bright green glass",
+                "adapter": "gateway-image-instruction-composite-v1",
+                "request": {
+                  "fit": {
+                    "mode": "strict",
+                    "expand_px": 0,
+                    "operation": "fit",
+                    "feather_px": 0
+                  },
+                  "pad": 64,
+                  "crop": [
+                    320,
+                    320,
+                    384,
+                    384
+                  ],
+                  "sent": [
+                    1152,
+                    1152
+                  ],
+                  "upscale": {
+                    "model": "photoctl/fake-upscale-v1",
+                    "adapter": "photoctl/fake-upscale-v1",
+                    "enabled": false,
+                    "prompt_id": "photoctl/upscale-balanced-v1",
+                    "derived_prompt": "Add plausible fine detail consistent with the image's original creative intent.\nUse a balanced creative treatment: synthesize medium detail while keeping resemblance high.\nPreserve composition, silhouette, identity, pose, lighting, placement, color, and boundary geometry.\nDo not add, remove, replace, move, or reinterpret subjects, objects, expressions, or text.\nDo not repeat, resume, or reinterpret the replacement instruction that produced these pixels.",
+                    "prompt_version": 1,
+                    "adapter_version": "1",
+                    "original_prompt": "Replace the selected area with bright green glass"
+                  },
+                  "controls": {
+                    "applied_init": "original",
+                    "reference_used": false,
+                    "requested_init": "original"
+                  },
+                  "full_res": false,
+                  "returned": [
+                    1152,
+                    1152
+                  ],
+                  "sampling": {
+                    "base_to_input": [
+                      1,
+                      0,
+                      0,
+                      1,
+                      0,
+                      0
+                    ],
+                    "outside_visible": "black-protected",
+                    "input_dimensions": [
+                      1024,
+                      1024
+                    ]
+                  },
+                  "operation": "prompt",
+                  "execution_id": "exec_6eeca616354c57df72894499575230862d6c2bfa1318a33d15c603faeb84b67d",
+                  "frame_mapping": {
+                    "output": [
+                      0,
+                      0,
+                      1152,
+                      1152
+                    ],
+                    "source": [
+                      0,
+                      0,
+                      384,
+                      384
+                    ]
+                  },
+                  "source_context": {
+                    "tier": "online-file",
+                    "pixel_scale": 1,
+                    "resolution_limited": false
+                  },
+                  "provider_output": {
+                    "h": 1152,
+                    "w": 1152
+                  }
+                },
+                "model_version": null,
+                "prompt_version": 1,
+                "adapter_version": "4"
+              },
+              "parameters_truncated": false,
+              "input_node_ids": [
+                "node_b1adc02b84f14e802ac4832983da04ad23edb5aec0f776402d3a4217484fd594"
+              ],
+              "input_artifact_hashes": [
+                "a_022e23e8d8e901fb5bd557d5f265254422580272a83848eda12f998079d607d0"
+              ],
+              "recipe_version": 1,
+              "execution_id": "exec_6eeca616354c57df72894499575230862d6c2bfa1318a33d15c603faeb84b67d",
+              "seed": null,
+              "model": "openai/gpt-image-2",
+              "adapter": "gateway-image-instruction-composite-v1",
+              "attempt": 1,
+              "service": "gateway",
+              "cost_usd": 0,
+              "input_px": 1327104,
+              "warnings": [
+                {
+                  "code": "provider_warning",
+                  "message": "Provider canvas increased from 384x384 to 1152x1152 at uniform scale 3 for openai/gpt-image-2; only the declared content rectangle will be kept"
+                }
+              ],
+              "target_px": 1327104,
+              "duration_ms": 17868,
+              "model_version": null,
+              "adapter_version": "4",
+              "density_verdict": "not-applicable",
+              "provider_request_id": null,
+              "output": {
+                "dimensions": {
+                  "w": 1152,
+                  "h": 1152
+                },
+                "artifact_hash": "a_703b0b95199a81deb90517324b53a82930dcf33c8e7818578cf800208bac7c4d",
+                "available": true
+              }
+            }
+          }
+        ]
+      },
+      "fidelity": {
+        "outsidePixels": 983040,
+        "changedOutsidePixels": 0,
+        "changedInsidePixels": 65536,
+        "artifacts": [
+          "a_763585a491ae9e9ffae76e557739a3e5dc67b11abe7ab2cda12377b36822f1e8",
+          "a_022e23e8d8e901fb5bd557d5f265254422580272a83848eda12f998079d607d0",
+          "a_586d19c3cd7151c722332aeef2796398695da5005c621034ef8a9561d4424fa9"
+        ]
+      },
+      "replay": {
+        "samePixels": true,
+        "pixelSha256": "7bdf29626cb7673a3e5a6c157cb45e7a09b7a0a4cd5597b39f1d5aa9f107a63c",
+        "purchaseIds": [
+          "exec_6eeca616354c57df72894499575230862d6c2bfa1318a33d15c603faeb84b67d"
+        ],
+        "beforeRevision": "3253d95e-ecd2-4650-bb4f-2b15171c5feb",
+        "undoRevision": "9882a78d-eb43-4473-ac15-b5b857ccf490",
+        "afterRevision": "3253d95e-ecd2-4650-bb4f-2b15171c5feb"
+      }
+    }
+  ]
+}

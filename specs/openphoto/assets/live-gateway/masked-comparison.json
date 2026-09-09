@@ -1,0 +1,34 @@
+{
+  "target": "Change only the authored central 256x256 selection to bright green glass; leave the red circle and blue background outside it unchanged. Material appearance is assessed separately from exact linear-pixel fidelity.",
+  "source": "Lossless display views of the exact retained base and composite artifacts, converted through the same render color path.",
+  "dimensions": {
+    "w": 1024,
+    "h": 1024
+  },
+  "changedPixels": 65536,
+  "mae": 6.52798651599967,
+  "rmse": 26.120337832768787,
+  "diffRatio16": 0.0625,
+  "diffRatio32": 0.0625,
+  "diffRatio64": 0.0625,
+  "linearFidelity": {
+    "outsidePixels": 983040,
+    "changedOutsidePixels": 0,
+    "changedInsidePixels": 65536,
+    "artifacts": [
+      "a_763585a491ae9e9ffae76e557739a3e5dc67b11abe7ab2cda12377b36822f1e8",
+      "a_022e23e8d8e901fb5bd557d5f265254422580272a83848eda12f998079d607d0",
+      "a_586d19c3cd7151c722332aeef2796398695da5005c621034ef8a9561d4424fa9"
+    ]
+  },
+  "replay": {
+    "samePixels": true,
+    "pixelSha256": "7bdf29626cb7673a3e5a6c157cb45e7a09b7a0a4cd5597b39f1d5aa9f107a63c",
+    "purchaseIds": [
+      "exec_6eeca616354c57df72894499575230862d6c2bfa1318a33d15c603faeb84b67d"
+    ],
+    "beforeRevision": "3253d95e-ecd2-4650-bb4f-2b15171c5feb",
+    "undoRevision": "9882a78d-eb43-4473-ac15-b5b857ccf490",
+    "afterRevision": "3253d95e-ecd2-4650-bb4f-2b15171c5feb"
+  }
+}

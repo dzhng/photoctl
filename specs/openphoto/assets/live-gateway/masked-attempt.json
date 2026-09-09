@@ -1,0 +1,65 @@
+{
+  "id": "34532345-7775-4b0c-a57a-bdf88d6dfdbc",
+  "state": "committed",
+  "created_at": "2026-09-09T13:53:59.075Z",
+  "updated_at": "2026-09-09T13:54:16.933Z",
+  "request": {
+    "model": "openai/gpt-image-2",
+    "route": "edits",
+    "prompt": "Replace the selected area with bright green glass",
+    "schema": 1,
+    "adapter": "gateway-image-instruction-composite-v1",
+    "operation": "edit",
+    "dimensions": {
+      "h": 1152,
+      "w": 1152
+    },
+    "frame_mapping": {
+      "output": [
+        0,
+        0,
+        1152,
+        1152
+      ],
+      "source": [
+        0,
+        0,
+        384,
+        384
+      ]
+    },
+    "prompt_version": 1,
+    "adapter_version": "4",
+    "provider_prompt": "Replace the selected area with bright green glass\n[photoctl:instruction-composite:v1]\nOnly perform the prompt inside the supplied crop.\n[photoctl:image-frame:v1]\nCompose the entire requested image inside rectangle [0,0,1152,1152] (left, top, width, height) on the 1152x1152 canvas. Keep all requested subjects inside this content rectangle. Leave the padding outside it blank; that padding will be removed.",
+    "applied_controls": {
+      "init": "original",
+      "reference": false
+    },
+    "input_artifact_hashes": [
+      "a_022e23e8d8e901fb5bd557d5f265254422580272a83848eda12f998079d607d0"
+    ]
+  },
+  "provenance": {
+    "schema": 1,
+    "cost_usd": null,
+    "request_id": null,
+    "transport_attempts": 1
+  },
+  "outcome": null,
+  "original": {
+    "artifact_hash": "a_08a1e194c254921f95f8cb52e7968630dc772fc8fc40d412a52b76ab14d0e142",
+    "path": "/tmp/openphoto-masked-final.ySy2jI/evidence/library/artifacts/sha256/08/a_08a1e194c254921f95f8cb52e7968630dc772fc8fc40d412a52b76ab14d0e142.png",
+    "media_type": "image/png",
+    "validation_profile": "encoded-image",
+    "w": 1152,
+    "h": 1152,
+    "available": true
+  },
+  "executions": [
+    {
+      "photo_id": "01a08672-60e6-7046-a3d8-beb2774fcbfd",
+      "execution_id": "exec_6eeca616354c57df72894499575230862d6c2bfa1318a33d15c603faeb84b67d"
+    }
+  ],
+  "record_truncated": false
+}

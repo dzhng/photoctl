@@ -1,145 +1,206 @@
 # OpenPhoto decisions
 
+Review the two cost/quality tradeoffs first: integer enlargement can buy more
+pixels than fractional resizing, and local compositing guarantees protection but
+does not show the provider the exact selection outline. These entries describe
+the final implementation, not intermediate plans. No unsound or user-only decision
+remains unresolved.
+
 ## Sound — medium confidence
 
-### Use the same image model with explicit local compositing
+### Enlarge by whole-number factors instead of fractional resizing
+
+**When:** provider canvas correction.
+
+When a user edits a 384×384 crop, the model's minimum output area prevents sending
+that size directly. OpenPhoto sends 1152×1152, repeating each input pixel across
+a 3×3 block. It keeps the source proportions and an exact whole-pixel mapping;
+canvas correction does not change the authored selection. A fractional enlargement to roughly
+816×816 could cost fewer pixels but would need a different resampling contract.
+Already-supported input sizes and bytes are unchanged. Requests that cannot fit
+the provider's limits without reducing density fail explicitly.
+
+**Gap:** the plan did not choose a resizing policy for unsupported small crops.
+**Reach:** small requests may cost more and retain higher native density than the
+requested size; warnings and provenance disclose the actual canvas.
+**Verdict:** sound because the mapping is explicit and reversible, rather than a
+silent stretch. **Confidence:** medium; lower pixel cost could justify a separately
+tested fractional policy later.
+
+### Put declared padding on the right and bottom
+
+**When:** provider canvas correction.
+
+A 1001×1000 image needs a canvas whose axes meet the model's alignment rules.
+OpenPhoto places that content at the top-left of a 1008×1008 canvas and fills
+the right/bottom margins with black. Very narrow images also receive enough
+short-axis padding to satisfy the provider's aspect limit. Centering would add
+offsets; extending image edges would invent additional image context. For a new
+generation, the prompt asks the model to compose inside the declared content
+rectangle before those margins are removed.
+
+**Gap:** the plan did not specify placement or the appearance of added margins.
+**Reach:** one coordinate convention serves edited and generated images. Prompt
+compliance is not a guarantee of photographic composition or material quality.
+**Verdict:** sound because padding is separate from the selected region and its
+removal is declared before purchase. **Confidence:** medium; margin appearance can
+influence a generative model.
+
+### Keep the requested model and protect pixels with local compositing
 
 **When:** masked-edit transport correction.
 
-When a user selects part of a photo, GPT Image 2 edits the supplied crop and
-OpenPhoto combines only the selected pixels with the unchanged base image. The
-provider is not trusted to protect the rest. A real request with a native mask
-changed a protected rectangle, so continuing to treat that mask as authoritative
-would make the guarantee false. Keeping the operation unavailable was the
-alternative; switching to another model or retrying a failed native purchase is
-not part of this choice.
+When a user selects part of a photo, GPT Image 2 edits the supplied context crop.
+OpenPhoto composites through the effective mask coverage and preserves pixels
+outside it. Strict fit follows the authored selection; other fit policies can
+expand or feather that coverage. The
+provider is not trusted to preserve the rest: its native mask did not protect a
+test rectangle. Keeping masked editing unavailable was the alternative; changing
+models or automatically retrying a failed native purchase was not chosen.
 
-**Gap:** the plan did not specify which supported transport to choose if the
-real service ignored its native mask. **Reach:** this model uses the existing
-instruction-composite adapter; native polarity remains unverified and other
-unknown native profiles still refuse masked requests. The provider does not see
-the exact selection outline, so semantic editing inside an irregular selection
-is distinct from exact protection outside it. **Verdict:** sound because the
-application already owns the protection contract, and provenance names the
-chosen strategy. **Confidence:** medium; photographic edit quality remains
-separate from pixel preservation.
+**Gap:** the plan did not select a transport after native-mask verification failed.
+**Reach:** this model uses instruction-and-composite requests; native polarity
+remains unverified and unknown native profiles still refuse masked requests. The
+provider does not see the exact outline. In the strict-fit glass example, a rim
+outside the selection is discarded even though protection is exact.
+**Verdict:** sound because the application owns the protection contract and names
+the strategy in provenance. **Confidence:** medium; semantic quality inside a
+selection is a separate limitation.
 
-### Give structured analysis its own bounded deadline
+### Give structured analysis a longer bounded deadline
 
-**When:** auto-enhance live verification.
+**When:** auto-enhance verification.
 
-When the photo-analysis model takes longer than an ordinary image or embedding
-request, the CLI now allows up to 120 seconds for its reply instead of stopping
-at 30. The exact previously failing request completed after 39.4 seconds, and
-the actual CLI later completed after 65 seconds. Image and embedding deadlines
-are unchanged; an explicitly supplied timeout still overrides the default.
+When photo analysis takes about a minute, the CLI allows its response instead of
+stopping after 30 seconds. Structured analysis and grounding have a 120-second
+per-attempt timeout; image and embedding requests keep their 30-second per-attempt
+timeout. Existing bounded rate-limit retries can make the total operation longer.
+An explicitly
+configured timeout still wins. Extending every provider call would also lengthen
+background indexing failures, which this choice does not do.
 
-**Gap:** the plan required finite timeouts but did not establish a suitable
-bound for model reasoning. **Reach:** structured photo analysis and grounding
-may take longer before reporting a timeout, without extending background image
-indexing or adding retries. **Verdict:** sound because measured valid responses
-exceeded the original bound. **Confidence:** medium; this is a finite tolerance
-for variable latency, not a promise that every request succeeds.
+**Gap:** the plan required finite timeouts without selecting a reasoning-time
+budget. **Reach:** analysis can keep the caller waiting longer, without adding
+retries or making latency unbounded. **Verdict:** sound because valid responses
+can exceed the ordinary request deadline. **Confidence:** medium; the bound is a
+tolerance for variable latency, not a promise that every request succeeds.
 
 ### Use a catalogued structured-model identifier
 
-**When:** live CLI verification checkpoint.
+**When:** live CLI provider correction.
 
-When OpenPhoto analyzes a photo without a library override, it selects the fixed
-structured-model default. The public Gateway catalog lists
-`google/gemini-3-flash` with image input but has no exact
-`google/gemini-3.1-flash` entry. The default now uses the listed identifier;
-saved library settings and command overrides retain their precedence. The
-alternative was to keep sending an identifier the catalog does not expose, or
-introduce runtime model discovery that changes selection without the user's say.
+When a library has no model override, analysis uses `google/gemini-3-flash`, an
+image-input model listed in the Gateway catalog, instead of the unlisted exact
+identifier `google/gemini-3.1-flash`. Saved library model settings still win.
+Runtime discovery could silently choose a different model later; the
+implementation instead keeps a fixed, inspectable default.
 
 **Gap:** the plan did not establish a verified structured-model identifier.
-**Reach:** default auto-enhance and text-grounding requests use the corrected ID;
-no stored schema or override migration changes. **Verdict:** sound, supported by
-the [official catalog](https://ai-gateway.vercel.sh/v1/models) and a successful
-targeted live grounding request. **Confidence:** medium; model availability and
-provider latency remain external dependencies.
+**Reach:** default analysis and grounding use the selected ID; no saved settings
+are migrated. **Verdict:** sound because the fixed identifier matches the
+[official catalog](https://ai-gateway.vercel.sh/v1/models).
+**Confidence:** medium; availability remains an external dependency.
 
-### Treat explicit rate-limit rejection differently from an ambiguous purchase
+### Send image embeddings through the native Google content protocol
 
-**When:** live CLI verification checkpoint.
+**When:** installation and image-embedding correction.
 
-If the provider replies HTTP 429, it has explicitly refused the request, so the
-existing transport may retry within its finite attempt bound. If a successful
-image response is received, or a request times out without a conclusive response,
-the script does not restart that paid mutation. A strict one-network-attempt
-interpretation would instead disable even the existing rate-limit handling.
+When a photo is indexed, OpenPhoto sends its JPEG bytes and a fixed caption using
+the Gateway's native multimodal embedding route. Text search uses the separate
+OpenAI-compatible text route. The verified image-content contract belongs to
+the native route; dropping the JPEG would embed only the caption and falsely
+appear to index photographs.
 
-**Gap:** “never automatically rerun paid mutations” did not specify whether a
-provider's explicit refusal counted as a purchase attempt to suppress.
-**Reach:** the live runner uses the normal CLI transport rather than introducing
-a verification-only retry control. **Verdict:** sound because only explicit 429
-rejections are retried; successful or ambiguous image purchases are not replayed.
-**Confidence:** medium; this does not create a hard spending ceiling.
+**Gap:** the plan did not establish an accepted image-embedding wire contract.
+**Reach:** image indexing depends on the AI SDK 6 native Gateway protocol and the
+verified `google/gemini-embedding-2` model. Another image model needs its own proven
+contract. There is no new SDK dependency or catalog migration.
+**Verdict:** sound because the image is part of the actual model input.
+**Confidence:** medium; the external protocol can evolve.
 
-### Image embeddings use the gateway's native Google content protocol
+### Retry an explicit rate-limit rejection, not an ambiguous purchase
 
-**When:** installation/live-provider checkpoint.
+**When:** live-runner acceptance policy.
 
-When a user indexes a photo, the application sends both its JPEG bytes and a
-fixed caption through the gateway's native image-embedding route. A text search
-still uses the OpenAI-compatible text route. The attempted image payload on that
-text route was rejected by the real service. Keeping it, or quietly dropping the
-JPEG and embedding only the caption, would make image indexing unusable.
+If the provider replies HTTP 429, the normal transport may retry within its
+existing finite attempt bound. If a paid image response succeeds, or times out
+without a conclusive result, the runner does not restart that mutation. Treating
+every HTTP request as a completed purchase would instead disable the existing
+rate-limit handling even when the service explicitly refused it.
 
-**Gap:** the original plan did not establish an accepted multimodal wire contract.
-**Reach:** transport now depends on the AI SDK 6 native gateway protocol. Image
-indexing explicitly requires the verified Gemini embedding model; another model
-needs its own proven image contract before it can be selected for this operation.
-No catalog schema changes. **Verdict:** sound because real image changes alter
-the returned vector while an identical image repeats it. **Confidence:** medium;
-the native protocol is an external dependency that may evolve.
+**Gap:** “never automatically rerun paid mutations” did not distinguish rejection
+from an ambiguous or completed purchase. **Reach:** verification uses production
+transport instead of a verification-only retry mode; it creates no hard spending
+ceiling. **Verdict:** sound because only explicit 429 rejections are retried.
+**Confidence:** medium; attempt records are not billing statements.
 
-### Replacing a saved key preserves values, not dotenv formatting
+### Preserve dotenv values rather than its formatting
 
-**When:** installation/configuration checkpoint.
+**When:** saved-credential configuration.
 
-If the user already has another setting in their private dotenv file, configure
-reads its value, replaces the gateway key, and rewrites the file atomically.
-Comments and spacing are not preserved. A round-trip parser check keeps quoted
-values and literal backslash sequences intact; an unrepresentable value fails
-without replacing the existing file. Appending another copy of the key would
-leave obsolete credentials on disk and make interpretation ambiguous.
+If the private dotenv file already contains another setting, configure reads its
+value, replaces the gateway key and atomically rewrites the file. Comments and
+spacing are not preserved. Values with quotes or literal backslashes must survive
+a parser round trip; an unrepresentable value fails without replacing the old
+file. Appending duplicate keys would leave obsolete credentials on disk and make
+interpretation ambiguous.
 
-**Gap:** preservation of formatting and duplicate keys was not specified.
-**Reach:** this is a value store, not a lossless dotenv editor. **Verdict:** sound
-because unrelated values survive and superseded secrets do not. **Confidence:**
-medium; preserving comments could be a future convenience, not a second store.
+**Gap:** the plan did not require a lossless dotenv editor or define duplicate-key
+handling. **Reach:** the file is a value store, not a formatting-preserving
+document. **Verdict:** sound because unrelated values survive and superseded
+secrets do not. **Confidence:** medium; preserving comments could be a future
+convenience without adding another credential store.
 
 ## Sound — high confidence
 
-### Version the changed instruction-composite requests
+### Record the provider frame and reject unexplained geometry
 
-**When:** masked-edit transport correction.
+**When:** provider canvas correction.
 
-When a purchased image is inspected later, its adapter identifier and version
-identify the request policy that produced it. Instruction-composite version 3
-keeps masked guidance on masked edits, while full-frame and reference-generation
-requests retain their original prompts. Keeping version 2 would make those
-different request bytes indistinguishable in recorded history.
+If a request declares a 1008×1008 canvas but the service returns 2016×2016, OpenPhoto
+retains the raw purchased image and refuses to apply the old crop coordinates.
+It does not guess whether the image was scaled or reframed. A matching response
+is reduced only to its declared content rectangle, using one shared normalization
+path for new edits, generation and refresh. Requests without a frame mapping keep
+their previous same-aspect response handling.
 
-**Gap:** the plan did not specify the versioning consequence of the transport
-correction. **Reach:** future inspection can distinguish the policies without
-regenerating saved pixels. **Verdict:** sound because changed request semantics
-receive distinct provenance. **Confidence:** high.
+**Gap:** the plan did not define how a provider-size correction should appear in
+stored provenance. **Reach:** existing JSON request records now carry declared
+`provider_output` canvas dimensions and `frame_mapping` source/output rectangles, or
+explicit null when no mapping applies. Refresh overwrites that field so it cannot
+inherit an obsolete crop. For edits, the input count covers the sent canvas plus
+references; generation without image input records zero. The target count tracks
+the requested provider canvas, not the cropped working image. There is no database migration.
+**Verdict:** sound because geometry and pixel accounting remain inspectable without
+regenerating a purchase. **Confidence:** high.
 
-### Live smoke acceptance requires evidence that image bytes matter
+### Identify changed request policies in adapter provenance
 
-**When:** live embedding checkpoint.
+**When:** masked transport and canvas corrections.
 
-A provider can return a valid-sized vector even if it ignores the image. The
-smoke therefore submits red, blue, then the same red image, with identical text.
-It accepts only when changing the image has a larger effect than repeating it.
-Only synthetic image hashes and bounded numerical observations enter the report;
-provider bodies and credentials do not. Each explicit smoke makes three serial
-requests with no automatic retries, outside default tests and CI.
+When someone inspects a purchased image later, the adapter version identifies
+which request policy produced it. GPT Image 2 records version 4 for its explicit
+canvas policy; unchanged fixture/native profiles keep their own version. Full-frame
+and reference-generation prompts remain unchanged for already-supported sizes.
+Reusing one version across different request semantics would hide that distinction.
 
-**Gap:** a successful response alone did not define useful live evidence.
-**Reach:** this checks the multimodal transport, not the accuracy of search or
-segmentation. **Verdict:** sound because caption-only success is explicitly
-rejected. **Confidence:** high.
+**Gap:** the plan did not specify the versioning consequence of transport changes.
+**Reach:** saved pixels remain replayable independently of later request policies.
+**Verdict:** sound because provenance distinguishes external request semantics,
+without introducing internal protocol negotiation. **Confidence:** high.
+
+### Require evidence that image bytes affect an embedding
+
+**When:** explicit live embedding smoke.
+
+A provider can return a vector of the right length while ignoring an image. The
+smoke submits red, blue and the same red image with identical text, and requires
+changing the image to have a larger effect than repeating it. Merely accepting a
+well-shaped vector would not distinguish image indexing from caption-only output.
+
+**Gap:** transport success alone did not define useful image-consumption evidence.
+**Reach:** the opt-in smoke makes three serial requests with no automatic retries,
+outside default tests and CI. It records synthetic hashes and bounded numerical
+observations, not credentials or provider bodies. **Verdict:** sound because it
+checks image consumption, while making no search-quality or segmentation claim.
+**Confidence:** high.
