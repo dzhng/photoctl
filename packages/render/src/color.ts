@@ -25,6 +25,14 @@ export async function linearRec2020ToDisplaySrgb(samples: Float32Array): Promise
   return await convertLinearRec2020(samples);
 }
 
+export function displaySrgbToBytes(samples: Float32Array): Uint8Array {
+  const bytes = new Uint8Array(samples.length);
+  // TypedArray.from iterates through a boxed sample list before filling its output.
+  for (let index = 0; index < samples.length; index += 1)
+    bytes[index] = Math.round(Math.max(0, Math.min(1, samples[index]!)) * 255);
+  return bytes;
+}
+
 export async function toSceneLinearRec2020(image: LinearImage): Promise<LinearImage> {
   if (image.space === "scene-linear-rec2020") return image;
   if (!image.camXyz || !image.asShotWb) {

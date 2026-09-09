@@ -14,10 +14,18 @@ capture, integration and final verification. Existing unrelated provider-table,
 auto-enhance and live-gateway edits belong to another task and must remain intact.
 
 - [ ] [Discovery](slices/01-discovery.md): library-independent help and root-linked usage.
-- [ ] [Memory](slices/02-memory.md): reproduce and remove unnecessary heap inflation;
+- [x] [Memory](slices/02-memory.md): reproduce and remove unnecessary heap inflation;
       verify the failed Docker real-model workload.
 - [ ] [Live evidence](slices/03-live.md): automatic whole-person capture and retained review.
 - [ ] Whole-change review, choices consolidation, final closeout and archive.
+
+Memory checkpoint: both isolated pixel consumers failed by heap exhaustion before
+the fix and pass after it with identical quantization assertions. Seventeen
+focused render tests pass. The real Docker model suite passes all three tests
+in 63.76 seconds using unchanged Node heap defaults (reported limit 2,348,810,240
+bytes). Independent Codex review found no actionable issues. The final rebuilt
+full gate still remains; this targeted run mounted the rebuilt render output
+into the existing test image. Continue discovery and the live person capture.
 
 ## Owners and boundaries
 

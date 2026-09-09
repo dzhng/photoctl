@@ -7,6 +7,7 @@ import {
 import type { Dimensions, Point } from "./coordinates.js";
 import type { MaskImage } from "./mask-tiff.js";
 import { invertTransformMatrix, type TransformMatrix } from "./transforms.js";
+import { displaySrgbToBytes } from "./color.js";
 
 const INPUT_SIZE = 1024;
 const CHANNEL_MEAN = [123.675, 116.28, 103.53].map(Math.fround);
@@ -51,7 +52,7 @@ export function prepareZimEncoderInput(
   if (data.length !== source.w * source.h * 3 || data.some((value) => !Number.isFinite(value))) {
     throw new Error("Segment encoder input must contain finite RGB samples");
   }
-  const bytes = Uint8Array.from(data, (value) => Math.round(Math.max(0, Math.min(1, value)) * 255));
+  const bytes = displaySrgbToBytes(data);
   const resized = resampleRgb8Antialiased(
     bytes,
     source.w,

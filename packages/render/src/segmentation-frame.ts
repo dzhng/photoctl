@@ -4,7 +4,7 @@ import { developFrame, parseRenderFrame, realizeCanvasFrame } from "./graph/fram
 import { projectSupportedRgbToRender } from "./graph/projection.js";
 import type { readCanvasPlan } from "./graph/output.js";
 import type { DevelopDict } from "./develop/dict.js";
-import { linearRec2020ToDisplaySrgb } from "./color.js";
+import { displaySrgbToBytes, linearRec2020ToDisplaySrgb } from "./color.js";
 import type { SceneLinearImage } from "./decoder.js";
 import { transformPoint } from "./transforms.js";
 import { resampleDisplaySrgb8 } from "@photoctl/img";
@@ -15,9 +15,7 @@ export function segmentationGroundingPixels(image: { w: number; h: number; data:
   const w = Math.max(1, Math.round(image.w * scale));
   const h = Math.max(1, Math.round(image.h * scale));
   // The borrowed U8 boundary avoids resamplePixels' full-resolution native float snapshot.
-  const pixels = Uint8Array.from(image.data, (value) =>
-    Math.round(Math.max(0, Math.min(1, value)) * 255),
-  );
+  const pixels = displaySrgbToBytes(image.data);
   return {
     w,
     h,
