@@ -1,0 +1,110 @@
+{
+  "encodes": [
+    {
+      "ms": 2823.0712080000003,
+      "shapes": [
+        [
+          1,
+          256,
+          64,
+          64
+        ],
+        [
+          1,
+          64,
+          512,
+          512
+        ],
+        [
+          1,
+          128,
+          256,
+          256
+        ],
+        [
+          1,
+          256,
+          128,
+          128
+        ]
+      ],
+      "bytes": 121634816
+    }
+  ],
+  "decodes": [
+    {
+      "arm": "points",
+      "ms": 195.16249999999945,
+      "scores": [
+        0.8829139471054077,
+        0.8717929124832153,
+        0.23029133677482605,
+        0.9036489725112915
+      ]
+    },
+    {
+      "arm": "combined",
+      "ms": 199.08120800000052,
+      "scores": [
+        0.8888759016990662,
+        0.8785027265548706,
+        0.22225750982761383,
+        0.9108572602272034
+      ]
+    },
+    {
+      "arm": "repeat",
+      "ms": 133.13837499999954,
+      "scores": [
+        0.8829139471054077,
+        0.8717929124832153,
+        0.23029133677482605,
+        0.9036489725112915
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "diagnostics": [],
+      "droppedDiagnostics": 0
+    },
+    {
+      "diagnostics": [],
+      "droppedDiagnostics": 0
+    },
+    {
+      "diagnostics": [],
+      "droppedDiagnostics": 0
+    },
+    {
+      "diagnostics": [],
+      "droppedDiagnostics": 0
+    },
+    {
+      "diagnostics": [],
+      "droppedDiagnostics": 0
+    }
+  ],
+  "loadMs": 891.8832500000001,
+  "arms": {
+    "points": {
+      "totalMs": 3170.3811250000003,
+      "baselineMaxDifference": 0.000019758939743041992,
+      "baselineMeanDifference": 9.20653072049093e-8,
+      "alphaHash": "6ed1243559261d59820a63090b1ab7f77869b1d6f05e89cf7c32e7071e6a3ffc"
+    },
+    "combined": {
+      "totalMs": 226.66291700000056,
+      "baselineMaxDifference": 0.2709161937236786,
+      "baselineMeanDifference": 0.001243865044851408,
+      "alphaHash": "f842eca988d141948c9834e6965e1d8c7f2b62f09d030a6339b01e2a9f19769b"
+    },
+    "repeat": {
+      "totalMs": 160.47450000000026,
+      "baselineMaxDifference": 0.000019758939743041992,
+      "baselineMeanDifference": 9.20653072049093e-8,
+      "alphaHash": "6ed1243559261d59820a63090b1ab7f77869b1d6f05e89cf7c32e7071e6a3ffc"
+    }
+  },
+  "maxRssBytes": 7260536832
+}

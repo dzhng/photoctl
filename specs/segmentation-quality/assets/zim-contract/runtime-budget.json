@@ -1,0 +1,31 @@
+{
+  "measured_at": "2026-09-09",
+  "cpu": "Apple M5 Pro",
+  "physical_memory_bytes": 51539607552,
+  "native_threads": { "intra": 4, "inter": 1, "workers": 1 },
+  "feature_cache_capacity": 1,
+  "feature_bytes_per_image": 121634816,
+  "portrait_cold_peak_rss_bytes": 7260536832,
+  "repeated_encode_probe": {
+    "runs": 16,
+    "dimensions": { "w": 1024, "h": 1024 },
+    "encode_min_ms": 2772.2784169999995,
+    "encode_max_ms": 3530.658209,
+    "peak_rss_bytes": 9008758784,
+    "rss_run_3_bytes": 8914468864,
+    "rss_run_10_bytes": 8914681856,
+    "rss_run_11_bytes": 5739888640,
+    "rss_run_15_bytes": 5974671360,
+    "all_masks_identical": true,
+    "mask_sha256": "62dff2eae5811bb9d9333d3b05b84d4e23f5f8698f4e8816859d855349e4c700",
+    "observed_canary_bytes": 8000000000,
+    "observed_canary_passed": false
+  },
+  "audit": {
+    "trigger": "Selecting successive photos in a persistent native runtime",
+    "disposition": "Large bounded working set, not observed history growth. Cache retains one feature set; per-request buffers become unreachable; Node and native allocator ownership supply reclamation. No production forced-GC or second worker is introduced.",
+    "acceptance_seam": "probe:segment reports peak RSS and fails above its explicit canary; repeated masks and encode timing remain separately checked.",
+    "revised_canary_bytes": 10000000000,
+    "rationale": "The cold-only 8 GB estimate excludes the measured warm transient peak. 10 GB covers the complete observed workload on the 48 GiB acceptance machine; it is not a visual-quality threshold."
+  }
+}

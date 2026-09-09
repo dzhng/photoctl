@@ -8,9 +8,11 @@ of coarse SAM plus manual correction does not satisfy this new goal.
 ## Next Agent Prompt
 
 Updated 2026-09-09. Execute the [implementation ladder](implementation.md),
-starting with the engine pass. Signed grounding is committed; the pixel library
-matches the reference input exactly and its focused tests pass. Acquisition is
-being verified in its independent worktree. The three planning drafts have been synthesized;
+starting with model-acquisition integration and the command slice. Signed
+grounding and the pixel library are committed. The engine matches the accepted
+portrait appearance, its native/geometry tests pass, and its reviewed 16-encode
+probe passes the measured 10 GB canary. Acquisition is ready on its independent
+branch; do not release these partial checkpoints. The three planning drafts have been synthesized;
 do not restart the interview or model search. The full quality goal remains open.
 The user approved `--text` plus `--at` choosing the clicked matching instance;
 wire that in the command slice. The actual whole-person automatic trial still

@@ -10,7 +10,7 @@ import { transformPoint } from "./transforms.js";
 import { resampleDisplaySrgb8 } from "@photoctl/img";
 
 /** Keep grounding delivery bounded without introducing a second pixel resampler. */
-export function sam2GroundingPixels(image: { w: number; h: number; data: Float32Array }) {
+export function segmentationGroundingPixels(image: { w: number; h: number; data: Float32Array }) {
   const scale = Math.min(1, 1024 / Math.max(image.w, image.h));
   const w = Math.max(1, Math.round(image.w * scale));
   const h = Math.max(1, Math.round(image.h * scale));
@@ -25,8 +25,8 @@ export function sam2GroundingPixels(image: { w: number; h: number; data: Float32
   };
 }
 
-/** SAM sees current develop pixels; every returned mask is projected back to uncropped base space. */
-export async function prepareSam2Frame(
+/** Segmentation sees current develop pixels; returned masks use uncropped base space. */
+export async function prepareSegmentationFrame(
   source: SceneLinearImage,
   develop: DevelopDict,
   base: { w: number; h: number },

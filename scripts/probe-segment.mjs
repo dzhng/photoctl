@@ -4,8 +4,8 @@ import { readFile } from "node:fs/promises";
 import { cpus } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { createSam2OnnxRuntime } from "../packages/img/dist/index.js";
-import { Sam2Segmenter } from "../packages/render/dist/sam2-runtime.js";
+import { createSegmentationRuntime } from "../packages/img/dist/index.js";
+import { ZimSegmenter } from "../packages/render/dist/segmentation-runtime.js";
 
 /* eslint-disable no-await-in-loop -- sequential requests measure bounded inference and cache memory. */
 
@@ -20,7 +20,7 @@ const { values } = parseArgs({
     "stop-on-memory-limit": { type: "boolean", default: false },
   },
 });
-assert(values.models, "Usage: node scripts/probe-sam2.mjs --models <ONNX directory>");
+assert(values.models, "Usage: node scripts/probe-segment.mjs --models <ONNX directory>");
 const width = Number(values.width);
 const height = Number(values.height);
 const runs = Number(values.runs);
@@ -28,13 +28,14 @@ assert([width, height, runs].every((value) => Number.isSafeInteger(value) && val
 const encoder = await readFile(join(values.models, "encoder.onnx"));
 const decoder = await readFile(join(values.models, "decoder.onnx"));
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
-const runtime = createSam2OnnxRuntime(encoder, decoder);
-const limits = { encodeMs: 4000, maxRssBytes: 5_000_000_000 };
+const runtime = createSegmentationRuntime(encoder, decoder);
+// ViT-L peaks near 9 GB across cold and repeated encodes on the acceptance Mac.
+const limits = { encodeMs: 4000, maxRssBytes: 10_000_000_000 };
 const samples = [];
 let maskHash;
 let encodeMs;
 let decodeMs;
-const segmenter = new Sam2Segmenter(async () => ({
+const segmenter = new ZimSegmenter(async () => ({
   runEncoder: async (...args) => {
     const started = performance.now();
     const result = await runtime.runEncoder(...args);
@@ -69,7 +70,7 @@ for (let run = 0; run < runs; run += 1) {
   decodeMs = undefined;
   const prepared = await prepare(run);
   const mask = await prepared.segment({
-    points: [[width / 2, height / 2]],
+    points: [{ at: [width / 2, height / 2], label: 1 }],
   });
   assert.equal(mask.w, width);
   assert.equal(mask.h, height);
@@ -78,8 +79,8 @@ for (let run = 0; run < runs; run += 1) {
     "each sample must execute both models",
   );
   assert(
-    mask.data.every((value) => value === 0 || value === 1),
-    "mask must be binary",
+    mask.data.every((value) => Number.isFinite(value) && value >= 0 && value <= 1),
+    "mask must contain finite fractional coverage",
   );
   const currentHash = hash(
     new Uint8Array(mask.data.buffer, mask.data.byteOffset, mask.data.byteLength),

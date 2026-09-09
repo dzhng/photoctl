@@ -3,13 +3,13 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PINNED_MODEL_RELEASE, type LibraryHandle } from "@photoctl/library";
 import {
-  createSam2OnnxRuntime,
-  Sam2Segmenter,
+  createSegmentationRuntime,
+  ZimSegmenter,
   loadActiveDocument,
   readActiveDevelopState,
-  prepareSam2Frame,
+  prepareSegmentationFrame,
   readCanvasPlan,
-  sam2GroundingPixels,
+  segmentationGroundingPixels,
   type SceneLinearImage,
   type RuntimeDiagnosticSink,
   type RuntimeDiagnostics,
@@ -28,8 +28,8 @@ import type { SegmentationDependencies } from "./handlers/segment.js";
 import { withGenerationSource } from "./handlers/generation-source.js";
 import { graphSourceWarning } from "./graph-source.js";
 
-export function createLibrarySegmenter(libraryPath: string): Sam2Segmenter {
-  return new Sam2Segmenter(async (diagnostics) => {
+export function createLibrarySegmenter(libraryPath: string): ZimSegmenter {
+  return new ZimSegmenter(async (diagnostics) => {
     const manifest = PINNED_MODEL_RELEASE;
     const bytes = await Promise.all(
       ["encoder.onnx", "decoder.onnx"].map(async (file) => {
@@ -40,20 +40,20 @@ export function createLibrarySegmenter(libraryPath: string): Sam2Segmenter {
         } catch {
           throw new PhotoctlError(
             "provider_unconfigured",
-            "Pinned SAM model is missing; run doctor --fetch-models",
+            "Pinned Segmentation model is missing; run doctor --fetch-models",
             { reason: "model_missing", file },
           );
         }
         if (!artifact || createHash("sha256").update(data).digest("hex") !== artifact.sha256)
           throw new PhotoctlError(
             "provider_unconfigured",
-            "Pinned SAM model hash does not match; run doctor --fetch-models",
+            "Pinned Segmentation model hash does not match; run doctor --fetch-models",
             { reason: "model_hash_mismatch", file },
           );
         return data;
       }),
     );
-    return createSam2OnnxRuntime(bytes[0]!, bytes[1]!, diagnostics);
+    return createSegmentationRuntime(bytes[0]!, bytes[1]!, diagnostics);
   });
 }
 
@@ -89,14 +89,20 @@ export async function configuredSegmentation(
     photo,
     {},
     async ({ source, sourceContext: selectedContext, fallback: selectedFallback }) => {
-      if (typeof source !== "function") throw new Error("SAM source must materialize pixels");
+      if (typeof source !== "function")
+        throw new Error("Segmentation source must materialize pixels");
       const { image } = await source();
       if (image.space !== "scene-linear-rec2020")
-        throw new Error("SAM source is not scene-linear Rec.2020");
-      const frame = await prepareSam2Frame(image as SceneLinearImage, develop, photo, canvas);
+        throw new Error("Segmentation source is not scene-linear Rec.2020");
+      const frame = await prepareSegmentationFrame(
+        image as SceneLinearImage,
+        develop,
+        photo,
+        canvas,
+      );
       let groundingImage;
       if (text) {
-        const pixels = sam2GroundingPixels(frame.image);
+        const pixels = segmentationGroundingPixels(frame.image);
         groundingImage = {
           bytes: await sharp(pixels.data, {
             raw: { width: pixels.w, height: pixels.h, channels: 3 },
@@ -141,7 +147,7 @@ export async function configuredSegmentation(
             prepared.segment(
               {
                 projection: { dimensions: { w: photo.w, h: photo.h }, baseToImage: matrix },
-                points: mappedPoints,
+                points: mappedPoints.map((at) => ({ at, label: 1 })),
                 ...(box ? { box: boxSpace === "render" ? box : mapBox(box) } : {}),
               },
               diagnostics,

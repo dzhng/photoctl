@@ -3,7 +3,7 @@ import { segmentInstancesDataSchema } from "@photoctl/protocol";
 import {
   loadActiveDocument,
   rasterizeManualMask,
-  Sam2Segmenter,
+  ZimSegmenter,
   type MaskImage,
 } from "@photoctl/render";
 import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
@@ -73,7 +73,7 @@ test.each([false, true])(
   },
 );
 
-test("slow SAM initialization reports progress before inference can proceed", async () => {
+test("slow segmentation initialization reports progress before inference can proceed", async () => {
   const fixture = await fixtureLibrary("slow-initialization");
   let reports = 0;
   let release = () => {};
@@ -96,7 +96,7 @@ test("slow SAM initialization reports progress before inference can proceed", as
             if (reports === 2) release();
           }
         },
-        segmenter: new Sam2Segmenter(async () => {
+        segmenter: new ZimSegmenter(async () => {
           await new Promise<void>((resolve, reject) => {
             release = resolve;
             timer = setTimeout(
@@ -109,15 +109,17 @@ test("slow SAM initialization reports progress before inference can proceed", as
             decoderInputNames: () => [],
             runEncoder: async () =>
               [
-                [1, 32, 256, 256],
-                [1, 64, 128, 128],
                 [1, 256, 64, 64],
+                [1, 64, 512, 512],
+                [1, 128, 256, 256],
+                [1, 256, 128, 128],
               ].map((dimensions) => ({
                 dimensions,
                 data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
               })),
             runDecoder: async () => [
-              { dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) },
+              { dimensions: [1, 4, 512, 512], data: new Float32Array(4 * 512 * 512).fill(1000) },
+              { dimensions: [1, 4], data: new Float32Array([1, 0, 0, 0]) },
             ],
           };
         }),
@@ -136,7 +138,7 @@ test("failed local initialization emits runtime diagnostics through command stde
   const fixture = await fixtureLibrary("runtime-diagnostic");
   const events: unknown[] = [];
   try {
-    const segmenter = new Sam2Segmenter(async (diagnostics) => {
+    const segmenter = new ZimSegmenter(async (diagnostics) => {
       diagnostics?.({
         diagnostics: [
           {
@@ -209,23 +211,25 @@ test("empty production grounding preserves JPEG bytes without encoding or evicti
     const cacheRoot = await pinFixture(fixture);
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("No fixture port");
-    const segmenter = new Sam2Segmenter(
+    const segmenter = new ZimSegmenter(
       async () => ({
         encoderInputNames: () => [],
         decoderInputNames: () => [],
         runEncoder: async () => {
           encodes++;
           return [
-            [1, 32, 256, 256],
-            [1, 64, 128, 128],
             [1, 256, 64, 64],
+            [1, 64, 512, 512],
+            [1, 128, 256, 256],
+            [1, 256, 128, 128],
           ].map((dimensions) => ({
             dimensions,
             data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
           }));
         },
         runDecoder: async () => [
-          { dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) },
+          { dimensions: [1, 4, 512, 512], data: new Float32Array(4 * 512 * 512).fill(1000) },
+          { dimensions: [1, 4], data: new Float32Array([1, 0, 0, 0]) },
         ],
       }),
       1,
@@ -316,26 +320,30 @@ test("production text grounding uses the cropped render box and commits masks in
     const context = {
       version: "test",
       library: fixture.handle,
-      segmenter: new Sam2Segmenter(async () => ({
+      segmenter: new ZimSegmenter(async () => ({
         encoderInputNames: () => [],
         decoderInputNames: () => [],
         runEncoder: async () =>
           [
-            [1, 32, 256, 256],
-            [1, 64, 128, 128],
             [1, 256, 64, 64],
+            [1, 64, 512, 512],
+            [1, 128, 256, 256],
+            [1, 256, 128, 128],
           ].map((dimensions) => ({
             dimensions,
             data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
           })),
         runDecoder: async (inputs) => {
-          expect([...inputs.find((input) => input.name === "point_labels")!.i32Data!]).toEqual([
+          expect([...inputs.find((input) => input.name === "point_labels")!.f32Data!]).toEqual([
             2, 3,
           ]);
           expect([...inputs.find((input) => input.name === "point_coords")!.f32Data!]).toEqual([
-            128, 0, 896, 1024,
+            0, 0, 768, 1024,
           ]);
-          return [{ dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) }];
+          return [
+            { dimensions: [1, 4, 512, 512], data: new Float32Array(4 * 512 * 512).fill(1000) },
+            { dimensions: [1, 4], data: new Float32Array([1, 0, 0, 0]) },
+          ];
         },
       })),
     };
@@ -405,22 +413,24 @@ test("default command adapter segments pinned develop pixels and dry-run leaves 
     const cacheRoot = await pinFixture(fixture);
     await fixture.handle.query("UPDATE photos SET w=16,h=12 WHERE id=$1", [fixture.id]);
     let encodes = 0;
-    const segmenter = new Sam2Segmenter(async () => ({
+    const segmenter = new ZimSegmenter(async () => ({
       encoderInputNames: () => [],
       decoderInputNames: () => [],
       runEncoder: async () => {
         encodes++;
         return [
-          [1, 32, 256, 256],
-          [1, 64, 128, 128],
           [1, 256, 64, 64],
+          [1, 64, 512, 512],
+          [1, 128, 256, 256],
+          [1, 256, 128, 128],
         ].map((dimensions) => ({
           dimensions,
           data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
         }));
       },
       runDecoder: async () => [
-        { dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) },
+        { dimensions: [1, 4, 512, 512], data: new Float32Array(4 * 512 * 512).fill(1000) },
+        { dimensions: [1, 4], data: new Float32Array([1, 0, 0, 0]) },
       ],
     }));
     const request = {
@@ -458,7 +468,7 @@ test("default command adapter segments pinned develop pixels and dry-run leaves 
   }
 });
 
-test("production SAM reports missing model files before touching the document", async () => {
+test("production segmentation reports missing model files before touching the document", async () => {
   const fixture = await fixtureLibrary("release");
   try {
     const response = await dispatch(
@@ -481,7 +491,7 @@ test("production SAM reports missing model files before touching the document", 
   }
 });
 
-test("SAM uses the catalog's already-oriented portrait dimensions", async () => {
+test("segmentation uses the catalog's already-oriented portrait dimensions", async () => {
   const fixture = await fixtureLibrary("portrait");
   try {
     await fixture.handle.query("UPDATE photos SET orientation = 6 WHERE id = $1", [fixture.id]);
@@ -705,7 +715,7 @@ test("text with no grounded matches succeeds without creating a revision", async
   }
 });
 
-test("a non-positive SAM box is rejected before local segmentation", async () => {
+test("a non-positive segmentation box is rejected before local segmentation", async () => {
   const fixture = await fixtureLibrary("invalid-box");
   try {
     const response = await dispatch(

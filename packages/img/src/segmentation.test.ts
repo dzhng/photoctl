@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createSam2OnnxRuntime, sam2MaskFromLogits } from "./index.js";
+import { createSegmentationRuntime } from "./index.js";
 import { setFlagsFromString } from "node:v8";
 import { runInNewContext } from "node:vm";
 import { setImmediate } from "node:timers/promises";
@@ -18,11 +18,11 @@ const identityOnnx = Uint8Array.from([
   0x00, 0x10, 0x15,
 ]);
 
-test("a process with a live SAM runtime exits cleanly after inference", () => {
+test("a process with a live segmentation runtime exits cleanly after inference", () => {
   const script = `
-    import { createSam2OnnxRuntime } from '@photoctl/img';
+    import { createSegmentationRuntime } from '@photoctl/img';
     const model = Uint8Array.from(${JSON.stringify(Array.from(identityOnnx))});
-    globalThis.runtime = createSam2OnnxRuntime(model, model);
+    globalThis.runtime = createSegmentationRuntime(model, model);
     const [output] = await globalThis.runtime.runEncoder([
       { name: 'x', dimensions: [1, 1, 2, 2], f32Data: new Float32Array([1, 2, 3, 4]) }
     ], ['y']);
@@ -69,10 +69,10 @@ test("initialization warnings survive a later decoder construction failure", () 
   ]);
   const diagnostics: Array<{ message: string }> = [];
   expect(() =>
-    createSam2OnnxRuntime(warningOnnx, Buffer.from("invalid"), (batch) => {
+    createSegmentationRuntime(warningOnnx, Buffer.from("invalid"), (batch) => {
       diagnostics.push(...batch.diagnostics);
     }),
-  ).toThrow("invalid SAM decoder");
+  ).toThrow("invalid segmentation decoder");
   expect(
     diagnostics.some(
       ({ message }) => message.includes("unused") && message.includes("Removing initializer"),
@@ -87,7 +87,7 @@ test("a live runtime does not retain the initialization request's diagnostic sin
       messages.push(...batch.diagnostics.map((diagnostic) => diagnostic.message));
     };
     return {
-      runtime: createSam2OnnxRuntime(identityOnnx, identityOnnx, sink),
+      runtime: createSegmentationRuntime(identityOnnx, identityOnnx, sink),
       weak: new WeakRef(sink),
     };
   })();
@@ -100,7 +100,7 @@ test("a live runtime does not retain the initialization request's diagnostic sin
 });
 
 test("a failed inference leaves the session usable for queued requests", async () => {
-  const runtime = createSam2OnnxRuntime(identityOnnx, identityOnnx);
+  const runtime = createSegmentationRuntime(identityOnnx, identityOnnx);
   const input = (value: number) => [
     {
       name: "x",
@@ -135,7 +135,7 @@ test("inference diagnostics accompany a failed operation without leaking into th
     ...field(98, tensorInfo("y")),
   ];
   const model = Uint8Array.from([8, 10, ...field(58, graph), ...field(66, [16, 21])]);
-  const runtime = createSam2OnnxRuntime(model, identityOnnx);
+  const runtime = createSegmentationRuntime(model, identityOnnx);
   const messages: string[] = [];
   await expect(
     runtime.runEncoder(
@@ -160,8 +160,8 @@ test("inference diagnostics accompany a failed operation without leaking into th
   expect(next).toEqual([]);
 });
 
-test("the TypeScript seam supplies ONNX bytes to CPU sessions and maps logits", async () => {
-  const runtime = createSam2OnnxRuntime(identityOnnx, identityOnnx);
+test("the TypeScript seam supplies ONNX bytes to CPU sessions and returns requested tensors", async () => {
+  const runtime = createSegmentationRuntime(identityOnnx, identityOnnx);
   expect(runtime.encoderInputNames()).toEqual(["x"]);
   expect(runtime.decoderInputNames()).toEqual(["x"]);
   expect(
@@ -170,15 +170,4 @@ test("the TypeScript seam supplies ONNX bytes to CPU sessions and maps logits", 
       ["y"],
     ),
   ).toEqual([{ dimensions: [1, 1, 2, 2], data: new Float32Array([1, 2, 3, 4]) }]);
-  expect(
-    sam2MaskFromLogits(new Float32Array([-1, 1, -0.25, 0.25]), 2, 2, {
-      modelSize: 2,
-      resizedWidth: 2,
-      resizedHeight: 2,
-      offsetX: 0,
-      offsetY: 0,
-      baseWidth: 2,
-      baseHeight: 2,
-    }),
-  ).toEqual(new Float32Array([0, 1, 0, 1]));
 });

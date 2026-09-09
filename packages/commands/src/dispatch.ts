@@ -50,7 +50,7 @@ export interface DispatchContext {
   stream?: (row: unknown) => void | Promise<void>;
   previewCoordinator?: PreviewCoordinator;
   segmentation?: SegmentationDependencies;
-  segmenter?: import("@photoctl/render").Sam2Segmenter;
+  segmenter?: import("@photoctl/render").ZimSegmenter;
   fill?: FillDependencies;
   develop?: DevelopDependencies;
   generate?: GenerateDependencies;

@@ -1,5 +1,21 @@
 # 04 — One bounded local engine
 
+The [runtime audit](../assets/zim-contract/runtime-budget.json) records cold and
+16-encode measurements, including the failed cold-only memory estimate. The
+canary covers the measured warm transient as well as cold initialization;
+changing that operational budget does not relax scope or boundary acceptance.
+The [repeated probe](../assets/zim-contract/repeated-runtime.json) retains the
+complete follow-up trace. The [unprimed visual review](../assets/native-zim/critique.md)
+supports appearance preservation at the supplied reference viewport, with the
+inherited limitations explicitly retained.
+
+Engine verification passed: six native-boundary tests, five runtime/cache tests,
+three pixel tests, the rotated-crop test, and 42 command/canvas tests. Typecheck,
+native/TS builds and scoped lint passed. Independent code review found no
+actionable defects. Automatic text guidance is still the command slice's work;
+manual CLI positives are converted at the existing configured boundary until
+that slice moves signed-point provenance into the shared request contract.
+
 Seam: adapt and rename the existing native ONNX worker and render segmenter to
 their ZIM responsibilities. One worker/session lifecycle and diagnostic sink,
 no second runtime or retained SAM2 compatibility path. Native tensor transport

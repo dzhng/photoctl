@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
-import { prepareSam2Frame } from "./sam2-frame.js";
-import { Sam2Segmenter } from "./sam2-runtime.js";
+import { prepareSegmentationFrame } from "./segmentation-frame.js";
+import { ZimSegmenter } from "./segmentation-runtime.js";
 
-test("cropped quarter-turn SAM masks return to base space without selecting outside the crop", async () => {
+test("cropped quarter-turn segmentation masks return to base space without selecting outside the crop", async () => {
   const source = {
     w: 6,
     h: 4,
@@ -13,26 +13,28 @@ test("cropped quarter-turn SAM masks return to base space without selecting outs
     blackLevel: 0,
     wbPreApplied: true,
   };
-  const frame = await prepareSam2Frame(
+  const frame = await prepareSegmentationFrame(
     source,
     { crop: { x: 1, y: 1, w: 4, h: 2 }, rotate: 90 },
     source,
   );
   expect(frame.point([2, 1.5])).toEqual([1.5, 1]);
-  const engine = new Sam2Segmenter(async () => ({
+  const engine = new ZimSegmenter(async () => ({
     encoderInputNames: () => [],
     decoderInputNames: () => [],
     runEncoder: async () =>
       [
-        [1, 32, 256, 256],
-        [1, 64, 128, 128],
         [1, 256, 64, 64],
+        [1, 64, 512, 512],
+        [1, 128, 256, 256],
+        [1, 256, 128, 128],
       ].map((dimensions) => ({
         dimensions,
         data: new Float32Array(dimensions.reduce((a, b) => a * b, 1)),
       })),
     runDecoder: async () => [
-      { dimensions: [1, 1, 256, 256], data: new Float32Array(256 * 256).fill(1) },
+      { dimensions: [1, 4, 512, 512], data: new Float32Array(4 * 512 * 512).fill(1000) },
+      { dimensions: [1, 4], data: new Float32Array([1, 0, 0, 0]) },
     ],
   }));
   const prepared = await engine.prepare({
@@ -41,7 +43,7 @@ test("cropped quarter-turn SAM masks return to base space without selecting outs
     image: frame.image,
   });
   const mask = await prepared.segment({
-    points: [frame.point([2, 1.5])],
+    points: [{ at: frame.point([2, 1.5]), label: 1 }],
     projection: { dimensions: source, baseToImage: frame.matrix },
   });
   expect([mask.w, mask.h]).toEqual([6, 4]);

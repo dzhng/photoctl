@@ -67,27 +67,14 @@ interface NativeBinding {
     threshold: number,
     inclusive: boolean,
   ): Promise<Float32Array>;
-  createSam2OnnxRuntime(
+  createSegmentationRuntime(
     encoder: Uint8Array,
     decoder: Uint8Array,
   ): {
-    runtime?: NativeSam2OnnxRuntime;
+    runtime?: NativeSegmentationRuntime;
     error?: string;
     diagnostics: RuntimeDiagnostics;
   };
-  sam2MaskFromLogits(
-    logits: Float32Array,
-    logitWidth: number,
-    logitHeight: number,
-    modelSize: number,
-    resizedWidth: number,
-    resizedHeight: number,
-    offsetX: number,
-    offsetY: number,
-    baseWidth: number,
-    baseHeight: number,
-    baseToModel?: number[],
-  ): Float32Array;
   atomicRenameNoReplace(source: string, destination: string): AtomicRenameOutcome;
   librawVersion(): string;
   probeLibraw(path: string): NativeProbe;
@@ -285,15 +272,15 @@ export function fitWhiteBalance(mean: readonly number[]): WhiteBalanceFit {
   return requiredBinding().fitWhiteBalance(mean);
 }
 
-interface NativeSam2OnnxRuntime {
+interface NativeSegmentationRuntime {
   encoderInputNames(): string[];
   decoderInputNames(): string[];
-  runEncoder(inputs: Sam2TensorInput[], outputs: string[]): Promise<NativeTensorOutcome>;
-  runDecoder(inputs: Sam2TensorInput[], outputs: string[]): Promise<NativeTensorOutcome>;
+  runEncoder(inputs: SegmentationTensorInput[], outputs: string[]): Promise<NativeTensorOutcome>;
+  runDecoder(inputs: SegmentationTensorInput[], outputs: string[]): Promise<NativeTensorOutcome>;
 }
 
 interface NativeTensorOutcome {
-  tensors?: Sam2TensorOutput[];
+  tensors?: SegmentationTensorOutput[];
   error?: string;
   diagnostics: RuntimeDiagnostics;
 }
@@ -311,27 +298,27 @@ export interface RuntimeDiagnostics {
 }
 export type RuntimeDiagnosticSink = (batch: RuntimeDiagnostics) => void;
 
-export type Sam2TensorInput = {
+export type SegmentationTensorInput = {
   name: string;
   dimensions: number[];
 } & ({ f32Data: Float32Array; i32Data?: never } | { i32Data: Int32Array; f32Data?: never });
-export interface Sam2TensorOutput {
+export interface SegmentationTensorOutput {
   dimensions: number[];
   data: Float32Array;
 }
-export interface Sam2OnnxRuntime {
+export interface SegmentationRuntime {
   encoderInputNames(): string[];
   decoderInputNames(): string[];
   runEncoder(
-    inputs: Sam2TensorInput[],
+    inputs: SegmentationTensorInput[],
     outputs: string[],
     diagnostics?: RuntimeDiagnosticSink,
-  ): Promise<Sam2TensorOutput[]>;
+  ): Promise<SegmentationTensorOutput[]>;
   runDecoder(
-    inputs: Sam2TensorInput[],
+    inputs: SegmentationTensorInput[],
     outputs: string[],
     diagnostics?: RuntimeDiagnosticSink,
-  ): Promise<Sam2TensorOutput[]>;
+  ): Promise<SegmentationTensorOutput[]>;
 }
 
 export type AtomicRenameOutcome = "installed" | "exists" | "unsupported";
@@ -388,23 +375,23 @@ export interface NativeDevelopParameters {
 
 export class NativeImageUnavailableError extends Error {}
 
-export function createSam2OnnxRuntime(
+export function createSegmentationRuntime(
   encoder: Uint8Array,
   decoder: Uint8Array,
   diagnostics?: RuntimeDiagnosticSink,
-): Sam2OnnxRuntime {
-  const created = requiredBinding().createSam2OnnxRuntime(encoder, decoder);
+): SegmentationRuntime {
+  const created = requiredBinding().createSegmentationRuntime(encoder, decoder);
   diagnostics?.(created.diagnostics);
   if (created.error) throw new Error(created.error);
   const runtime = created.runtime;
-  if (!runtime) throw new Error("SAM runtime creation returned no runtime");
-  return wrapSam2Runtime(runtime);
+  if (!runtime) throw new Error("Segmentation runtime creation returned no runtime");
+  return wrapSegmentationRuntime(runtime);
 }
 
-function wrapSam2Runtime(runtime: NativeSam2OnnxRuntime): Sam2OnnxRuntime {
+function wrapSegmentationRuntime(runtime: NativeSegmentationRuntime): SegmentationRuntime {
   async function run(
     decoder: boolean,
-    inputs: Sam2TensorInput[],
+    inputs: SegmentationTensorInput[],
     outputs: string[],
     sink?: RuntimeDiagnosticSink,
   ) {
@@ -413,7 +400,7 @@ function wrapSam2Runtime(runtime: NativeSam2OnnxRuntime): Sam2OnnxRuntime {
       : runtime.runEncoder(inputs, outputs));
     sink?.(result.diagnostics);
     if (result.error) throw new Error(result.error);
-    if (!result.tensors) throw new Error("SAM inference returned no tensors");
+    if (!result.tensors) throw new Error("Segmentation inference returned no tensors");
     return result.tensors;
   }
   return {
@@ -422,38 +409,6 @@ function wrapSam2Runtime(runtime: NativeSam2OnnxRuntime): Sam2OnnxRuntime {
     runEncoder: (inputs, outputs, sink) => run(false, inputs, outputs, sink),
     runDecoder: (inputs, outputs, sink) => run(true, inputs, outputs, sink),
   };
-}
-
-export function sam2MaskFromLogits(
-  logits: Float32Array,
-  logitWidth: number,
-  logitHeight: number,
-  mapping: {
-    modelSize: number;
-    resizedWidth: number;
-    resizedHeight: number;
-    offsetX: number;
-    offsetY: number;
-    baseWidth: number;
-    baseHeight: number;
-    baseToModel?: readonly [number, number, number, number, number, number];
-  },
-): Float32Array {
-  return asFloat32Array(
-    requiredBinding().sam2MaskFromLogits(
-      logits,
-      logitWidth,
-      logitHeight,
-      mapping.modelSize,
-      mapping.resizedWidth,
-      mapping.resizedHeight,
-      mapping.offsetX,
-      mapping.offsetY,
-      mapping.baseWidth,
-      mapping.baseHeight,
-      mapping.baseToModel ? [...mapping.baseToModel] : undefined,
-    ),
-  );
 }
 
 /** Atomically moves a sibling file into an unoccupied destination. */

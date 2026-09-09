@@ -21,10 +21,10 @@ import { openRequestLibrary, type RequestEnv } from "../context.js";
 import { errorMessage } from "../errors.js";
 import { loadPhoto } from "../photo.js";
 import { configuredSegmentation } from "../segmentation.js";
-import type { Sam2Segmenter } from "@photoctl/render";
+import type { ZimSegmenter } from "@photoctl/render";
 import { createProgressHeartbeat } from "../progress.js";
 
-/* eslint-disable no-await-in-loop -- SAM decoder prompts stay ordered and bound peak mask memory. */
+/* eslint-disable no-await-in-loop -- Segmentation decoder prompts stay ordered and bound peak mask memory. */
 
 export interface SegmentationAdapter {
   segment(request: {
@@ -50,7 +50,7 @@ export async function segmentCommand(
   cwd: string,
   provided?: LibraryHandle,
   dependencies?: SegmentationDependencies,
-  segmenter?: Sam2Segmenter,
+  segmenter?: ZimSegmenter,
   emit?: (event: import("@photoctl/protocol").StderrEvent) => void | Promise<void>,
 ): Promise<Envelope> {
   const parsed = parseSegmentArguments(args);
@@ -225,7 +225,7 @@ export async function segmentCommand(
 
 interface ParsedSegment {
   id: string;
-  mode: "manual" | "sam";
+  mode: "manual" | "model";
   at: string[];
   box?: string;
   brush?: string;
@@ -263,11 +263,11 @@ function parseSegmentArguments(args: string[]): ParsedSegment {
   ) {
     throw new PhotoctlError(
       "usage",
-      "Selection refinement requires exactly one manual --box or --brush and no SAM prompts",
+      "Selection refinement requires exactly one manual --box or --brush and no Segmentation prompts",
     );
   }
   if (brush && (box || at.length > 0 || text !== undefined)) {
-    throw new PhotoctlError("usage", "--brush cannot be combined with SAM prompts");
+    throw new PhotoctlError("usage", "--brush cannot be combined with Segmentation prompts");
   }
   if (text !== undefined && box) {
     throw new PhotoctlError("usage", "--text cannot be combined with --box");
@@ -277,7 +277,7 @@ function parseSegmentArguments(args: string[]): ParsedSegment {
   }
   return {
     id: parsed.positionals[0]!,
-    mode: brush || (box && at.length === 0 && text === undefined) ? "manual" : "sam",
+    mode: brush || (box && at.length === 0 && text === undefined) ? "manual" : "model",
     at,
     ...(box ? { box } : {}),
     ...(brush ? { brush } : {}),

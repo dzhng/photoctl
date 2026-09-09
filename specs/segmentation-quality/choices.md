@@ -1,4 +1,25 @@
-# Grounding decisions
+# Implementation choices
+
+## Sound — native runtime diagnostic budget
+
+- **When:** engine cutover, slice 04.
+- **The choice:** allow a 10 GB peak in the native diagnostic probe. Selecting
+  successive photos with the accepted ViT-L model has a larger warm transient
+  than loading and selecting one photo. A cold-only budget would reject that
+  ordinary workload even when the cache stays bounded and repeated work
+  produces identical masks.
+- **The gap:** the plan required measurement but did not set the replacement
+  model's operational memory canary. It explicitly separated that canary from
+  quality requirements. The former SAM2 budget is not a viable ZIM budget.
+- **The reach:** this is a substantial memory requirement on the 48 GiB
+  acceptance Mac, not a claim that low-memory computers can run the model.
+  The probe still reports and fails budget overruns; no forced collection,
+  lower-quality model, extra cache or platform validation was added.
+- **Verdict:** sound. The complete repeated-encode workload informs the bound;
+  the [runtime audit](assets/zim-contract/runtime-budget.json) retains the failed
+  smaller estimate and the observations that distinguish a large working set
+  from accumulating per-photo history.
+- **Confidence:** medium.
 
 ## Restrict point conversion to the grounding response contract
 

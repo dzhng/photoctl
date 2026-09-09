@@ -54,10 +54,10 @@ target and an unprimed screenshot-critique as its last check. Include the
 user's reference viewport and full-frame/feature crops. Preview checkpoints
 are non-blocking opportunities to course-correct, not inferred acceptance.
 
-Remaining user choice: combining `--text` and `--at` currently sends the same
-click to every candidate. An instance hit-test with an ambiguity error was
-recommended and asked explicitly; do not silently change this public meaning.
-Slice 05 waits for that answer or preserves the current documented behavior.
+The user approved text-plus-click instance selection: text says what kind of
+thing and the click says which instance. Slice 05 must select the clicked match,
+report no match or ambiguity explicitly, and never apply the click to every
+candidate. No new flag is required.
 The actual whole-person automatic trial needs the configured gateway key;
 missing credentials do not block deterministic local port work.
 
