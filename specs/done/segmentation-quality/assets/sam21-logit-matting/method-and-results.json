@@ -1,0 +1,283 @@
+{
+  "experiment": "OneViTMatteSmall pass from originalLarge2048 confidence trimap; raw and standardtrimapconstrained alpha retained; no iterations,morphology,manualholes,tuning.",
+  "model_manifest": {
+    "model": "hustvl/vitmatte-small-composition-1k",
+    "snapshot": "/private/tmp/openphoto-vitmatte.5zPl0e/cache/hub/models--hustvl--vitmatte-small-composition-1k/snapshots/6a58ad7646403c1df626fbd746900aec7361ea1d",
+    "hashes": {
+      "model.safetensors": "bda9289db1bb6762d978b42d1c62ae3f34daf7497171a347a1d09657efd788cb",
+      "config.json": "ae1006f5a83227048b563b2e60709d4203e432b2276949ebef41a8cfeeeaf45f",
+      "README.md": "5545af4bf41cc017cd1a75ff096d27ff4e6e6ea0bb41c9a272dd4072a0fefaaf",
+      "preprocessor_config.json": "0db558038b96a3f5c97e46d4ec8966fcc479e9aa58a391bca60b5094a5f7fee0"
+    }
+  },
+  "inference": {
+    "rule": "Original2048 independently score-selected native logits<=-log(99)=>BG0,>=log(99)=>FG255,otherwiseunknown128; fixedequivalent sigmoid.01/.99,NOTcalibratedalpha. No morphology or tuning.",
+    "threshold": 4.59511985013459,
+    "selected_seed_index": 2,
+    "seed_score": 0.8643166422843933,
+    "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+    "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+    "seed_path": "/private/tmp/openphoto-sam21-2048.DVycY8/hair/all-native-logits-float32.npy",
+    "seed_sha256": "27e315928789d78b0bc41b0f175aaaea96f2d490f11f507165ee1c6a3cb11045",
+    "model_path": "/private/tmp/openphoto-vitmatte.5zPl0e/cache/hub/models--hustvl--vitmatte-small-composition-1k/snapshots/6a58ad7646403c1df626fbd746900aec7361ea1d",
+    "model_manifest": "/private/tmp/openphoto-vitmatte.5zPl0e/model-manifest.json",
+    "model_load": "Existinglocalcache,safetensors,local_files_only,offline,noinstallation",
+    "load_seconds": 0.08147904102224857,
+    "inference_seconds": 7.755337374983355,
+    "inference_peak_rss_bytes_macos": 6677954560,
+    "torch": "2.14.0",
+    "transformers": "5.16.1",
+    "torch_threads": 4,
+    "torch_interop_threads": 1,
+    "device": "cpu",
+    "dtype": "float32",
+    "input_shape": [
+      1,
+      4,
+      1088,
+      1632
+    ],
+    "source_shape": [
+      1080,
+      1614
+    ],
+    "processor": "ExistingViTMatteprocessor normalizes.5/.5,rescales1/255,padsdivisibility32; nativeimagepreserved; cropoutputtounpaddedshape",
+    "trimap_counts": {
+      "0": 392010,
+      "128": 1335059,
+      "255": 16051
+    },
+    "trimap_fraction": {
+      "0": 0.22488985267795678,
+      "128": 0.7659019459360228,
+      "255": 0.009208201386020468
+    },
+    "raw_alpha_range": [
+      8.834283704572954e-08,
+      1.0
+    ],
+    "constrained_rule": "clip raw to[0,1],forceBG0/FG1onlywherefixedtrimapdefines; unknownpreservesraw",
+    "points": [
+      [
+        968,
+        108
+      ],
+      [
+        1323,
+        346
+      ],
+      [
+        1469,
+        594
+      ],
+      [
+        1291,
+        886
+      ],
+      [
+        1130,
+        648
+      ],
+      [
+        888,
+        572
+      ],
+      [
+        807,
+        810
+      ],
+      [
+        484,
+        432
+      ],
+      [
+        646,
+        54
+      ],
+      [
+        161,
+        540
+      ],
+      [
+        1372,
+        1058
+      ],
+      [
+        484,
+        994
+      ]
+    ],
+    "labels": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "python": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]"
+  },
+  "variants": [
+    {
+      "variant": "A-binary",
+      "mean_alpha": 0.24584881961345673,
+      "coverage_above_half": 0.24584882280049566,
+      "point_alpha": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "point_threshold_half_consistency": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "variant": "B-raw",
+      "mean_alpha": 0.5547974705696106,
+      "coverage_above_half": 0.5828870072054706,
+      "point_alpha": [
+        0.8730581402778625,
+        0.9995731711387634,
+        0.9990329742431641,
+        0.9999508857727051,
+        0.9999786615371704,
+        0.39577099680900574,
+        0.8401026129722595,
+        0.8877868056297302,
+        1.4875162378302775e-05,
+        3.1651309200242395e-06,
+        0.13115759193897247,
+        0.19903679192066193
+      ],
+      "point_threshold_half_consistency": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "variant": "C-constrained",
+      "mean_alpha": 0.5537564754486084,
+      "coverage_above_half": 0.5820551654504567,
+      "point_alpha": [
+        0.8730581402778625,
+        0.9995731711387634,
+        0.9990329742431641,
+        0.9999508857727051,
+        0.9999786615371704,
+        0.39577099680900574,
+        0.8401026129722595,
+        0.8877868056297302,
+        0.0,
+        0.0,
+        0.13115759193897247,
+        0.0
+      ],
+      "point_threshold_half_consistency": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "crops": {
+    "top": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "right": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "face": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "bottom": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "flowers": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "artifact": [
+      820,
+      80,
+      1050,
+      220
+    ],
+    "artifact-context": [
+      700,
+      60,
+      1080,
+      260
+    ],
+    "neck": [
+      1060,
+      650,
+      1300,
+      980
+    ]
+  },
+  "pair_labels": {
+    "A": "Original2048binary",
+    "B": "ViTMatteraw",
+    "C": "ViTMattetrimapconstrained"
+  },
+  "interpretation": "Thetrimapusesuncalibratedsegmentationlogits asfixedconfidenceheuristic. Mattingoutputs aretrainedalphaestimates, not groundtruth; threshold.5promptchecks anddistances diagnostic only. No qualityacceptance."
+}

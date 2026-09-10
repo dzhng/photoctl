@@ -1,0 +1,16 @@
+{
+  "original": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/zim-original12-alpha16.png",
+  "original_sha256": "49ed3fc1f5d5568f7ebeade1884131fd5f8682f1b5b58615ba8f6c411ffedf92",
+  "retained_sha256": "49ed3fc1f5d5568f7ebeade1884131fd5f8682f1b5b58615ba8f6c411ffedf92",
+  "gray8_sha256": "1079f2f490bdd300b659c149d511f36ad74319998bc8336df3f00027a6298672",
+  "conversion": "np.rint(alpha16.astype(float64) / 65535 * 255).astype(uint8)",
+  "official_threshold": 128,
+  "equivalent_original_threshold": 32768,
+  "binary_equality_asserted_on_all_actual_pixels": true,
+  "shape": [
+    1080,
+    1614
+  ],
+  "foreground_pixels": 466671,
+  "all_65536_levels_tested": "../test-zim-green.log"
+}

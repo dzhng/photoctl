@@ -1,0 +1,295 @@
+{
+  "control_manifest": "/private/tmp/openphoto-sam21-control.QOaGJ8/method-and-results.json",
+  "control_environment": "/private/tmp/openphoto-sam21-control.QOaGJ8/environment.json",
+  "official_code_and_weights": "Same unmodified official clone and Small/Large checkpoints recorded in control manifest; weights_only enforced.",
+  "change": "Portrait only: multimask_output=False; one returned mask, not visual selection. No new points, box, mask input, iteration or tuning. Native logits retained with return_logits=True then threshold >0 (same binary criterion).",
+  "defaults": "Official build_sam2 apply_postprocessing=True retained: dynamic_multimask_via_stability=True, delta0.05 threshold0.98. Predictor max_hole_area=0,max_sprinkle_area=0. No optional CUDA cleanup.",
+  "fallback": "Default fallback can return best multimask token when single-token stability is below threshold. Branch not instrumented; numerical equality with previous selected low-res logits recorded.",
+  "runtime": "Same read-only venv, official clone PYTHONPATH, CPU float32, four intra-op/one inter-op threads, eval/inference_mode,seed0; 180s watchdog each; exactly two calls.",
+  "visuals": "Native source/mask/40%green overlay/black/white, all five hair feature crops nearest-neighbor2x. A=earlier multimask argmax; B=single-output mode.",
+  "target": "Hair only, excluding skin, flowers, clothing and background. No reference mask; prompt consistency and differences are diagnostic only.",
+  "crops": {
+    "top": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "right": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "face": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "bottom": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "flowers": [
+      660,
+      670,
+      1060,
+      920
+    ]
+  },
+  "runs": [
+    {
+      "variant": "small",
+      "subject": "hair",
+      "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+      "points": [
+        [
+          968,
+          108
+        ],
+        [
+          1323,
+          346
+        ],
+        [
+          1469,
+          594
+        ],
+        [
+          1291,
+          886
+        ],
+        [
+          1130,
+          648
+        ],
+        [
+          888,
+          572
+        ],
+        [
+          807,
+          810
+        ],
+        [
+          484,
+          432
+        ],
+        [
+          646,
+          54
+        ],
+        [
+          161,
+          540
+        ],
+        [
+          1372,
+          1058
+        ],
+        [
+          484,
+          994
+        ]
+      ],
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_s.yaml",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 1.3655197080224752,
+      "encoder_seconds": 0.7738839170197025,
+      "decoder_and_native_upsample_seconds": 0.02930508297868073,
+      "inference_seconds": 0.8031889999983832,
+      "peak_rss_bytes": 1299873792,
+      "score": 0.9430591464042664,
+      "coverage": 0.22772844095644593,
+      "point_inclusion": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "prompt_satisfied": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "multimask_output": false,
+      "return_logits": true,
+      "return_logits_note": "Retains native float32 values; binary result uses same official >0 threshold. Does not change decoder inference.",
+      "dynamic_multimask_via_stability": true,
+      "stability_delta": 0.05,
+      "stability_threshold": 0.98,
+      "fallback_note": "Official default retained: if token-0 stability <0.98, returns best score among tokens1..3. No forced token choice. Actual branch is not instrumented.",
+      "equal_to_prior_multimask_lowres": false,
+      "prior_multimask_selected_index": 1,
+      "prior_multimask_score": 0.9263045787811279,
+      "prior_multimask_coverage": 0.24032998301895453,
+      "disagreement_fraction": 0.012771352517325255,
+      "mask_iou_between_modes": 0.9468778634697618,
+      "interpretation": "Prompt-mode diagnostic, not accuracy or acceptance."
+    },
+    {
+      "variant": "large",
+      "subject": "hair",
+      "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+      "points": [
+        [
+          968,
+          108
+        ],
+        [
+          1323,
+          346
+        ],
+        [
+          1469,
+          594
+        ],
+        [
+          1291,
+          886
+        ],
+        [
+          1130,
+          648
+        ],
+        [
+          888,
+          572
+        ],
+        [
+          807,
+          810
+        ],
+        [
+          484,
+          432
+        ],
+        [
+          646,
+          54
+        ],
+        [
+          161,
+          540
+        ],
+        [
+          1372,
+          1058
+        ],
+        [
+          484,
+          994
+        ]
+      ],
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_l.yaml",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 0.5189817920327187,
+      "encoder_seconds": 2.3827179160434753,
+      "decoder_and_native_upsample_seconds": 0.017658208962529898,
+      "inference_seconds": 2.400376125006005,
+      "peak_rss_bytes": 2708094976,
+      "score": 0.9512405395507812,
+      "coverage": 0.24009591995961266,
+      "point_inclusion": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "prompt_satisfied": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "multimask_output": false,
+      "return_logits": true,
+      "return_logits_note": "Retains native float32 values; binary result uses same official >0 threshold. Does not change decoder inference.",
+      "dynamic_multimask_via_stability": true,
+      "stability_delta": 0.05,
+      "stability_threshold": 0.98,
+      "fallback_note": "Official default retained: if token-0 stability <0.98, returns best score among tokens1..3. No forced token choice. Actual branch is not instrumented.",
+      "equal_to_prior_multimask_lowres": false,
+      "prior_multimask_selected_index": 2,
+      "prior_multimask_score": 0.9589996933937073,
+      "prior_multimask_coverage": 0.2494406581302492,
+      "disagreement_fraction": 0.00934473817063656,
+      "mask_iou_between_modes": 0.9625372293326894,
+      "interpretation": "Prompt-mode diagnostic, not accuracy or acceptance."
+    }
+  ]
+}

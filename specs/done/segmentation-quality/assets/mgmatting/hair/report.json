@@ -1,0 +1,21 @@
+{
+  "status": "complete",
+  "kind": "hair",
+  "device": "cpu",
+  "dtype": "torch.float32",
+  "threads": 4,
+  "forward_and_output_seconds": 1.9523800410097465,
+  "total_seconds": 2.7255338330287486,
+  "peak_rss_bytes": 6480216064,
+  "native_shape": [
+    1080,
+    1614
+  ],
+  "raw_nonzero_pixels": 1742867,
+  "published_nonzero_pixels": 562620,
+  "postprocess_changed_pixels": 1180247,
+  "alpha_sha256": {
+    "raw.png": "a887952e126db8ba55b6af9a4ac6f032052bddda79ba57aab42d1a9b041b6987",
+    "published.png": "63998236ef3e40353b20b26b060df58448d8fb9e204b9091f741acdb2e20a9f0"
+  }
+}

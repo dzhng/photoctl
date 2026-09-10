@@ -1,0 +1,23 @@
+{
+  "status": "complete",
+  "kind": "zim-guidance",
+  "device": "cpu",
+  "dtype": "torch.float32",
+  "threads": 4,
+  "forward_and_output_seconds": 2.0693828329676762,
+  "total_seconds": 2.8723861249163747,
+  "peak_rss_bytes": 6496370688,
+  "native_shape": [
+    1080,
+    1614
+  ],
+  "raw_nonzero_pixels": 1742679,
+  "published_nonzero_pixels": 553116,
+  "postprocess_changed_pixels": 1189563,
+  "alpha_sha256": {
+    "raw.png": "37ea3265924568594e2f36f031ab19a0847aaf87aed64e0824f2bc501673453f",
+    "guidance-original16.png": "49ed3fc1f5d5568f7ebeade1884131fd5f8682f1b5b58615ba8f6c411ffedf92",
+    "published.png": "393aa3f3c24ef8ed565c4fb5bdc444fa157dea8b42075582a40a374021f06e25",
+    "guidance-gray8.png": "1079f2f490bdd300b659c149d511f36ad74319998bc8336df3f00027a6298672"
+  }
+}

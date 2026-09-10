@@ -1,0 +1,218 @@
+[
+  {
+    "region": "full",
+    "box": [
+      0,
+      0,
+      1614,
+      1080
+    ],
+    "original2048_coverage": 0.24584882280049566,
+    "flip_back_coverage": 0.2504503419156455,
+    "original_nonpositive_pixels": 1314576,
+    "flip_nonpositive_pixels": 1306555,
+    "disagreement_fraction": 0.010700927073293865,
+    "mask_iou_between_orientations": 0.9577872775702055,
+    "mean_abs_logit_difference": 0.6664495468139648,
+    "original_logit_min_max": [
+      -7.318628787994385,
+      6.848241806030273
+    ],
+    "flip_logit_min_max": [
+      -6.429015159606934,
+      5.928539276123047
+    ]
+  },
+  {
+    "region": "top",
+    "box": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "original2048_coverage": 0.5736033133916245,
+    "flip_back_coverage": 0.618150023009664,
+    "original_nonpositive_pixels": 46328,
+    "flip_nonpositive_pixels": 41488,
+    "disagreement_fraction": 0.05544408651633686,
+    "mask_iou_between_orientations": 0.9110901201405083,
+    "mean_abs_logit_difference": 0.42469608783721924,
+    "original_logit_min_max": [
+      -6.246365070343018,
+      5.0901055335998535
+    ],
+    "flip_logit_min_max": [
+      -6.12591552734375,
+      4.597172737121582
+    ]
+  },
+  {
+    "region": "right",
+    "box": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "original2048_coverage": 0.5773779983457403,
+    "flip_back_coverage": 0.5670113041080783,
+    "original_nonpositive_pixels": 61314,
+    "flip_nonpositive_pixels": 62818,
+    "disagreement_fraction": 0.025654811138682107,
+    "mask_iou_between_orientations": 0.9561472754050073,
+    "mean_abs_logit_difference": 0.3366354703903198,
+    "original_logit_min_max": [
+      -4.651951789855957,
+      6.008137226104736
+    ],
+    "flip_logit_min_max": [
+      -5.2658257484436035,
+      5.151674747467041
+    ]
+  },
+  {
+    "region": "face",
+    "box": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "original2048_coverage": 0.46496507936507936,
+    "flip_back_coverage": 0.47087407407407406,
+    "original_nonpositive_pixels": 63201,
+    "flip_nonpositive_pixels": 62503,
+    "disagreement_fraction": 0.009955555555555556,
+    "mask_iou_between_orientations": 0.9789477452963606,
+    "mean_abs_logit_difference": 0.6086346507072449,
+    "original_logit_min_max": [
+      -5.1171746253967285,
+      6.1807098388671875
+    ],
+    "flip_logit_min_max": [
+      -3.7545289993286133,
+      5.561713218688965
+    ]
+  },
+  {
+    "region": "bottom",
+    "box": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "original2048_coverage": 0.24936891453299675,
+    "flip_back_coverage": 0.24655607645149658,
+    "original_nonpositive_pixels": 62445,
+    "flip_nonpositive_pixels": 62679,
+    "disagreement_fraction": 0.018343550907561006,
+    "mask_iou_between_orientations": 0.9286615866485906,
+    "mean_abs_logit_difference": 0.296866238117218,
+    "original_logit_min_max": [
+      -4.733771324157715,
+      5.603478908538818
+    ],
+    "flip_logit_min_max": [
+      -4.501852989196777,
+      4.321597576141357
+    ]
+  },
+  {
+    "region": "flowers",
+    "box": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "original2048_coverage": 0.0,
+    "flip_back_coverage": 0.00704,
+    "original_nonpositive_pixels": 100000,
+    "flip_nonpositive_pixels": 99296,
+    "disagreement_fraction": 0.00704,
+    "mask_iou_between_orientations": 0.0,
+    "mean_abs_logit_difference": 0.7248026728630066,
+    "original_logit_min_max": [
+      -5.136008262634277,
+      -0.32611769437789917
+    ],
+    "flip_logit_min_max": [
+      -4.0954365730285645,
+      0.9045349955558777
+    ]
+  },
+  {
+    "region": "artifact",
+    "box": [
+      820,
+      80,
+      1050,
+      220
+    ],
+    "original2048_coverage": 0.8380745341614907,
+    "flip_back_coverage": 0.9586956521739131,
+    "original_nonpositive_pixels": 5214,
+    "flip_nonpositive_pixels": 1330,
+    "disagreement_fraction": 0.12142857142857143,
+    "mask_iou_between_orientations": 0.8733931289058705,
+    "mean_abs_logit_difference": 0.5060850381851196,
+    "original_logit_min_max": [
+      -2.9020845890045166,
+      4.53698205947876
+    ],
+    "flip_logit_min_max": [
+      -2.7155067920684814,
+      4.597172737121582
+    ]
+  },
+  {
+    "region": "artifact-context",
+    "box": [
+      700,
+      60,
+      1080,
+      260
+    ],
+    "original2048_coverage": 0.7320394736842105,
+    "flip_back_coverage": 0.8221842105263157,
+    "original_nonpositive_pixels": 20365,
+    "flip_nonpositive_pixels": 13514,
+    "disagreement_fraction": 0.09332894736842105,
+    "mask_iou_between_orientations": 0.8867059593975115,
+    "mean_abs_logit_difference": 0.5221314430236816,
+    "original_logit_min_max": [
+      -6.708920478820801,
+      4.53698205947876
+    ],
+    "flip_logit_min_max": [
+      -5.932404518127441,
+      4.597172737121582
+    ]
+  },
+  {
+    "region": "artifact-interior-diagnostic",
+    "box": [
+      820,
+      140,
+      900,
+      190
+    ],
+    "original2048_coverage": 0.55725,
+    "flip_back_coverage": 0.994,
+    "original_nonpositive_pixels": 1771,
+    "flip_nonpositive_pixels": 24,
+    "disagreement_fraction": 0.43825,
+    "mask_iou_between_orientations": 0.5594370444835386,
+    "mean_abs_logit_difference": 0.6303569674491882,
+    "original_logit_min_max": [
+      -0.8991173505783081,
+      2.0054848194122314
+    ],
+    "flip_logit_min_max": [
+      -0.14453689754009247,
+      3.108013868331909
+    ]
+  }
+]

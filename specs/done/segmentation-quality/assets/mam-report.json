@@ -1,0 +1,307 @@
+{
+  "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+  "checkpoint_sha256": "b7d0781aa6edeab7b0d8195edf5b894402f9fa5b7220759825ff750c75450f08",
+  "upstream_revision": "eb01e1c1f0016e2a4d00615b115f3b5ddcd031e4",
+  "inference_seconds": 9.573984124930575,
+  "peak_rss_bytes": 4922343424,
+  "prompts": {
+    "provenance": "Automatic single VLM call on unmasked source only; no PhotoLab overlay or human point correction.",
+    "coordinates": "pixels_xy_in_original_image",
+    "image_size": [
+      1614,
+      1080
+    ],
+    "points": [
+      [
+        968,
+        108
+      ],
+      [
+        1323,
+        346
+      ],
+      [
+        1469,
+        594
+      ],
+      [
+        1291,
+        886
+      ],
+      [
+        1130,
+        648
+      ],
+      [
+        888,
+        572
+      ],
+      [
+        807,
+        810
+      ],
+      [
+        484,
+        432
+      ],
+      [
+        646,
+        54
+      ],
+      [
+        161,
+        540
+      ],
+      [
+        1372,
+        1058
+      ],
+      [
+        484,
+        994
+      ]
+    ],
+    "labels": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "raw": {
+      "points": [
+        {
+          "x": 600,
+          "y": 100,
+          "label": 1,
+          "region": "hair near the top center"
+        },
+        {
+          "x": 820,
+          "y": 320,
+          "label": 1,
+          "region": "thick curls on the upper right"
+        },
+        {
+          "x": 910,
+          "y": 550,
+          "label": 1,
+          "region": "curls on the far right edge"
+        },
+        {
+          "x": 800,
+          "y": 820,
+          "label": 1,
+          "region": "lower right curls"
+        },
+        {
+          "x": 700,
+          "y": 600,
+          "label": 1,
+          "region": "curls in the mid-right section"
+        },
+        {
+          "x": 550,
+          "y": 530,
+          "label": 0,
+          "region": "skin on the woman's face"
+        },
+        {
+          "x": 500,
+          "y": 750,
+          "label": 0,
+          "region": "petal of the large orange flower"
+        },
+        {
+          "x": 300,
+          "y": 400,
+          "label": 0,
+          "region": "orange flower in the main cluster"
+        },
+        {
+          "x": 400,
+          "y": 50,
+          "label": 0,
+          "region": "bright sky in the background"
+        },
+        {
+          "x": 100,
+          "y": 500,
+          "label": 0,
+          "region": "green foliage in the far background"
+        },
+        {
+          "x": 850,
+          "y": 980,
+          "label": 0,
+          "region": "white lace fabric of the garment"
+        },
+        {
+          "x": 300,
+          "y": 920,
+          "label": 0,
+          "region": "skin on the woman's arm"
+        }
+      ]
+    },
+    "prompt": "Select the woman's hair only. Return exactly 5 positive points confidently inside different parts of the target and 7 negative points confidently inside adjacent non-target regions, distributing negatives among different adjacent objects/regions rather than repeating one background area. Avoid ambiguous boundaries. Coordinates are normalized integers x and y from 0 to 1000, x left-to-right, y top-to-bottom. label=1 means selected target, label=0 means definitely not target. Describe briefly what each point lies on. Do not provide a bounding box or any mask.",
+    "model": "google/gemini-3-flash",
+    "requestId": null,
+    "durationMs": 17306.675625,
+    "budget": {
+      "positive": 5,
+      "negative": 7,
+      "inference_calls": 1
+    },
+    "selection_policy": "highest predicted IoU among all three multimask outputs; no visual candidate substitution"
+  },
+  "metrics": {
+    "coarse": {
+      "mean_alpha": 0.2518506944179535,
+      "fractional_share": 0.0,
+      "mae_from_coarse": 0.0,
+      "changed_gt_16_255": 0.0,
+      "point_alphas": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "alpha_os1": {
+      "mean_alpha": 0.34036484360694885,
+      "fractional_share": 0.35202567809445134,
+      "mae_from_coarse": 0.11309335380792618,
+      "changed_gt_16_255": 0.24347893432465922,
+      "point_alphas": [
+        0.8589487671852112,
+        0.9997664093971252,
+        0.9997454285621643,
+        0.9985260963439941,
+        0.9993001222610474,
+        0.32532384991645813,
+        2.978247903229203e-05,
+        0.0006884452304802835,
+        2.368482637393754e-05,
+        1.5145374163694214e-05,
+        1.67187081387965e-05,
+        0.016373952850699425
+      ]
+    },
+    "alpha_os4": {
+      "mean_alpha": 0.37354546785354614,
+      "fractional_share": 0.5127048051769242,
+      "mae_from_coarse": 0.14650796353816986,
+      "changed_gt_16_255": 0.3880828629124788,
+      "point_alphas": [
+        0.9046208262443542,
+        0.9995932579040527,
+        0.9996419548988342,
+        0.9989502429962158,
+        0.9991186261177063,
+        0.46919044852256775,
+        0.1335861086845398,
+        0.027752824127674103,
+        0.0003230141883250326,
+        0.0005165616166777909,
+        0.00647224485874176,
+        0.21591037511825562
+      ]
+    },
+    "alpha_os8": {
+      "mean_alpha": 0.30996188521385193,
+      "fractional_share": 0.2837022121253844,
+      "mae_from_coarse": 0.08031721413135529,
+      "changed_gt_16_255": 0.17161870668686036,
+      "point_alphas": [
+        0.9529268145561218,
+        0.9998605847358704,
+        0.9999426603317261,
+        0.9998183846473694,
+        0.9983221292495728,
+        0.050506606698036194,
+        2.0179895727778785e-05,
+        0.0005129855126142502,
+        3.088651055804803e-06,
+        2.1261662368488032e-06,
+        5.518059333553538e-05,
+        0.02839745208621025
+      ]
+    },
+    "mask": {
+      "mean_alpha": 0.25198397040367126,
+      "fractional_share": 0.032141791729771906,
+      "mae_from_coarse": 0.007667532656341791,
+      "changed_gt_16_255": 0.02436321079443756,
+      "point_alphas": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "mask-guidance": {
+      "mean_alpha": 0.26731449365615845,
+      "fractional_share": 0.025324705126439948,
+      "mae_from_coarse": 0.01546378992497921,
+      "changed_gt_16_255": 0.0243207581807334,
+      "point_alphas": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "alpha-guidance": {
+      "mean_alpha": 0.32158416509628296,
+      "fractional_share": 0.22253717472118958,
+      "mae_from_coarse": 0.09397712349891663,
+      "changed_gt_16_255": 0.18116480793060719,
+      "point_alphas": [
+        0.8589487671852112,
+        0.9998605847358704,
+        0.9999426603317261,
+        0.9998183846473694,
+        0.9983221292495728,
+        0.32532384991645813,
+        2.0179895727778785e-05,
+        0.0,
+        3.088651055804803e-06,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  }
+}

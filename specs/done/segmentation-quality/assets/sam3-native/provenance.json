@@ -1,0 +1,87 @@
+{
+  "source_repository": "https://github.com/facebookresearch/sam3",
+  "source_commit": "660a5e9e1b8b4c02c0ad97229b88a09a6e4ff5b7",
+  "checkpoint_repository": "facebook/sam3",
+  "checkpoint_revision": "3c879f39826c281e95690f02c7821c4de09afae7",
+  "checkpoint_filename": "sam3.pt",
+  "expected_checkpoint_bytes": 3450062241,
+  "expected_checkpoint_sha256": "9999e2341ceef5e136daa386eecb55cb414446a00ac2b55eb2dfd2f7c3cf8c9e",
+  "license": "SAM License, November 19, 2025 (not MIT despite pyproject classifier)",
+  "version_scope": "Official build_sam3_image_model uses SAM3 checkpoint; SAM3.1 release and new entry points use multiplex video. This is a SAM3 image baseline, not a SAM3.1 image claim.",
+  "runtime": {
+    "python": "3.12.14",
+    "torch": "2.8.0",
+    "torchvision": "0.23.0",
+    "numpy": "1.26.4",
+    "device": "cpu",
+    "threads": 4,
+    "interop_threads": 1,
+    "dtype": "float32 weights and CPU float32 inference, native unfused MLP (after bfloat16 CPU watchdog)",
+    "compile": false,
+    "image_resolution": [1008, 1008],
+    "normalization_mean": [0.5, 0.5, 0.5],
+    "normalization_std": [0.5, 0.5, 0.5],
+    "watchdog_seconds_per_subject": 180,
+    "download_timeout_seconds": 1200
+  },
+  "scratch_portability_changes": [
+    "position_encoding.py: positional cache allocation chooses CPU if CUDA unavailable, retaining all precompute sizes and mathematics",
+    "decoder.py: relative-position coordinate cache allocation chooses CPU if CUDA unavailable",
+    "sam3_tracker_utils.py: move Triton EDT import into its sole caller sample_one_point_from_error_center, which is not used by frozen supplied point inference",
+    "vitdet.Mlp.forward: non-CUDA uses same self.act(self.fc1(x)) instead of fused addmm_act; same linear/GELU computation, native float32 instead of forced bfloat16",
+    "geometry_encoders.py: pin scale tensor memory only for CUDA; retain same scale tensor, dtype and device transfer"
+  ],
+  "checkpoint_loading": "torch.load(weights_only=True, map_location=cpu); official detector/tracker key remapping followed by strict=True state loading",
+  "pre_embedding_diagnostic": {
+    "first_run_session": 74035,
+    "exit_code": 1,
+    "strict_model_load_seconds": 6.46685287496075,
+    "error": "RuntimeError: mat1 and mat2 must have the same dtype, but got BFloat16 and Float",
+    "location": "vitdet.Mlp.forward -> self.fc2 after perflib.fused.addmm_act forces bfloat16",
+    "outcome": "No completed embedding or mask prediction; CPU bfloat16 autocast added to match official fused MLP precision contract",
+    "followup_session": 71032,
+    "followup_exit_code": 124,
+    "followup_outcome": "CPU bfloat16 reached 180s portrait watchdog before first embedding; no quality result",
+    "export_note": "Text scores/boxes/probabilities converted via float() before NumPy because NumPy does not support bfloat16; official interactive API already does this"
+  },
+  "float32_diagnostic": {
+    "session": 41499,
+    "exit_code": 1,
+    "strict_model_load_seconds": 7.067526541999541,
+    "portrait_embedding_seconds": 6.034631458926015,
+    "error": "geometry_encoders.py651 scale.pin_memory(): CPU storage versus MPS storage mismatch",
+    "outcome": "Embedding completed, first text forward failed before producing masks; no completed prediction to select or tune",
+    "fused_equivalence_check": "GELU(x @ W.T + b), float32 small random input: aten._addmm_activation versus native linear+GELU max absolute difference 0.0"
+  },
+  "successful_run": {
+    "session": 44872,
+    "exit_code": 0,
+    "strict_model_load_seconds": 4.340252749971114,
+    "portrait_total_seconds": 15.265319917001761,
+    "landscape_total_seconds": 8.564539500046521,
+    "device": "cpu",
+    "dtype": "float32",
+    "source_changes_files": 5,
+    "source_diff_insertions": 8,
+    "source_diff_deletions": 5,
+    "quality_status": "Not visually assessed by baseline agent; native output preserved for independent review"
+  },
+  "text_contract": {
+    "api": "Sam3Processor.set_image then set_text_prompt",
+    "confidence": "sigmoid(class logit) times sigmoid(presence logit), retained when > 0.5",
+    "mask": "bilinear interpolation to original dimensions with align_corners=False, sigmoid then >0.5",
+    "retention": "Every returned instance, score, pixel xyxy box and probability raster; binary union separate",
+    "prompts": {"portrait": ["hair", "person"], "landscape": ["sky", "road"]}
+  },
+  "points_contract": {
+    "api": "Sam3Image.predict_inst with enable_inst_interactivity=True",
+    "source": "/private/tmp/openphoto-live.r2dGWB/hair-points.json",
+    "coordinates": "frozen 5 positive + 7 negative original pixel xy points; normalize_coords default True",
+    "multimask_output": true,
+    "mask_logit_threshold": 0,
+    "max_hole_area_default": 256,
+    "max_sprinkle_area_default": 0,
+    "retention": "All three candidate masks and predicted IoUs plus low-resolution logits; highest predicted IoU saved separately, no visual substitution"
+  },
+  "exclusions": "No production changes, no prompt tuning, no automatic retries, no source-photo uploads, no alpha-matting or edit applied"
+}

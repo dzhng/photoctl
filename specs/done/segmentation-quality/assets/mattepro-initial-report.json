@@ -1,0 +1,144 @@
+{
+  "upstream_revision": "5ef19eb06a308ea88321f9bbd939867ced48af20",
+  "device": "cpu",
+  "threads": 4,
+  "checkpoint_sha256": "c1c0a47a8737f5bc540076339d558439c4a22921792d431516bc128358b81e6f",
+  "strict_load": "<All keys matched successfully>",
+  "weights_only": true,
+  "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+  "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+  "points": "/private/tmp/openphoto-live.r2dGWB/hair-points.json",
+  "points_sha256": "3ea9da8d9533a523e5fd46cb1285e7b34a8855a4b3f8c2558cc9ff8db66b6b24",
+  "scaled_clicks": [
+    [
+      614,
+      102,
+      1
+    ],
+    [
+      839,
+      328,
+      1
+    ],
+    [
+      932,
+      563,
+      1
+    ],
+    [
+      819,
+      840,
+      1
+    ],
+    [
+      716,
+      614,
+      1
+    ],
+    [
+      563,
+      542,
+      0
+    ],
+    [
+      512,
+      768,
+      0
+    ],
+    [
+      307,
+      409,
+      0
+    ],
+    [
+      409,
+      51,
+      0
+    ],
+    [
+      102,
+      512,
+      0
+    ],
+    [
+      870,
+      1003,
+      0
+    ],
+    [
+      307,
+      942,
+      0
+    ]
+  ],
+  "mattepro_seconds": 5.988535583019257,
+  "trimap_counts": {
+    "0": 1102185,
+    "128": 122342,
+    "255": 518593
+  },
+  "adaptations": [
+    "Unchanged AST-extracted MattePro and MattingCriterion classes avoid training/SAM1 imports.",
+    "Direct constructor reproduces configs/MattePro_SAM2.py settings, CPU device.",
+    "Unused discarded MattingDetailDecoder allocation omitted.",
+    "Non-mutating forward_others wrapper captures raw logits."
+  ],
+  "postprocess": "Official forward softmax, then bilinear probabilities to original dimensions, argmax times128 clamped255. No trimap edits.",
+  "versions": {
+    "torch": "2.14.0",
+    "torchvision": "0.29.0",
+    "peft": "0.20.0",
+    "hydra-core": "1.3.6",
+    "omegaconf": "2.3.1",
+    "transformers": "5.16.1"
+  },
+  "vitmatte_seconds": 12.295691417064518,
+  "vitmatte_model": "/private/tmp/openphoto-vitmatte.5zPl0e/cache/hub/models--hustvl--vitmatte-small-composition-1k/snapshots/6a58ad7646403c1df626fbd746900aec7361ea1d",
+  "wall_seconds": 22.643898750073276,
+  "max_rss_bytes": 12059934720,
+  "automatic_only": true,
+  "quality_accepted": false,
+  "artifact_sha256": {
+    "bottom-black.png": "af96db219c99fdbbe328c0932605f4955220d5bbc8265b78491fa14844677b2a",
+    "flowers-trimap.png": "6a54fcc1160df53ac0a5c94f3aa9d9a5d3db651c9ca0270df8fea73ebc7fbe11",
+    "trimap.png": "3f384fde28715d1f6faf34c6e37559c07866300c5ea4d95d9af6164c0cacd9da",
+    "composite-black.png": "bd233bebbc7024a995b371e7e210b59379af2cfb384eb116d286b638a9253bd1",
+    "raw-logits-f32.npy": "275483717b32b404c770cef777252c8f61531f3c8cceab48d3fbeca6e4d17e33",
+    "face-source.png": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40",
+    "top-trimap.png": "d7c4e55a7f8a42342e799c9464a29a34d5e31a1bc1db903a93b9d71422959279",
+    "bottom-alpha.png": "3654d6ca452d88535d740ec45b68376e695a6dfdf58cb2f2ff547d392bd3f4b9",
+    "flowers-overlay.png": "bc5491f3e40fd77f6d2510641ac1cee7834a8894746a85c26404cbeb07cc2d0e",
+    "alpha-raw-f32.npy": "b5e7aad0b8967ebf65484695b9226892b724588fcef9f5da6def34ca43c78c4b",
+    "alpha.png": "168b3be2e134c23be0ab696f8301d8be1da212697663aa60b2d99a8d3ff0b68f",
+    "right-alpha.png": "bbddbf0d666bd3d3ed36a1c6db3b6c6ca18622576c48865461240f6922d8a21b",
+    "top-black.png": "8609c9c8982b4f2f75d2a33ebcb91ae03a49c825ff923a5ba4be0874f09c5455",
+    "face-alpha.png": "8be12b8b1ab35e5871c5bbdd29ba166b25149e1afe36b6c18d73866a2da1b043",
+    "bottom-trimap.png": "490128a725349ec32b3b03b2870607fef458771232b145186ea6e7507006a5a5",
+    "probabilities-f32.npy": "04303e0b858970a31f49fb027e6b027df3bbfd3a993eaa1dbb6e0d36b6fe4331",
+    "flowers-white.png": "8f62b333d24089080ca311ff27e0b5af138c5200a3ed09bd1308af3ad58a7016",
+    "right-black.png": "4cffaa3af6cb8caee888a053e6b71a8ec8b8d72240f3e128b351639827cf97f5",
+    "right-trimap.png": "e93b27d6309020dcbf46c88949cbbde86fc7866ef1ab4a58175f8596dfafacda",
+    "top-alpha.png": "3c8d85b7768da511617a3624e538f4250c9b2256c7c129742cc4b0dfb7df579d",
+    "face-black.png": "33b9e3b29f81e7624890e3aee136c24223bbe7d53d05375aba73b8927e6fc199",
+    "selection-overlay.png": "446671fc2798cf7f2f4dacd627afd1787cb19dad7f321452e104d05a3b3a72ec",
+    "composite-white.png": "c0a334f1fe1c704d80da13e36b15ed197aeb0e6d81f40e810287c904a8433a0c",
+    "bottom-white.png": "5c72e7e45916d167a0dd3114703711e05beb0308eddde2a06143e3dde5bd376e",
+    "top-overlay.png": "337bc0f39c1b59f1a011d9c4cf4f00ecd78dd5336fc4deeb19d193e843c68880",
+    "trimap.npy": "0309dbc58298080baefb161fdf50b0f3a135725f302fb031829faf932eeda10c",
+    "bottom-source.png": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9",
+    "alpha-constrained-f32.npy": "210c99e6d9f0d3bacc3e7fa4266d124b0dda32465bb30b06c77f29af5569380e",
+    "right-source.png": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176",
+    "face-trimap.png": "2b0ee7d8fa4294f5d39e6daeb20e3eb0b4b972c4547052d5c1805d9075510b31",
+    "flowers-source.png": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f",
+    "flowers-alpha.png": "f998846b413e4a5162ece8a493d08335cf97824438b7150416bf1c3d6727d554",
+    "face-overlay.png": "06063106f972cfa30e0ce5962387b6b5152ce88a2bfd69016d926f43042a13d9",
+    "top-white.png": "e20d3a646dbd87c4fde50c91b3fe8878434b5231758ad769ed79eed16ab35777",
+    "top-source.png": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168",
+    "bottom-overlay.png": "358b4852bc8d17f42c071e37123105174bc53ddb62be73e41affacebe4ed0ffb",
+    "right-white.png": "559aef2a1f57f6253ab8d2134c0be255a6453ebacb6a59d0bd888dce8b1ac26a",
+    "flowers-black.png": "c4f1f109a432002665750ed10454d2daee35ab4dc2c45097c07368942e133175",
+    "alpha16.png": "a8d9ee11772cf8b2689101cc0e094d51d7f17964f019b0a9473568a0d64ca0f4",
+    "right-overlay.png": "4ed72e7db6c42a132a0528d1d0b592b0204f93aa21e7994f7ed23d07855e0e70",
+    "face-white.png": "57d8c72db08c0bbd8c585f5305cb737639451c94a4f986439a2470f1f304d151"
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "target": "Select sky including foliage gaps; exclude ground, vegetation, poles and wires.",
+  "semantics": "Fractional alpha composited in display RGB for inspection; no thresholding or foreground decontamination. A is binary segmentation, B/C are predicted alpha. Metrics measure difference, not accuracy.",
+  "source_sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+  "labels": {
+    "A": "SAM3 native sky binary",
+    "B": "SAM3 matting with direct sky seed",
+    "C": "SAM3 matting with complementary foreground seed then alpha inversion"
+  },
+  "inputs": {
+    "A": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/sam3-native/visuals/landscape-text-sky-union/binary-mask.png",
+    "B": "/private/tmp/openphoto-sam3matting.d0OQ4u/holdouts/sky/alpha.float32.npy",
+    "C": "/private/tmp/openphoto-sam3matting.d0OQ4u/polarity-sky/derived-sky-alpha-original.float32.npy"
+  },
+  "crops": {
+    "foliage": [
+      2900,
+      1050,
+      3600,
+      1700
+    ],
+    "wires": [
+      800,
+      650,
+      1600,
+      1300
+    ],
+    "path": [
+      2300,
+      2500,
+      3100,
+      3100
+    ],
+    "far-path-supplement": [
+      3100,
+      2500,
+      4400,
+      3050
+    ]
+  },
+  "differences": {
+    "A-C": {
+      "full": {
+        "mean_absolute_alpha_difference": 0.6247667074203491,
+        "rmse_alpha_difference": 0.7847434878349304,
+        "fraction_difference_gt_0_1": 0.6386673547257147,
+        "edge_energy_a": 0.005452827550470829,
+        "edge_energy_b": 0.006140748504549265,
+        "fraction_edge_difference_gt_0_1": 0.016063802572011635
+      },
+      "crops": {
+        "foliage": {
+          "mean_absolute_alpha_difference": 0.6480980515480042,
+          "rmse_alpha_difference": 0.8013235926628113,
+          "fraction_difference_gt_0_1": 0.6542835164835165,
+          "edge_energy_a": 0.017024707049131393,
+          "edge_energy_b": 0.003358948975801468,
+          "fraction_edge_difference_gt_0_1": 0.008323076923076923
+        },
+        "wires": {
+          "mean_absolute_alpha_difference": 0.17576946318149567,
+          "rmse_alpha_difference": 0.4134979546070099,
+          "fraction_difference_gt_0_1": 0.18258461538461537,
+          "edge_energy_a": 0.029198233038187027,
+          "edge_energy_b": 0.005180508829653263,
+          "fraction_edge_difference_gt_0_1": 0.01891730769230769
+        },
+        "path": {
+          "mean_absolute_alpha_difference": 0.6559209823608398,
+          "rmse_alpha_difference": 0.7846472859382629,
+          "fraction_difference_gt_0_1": 0.7525145833333333,
+          "edge_energy_a": 0.0,
+          "edge_energy_b": 0.025789212435483932,
+          "fraction_edge_difference_gt_0_1": 0.06567916666666666
+        },
+        "far-path-supplement": {
+          "mean_absolute_alpha_difference": 0.9589812755584717,
+          "rmse_alpha_difference": 0.9714162945747375,
+          "fraction_difference_gt_0_1": 0.9829664335664335,
+          "edge_energy_a": 0.0,
+          "edge_energy_b": 0.008529269136488438,
+          "fraction_edge_difference_gt_0_1": 0.01853146853146853
+        }
+      }
+    },
+    "B-C": {
+      "full": {
+        "mean_absolute_alpha_difference": 0.9402685165405273,
+        "rmse_alpha_difference": 0.9644070863723755,
+        "fraction_difference_gt_0_1": 0.9555087727528617,
+        "edge_energy_a": 0.00043741855188272893,
+        "edge_energy_b": 0.006140748504549265,
+        "fraction_edge_difference_gt_0_1": 0.014070331069775443
+      },
+      "crops": {
+        "foliage": {
+          "mean_absolute_alpha_difference": 0.9926294684410095,
+          "rmse_alpha_difference": 0.9927644729614258,
+          "fraction_difference_gt_0_1": 1.0,
+          "edge_energy_a": 0.0011241851607337594,
+          "edge_energy_b": 0.003358948975801468,
+          "fraction_edge_difference_gt_0_1": 0.00434945054945055
+        },
+        "wires": {
+          "mean_absolute_alpha_difference": 0.9894704222679138,
+          "rmse_alpha_difference": 0.9909789562225342,
+          "fraction_difference_gt_0_1": 0.9996615384615385,
+          "edge_energy_a": 0.0015728776343166828,
+          "edge_energy_b": 0.005180508829653263,
+          "fraction_edge_difference_gt_0_1": 0.010236538461538462
+        },
+        "path": {
+          "mean_absolute_alpha_difference": 0.6559197902679443,
+          "rmse_alpha_difference": 0.7846463322639465,
+          "fraction_difference_gt_0_1": 0.7525145833333333,
+          "edge_energy_a": 7.476481300727755e-07,
+          "edge_energy_b": 0.025789212435483932,
+          "fraction_edge_difference_gt_0_1": 0.06567916666666666
+        },
+        "far-path-supplement": {
+          "mean_absolute_alpha_difference": 0.9589802622795105,
+          "rmse_alpha_difference": 0.9714153409004211,
+          "fraction_difference_gt_0_1": 0.9829664335664335,
+          "edge_energy_a": 7.849892540434666e-07,
+          "edge_energy_b": 0.008529269136488438,
+          "fraction_edge_difference_gt_0_1": 0.01853006993006993
+        }
+      }
+    }
+  }
+}

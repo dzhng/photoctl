@@ -1,0 +1,115 @@
+{
+  "baseline_report": "/private/tmp/openphoto-sdmatte.kTMwUL/report.json",
+  "model_kwargs": {
+    "pretrained_model_name_or_path": "/private/tmp/openphoto-sdmatte.kTMwUL/weights",
+    "load_weight": false,
+    "conv_scale": 3,
+    "num_inference_steps": 1,
+    "aux_input": "mask",
+    "add_noise": false,
+    "use_dis_loss": true,
+    "use_aux_input": true,
+    "use_coor_input": true,
+    "use_attention_mask": true,
+    "residual_connection": false,
+    "use_encoder_hidden_states": true,
+    "use_attention_mask_list": [
+      true,
+      true,
+      true
+    ],
+    "use_encoder_hidden_states_list": [
+      false,
+      true,
+      false
+    ]
+  },
+  "checkpoint_verified_sha256": "d3465a9b7a75dbbf348be603831f5cf417aee6b0e84ae7ef96dac710c9e2de46",
+  "strict_load": true,
+  "device": "cpu",
+  "dtype": "float32",
+  "threads": 4,
+  "model_load_seconds": 9.273901000036858,
+  "cases": [
+    {
+      "name": "portrait-person",
+      "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+      "guidance": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/sam3-native/visuals/portrait-text-person-union/binary-mask.png",
+      "guidance_sha256": "9b25bf787350b74698af5131436c3af19be4dc29fbcd0296246e66addb3f9369",
+      "original_hw": [
+        1080,
+        1614
+      ],
+      "mask_coords": [
+        0.0810546875,
+        0.046875,
+        0.9892578125,
+        0.998046875
+      ],
+      "caption": "",
+      "is_trans": 0,
+      "status": "complete",
+      "forward_seconds": 71.86400095804129,
+      "alpha_range": [
+        0.0,
+        1.0
+      ],
+      "process_peak_rss_bytes": 15462924288
+    },
+    {
+      "name": "landscape-sky",
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "source_sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+      "guidance": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/sam3-native/visuals/landscape-text-sky-union/binary-mask.png",
+      "guidance_sha256": "3a570e0e73bfbf751a9da6194a741f9a01481c5956e1bb5a93b260db120c5b22",
+      "original_hw": [
+        4672,
+        7008
+      ],
+      "mask_coords": [
+        0.0,
+        0.0,
+        0.9990234375,
+        0.462890625
+      ],
+      "caption": "",
+      "is_trans": 0,
+      "status": "complete",
+      "forward_seconds": 64.31924441596493,
+      "alpha_range": [
+        0.0,
+        1.0
+      ],
+      "process_peak_rss_bytes": 15462924288
+    },
+    {
+      "name": "landscape-road",
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "source_sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+      "guidance": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/sam3-native/visuals/landscape-text-road-union/binary-mask.png",
+      "guidance_sha256": "00968463bfb346148c89a8861ce29f3e651f1a599953654b353b010cbab78587",
+      "original_hw": [
+        4672,
+        7008
+      ],
+      "mask_coords": [
+        0.3466796875,
+        0.521484375,
+        0.9990234375,
+        0.9599609375
+      ],
+      "caption": "",
+      "is_trans": 0,
+      "status": "complete",
+      "forward_seconds": 54.53623033303302,
+      "alpha_range": [
+        0.0,
+        1.0
+      ],
+      "process_peak_rss_bytes": 19201622016
+    }
+  ],
+  "elapsed_seconds": 202.17688100005034,
+  "peak_rss_bytes": 19201622016
+}

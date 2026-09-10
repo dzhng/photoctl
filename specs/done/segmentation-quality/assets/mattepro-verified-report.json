@@ -1,0 +1,224 @@
+{
+  "upstream_revision": "5ef19eb06a308ea88321f9bbd939867ced48af20",
+  "device": "cpu",
+  "threads": 4,
+  "checkpoint_sha256": "c1c0a47a8737f5bc540076339d558439c4a22921792d431516bc128358b81e6f",
+  "strict_load": "<All keys matched successfully>",
+  "weights_only": true,
+  "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+  "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+  "points": "/private/tmp/openphoto-live.r2dGWB/hair-verified-01.json",
+  "points_sha256": "2d2ab09a059ba4aaa6fb4a28b155363375eba37e2a5d6a804ee92ed613e0d5f7",
+  "scaled_clicks": [
+    [
+      614,
+      102,
+      1
+    ],
+    [
+      839,
+      328,
+      1
+    ],
+    [
+      932,
+      563,
+      1
+    ],
+    [
+      819,
+      840,
+      1
+    ],
+    [
+      716,
+      614,
+      1
+    ],
+    [
+      563,
+      542,
+      0
+    ],
+    [
+      512,
+      768,
+      0
+    ],
+    [
+      307,
+      409,
+      0
+    ],
+    [
+      409,
+      51,
+      0
+    ],
+    [
+      102,
+      512,
+      0
+    ],
+    [
+      870,
+      1003,
+      0
+    ],
+    [
+      307,
+      942,
+      0
+    ],
+    [
+      553,
+      368,
+      0
+    ],
+    [
+      593,
+      481,
+      0
+    ],
+    [
+      665,
+      665,
+      0
+    ],
+    [
+      747,
+      921,
+      0
+    ],
+    [
+      501,
+      573,
+      0
+    ],
+    [
+      440,
+      337,
+      0
+    ],
+    [
+      425,
+      219,
+      4
+    ],
+    [
+      450,
+      420,
+      0
+    ],
+    [
+      768,
+      460,
+      1
+    ],
+    [
+      542,
+      55,
+      0
+    ],
+    [
+      982,
+      460,
+      4
+    ],
+    [
+      900,
+      143,
+      0
+    ],
+    [
+      942,
+      798,
+      4
+    ],
+    [
+      388,
+      143,
+      0
+    ],
+    [
+      655,
+      870,
+      0
+    ],
+    [
+      624,
+      522,
+      0
+    ]
+  ],
+  "mattepro_seconds": 7.566365333041176,
+  "trimap_counts": {
+    "0": 1234311,
+    "128": 167030,
+    "255": 341779
+  },
+  "adaptations": [
+    "Unchanged AST-extracted MattePro and MattingCriterion classes avoid training/SAM1 imports.",
+    "Direct constructor reproduces configs/MattePro_SAM2.py settings, CPU device.",
+    "Unused discarded MattingDetailDecoder allocation omitted.",
+    "Non-mutating forward_others wrapper captures raw logits."
+  ],
+  "postprocess": "Official forward softmax, then bilinear probabilities to original dimensions, argmax times128 clamped255. No trimap edits.",
+  "versions": {
+    "torch": "2.14.0",
+    "torchvision": "0.29.0",
+    "peft": "0.20.0",
+    "hydra-core": "1.3.6",
+    "omegaconf": "2.3.1",
+    "transformers": "5.16.1"
+  },
+  "vitmatte_seconds": 12.09782758296933,
+  "vitmatte_model": "/private/tmp/openphoto-vitmatte.5zPl0e/cache/hub/models--hustvl--vitmatte-small-composition-1k/snapshots/6a58ad7646403c1df626fbd746900aec7361ea1d",
+  "wall_seconds": 23.77388262504246,
+  "max_rss_bytes": 8784609280,
+  "automatic_only": true,
+  "quality_accepted": false,
+  "artifact_sha256": {
+    "bottom-black.png": "b3c0e1a70a362e6041faf45f123fd6082b4f73fc61a7bd327dc5c12ec209af92",
+    "flowers-trimap.png": "225b6d256666567763d50f8591e3b5ee2331cf48fe172ea88bf6ce9e0313a22c",
+    "trimap.png": "34942ed461798896d1fd840a10abc5e7fe1fdcd04e895b842dc9c85f0c8786cb",
+    "composite-black.png": "cd4e7c977615ab5516e9cbeaeed450ae919a6c9d25c4cc0b6f5059cfcf418009",
+    "raw-logits-f32.npy": "deb8e430f36db09e564f47ee73113287071aa847470e13a873f784b0c3e35ad6",
+    "face-source.png": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40",
+    "top-trimap.png": "afc7484fea602c9c072f9d87536253871a9dbb6c71c16d73adbb7725e341bde5",
+    "bottom-alpha.png": "8e1e34156c93b379f6f15e2ce1bf5fe5d861671194e6ed747fc83ebb80723549",
+    "flowers-overlay.png": "a0a77e25ce2502884bd05819af2063f39280511691c3550beb4f25d3032b4156",
+    "alpha-raw-f32.npy": "8202a12174a343080a4cf8bdc764cd87d2b9f8dab6aee8e95f0d1c325fca794e",
+    "alpha.png": "30b53197e1bac1a39e14962df01372e02d1bc2b20945b81185103a97ff882b84",
+    "right-alpha.png": "1e662d141df1fbeef7b83fb44ca3d3d3310ce67852f2c5fc6b2454fb8a28b5fa",
+    "top-black.png": "ceb874df94cb667ba78cf3c283eb153a5b4c23761b3685ffb29b5f367a718a87",
+    "face-alpha.png": "899d97a0cdb973d6d88cb7c6184d5c1986fc5d2bc5f8c354ce42ac9463695a27",
+    "bottom-trimap.png": "e13471525d1512d320c7247a9eb92b10c6f68e884933943233486c9fb90f5839",
+    "probabilities-f32.npy": "531c3a12a078c3aa559d7672f01f7d27db7818e75eba3aa9e976cda81a2c7709",
+    "flowers-white.png": "3bd31e16e78258e4bbc747b92a5e7bf697fde223c07bb2709a819d9ec048eccb",
+    "right-black.png": "877c1dd9439fb07b63a78e5c0c8ab838525410d9ef08096331cd1c92512769f1",
+    "right-trimap.png": "db5eb4e776b0a3e38d74c67a9ed3a8179c8d91e189d0e33c553259c349e9f2de",
+    "top-alpha.png": "8de3f82e106746f967e862eca84083cb03d822e0f45c4c97e3793a96cda06fa9",
+    "face-black.png": "8e013072f84ab45576a278bffcaeb48d7ae8ed8fa36f523325b1319414fffbd2",
+    "selection-overlay.png": "852f1c78dec3cc252916e12d84837af9fafa2d2358beac01b3436defc8fd0273",
+    "composite-white.png": "216777dab583e5388e5153ab653b3e73797c9d13c56a53665f9cce6a12b93b1a",
+    "bottom-white.png": "558e67bbb99a1c5c806cd01b2ebab32625127b262a7daadcf216a98e4e017fa2",
+    "top-overlay.png": "54ba6fb045d6dba37d22a04d0ef05dfa5576cd9f6d7a0bead1685452cbe63043",
+    "trimap.npy": "838a27a048ba51edc45d14a9356b781effb20b57b82e0d7250d4230b44ccf6c6",
+    "bottom-source.png": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9",
+    "alpha-constrained-f32.npy": "b2301adc1fa48ba55a9d6203d499d7666bdc9208fdd187ac9f76bf872e76725f",
+    "right-source.png": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176",
+    "face-trimap.png": "b488438ed0ee81bc3663680730fb778ee156a1a490beb45d9eb17e5ef295e4be",
+    "flowers-source.png": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f",
+    "flowers-alpha.png": "24e978b748e474a09a2f01f695a55412a30a1a2e5822ea98e564e24dcd929184",
+    "face-overlay.png": "362437ed6fc9aeb75fd850cdba7558cc30e71d75583ea71c9b52b93c52111c6e",
+    "top-white.png": "0694ce2baaf9ead3a159c0bbeb8c2b4fed5e7191c5d0276abe059ffa4e11709a",
+    "top-source.png": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168",
+    "bottom-overlay.png": "3f5ffb196ee5d40cd7476ca9601d27a45903a7dba1078880eedd9953577d5161",
+    "right-white.png": "59d120c1ba2ccb9988c194c36cba117b800b2aa8e1035029de585d45c0679c3f",
+    "flowers-black.png": "01eb2b91767c5ed9863f0448f6fedf750ba2f8a0259cf394570c34f454e67d44",
+    "alpha16.png": "0069ace1295f85e0aa823d46edf93402e7516d869d5e61a6fe79b2428f1dc076",
+    "right-overlay.png": "be990e8f4bc4722253e2b04ef3a1815bf760f3f96f538cbaa611edbb794e94b3",
+    "face-white.png": "e431900d040ab634710512d177fbd1999ac737b47168edd65f85b3d12f0d5f31"
+  }
+}

@@ -1,0 +1,206 @@
+[
+  {
+    "variant": "small",
+    "region": "full",
+    "box": [
+      0,
+      0,
+      1614,
+      1080
+    ],
+    "multimask_coverage": 0.24032998301895453,
+    "singlemode_coverage": 0.22772844095644593,
+    "disagreement_fraction": 0.012771352517325255,
+    "mask_grayscale_mae": 3.25669489191794,
+    "mask_grayscale_rmse": 28.817654266769782,
+    "mask_iou_between_modes": 0.9468778634697618,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "small",
+    "region": "top",
+    "box": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "multimask_coverage": 0.5595398067188219,
+    "singlemode_coverage": 0.49223193741371374,
+    "disagreement_fraction": 0.06739990796134376,
+    "mask_grayscale_mae": 17.18697653014266,
+    "mask_grayscale_rmse": 66.2018052260388,
+    "mask_iou_between_modes": 0.8795539400319085,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "small",
+    "region": "right",
+    "box": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "multimask_coverage": 0.5111248966087676,
+    "singlemode_coverage": 0.4788737248414668,
+    "disagreement_fraction": 0.03294044665012407,
+    "mask_grayscale_mae": 8.399813895781637,
+    "mask_grayscale_rmse": 46.281233166633726,
+    "mask_iou_between_modes": 0.9355964638024904,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "small",
+    "region": "face",
+    "box": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "multimask_coverage": 0.45425608465608464,
+    "singlemode_coverage": 0.43524232804232804,
+    "disagreement_fraction": 0.019030687830687832,
+    "mask_grayscale_mae": 4.852825396825398,
+    "mask_grayscale_rmse": 35.17769856301683,
+    "mask_iou_between_modes": 0.9581065970928065,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "small",
+    "region": "bottom",
+    "box": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "multimask_coverage": 0.24542613294867172,
+    "singlemode_coverage": 0.2274792643346556,
+    "disagreement_fraction": 0.01871619184998197,
+    "mask_grayscale_mae": 4.772628921745403,
+    "mask_grayscale_rmse": 34.8858191109952,
+    "mask_iou_between_modes": 0.923859357425791,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "small",
+    "region": "flowers",
+    "box": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "multimask_coverage": 0.0,
+    "singlemode_coverage": 0.0,
+    "disagreement_fraction": 0.0,
+    "mask_grayscale_mae": 0.0,
+    "mask_grayscale_rmse": 0.0,
+    "mask_iou_between_modes": 1.0,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "large",
+    "region": "full",
+    "box": [
+      0,
+      0,
+      1614,
+      1080
+    ],
+    "multimask_coverage": 0.2494406581302492,
+    "singlemode_coverage": 0.24009591995961266,
+    "disagreement_fraction": 0.00934473817063656,
+    "mask_grayscale_mae": 2.382908233512323,
+    "mask_grayscale_rmse": 24.650387411674537,
+    "mask_iou_between_modes": 0.9625372293326894,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "large",
+    "region": "top",
+    "box": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "multimask_coverage": 0.6220340543028072,
+    "singlemode_coverage": 0.6000460193281179,
+    "disagreement_fraction": 0.02198803497468937,
+    "mask_grayscale_mae": 5.60694891854579,
+    "mask_grayscale_rmse": 37.812325691884865,
+    "mask_iou_between_modes": 0.964651396780303,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "large",
+    "region": "right",
+    "box": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "multimask_coverage": 0.5880548662806727,
+    "singlemode_coverage": 0.5608354011579818,
+    "disagreement_fraction": 0.02721946512269093,
+    "mask_grayscale_mae": 6.940963606286187,
+    "mask_grayscale_rmse": 42.0707228319526,
+    "mask_iou_between_modes": 0.9537127117154076,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "large",
+    "region": "face",
+    "box": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "multimask_coverage": 0.4632550264550265,
+    "singlemode_coverage": 0.44768677248677247,
+    "disagreement_fraction": 0.015568253968253969,
+    "mask_grayscale_mae": 3.969904761904762,
+    "mask_grayscale_rmse": 31.817066399743933,
+    "mask_iou_between_modes": 0.9663937721574504,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "large",
+    "region": "bottom",
+    "box": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "multimask_coverage": 0.20358216131746604,
+    "singlemode_coverage": 0.176980406298834,
+    "disagreement_fraction": 0.02660175501863205,
+    "mask_grayscale_mae": 6.7834475297511725,
+    "mask_grayscale_rmse": 41.5906133651158,
+    "mask_iou_between_modes": 0.8693316013226263,
+    "interpretation": "Distance only; not accuracy."
+  },
+  {
+    "variant": "large",
+    "region": "flowers",
+    "box": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "multimask_coverage": 0.0,
+    "singlemode_coverage": 0.0,
+    "disagreement_fraction": 0.0,
+    "mask_grayscale_mae": 0.0,
+    "mask_grayscale_rmse": 0.0,
+    "mask_iou_between_modes": 1.0,
+    "interpretation": "Distance only; not accuracy."
+  }
+]

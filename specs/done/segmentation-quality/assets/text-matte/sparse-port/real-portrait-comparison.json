@@ -1,0 +1,26 @@
+{
+  "seconds": 1.1354782929993235,
+  "metrics": {
+    "alpha": {
+      "max_abs_error": 8.344650268554688e-07,
+      "mean_abs_error": 8.505322668383997e-09,
+      "fraction_abs_error_gt_1e_5": 0.0
+    },
+    "alpha_half": {
+      "max_abs_error": 8.940696716308594e-07,
+      "mean_abs_error": 6.754938386421827e-09,
+      "fraction_abs_error_gt_1e_5": 0.0
+    },
+    "mask": {
+      "max_abs_error": 0.0,
+      "mean_abs_error": 0.0,
+      "fraction_abs_error_gt_1e_5": 0.0
+    },
+    "mask_half": {
+      "max_abs_error": 0.0,
+      "mean_abs_error": 0.0,
+      "fraction_abs_error_gt_1e_5": 0.0
+    }
+  },
+  "reference": "Unmodified upstream spconv CPU refiner, one thread, actual checkpoint and actual upstream-entry image features."
+}

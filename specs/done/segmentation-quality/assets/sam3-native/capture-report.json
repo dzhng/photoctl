@@ -1,0 +1,650 @@
+{
+  "target": "Hair includes visible hair but excludes skin, flowers, fabric and background. Sky excludes solid foliage, branches, wires and terrain. Road includes the visible path, excluding adjacent vegetation. Person is assessed as whole-person scope, with flower ownership reported separately.",
+  "comparison_rule": "Same exact source pixels and crop rectangles; all saved native predictions shown. Prior masks are comparison candidates, not ground truth. Difference metrics measure disagreement, never accuracy.",
+  "semantics": "Binary masks are segmentation, not alpha mattes. Green overlay is 40% green on selected pixels. Black/white views use binary selection. Probability grayscale displays model confidence, NOT alpha/transparency. All crops are nearest-neighbor 2x.",
+  "sources": {
+    "portrait": {
+      "path": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+      "size": [
+        1614,
+        1080
+      ]
+    },
+    "landscape": {
+      "path": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+      "size": [
+        7008,
+        4672
+      ]
+    }
+  },
+  "crops": {
+    "portrait": {
+      "top": [
+        820,
+        15,
+        1350,
+        220
+      ],
+      "right": [
+        1380,
+        170,
+        1614,
+        790
+      ],
+      "face": [
+        855,
+        305,
+        1170,
+        680
+      ],
+      "bottom": [
+        1260,
+        845,
+        1614,
+        1080
+      ],
+      "flowers": [
+        660,
+        670,
+        1060,
+        920
+      ],
+      "artifact-supplement": [
+        700,
+        60,
+        1080,
+        260
+      ]
+    },
+    "landscape": {
+      "foliage": [
+        2900,
+        1050,
+        3600,
+        1700
+      ],
+      "wires": [
+        800,
+        650,
+        1600,
+        1300
+      ],
+      "path": [
+        2300,
+        2500,
+        3100,
+        3100
+      ]
+    }
+  },
+  "variants": {
+    "landscape-text-road-instance-000": {
+      "label": "SAM3 text road: instance 0, score 0.6354",
+      "subject": "landscape",
+      "selected_pixels": 1600793,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white",
+        "confidence-NOT-alpha"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/landscape-text-road-instance-000"
+    },
+    "landscape-text-road-union": {
+      "label": "SAM3 text road: union of ALL 1 instances",
+      "subject": "landscape",
+      "selected_pixels": 1600793,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white",
+        "confidence-NOT-alpha"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/landscape-text-road-union"
+    },
+    "landscape-text-sky-instance-000": {
+      "label": "SAM3 text sky: instance 0, score 0.9744",
+      "subject": "landscape",
+      "selected_pixels": 10374265,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white",
+        "confidence-NOT-alpha"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/landscape-text-sky-instance-000"
+    },
+    "landscape-text-sky-union": {
+      "label": "SAM3 text sky: union of ALL 1 instances",
+      "subject": "landscape",
+      "selected_pixels": 10374265,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white",
+        "confidence-NOT-alpha"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/landscape-text-sky-union"
+    },
+    "portrait-points-hair-candidate-000": {
+      "label": "SAM3 hair points: candidate 0, predicted IoU 0.2075",
+      "subject": "portrait",
+      "selected_pixels": 42241,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/portrait-points-hair-candidate-000",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 2,
+        "negative_exclusions": 7,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    },
+    "portrait-points-hair-candidate-001": {
+      "label": "SAM3 hair points: candidate 1, predicted IoU 0.7957",
+      "subject": "portrait",
+      "selected_pixels": 639217,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/portrait-points-hair-candidate-001",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 5,
+        "negative_exclusions": 6,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    },
+    "portrait-points-hair-candidate-002": {
+      "label": "SAM3 hair points: candidate 2, predicted IoU 0.8568",
+      "subject": "portrait",
+      "selected_pixels": 422266,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/portrait-points-hair-candidate-002",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 5,
+        "negative_exclusions": 7,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    },
+    "portrait-points-hair-highest-iou": {
+      "label": "SAM3 hair points: highest IoU, candidate 2",
+      "subject": "portrait",
+      "selected_pixels": 422266,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/portrait-points-hair-highest-iou",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 5,
+        "negative_exclusions": 7,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    },
+    "portrait-text-hair-instance-000": {
+      "label": "SAM3 text hair: instance 0, score 0.9280",
+      "subject": "portrait",
+      "selected_pixels": 457307,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white",
+        "confidence-NOT-alpha"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/portrait-text-hair-instance-000",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 5,
+        "negative_exclusions": 7,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    },
+    "portrait-text-hair-union": {
+      "label": "SAM3 text hair: union of ALL 1 instances",
+      "subject": "portrait",
+      "selected_pixels": 457307,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white",
+        "confidence-NOT-alpha"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/portrait-text-hair-union",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 5,
+        "negative_exclusions": 7,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    },
+    "portrait-text-person-instance-000": {
+      "label": "SAM3 text person: instance 0, score 0.8931",
+      "subject": "portrait",
+      "selected_pixels": 723189,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white",
+        "confidence-NOT-alpha"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/portrait-text-person-instance-000",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 5,
+        "negative_exclusions": 4,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    },
+    "portrait-text-person-union": {
+      "label": "SAM3 text person: union of ALL 1 instances",
+      "subject": "portrait",
+      "selected_pixels": 723189,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white",
+        "confidence-NOT-alpha"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/portrait-text-person-union",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 5,
+        "negative_exclusions": 4,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    },
+    "sam2-large-1024": {
+      "label": "SAM2.1 Large 1024 / frozen points",
+      "subject": "portrait",
+      "selected_pixels": 434805,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/sam2-large-1024",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 5,
+        "negative_exclusions": 7,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    },
+    "sam2-large-2048": {
+      "label": "SAM2.1 Large 2048 / frozen points",
+      "subject": "portrait",
+      "selected_pixels": 428544,
+      "views": [
+        "source",
+        "binary-mask",
+        "overlay",
+        "black",
+        "white"
+      ],
+      "directory": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/sam2-large-2048",
+      "frozen_hair_point_consistency": {
+        "positive_hits": 5,
+        "negative_exclusions": 7,
+        "interpretation": "Hair prompt consistency only; not a quality criterion for person scope."
+      }
+    }
+  },
+  "hair_pair_differences": {
+    "sam2-large-1024--sam3-text-hair": {
+      "full": {
+        "iou_between_candidates": 0.9468183772294492,
+        "changed_pixel_share": 0.013980678323924916,
+        "grayscale_mae": 3.5650729726008534,
+        "grayscale_rmse": 30.151179214306325,
+        "area_a": 434805,
+        "area_b": 457307
+      },
+      "crops": {
+        "top": {
+          "iou_between_candidates": 0.9233070995245122,
+          "changed_pixel_share": 0.051661297745052924,
+          "grayscale_mae": 13.173630924988496,
+          "grayscale_rmse": 57.95926057043919,
+          "area_a": 67584,
+          "area_b": 73179
+        },
+        "right": {
+          "iou_between_candidates": 0.9274996738137694,
+          "changed_pixel_share": 0.04596084918665564,
+          "grayscale_mae": 11.720016542597188,
+          "grayscale_rmse": 54.66812799394436,
+          "area_a": 85315,
+          "area_b": 91961
+        },
+        "face": {
+          "iou_between_candidates": 0.9741817660961112,
+          "changed_pixel_share": 0.012207407407407408,
+          "grayscale_mae": 3.112888888888889,
+          "grayscale_rmse": 28.17421989455372,
+          "area_a": 54722,
+          "area_b": 55540
+        },
+        "bottom": {
+          "iou_between_candidates": 0.8685737763853937,
+          "changed_pixel_share": 0.030760908763072484,
+          "grayscale_mae": 7.844031734583483,
+          "grayscale_rmse": 44.72390962694103,
+          "area_a": 16936,
+          "area_b": 19447
+        },
+        "flowers": {
+          "iou_between_candidates": 1,
+          "changed_pixel_share": 0.0,
+          "grayscale_mae": 0.0,
+          "grayscale_rmse": 0.0,
+          "area_a": 0,
+          "area_b": 0
+        },
+        "artifact-supplement": {
+          "iou_between_candidates": 0.9408875765983649,
+          "changed_pixel_share": 0.052421052631578945,
+          "grayscale_mae": 13.36736842105263,
+          "grayscale_rmse": 58.38389287610429,
+          "area_a": 63413,
+          "area_b": 67397
+        }
+      }
+    },
+    "sam2-large-2048--sam3-text-hair": {
+      "full": {
+        "iou_between_candidates": 0.9210147960367526,
+        "changed_pixel_share": 0.020895291201982653,
+        "grayscale_mae": 5.328299256505576,
+        "grayscale_rmse": 36.86076925959254,
+        "area_a": 428544,
+        "area_b": 457307
+      },
+      "crops": {
+        "top": {
+          "iou_between_candidates": 0.8512582998606443,
+          "changed_pixel_share": 0.10020248504371836,
+          "grayscale_mae": 25.551633686148183,
+          "grayscale_rmse": 80.71967907498014,
+          "area_a": 62322,
+          "area_b": 73179
+        },
+        "right": {
+          "iou_between_candidates": 0.9071738658563057,
+          "changed_pixel_share": 0.058953680727874276,
+          "grayscale_mae": 15.03318858560794,
+          "grayscale_rmse": 61.91496660202624,
+          "area_a": 83766,
+          "area_b": 91961
+        },
+        "face": {
+          "iou_between_candidates": 0.9672317994016242,
+          "changed_pixel_share": 0.015576719576719576,
+          "grayscale_mae": 3.972063492063492,
+          "grayscale_rmse": 31.825715867458353,
+          "area_a": 54924,
+          "area_b": 55540
+        },
+        "bottom": {
+          "iou_between_candidates": 0.8958490566037736,
+          "changed_pixel_share": 0.026541651640822214,
+          "grayscale_mae": 6.768121168409665,
+          "grayscale_rmse": 41.54360237081595,
+          "area_a": 20745,
+          "area_b": 19447
+        },
+        "flowers": {
+          "iou_between_candidates": 1,
+          "changed_pixel_share": 0.0,
+          "grayscale_mae": 0.0,
+          "grayscale_rmse": 0.0,
+          "area_a": 0,
+          "area_b": 0
+        },
+        "artifact-supplement": {
+          "iou_between_candidates": 0.8254818463729839,
+          "changed_pixel_share": 0.15476315789473685,
+          "grayscale_mae": 39.4646052631579,
+          "grayscale_rmse": 100.31686967856037,
+          "area_a": 55635,
+          "area_b": 67397
+        }
+      }
+    },
+    "sam2-large-1024--sam3-points-hair": {
+      "full": {
+        "iou_between_candidates": 0.9373258076984803,
+        "changed_pixel_share": 0.015906535407774564,
+        "grayscale_mae": 4.056166528982514,
+        "grayscale_rmse": 32.16088408129573,
+        "area_a": 434805,
+        "area_b": 422266
+      },
+      "crops": {
+        "top": {
+          "iou_between_candidates": 0.9282784791651463,
+          "changed_pixel_share": 0.045227795674183155,
+          "grayscale_mae": 11.533087896916705,
+          "grayscale_rmse": 54.23041041439535,
+          "area_a": 67584,
+          "area_b": 64532
+        },
+        "right": {
+          "iou_between_candidates": 0.9483590787889697,
+          "changed_pixel_share": 0.03163771712158809,
+          "grayscale_mae": 8.067617866004962,
+          "grayscale_rmse": 45.35683582252256,
+          "area_a": 85315,
+          "area_b": 87861
+        },
+        "face": {
+          "iou_between_candidates": 0.9180047021086588,
+          "changed_pixel_share": 0.03808677248677249,
+          "grayscale_mae": 9.712126984126984,
+          "grayscale_rmse": 49.76537331269987,
+          "area_a": 54722,
+          "area_b": 50517
+        },
+        "bottom": {
+          "iou_between_candidates": 0.9068700602442934,
+          "changed_pixel_share": 0.02025483832191369,
+          "grayscale_mae": 5.164983772087991,
+          "grayscale_rmse": 36.291470924756375,
+          "area_a": 16936,
+          "area_b": 17565
+        },
+        "flowers": {
+          "iou_between_candidates": 1,
+          "changed_pixel_share": 0.0,
+          "grayscale_mae": 0.0,
+          "grayscale_rmse": 0.0,
+          "area_a": 0,
+          "area_b": 0
+        },
+        "artifact-supplement": {
+          "iou_between_candidates": 0.9131234379666452,
+          "changed_pixel_share": 0.07272368421052632,
+          "grayscale_mae": 18.54453947368421,
+          "grayscale_rmse": 68.76668936185217,
+          "area_a": 63413,
+          "area_b": 58298
+        }
+      }
+    },
+    "sam2-large-2048--sam3-points-hair": {
+      "full": {
+        "iou_between_candidates": 0.9121345400525449,
+        "changed_pixel_share": 0.022428748451053283,
+        "grayscale_mae": 5.719330855018587,
+        "grayscale_rmse": 38.18938815992919,
+        "area_a": 428544,
+        "area_b": 422266
+      },
+      "crops": {
+        "top": {
+          "iou_between_candidates": 0.8753732887850744,
+          "changed_pixel_share": 0.07758858720662679,
+          "grayscale_mae": 19.78508973768983,
+          "grayscale_rmse": 71.0295564051396,
+          "area_a": 62322,
+          "area_b": 64532
+        },
+        "right": {
+          "iou_between_candidates": 0.9226253822801259,
+          "changed_pixel_share": 0.04760821615660325,
+          "grayscale_mae": 12.140095119933829,
+          "grayscale_rmse": 55.63923306070211,
+          "area_a": 83766,
+          "area_b": 87861
+        },
+        "face": {
+          "iou_between_candidates": 0.9092637525803063,
+          "changed_pixel_share": 0.04242116402116402,
+          "grayscale_mae": 10.817396825396825,
+          "grayscale_rmse": 52.520816734664265,
+          "area_a": 54924,
+          "area_b": 50517
+        },
+        "bottom": {
+          "iou_between_candidates": 0.8327512797206142,
+          "changed_pixel_share": 0.04202428176463517,
+          "grayscale_mae": 10.71619184998197,
+          "grayscale_rmse": 52.2745532907303,
+          "area_a": 20745,
+          "area_b": 17565
+        },
+        "flowers": {
+          "iou_between_candidates": 1,
+          "changed_pixel_share": 0.0,
+          "grayscale_mae": 0.0,
+          "grayscale_rmse": 0.0,
+          "area_a": 0,
+          "area_b": 0
+        },
+        "artifact-supplement": {
+          "iou_between_candidates": 0.8330464162175207,
+          "changed_pixel_share": 0.13653947368421052,
+          "grayscale_mae": 34.81756578947368,
+          "grayscale_rmse": 94.22568267895855,
+          "area_a": 55635,
+          "area_b": 58298
+        }
+      }
+    }
+  },
+  "peak_rss_bytes": null,
+  "peak_rss_note": "Not sampled for successful run; no inference rerun solely to measure memory.",
+  "point_checks": {
+    "selection": "highest predicted IoU",
+    "selected_index": 2,
+    "candidates": [
+      {
+        "index": 0,
+        "score": 0.20751038193702698,
+        "positive_hits": 2,
+        "positive_total": 5,
+        "negative_exclusions": 7,
+        "negative_total": 7,
+        "at_points": [
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "index": 1,
+        "score": 0.7956976294517517,
+        "positive_hits": 5,
+        "positive_total": 5,
+        "negative_exclusions": 6,
+        "negative_total": 7,
+        "at_points": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "index": 2,
+        "score": 0.8568304181098938,
+        "positive_hits": 5,
+        "positive_total": 5,
+        "negative_exclusions": 7,
+        "negative_total": 7,
+        "at_points": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "marker_view": "/private/tmp/openphoto-sam3-native.l38IVW/visuals/frozen-hair-points-source.png"
+  },
+  "portability_diff": "diff --git a/sam3/model/decoder.py b/sam3/model/decoder.py\nindex 578a2bf..dcebdb7 100644\n--- a/sam3/model/decoder.py\n+++ b/sam3/model/decoder.py\n@@ -298,7 +298,7 @@ class TransformerDecoder(nn.Module):\n             if resolution is not None and stride is not None:\n                 feat_size = resolution // stride\n                 coords_h, coords_w = self._get_coords(\n-                    feat_size, feat_size, device=\"cuda\"\n+                    feat_size, feat_size, device=\"cuda\" if torch.cuda.is_available() else \"cpu\"\n                 )\n                 self.compilable_cord_cache = (coords_h, coords_w)\n                 self.compilable_stored_size = (feat_size, feat_size)\ndiff --git a/sam3/model/geometry_encoders.py b/sam3/model/geometry_encoders.py\nindex f86cc97..f3aafc4 100644\n--- a/sam3/model/geometry_encoders.py\n+++ b/sam3/model/geometry_encoders.py\n@@ -648,7 +648,9 @@ class SequenceGeometryEncoder(nn.Module):\n             # We need to denormalize, and convert to [x, y, x, y]\n             boxes_xyxy = box_cxcywh_to_xyxy(boxes)\n             scale = torch.tensor([W, H, W, H], dtype=boxes_xyxy.dtype)\n-            scale = scale.pin_memory().to(device=boxes_xyxy.device, non_blocking=True)\n+            if boxes_xyxy.is_cuda:\n+                scale = scale.pin_memory()\n+            scale = scale.to(device=boxes_xyxy.device, non_blocking=True)\n             scale = scale.view(1, 1, 4)\n             boxes_xyxy = boxes_xyxy * scale\n             sampled = torchvision.ops.roi_align(\ndiff --git a/sam3/model/position_encoding.py b/sam3/model/position_encoding.py\nindex f38c62b..9debcee 100644\n--- a/sam3/model/position_encoding.py\n+++ b/sam3/model/position_encoding.py\n@@ -52,7 +52,7 @@ class PositionEmbeddingSine(nn.Module):\n                 (precompute_resolution // 32, precompute_resolution // 32),\n             ]\n             for size in precompute_sizes:\n-                tensors = torch.zeros((1, 1) + size, device=\"cuda\")\n+                tensors = torch.zeros((1, 1) + size, device=\"cuda\" if torch.cuda.is_available() else \"cpu\")\n                 self.forward(tensors)\n                 # further clone and detach it in the cache (just to be safe)\n                 self.cache[size] = self.cache[size].clone().detach()\ndiff --git a/sam3/model/sam3_tracker_utils.py b/sam3/model/sam3_tracker_utils.py\nindex 7b6047e..f5ede4e 100644\n--- a/sam3/model/sam3_tracker_utils.py\n+++ b/sam3/model/sam3_tracker_utils.py\n@@ -6,7 +6,6 @@ import numpy as np\n import torch\n import torch.nn.functional as F\n from numpy.typing import NDArray\n-from sam3.model.edt import edt_triton\n \n \n def sample_box_points(\n@@ -178,6 +177,8 @@ def sample_one_point_from_error_center(gt_masks, pred_masks, padding=True):\n         padded_fp_masks = fp_masks\n         padded_fn_masks = fn_masks\n \n+    from sam3.model.edt import edt_triton\n+\n     fn_mask_dt = edt_triton(padded_fn_masks)\n     fp_mask_dt = edt_triton(padded_fp_masks)\n     if padding:\ndiff --git a/sam3/model/vitdet.py b/sam3/model/vitdet.py\nindex fe8e402..a70ef95 100644\n--- a/sam3/model/vitdet.py\n+++ b/sam3/model/vitdet.py\n@@ -68,7 +68,7 @@ class Mlp(nn.Module):\n         self.drop2 = nn.Dropout(drop_probs[1])\n \n     def forward(self, x):\n-        x = addmm_act(type(self.act), self.fc1, x)\n+        x = addmm_act(type(self.act), self.fc1, x) if x.is_cuda else self.act(self.fc1(x))\n         x = self.drop1(x)\n         x = self.norm(x)\n         x = self.fc2(x)\n",
+  "cross_prompt_consistency": {
+    "hair_pixels": 457307,
+    "person_pixels": 723189,
+    "hair_outside_person_pixels": 6396,
+    "person_beyond_hair_pixels": 272278,
+    "interpretation": "Independent native text queries; scope-consistency telemetry, not accuracy. No nesting or clipping imposed."
+  }
+}

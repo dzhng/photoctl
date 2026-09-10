@@ -1,0 +1,47 @@
+{
+  "original_native_all_finite": true,
+  "original_lowres_all_finite": true,
+  "original_png_exactly_native_threshold": true,
+  "new_native_all_finite": true,
+  "new_lowres_all_finite": true,
+  "native_shapes": [
+    [
+      3,
+      1080,
+      1614
+    ],
+    [
+      3,
+      1080,
+      1614
+    ]
+  ],
+  "lowres_shapes": [
+    [
+      3,
+      512,
+      512
+    ],
+    [
+      3,
+      512,
+      512
+    ]
+  ],
+  "lowres_artifact_box_approx_xyxy": [
+    260,
+    37,
+    334,
+    105
+  ],
+  "original_lowres_artifact_nonpositive_fraction": 0.1800476947535771,
+  "original_lowres_artifact_min_max": [
+    -3.3271450996398926,
+    4.869206428527832
+  ],
+  "flip_back_lowres_artifact_nonpositive_fraction": 0.053457869634340224,
+  "flip_back_lowres_artifact_min_max": [
+    -2.8031163215637207,
+    5.121962547302246
+  ]
+}

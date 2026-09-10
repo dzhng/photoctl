@@ -1,0 +1,72 @@
+{
+  "rule": "32x32 grid inset8; seed alpha>=.99 foreground,<=.01 background. Up to4 each: nearest crop center then farthest-point spread. No manual points or fresh VLM calls. Fixed evaluation crops only; crop placement and recombination are not automatic.",
+  "variants": {
+    "hair-context": {
+      "status": "inferred",
+      "bounds": [
+        590,
+        0,
+        1614,
+        1080
+      ],
+      "points": [
+        [
+          528,
+          557
+        ],
+        [
+          73,
+          214
+        ],
+        [
+          950,
+          831
+        ],
+        [
+          560,
+          111
+        ],
+        [
+          495,
+          557
+        ],
+        [
+          1015,
+          8
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          1015,
+          1071
+        ]
+      ],
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "scores": [
+        0.8747814893722534,
+        0.8615754842758179,
+        0.22666090726852417,
+        0.8966134786605835
+      ],
+      "selected_index": 3,
+      "encoder_seconds": 3.016580583062023,
+      "decoder_seconds": 0.15889566694386303,
+      "peak_rss_bytes": 6619578368,
+      "distance_only": {
+        "mae": 0.017648961395025253,
+        "changed_gt_0_1": 0.048130967881944445
+      }
+    }
+  }
+}

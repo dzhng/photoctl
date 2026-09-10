@@ -1,0 +1,29 @@
+{
+  "zim-guidance": {
+    "all_pixels_exact": true,
+    "compared": [
+      "two-stage progressive refinement",
+      "largest component on padded float alpha",
+      "native crop",
+      "uint8 truncation",
+      "PNG decoding"
+    ],
+    "additional_intermediates": "Reconstructed from saved heads using explicit NumPy/OpenCV operations; no additional model call"
+  },
+  "tracked_source_diff": "",
+  "scripts_sha256": {
+    "watchdog.py": "35d9155ab9ba84803b42f9014e72705dbc8592322ee13c3ceafd9d4ed1e0f9bd",
+    "test_zim_conversion.py": "a712a3775759154fcf3d546cc5d7000535ce2f367ea30c802e28000d53af26a3",
+    "adapter.py": "16890c0e5286a9adc41b983763e349e78033675cfab76e0fb5e71fab51973ad3",
+    "test_adapter.py": "14c332bd1c339737ef3942643d20d598f3dae3ad9c89db306677c294d434e9a1",
+    "probe_zim_v2.py": "995002e095bb6d2ccf2f4a9ab1068e21d7f3ba3822ed6aa15105e0b2d323b470",
+    "capture_review.py": "b5ffcc6c09d07acbeac8639d389e78a76beb945ccc4389699fcb6532dba8223d",
+    "verify_artifacts.py": "a4bb72c12e51387d2680f8cbf3f7f8232fc271a0999cc4ac7781ff67d21b13b1",
+    "archive_evidence.py": "aacc35cde906586859a70f6d5f61839a6c77fae8f988d9ae5932b4edefc9065d",
+    "watchdog_zim_v2.py": "a8653d0f010494b27ce4cee4978ec5c2a4e2a0d0b2757be23e98242da6f6a2e9",
+    "probe.py": "3283a096011b627be3b2af004bc69287aed911e91a8853ec36fc0d813f8bdc81",
+    "capture_zim_control.py": "949a25440fa83936186688fa6d57c336a14328579dc9529b69aa80f7ee022fa8",
+    "verify_zim_v2.py": "5f5f984574655127385fade07c0938c58badfb601151c7b7c66b67e95d2461d2",
+    "zim_conversion.py": "82a82d550b75a681877dc9603b2af105f1052b430fac9e90cde8774ca22ea05e"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "rule": "selected original12 ZIM alpha <=0.01 => BG0; >=0.99 => FG255; otherwise unknown128. No morphology or widening.",
+  "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+  "seed_sha256": "86e8d25acd9293948328199008e9a0ab8a979366bbeb8bb53b584cdb35f44215",
+  "model_path": "/private/tmp/openphoto-vitmatte.5zPl0e/cache/hub/models--hustvl--vitmatte-small-composition-1k/snapshots/6a58ad7646403c1df626fbd746900aec7361ea1d",
+  "model_manifest": "/private/tmp/openphoto-vitmatte.5zPl0e/model-manifest.json",
+  "load_seconds": 0.06111795804463327,
+  "inference_seconds": 6.300157958990894,
+  "inference_peak_rss_bytes_macos": 9313894400,
+  "torch_threads": 4,
+  "torch_interop_threads": 1,
+  "input_shape": [
+    1,
+    4,
+    1088,
+    1632
+  ],
+  "trimap_counts": {
+    "0": 1219304,
+    "128": 139199,
+    "255": 384617
+  },
+  "trimap_fraction": {
+    "0": 0.6994951581073019,
+    "128": 0.07985623479737482,
+    "255": 0.22064860709532333
+  },
+  "distance_only": {
+    "raw": {
+      "mae_alpha": 0.00764890480786562,
+      "rmse_alpha": 0.04111400619149208,
+      "changed_over_0.01": 0.07071572811969343,
+      "changed_over_0.1": 0.026581646702464545,
+      "alpha_range": [
+        3.499746492607869e-09,
+        1.0
+      ]
+    },
+    "constrained": {
+      "mae_alpha": 0.007648049388080835,
+      "rmse_alpha": 0.04105518013238907,
+      "changed_over_0.01": 0.07067212813805131,
+      "changed_over_0.1": 0.026570173023085043,
+      "alpha_range": [
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "python": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "final_peak_rss_bytes_macos": 9313894400
+}

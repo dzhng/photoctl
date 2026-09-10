@@ -1,0 +1,50 @@
+{
+  "purpose": "crop-scale diagnostic, NOT automatic whole-image pipeline",
+  "prompt": "one manually chosen positive sky point [400,50] in each crop; no negative points",
+  "variants": {
+    "wires": {
+      "bounds": [
+        800,
+        650,
+        1600,
+        1300
+      ],
+      "scores": [
+        0.8902878761291504,
+        0.8750060796737671,
+        0.19961939752101898,
+        0.9167801141738892
+      ],
+      "selected_index": 3,
+      "encoder_seconds": 2.856704416917637,
+      "decoder_seconds": 0.14811012509744614,
+      "peak_rss_bytes": 6588776448,
+      "distance_from_global": {
+        "mae": 0.027277223765850067,
+        "changed_gt_0_1": 0.07074807692307693
+      }
+    },
+    "foliage": {
+      "bounds": [
+        2900,
+        1050,
+        3600,
+        1700
+      ],
+      "scores": [
+        0.8969786167144775,
+        0.8825207948684692,
+        0.20051181316375732,
+        0.920271635055542
+      ],
+      "selected_index": 3,
+      "encoder_seconds": 2.892136000096798,
+      "decoder_seconds": 0.14764066692441702,
+      "peak_rss_bytes": 9377595392,
+      "distance_from_global": {
+        "mae": 0.026921382173895836,
+        "changed_gt_0_1": 0.08265494505494506
+      }
+    }
+  }
+}

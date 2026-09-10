@@ -1,0 +1,229 @@
+{
+  "state": "hair",
+  "labels": {
+    "A": "Native SAM 3",
+    "B": "ZIM",
+    "C": "MatAnyone 2 (hair OOD)"
+  },
+  "crops": {
+    "top": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "right": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "face": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "bottom": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "flowers": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "artifact-supplement": [
+      700,
+      60,
+      1080,
+      260
+    ]
+  },
+  "semantics": "Original-resolution alpha; fractional display-RGB composites without threshold or foreground decontamination. Metrics measure difference, not accuracy.",
+  "differences": {
+    "A": {
+      "full": {
+        "mean_absolute_alpha_difference": 0.0115385502576828,
+        "rmse_alpha_difference": 0.09034503251314163,
+        "fraction_difference_gt_0_1": 0.019139818256918628,
+        "edge_energy_a": 0.01959700882434845,
+        "edge_energy_b": 0.02149331569671631,
+        "fraction_edge_difference_gt_0_1": 0.026732525586305015
+      },
+      "crops": {
+        "top": {
+          "mean_absolute_alpha_difference": 0.03142184764146805,
+          "rmse_alpha_difference": 0.14482566714286804,
+          "fraction_difference_gt_0_1": 0.05688909341923608,
+          "edge_energy_a": 0.048408303409814835,
+          "edge_energy_b": 0.06641782075166702,
+          "fraction_edge_difference_gt_0_1": 0.08174873446847676
+        },
+        "right": {
+          "mean_absolute_alpha_difference": 0.04241817072033882,
+          "rmse_alpha_difference": 0.17518074810504913,
+          "fraction_difference_gt_0_1": 0.06781775572098153,
+          "edge_energy_a": 0.04577323794364929,
+          "edge_energy_b": 0.054981835186481476,
+          "fraction_edge_difference_gt_0_1": 0.083767576509512
+        },
+        "face": {
+          "mean_absolute_alpha_difference": 0.016380971297621727,
+          "rmse_alpha_difference": 0.10713143646717072,
+          "fraction_difference_gt_0_1": 0.028774603174603175,
+          "edge_energy_a": 0.05319938063621521,
+          "edge_energy_b": 0.05924518406391144,
+          "fraction_edge_difference_gt_0_1": 0.05197883597883598
+        },
+        "bottom": {
+          "mean_absolute_alpha_difference": 0.02983875572681427,
+          "rmse_alpha_difference": 0.14586934447288513,
+          "fraction_difference_gt_0_1": 0.04458468565933405,
+          "edge_energy_a": 0.045778047293424606,
+          "edge_energy_b": 0.03513265773653984,
+          "fraction_edge_difference_gt_0_1": 0.0531313859838923
+        },
+        "flowers": {
+          "mean_absolute_alpha_difference": 0.0,
+          "rmse_alpha_difference": 0.0,
+          "fraction_difference_gt_0_1": 0.0,
+          "edge_energy_a": 0.0,
+          "edge_energy_b": 0.0,
+          "fraction_edge_difference_gt_0_1": 0.0
+        },
+        "artifact-supplement": {
+          "mean_absolute_alpha_difference": 0.021024411544203758,
+          "rmse_alpha_difference": 0.11396326869726181,
+          "fraction_difference_gt_0_1": 0.04138157894736842,
+          "edge_energy_a": 0.039860911667346954,
+          "edge_energy_b": 0.046372223645448685,
+          "fraction_edge_difference_gt_0_1": 0.06255263157894737
+        }
+      }
+    },
+    "B": {
+      "full": {
+        "mean_absolute_alpha_difference": 0.019653556868433952,
+        "rmse_alpha_difference": 0.09544102102518082,
+        "fraction_difference_gt_0_1": 0.049895015833677545,
+        "edge_energy_a": 0.0291883684694767,
+        "edge_energy_b": 0.02149331569671631,
+        "fraction_edge_difference_gt_0_1": 0.05971361696268759
+      },
+      "crops": {
+        "top": {
+          "mean_absolute_alpha_difference": 0.04924390837550163,
+          "rmse_alpha_difference": 0.12155100703239441,
+          "fraction_difference_gt_0_1": 0.16508973768982974,
+          "edge_energy_a": 0.10135740786790848,
+          "edge_energy_b": 0.06641782075166702,
+          "fraction_edge_difference_gt_0_1": 0.20873446847676025
+        },
+        "right": {
+          "mean_absolute_alpha_difference": 0.07380755245685577,
+          "rmse_alpha_difference": 0.19710330665111542,
+          "fraction_difference_gt_0_1": 0.1669010201268266,
+          "edge_energy_a": 0.07335135340690613,
+          "edge_energy_b": 0.054981835186481476,
+          "fraction_edge_difference_gt_0_1": 0.17797766749379654
+        },
+        "face": {
+          "mean_absolute_alpha_difference": 0.025998583063483238,
+          "rmse_alpha_difference": 0.10502505302429199,
+          "fraction_difference_gt_0_1": 0.06968888888888888,
+          "edge_energy_a": 0.057748351246118546,
+          "edge_energy_b": 0.05924518406391144,
+          "fraction_edge_difference_gt_0_1": 0.09914074074074074
+        },
+        "bottom": {
+          "mean_absolute_alpha_difference": 0.08296925574541092,
+          "rmse_alpha_difference": 0.20335350930690765,
+          "fraction_difference_gt_0_1": 0.1900348599591297,
+          "edge_energy_a": 0.06981562077999115,
+          "edge_energy_b": 0.03513265773653984,
+          "fraction_edge_difference_gt_0_1": 0.19152542372881357
+        },
+        "flowers": {
+          "mean_absolute_alpha_difference": 1.4068817790757748e-06,
+          "rmse_alpha_difference": 1.425506252417108e-05,
+          "fraction_difference_gt_0_1": 0.0,
+          "edge_energy_a": 3.6007056678499794e-06,
+          "edge_energy_b": 0.0,
+          "fraction_edge_difference_gt_0_1": 0.0
+        },
+        "artifact-supplement": {
+          "mean_absolute_alpha_difference": 0.0393606536090374,
+          "rmse_alpha_difference": 0.11172063648700714,
+          "fraction_difference_gt_0_1": 0.12669736842105264,
+          "edge_energy_a": 0.06005321070551872,
+          "edge_energy_b": 0.046372223645448685,
+          "fraction_edge_difference_gt_0_1": 0.14952631578947367
+        }
+      }
+    },
+    "C": {
+      "full": {
+        "mean_absolute_alpha_difference": 0.0,
+        "rmse_alpha_difference": 0.0,
+        "fraction_difference_gt_0_1": 0.0,
+        "edge_energy_a": 0.02149331569671631,
+        "edge_energy_b": 0.02149331569671631,
+        "fraction_edge_difference_gt_0_1": 0.0
+      },
+      "crops": {
+        "top": {
+          "mean_absolute_alpha_difference": 0.0,
+          "rmse_alpha_difference": 0.0,
+          "fraction_difference_gt_0_1": 0.0,
+          "edge_energy_a": 0.06641782075166702,
+          "edge_energy_b": 0.06641782075166702,
+          "fraction_edge_difference_gt_0_1": 0.0
+        },
+        "right": {
+          "mean_absolute_alpha_difference": 0.0,
+          "rmse_alpha_difference": 0.0,
+          "fraction_difference_gt_0_1": 0.0,
+          "edge_energy_a": 0.054981835186481476,
+          "edge_energy_b": 0.054981835186481476,
+          "fraction_edge_difference_gt_0_1": 0.0
+        },
+        "face": {
+          "mean_absolute_alpha_difference": 0.0,
+          "rmse_alpha_difference": 0.0,
+          "fraction_difference_gt_0_1": 0.0,
+          "edge_energy_a": 0.05924518406391144,
+          "edge_energy_b": 0.05924518406391144,
+          "fraction_edge_difference_gt_0_1": 0.0
+        },
+        "bottom": {
+          "mean_absolute_alpha_difference": 0.0,
+          "rmse_alpha_difference": 0.0,
+          "fraction_difference_gt_0_1": 0.0,
+          "edge_energy_a": 0.03513265773653984,
+          "edge_energy_b": 0.03513265773653984,
+          "fraction_edge_difference_gt_0_1": 0.0
+        },
+        "flowers": {
+          "mean_absolute_alpha_difference": 0.0,
+          "rmse_alpha_difference": 0.0,
+          "fraction_difference_gt_0_1": 0.0,
+          "edge_energy_a": 0.0,
+          "edge_energy_b": 0.0,
+          "fraction_edge_difference_gt_0_1": 0.0
+        },
+        "artifact-supplement": {
+          "mean_absolute_alpha_difference": 0.0,
+          "rmse_alpha_difference": 0.0,
+          "fraction_difference_gt_0_1": 0.0,
+          "edge_energy_a": 0.046372223645448685,
+          "edge_energy_b": 0.046372223645448685,
+          "fraction_edge_difference_gt_0_1": 0.0
+        }
+      }
+    }
+  }
+}

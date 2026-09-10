@@ -1,0 +1,562 @@
+[
+  {
+    "region": "full",
+    "box": [
+      0,
+      0,
+      1614,
+      1080
+    ],
+    "trimap_counts": {
+      "0": 392010,
+      "128": 1335059,
+      "255": 16051
+    },
+    "mean_alpha": {
+      "A-binary": 0.24584881961345673,
+      "B-raw": 0.5547974705696106,
+      "C-constrained": 0.5537564754486084
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 1314576,
+      "B-raw": 727078,
+      "C-constrained": 728528
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.3214845359325409,
+        "rmse_alpha": 0.5067419409751892,
+        "changed_over_0.01": 0.524399352884483,
+        "changed_over_0.1": 0.44855489008215155
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.32044345140457153,
+        "rmse_alpha": 0.506148636341095,
+        "changed_over_0.01": 0.5215659277617146,
+        "changed_over_0.1": 0.4462785120932581
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.0010410947725176811,
+        "rmse_alpha": 0.024515466764569283,
+        "changed_over_0.01": 0.0028334251227683693,
+        "changed_over_0.1": 0.0022763779888934784
+      }
+    ]
+  },
+  {
+    "region": "top",
+    "box": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "trimap_counts": {
+      "0": 10424,
+      "128": 98221,
+      "255": 5
+    },
+    "mean_alpha": {
+      "A-binary": 0.5736033320426941,
+      "B-raw": 0.5669775605201721,
+      "C-constrained": 0.5669556260108948
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 46328,
+      "B-raw": 45343,
+      "C-constrained": 45343
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.11848537623882294,
+        "rmse_alpha": 0.24352876842021942,
+        "changed_over_0.01": 0.49665899677864705,
+        "changed_over_0.1": 0.28467556373676944
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.11846349388360977,
+        "rmse_alpha": 0.24352869391441345,
+        "changed_over_0.01": 0.49665899677864705,
+        "changed_over_0.1": 0.28467556373676944
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 2.1895733880228363e-05,
+        "rmse_alpha": 0.00017403450328856707,
+        "changed_over_0.01": 0.0,
+        "changed_over_0.1": 0.0
+      }
+    ]
+  },
+  {
+    "region": "right",
+    "box": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "trimap_counts": {
+      "0": 4,
+      "128": 144612,
+      "255": 464
+    },
+    "mean_alpha": {
+      "A-binary": 0.57737797498703,
+      "B-raw": 0.8014910817146301,
+      "C-constrained": 0.8014910817146301
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 61314,
+      "B-raw": 30039,
+      "C-constrained": 30039
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.25470811128616333,
+        "rmse_alpha": 0.4524654746055603,
+        "changed_over_0.01": 0.501419906258616,
+        "changed_over_0.1": 0.39483733112765373
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.25470805168151855,
+        "rmse_alpha": 0.4524654746055603,
+        "changed_over_0.01": 0.501419906258616,
+        "changed_over_0.1": 0.39483733112765373
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 8.123105033064348e-08,
+        "rmse_alpha": 1.2731909919239115e-05,
+        "changed_over_0.01": 0.0,
+        "changed_over_0.1": 0.0
+      }
+    ]
+  },
+  {
+    "region": "face",
+    "box": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "trimap_counts": {
+      "0": 81,
+      "128": 113789,
+      "255": 4255
+    },
+    "mean_alpha": {
+      "A-binary": 0.4649650752544403,
+      "B-raw": 0.8328431248664856,
+      "C-constrained": 0.8325551748275757
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 63201,
+      "B-raw": 19614,
+      "C-constrained": 19628
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.3685119152069092,
+        "rmse_alpha": 0.5292229056358337,
+        "changed_over_0.01": 0.5401650793650794,
+        "changed_over_0.1": 0.5350349206349206
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.36822381615638733,
+        "rmse_alpha": 0.5291045904159546,
+        "changed_over_0.01": 0.5394793650793651,
+        "changed_over_0.1": 0.5343492063492064
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.00028808569186367095,
+        "rmse_alpha": 0.011187505908310413,
+        "changed_over_0.01": 0.0006857142857142857,
+        "changed_over_0.1": 0.0006857142857142857
+      }
+    ]
+  },
+  {
+    "region": "bottom",
+    "box": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "trimap_counts": {
+      "0": 5,
+      "128": 83013,
+      "255": 172
+    },
+    "mean_alpha": {
+      "A-binary": 0.24936892092227936,
+      "B-raw": 0.8568906784057617,
+      "C-constrained": 0.8568681478500366
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 62445,
+      "B-raw": 8251,
+      "C-constrained": 8254
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.6106109619140625,
+        "rmse_alpha": 0.7383113503456116,
+        "changed_over_0.01": 0.7740473614617142,
+        "changed_over_0.1": 0.7215410506070441
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.6105883717536926,
+        "rmse_alpha": 0.7383020520210266,
+        "changed_over_0.01": 0.7739992787594663,
+        "changed_over_0.1": 0.7215049885803582
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 2.256769221276045e-05,
+        "rmse_alpha": 0.003712046891450882,
+        "changed_over_0.01": 4.808270224786633e-05,
+        "changed_over_0.1": 3.606202668589975e-05
+      }
+    ]
+  },
+  {
+    "region": "flowers",
+    "box": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "trimap_counts": {
+      "0": 191,
+      "128": 99809,
+      "255": 0
+    },
+    "mean_alpha": {
+      "A-binary": 0.0,
+      "B-raw": 0.6718388199806213,
+      "C-constrained": 0.670441746711731
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 100000,
+      "B-raw": 30123,
+      "C-constrained": 30271
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.6718388795852661,
+        "rmse_alpha": 0.7057723999023438,
+        "changed_over_0.01": 1.0,
+        "changed_over_0.1": 1.0
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.6704416275024414,
+        "rmse_alpha": 0.7049940824508667,
+        "changed_over_0.01": 0.99809,
+        "changed_over_0.1": 0.99809
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.0013972505694255233,
+        "rmse_alpha": 0.033135443925857544,
+        "changed_over_0.01": 0.00191,
+        "changed_over_0.1": 0.00191
+      }
+    ]
+  },
+  {
+    "region": "artifact",
+    "box": [
+      820,
+      80,
+      1050,
+      220
+    ],
+    "trimap_counts": {
+      "0": 0,
+      "128": 32200,
+      "255": 0
+    },
+    "mean_alpha": {
+      "A-binary": 0.8380745053291321,
+      "B-raw": 0.8917573094367981,
+      "C-constrained": 0.8917573094367981
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 5214,
+      "B-raw": 2265,
+      "C-constrained": 2265
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.1653449684381485,
+        "rmse_alpha": 0.3309938907623291,
+        "changed_over_0.01": 0.46869565217391307,
+        "changed_over_0.1": 0.3379503105590062
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.1653449684381485,
+        "rmse_alpha": 0.3309938907623291,
+        "changed_over_0.01": 0.46869565217391307,
+        "changed_over_0.1": 0.3379503105590062
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.0,
+        "rmse_alpha": 0.0,
+        "changed_over_0.01": 0.0,
+        "changed_over_0.1": 0.0
+      }
+    ]
+  },
+  {
+    "region": "artifact-context",
+    "box": [
+      700,
+      60,
+      1080,
+      260
+    ],
+    "trimap_counts": {
+      "0": 3896,
+      "128": 72104,
+      "255": 0
+    },
+    "mean_alpha": {
+      "A-binary": 0.7320394515991211,
+      "B-raw": 0.795562207698822,
+      "C-constrained": 0.7955599427223206
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 20365,
+      "B-raw": 13887,
+      "C-constrained": 13887
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.14915813505649567,
+        "rmse_alpha": 0.3056783676147461,
+        "changed_over_0.01": 0.4378684210526316,
+        "changed_over_0.1": 0.2980263157894737
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.14915591478347778,
+        "rmse_alpha": 0.3056783676147461,
+        "changed_over_0.01": 0.4378684210526316,
+        "changed_over_0.1": 0.2980263157894737
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 2.233054374300991e-06,
+        "rmse_alpha": 5.5235610489035025e-05,
+        "changed_over_0.01": 0.0,
+        "changed_over_0.1": 0.0
+      }
+    ]
+  },
+  {
+    "region": "neck",
+    "box": [
+      1060,
+      650,
+      1300,
+      980
+    ],
+    "trimap_counts": {
+      "0": 0,
+      "128": 75151,
+      "255": 4049
+    },
+    "mean_alpha": {
+      "A-binary": 0.5810227394104004,
+      "B-raw": 0.9350390434265137,
+      "C-constrained": 0.9350392818450928
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 33183,
+      "B-raw": 274,
+      "C-constrained": 274
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.35688477754592896,
+        "rmse_alpha": 0.5594311952590942,
+        "changed_over_0.01": 0.44252525252525254,
+        "changed_over_0.1": 0.4214772727272727
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.356884628534317,
+        "rmse_alpha": 0.5594311952590942,
+        "changed_over_0.01": 0.44252525252525254,
+        "changed_over_0.1": 0.4214772727272727
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 1.1042512682024608e-07,
+        "rmse_alpha": 5.5396058087353595e-06,
+        "changed_over_0.01": 0.0,
+        "changed_over_0.1": 0.0
+      }
+    ]
+  },
+  {
+    "region": "artifact-interior-diagnostic",
+    "box": [
+      820,
+      140,
+      900,
+      190
+    ],
+    "trimap_counts": {
+      "0": 0,
+      "128": 4000,
+      "255": 0
+    },
+    "mean_alpha": {
+      "A-binary": 0.5572500228881836,
+      "B-raw": 0.9951015710830688,
+      "C-constrained": 0.9951015710830688
+    },
+    "below_or_equal_half_pixels": {
+      "A-binary": 1771,
+      "B-raw": 0,
+      "C-constrained": 0
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-binary",
+          "B-raw"
+        ],
+        "mae_alpha": 0.43933895230293274,
+        "rmse_alpha": 0.6591984033584595,
+        "changed_over_0.01": 0.4555,
+        "changed_over_0.1": 0.44275
+      },
+      {
+        "pair": [
+          "A-binary",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.43933895230293274,
+        "rmse_alpha": 0.6591984033584595,
+        "changed_over_0.01": 0.4555,
+        "changed_over_0.1": 0.44275
+      },
+      {
+        "pair": [
+          "B-raw",
+          "C-constrained"
+        ],
+        "mae_alpha": 0.0,
+        "rmse_alpha": 0.0,
+        "changed_over_0.01": 0.0,
+        "changed_over_0.1": 0.0
+      }
+    ]
+  }
+]

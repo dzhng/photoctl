@@ -1,0 +1,327 @@
+{
+  "experiment": "Exactly one original-orientation1536 Large portrait inference. OUT-OF-TRAINING-RESOLUTION diagnostic, not official supported benchmark.",
+  "baseline_manifest": "/private/tmp/openphoto-sam21-control.QOaGJ8/method-and-results.json",
+  "prior2048_manifest": "/private/tmp/openphoto-sam21-2048.DVycY8/method-and-results.json",
+  "environment": "/private/tmp/openphoto-sam21-control.QOaGJ8/environment.json",
+  "git_commit": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+  "git_status_after": "",
+  "checkpoint": {
+    "bytes": 898083611,
+    "sha256": "2647878d5dfa5098f2f8649825738a9345572bae2d4350a2468587ece47dd318",
+    "url": "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt"
+  },
+  "weights_load": "Official build_sam2 torch.load weights_only=True, strict load_state_dict; forcedweights_only env; no weight changes.",
+  "overrides": {
+    "hydra": [
+      "model.image_size=1536"
+    ],
+    "predictor._bb_feat_sizes": [
+      [
+        384,
+        384
+      ],
+      [
+        192,
+        192
+      ],
+      [
+        96,
+        96
+      ]
+    ]
+  },
+  "shape_rationale": "1536/stride16=96 prompt embedding. Predictor FPN reshapes384,192,96 asserted against actual features. Model-derived prompt input1536,maskinput384 asserted. Existing official Hiera interpolates background positions and tiles learned window positions; no new adapters.",
+  "controls": "Same source/frozen12points,RGBpreprocess,CPUfloat32fourthreads,eval/inference_mode,seed0,multimask3argmax,threshold0,nohole/sprinkle,noCUDA. 180secondwatchdog, no retries/tuning.",
+  "crops": {
+    "top": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "right": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "face": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "bottom": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "flowers": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "artifact": [
+      820,
+      80,
+      1050,
+      220
+    ],
+    "artifact-context": [
+      700,
+      60,
+      1080,
+      260
+    ],
+    "neck": [
+      1060,
+      650,
+      1300,
+      980
+    ]
+  },
+  "pair_labels": {
+    "A": "1024 original",
+    "B": "1536 original",
+    "C": "2048 original"
+  },
+  "artifact_retention": "All3 native float32 logits,3x384x384 float32 returned clampedlowres logits,scores,nativemasks; allselected fullviews/crops for all3resolutions.",
+  "run": {
+    "subject": "hair",
+    "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+    "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+    "points": [
+      [
+        968,
+        108
+      ],
+      [
+        1323,
+        346
+      ],
+      [
+        1469,
+        594
+      ],
+      [
+        1291,
+        886
+      ],
+      [
+        1130,
+        648
+      ],
+      [
+        888,
+        572
+      ],
+      [
+        807,
+        810
+      ],
+      [
+        484,
+        432
+      ],
+      [
+        646,
+        54
+      ],
+      [
+        161,
+        540
+      ],
+      [
+        1372,
+        1058
+      ],
+      [
+        484,
+        994
+      ]
+    ],
+    "labels": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "config": "configs/sam2.1/sam2.1_hiera_l.yaml",
+    "model": "SAM2.1 Hiera Large",
+    "resolution": 1536,
+    "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+    "experimental_status": "Out-of-training-resolution diagnostic, not supported official benchmark",
+    "overrides": {
+      "hydra": [
+        "model.image_size=1536"
+      ],
+      "predictor._bb_feat_sizes": [
+        [
+          384,
+          384
+        ],
+        [
+          192,
+          192
+        ],
+        [
+          96,
+          96
+        ]
+      ]
+    },
+    "asserted_prompt_sizes": {
+      "input": [
+        1536,
+        1536
+      ],
+      "embedding": [
+        96,
+        96
+      ],
+      "mask_input": [
+        384,
+        384
+      ]
+    },
+    "asserted_backbone_shapes": [
+      [
+        384,
+        384
+      ],
+      [
+        192,
+        192
+      ],
+      [
+        96,
+        96
+      ]
+    ],
+    "device": "cpu",
+    "dtype": "float32",
+    "threads": 4,
+    "interop_threads": 1,
+    "model_load_seconds": 0.7025284580886364,
+    "encoder_seconds": 10.091198249952868,
+    "decoder_and_native_upsample_seconds": 0.07429295894689858,
+    "inference_seconds": 10.165491208899766,
+    "peak_rss_bytes": 3694755840,
+    "selected_index": 2,
+    "candidates": [
+      {
+        "index": 0,
+        "score": 0.5954545140266418,
+        "coverage": 0.15157648354674377,
+        "point_inclusion": [
+          false,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "prompt_satisfied": [
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "index": 1,
+        "score": 0.7573868036270142,
+        "coverage": 0.37189981183165816,
+        "point_inclusion": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        "prompt_satisfied": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false
+        ]
+      },
+      {
+        "index": 2,
+        "score": 0.9073405861854553,
+        "coverage": 0.24743850107852586,
+        "point_inclusion": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "prompt_satisfied": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    ],
+    "selection": "argmax predicted IoU from3 candidates; no visual substitution",
+    "postprocessing": "hole/sprinkle0,threshold0,default stability retained (inactive explicitmultimask),noCUDA cleanup",
+    "all_logits_finite": true
+  },
+  "interpretation": "Promptconsistency and distances only; no accuracy or acceptance claim."
+}

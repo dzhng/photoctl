@@ -1,0 +1,33 @@
+{
+  "person": {
+    "all_pixels_exact": true,
+    "compared": [
+      "two-stage progressive refinement",
+      "largest component on padded float alpha",
+      "native crop",
+      "uint8 truncation",
+      "PNG decoding"
+    ],
+    "additional_intermediates": "Reconstructed from saved heads using explicit NumPy/OpenCV operations; no additional model call"
+  },
+  "hair": {
+    "all_pixels_exact": true,
+    "compared": [
+      "two-stage progressive refinement",
+      "largest component on padded float alpha",
+      "native crop",
+      "uint8 truncation",
+      "PNG decoding"
+    ],
+    "additional_intermediates": "Reconstructed from saved heads using explicit NumPy/OpenCV operations; no additional model call"
+  },
+  "tracked_source_diff": "",
+  "scripts_sha256": {
+    "watchdog.py": "35d9155ab9ba84803b42f9014e72705dbc8592322ee13c3ceafd9d4ed1e0f9bd",
+    "adapter.py": "16890c0e5286a9adc41b983763e349e78033675cfab76e0fb5e71fab51973ad3",
+    "test_adapter.py": "14c332bd1c339737ef3942643d20d598f3dae3ad9c89db306677c294d434e9a1",
+    "capture_review.py": "b5ffcc6c09d07acbeac8639d389e78a76beb945ccc4389699fcb6532dba8223d",
+    "verify_artifacts.py": "a4bb72c12e51387d2680f8cbf3f7f8232fc271a0999cc4ac7781ff67d21b13b1",
+    "probe.py": "3283a096011b627be3b2af004bc69287aed911e91a8853ec36fc0d813f8bdc81"
+  }
+}

@@ -1,0 +1,243 @@
+{
+  "experiment": "Fixed equal-weight two-view selected native logit mean; NO NEW INFERENCE. Diagnostic only, not calibrated alpha or accepted solution.",
+  "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+  "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+  "inputs": [
+    {
+      "path": "/private/tmp/openphoto-sam21-2048.DVycY8/hair/all-native-logits-float32.npy",
+      "sha256": "27e315928789d78b0bc41b0f175aaaea96f2d490f11f507165ee1c6a3cb11045",
+      "selected_index": 2,
+      "recorded_score": 0.8643166422843933
+    },
+    {
+      "path": "/private/tmp/openphoto-sam21-flip.7lhkit/all-native-logits-original-orientation-float32.npy",
+      "sha256": "c3c72d91bab464f7e6be49da56f2d39758568371c7402dca660aec236e3f8a2d",
+      "selected_index": 2,
+      "recorded_score": 0.8629361391067505
+    }
+  ],
+  "selection": "Each input uses its independently recorded argmax predicted IoU candidate, no visual substitution.",
+  "aggregation": "float32 mean = (original_selected_native_logits + mapped_back_flip_selected_native_logits) * float32(0.5); binary = mean >0. No normalization, morphology, fill, or tuning.",
+  "coordinates": "Both saved inputs in original orientation; no new transforms.",
+  "points": [
+    [
+      968,
+      108
+    ],
+    [
+      1323,
+      346
+    ],
+    [
+      1469,
+      594
+    ],
+    [
+      1291,
+      886
+    ],
+    [
+      1130,
+      648
+    ],
+    [
+      888,
+      572
+    ],
+    [
+      807,
+      810
+    ],
+    [
+      484,
+      432
+    ],
+    [
+      646,
+      54
+    ],
+    [
+      161,
+      540
+    ],
+    [
+      1372,
+      1058
+    ],
+    [
+      484,
+      994
+    ]
+  ],
+  "labels": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "pair_labels": {
+    "A": "original2048",
+    "B": "flip2048 mapped back",
+    "C": "equal-weight logit mean"
+  },
+  "crops": {
+    "top": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "right": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "face": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "bottom": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "flowers": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "artifact": [
+      820,
+      80,
+      1050,
+      220
+    ],
+    "artifact-context": [
+      700,
+      60,
+      1080,
+      260
+    ],
+    "neck": [
+      1060,
+      650,
+      1300,
+      980
+    ]
+  },
+  "views": "Native source/mask/40%green overlay/black/white for every variant; nearest-neighbor2x crops; full ABC sheets downscaled for overview, cropABC native2x.",
+  "all_logits_finite": true,
+  "dtype": "float32",
+  "variants": [
+    {
+      "variant": "A-original",
+      "coverage": 0.24584882280049566,
+      "point_inclusion": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "prompt_satisfied": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "variant": "B-flip",
+      "coverage": 0.2504503419156455,
+      "point_inclusion": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "prompt_satisfied": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "variant": "C-mean",
+      "coverage": 0.24870060581027123,
+      "point_inclusion": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "prompt_satisfied": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "interpretation": "Coverage,prompt consistency, and output distances only; no ground-truth accuracy."
+}

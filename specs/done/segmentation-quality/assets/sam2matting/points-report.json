@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "torch": "2.8.0",
+  "python": "3.12.14",
+  "device": "cpu",
+  "threads": 4,
+  "interop_threads": 1,
+  "strict_load": "<All keys matched successfully>",
+  "build_load_seconds": 0.20729254197794944,
+  "inference_and_artifacts_seconds": 4.238471082993783,
+  "total_seconds": 4.4457636249717325,
+  "inference_seconds_including_intermediate_io": 3.88524391700048,
+  "final_artifact_seconds": 0.35322716599330306,
+  "peak_rss_bytes_macos": 7242055680,
+  "alpha_min": 3.470730296824596e-21,
+  "alpha_max": 0.9999758005142212,
+  "alpha_fraction_gt_0_5": 0.22738308320712286,
+  "intermediate_counts": {
+    "sam_mask_decoder": 1,
+    "unknown_fusion": 1,
+    "alpha_pred1": 1,
+    "alpha_pred2": 1,
+    "alpha_pred3": 1
+  }
+}

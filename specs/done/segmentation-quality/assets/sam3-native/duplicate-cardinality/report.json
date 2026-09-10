@@ -1,0 +1,118 @@
+{
+  "purpose": "Synthetic duplicate-instance scope/cardinality diagnostic; NOT a quality holdout",
+  "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+  "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+  "contact_size": [
+    3228,
+    1080
+  ],
+  "construction": "Two pixel-identical RGB copies side by side; no transformations or edits",
+  "copies_pixel_identical_to_source": true,
+  "fixed_copy_points_xy": [
+    [
+      1200,
+      400
+    ],
+    [
+      2814,
+      400
+    ]
+  ],
+  "hit_test_semantics": "Diagnostic membership only; points were not supplied to model and do not select or substitute a mask",
+  "configuration": "Same pinned official SAM3 image builder + documented scratch portability fixes; CPU float32; 4 threads; default1008 resolution and score>0.5/mask>0.5 thresholds; strict weights; no tuning",
+  "results": {
+    "person": {
+      "count": 2,
+      "instances": [
+        {
+          "index": 0,
+          "score": 0.843543529510498,
+          "box_xyxy": [
+            1714.48388671875,
+            47.765743255615234,
+            3207.32861328125,
+            1078.994140625
+          ],
+          "area_pixels": 763630,
+          "contains_copy_points": [
+            false,
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.8472464084625244,
+          "box_xyxy": [
+            97.9694595336914,
+            46.710350036621094,
+            1598.4569091796875,
+            1079.181640625
+          ],
+          "area_pixels": 767113,
+          "contains_copy_points": [
+            true,
+            false
+          ]
+        }
+      ],
+      "union_area_pixels": 1530743,
+      "union_contains_copy_points": [
+        true,
+        true
+      ],
+      "seconds_including_save": 1.6935981250135228
+    },
+    "hair": {
+      "count": 2,
+      "instances": [
+        {
+          "index": 0,
+          "score": 0.9244403839111328,
+          "box_xyxy": [
+            2231.177978515625,
+            46.19819641113281,
+            3216.228271484375,
+            975.897216796875
+          ],
+          "area_pixels": 463261,
+          "contains_copy_points": [
+            false,
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.922845721244812,
+          "box_xyxy": [
+            610.4528198242188,
+            46.214805603027344,
+            1600.706298828125,
+            976.174072265625
+          ],
+          "area_pixels": 466659,
+          "contains_copy_points": [
+            true,
+            false
+          ]
+        }
+      ],
+      "union_area_pixels": 929920,
+      "union_contains_copy_points": [
+        true,
+        true
+      ],
+      "seconds_including_save": 1.2855460840510204
+    }
+  },
+  "model_load_seconds": 6.4781315420987085,
+  "encode_seconds": 6.364913749974221,
+  "total_seconds": 15.824502000003122,
+  "peak_rss_bytes": 7102021632,
+  "watchdog_seconds": 180,
+  "validation": {
+    "unions_match_all_instances": true,
+    "probability_threshold_matches_binary": true,
+    "distinct_instance_membership": "Each returned mask hits exactly one copy point for both prompts; unions hit both",
+    "scope_implication": "Backend yields per-instance masks and supports caller-side hit testing and union. No CLI selection policy implemented. Synthetic duplicate test does not establish quality on a real multi-person holdout."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "max_abs_differences": {
+    "coarse_alpha": 0.0,
+    "alpha": 0.0,
+    "alpha_half": 0.0,
+    "refinement_mask": 0.0,
+    "refinement_mask_half": 0.0
+  },
+  "reference": "Original upstream entry point; CUDA calls replaced by CPU calls, local checkpoint paths and safe CPU checkpoint loading only.",
+  "limitation": "Both entry points use the validated dense sparse backend; separate original spconv comparison consumes the exported real refiner inputs."
+}

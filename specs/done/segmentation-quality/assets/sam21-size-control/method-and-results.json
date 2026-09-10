@@ -1,0 +1,745 @@
+{
+  "official_repo": "https://github.com/facebookresearch/sam2",
+  "git_commit": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+  "git_status": "",
+  "weights": {
+    "small": {
+      "bytes": 184416285,
+      "sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+      "url": "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_small.pt"
+    },
+    "large": {
+      "bytes": 898083611,
+      "sha256": "2647878d5dfa5098f2f8649825738a9345572bae2d4350a2468587ece47dd318",
+      "url": "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt"
+    }
+  },
+  "weights_load": "Official build_sam2 torch.load(weights_only=True), strict load_state_dict; TORCH_FORCE_WEIGHTS_ONLY_LOAD=1",
+  "preprocessing": "Official SAM2Transforms ToTensor RGB uint8, Resize(1024,1024), default torchvision bilinear antialias, Normalize ImageNet mean/std; original pixel points normalized separately by width and height",
+  "inference": "CPU float32; 4 intra-op and 1 inter-op threads; seed 0; eval and inference_mode; no autocast; one set_image plus one predict per subject/model; 180-second subprocess watchdog",
+  "selection": "All three multimask candidates retained; argmax predicted IoU, no visual substitution. No iteration, extra prompts, boxes, or mask input.",
+  "artifact_semantics": "Native binary masks threshold official bilinearly upsampled logits >0. Lowres logits float32 3x256x256 retained (official predictor clamps [-32,32]). Binary masks are segmentation, not alpha mattes. Green overlay is 40% green blend at selected pixels; black/white composites use binary mask. Crops nearest-neighbor 2x.",
+  "visual_target": "Hair selects hair while excluding skin, flowers, fabric and background; sky excludes solid foliage/branches/wires/terrain; road selects the visible path while excluding adjacent vegetation. No hand-drawn truth exists: metrics are differences and prompt consistency, never accuracy.",
+  "pair_labels": {
+    "A": "small",
+    "B": "large"
+  },
+  "crops": {
+    "hair": {
+      "top": [
+        820,
+        15,
+        1350,
+        220
+      ],
+      "right": [
+        1380,
+        170,
+        1614,
+        790
+      ],
+      "face": [
+        855,
+        305,
+        1170,
+        680
+      ],
+      "bottom": [
+        1260,
+        845,
+        1614,
+        1080
+      ],
+      "flowers": [
+        660,
+        670,
+        1060,
+        920
+      ]
+    },
+    "landscape": {
+      "foliage": [
+        2900,
+        1050,
+        3600,
+        1700
+      ],
+      "wires": [
+        800,
+        650,
+        1600,
+        1300
+      ],
+      "path": [
+        2300,
+        2500,
+        3100,
+        3100
+      ]
+    }
+  },
+  "runs": [
+    {
+      "variant": "small",
+      "subject": "hair",
+      "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+      "dimensions": [
+        1614,
+        1080
+      ],
+      "points": [
+        [
+          968,
+          108
+        ],
+        [
+          1323,
+          346
+        ],
+        [
+          1469,
+          594
+        ],
+        [
+          1291,
+          886
+        ],
+        [
+          1130,
+          648
+        ],
+        [
+          888,
+          572
+        ],
+        [
+          807,
+          810
+        ],
+        [
+          484,
+          432
+        ],
+        [
+          646,
+          54
+        ],
+        [
+          161,
+          540
+        ],
+        [
+          1372,
+          1058
+        ],
+        [
+          484,
+          994
+        ]
+      ],
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_s.yaml",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "torch_version": "2.8.0",
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 0.15535570797510445,
+      "encoder_seconds": 0.6442518749972805,
+      "decoder_and_native_upsample_seconds": 0.02774616691749543,
+      "inference_seconds": 0.671998041914776,
+      "peak_rss_bytes": 1502691328,
+      "selected_index": 1,
+      "selection": "numpy.argmax predicted IoU over 3 candidates, first maximum tie policy",
+      "candidates": [
+        {
+          "index": 0,
+          "score": 0.7832995057106018,
+          "coverage": 0.20368362476478957,
+          "point_inclusion": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "prompt_satisfied": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.9263045787811279,
+          "coverage": 0.24032998301895453,
+          "point_inclusion": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "prompt_satisfied": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "score": 0.6426007747650146,
+          "coverage": 0.40436975079168386,
+          "point_inclusion": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true
+          ],
+          "prompt_satisfied": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false
+          ]
+        }
+      ],
+      "lowres_logits": "official predictor clamps returned low-resolution logits to [-32,32]; all float32 retained",
+      "postprocessing": "Image predictor defaults: threshold 0, no hole filling or sprinkle removal; CUDA extension neither built nor used. build_sam2 default stability option retained, inactive for explicitly requested multimask."
+    },
+    {
+      "variant": "small",
+      "subject": "sky",
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "source_sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+      "dimensions": [
+        7008,
+        4672
+      ],
+      "points": [
+        [
+          4000,
+          600
+        ]
+      ],
+      "labels": [
+        1
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_s.yaml",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "torch_version": "2.8.0",
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 0.12833141605369747,
+      "encoder_seconds": 0.6528907920001075,
+      "decoder_and_native_upsample_seconds": 0.05663895793259144,
+      "inference_seconds": 0.7095297499326989,
+      "peak_rss_bytes": 2537750528,
+      "selected_index": 1,
+      "selection": "numpy.argmax predicted IoU over 3 candidates, first maximum tie policy",
+      "candidates": [
+        {
+          "index": 0,
+          "score": 0.9397780299186707,
+          "coverage": 0.29889852521775506,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.9923627376556396,
+          "coverage": 0.3169765986621943,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "score": 0.9788832068443298,
+          "coverage": 0.3238406657069025,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        }
+      ],
+      "lowres_logits": "official predictor clamps returned low-resolution logits to [-32,32]; all float32 retained",
+      "postprocessing": "Image predictor defaults: threshold 0, no hole filling or sprinkle removal; CUDA extension neither built nor used. build_sam2 default stability option retained, inactive for explicitly requested multimask."
+    },
+    {
+      "variant": "small",
+      "subject": "road",
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "source_sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+      "dimensions": [
+        7008,
+        4672
+      ],
+      "points": [
+        [
+          4400,
+          3500
+        ]
+      ],
+      "labels": [
+        1
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_s.yaml",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "torch_version": "2.8.0",
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 0.12421370798256248,
+      "encoder_seconds": 0.6301744589582086,
+      "decoder_and_native_upsample_seconds": 0.05899675004184246,
+      "inference_seconds": 0.689171209000051,
+      "peak_rss_bytes": 2536882176,
+      "selected_index": 1,
+      "selection": "numpy.argmax predicted IoU over 3 candidates, first maximum tie policy",
+      "candidates": [
+        {
+          "index": 0,
+          "score": 0.9622962474822998,
+          "coverage": 0.048551441454384815,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.9817258715629578,
+          "coverage": 0.04986543632130794,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "score": 0.9331490993499756,
+          "coverage": 0.051894184288406205,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        }
+      ],
+      "lowres_logits": "official predictor clamps returned low-resolution logits to [-32,32]; all float32 retained",
+      "postprocessing": "Image predictor defaults: threshold 0, no hole filling or sprinkle removal; CUDA extension neither built nor used. build_sam2 default stability option retained, inactive for explicitly requested multimask."
+    },
+    {
+      "variant": "large",
+      "subject": "hair",
+      "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+      "dimensions": [
+        1614,
+        1080
+      ],
+      "points": [
+        [
+          968,
+          108
+        ],
+        [
+          1323,
+          346
+        ],
+        [
+          1469,
+          594
+        ],
+        [
+          1291,
+          886
+        ],
+        [
+          1130,
+          648
+        ],
+        [
+          888,
+          572
+        ],
+        [
+          807,
+          810
+        ],
+        [
+          484,
+          432
+        ],
+        [
+          646,
+          54
+        ],
+        [
+          161,
+          540
+        ],
+        [
+          1372,
+          1058
+        ],
+        [
+          484,
+          994
+        ]
+      ],
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_l.yaml",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "torch_version": "2.8.0",
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 0.49663095793221146,
+      "encoder_seconds": 2.291039542062208,
+      "decoder_and_native_upsample_seconds": 0.025746415951289237,
+      "inference_seconds": 2.3167859580134973,
+      "peak_rss_bytes": 2710618112,
+      "selected_index": 2,
+      "selection": "numpy.argmax predicted IoU over 3 candidates, first maximum tie policy",
+      "candidates": [
+        {
+          "index": 0,
+          "score": 0.7417837977409363,
+          "coverage": 0.2122320895864886,
+          "point_inclusion": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "prompt_satisfied": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.8882522583007812,
+          "coverage": 0.2699613337004911,
+          "point_inclusion": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "prompt_satisfied": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "score": 0.9589996933937073,
+          "coverage": 0.2494406581302492,
+          "point_inclusion": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "prompt_satisfied": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "lowres_logits": "official predictor clamps returned low-resolution logits to [-32,32]; all float32 retained",
+      "postprocessing": "Image predictor defaults: threshold 0, no hole filling or sprinkle removal; CUDA extension neither built nor used. build_sam2 default stability option retained, inactive for explicitly requested multimask."
+    },
+    {
+      "variant": "large",
+      "subject": "sky",
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "source_sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+      "dimensions": [
+        7008,
+        4672
+      ],
+      "points": [
+        [
+          4000,
+          600
+        ]
+      ],
+      "labels": [
+        1
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_l.yaml",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "torch_version": "2.8.0",
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 0.8434391670161858,
+      "encoder_seconds": 3.1383578330278397,
+      "decoder_and_native_upsample_seconds": 0.07663216697983444,
+      "inference_seconds": 3.214990000007674,
+      "peak_rss_bytes": 3238969344,
+      "selected_index": 2,
+      "selection": "numpy.argmax predicted IoU over 3 candidates, first maximum tie policy",
+      "candidates": [
+        {
+          "index": 0,
+          "score": 0.965041995048523,
+          "coverage": 0.3031764456081504,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.7415329217910767,
+          "coverage": 0.43857848246817727,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "score": 0.9882893562316895,
+          "coverage": 0.31475952629480203,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        }
+      ],
+      "lowres_logits": "official predictor clamps returned low-resolution logits to [-32,32]; all float32 retained",
+      "postprocessing": "Image predictor defaults: threshold 0, no hole filling or sprinkle removal; CUDA extension neither built nor used. build_sam2 default stability option retained, inactive for explicitly requested multimask."
+    },
+    {
+      "variant": "large",
+      "subject": "road",
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "source_sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+      "dimensions": [
+        7008,
+        4672
+      ],
+      "points": [
+        [
+          4400,
+          3500
+        ]
+      ],
+      "labels": [
+        1
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_l.yaml",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "torch_version": "2.8.0",
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 1.3615933749824762,
+      "encoder_seconds": 3.430247624986805,
+      "decoder_and_native_upsample_seconds": 0.12031358294188976,
+      "inference_seconds": 3.550561207928695,
+      "peak_rss_bytes": 3021701120,
+      "selected_index": 0,
+      "selection": "numpy.argmax predicted IoU over 3 candidates, first maximum tie policy",
+      "candidates": [
+        {
+          "index": 0,
+          "score": 0.9723212122917175,
+          "coverage": 0.04844402385531995,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.12788651883602142,
+          "coverage": 0.3346163276705292,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "score": 0.9710937738418579,
+          "coverage": 0.04908596388862826,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        }
+      ],
+      "lowres_logits": "official predictor clamps returned low-resolution logits to [-32,32]; all float32 retained",
+      "postprocessing": "Image predictor defaults: threshold 0, no hole filling or sprinkle removal; CUDA extension neither built nor used. build_sam2 default stability option retained, inactive for explicitly requested multimask."
+    }
+  ]
+}

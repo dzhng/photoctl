@@ -1,0 +1,102 @@
+{
+  "status": "complete",
+  "device": "cpu",
+  "dtype": "float32",
+  "threads": 4,
+  "input": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+  "guidance": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/sam3-native/visuals/portrait-text-hair-union/binary-mask.png",
+  "checkpoint": "/private/tmp/openphoto-sdmatte.kTMwUL/weights/SDMatte.pth",
+  "revision": "3936e1b68222c5bbfb59cc6970b74c5b14a09a68",
+  "adaptations": [
+    "Explicit CUDA tensor placements changed to CPU",
+    "utils package exports model helpers only; training logger/evaluation imports omitted",
+    "Model instantiated directly with published kwargs; benchmark dataset bypassed",
+    "Safe weights-only load of model state instead of DetectionCheckpointer"
+  ],
+  "timings": {
+    "checkpoint_load_seconds": 0.18140120804309845,
+    "instantiate_load_seconds": 8.157322500017472,
+    "forward_seconds": 70.44699829199817
+  },
+  "torch_version": "2.8.0",
+  "package_versions": {
+    "torch": "2.8.0",
+    "torchvision": "0.23.0",
+    "diffusers": "0.30.3",
+    "transformers": "4.45.1",
+    "numpy": "1.26.4",
+    "opencv-python": "4.10.0.84",
+    "omegaconf": "2.3.1"
+  },
+  "source_commit": "c3ea6949f270d253539a2bda2ad290e127934de9",
+  "source_patch": "diff --git a/modeling/SDMatte/meta_arch.py b/modeling/SDMatte/meta_arch.py\nindex 2cf972a..3c3c783 100644\n--- a/modeling/SDMatte/meta_arch.py\n+++ b/modeling/SDMatte/meta_arch.py\n@@ -96,7 +96,7 @@ class SDMatte(nn.Module):\n \n \n     def forward(self, data):\n-        rgb = data[\"image\"].cuda()\n+        rgb = data[\"image\"].to(\"cpu\")\n         B = rgb.shape[0]\n \n         if self.aux_input is None and self.training:\n@@ -108,7 +108,7 @@ class SDMatte(nn.Module):\n \n         # get aux input latent\n         if self.use_aux_input:\n-            aux_input = data[aux_input_type].cuda()\n+            aux_input = data[aux_input_type].to(\"cpu\")\n             aux_input = aux_input.repeat(1, 3, 1, 1)\n             aux_input_h = self.vae.encoder(aux_input.to(rgb.dtype))\n             aux_input_moments = self.vae.quant_conv(aux_input_h)\n@@ -119,7 +119,7 @@ class SDMatte(nn.Module):\n \n         # get aux coordinate\n         coor_name = AUX_INPUT_DIT[aux_input_type]\n-        coor = data[coor_name].cuda()\n+        coor = data[coor_name].to(\"cpu\")\n         if coor_name == \"point_coords\":\n             N = coor.shape[1]\n             for i in range(N, 1680):\n@@ -149,12 +149,12 @@ class SDMatte(nn.Module):\n             if self.use_coor_input:\n                 added_cond_kwargs = {\"bbox_mask_coords\": coor}\n             else:\n-                coor = torch.tensor([[0, 0, 1, 1]] * B).cuda()\n+                coor = torch.tensor([[0, 0, 1, 1]] * B).to(\"cpu\")\n                 added_cond_kwargs = {\"bbox_mask_coords\": coor}\n \n         # get attention mask\n         if self.use_attention_mask and aux_input_type in self.attn_mask_aux_input:\n-            attention_mask = data[aux_input_type].cuda()\n+            attention_mask = data[aux_input_type].to(\"cpu\")\n             attention_mask = (attention_mask + 1) / 2\n             attention_mask = F.interpolate(attention_mask, scale_factor=1 / 8, mode=\"nearest\")\n             attention_mask = attention_mask.flatten(start_dim=1)\n@@ -185,16 +185,16 @@ class SDMatte(nn.Module):\n             truncation=True,\n             return_tensors=\"pt\",\n         )\n-        text_input_ids = text_inputs.input_ids.to(\"cuda\")\n+        text_input_ids = text_inputs.input_ids.to(\"cpu\")\n         text_embed = self.text_encoder(text_input_ids)[0]\n         encoder_hidden_states_2 = text_embed\n \n         # get class_label\n-        is_trans = data[\"is_trans\"].cuda()\n+        is_trans = data[\"is_trans\"].to(\"cpu\")\n         trans = 1 - is_trans\n \n         # get timesteps\n-        timestep = torch.tensor([1], device=\"cuda\").long()\n+        timestep = torch.tensor([1], device=\"cpu\").long()\n \n         # unet\n         unet_input = torch.cat([rgb_latent, aux_input_latent], dim=1)\ndiff --git a/utils/__init__.py b/utils/__init__.py\nindex 0643a35..16281fe 100644\n--- a/utils/__init__.py\n+++ b/utils/__init__.py\n@@ -1,3 +1 @@\n-from .logger import *\n from .utils import *\n-from .evaluate import *\n",
+  "checkpoint_expected_sha256": "d3465a9b7a75dbbf348be603831f5cf417aee6b0e84ae7ef96dac710c9e2de46",
+  "checkpoint_verified_sha256": "d3465a9b7a75dbbf348be603831f5cf417aee6b0e84ae7ef96dac710c9e2de46",
+  "checkpoint_verified_bytes": 12173702622,
+  "checkpoint_verification": "Parent shasum session70681 exit0 and size verification before launch",
+  "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+  "mask_sha256": "03ae4bd90a3ffa911d77e971df3a3d360a108089182304951da00ef7d61cb5f3",
+  "original_hw": [
+    1080,
+    1614
+  ],
+  "mask_coords": [
+    0.365234375,
+    0.0439453125,
+    0.9912109375,
+    0.8974609375
+  ],
+  "caption": "",
+  "is_trans": 0,
+  "elapsed_seconds": 78.96050500008278,
+  "peak_rss_bytes": 13850804224,
+  "checkpoint_unsafe_globals": [
+    "typing.Any",
+    "omegaconf.base.ContainerMetadata",
+    "builtins.int",
+    "collections.defaultdict",
+    "omegaconf.listconfig.ListConfig",
+    "builtins.dict",
+    "omegaconf.base.Metadata",
+    "builtins.list",
+    "omegaconf.nodes.AnyNode"
+  ],
+  "checkpoint_top_keys": [
+    "model",
+    "trainer",
+    "iteration"
+  ],
+  "state_key_count": 1316,
+  "state_tensor_bytes": 5188290220,
+  "model_kwargs": {
+    "pretrained_model_name_or_path": "/private/tmp/openphoto-sdmatte.kTMwUL/weights",
+    "load_weight": false,
+    "conv_scale": 3,
+    "num_inference_steps": 1,
+    "aux_input": "mask",
+    "add_noise": false,
+    "use_dis_loss": true,
+    "use_aux_input": true,
+    "use_coor_input": true,
+    "use_attention_mask": true,
+    "residual_connection": false,
+    "use_encoder_hidden_states": true,
+    "use_attention_mask_list": [
+      true,
+      true,
+      true
+    ],
+    "use_encoder_hidden_states_list": [
+      false,
+      true,
+      false
+    ]
+  },
+  "missing_keys": [],
+  "unexpected_keys": [],
+  "parameter_count": 1297072555,
+  "alpha_range": [
+    0.0,
+    1.0
+  ]
+}

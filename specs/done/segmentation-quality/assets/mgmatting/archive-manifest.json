@@ -1,0 +1,2387 @@
+[
+  {
+    "path": "person/published.npy",
+    "bytes": 6972608,
+    "sha256": "2c606718ed56471efa4dc691f68815fd68a74d6d5b0db9aa15d7b8e47b8a0dc6"
+  },
+  {
+    "path": "person/refinement_weight_os4.npy",
+    "bytes": 1953920,
+    "sha256": "fe41e81308e9c17dca2486f8065d084b9d1cd1997d382834e4716113f1848087"
+  },
+  {
+    "path": "person/post_padded.npy",
+    "bytes": 7815296,
+    "sha256": "2b4b4fd1fea4a93f819605ade6149e2b3c6699e0212138c224a2eae4288f7906"
+  },
+  {
+    "path": "person/refinement_weight_os1.npy",
+    "bytes": 1953920,
+    "sha256": "422df09247e5c06a7be22c929c5ca8b0777163cf9d094b0e567cb3ba97400dab"
+  },
+  {
+    "path": "person/report.json",
+    "bytes": 582,
+    "sha256": "c1a14d1eaa4d9a7362d0cf14020bc8a06d9d9b12d64326f59f19c13da7745bcf"
+  },
+  {
+    "path": "person/provenance.json",
+    "bytes": 4239,
+    "sha256": "4e1b476bbd45fe4b1a1fb72f4a50c469f235ab3c8460c2c238505f886bc0723d"
+  },
+  {
+    "path": "person/watchdog.json",
+    "bytes": 127,
+    "sha256": "b9520221d1e95e5a5c1e3d1dbf903a28b08f4bf5762e22cfbf36243841b73100"
+  },
+  {
+    "path": "person/alpha_os8.npy",
+    "bytes": 7815296,
+    "sha256": "2631057ad00557bdbf9702c1dfd669a2e80f8888058eda3cc70d834efa2267a8"
+  },
+  {
+    "path": "person/run.log",
+    "bytes": 2178,
+    "sha256": "dc9b237146d95aedf1acc60a0374dd4db8753cad6305adf181bc3d6e07d787ce"
+  },
+  {
+    "path": "person/raw.png",
+    "bytes": 198880,
+    "sha256": "4ab2a027562c179bfd38fb7711b6e66ee3361cab3e20ad4177e097192b0757dc"
+  },
+  {
+    "path": "person/input_guidance_binary_padded.npy",
+    "bytes": 7815296,
+    "sha256": "448965d7b1dc71b72f85c68075c473d3ba7bf60a6177f8b2da1048df2eca806f"
+  },
+  {
+    "path": "person/published.png",
+    "bytes": 174002,
+    "sha256": "9c8c74d76264c0a15df6ba741294549d7eb69d6e0d2a61075ae7dd0107d80a05"
+  },
+  {
+    "path": "person/input_image_normalized_padded.npy",
+    "bytes": 23445632,
+    "sha256": "bb95760ab4706e9a4bf0e8006d544d71b7e989124a33db7020c14ac0a73b2af2"
+  },
+  {
+    "path": "person/refined_os1_padded.npy",
+    "bytes": 7815296,
+    "sha256": "b59dc969b55c4cc81b13f80c43fd0e31ccb01a29dbf0ff7ea25ead0d6b4a21d8"
+  },
+  {
+    "path": "person/alpha_os4.npy",
+    "bytes": 7815296,
+    "sha256": "4a01fb9970c17e34cb5abb1517484f0eaada4da9d2677d6f1bef640be17e22b4"
+  },
+  {
+    "path": "person/raw.npy",
+    "bytes": 6972608,
+    "sha256": "07d0f79875ef9c0229c02d4faa16db22a6c72f2754f5f2391c127c8378aff50f"
+  },
+  {
+    "path": "person/raw_padded.npy",
+    "bytes": 7815296,
+    "sha256": "b59dc969b55c4cc81b13f80c43fd0e31ccb01a29dbf0ff7ea25ead0d6b4a21d8"
+  },
+  {
+    "path": "person/refined_os4_padded.npy",
+    "bytes": 7815296,
+    "sha256": "863c0d7abcfb8b761ab7df9b222732f1a11a4a67a6200e3ce47efe7bcf1ef91e"
+  },
+  {
+    "path": "person/alpha_os1.npy",
+    "bytes": 7815296,
+    "sha256": "4b98761349a055b318e9e3039b8fa5a5c97da555f1e304b33d9e2c17b2ee6f63"
+  },
+  {
+    "path": "hair/published.npy",
+    "bytes": 6972608,
+    "sha256": "dc981b9ca940fabc68a60ac54bf34f464dc475cd771996a1f90a92a92196a2c0"
+  },
+  {
+    "path": "hair/refinement_weight_os4.npy",
+    "bytes": 1953920,
+    "sha256": "e234f3d4c20ff9b642a20404714f99ec279427e2a157299a3ca03576a30c63d3"
+  },
+  {
+    "path": "hair/post_padded.npy",
+    "bytes": 7815296,
+    "sha256": "d3cb6bf5b5f909f36261b8acfb502fb50d84863dddb48a9b13a8300878f9947f"
+  },
+  {
+    "path": "hair/refinement_weight_os1.npy",
+    "bytes": 1953920,
+    "sha256": "a85ea20b63cd1c1cf2cf3562afa65feacf4da2092233f4dcc45fc2b2211dc6fd"
+  },
+  {
+    "path": "hair/report.json",
+    "bytes": 582,
+    "sha256": "1da81314a19872d9a3bf745ceca08ef436b0a8e985cd5740d75430981d24837f"
+  },
+  {
+    "path": "hair/provenance.json",
+    "bytes": 4235,
+    "sha256": "27b9624bb9d9ae96273ab3b6df78abb14986d4347276999933e88adc584a16a9"
+  },
+  {
+    "path": "hair/watchdog.json",
+    "bytes": 126,
+    "sha256": "de3098046f6a191c54153f1eff0653c673f31e02ec59cd353f62fa616cd50d69"
+  },
+  {
+    "path": "hair/alpha_os8.npy",
+    "bytes": 7815296,
+    "sha256": "602b4d9e54219ff984a2764fce0a4693f856fd60429357d7a26f3a3fbf27c3b2"
+  },
+  {
+    "path": "hair/run.log",
+    "bytes": 2206,
+    "sha256": "c8c07fa8a9b601f2e60ad9ff8d1ec68b20bc95d8f8cb21b4d3fa5bcd1b79de3f"
+  },
+  {
+    "path": "hair/raw.png",
+    "bytes": 170766,
+    "sha256": "a887952e126db8ba55b6af9a4ac6f032052bddda79ba57aab42d1a9b041b6987"
+  },
+  {
+    "path": "hair/input_guidance_binary_padded.npy",
+    "bytes": 7815296,
+    "sha256": "9b236512c6cd008c5bb83c5891e85e212e61beb06039895140d2011123a53b18"
+  },
+  {
+    "path": "hair/published.png",
+    "bytes": 143145,
+    "sha256": "63998236ef3e40353b20b26b060df58448d8fb9e204b9091f741acdb2e20a9f0"
+  },
+  {
+    "path": "hair/input_image_normalized_padded.npy",
+    "bytes": 23445632,
+    "sha256": "bb95760ab4706e9a4bf0e8006d544d71b7e989124a33db7020c14ac0a73b2af2"
+  },
+  {
+    "path": "hair/refined_os1_padded.npy",
+    "bytes": 7815296,
+    "sha256": "5ff03480907aa0cb72e5a2cfbddf86d7f84ccd35513d0a693303b7dee6ef5885"
+  },
+  {
+    "path": "hair/alpha_os4.npy",
+    "bytes": 7815296,
+    "sha256": "b21473346842be03ceadb7101a0a9ce8441a68401f633d5c7577bcb4c4e0a74a"
+  },
+  {
+    "path": "hair/raw.npy",
+    "bytes": 6972608,
+    "sha256": "65b70c10c9d400496a2ce82a8a4a3cd102f5036cd122042f47ef66b518343bbc"
+  },
+  {
+    "path": "hair/raw_padded.npy",
+    "bytes": 7815296,
+    "sha256": "5ff03480907aa0cb72e5a2cfbddf86d7f84ccd35513d0a693303b7dee6ef5885"
+  },
+  {
+    "path": "hair/refined_os4_padded.npy",
+    "bytes": 7815296,
+    "sha256": "5ce5b9d4305492ebd5987ff7e10b726923ed419c2a670d4d15babdb852747fa3"
+  },
+  {
+    "path": "hair/alpha_os1.npy",
+    "bytes": 7815296,
+    "sha256": "3cb847fdb6e7169e9ead1b3cbab324cfb74a7315d3d96a0f3cab61213008833a"
+  },
+  {
+    "path": "review/person/comparison-face-black.png",
+    "bytes": 306536,
+    "sha256": "3848675a682c83d59f80a16d89b3600a10a46c8d2edeb14b871ce67781605a6e"
+  },
+  {
+    "path": "review/person/comparison-flowers-alpha.png",
+    "bytes": 234019,
+    "sha256": "40d1d5beae7a7fed62b5a4a23b1247236bf402494e25fb3b005130d7f21e8624"
+  },
+  {
+    "path": "review/person/named-face-overlay.png",
+    "bytes": 511037,
+    "sha256": "a61dee6d80e7b95bb834b5bf053f699f93e2f4da9fe532d558dcd17878ebb67d"
+  },
+  {
+    "path": "review/person/comparison-clothing-supplement-black.png",
+    "bytes": 262713,
+    "sha256": "6ff6bca3602ac68d560987d7a42e6fdca84dab8747078aa94a7490fb1dd708e0"
+  },
+  {
+    "path": "review/person/comparison-top-white.png",
+    "bytes": 409339,
+    "sha256": "1a0928b211ba27f776820a6fd33ee2b30fb6a6d781f18f67c4e4db65fcaf7f0b"
+  },
+  {
+    "path": "review/person/comparison-bottom-white.png",
+    "bytes": 357163,
+    "sha256": "b2b163946b9453424b2e9aa57329dc5f03ce216c9408bd6d4b2b7b5fa316a703"
+  },
+  {
+    "path": "review/person/named-clothing-supplement-black.png",
+    "bytes": 267288,
+    "sha256": "fc03621234ec7591c70914d388b797ee34dba4faf14aee1f76079766a77764ad"
+  },
+  {
+    "path": "review/person/comparison-full-alpha.png",
+    "bytes": 398314,
+    "sha256": "b3c7fcbf870510939dc9f801212e99df92fd8c8cd737bca7a127184fa5f46cb6"
+  },
+  {
+    "path": "review/person/named-flowers-white.png",
+    "bytes": 257700,
+    "sha256": "2f55de1b8faa48b1996c295ea22fb9f8cbd9f628a5216910e43ce3d746b48662"
+  },
+  {
+    "path": "review/person/named-flowers-overlay.png",
+    "bytes": 414037,
+    "sha256": "6e38f4fc3e6be2e13552389a1747c1404643b7c190502f6873e75323abcb5338"
+  },
+  {
+    "path": "review/person/named-artifact-supplement-white.png",
+    "bytes": 295843,
+    "sha256": "6f366d482bc2e4c7f1d2cdcb769a7f71320010d111cd0c2b52313b6d9c57df71"
+  },
+  {
+    "path": "review/person/comparison-face-alpha.png",
+    "bytes": 277533,
+    "sha256": "d93264af8a7248db40cff7cad0c692f138b2f74859ee7b982e378b629141239d"
+  },
+  {
+    "path": "review/person/named-top-overlay.png",
+    "bytes": 575931,
+    "sha256": "734bbb9035edaac9be543fb9bd7695f51d787a9ca6c34669606888fb69dda40e"
+  },
+  {
+    "path": "review/person/comparison-flowers-black.png",
+    "bytes": 249162,
+    "sha256": "de5a5447b4eca87f9d7c445209d0760d175bdbf85cefdee196d99b8041706ec5"
+  },
+  {
+    "path": "review/person/named-clothing-supplement-overlay.png",
+    "bytes": 344260,
+    "sha256": "b3821f6d2a82d247ab1055617a8ccd5d1a029cbac18d989c2fb2e39818cdc128"
+  },
+  {
+    "path": "review/person/comparison-full-overlay.png",
+    "bytes": 596664,
+    "sha256": "8611ca915bfff3b5a0a55be2103de9b3891712bc357a03e1f724a7e2cb860b46"
+  },
+  {
+    "path": "review/person/capture-report.json",
+    "bytes": 12451,
+    "sha256": "d2e981689e77e1403998c536523a513d04ae822736849a3777235e57ce9541d8"
+  },
+  {
+    "path": "review/person/comparison-clothing-supplement-alpha.png",
+    "bytes": 224753,
+    "sha256": "c4df93e3b7df7e1509431f1d3317bb279515e56a47bac722d391a10cedc3d2ff"
+  },
+  {
+    "path": "review/person/comparison-right-white.png",
+    "bytes": 531776,
+    "sha256": "45a019de6702fbb2ad4bbba0cdd1c5c5551a7b10346fb0312ba7296e2e72df24"
+  },
+  {
+    "path": "review/person/comparison-flowers-overlay.png",
+    "bytes": 409570,
+    "sha256": "70407eb7cef6f53b3975a1d66d6c644e9ed4a21bf608ee13a4c907e49d1a234a"
+  },
+  {
+    "path": "review/person/comparison-artifact-supplement-white.png",
+    "bytes": 291395,
+    "sha256": "4dcfcf2e730a9978bd006b33e62df7ebdde1b74261841a35363a0606ba5477a3"
+  },
+  {
+    "path": "review/person/comparison-clothing-supplement-overlay.png",
+    "bytes": 339793,
+    "sha256": "af7faa09db7b8cf560204e447b7637608e1f9cd02cff529b567c6725b4dfc0de"
+  },
+  {
+    "path": "review/person/named-clothing-supplement-alpha.png",
+    "bytes": 229295,
+    "sha256": "9dfe0c396f075290e2877a9cab8c11e2c7633f3c78789e2c7ae46c595666bfa6"
+  },
+  {
+    "path": "review/person/comparison-full-black.png",
+    "bytes": 429404,
+    "sha256": "e6ec7e26ceaea94c9f6274c728bb99cd1384783a64dcd1bf8722a250d233664d"
+  },
+  {
+    "path": "review/person/comparison-right-overlay.png",
+    "bytes": 716593,
+    "sha256": "ca818bfd79eda16b79cd59a278eb1f9a40fc34a031d5df0f693fc620689ac686"
+  },
+  {
+    "path": "review/person/named-face-alpha.png",
+    "bytes": 282016,
+    "sha256": "60be6dae74eccdd31ebf1927028af3b3e01c048c4b4d8b493ad36c905d5b55bb"
+  },
+  {
+    "path": "review/person/named-right-white.png",
+    "bytes": 535951,
+    "sha256": "e95179d5d46ebb7f18f99a5d87429dd13cf9a8b39c7c46bcc0f668a605f40c3c"
+  },
+  {
+    "path": "review/person/named-top-white.png",
+    "bytes": 413756,
+    "sha256": "241326646707240b6e2d75a2897cc32643efe253604fdff181a0f26f1d0d3d88"
+  },
+  {
+    "path": "review/person/comparison-top-overlay.png",
+    "bytes": 571583,
+    "sha256": "979cf6bca0349d971b62dd90602481bb8c2c01ee4659510ec05f25290e23691b"
+  },
+  {
+    "path": "review/person/named-bottom-white.png",
+    "bytes": 361490,
+    "sha256": "d8fe1f8c02b77463f49df1f47bcc829137ffa72130f54e67854731b32da0ef56"
+  },
+  {
+    "path": "review/person/named-full-black.png",
+    "bytes": 433444,
+    "sha256": "82012e6f378c6426f6cc1b4f61ea0ca0f589f3bc234384a3b85cc4b5283b8a81"
+  },
+  {
+    "path": "review/person/comparison-face-overlay.png",
+    "bytes": 506691,
+    "sha256": "b4230eca8ce277cc887b2ce30ab125d5a2a13cb1924498b96a89fdd56aa597fa"
+  },
+  {
+    "path": "review/person/named-face-black.png",
+    "bytes": 310944,
+    "sha256": "6b16c1ee5a6fbc08edff1f3743f2244137ea63a53bdb8458fa9a784bb5307338"
+  },
+  {
+    "path": "review/person/named-artifact-supplement-overlay.png",
+    "bytes": 433113,
+    "sha256": "9045cc229f4f4e4577915f1fd2e5b933a77a7acc762c7538e2d854f05e8e008d"
+  },
+  {
+    "path": "review/person/comparison-artifact-supplement-overlay.png",
+    "bytes": 428726,
+    "sha256": "a4ae0cce9eca502eea3e087eb51199a171f5af603a1a5773cd0fd06acd3f2f5b"
+  },
+  {
+    "path": "review/person/named-full-alpha.png",
+    "bytes": 402157,
+    "sha256": "885d08e4a55e977a386a1b1239801450de6e8e9fb9605f7e39d5644de338473c"
+  },
+  {
+    "path": "review/person/named-full-overlay.png",
+    "bytes": 600745,
+    "sha256": "c8cc51fdc58be3387da0f9dcc5c645f498e4cf293dd60372a4f1d68dbb0f5f27"
+  },
+  {
+    "path": "review/person/comparison-face-white.png",
+    "bytes": 304837,
+    "sha256": "cec1e9a4618c4a89a00cbdce5752c55b4165968ae99cf359bb4712d79308a959"
+  },
+  {
+    "path": "review/person/named-artifact-supplement-alpha.png",
+    "bytes": 238513,
+    "sha256": "f62f4fee631f0184e45e02f4186a32f0ab1776ddd1f6eae72fcfeb50ac2d9586"
+  },
+  {
+    "path": "review/person/named-right-overlay.png",
+    "bytes": 720782,
+    "sha256": "1de66b7c42344a96eb2667f6958f5e8931d778fd6a299c78fe600f7b5d221ae8"
+  },
+  {
+    "path": "review/person/comparison-clothing-supplement-white.png",
+    "bytes": 249476,
+    "sha256": "0619211cd66ff8f9bcf4191582b14b27d403a5f51e6a7ae2c439a82245a83f59"
+  },
+  {
+    "path": "review/person/comparison-bottom-black.png",
+    "bytes": 340135,
+    "sha256": "0608e03d862fb68660c2ea37a316236301b1800a8d88a3c61623613f899e3eac"
+  },
+  {
+    "path": "review/person/comparison-artifact-supplement-alpha.png",
+    "bytes": 234109,
+    "sha256": "19589ec97ceb5ed87ed65345fcf3b4ab44eec7577bb251bb529c3712cfc6f936"
+  },
+  {
+    "path": "review/person/comparison-top-black.png",
+    "bytes": 425389,
+    "sha256": "ffa97cde17eb521ccaeb6653d010f3a66a1afecad6e52e2ee5e608f56a894310"
+  },
+  {
+    "path": "review/person/comparison-right-alpha.png",
+    "bytes": 426265,
+    "sha256": "eb494c60f86c1f4438206e866411fed4060990b5a206561f5f90b26d544f528e"
+  },
+  {
+    "path": "review/person/named-clothing-supplement-white.png",
+    "bytes": 254021,
+    "sha256": "60060441219b60126d4230d90acb84792599a04f62b68523cd82c480235a7bf5"
+  },
+  {
+    "path": "review/person/named-flowers-black.png",
+    "bytes": 253626,
+    "sha256": "e80fa55a18eb0043b088652422e8ec24ad49f9f81b884c1d43f3476b688445c4"
+  },
+  {
+    "path": "review/person/named-artifact-supplement-black.png",
+    "bytes": 302253,
+    "sha256": "2cb0c1d8ba34246a43328e3ed59c414811b8ef124a97feb60fcbabf301d272fb"
+  },
+  {
+    "path": "review/person/comparison-flowers-white.png",
+    "bytes": 253228,
+    "sha256": "b0c336fbdf9b1e4cf75e1ffc19eeb34a24a0092043aae8e106172ac8b4be414d"
+  },
+  {
+    "path": "review/person/comparison-bottom-alpha.png",
+    "bytes": 275782,
+    "sha256": "c3cc2f5ad886bb4bc8859fe239f82c410e4609a0d34185a3c5bf4023ed2a74c9"
+  },
+  {
+    "path": "review/person/comparison-artifact-supplement-black.png",
+    "bytes": 297814,
+    "sha256": "f07c3ed57b0dde425600a663996c1d9a8b22c02bde8a0ee39d9abdab58ee4d48"
+  },
+  {
+    "path": "review/person/comparison-top-alpha.png",
+    "bytes": 312726,
+    "sha256": "a14446a1965dce9c22d8e9762c238e86cb5c5babba5baffa971e19f0b87eed56"
+  },
+  {
+    "path": "review/person/comparison-right-black.png",
+    "bytes": 540035,
+    "sha256": "aa995f1bb58e0d1c3e746ccc78a090da090dc1869d6cf334eaf20ffdf387ca5b"
+  },
+  {
+    "path": "review/person/comparison-full-white.png",
+    "bytes": 425808,
+    "sha256": "134d8a17c2e021b1a986df37e4b5ec249af14894ce33aff65a1c37a88bef90b4"
+  },
+  {
+    "path": "review/person/named-flowers-alpha.png",
+    "bytes": 238561,
+    "sha256": "6fe2a537240976c13272157a2e363d17c69e9e95749b865d289800d317b3ccd3"
+  },
+  {
+    "path": "review/person/named-right-black.png",
+    "bytes": 544145,
+    "sha256": "43bb260b52d88424e87dbbb1cedea007bd230f979a8522ad28deb03bb4942c6d"
+  },
+  {
+    "path": "review/person/named-top-black.png",
+    "bytes": 429738,
+    "sha256": "416dcf30310d392ed2e60cbac7753d9a9f858079ef39716adbe29c4d211a9673"
+  },
+  {
+    "path": "review/person/named-bottom-overlay.png",
+    "bytes": 420004,
+    "sha256": "5d5c8b974ec57a59ad7fd1a5f293ac6c3fe1fe5a58dc5f15c2b0e25dce1f50f0"
+  },
+  {
+    "path": "review/person/comparison-bottom-overlay.png",
+    "bytes": 415606,
+    "sha256": "d117f1f013a140f9ca552621820cc3274dad8268d3df47289a13a8f3ea8becf4"
+  },
+  {
+    "path": "review/person/named-bottom-black.png",
+    "bytes": 344525,
+    "sha256": "f0bf1ba7bf179a5733c555409230d0ea8fc3d50f89028a504f55d6ce8202670d"
+  },
+  {
+    "path": "review/person/named-full-white.png",
+    "bytes": 429896,
+    "sha256": "39032ba671cb9a2960ab4faa8036363d9e171ba6610df804932a24d6955d4d1d"
+  },
+  {
+    "path": "review/person/named-right-alpha.png",
+    "bytes": 430438,
+    "sha256": "acd8bf5ea744378d9306d46b419a443044f62488579d49b18c9e2a1d4be49bf4"
+  },
+  {
+    "path": "review/person/named-face-white.png",
+    "bytes": 309240,
+    "sha256": "7124305f5b2e4e34b69f0f2f55c406897a68a183f5e9fa0f06702ca9ccd1fe8a"
+  },
+  {
+    "path": "review/person/named-top-alpha.png",
+    "bytes": 317238,
+    "sha256": "0f3f44dde2d46f48c9f84b9db83f8c676239ca4539efb2544afafbe90927f857"
+  },
+  {
+    "path": "review/person/named-bottom-alpha.png",
+    "bytes": 280180,
+    "sha256": "a38991f7153ab808cac4ad3be029d91d1bf7f42f1f402490a1d5818d4d0afde9"
+  },
+  {
+    "path": "review/hair/comparison-face-black.png",
+    "bytes": 386280,
+    "sha256": "7d32e8dbedabac9545d548281734d4fe75fd2ac41ea27493efd8bc4936106138"
+  },
+  {
+    "path": "review/hair/comparison-flowers-alpha.png",
+    "bytes": 212648,
+    "sha256": "efa2a1b66f01120edd6fced9f194804c66f2bef4360462f9123109486c46620a"
+  },
+  {
+    "path": "review/hair/named-face-overlay.png",
+    "bytes": 524864,
+    "sha256": "aedcb97604d66c32fbe43fd44f9b6841a5ba484f58764693dc41c429bdd45b76"
+  },
+  {
+    "path": "review/hair/comparison-top-white.png",
+    "bytes": 352521,
+    "sha256": "ec3429b277fa7213426cde0e4e9925422a71e6eff5f49425ad025175a4348aab"
+  },
+  {
+    "path": "review/hair/comparison-bottom-white.png",
+    "bytes": 345989,
+    "sha256": "ba6f533f6d34202c43fb0a3917ab3199c3575e0237ef6c1b72f18e77046b5c23"
+  },
+  {
+    "path": "review/hair/comparison-full-alpha.png",
+    "bytes": 385238,
+    "sha256": "26156564b7f523cc258ef949fd746f52e42a382b6250ef6ddcf050c1a3a77324"
+  },
+  {
+    "path": "review/hair/named-flowers-white.png",
+    "bytes": 218365,
+    "sha256": "6e370901cb5f577082f1acc9ceae13e1d04b8f6ca4a9a8fbb831a4d89f38e7d9"
+  },
+  {
+    "path": "review/hair/named-flowers-overlay.png",
+    "bytes": 238871,
+    "sha256": "3a1a5d0625ba96ce623463d6f009221b8159e3ebad5cd8315b32cb4d129f0340"
+  },
+  {
+    "path": "review/hair/named-artifact-supplement-white.png",
+    "bytes": 268833,
+    "sha256": "55c88eea808532f039f1c93a0e5676ce3ab7fe6cae85ee7b8f96c00e8bee6534"
+  },
+  {
+    "path": "review/hair/comparison-face-alpha.png",
+    "bytes": 343628,
+    "sha256": "e044c721a21d5310efe9debdc635deb86c3476b82751d5c58f4d82f4f8d524a3"
+  },
+  {
+    "path": "review/hair/named-top-overlay.png",
+    "bytes": 537777,
+    "sha256": "e8f4795b6ee8803b2aa3113ad5c998aa857f6236b1e40e671543e00fbed22adc"
+  },
+  {
+    "path": "review/hair/comparison-flowers-black.png",
+    "bytes": 212355,
+    "sha256": "fcf15a98b9baaed28d8b3460d7e4d29ed60d4a39729e13759ec2e0622d7454b1"
+  },
+  {
+    "path": "review/hair/comparison-full-overlay.png",
+    "bytes": 477146,
+    "sha256": "d2be40f534c057bf181628b669a98c8662e25fae6a34592d9f3fd09224ddaf3e"
+  },
+  {
+    "path": "review/hair/capture-report.json",
+    "bytes": 10758,
+    "sha256": "9cd8996f11ed3c45946ef59ab73a24988c49fa414b109e8cac9bcb77ee15482e"
+  },
+  {
+    "path": "review/hair/comparison-right-white.png",
+    "bytes": 504828,
+    "sha256": "7bf55be7bd883b9cbe135d73b09a653a84668eaaad9af1812fb0f0faee8389fd"
+  },
+  {
+    "path": "review/hair/comparison-flowers-overlay.png",
+    "bytes": 234638,
+    "sha256": "cd9a7a8d9ee931b0fba26e7495907fc4fcd3f888edcef252c9748bb2fbeabb42"
+  },
+  {
+    "path": "review/hair/comparison-artifact-supplement-white.png",
+    "bytes": 264694,
+    "sha256": "b7713b66b4a72b201aa2b634a09235fcda249906049ab09f3c7c73f8fff26bea"
+  },
+  {
+    "path": "review/hair/comparison-full-black.png",
+    "bytes": 395486,
+    "sha256": "c4442b434a7c53501d92c58f3a55df9508ff4e8699c6fd1a2aaeb8c33b7d1823"
+  },
+  {
+    "path": "review/hair/comparison-right-overlay.png",
+    "bytes": 696022,
+    "sha256": "b3d5ec7c03ab5ae197288dbc1de6d07a67745c36f2643be5bee18dc4e81ca4d3"
+  },
+  {
+    "path": "review/hair/named-face-alpha.png",
+    "bytes": 347730,
+    "sha256": "2eea5341f666da877a609396ccb81e6be0f07835221ecd4e9e9f27641366b60d"
+  },
+  {
+    "path": "review/hair/named-right-white.png",
+    "bytes": 508739,
+    "sha256": "481753ff40bde669aa8169ad54848e71020a1bc5c1172dfdab40f4b519a5f562"
+  },
+  {
+    "path": "review/hair/named-top-white.png",
+    "bytes": 356690,
+    "sha256": "dd5f8fd98213a74ddecb9183beca4eba666cc3d3ad3c11e61f351ba74be9e0a8"
+  },
+  {
+    "path": "review/hair/comparison-top-overlay.png",
+    "bytes": 533632,
+    "sha256": "0685aebf4c950a438ec1212c446cd227578b8e52ae1ef6a3197e304703163191"
+  },
+  {
+    "path": "review/hair/named-bottom-white.png",
+    "bytes": 350113,
+    "sha256": "13196c9fa955d703226769743db5b0815946b653a4446a8f9f9935d6f988f505"
+  },
+  {
+    "path": "review/hair/named-full-black.png",
+    "bytes": 399292,
+    "sha256": "6b9c93db545276d275d241fc97105dd62d417dcde665329cb40bf419d6737833"
+  },
+  {
+    "path": "review/hair/comparison-face-overlay.png",
+    "bytes": 520738,
+    "sha256": "2dc2e95bebc7f1a01f89b69516bcc4eaedd0232764fb9ef8f525b09d966dbf48"
+  },
+  {
+    "path": "review/hair/named-face-black.png",
+    "bytes": 390414,
+    "sha256": "be9ba9507ad3d4a1d1929b9752924c5c3377d3178272939c93cd147b3a0b851d"
+  },
+  {
+    "path": "review/hair/named-artifact-supplement-overlay.png",
+    "bytes": 411601,
+    "sha256": "dbcb22fe2ba1df1b1394b05168c6792a5a4ba6ffedb73181ea168cfa257616b2"
+  },
+  {
+    "path": "review/hair/comparison-artifact-supplement-overlay.png",
+    "bytes": 407462,
+    "sha256": "453de8a0ffc94ba6e153af305d6fae4381b992ee0fbbb38e55751327a6c8d6b9"
+  },
+  {
+    "path": "review/hair/named-full-alpha.png",
+    "bytes": 388833,
+    "sha256": "abab7eeef0d0aa01f74fb9db219ede31c581553913166665d7c3edb2a2a108e1"
+  },
+  {
+    "path": "review/hair/named-full-overlay.png",
+    "bytes": 480973,
+    "sha256": "e8fe280cd153b9137f3465317b853420548456fbc88c0565e1a997b46fcbfa57"
+  },
+  {
+    "path": "review/hair/comparison-face-white.png",
+    "bytes": 410149,
+    "sha256": "f007fde2f3b41835db095cea47a16496f437de50d32df2de37cd314f2d378a4d"
+  },
+  {
+    "path": "review/hair/named-artifact-supplement-alpha.png",
+    "bytes": 223644,
+    "sha256": "f4d4a6881316231b8b8d04a30e6fc8aef41194227e2db482b2e65ba72cd5532f"
+  },
+  {
+    "path": "review/hair/named-right-overlay.png",
+    "bytes": 699931,
+    "sha256": "0d5708be913e3e56e4f24c324f41af9b9334f68510ae8d6671079d5d44cda122"
+  },
+  {
+    "path": "review/hair/comparison-bottom-black.png",
+    "bytes": 332220,
+    "sha256": "b5de4adb4ba9b996d52c467603b0ba5ea4e3dfa4c4e83e4bff0158cb236fc9a8"
+  },
+  {
+    "path": "review/hair/comparison-artifact-supplement-alpha.png",
+    "bytes": 219466,
+    "sha256": "ac96a724375d19a47b77fdd90be953cf5f53db498e5778a0e9b29ea959c166f9"
+  },
+  {
+    "path": "review/hair/comparison-top-black.png",
+    "bytes": 372658,
+    "sha256": "a38dbaebdc99aef3ba922f3b0ccddacdca8ff79131be3169926bb12d4702dcac"
+  },
+  {
+    "path": "review/hair/comparison-right-alpha.png",
+    "bytes": 415692,
+    "sha256": "0cbc13faaede76692a10205c720f42eed837e593042cc6f19d636750b4d1c0e9"
+  },
+  {
+    "path": "review/hair/named-flowers-black.png",
+    "bytes": 216678,
+    "sha256": "d9bceea11e7a7cd3060dc099c5f08486147a0e601fd65836f73e360ce9a59c36"
+  },
+  {
+    "path": "review/hair/named-artifact-supplement-black.png",
+    "bytes": 276889,
+    "sha256": "d470374451cd02fefa0c0d759b991ceab95df26bd36f484664767805989d4aa9"
+  },
+  {
+    "path": "review/hair/comparison-flowers-white.png",
+    "bytes": 214032,
+    "sha256": "3b51cf16aeee032d98f659ec8f5c6b261988a817db5a8d42371437d4e3af000f"
+  },
+  {
+    "path": "review/hair/comparison-bottom-alpha.png",
+    "bytes": 266677,
+    "sha256": "e2c308f25811a74532f3d57e498b65e2f4070ba4486808ef50079f84417b801d"
+  },
+  {
+    "path": "review/hair/comparison-artifact-supplement-black.png",
+    "bytes": 272686,
+    "sha256": "9bb2c42b381336f823972d592d5e43015865811b84ddf2550c0c956481c6862c"
+  },
+  {
+    "path": "review/hair/comparison-top-alpha.png",
+    "bytes": 288783,
+    "sha256": "9f929bfa6722a61a70f495410697be4c23594b2d4961b90acb6a7c10919c7e36"
+  },
+  {
+    "path": "review/hair/comparison-right-black.png",
+    "bytes": 516763,
+    "sha256": "3336f09f13579183e4daf87df0cc5bcea1b0f619611ab2b3217548dcd5ac2e8a"
+  },
+  {
+    "path": "review/hair/comparison-full-white.png",
+    "bytes": 402335,
+    "sha256": "8ae83383f7a762565908a358523042a8da11b9d0c1132e473ecf018b5d2b0e83"
+  },
+  {
+    "path": "review/hair/named-flowers-alpha.png",
+    "bytes": 216966,
+    "sha256": "1a13e999e5536bc119f8d55650ab1c184666957788b9710eee768c78d5ab9742"
+  },
+  {
+    "path": "review/hair/named-right-black.png",
+    "bytes": 520652,
+    "sha256": "af941ada578238b91499a3426b4fc7a4a1880a8751e79577a59dc65c52ddde98"
+  },
+  {
+    "path": "review/hair/named-top-black.png",
+    "bytes": 376806,
+    "sha256": "854318ea6fb1220dabd9841fa150d68271bc2bc3f1f686585a54b714ebbd6233"
+  },
+  {
+    "path": "review/hair/named-bottom-overlay.png",
+    "bytes": 397864,
+    "sha256": "98cca2a8bd122d8bf896ae3a389f4af55207a607fa443e3e0f10ad821147502e"
+  },
+  {
+    "path": "review/hair/comparison-bottom-overlay.png",
+    "bytes": 393729,
+    "sha256": "75005f9eabee445c6530941b02f3041f68a172cfc67a9faf32872283626b8b03"
+  },
+  {
+    "path": "review/hair/named-bottom-black.png",
+    "bytes": 336327,
+    "sha256": "0cafd5c14ffc7e3ed733b14d184401ff608769f007d82f99d630d2c717d952b5"
+  },
+  {
+    "path": "review/hair/named-full-white.png",
+    "bytes": 406139,
+    "sha256": "97061b8c47d746065365121d344955a100878a4f516b67a8f0dddcd5214bc831"
+  },
+  {
+    "path": "review/hair/named-right-alpha.png",
+    "bytes": 419571,
+    "sha256": "d972481c8944ff6875f73bd1f27bc784b67e7eb34f04e984cf9091539895c539"
+  },
+  {
+    "path": "review/hair/named-face-white.png",
+    "bytes": 414255,
+    "sha256": "cf9edf3bf4aca56ef14c1bb0bfe2e7b1ff91ec5c7852968c6f317e8be90224f0"
+  },
+  {
+    "path": "review/hair/named-top-alpha.png",
+    "bytes": 293014,
+    "sha256": "5dce3d64c57dc3756a87d9f71fc280a36bdc774690f3ea45e311c8d4095a1f09"
+  },
+  {
+    "path": "review/hair/named-bottom-alpha.png",
+    "bytes": 270772,
+    "sha256": "ec78b0af907afbfac769a4338c8ec363f5b97fdb3f4262afc53926b70363182c"
+  },
+  {
+    "path": "review/person/R/bottom-black-2x.png",
+    "bytes": 122046,
+    "sha256": "d7e94b61f8cfc54ceb9b649ec345710b6db20df23148d91bc85ea406f4d26c31"
+  },
+  {
+    "path": "review/person/R/face-overlay-2x.png",
+    "bytes": 210073,
+    "sha256": "60714c797aa6a122e3b6cfc5c3b68d9f79639dcf8bd03108a1eacb19deca7e7d"
+  },
+  {
+    "path": "review/person/R/bottom-source-2x.png",
+    "bytes": 146261,
+    "sha256": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9"
+  },
+  {
+    "path": "review/person/R/face-white-2x.png",
+    "bytes": 216095,
+    "sha256": "93989e696c1635c83001aa9e1ff106f82c05f08b5ffaf17ad0af32f3c4867b85"
+  },
+  {
+    "path": "review/person/R/top-white-2x.png",
+    "bytes": 178404,
+    "sha256": "780bc5656ec186c37329f4bb61a126d61e38b72fcd065472df77a589a344d47b"
+  },
+  {
+    "path": "review/person/R/artifact-supplement-white-2x.png",
+    "bytes": 153130,
+    "sha256": "8839b1b3b9f80db237cea4282b65c7d99ff58f4c99d366cc3b2debf197075e7b"
+  },
+  {
+    "path": "review/person/R/bottom-alpha-2x.png",
+    "bytes": 41213,
+    "sha256": "6df3d46578ec676cc0b2582984d769b903286c5447be760a4b5bbc59ce9fa3ce"
+  },
+  {
+    "path": "review/person/R/artifact-supplement-overlay-2x.png",
+    "bytes": 146690,
+    "sha256": "f33c81bb3fd605d6552db61ec511a60674c08580d655c929267f93f9aea07682"
+  },
+  {
+    "path": "review/person/R/top-source-2x.png",
+    "bytes": 180661,
+    "sha256": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168"
+  },
+  {
+    "path": "review/person/R/clothing-supplement-overlay-2x.png",
+    "bytes": 158219,
+    "sha256": "7a124e308a03019e26b994c5a25710e017d98e8fa0a3c74f0a88cc25393a5230"
+  },
+  {
+    "path": "review/person/R/clothing-supplement-alpha-2x.png",
+    "bytes": 24011,
+    "sha256": "23628b21f240bb241c954044f8d73e6d296465ee67366932b7c5eca50dad7343"
+  },
+  {
+    "path": "review/person/R/face-source-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/person/R/alpha.png",
+    "bytes": 183574,
+    "sha256": "4352c38f74bb4625db300236b6149bcf83ad166fd05068ce77dcd94c96fd1d93"
+  },
+  {
+    "path": "review/person/R/right-source-2x.png",
+    "bytes": 269608,
+    "sha256": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176"
+  },
+  {
+    "path": "review/person/R/right-white-2x.png",
+    "bytes": 242244,
+    "sha256": "bb3cac8ae6a21dbc381a00ee0ae9c7c1df731dea0c9677013b1cf81eecb2e57b"
+  },
+  {
+    "path": "review/person/R/black.png",
+    "bytes": 1348901,
+    "sha256": "3ff9e95bb988eaca81e9b6d88f1088fd4024f4bb514bd95f2f1490b88802b4ea"
+  },
+  {
+    "path": "review/person/R/clothing-supplement-black-2x.png",
+    "bytes": 94665,
+    "sha256": "22cfc758964022b3bb66ac0f04752fe89e6f239646ccda73004868f194f025e0"
+  },
+  {
+    "path": "review/person/R/artifact-supplement-source-2x.png",
+    "bytes": 153505,
+    "sha256": "deebe0b283c977829da08843ab408613b2fcf38a4261a202b3a27becafa84958"
+  },
+  {
+    "path": "review/person/R/flowers-white-2x.png",
+    "bytes": 53977,
+    "sha256": "cb199eb907fa5140d9632bec085224d20d3ca6fe78808f518087a9531ea03874"
+  },
+  {
+    "path": "review/person/R/face-black-2x.png",
+    "bytes": 217373,
+    "sha256": "48d28a4bc1d427009da0836d8d74d5e618ee79c55dab35de719fbc019e89827a"
+  },
+  {
+    "path": "review/person/R/top-overlay-2x.png",
+    "bytes": 176866,
+    "sha256": "de220e70e2b5163f215809506e3651ae15f1eabbb4b876a4f1c71ac44c83ee83"
+  },
+  {
+    "path": "review/person/R/top-alpha-2x.png",
+    "bytes": 41216,
+    "sha256": "d08104b5a06b9faf28cb07c8687ff8f436668ed519b57742579ffac62772fdf9"
+  },
+  {
+    "path": "review/person/R/bottom-white-2x.png",
+    "bytes": 128116,
+    "sha256": "bf2e109b0b6b3b6734d15ac46e36a5e8a13f779f9ddb3096ba5b1371714d373b"
+  },
+  {
+    "path": "review/person/R/artifact-supplement-alpha-2x.png",
+    "bytes": 21330,
+    "sha256": "b2278d548ef3feeec8e87959e84d59413b17a35a2d426cae442edd564a824a5a"
+  },
+  {
+    "path": "review/person/R/artifact-supplement-black-2x.png",
+    "bytes": 156032,
+    "sha256": "850f4b237162131ad135542cb9e68bf8bb8f812e46206f351cae9268de72e558"
+  },
+  {
+    "path": "review/person/R/clothing-supplement-source-2x.png",
+    "bytes": 151331,
+    "sha256": "cc62209fb996b7ae404ea8de31c4e258f58082332e5cd7f95f795bb849493935"
+  },
+  {
+    "path": "review/person/R/bottom-overlay-2x.png",
+    "bytes": 150902,
+    "sha256": "1b3649ecc7b418db6e3b61403d74fac103261aeeaa52e7f0f66274e48106ae59"
+  },
+  {
+    "path": "review/person/R/top-black-2x.png",
+    "bytes": 186285,
+    "sha256": "790866eb301cd300be4b04d4e4fb348db8691919fc64124726dbb807f92cd092"
+  },
+  {
+    "path": "review/person/R/face-alpha-2x.png",
+    "bytes": 8246,
+    "sha256": "9418841e6f444d1117fcd8adbd788426413eee7f5b42ea6de9c5cfd841c8ff19"
+  },
+  {
+    "path": "review/person/R/overlay.png",
+    "bytes": 2024235,
+    "sha256": "73f804f0facc648d788e95bb3cfe2cf19bf873bb70be2cb0d858778c0bff038f"
+  },
+  {
+    "path": "review/person/R/source.png",
+    "bytes": 2111076,
+    "sha256": "010ba5310daaede7f9d5d3b311f9fd6144a37247cd4cfb83bcef6311d1c2886e"
+  },
+  {
+    "path": "review/person/R/right-black-2x.png",
+    "bytes": 247701,
+    "sha256": "34f9e7014070bbce400f4ced884a73614b8a20cc737983bd3e6da61598f817a6"
+  },
+  {
+    "path": "review/person/R/flowers-alpha-2x.png",
+    "bytes": 11352,
+    "sha256": "54079c298bd1ee70d68a5bc385110c869a5a4c2e2f524abab86f10562aafeb03"
+  },
+  {
+    "path": "review/person/R/clothing-supplement-white-2x.png",
+    "bytes": 85131,
+    "sha256": "fe2dd6a654be59f2998274eca385e5172a4ca8797bb60a73e0a506150587ccbb"
+  },
+  {
+    "path": "review/person/R/flowers-overlay-2x.png",
+    "bytes": 181379,
+    "sha256": "ead745918eec85e423f164ed13d5841f3a0e8c8d3d04520438cead76fd558afc"
+  },
+  {
+    "path": "review/person/R/flowers-black-2x.png",
+    "bytes": 51500,
+    "sha256": "fc70c0c0938cdce8fdca5eab5622ea31584001f27edab14e2e5695073a9fb0ea"
+  },
+  {
+    "path": "review/person/R/white.png",
+    "bytes": 1337638,
+    "sha256": "c675b401348525109bed0ff7add49942078d2c877bcac4a00754e577837c7268"
+  },
+  {
+    "path": "review/person/R/right-alpha-2x.png",
+    "bytes": 40069,
+    "sha256": "daa81f65a0b1e0f7162313ea38f5860383f4274e5fcc58977d0c92f5c2ee791b"
+  },
+  {
+    "path": "review/person/R/flowers-source-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/person/R/right-overlay-2x.png",
+    "bytes": 259816,
+    "sha256": "42f902fe1dada1a9b377c72c1caa0d8614a75640807c32da1dd4f265ff37a963"
+  },
+  {
+    "path": "review/person/S/bottom-black-2x.png",
+    "bytes": 110679,
+    "sha256": "a9cf312e18522d3e0fca614bf5a9741f816bf5c58810e739f4f9c3f0c66db845"
+  },
+  {
+    "path": "review/person/S/face-overlay-2x.png",
+    "bytes": 210011,
+    "sha256": "c26ee1b9275f3195c108ec74deafa48c6f80c032650d87771e501472a1645712"
+  },
+  {
+    "path": "review/person/S/bottom-source-2x.png",
+    "bytes": 146261,
+    "sha256": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9"
+  },
+  {
+    "path": "review/person/S/face-white-2x.png",
+    "bytes": 214913,
+    "sha256": "f9e99cf9c592bdc35e496e28680cc853e74b1ec482ae80e2cf544f208497de4c"
+  },
+  {
+    "path": "review/person/S/top-white-2x.png",
+    "bytes": 178367,
+    "sha256": "970714a7f0dcde9b8820527cee03af5eb360d26c59f87ec7acc9ac8b54bbb447"
+  },
+  {
+    "path": "review/person/S/artifact-supplement-white-2x.png",
+    "bytes": 153130,
+    "sha256": "131ed52e1a2a45ce84dd0b3e83d8a368dfaf7fea13c28b5d5c1093d67fb017bf"
+  },
+  {
+    "path": "review/person/S/bottom-alpha-2x.png",
+    "bytes": 35625,
+    "sha256": "c98249af73ddbc77b698f7452bfab3833dc5fe30411479d261d66812c90efb1c"
+  },
+  {
+    "path": "review/person/S/artifact-supplement-overlay-2x.png",
+    "bytes": 146335,
+    "sha256": "9c2d5a6e21fbaa3082a91300afdc92510f283c4141bc0ec6afd1fc5575c21bd4"
+  },
+  {
+    "path": "review/person/S/top-source-2x.png",
+    "bytes": 180661,
+    "sha256": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168"
+  },
+  {
+    "path": "review/person/S/clothing-supplement-overlay-2x.png",
+    "bytes": 156392,
+    "sha256": "afeb2d486ce758f5d167a6e0ddb34e0d18e70a4e01dba109e369c87d8622b76a"
+  },
+  {
+    "path": "review/person/S/clothing-supplement-alpha-2x.png",
+    "bytes": 16832,
+    "sha256": "34dcf2464a9a2a73ccbbf93789847e5019c30091f1f834bba07bce7a8a453c15"
+  },
+  {
+    "path": "review/person/S/face-source-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/person/S/alpha.png",
+    "bytes": 159002,
+    "sha256": "9fdcf19f42bd84bf7182cdb9afb05feedde42f523f05dd8fd0ce02d5074a1e15"
+  },
+  {
+    "path": "review/person/S/right-source-2x.png",
+    "bytes": 269608,
+    "sha256": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176"
+  },
+  {
+    "path": "review/person/S/right-white-2x.png",
+    "bytes": 237318,
+    "sha256": "4cdce68a2e9adbf8844b25450fb21dcfcb54f6ef20b121eddaaa97f6f04007a2"
+  },
+  {
+    "path": "review/person/S/black.png",
+    "bytes": 1301213,
+    "sha256": "4ad593ea4015cb1fc0fa398b50f0ff302fe7aae005355beeebd80657cbb40817"
+  },
+  {
+    "path": "review/person/S/clothing-supplement-black-2x.png",
+    "bytes": 80033,
+    "sha256": "d5d3d531cfe9685fea4710152d8def8cdae430520839b41a6b395cd1e93baa49"
+  },
+  {
+    "path": "review/person/S/artifact-supplement-source-2x.png",
+    "bytes": 153505,
+    "sha256": "deebe0b283c977829da08843ab408613b2fcf38a4261a202b3a27becafa84958"
+  },
+  {
+    "path": "review/person/S/flowers-white-2x.png",
+    "bytes": 49820,
+    "sha256": "6e288a8f49a7310f64a63f9d5b4749da7f0415275602b2a04331570d4589e045"
+  },
+  {
+    "path": "review/person/S/face-black-2x.png",
+    "bytes": 216091,
+    "sha256": "bf43a1769a0f7df8858093a866e2b8e097c2780f7482908cec83bb97874c8ec2"
+  },
+  {
+    "path": "review/person/S/top-overlay-2x.png",
+    "bytes": 175388,
+    "sha256": "83f4d70b6543445e88fefe07747b0dd0f678fda6021097dc8815a82ad4195b01"
+  },
+  {
+    "path": "review/person/S/top-alpha-2x.png",
+    "bytes": 39027,
+    "sha256": "4047f82aba6e02f7bdb69b82f27b9e8eb1c00f1ee489b5c9cf923fecd9fae1ee"
+  },
+  {
+    "path": "review/person/S/bottom-white-2x.png",
+    "bytes": 113850,
+    "sha256": "f14f5c6866d1a4782ea5e514b1223feed47b92457d604ee37a0b3beac7c5a87f"
+  },
+  {
+    "path": "review/person/S/artifact-supplement-alpha-2x.png",
+    "bytes": 20726,
+    "sha256": "bdd06d89d6372632aa5c7b297af11098ec117e2e72bab5c22af368177bc440ca"
+  },
+  {
+    "path": "review/person/S/artifact-supplement-black-2x.png",
+    "bytes": 155047,
+    "sha256": "81c69ac0d1d7e25b8680b56372c50f7fe2a43738b5ef7425a22b270b99a7228e"
+  },
+  {
+    "path": "review/person/S/clothing-supplement-source-2x.png",
+    "bytes": 151331,
+    "sha256": "cc62209fb996b7ae404ea8de31c4e258f58082332e5cd7f95f795bb849493935"
+  },
+  {
+    "path": "review/person/S/bottom-overlay-2x.png",
+    "bytes": 150136,
+    "sha256": "00cdb7782283ce81bac85c70707cb85706ea0374bf276866aaf5baa79fba7cc1"
+  },
+  {
+    "path": "review/person/S/top-black-2x.png",
+    "bytes": 182718,
+    "sha256": "22837c9f1e30842856f766582aeb89535e18a8ba35dcaa85837671a4cc3553b6"
+  },
+  {
+    "path": "review/person/S/face-alpha-2x.png",
+    "bytes": 7515,
+    "sha256": "9be4a1ad67b4fb1d4e51b130ccc06bbdb686314b9f9f69721f42a311a59deb11"
+  },
+  {
+    "path": "review/person/S/overlay.png",
+    "bytes": 2019752,
+    "sha256": "416d3a7a2d063374dfbf1c708e9562c2b53b89bb3576c75fb24f2e0472cc40aa"
+  },
+  {
+    "path": "review/person/S/source.png",
+    "bytes": 2111076,
+    "sha256": "010ba5310daaede7f9d5d3b311f9fd6144a37247cd4cfb83bcef6311d1c2886e"
+  },
+  {
+    "path": "review/person/S/right-black-2x.png",
+    "bytes": 240052,
+    "sha256": "1c12bc4ff3b0099a3ec13e3a06b225d4549300be921d9d065f1f52cf2cf52ff0"
+  },
+  {
+    "path": "review/person/S/flowers-alpha-2x.png",
+    "bytes": 8923,
+    "sha256": "df1743acb1c0bf871b02c7b1b41647f383c1d9090e2375c6dcc587cc699ff89d"
+  },
+  {
+    "path": "review/person/S/clothing-supplement-white-2x.png",
+    "bytes": 73816,
+    "sha256": "a92ad4d5f34844285ef148bd83cf5792313c9ef27cc86573854f2fc4e2799f22"
+  },
+  {
+    "path": "review/person/S/flowers-overlay-2x.png",
+    "bytes": 181110,
+    "sha256": "acff4591371b23d87a54c9e03588e9f73530f6a9dcd0cd86aba930f124e30f8d"
+  },
+  {
+    "path": "review/person/S/flowers-black-2x.png",
+    "bytes": 48288,
+    "sha256": "84e72c95d2f26b5bca49d7cb753bf0aea347fe5dd673e15f6d40cdfbbfbf1e85"
+  },
+  {
+    "path": "review/person/S/white.png",
+    "bytes": 1296971,
+    "sha256": "1de4efd33e3a469937cc08f0e92070e7365c4e5fd082e658e1e8073c886b2391"
+  },
+  {
+    "path": "review/person/S/right-alpha-2x.png",
+    "bytes": 37467,
+    "sha256": "db3e7b835189c594d57d4db75b99f2197092e667eccd0889617bb41afac26f95"
+  },
+  {
+    "path": "review/person/S/flowers-source-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/person/S/right-overlay-2x.png",
+    "bytes": 259294,
+    "sha256": "61b1c2206735039fb49c30ee55849502d40b7dc446ed015fd610537cb9ff48c3"
+  },
+  {
+    "path": "review/person/Q/bottom-black-2x.png",
+    "bytes": 97440,
+    "sha256": "a4f3d742bd099d58f2f30f766cb1f77898173d85c2aae3edd00f53ade377955a"
+  },
+  {
+    "path": "review/person/Q/face-overlay-2x.png",
+    "bytes": 205706,
+    "sha256": "3f88dbc61ce39c8320917a8933a859cad5c53fb3ebf232f87669dc856aa31030"
+  },
+  {
+    "path": "review/person/Q/bottom-source-2x.png",
+    "bytes": 146261,
+    "sha256": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9"
+  },
+  {
+    "path": "review/person/Q/face-white-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/person/Q/top-white-2x.png",
+    "bytes": 176280,
+    "sha256": "94af337130c2e945ab0a7614cc0197b094067242bfccea1fcb46145eaebf9b8a"
+  },
+  {
+    "path": "review/person/Q/artifact-supplement-white-2x.png",
+    "bytes": 153067,
+    "sha256": "2c3ce1ed9b738392a4d956fc09100f5b11500e2d193d88cbf67d08be817f69fa"
+  },
+  {
+    "path": "review/person/Q/bottom-alpha-2x.png",
+    "bytes": 27663,
+    "sha256": "2a0c210476caeb2370cc834b29c7b3ebeb47061d2d0563030afdab747fd52a43"
+  },
+  {
+    "path": "review/person/Q/artifact-supplement-overlay-2x.png",
+    "bytes": 146662,
+    "sha256": "0cade70b5c71052baedc0ed2c3a350bc7cd95aa25994e55fe9ea86ff917ba9de"
+  },
+  {
+    "path": "review/person/Q/top-source-2x.png",
+    "bytes": 180661,
+    "sha256": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168"
+  },
+  {
+    "path": "review/person/Q/clothing-supplement-overlay-2x.png",
+    "bytes": 145631,
+    "sha256": "336be375a460b7d6bff34aca3437f6242079d33d16c25587cfcb11070b2d91d4"
+  },
+  {
+    "path": "review/person/Q/clothing-supplement-alpha-2x.png",
+    "bytes": 7946,
+    "sha256": "ca9bc6ad2a1df8fd6cdbd6ca1cfa6fdd91d055bc96b927880956c160b1f360ac"
+  },
+  {
+    "path": "review/person/Q/face-source-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/person/Q/alpha.png",
+    "bytes": 116002,
+    "sha256": "a28ce11b6559886d02331800bef964f5269f6e26c38a910130456ccf64439c28"
+  },
+  {
+    "path": "review/person/Q/right-source-2x.png",
+    "bytes": 269608,
+    "sha256": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176"
+  },
+  {
+    "path": "review/person/Q/right-white-2x.png",
+    "bytes": 238625,
+    "sha256": "5106c5d833879e5b82570a2b83b1b9035e32a2012b25735b7d6d80e99e6b9342"
+  },
+  {
+    "path": "review/person/Q/black.png",
+    "bytes": 1812635,
+    "sha256": "65c05cb835626f2a26aa5d3c38a3bbad7d7084c83c71e180b93d439350a778b3"
+  },
+  {
+    "path": "review/person/Q/clothing-supplement-black-2x.png",
+    "bytes": 87677,
+    "sha256": "6c905b9efae9b4213ed70f3efc59d5ff1d603eb00d8f9d754a3933a425a101e5"
+  },
+  {
+    "path": "review/person/Q/artifact-supplement-source-2x.png",
+    "bytes": 153505,
+    "sha256": "deebe0b283c977829da08843ab408613b2fcf38a4261a202b3a27becafa84958"
+  },
+  {
+    "path": "review/person/Q/flowers-white-2x.png",
+    "bytes": 180839,
+    "sha256": "a03ba5fba7f9c026f0c7912df574d61dbef8b2e26f28134d24dba2bc177d97ba"
+  },
+  {
+    "path": "review/person/Q/face-black-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/person/Q/top-overlay-2x.png",
+    "bytes": 177040,
+    "sha256": "7a3d741a7578041eb5cc7eca2d7345b5118919d58272774898b70dd3928e00f2"
+  },
+  {
+    "path": "review/person/Q/top-alpha-2x.png",
+    "bytes": 29961,
+    "sha256": "c50479d5d9be317eb54fbd2e7f1d15987b97adbef93fb570531205da18db1cf3"
+  },
+  {
+    "path": "review/person/Q/bottom-white-2x.png",
+    "bytes": 104105,
+    "sha256": "b9f51bab0dfe69477c286d939aa6b2d43e816fa3ee96777c1295e9bc7e5425f2"
+  },
+  {
+    "path": "review/person/Q/artifact-supplement-alpha-2x.png",
+    "bytes": 17525,
+    "sha256": "eeef8fc2cf23dc6a53b79ffc4137c695a53805a5405af27ecbe41a16254ecd6b"
+  },
+  {
+    "path": "review/person/Q/artifact-supplement-black-2x.png",
+    "bytes": 154021,
+    "sha256": "787b9b72ccfb403a10df512129047476e5ebabe7754ca3be97457784baea8b72"
+  },
+  {
+    "path": "review/person/Q/clothing-supplement-source-2x.png",
+    "bytes": 151331,
+    "sha256": "cc62209fb996b7ae404ea8de31c4e258f58082332e5cd7f95f795bb849493935"
+  },
+  {
+    "path": "review/person/Q/bottom-overlay-2x.png",
+    "bytes": 147418,
+    "sha256": "25422f7e258d48f2b9eb49306d2c55b155864c64cf98a9aedd1a1f769de499ec"
+  },
+  {
+    "path": "review/person/Q/top-black-2x.png",
+    "bytes": 180793,
+    "sha256": "ddd80b2c1d2f17b2401bc4cbe47b03556d3d8d419b3e1eb48d3cd2b8937a61fa"
+  },
+  {
+    "path": "review/person/Q/face-alpha-2x.png",
+    "bytes": 1962,
+    "sha256": "945e2d97d593a6090e22baab95028a357375d460359db734460557abd0b10dc7"
+  },
+  {
+    "path": "review/person/Q/overlay.png",
+    "bytes": 1934300,
+    "sha256": "de3b17e82f684dcc03e5a65242630c3ef54101735fe8449b1c2f9cd6bcc573b2"
+  },
+  {
+    "path": "review/person/Q/source.png",
+    "bytes": 2111076,
+    "sha256": "010ba5310daaede7f9d5d3b311f9fd6144a37247cd4cfb83bcef6311d1c2886e"
+  },
+  {
+    "path": "review/person/Q/right-black-2x.png",
+    "bytes": 240293,
+    "sha256": "d9d533f599435f7a3026c1b5b072944bad6eeffce6c3d1b8f163cd2d828c0b55"
+  },
+  {
+    "path": "review/person/Q/flowers-alpha-2x.png",
+    "bytes": 2277,
+    "sha256": "755cdaeed616d12a0fc79cb1747cb4854369fc70281e30561ab57aac6676cc22"
+  },
+  {
+    "path": "review/person/Q/clothing-supplement-white-2x.png",
+    "bytes": 86057,
+    "sha256": "5dfa62308a90d0edbd0473b522b5e551dc6dca1bc7114802eb66e8d230ba6b29"
+  },
+  {
+    "path": "review/person/Q/flowers-overlay-2x.png",
+    "bytes": 157225,
+    "sha256": "4bf50c69bccd917cdad66e08447dedc7efcdf3ff8ea48f82ab2a75a92249bcbb"
+  },
+  {
+    "path": "review/person/Q/flowers-black-2x.png",
+    "bytes": 180769,
+    "sha256": "5f94e1dd506a31c061dd67f9ecbc98289efd5b993c14d9687491bbb99e3ddcd8"
+  },
+  {
+    "path": "review/person/Q/white.png",
+    "bytes": 1807313,
+    "sha256": "3bbe7be1d3169e462bba542a6b197bf6535ca8e15ebe403fd1aa1275c32dad60"
+  },
+  {
+    "path": "review/person/Q/right-alpha-2x.png",
+    "bytes": 36704,
+    "sha256": "225b490e9983c361f0993de338e8ff1c9cd9e6d1dc1e779ce8161ec1b62dbe6c"
+  },
+  {
+    "path": "review/person/Q/flowers-source-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/person/Q/right-overlay-2x.png",
+    "bytes": 259877,
+    "sha256": "d48a3bfeac19fc027c29840093787b68dc2467f8201f846625b0912213d39470"
+  },
+  {
+    "path": "review/person/P/bottom-black-2x.png",
+    "bytes": 66964,
+    "sha256": "cc7893eae9e75eeb0be09e2c80b99c06a91f5c91455ca0a7aaa29ffb1e196abf"
+  },
+  {
+    "path": "review/person/P/face-overlay-2x.png",
+    "bytes": 209453,
+    "sha256": "8cfb6816b6e3822826a1a1a91e2b958e30d164abefb77e642dd4f2dd01544172"
+  },
+  {
+    "path": "review/person/P/bottom-source-2x.png",
+    "bytes": 146261,
+    "sha256": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9"
+  },
+  {
+    "path": "review/person/P/face-white-2x.png",
+    "bytes": 209335,
+    "sha256": "452b2fde012a67db3a01f56a47a33d02edb29a5464a0795749797774fde17234"
+  },
+  {
+    "path": "review/person/P/top-white-2x.png",
+    "bytes": 164595,
+    "sha256": "5464e8fc59c15b9729c111722772ce2730825916bbeebed1350d92cf33e1e057"
+  },
+  {
+    "path": "review/person/P/artifact-supplement-white-2x.png",
+    "bytes": 146274,
+    "sha256": "4079477a490288f9486c204ce5dc9a6e57c48a186c7f2f77eed7d8af6087e998"
+  },
+  {
+    "path": "review/person/P/bottom-alpha-2x.png",
+    "bytes": 2244,
+    "sha256": "0ef9e817e179853f34c573a770c630beaa18c31b835c64b7dda62dd7f1fca325"
+  },
+  {
+    "path": "review/person/P/artifact-supplement-overlay-2x.png",
+    "bytes": 142020,
+    "sha256": "606ec5eadc76bfa8e28c1fcb6bb04d7cc1a9bc7d9ccba5fb2c325eb83672366e"
+  },
+  {
+    "path": "review/person/P/top-source-2x.png",
+    "bytes": 180661,
+    "sha256": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168"
+  },
+  {
+    "path": "review/person/P/clothing-supplement-overlay-2x.png",
+    "bytes": 149333,
+    "sha256": "10ea11a9234552de0ed3760dabde4e9fa087cd2fab8a0e38d5b0d10dd7aea37e"
+  },
+  {
+    "path": "review/person/P/clothing-supplement-alpha-2x.png",
+    "bytes": 2182,
+    "sha256": "b1960421e4de8f807d95370aaf74a96fd298c538698c3501db2f741887ff7456"
+  },
+  {
+    "path": "review/person/P/face-source-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/person/P/alpha.png",
+    "bytes": 9702,
+    "sha256": "9b25bf787350b74698af5131436c3af19be4dc29fbcd0296246e66addb3f9369"
+  },
+  {
+    "path": "review/person/P/right-source-2x.png",
+    "bytes": 269608,
+    "sha256": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176"
+  },
+  {
+    "path": "review/person/P/right-white-2x.png",
+    "bytes": 202548,
+    "sha256": "f06f2ebdf05c1eb7b968098f67e73782e6f8df8352e9ad1c9c1b2da338ce52e9"
+  },
+  {
+    "path": "review/person/P/black.png",
+    "bytes": 1145412,
+    "sha256": "9d7ad2134376f3271add7b38e6b26e97727e4ae184532ee37b5eefc51394c391"
+  },
+  {
+    "path": "review/person/P/clothing-supplement-black-2x.png",
+    "bytes": 53596,
+    "sha256": "34261b44c26cb5b82dfd0aba206a2be1f9c753494b0190dd9014c32932b76f7b"
+  },
+  {
+    "path": "review/person/P/artifact-supplement-source-2x.png",
+    "bytes": 153505,
+    "sha256": "deebe0b283c977829da08843ab408613b2fcf38a4261a202b3a27becafa84958"
+  },
+  {
+    "path": "review/person/P/flowers-white-2x.png",
+    "bytes": 36159,
+    "sha256": "f91c48d334ddf195825287acee0023344749e6ae46a6dafaac89e17f077f892f"
+  },
+  {
+    "path": "review/person/P/face-black-2x.png",
+    "bytes": 209336,
+    "sha256": "8b629152a2decd64662ec206734db2ee1644853fd3328149fd95a844eb7f9ca6"
+  },
+  {
+    "path": "review/person/P/top-overlay-2x.png",
+    "bytes": 167636,
+    "sha256": "6dddbdb1e9a00c1cad3b78aedef6c01ec5d9accf87c3dc0e127d97ebd3c92010"
+  },
+  {
+    "path": "review/person/P/top-alpha-2x.png",
+    "bytes": 1804,
+    "sha256": "1cf27459c95e31508adb9e558a7be3cd2794c04b12c05c7cc8ae6a0fa7b76876"
+  },
+  {
+    "path": "review/person/P/bottom-white-2x.png",
+    "bytes": 66995,
+    "sha256": "a9c4c845cf5fc470df66ce0033b151f3eebd0da48480bae9eeaf86bc49f9a9c7"
+  },
+  {
+    "path": "review/person/P/artifact-supplement-alpha-2x.png",
+    "bytes": 1588,
+    "sha256": "d7a93175908027888eba63dd54568fa32de4d35d074b7bcd09b645c6c85058d3"
+  },
+  {
+    "path": "review/person/P/artifact-supplement-black-2x.png",
+    "bytes": 146296,
+    "sha256": "abba85cc2bc27c6b22e95899513e974a94dac7b534fdabf0d348c9b11c8cea65"
+  },
+  {
+    "path": "review/person/P/clothing-supplement-source-2x.png",
+    "bytes": 151331,
+    "sha256": "cc62209fb996b7ae404ea8de31c4e258f58082332e5cd7f95f795bb849493935"
+  },
+  {
+    "path": "review/person/P/bottom-overlay-2x.png",
+    "bytes": 142265,
+    "sha256": "a906a6826103090bd2fe792858da20c406037455f3f6eb3f6744741dd2bcf829"
+  },
+  {
+    "path": "review/person/P/top-black-2x.png",
+    "bytes": 164390,
+    "sha256": "01420791bc75a09cc4fae1de68787aff1ecbc1114547dc538fac7404acf785d7"
+  },
+  {
+    "path": "review/person/P/face-alpha-2x.png",
+    "bytes": 2257,
+    "sha256": "62d5282e697f65160b8e65addee4d0afbf6dc36f72e66100e377e694bb029944"
+  },
+  {
+    "path": "review/person/P/overlay.png",
+    "bytes": 2000515,
+    "sha256": "f2f7f47fa0b4deeea3c813aa6c67ac2d7b103d0aa333a250afa2b95979f77d97"
+  },
+  {
+    "path": "review/person/P/source.png",
+    "bytes": 2111076,
+    "sha256": "010ba5310daaede7f9d5d3b311f9fd6144a37247cd4cfb83bcef6311d1c2886e"
+  },
+  {
+    "path": "review/person/P/right-black-2x.png",
+    "bytes": 202553,
+    "sha256": "9fe127da1654a14cef3c5b09b8f617686791ad6c235f5d42840f431f7dea09f1"
+  },
+  {
+    "path": "review/person/P/flowers-alpha-2x.png",
+    "bytes": 2025,
+    "sha256": "5090470e96165dfef2579d640937420b50bf4c61051e9cad94b07cac34408b7f"
+  },
+  {
+    "path": "review/person/P/clothing-supplement-white-2x.png",
+    "bytes": 53660,
+    "sha256": "23f3fc68faf7b07dd906c35eb4b7c00260c6d6edc23c28cee882ef84d381f576"
+  },
+  {
+    "path": "review/person/P/flowers-overlay-2x.png",
+    "bytes": 179647,
+    "sha256": "6a7fa6abdb884a90100305c9ed32b947c327c645bec59111d92053d582dd6a9b"
+  },
+  {
+    "path": "review/person/P/flowers-black-2x.png",
+    "bytes": 36131,
+    "sha256": "979b6cb104c9a9b5c0dce4c948d6e52f26c729228725b2d53cd1470a7308a240"
+  },
+  {
+    "path": "review/person/P/white.png",
+    "bytes": 1145564,
+    "sha256": "eb09197930dbcdec3915b666cfe5f371a803bd90d494763ae9856d5eb56ecd5e"
+  },
+  {
+    "path": "review/person/P/right-alpha-2x.png",
+    "bytes": 3780,
+    "sha256": "32b490136cb7e6947340e741aecad809d221efba2335bb38f5c547c08688184c"
+  },
+  {
+    "path": "review/person/P/flowers-source-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/person/P/right-overlay-2x.png",
+    "bytes": 252767,
+    "sha256": "15703c6ed57171649d5c43c5570c43c6cac26b95b403482a0d8ea8750ae442bc"
+  },
+  {
+    "path": "review/hair/A/bottom-black-2x.png",
+    "bytes": 44681,
+    "sha256": "ffbad1427061083e9f229f99089626ba96a16d72022e35153b69ee9171b34d20"
+  },
+  {
+    "path": "review/hair/A/face-overlay-2x.png",
+    "bytes": 220994,
+    "sha256": "3783e6ad3c6f6411ba1f29336c46d28d24194b495118a30424e2bbd6dbe48d2a"
+  },
+  {
+    "path": "review/hair/A/bottom-source-2x.png",
+    "bytes": 146261,
+    "sha256": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9"
+  },
+  {
+    "path": "review/hair/A/face-white-2x.png",
+    "bytes": 119552,
+    "sha256": "ae75fa62bc5d71e8d843636c9e4120d18b4cde8038572a74007281a26eb83f9c"
+  },
+  {
+    "path": "review/hair/A/top-white-2x.png",
+    "bytes": 167056,
+    "sha256": "5b9815df2876e7739bf36cfa275eff55b89f66855c13a1d03a4667e52bdf7a12"
+  },
+  {
+    "path": "review/hair/A/artifact-supplement-white-2x.png",
+    "bytes": 147712,
+    "sha256": "51848c65afa5093ace4014558f9ce759f07fffc60754a49b52e4c30fe498636d"
+  },
+  {
+    "path": "review/hair/A/bottom-alpha-2x.png",
+    "bytes": 1507,
+    "sha256": "b5573a60650a3ac4fe8d7e5590e48c54984560c93a76ec0d13c7e888f978abdf"
+  },
+  {
+    "path": "review/hair/A/artifact-supplement-overlay-2x.png",
+    "bytes": 141713,
+    "sha256": "77d2c5e6b6ead2209d5ea1166e417e8dfc5a73c26dd52dee3a3cd5b0578958ca"
+  },
+  {
+    "path": "review/hair/A/top-source-2x.png",
+    "bytes": 180661,
+    "sha256": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168"
+  },
+  {
+    "path": "review/hair/A/face-source-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/hair/A/alpha.png",
+    "bytes": 7999,
+    "sha256": "03ae4bd90a3ffa911d77e971df3a3d360a108089182304951da00ef7d61cb5f3"
+  },
+  {
+    "path": "review/hair/A/right-source-2x.png",
+    "bytes": 269608,
+    "sha256": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176"
+  },
+  {
+    "path": "review/hair/A/right-white-2x.png",
+    "bytes": 208100,
+    "sha256": "e8a23d2bcfaa2e5178e2c7394cbf8e1aefc89d43eaba974f014fa7b8c9841e00"
+  },
+  {
+    "path": "review/hair/A/black.png",
+    "bytes": 817117,
+    "sha256": "c6c0c0232661da9685cb13831b7d9c6b11266f221928fbf0036d5c8a8aaca898"
+  },
+  {
+    "path": "review/hair/A/artifact-supplement-source-2x.png",
+    "bytes": 153505,
+    "sha256": "deebe0b283c977829da08843ab408613b2fcf38a4261a202b3a27becafa84958"
+  },
+  {
+    "path": "review/hair/A/flowers-white-2x.png",
+    "bytes": 2337,
+    "sha256": "5293b1274f53e45588158dbe1aaa8fbcb080527585b3f4422311be7d46c16e71"
+  },
+  {
+    "path": "review/hair/A/face-black-2x.png",
+    "bytes": 119591,
+    "sha256": "cd3cd4e3ba4e8530c65a531d8736a0f05c051d8edf7a95bf9baa9c3eff7e8c83"
+  },
+  {
+    "path": "review/hair/A/top-overlay-2x.png",
+    "bytes": 167235,
+    "sha256": "251aa7bb3752f24c6f132521b97e86c9a4d4e9ee112771870acda126a954da76"
+  },
+  {
+    "path": "review/hair/A/top-alpha-2x.png",
+    "bytes": 1802,
+    "sha256": "65f8310acaa89708a010a3722bd93b4f443c6c587215766f42cf859b9e6e4d6c"
+  },
+  {
+    "path": "review/hair/A/bottom-white-2x.png",
+    "bytes": 45373,
+    "sha256": "58da24cde6b47c9f57a2ccca77862d220ae50a509773587ddf9755ee7d505d53"
+  },
+  {
+    "path": "review/hair/A/artifact-supplement-alpha-2x.png",
+    "bytes": 1543,
+    "sha256": "3040817b350557b3aac2808469f6d0fd70823e618883c8c8ed77028449e13bb6"
+  },
+  {
+    "path": "review/hair/A/artifact-supplement-black-2x.png",
+    "bytes": 147750,
+    "sha256": "4a441911c7fc61822dc34e32de0e3ba3cd73c3c565ceb1d9fafd6e47b4ac9fa2"
+  },
+  {
+    "path": "review/hair/A/bottom-overlay-2x.png",
+    "bytes": 143891,
+    "sha256": "06bd1390f691d876ccce4372aa0171099077c394aa2772aaa6106fbd6c36bd28"
+  },
+  {
+    "path": "review/hair/A/top-black-2x.png",
+    "bytes": 166876,
+    "sha256": "5542bf0394c5656d5d04a1262ce9ef7ff209874db2638985800c757b70a0c07b"
+  },
+  {
+    "path": "review/hair/A/face-alpha-2x.png",
+    "bytes": 2924,
+    "sha256": "a80648e3c8a1278bde268bae8e1fe794c09735d061a9fdc53885a6ca69665be2"
+  },
+  {
+    "path": "review/hair/A/overlay.png",
+    "bytes": 2028179,
+    "sha256": "b44323b1dcd48b7e2d8701534ecdaf6768169ed2f42d4dd45ebe735576da387d"
+  },
+  {
+    "path": "review/hair/A/source.png",
+    "bytes": 2111076,
+    "sha256": "010ba5310daaede7f9d5d3b311f9fd6144a37247cd4cfb83bcef6311d1c2886e"
+  },
+  {
+    "path": "review/hair/A/right-black-2x.png",
+    "bytes": 208104,
+    "sha256": "08e7c3467500bf7a7558728cc122d1d058b60cb5d70c72f8d8ef1ae407675fe4"
+  },
+  {
+    "path": "review/hair/A/flowers-alpha-2x.png",
+    "bytes": 468,
+    "sha256": "24e978b748e474a09a2f01f695a55412a30a1a2e5822ea98e564e24dcd929184"
+  },
+  {
+    "path": "review/hair/A/flowers-overlay-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/hair/A/flowers-black-2x.png",
+    "bytes": 1243,
+    "sha256": "01eb2b91767c5ed9863f0448f6fedf750ba2f8a0259cf394570c34f454e67d44"
+  },
+  {
+    "path": "review/hair/A/white.png",
+    "bytes": 817571,
+    "sha256": "9fc7bf46ae6c1c44dab1c3abf60c32102c6f5db592723f5621907f6a915feedf"
+  },
+  {
+    "path": "review/hair/A/right-alpha-2x.png",
+    "bytes": 3842,
+    "sha256": "51834cf06f6ced2f5e447d0816e8efdcdcd806482e8ab7506db9d5e4182bb024"
+  },
+  {
+    "path": "review/hair/A/flowers-source-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/hair/A/right-overlay-2x.png",
+    "bytes": 252077,
+    "sha256": "d1e926335e3c3e5e323dfe796536d72244ee26d38b367581b2720b9736a0197a"
+  },
+  {
+    "path": "review/hair/C/bottom-black-2x.png",
+    "bytes": 111908,
+    "sha256": "191e51a51346beffa6f9df789a4bf47b6246420faac2b7c93725c1527f67851c"
+  },
+  {
+    "path": "review/hair/C/face-overlay-2x.png",
+    "bytes": 227947,
+    "sha256": "6b4faf2e253fab382b82cadfd5c3832688683957378811d98df0d81261af834d"
+  },
+  {
+    "path": "review/hair/C/bottom-source-2x.png",
+    "bytes": 146261,
+    "sha256": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9"
+  },
+  {
+    "path": "review/hair/C/face-white-2x.png",
+    "bytes": 165382,
+    "sha256": "7d246e07d342cc7e8e250db65e55f0e6cdec4184a2ca56eb8c3e6f0dd6b1b794"
+  },
+  {
+    "path": "review/hair/C/top-white-2x.png",
+    "bytes": 178608,
+    "sha256": "47beac1a445d9ebbb63921bd33268f2a1762e1a5ae639a2f8d162d01dd3fad27"
+  },
+  {
+    "path": "review/hair/C/artifact-supplement-white-2x.png",
+    "bytes": 153500,
+    "sha256": "8421f0ae63ec7790d1bf7a8a3bf476eb3d4e1ea128789e953943b1885acbcf01"
+  },
+  {
+    "path": "review/hair/C/bottom-alpha-2x.png",
+    "bytes": 43626,
+    "sha256": "0e885768e7934303cc585eecbe8f3b0d56b6ca88b3b20ffaf2ceac3007be4104"
+  },
+  {
+    "path": "review/hair/C/artifact-supplement-overlay-2x.png",
+    "bytes": 144639,
+    "sha256": "0905760dfbf9d3d3c2af896c7455950a281495069d96cfee33039009ef144afe"
+  },
+  {
+    "path": "review/hair/C/top-source-2x.png",
+    "bytes": 180661,
+    "sha256": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168"
+  },
+  {
+    "path": "review/hair/C/face-source-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/hair/C/alpha.png",
+    "bytes": 159589,
+    "sha256": "99d7340e86d413c34f4c7e9c15429101e182a908a81cb729eeba840102574027"
+  },
+  {
+    "path": "review/hair/C/right-source-2x.png",
+    "bytes": 269608,
+    "sha256": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176"
+  },
+  {
+    "path": "review/hair/C/right-white-2x.png",
+    "bytes": 250414,
+    "sha256": "d1579620c70cc83811d339cbd93a7b2e947d0abe8f22a3d0bf94281331b4ab7d"
+  },
+  {
+    "path": "review/hair/C/black.png",
+    "bytes": 1020334,
+    "sha256": "99aec49fa9ff314ac337f3362b2c26e57ba9b5c30928217d56d8e21abebb9050"
+  },
+  {
+    "path": "review/hair/C/artifact-supplement-source-2x.png",
+    "bytes": 153505,
+    "sha256": "deebe0b283c977829da08843ab408613b2fcf38a4261a202b3a27becafa84958"
+  },
+  {
+    "path": "review/hair/C/flowers-white-2x.png",
+    "bytes": 5509,
+    "sha256": "c477f566e5105c152e65e5e544ab9ae21c6d80291318bb530e124b80feac7075"
+  },
+  {
+    "path": "review/hair/C/face-black-2x.png",
+    "bytes": 156679,
+    "sha256": "cedfb6221836d532e2d0338dbef44088ddff6c6f168e2a964e9e42b00d91eba2"
+  },
+  {
+    "path": "review/hair/C/top-overlay-2x.png",
+    "bytes": 173577,
+    "sha256": "26b520aa22fab8a51f0ae8f2f9eb9e878db77ec34277c4c94f24daf103a4d216"
+  },
+  {
+    "path": "review/hair/C/top-alpha-2x.png",
+    "bytes": 25675,
+    "sha256": "833e45428197b2ccbf1e44231c58297bf8decee61db02ce6888518974f004087"
+  },
+  {
+    "path": "review/hair/C/bottom-white-2x.png",
+    "bytes": 117354,
+    "sha256": "226a8bd4b851ae626c6fa593d65e43ce983d81dcd6f747dbbe1035bfb3824baa"
+  },
+  {
+    "path": "review/hair/C/artifact-supplement-alpha-2x.png",
+    "bytes": 14234,
+    "sha256": "c75a6cb79b201eb4c07241632b24efba5d5298a0547603d11ad95ed96b6fabb2"
+  },
+  {
+    "path": "review/hair/C/artifact-supplement-black-2x.png",
+    "bytes": 156101,
+    "sha256": "8b70326ed7c993423d3aa17b4fb665d284513183a288af8df021a55c00439569"
+  },
+  {
+    "path": "review/hair/C/bottom-overlay-2x.png",
+    "bytes": 154309,
+    "sha256": "458eadc3d84a2ff6d85b1204d42c61fb036d4f33fb7ed43172e26fd8023d1ffe"
+  },
+  {
+    "path": "review/hair/C/top-black-2x.png",
+    "bytes": 187018,
+    "sha256": "a4cb5fcdd4a6e4f32daf1c08d62527ba29fc3023e3afdccacbc9c2188c252920"
+  },
+  {
+    "path": "review/hair/C/face-alpha-2x.png",
+    "bytes": 34448,
+    "sha256": "6a8d70bc7865d3ead1d2510fe502c745ae56023a8bac0c25d737e1055c660809"
+  },
+  {
+    "path": "review/hair/C/overlay.png",
+    "bytes": 2054245,
+    "sha256": "9b37e6052cc05ef5c13039aebf7b9f55c5e3709076cd77ee41c7fae722263fa1"
+  },
+  {
+    "path": "review/hair/C/source.png",
+    "bytes": 2111076,
+    "sha256": "010ba5310daaede7f9d5d3b311f9fd6144a37247cd4cfb83bcef6311d1c2886e"
+  },
+  {
+    "path": "review/hair/C/right-black-2x.png",
+    "bytes": 257460,
+    "sha256": "ac145a9253823297d8427faba3b94575bd25d99079c246a49a2ff3c786bfcdd9"
+  },
+  {
+    "path": "review/hair/C/flowers-alpha-2x.png",
+    "bytes": 2510,
+    "sha256": "7118d3c309913e364f2964415d2587d59b2efbc88712afce4a983007e1bbbd78"
+  },
+  {
+    "path": "review/hair/C/flowers-overlay-2x.png",
+    "bytes": 180768,
+    "sha256": "805d9f13c859cadd302a1d62decf3559dbeb4ef36a8926d5de45b958688e45b6"
+  },
+  {
+    "path": "review/hair/C/flowers-black-2x.png",
+    "bytes": 3462,
+    "sha256": "6763ae6f2b42d7243116025f8798e7c4cb856f006ad5194a489a52c1154e70cb"
+  },
+  {
+    "path": "review/hair/C/white.png",
+    "bytes": 1025829,
+    "sha256": "0b581dcf0f1317bbb57116674ec8f4096d5b06aa7e5d392d61b7dbbef4984a71"
+  },
+  {
+    "path": "review/hair/C/right-alpha-2x.png",
+    "bytes": 37430,
+    "sha256": "e07c6a987501bf776ceedee5bb791e592aa50e977aa65a45a9a804d7f9d00ec5"
+  },
+  {
+    "path": "review/hair/C/flowers-source-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/hair/C/right-overlay-2x.png",
+    "bytes": 259519,
+    "sha256": "5100bbed66fff77b5da8aaff8c80a5f57108da09de2cf4d7ef0a7a79cc7c5c98"
+  },
+  {
+    "path": "review/hair/D/bottom-black-2x.png",
+    "bytes": 100380,
+    "sha256": "db489d3b2c8e192c26b444d1f2ffb9638631ad215b4dc1d8c4710945368fdbad"
+  },
+  {
+    "path": "review/hair/D/face-overlay-2x.png",
+    "bytes": 227495,
+    "sha256": "2750ebd612bc5e7ce2dcb30740e4123c17157ee66d757d640fe12f875b05e33d"
+  },
+  {
+    "path": "review/hair/D/bottom-source-2x.png",
+    "bytes": 146261,
+    "sha256": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9"
+  },
+  {
+    "path": "review/hair/D/face-white-2x.png",
+    "bytes": 152387,
+    "sha256": "f5e709cf296307321f22ae166f7d23226869a68e5b81eeb3a4f93f839bbe0651"
+  },
+  {
+    "path": "review/hair/D/top-white-2x.png",
+    "bytes": 178606,
+    "sha256": "831924ef87342101df255b7f1a79da7a48df78a26569567dd0d340b3abfcb70c"
+  },
+  {
+    "path": "review/hair/D/artifact-supplement-white-2x.png",
+    "bytes": 153500,
+    "sha256": "8421f0ae63ec7790d1bf7a8a3bf476eb3d4e1ea128789e953943b1885acbcf01"
+  },
+  {
+    "path": "review/hair/D/bottom-alpha-2x.png",
+    "bytes": 38148,
+    "sha256": "0a97f4af45d9afb72fd04a8903b5c504ef43532c51377544ec13e94103f89d8a"
+  },
+  {
+    "path": "review/hair/D/artifact-supplement-overlay-2x.png",
+    "bytes": 144242,
+    "sha256": "e49c870d504e3bab97318222c33d5acb25450f3ed4d4396cfb8fb5b47f36585a"
+  },
+  {
+    "path": "review/hair/D/top-source-2x.png",
+    "bytes": 180661,
+    "sha256": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168"
+  },
+  {
+    "path": "review/hair/D/face-source-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/hair/D/alpha.png",
+    "bytes": 131976,
+    "sha256": "154f7598f9d4a7dd790cdc2cc53bf09aecb0c79505764226dcc2b4622e31c158"
+  },
+  {
+    "path": "review/hair/D/right-source-2x.png",
+    "bytes": 269608,
+    "sha256": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176"
+  },
+  {
+    "path": "review/hair/D/right-white-2x.png",
+    "bytes": 246057,
+    "sha256": "cd139c765cec4d4e4a05f4f5c31e51f5f2b14a702bb2f94bd8b597d48df4cba6"
+  },
+  {
+    "path": "review/hair/D/black.png",
+    "bytes": 969344,
+    "sha256": "4045eef32c5d577eb364dd90fb16f8c797a9897f0ccdd250e7c75cbcc4fdd68a"
+  },
+  {
+    "path": "review/hair/D/artifact-supplement-source-2x.png",
+    "bytes": 153505,
+    "sha256": "deebe0b283c977829da08843ab408613b2fcf38a4261a202b3a27becafa84958"
+  },
+  {
+    "path": "review/hair/D/flowers-white-2x.png",
+    "bytes": 2337,
+    "sha256": "5293b1274f53e45588158dbe1aaa8fbcb080527585b3f4422311be7d46c16e71"
+  },
+  {
+    "path": "review/hair/D/face-black-2x.png",
+    "bytes": 145207,
+    "sha256": "72c55a15fe004afc555c6acddda0fe9bd544e4087ec87e6a5a74dfdd2d5ad247"
+  },
+  {
+    "path": "review/hair/D/top-overlay-2x.png",
+    "bytes": 171947,
+    "sha256": "4b489393bb47a8cfe0c1cf65288f873cd138e3ae93b17e96b83ae37f2456f606"
+  },
+  {
+    "path": "review/hair/D/top-alpha-2x.png",
+    "bytes": 23289,
+    "sha256": "a116408c204e19af58c840c54d9c3610371affdd07a2e16b24b41b82f0ddcac6"
+  },
+  {
+    "path": "review/hair/D/bottom-white-2x.png",
+    "bytes": 104315,
+    "sha256": "f5a5baec15618860c85fff8aaf285cc9adeaa7f32209c96df297d8aa6290c925"
+  },
+  {
+    "path": "review/hair/D/artifact-supplement-alpha-2x.png",
+    "bytes": 13626,
+    "sha256": "89ef85c4ccb1d8f5ffcf8c8a11d92546904c14b274cb60480d6a139017857454"
+  },
+  {
+    "path": "review/hair/D/artifact-supplement-black-2x.png",
+    "bytes": 155154,
+    "sha256": "682adaa072b71b72cc9defafb0f26d2328fab1b74a7969407eaebe08b367aff3"
+  },
+  {
+    "path": "review/hair/D/bottom-overlay-2x.png",
+    "bytes": 153697,
+    "sha256": "951a898ba06affd1833fc2a074dc5c979e6a4fe7024bd5269f8c770562134b84"
+  },
+  {
+    "path": "review/hair/D/top-black-2x.png",
+    "bytes": 183451,
+    "sha256": "68f6decf20af761a16bc4f91cc2c7d6cc925cc8c800414e0ef2a921104f72371"
+  },
+  {
+    "path": "review/hair/D/face-alpha-2x.png",
+    "bytes": 28960,
+    "sha256": "c6cc5342bc78227309fba0c2e89031ba368f5222b8680bc8f02d31f9a834d508"
+  },
+  {
+    "path": "review/hair/D/overlay.png",
+    "bytes": 2048662,
+    "sha256": "454ede2720b35a0a7bda319155c6e8d4801368292914bbadcb761e812cec00b2"
+  },
+  {
+    "path": "review/hair/D/source.png",
+    "bytes": 2111076,
+    "sha256": "010ba5310daaede7f9d5d3b311f9fd6144a37247cd4cfb83bcef6311d1c2886e"
+  },
+  {
+    "path": "review/hair/D/right-black-2x.png",
+    "bytes": 249885,
+    "sha256": "1ffe338be9a6da3efc4ed21f1ca1e0c910760b6d229c1dc5ad2426260e156c84"
+  },
+  {
+    "path": "review/hair/D/flowers-alpha-2x.png",
+    "bytes": 468,
+    "sha256": "24e978b748e474a09a2f01f695a55412a30a1a2e5822ea98e564e24dcd929184"
+  },
+  {
+    "path": "review/hair/D/flowers-overlay-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/hair/D/flowers-black-2x.png",
+    "bytes": 1243,
+    "sha256": "01eb2b91767c5ed9863f0448f6fedf750ba2f8a0259cf394570c34f454e67d44"
+  },
+  {
+    "path": "review/hair/D/white.png",
+    "bytes": 976877,
+    "sha256": "70d196f27e214671fa8d26b17d013986ec178673a52ead405472369265bc20ed"
+  },
+  {
+    "path": "review/hair/D/right-alpha-2x.png",
+    "bytes": 34463,
+    "sha256": "31c7b1fff62fe77a82fe3e1d1519792ebeab4e653f970cd710fa02bb4508dff9"
+  },
+  {
+    "path": "review/hair/D/flowers-source-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/hair/D/right-overlay-2x.png",
+    "bytes": 258576,
+    "sha256": "6c60fdf18998ee0ee69adb5abf52c1dbe10656c4a197547ee45d22901e03185b"
+  },
+  {
+    "path": "review/hair/B/bottom-black-2x.png",
+    "bytes": 71538,
+    "sha256": "763320181bbdfda60f2faf9df65ca7fcae3caecf626df4582b25494c4172503a"
+  },
+  {
+    "path": "review/hair/B/face-overlay-2x.png",
+    "bytes": 224140,
+    "sha256": "822ce05a52e05fb24c8fbbe90e395a095ba1ee4a1d079d9ff659c582168f53cf"
+  },
+  {
+    "path": "review/hair/B/bottom-source-2x.png",
+    "bytes": 146261,
+    "sha256": "6f93d541c657c1200e7378375a59a1af005aa111491ec1779eb4f53c26efccf9"
+  },
+  {
+    "path": "review/hair/B/face-white-2x.png",
+    "bytes": 135377,
+    "sha256": "18f8f88dac3ebe5bf0f96d8377b3be6d35c9915c39bf1c7b7415ae61573be8e0"
+  },
+  {
+    "path": "review/hair/B/top-white-2x.png",
+    "bytes": 175369,
+    "sha256": "06eddc1b410293d8ff84e3f5bf88e3e281abe3a81f70a0451ae8f930324f93c4"
+  },
+  {
+    "path": "review/hair/B/artifact-supplement-white-2x.png",
+    "bytes": 152502,
+    "sha256": "b48c6d7de57ee6e4d3f0673dd1f35a99508e78a4fa52d23b41310ba993717f3a"
+  },
+  {
+    "path": "review/hair/B/bottom-alpha-2x.png",
+    "bytes": 18664,
+    "sha256": "06d0d009e8e65b9d88ad7e9b1d7a4115e0c37d0803175ed281c1e2d54be351d6"
+  },
+  {
+    "path": "review/hair/B/artifact-supplement-overlay-2x.png",
+    "bytes": 145841,
+    "sha256": "4cdd5d1908cb5d698af7b9245088b4be9a4c5711eabff53816dfb48e4d398ecd"
+  },
+  {
+    "path": "review/hair/B/top-source-2x.png",
+    "bytes": 180661,
+    "sha256": "a0ee65dfde3ccb5a8b83a4406a4399997125023e1e7cf9df7a9d072f2496a168"
+  },
+  {
+    "path": "review/hair/B/face-source-2x.png",
+    "bytes": 226545,
+    "sha256": "6a1fdffa0062838fff2232b6d3996e4e78fdb5b081a7b1b706d457de19081e40"
+  },
+  {
+    "path": "review/hair/B/alpha.png",
+    "bytes": 101829,
+    "sha256": "04bfc7585fe353b7d3ae77c23b47e1275d1e1df2e717fafdcfcf8dd5e2185490"
+  },
+  {
+    "path": "review/hair/B/right-source-2x.png",
+    "bytes": 269608,
+    "sha256": "ba8bd965245d6d4301352d39ae15ac6edc03fca51ef939d4e74c0f1bba4e9176"
+  },
+  {
+    "path": "review/hair/B/right-white-2x.png",
+    "bytes": 233558,
+    "sha256": "79041a719dae91113824a7ebf665272b8d8514970d4353393b6dc847f41a14a0"
+  },
+  {
+    "path": "review/hair/B/black.png",
+    "bytes": 904977,
+    "sha256": "322af6feea5a4f097b3397b512ba54f3fb40ce2c4bd3366cf866119143192d0b"
+  },
+  {
+    "path": "review/hair/B/artifact-supplement-source-2x.png",
+    "bytes": 153505,
+    "sha256": "deebe0b283c977829da08843ab408613b2fcf38a4261a202b3a27becafa84958"
+  },
+  {
+    "path": "review/hair/B/flowers-white-2x.png",
+    "bytes": 2337,
+    "sha256": "5293b1274f53e45588158dbe1aaa8fbcb080527585b3f4422311be7d46c16e71"
+  },
+  {
+    "path": "review/hair/B/face-black-2x.png",
+    "bytes": 132248,
+    "sha256": "cba9ac4171d01749623ac4d833f3a5eaa38359c71b94e8a4664509a06d161839"
+  },
+  {
+    "path": "review/hair/B/top-overlay-2x.png",
+    "bytes": 176998,
+    "sha256": "5d7d887fb76e8225ef3c9d4065d6760aa8ae66df58682f29b3c1ce32eb65ad64"
+  },
+  {
+    "path": "review/hair/B/top-alpha-2x.png",
+    "bytes": 28058,
+    "sha256": "5792db143df1131a733cc4a40098f278ba881ce4e8679beaa9bf37378cf9c27d"
+  },
+  {
+    "path": "review/hair/B/bottom-white-2x.png",
+    "bytes": 74016,
+    "sha256": "5d5dd891fbc32cc3bd808722723db77aaa4abfd4eef66274452e44499e1c30af"
+  },
+  {
+    "path": "review/hair/B/artifact-supplement-alpha-2x.png",
+    "bytes": 14437,
+    "sha256": "d2f67d9e90f4f703b2109b5c54b217689bbdf6f3772403f120fed0d17aef1e55"
+  },
+  {
+    "path": "review/hair/B/artifact-supplement-black-2x.png",
+    "bytes": 153081,
+    "sha256": "275484d026c9172baeb532afa4160c534193004f285d10d1f5a330dfa3a9131c"
+  },
+  {
+    "path": "review/hair/B/bottom-overlay-2x.png",
+    "bytes": 147985,
+    "sha256": "e96fc2aab3bd9f3fef0501ab7b66ff95a55ed13f28d8575888a24cb14cc47574"
+  },
+  {
+    "path": "review/hair/B/top-black-2x.png",
+    "bytes": 178562,
+    "sha256": "ed5d0f78ba25a7a0dc5f3c8653ea72543909d049d02dfd445e359cd2e3e41077"
+  },
+  {
+    "path": "review/hair/B/face-alpha-2x.png",
+    "bytes": 16046,
+    "sha256": "39e01d8afd95ab53d257ff4c19f054fefdb58fea59e99d2da488446ee5bbdf6d"
+  },
+  {
+    "path": "review/hair/B/overlay.png",
+    "bytes": 2046673,
+    "sha256": "89925a699220faa6855bafcfc5e5e75b3af39f6d78a70a04b2f8a60e5e195ecb"
+  },
+  {
+    "path": "review/hair/B/source.png",
+    "bytes": 2111076,
+    "sha256": "010ba5310daaede7f9d5d3b311f9fd6144a37247cd4cfb83bcef6311d1c2886e"
+  },
+  {
+    "path": "review/hair/B/right-black-2x.png",
+    "bytes": 235051,
+    "sha256": "4d0a909d05027fdca890f42361e2e7c690e4129950efe0ea27bb9ed83433ecc4"
+  },
+  {
+    "path": "review/hair/B/flowers-alpha-2x.png",
+    "bytes": 468,
+    "sha256": "24e978b748e474a09a2f01f695a55412a30a1a2e5822ea98e564e24dcd929184"
+  },
+  {
+    "path": "review/hair/B/flowers-overlay-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/hair/B/flowers-black-2x.png",
+    "bytes": 1243,
+    "sha256": "01eb2b91767c5ed9863f0448f6fedf750ba2f8a0259cf394570c34f454e67d44"
+  },
+  {
+    "path": "review/hair/B/white.png",
+    "bytes": 909668,
+    "sha256": "0a7e9f952421364e90f90fbe30b6d199ab587cca9d8f6409967ecba696949db7"
+  },
+  {
+    "path": "review/hair/B/right-alpha-2x.png",
+    "bytes": 31611,
+    "sha256": "f96c4fbcf748387692db79410ff137ca6f3481af8052593e722a1cd4288a92ff"
+  },
+  {
+    "path": "review/hair/B/flowers-source-2x.png",
+    "bytes": 180616,
+    "sha256": "4134a976c523930aeeec892c40fdf3151d7fc87b7507629e72ec1be7f7c5fd3f"
+  },
+  {
+    "path": "review/hair/B/right-overlay-2x.png",
+    "bytes": 259916,
+    "sha256": "7d0aa3e1ccb2bdd25fefe385a1be8201b71d2c44a954ae46801c3c6b519c03ba"
+  },
+  {
+    "path": "adapted-source/utils_util.py",
+    "bytes": 8261,
+    "sha256": "c329b4a9da762fc548fb6467303c51bd124abcee6ba1f7bb2d4b099f0d9cb659"
+  },
+  {
+    "path": "adapted-source/device-observation.patch",
+    "bytes": 1674,
+    "sha256": "ac4c9c2be68d49083e4f0a809e895de683a09c787fa667af8658f8a50b0a0eea"
+  },
+  {
+    "path": "adapted-source/infer.py",
+    "bytes": 5951,
+    "sha256": "36fbb1ef384fa1cd3cbd67d21d1a5debf668c217e07fc28fd458c0d3d607013a"
+  },
+  {
+    "path": "acquisition.json",
+    "bytes": 1006,
+    "sha256": "0f1617aa4fe5374d295e95b016eced83ecf3f3c378d0787ed61a72c95203332d"
+  },
+  {
+    "path": "adapter.py",
+    "bytes": 1803,
+    "sha256": "16890c0e5286a9adc41b983763e349e78033675cfab76e0fb5e71fab51973ad3"
+  },
+  {
+    "path": "test_adapter.py",
+    "bytes": 2138,
+    "sha256": "14c332bd1c339737ef3942643d20d598f3dae3ad9c89db306677c294d434e9a1"
+  },
+  {
+    "path": "test-red.log",
+    "bytes": 1001,
+    "sha256": "534b5bc19589f735c916606eb8a520e41b833bf9393a0f6ff309748d326528cc"
+  },
+  {
+    "path": "test-green.log",
+    "bytes": 100,
+    "sha256": "fe008aab760eb03ccac7578e2b84665b1b50b0d7f855b17a0c7a8d039435b658"
+  },
+  {
+    "path": "test-observer-red.log",
+    "bytes": 669,
+    "sha256": "985bc81da0575931946bde65832050433ead5968709616287e56b58688c8140a"
+  },
+  {
+    "path": "probe.py",
+    "bytes": 5801,
+    "sha256": "3283a096011b627be3b2af004bc69287aed911e91a8853ec36fc0d813f8bdc81"
+  },
+  {
+    "path": "watchdog.py",
+    "bytes": 1280,
+    "sha256": "35d9155ab9ba84803b42f9014e72705dbc8592322ee13c3ceafd9d4ed1e0f9bd"
+  },
+  {
+    "path": "verify_artifacts.py",
+    "bytes": 3327,
+    "sha256": "a4bb72c12e51387d2680f8cbf3f7f8232fc271a0999cc4ac7781ff67d21b13b1"
+  },
+  {
+    "path": "fidelity.json",
+    "bytes": 1317,
+    "sha256": "e1ed8db40f7a87d0797731c595bbab34e1744be85213fb7c3c7d16fd303a3185"
+  },
+  {
+    "path": "capture_review.py",
+    "bytes": 3460,
+    "sha256": "b5ffcc6c09d07acbeac8639d389e78a76beb945ccc4389699fcb6532dba8223d"
+  },
+  {
+    "path": "archive_evidence.py",
+    "bytes": 1463,
+    "sha256": "aacc35cde906586859a70f6d5f61839a6c77fae8f988d9ae5932b4edefc9065d"
+  },
+  {
+    "path": "upstream-LICENCE.md",
+    "bytes": 1555,
+    "sha256": "cdaf9eb706de4250e9ffd0268c46f6b2161901b661b2306cb31e869625f830f6"
+  },
+  {
+    "path": "upstream-code-LICENSE",
+    "bytes": 1065,
+    "sha256": "f0f5868e6adc21ddb8d83f306e964f0e9068641aa2c6e0b69285bdcc6b0f4983"
+  }
+]

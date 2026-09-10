@@ -1,0 +1,202 @@
+{
+  "python": "3.12.14 (main, Sep  1 2026, 14:09:38) [Clang 22.1.3 ]",
+  "packages": {
+    "numpy": "2.5.3",
+    "filelock": "3.32.6",
+    "einops": "0.8.2",
+    "ImageIO": "2.37.4",
+    "packaging": "26.3",
+    "charset-normalizer": "3.5.1",
+    "requests": "2.34.2",
+    "hf-xet": "1.6.0",
+    "networkx": "3.6.1",
+    "torch": "2.8.0",
+    "hydra-core": "1.3.6",
+    "sympy": "1.14.0",
+    "huggingface_hub": "0.36.2",
+    "fsspec": "2026.7.0",
+    "torchvision": "0.23.0",
+    "safetensors": "0.8.0",
+    "setuptools": "84.0.0",
+    "mpmath": "1.3.0",
+    "PyYAML": "6.0.3",
+    "opencv-python": "5.0.0.93",
+    "idna": "3.19",
+    "antlr4-python3-runtime": "4.9.3",
+    "certifi": "2026.7.22",
+    "Jinja2": "3.1.6",
+    "omegaconf": "2.3.1",
+    "MarkupSafe": "3.0.3",
+    "tqdm": "4.70.0",
+    "urllib3": "2.7.0",
+    "typing_extensions": "4.16.0",
+    "pillow": "12.3.0",
+    "scipy": "1.18.1"
+  },
+  "runs": {
+    "person": {
+      "watchdog": {
+        "status": "complete",
+        "exit_code": 0,
+        "elapsed_s": 38.62562108039856,
+        "started_unix": 1788931720.730232
+      },
+      "import": {
+        "event": "imports_ready",
+        "elapsed_s": 30.777785249985754,
+        "peak_rss_bytes": 354811904,
+        "torch": "2.8.0",
+        "python": "3.12.14 (main, Sep  1 2026, 14:09:38) [Clang 22.1.3 ]",
+        "device": "mps",
+        "mps_autocast": false
+      },
+      "checkpoint": {
+        "event": "checkpoint_verified_and_loaded",
+        "elapsed_s": 31.31865133298561,
+        "peak_rss_bytes": 684867584,
+        "audit": {
+          "missing": [],
+          "extra": [],
+          "shape_mismatches": {},
+          "state_entries": 562
+        },
+        "all_parameters_and_buffers_device": "mps",
+        "floating_dtype": "float32",
+        "suppressed_pretrained_resnet": true,
+        "strict_load": true
+      },
+      "input": {
+        "event": "input_verified",
+        "elapsed_s": 31.375144374906085,
+        "peak_rss_bytes": 688553984,
+        "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+        "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+        "seed": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/sam3-native/visuals/portrait-text-person-union/binary-mask.png",
+        "seed_sha256": "9b25bf787350b74698af5131436c3af19be4dc29fbcd0296246e66addb3f9369",
+        "shape": [
+          1080,
+          1614,
+          3
+        ],
+        "seed_values": [
+          0,
+          255
+        ],
+        "seed_foreground_pixels": 723189,
+        "n_warmup": 10,
+        "duplicate_frames": 2,
+        "erosion": 0,
+        "dilation": 0,
+        "scope": "person"
+      },
+      "complete": {
+        "event": "complete",
+        "elapsed_s": 38.247288207989186,
+        "peak_rss_bytes": 1014644736,
+        "step_calls": 13,
+        "alpha_sha256": "2f6de1fb54c7979432b73028344c134606d463c5dd5b91113621b301bd6b9c30",
+        "raw_sha256": "6039ddf72648a197d386318d9f5bed44add52542a90203bb03aed5da515bb027"
+      },
+      "sum_synchronized_step_s": 6.512503374135122,
+      "peak_mps_driver_allocated_bytes": 6521946112,
+      "peak_mps_allocated_bytes": 278149120,
+      "step_s": [
+        1.9917245419928804,
+        1.7097623749868944,
+        0.20892716699745506,
+        0.19941258302424103,
+        0.19808175007347018,
+        0.20040083304047585,
+        0.20211262500379235,
+        0.19858724996447563,
+        0.19689241598825902,
+        0.19836008304264396,
+        0.19640274997800589,
+        0.20266054209787399,
+        0.8091784579446539
+      ]
+    },
+    "hair": {
+      "watchdog": {
+        "status": "complete",
+        "exit_code": 0,
+        "elapsed_s": 5.296422958374023,
+        "started_unix": 1788931759.356375
+      },
+      "import": {
+        "event": "imports_ready",
+        "elapsed_s": 1.0325515000149608,
+        "peak_rss_bytes": 316555264,
+        "torch": "2.8.0",
+        "python": "3.12.14 (main, Sep  1 2026, 14:09:38) [Clang 22.1.3 ]",
+        "device": "mps",
+        "mps_autocast": false
+      },
+      "checkpoint": {
+        "event": "checkpoint_verified_and_loaded",
+        "elapsed_s": 1.5575982499867678,
+        "peak_rss_bytes": 652165120,
+        "audit": {
+          "missing": [],
+          "extra": [],
+          "shape_mismatches": {},
+          "state_entries": 562
+        },
+        "all_parameters_and_buffers_device": "mps",
+        "floating_dtype": "float32",
+        "suppressed_pretrained_resnet": true,
+        "strict_load": true
+      },
+      "input": {
+        "event": "input_verified",
+        "elapsed_s": 1.5937439580447972,
+        "peak_rss_bytes": 653049856,
+        "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+        "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+        "seed": "/Users/david/dev/photoctl/specs/segmentation-quality/assets/sam3-native/visuals/portrait-text-hair-union/binary-mask.png",
+        "seed_sha256": "03ae4bd90a3ffa911d77e971df3a3d360a108089182304951da00ef7d61cb5f3",
+        "shape": [
+          1080,
+          1614,
+          3
+        ],
+        "seed_values": [
+          0,
+          255
+        ],
+        "seed_foreground_pixels": 457307,
+        "n_warmup": 10,
+        "duplicate_frames": 2,
+        "erosion": 0,
+        "dilation": 0,
+        "scope": "hair-only out-of-domain"
+      },
+      "complete": {
+        "event": "complete",
+        "elapsed_s": 4.97809116600547,
+        "peak_rss_bytes": 984940544,
+        "step_calls": 13,
+        "alpha_sha256": "a43221149a8b63787bc17bcb4d5e3784b4e3e05bd9c4da63800ffc35b9ce6991",
+        "raw_sha256": "97d7ab20e78d0c1625d53cf189d65d568c94ae9ee73f66db429567560bf235a8"
+      },
+      "sum_synchronized_step_s": 2.9589257882907987,
+      "peak_mps_driver_allocated_bytes": 6521946112,
+      "peak_mps_allocated_bytes": 278149120,
+      "step_s": [
+        0.16872245795093477,
+        0.28407304105348885,
+        0.2000808750744909,
+        0.19899958302266896,
+        0.20014537498354912,
+        0.1972878749947995,
+        0.19685991702135652,
+        0.19789170799776912,
+        0.20057916606310755,
+        0.19617454102262855,
+        0.19655458303168416,
+        0.19675358303356916,
+        0.5248030830407515
+      ]
+    }
+  }
+}

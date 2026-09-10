@@ -1,0 +1,254 @@
+{
+  "target": "Select real hair, including curl loops and flyaways, excluding skin, flowers, and background; fractional alpha only where genuinely mixed. No source alpha ground truth exists.",
+  "comparability": "Same 1614x1080 source and frozen automatic points; compare predicted alpha only, not differently graded PhotoLab RGB.",
+  "pairs": {
+    "mam-coarse--mask-guidance": {
+      "full": {
+        "mae": 3.9432663917541504,
+        "rmse": 27.862348556518555,
+        "diffRatio16": 0.0243207581807334,
+        "edgeEnergyReference": 6.610121726989746,
+        "edgeEnergyCandidate": 5.883284568786621,
+        "edgeEnergyRatio": 0.8900417685508728,
+        "meanAlphaReference": 0.2518507242202759,
+        "meanAlphaCandidate": 0.26731446385383606
+      },
+      "top": {
+        "mae": 3.505148410797119,
+        "rmse": 17.826427459716797,
+        "diffRatio16": 0.0502899217671422,
+        "edgeEnergyReference": 17.17774772644043,
+        "edgeEnergyCandidate": 16.594478607177734,
+        "edgeEnergyRatio": 0.966045081615448,
+        "meanAlphaReference": 0.6398527026176453,
+        "meanAlphaCandidate": 0.6535983681678772
+      },
+      "right": {
+        "mae": 11.423985481262207,
+        "rmse": 44.04969024658203,
+        "diffRatio16": 0.07833609043286463,
+        "edgeEnergyReference": 21.96030616760254,
+        "edgeEnergyCandidate": 16.147056579589844,
+        "edgeEnergyRatio": 0.7352837920188904,
+        "meanAlphaReference": 0.5822166800498962,
+        "meanAlphaCandidate": 0.6270166635513306
+      },
+      "face": {
+        "mae": 12.059904098510742,
+        "rmse": 53.47589874267578,
+        "diffRatio16": 0.05201269841269841,
+        "edgeEnergyReference": 12.752279281616211,
+        "edgeEnergyCandidate": 11.789348602294922,
+        "edgeEnergyRatio": 0.9244894981384277,
+        "meanAlphaReference": 0.45269840955734253,
+        "meanAlphaCandidate": 0.49999216198921204
+      },
+      "bottom": {
+        "mae": 12.572057723999023,
+        "rmse": 50.227989196777344,
+        "diffRatio16": 0.0666185839644188,
+        "edgeEnergyReference": 15.98376750946045,
+        "edgeEnergyCandidate": 14.296740531921387,
+        "edgeEnergyRatio": 0.8944537043571472,
+        "meanAlphaReference": 0.21871618926525116,
+        "meanAlphaCandidate": 0.2680183947086334
+      },
+      "flowers": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "diffRatio16": 0.0,
+        "edgeEnergyReference": 0.0,
+        "edgeEnergyCandidate": 0.0,
+        "edgeEnergyRatio": 0.0,
+        "meanAlphaReference": 0.0,
+        "meanAlphaCandidate": 0.0
+      }
+    },
+    "automatic-vitmatte--mask-guidance": {
+      "full": {
+        "mae": 14.643787384033203,
+        "rmse": 41.19428253173828,
+        "diffRatio16": 0.17418708981596218,
+        "edgeEnergyReference": 10.549891471862793,
+        "edgeEnergyCandidate": 5.883284568786621,
+        "edgeEnergyRatio": 0.5576630234718323,
+        "meanAlphaReference": 0.26072928309440613,
+        "meanAlphaCandidate": 0.26731446385383606
+      },
+      "top": {
+        "mae": 33.43539810180664,
+        "rmse": 61.64108657836914,
+        "diffRatio16": 0.39829728485964105,
+        "edgeEnergyReference": 39.26537322998047,
+        "edgeEnergyCandidate": 16.594478607177734,
+        "edgeEnergyRatio": 0.42262372374534607,
+        "meanAlphaReference": 0.5367550849914551,
+        "meanAlphaCandidate": 0.6535983681678772
+      },
+      "right": {
+        "mae": 40.93922805786133,
+        "rmse": 72.3542251586914,
+        "diffRatio16": 0.45085470085470086,
+        "edgeEnergyReference": 24.450551986694336,
+        "edgeEnergyCandidate": 16.147056579589844,
+        "edgeEnergyRatio": 0.6603963971138,
+        "meanAlphaReference": 0.5730398297309875,
+        "meanAlphaCandidate": 0.6270166635513306
+      },
+      "face": {
+        "mae": 40.13412094116211,
+        "rmse": 72.97825622558594,
+        "diffRatio16": 0.4176846560846561,
+        "edgeEnergyReference": 24.14568519592285,
+        "edgeEnergyCandidate": 11.789348602294922,
+        "edgeEnergyRatio": 0.4882590174674988,
+        "meanAlphaReference": 0.6108492612838745,
+        "meanAlphaCandidate": 0.49999216198921204
+      },
+      "bottom": {
+        "mae": 37.88483428955078,
+        "rmse": 63.0299072265625,
+        "diffRatio16": 0.48473374203630243,
+        "edgeEnergyReference": 32.026065826416016,
+        "edgeEnergyCandidate": 14.296740531921387,
+        "edgeEnergyRatio": 0.44640952348709106,
+        "meanAlphaReference": 0.3021865785121918,
+        "meanAlphaCandidate": 0.2680183947086334
+      },
+      "flowers": {
+        "mae": 1.469662070274353,
+        "rmse": 4.804093837738037,
+        "diffRatio16": 0.03233,
+        "edgeEnergyReference": 0.7964324355125427,
+        "edgeEnergyCandidate": 0.0,
+        "edgeEnergyRatio": 0.0,
+        "meanAlphaReference": 0.005763380788266659,
+        "meanAlphaCandidate": 0.0
+      }
+    },
+    "mam-coarse--alpha-guidance": {
+      "full": {
+        "mae": 23.964168548583984,
+        "rmse": 64.97210693359375,
+        "diffRatio16": 0.18116480793060719,
+        "edgeEnergyReference": 6.610121726989746,
+        "edgeEnergyCandidate": 6.934037208557129,
+        "edgeEnergyRatio": 1.049003005027771,
+        "meanAlphaReference": 0.2518507242202759,
+        "meanAlphaCandidate": 0.32158419489860535
+      },
+      "top": {
+        "mae": 29.2552547454834,
+        "rmse": 57.634727478027344,
+        "diffRatio16": 0.3484491486424298,
+        "edgeEnergyReference": 17.17774772644043,
+        "edgeEnergyCandidate": 25.152616500854492,
+        "edgeEnergyRatio": 1.4642558097839355,
+        "meanAlphaReference": 0.6398527026176453,
+        "meanAlphaCandidate": 0.5637607574462891
+      },
+      "right": {
+        "mae": 30.58290672302246,
+        "rmse": 60.493499755859375,
+        "diffRatio16": 0.3645919492693686,
+        "edgeEnergyReference": 21.96030616760254,
+        "edgeEnergyCandidate": 16.934154510498047,
+        "edgeEnergyRatio": 0.7711256146430969,
+        "meanAlphaReference": 0.5822166800498962,
+        "meanAlphaCandidate": 0.6475169658660889
+      },
+      "face": {
+        "mae": 101.0072021484375,
+        "rmse": 147.3206024169922,
+        "diffRatio16": 0.507437037037037,
+        "edgeEnergyReference": 12.752279281616211,
+        "edgeEnergyCandidate": 7.952585220336914,
+        "edgeEnergyRatio": 0.6236206889152527,
+        "meanAlphaReference": 0.45269840955734253,
+        "meanAlphaCandidate": 0.8468927145004272
+      },
+      "bottom": {
+        "mae": 38.569183349609375,
+        "rmse": 73.79291534423828,
+        "diffRatio16": 0.38127178747445606,
+        "edgeEnergyReference": 15.98376750946045,
+        "edgeEnergyCandidate": 14.973716735839844,
+        "edgeEnergyRatio": 0.9368076920509338,
+        "meanAlphaReference": 0.21871618926525116,
+        "meanAlphaCandidate": 0.35080793499946594
+      },
+      "flowers": {
+        "mae": 26.622472763061523,
+        "rmse": 61.971214294433594,
+        "diffRatio16": 0.22125,
+        "edgeEnergyReference": 0.0,
+        "edgeEnergyCandidate": 6.003072261810303,
+        "edgeEnergyRatio": 6003072512.0,
+        "meanAlphaReference": 0.0,
+        "meanAlphaCandidate": 0.1044018566608429
+      }
+    },
+    "automatic-vitmatte--alpha-guidance": {
+      "full": {
+        "mae": 19.017833709716797,
+        "rmse": 49.897560119628906,
+        "diffRatio16": 0.20000401578778282,
+        "edgeEnergyReference": 10.549891471862793,
+        "edgeEnergyCandidate": 6.934037208557129,
+        "edgeEnergyRatio": 0.6572614908218384,
+        "meanAlphaReference": 0.26072928309440613,
+        "meanAlphaCandidate": 0.32158419489860535
+      },
+      "top": {
+        "mae": 10.951281547546387,
+        "rmse": 18.16754722595215,
+        "diffRatio16": 0.25481822365393464,
+        "edgeEnergyReference": 39.26537322998047,
+        "edgeEnergyCandidate": 25.152616500854492,
+        "edgeEnergyRatio": 0.6405801177024841,
+        "meanAlphaReference": 0.5367550849914551,
+        "meanAlphaCandidate": 0.5637607574462891
+      },
+      "right": {
+        "mae": 33.38661575317383,
+        "rmse": 55.82997512817383,
+        "diffRatio16": 0.48181692859112213,
+        "edgeEnergyReference": 24.450551986694336,
+        "edgeEnergyCandidate": 16.934154510498047,
+        "edgeEnergyRatio": 0.6925877928733826,
+        "meanAlphaReference": 0.5730398297309875,
+        "meanAlphaCandidate": 0.6475169658660889
+      },
+      "face": {
+        "mae": 63.277740478515625,
+        "rmse": 98.32373046875,
+        "diffRatio16": 0.5254179894179895,
+        "edgeEnergyReference": 24.14568519592285,
+        "edgeEnergyCandidate": 7.952585220336914,
+        "edgeEnergyRatio": 0.32935842871665955,
+        "meanAlphaReference": 0.6108492612838745,
+        "meanAlphaCandidate": 0.8468927145004272
+      },
+      "bottom": {
+        "mae": 30.132671356201172,
+        "rmse": 49.07394027709961,
+        "diffRatio16": 0.4685779540810194,
+        "edgeEnergyReference": 32.026065826416016,
+        "edgeEnergyCandidate": 14.973716735839844,
+        "edgeEnergyRatio": 0.46754780411720276,
+        "meanAlphaReference": 0.3021865785121918,
+        "meanAlphaCandidate": 0.35080793499946594
+      },
+      "flowers": {
+        "mae": 25.152809143066406,
+        "rmse": 58.03169250488281,
+        "diffRatio16": 0.22125,
+        "edgeEnergyReference": 0.7964324355125427,
+        "edgeEnergyCandidate": 6.003072261810303,
+        "edgeEnergyRatio": 7.5374531745910645,
+        "meanAlphaReference": 0.005763380788266659,
+        "meanAlphaCandidate": 0.1044018566608429
+      }
+    }
+  }
+}

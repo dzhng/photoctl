@@ -1,0 +1,33 @@
+{
+  "status": "completed",
+  "torch": "2.8.0",
+  "python": "3.12.14",
+  "device": "cpu",
+  "threads": 4,
+  "interop_threads": 1,
+  "strict_load": "<All keys matched successfully>",
+  "build_load_seconds": 0.7101529999636114,
+  "inference_seconds_including_intermediate_io": 3.474764624959789,
+  "final_artifact_seconds": 0.30522987502627075,
+  "total_seconds": 4.490147499949671,
+  "peak_rss_bytes_macos": 7326564352,
+  "seed_sha256": "86e8d25acd9293948328199008e9a0ab8a979366bbeb8bb53b584cdb35f44215",
+  "seed_threshold": ">=0.5",
+  "alpha_min": 1.1245540279993113e-17,
+  "alpha_max": 0.9999778270721436,
+  "alpha_fraction_gt_0_5": 0.2504182156133829,
+  "intermediate_counts": {
+    "unknown_fusion": 1,
+    "alpha_pred1": 1,
+    "alpha_pred2": 1,
+    "alpha_pred3": 1
+  },
+  "distance_from_ZIM_not_accuracy": {
+    "mae": 0.018663106486201286,
+    "rmse": 0.08082539588212967,
+    "fraction_abs_delta_gt_0_1": 0.05568807655238882,
+    "fraction_abs_delta_gt_0_5": 0.0071595759328101334,
+    "mean_signed_delta": -0.015895400196313858,
+    "max_abs_delta": 0.8635311722755432
+  }
+}

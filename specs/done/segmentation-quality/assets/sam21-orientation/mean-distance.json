@@ -1,0 +1,452 @@
+[
+  {
+    "region": "full",
+    "box": [
+      0,
+      0,
+      1614,
+      1080
+    ],
+    "coverage": {
+      "A-original": 0.24584882280049566,
+      "B-flip": 0.2504503419156455,
+      "C-mean": 0.24870060581027123
+    },
+    "nonpositive_pixels": {
+      "A-original": 1314576,
+      "B-flip": 1306555,
+      "C-mean": 1309605
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.010700927073293865,
+        "mask_iou": 0.9577872775702055
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.005511381889944467,
+        "mask_iou": 0.9779571533133103
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.005189545183349397,
+        "mask_iou": 0.9794204698757629
+      }
+    ]
+  },
+  {
+    "region": "top",
+    "box": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "coverage": {
+      "A-original": 0.5736033133916245,
+      "B-flip": 0.618150023009664,
+      "C-mean": 0.6027887712839393
+    },
+    "nonpositive_pixels": {
+      "A-original": 46328,
+      "B-flip": 41488,
+      "C-mean": 43157
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.05544408651633686,
+        "mask_iou": 0.9110901201405083
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.03479981592268753,
+        "mask_iou": 0.9425362473023496
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.020644270593649334,
+        "mask_iou": 0.9667452445551453
+      }
+    ]
+  },
+  {
+    "region": "right",
+    "box": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "coverage": {
+      "A-original": 0.5773779983457403,
+      "B-flip": 0.5670113041080783,
+      "C-mean": 0.5745312930796802
+    },
+    "nonpositive_pixels": {
+      "A-original": 61314,
+      "B-flip": 62818,
+      "C-mean": 61727
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.025654811138682107,
+        "mask_iou": 0.9561472754050073
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.011862420733388475,
+        "mask_iou": 0.9796138355839848
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.013792390405293632,
+        "mask_iou": 0.9761239977090492
+      }
+    ]
+  },
+  {
+    "region": "face",
+    "box": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "coverage": {
+      "A-original": 0.46496507936507936,
+      "B-flip": 0.47087407407407406,
+      "C-mean": 0.4674285714285714
+    },
+    "nonpositive_pixels": {
+      "A-original": 63201,
+      "B-flip": 62503,
+      "C-mean": 62910
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.009955555555555556,
+        "mask_iou": 0.9789477452963606
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.003936507936507937,
+        "mask_iou": 0.9915916241727243
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.006019047619047619,
+        "mask_iou": 0.9872521246458924
+      }
+    ]
+  },
+  {
+    "region": "bottom",
+    "box": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "coverage": {
+      "A-original": 0.24936891453299675,
+      "B-flip": 0.24655607645149658,
+      "C-mean": 0.2478062267099411
+    },
+    "nonpositive_pixels": {
+      "A-original": 62445,
+      "B-flip": 62679,
+      "C-mean": 62575
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.018343550907561006,
+        "mask_iou": 0.9286615866485906
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.008727010457987738,
+        "mask_iou": 0.9654992158912703
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.009616540449573266,
+        "mask_iou": 0.9618375232552593
+      }
+    ]
+  },
+  {
+    "region": "flowers",
+    "box": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "coverage": {
+      "A-original": 0.0,
+      "B-flip": 0.00704,
+      "C-mean": 0.0
+    },
+    "nonpositive_pixels": {
+      "A-original": 100000,
+      "B-flip": 99296,
+      "C-mean": 100000
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.00704,
+        "mask_iou": 0.0
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.0,
+        "mask_iou": 1.0
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.00704,
+        "mask_iou": 0.0
+      }
+    ]
+  },
+  {
+    "region": "artifact",
+    "box": [
+      820,
+      80,
+      1050,
+      220
+    ],
+    "coverage": {
+      "A-original": 0.8380745341614907,
+      "B-flip": 0.9586956521739131,
+      "C-mean": 0.9261180124223602
+    },
+    "nonpositive_pixels": {
+      "A-original": 5214,
+      "B-flip": 1330,
+      "C-mean": 2379
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.12142857142857143,
+        "mask_iou": 0.8733931289058705
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.08847826086956521,
+        "mask_iou": 0.9044857181172054
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.03295031055900621,
+        "mask_iou": 0.9656367405104288
+      }
+    ]
+  },
+  {
+    "region": "artifact-context",
+    "box": [
+      700,
+      60,
+      1080,
+      260
+    ],
+    "coverage": {
+      "A-original": 0.7320394736842105,
+      "B-flip": 0.8221842105263157,
+      "C-mean": 0.7901973684210526
+    },
+    "nonpositive_pixels": {
+      "A-original": 20365,
+      "B-flip": 13514,
+      "C-mean": 15945
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.09332894736842105,
+        "mask_iou": 0.8867059593975115
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.059394736842105264,
+        "mask_iou": 0.924894346277994
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.03393421052631579,
+        "mask_iou": 0.9587755754475703
+      }
+    ]
+  },
+  {
+    "region": "neck",
+    "box": [
+      1060,
+      650,
+      1300,
+      980
+    ],
+    "coverage": {
+      "A-original": 0.5810227272727273,
+      "B-flip": 0.5919318181818182,
+      "C-mean": 0.5868055555555556
+    },
+    "nonpositive_pixels": {
+      "A-original": 33183,
+      "B-flip": 32319,
+      "C-mean": 32725
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.011338383838383839,
+        "mask_iou": 0.9808520619216171
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.005934343434343434,
+        "mask_iou": 0.9898883414728599
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.005404040404040404,
+        "mask_iou": 0.9908726435212829
+      }
+    ]
+  },
+  {
+    "region": "artifact-interior-diagnostic",
+    "box": [
+      820,
+      140,
+      900,
+      190
+    ],
+    "coverage": {
+      "A-original": 0.55725,
+      "B-flip": 0.994,
+      "C-mean": 0.9305
+    },
+    "nonpositive_pixels": {
+      "A-original": 1771,
+      "B-flip": 24,
+      "C-mean": 278
+    },
+    "pair_distances": [
+      {
+        "pair": [
+          "A-original",
+          "B-flip"
+        ],
+        "disagreement_fraction": 0.43825,
+        "mask_iou": 0.5594370444835386
+      },
+      {
+        "pair": [
+          "A-original",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.37375,
+        "mask_iou": 0.5984421165726564
+      },
+      {
+        "pair": [
+          "B-flip",
+          "C-mean"
+        ],
+        "disagreement_fraction": 0.0645,
+        "mask_iou": 0.9351432880844646
+      }
+    ]
+  }
+]

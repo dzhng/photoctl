@@ -1,0 +1,369 @@
+{
+  "experiment": "Exactly one2048 Large horizontal-flip portrait diagnostic; all results mapped back to original orientation; no ensemble/fill/prompt tuning.",
+  "prior2048_manifest": "/private/tmp/openphoto-sam21-2048.DVycY8/method-and-results.json",
+  "original1024_context": "/private/tmp/openphoto-sam21-control.QOaGJ8/results/large/hair",
+  "git_commit": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+  "git_status_after": "",
+  "load": "Same checkpoint; official strict load_state_dict and weights_only=True enforced; clean source and read-only existing venv.",
+  "input_transform": "PIL FLIP_LEFT_RIGHT, points x -> width-1-x; y and labels unchanged",
+  "output_transform": "Reverse last (x) dimension of every native and low-resolution candidate logit before thresholding, saving, comparisons",
+  "crops": {
+    "top": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "right": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "face": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "bottom": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "flowers": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "artifact": [
+      820,
+      80,
+      1050,
+      220
+    ],
+    "artifact-context": [
+      700,
+      60,
+      1080,
+      260
+    ]
+  },
+  "supplemental_crop_note": "Original specified box retained; wider context added because visible patch reaches left edge of specified crop. Interior diagnostic box[820,140,900,190] measures hair inside patch but is not a ground-truth annotation.",
+  "pair_labels": {
+    "A": "Original2048",
+    "B": "Flipped2048 mapped back"
+  },
+  "raw_logit_check": {
+    "original_native_all_finite": true,
+    "original_lowres_all_finite": true,
+    "original_png_exactly_native_threshold": true,
+    "new_native_all_finite": true,
+    "new_lowres_all_finite": true,
+    "native_shapes": [
+      [
+        3,
+        1080,
+        1614
+      ],
+      [
+        3,
+        1080,
+        1614
+      ]
+    ],
+    "lowres_shapes": [
+      [
+        3,
+        512,
+        512
+      ],
+      [
+        3,
+        512,
+        512
+      ]
+    ],
+    "lowres_artifact_box_approx_xyxy": [
+      260,
+      37,
+      334,
+      105
+    ],
+    "original_lowres_artifact_nonpositive_fraction": 0.1800476947535771,
+    "original_lowres_artifact_min_max": [
+      -3.3271450996398926,
+      4.869206428527832
+    ],
+    "flip_back_lowres_artifact_nonpositive_fraction": 0.053457869634340224,
+    "flip_back_lowres_artifact_min_max": [
+      -2.8031163215637207,
+      5.121962547302246
+    ]
+  },
+  "run": {
+    "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+    "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+    "source_dimensions": [
+      1614,
+      1080
+    ],
+    "original_points": [
+      [
+        968,
+        108
+      ],
+      [
+        1323,
+        346
+      ],
+      [
+        1469,
+        594
+      ],
+      [
+        1291,
+        886
+      ],
+      [
+        1130,
+        648
+      ],
+      [
+        888,
+        572
+      ],
+      [
+        807,
+        810
+      ],
+      [
+        484,
+        432
+      ],
+      [
+        646,
+        54
+      ],
+      [
+        161,
+        540
+      ],
+      [
+        1372,
+        1058
+      ],
+      [
+        484,
+        994
+      ]
+    ],
+    "inference_points": [
+      [
+        645,
+        108
+      ],
+      [
+        290,
+        346
+      ],
+      [
+        144,
+        594
+      ],
+      [
+        322,
+        886
+      ],
+      [
+        483,
+        648
+      ],
+      [
+        725,
+        572
+      ],
+      [
+        806,
+        810
+      ],
+      [
+        1129,
+        432
+      ],
+      [
+        967,
+        54
+      ],
+      [
+        1452,
+        540
+      ],
+      [
+        241,
+        1058
+      ],
+      [
+        1129,
+        994
+      ]
+    ],
+    "labels": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "input_transform": "PIL FLIP_LEFT_RIGHT, points x -> width-1-x; y and labels unchanged",
+    "output_transform": "Reverse last (x) dimension of every native and low-resolution candidate logit before thresholding, saving, comparisons",
+    "model": "SAM2.1 Hiera Large",
+    "resolution": 2048,
+    "config": "configs/sam2.1/sam2.1_hiera_l.yaml",
+    "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+    "overrides": {
+      "hydra": [
+        "model.image_size=2048"
+      ],
+      "predictor._bb_feat_sizes": [
+        [
+          512,
+          512
+        ],
+        [
+          256,
+          256
+        ],
+        [
+          128,
+          128
+        ]
+      ]
+    },
+    "device": "cpu",
+    "dtype": "float32",
+    "threads": 4,
+    "interop_threads": 1,
+    "model_load_seconds": 1.8520350829930976,
+    "encoder_seconds": 18.6457261670148,
+    "decoder_and_native_upsample_seconds": 0.15047491702716798,
+    "inference_seconds": 18.796201084041968,
+    "peak_rss_bytes": 4911792128,
+    "selected_index": 2,
+    "selection": "argmax predicted IoU among3, no visual substitution",
+    "candidates": [
+      {
+        "index": 0,
+        "score": 0.5270588397979736,
+        "coverage": 0.13863704162650878,
+        "point_inclusion": [
+          false,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "prompt_satisfied": [
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "index": 1,
+        "score": 0.7595199346542358,
+        "coverage": 0.4113050162926247,
+        "point_inclusion": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          true
+        ],
+        "prompt_satisfied": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false
+        ]
+      },
+      {
+        "index": 2,
+        "score": 0.8629361391067505,
+        "coverage": 0.2504503419156455,
+        "point_inclusion": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "prompt_satisfied": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    ],
+    "native_and_lowres_all_finite": true,
+    "postprocessing": "Default stability fallback retained (inactive for explicit multimask); hole/sprinkle areas0; threshold0; no CUDA cleanup",
+    "experimental_status": "One flip-equivariance diagnostic at experimental2048; no ensemble or fill"
+  },
+  "interpretation": "Difference/coverage/logit statistics locate orientation sensitivity; they do not measure segmentation accuracy or establish the architectural root cause."
+}

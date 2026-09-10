@@ -1,0 +1,21 @@
+{
+  "status": "complete",
+  "kind": "person",
+  "device": "cpu",
+  "dtype": "torch.float32",
+  "threads": 4,
+  "forward_and_output_seconds": 3.032211457961239,
+  "total_seconds": 3.8356266249902546,
+  "peak_rss_bytes": 5600591872,
+  "native_shape": [
+    1080,
+    1614
+  ],
+  "raw_nonzero_pixels": 1742789,
+  "published_nonzero_pixels": 832997,
+  "postprocess_changed_pixels": 909792,
+  "alpha_sha256": {
+    "raw.png": "4ab2a027562c179bfd38fb7711b6e66ee3361cab3e20ad4177e097192b0757dc",
+    "published.png": "9c8c74d76264c0a15df6ba741294549d7eb69d6e0d2a61075ae7dd0107d80a05"
+  }
+}

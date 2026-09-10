@@ -1,0 +1,511 @@
+{
+  "experiment": "Full-context2048 input, Large only. OUT-OF-TRAINING-RESOLUTION EXPERIMENT, NOT official supported benchmark.",
+  "control_manifest": "/private/tmp/openphoto-sam21-control.QOaGJ8/method-and-results.json",
+  "environment_manifest": "/private/tmp/openphoto-sam21-control.QOaGJ8/environment.json",
+  "official_repo": "https://github.com/facebookresearch/sam2",
+  "git_commit": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+  "git_status_after": "",
+  "checkpoint": {
+    "bytes": 898083611,
+    "sha256": "2647878d5dfa5098f2f8649825738a9345572bae2d4350a2468587ece47dd318",
+    "url": "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt"
+  },
+  "checkpoint_load": "Official build_sam2 weights_only=True, strict load_state_dict default; TORCH_FORCE_WEIGHTS_ONLY_LOAD=1. No parameter conversion or learned-weight resizing.",
+  "overrides": [
+    "build_sam2 hydra_overrides_extra=[model.image_size=2048]",
+    "predictor._bb_feat_sizes=[(512,512),(256,256),(128,128)]"
+  ],
+  "shape_rationale": "SAM2Base derives prompt encoder input2048, embedding128 and maskinput512 from image_size/backbone_stride16. SAM2Transforms derives resize2048 from model.image_size. Hiera official positional embedding interpolation and tiling supports expanded patch grid; FPN computes spatial shapes dynamically. Predictor hardcodes feature reshape sizes, requiring the listed runtime metadata override. TwoWayTransformer decoder operates on variable image token count. Memory attention unused by SAM2ImagePredictor.",
+  "controls": "Same entire source images and frozen points, CPU float32 four intra-op/one inter-op threads, eval/inference_mode,seed0; same RGB/ToTensor/bilinear antialias/ImageNet normalization; same multimask3 argmax, no prompt change/box/mask input/tuning. Return native logits then official >0 binary threshold. One process per subject,180s watchdog.",
+  "artifacts": "All3 native float32 logits, lowres float32 3x512x512 logits (official returned clamp[-32,32]), scores and native binary masks; selected source/mask/40%green overlay/black/white; same crops nearest-neighbor2x.",
+  "pair_labels": {
+    "A": "Large1024 official control",
+    "B": "Large2048 experimental"
+  },
+  "crops": {
+    "hair": {
+      "top": [
+        820,
+        15,
+        1350,
+        220
+      ],
+      "right": [
+        1380,
+        170,
+        1614,
+        790
+      ],
+      "face": [
+        855,
+        305,
+        1170,
+        680
+      ],
+      "bottom": [
+        1260,
+        845,
+        1614,
+        1080
+      ],
+      "flowers": [
+        660,
+        670,
+        1060,
+        920
+      ]
+    },
+    "landscape": {
+      "foliage": [
+        2900,
+        1050,
+        3600,
+        1700
+      ],
+      "wires": [
+        800,
+        650,
+        1600,
+        1300
+      ],
+      "path": [
+        2300,
+        2500,
+        3100,
+        3100
+      ]
+    }
+  },
+  "runs": [
+    {
+      "subject": "hair",
+      "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "source_sha256": "052ecfc6d93c615165f526bfe7db9765fcf4451f598c4ea96b560fd49a48746e",
+      "dimensions": [
+        1614,
+        1080
+      ],
+      "points": [
+        [
+          968,
+          108
+        ],
+        [
+          1323,
+          346
+        ],
+        [
+          1469,
+          594
+        ],
+        [
+          1291,
+          886
+        ],
+        [
+          1130,
+          648
+        ],
+        [
+          888,
+          572
+        ],
+        [
+          807,
+          810
+        ],
+        [
+          484,
+          432
+        ],
+        [
+          646,
+          54
+        ],
+        [
+          161,
+          540
+        ],
+        [
+          1372,
+          1058
+        ],
+        [
+          484,
+          994
+        ]
+      ],
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_l.yaml",
+      "model": "SAM2.1 Hiera Large",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "experimental_status": "Out-of-training-resolution experiment, NOT official supported benchmark",
+      "overrides": {
+        "hydra": [
+          "model.image_size=2048"
+        ],
+        "predictor._bb_feat_sizes": [
+          [
+            512,
+            512
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            128,
+            128
+          ]
+        ]
+      },
+      "derived_prompt_encoder_sizes": {
+        "input": [
+          2048,
+          2048
+        ],
+        "embedding": [
+          128,
+          128
+        ],
+        "mask_input": [
+          512,
+          512
+        ]
+      },
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 0.6980800000019372,
+      "encoder_seconds": 15.400841832975857,
+      "decoder_and_native_upsample_seconds": 0.14509233401622623,
+      "inference_seconds": 15.545934166992083,
+      "peak_rss_bytes": 4443717632,
+      "selected_index": 2,
+      "candidates": [
+        {
+          "index": 0,
+          "score": 0.6097673773765564,
+          "coverage": 0.14597331222176327,
+          "point_inclusion": [
+            false,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "prompt_satisfied": [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.7039380073547363,
+          "coverage": 0.40932465923172245,
+          "point_inclusion": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "prompt_satisfied": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "score": 0.8643166422843933,
+          "coverage": 0.24584882280049566,
+          "point_inclusion": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "prompt_satisfied": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "selection": "argmax predicted IoU, three multimask candidates; no visual substitution",
+      "postprocessing": "Default stability fallback retained (inactive for explicit multimask); hole/sprinkle areas0; threshold0; no CUDA cleanup",
+      "return_logits": "True to retain native float32 logits; binary uses unchanged >0 threshold; lowres official returned logits clamp[-32,32]"
+    },
+    {
+      "subject": "sky",
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "source_sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+      "dimensions": [
+        7008,
+        4672
+      ],
+      "points": [
+        [
+          4000,
+          600
+        ]
+      ],
+      "labels": [
+        1
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_l.yaml",
+      "model": "SAM2.1 Hiera Large",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "experimental_status": "Out-of-training-resolution experiment, NOT official supported benchmark",
+      "overrides": {
+        "hydra": [
+          "model.image_size=2048"
+        ],
+        "predictor._bb_feat_sizes": [
+          [
+            512,
+            512
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            128,
+            128
+          ]
+        ]
+      },
+      "derived_prompt_encoder_sizes": {
+        "input": [
+          2048,
+          2048
+        ],
+        "embedding": [
+          128,
+          128
+        ],
+        "mask_input": [
+          512,
+          512
+        ]
+      },
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 1.6915000000735745,
+      "encoder_seconds": 16.858044749940746,
+      "decoder_and_native_upsample_seconds": 0.2167179170064628,
+      "inference_seconds": 17.07476266694721,
+      "peak_rss_bytes": 5606293504,
+      "selected_index": 2,
+      "candidates": [
+        {
+          "index": 0,
+          "score": 0.8632795214653015,
+          "coverage": 0.29659138333098767,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.7467262148857117,
+          "coverage": 0.4471770520579221,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "score": 0.9896494150161743,
+          "coverage": 0.31853499376446487,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        }
+      ],
+      "selection": "argmax predicted IoU, three multimask candidates; no visual substitution",
+      "postprocessing": "Default stability fallback retained (inactive for explicit multimask); hole/sprinkle areas0; threshold0; no CUDA cleanup",
+      "return_logits": "True to retain native float32 logits; binary uses unchanged >0 threshold; lowres official returned logits clamp[-32,32]"
+    },
+    {
+      "subject": "road",
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "source_sha256": "63dc1d626cebcf6f8e4e323a683ce106f38d404ef6a42fc1b4e2e84ff0f8f6e4",
+      "dimensions": [
+        7008,
+        4672
+      ],
+      "points": [
+        [
+          4400,
+          3500
+        ]
+      ],
+      "labels": [
+        1
+      ],
+      "config": "configs/sam2.1/sam2.1_hiera_l.yaml",
+      "model": "SAM2.1 Hiera Large",
+      "sam2_module": "/private/tmp/openphoto-sam21-control.QOaGJ8/sam2/sam2/__init__.py",
+      "experimental_status": "Out-of-training-resolution experiment, NOT official supported benchmark",
+      "overrides": {
+        "hydra": [
+          "model.image_size=2048"
+        ],
+        "predictor._bb_feat_sizes": [
+          [
+            512,
+            512
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            128,
+            128
+          ]
+        ]
+      },
+      "derived_prompt_encoder_sizes": {
+        "input": [
+          2048,
+          2048
+        ],
+        "embedding": [
+          128,
+          128
+        ],
+        "mask_input": [
+          512,
+          512
+        ]
+      },
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 4,
+      "interop_threads": 1,
+      "model_load_seconds": 1.0514340419322252,
+      "encoder_seconds": 25.194630542071536,
+      "decoder_and_native_upsample_seconds": 0.2230114999692887,
+      "inference_seconds": 25.417642042040825,
+      "peak_rss_bytes": 3987931136,
+      "selected_index": 2,
+      "candidates": [
+        {
+          "index": 0,
+          "score": 0.9726304411888123,
+          "coverage": 0.04806224393257021,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "score": 0.09894511848688126,
+          "coverage": 0.4608882045763745,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "score": 0.9761837720870972,
+          "coverage": 0.04901144044770751,
+          "point_inclusion": [
+            true
+          ],
+          "prompt_satisfied": [
+            true
+          ]
+        }
+      ],
+      "selection": "argmax predicted IoU, three multimask candidates; no visual substitution",
+      "postprocessing": "Default stability fallback retained (inactive for explicit multimask); hole/sprinkle areas0; threshold0; no CUDA cleanup",
+      "return_logits": "True to retain native float32 logits; binary uses unchanged >0 threshold; lowres official returned logits clamp[-32,32]"
+    }
+  ]
+}

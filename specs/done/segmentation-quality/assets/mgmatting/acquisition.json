@@ -1,0 +1,12 @@
+{
+  "source_repository": "https://github.com/yucornetto/MGMatting",
+  "source_commit": "2bac93f01a6482d69229065ba16096fece95b34c",
+  "checkpoint": "MGMatting-RWP-100k/latest_model.pth",
+  "official_link": "https://livejohnshopkins-my.sharepoint.com/:u:/g/personal/qyu13_jh_edu/Edl8x0nQjy1JhGP6rcV0N-cB654HpmZZa5bwW9rYUvmsJg?e=J3lSba",
+  "bytes": 356056649,
+  "sha256": "20536bbab4fd98d4b67f4e0242e624b7935bee80a8855276096be850b34c927e",
+  "acquired_utc_date": "2026-09-09",
+  "method": "Public shared-link GET with download=1 and anonymous session cookies. First HTTP200 transfer timed out at 82870272 bytes; resumed existing file with HTTP206 for remaining 273186377 bytes. Full file size and SHA256 verified after completion.",
+  "credential_handling": "No user credentials used. Temporary public-link session cookies are excluded from evidence archives.",
+  "replication_scope": "Released RWP checkpoint, not additional privately trained automatic-system showcase. Native SAM3 frozen portrait masks."
+}

@@ -1,0 +1,294 @@
+{
+  "semantics": "Fractional display-RGB composites, no threshold or foreground decontamination; native guides are binary. Distances measure disagreement, not accuracy.",
+  "states": {
+    "person": {
+      "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "native_alpha_shape": [
+        576,
+        576
+      ],
+      "display_projection": "Original predictor bilinearly enlarges its native 576x576 alpha to source dimensions.",
+      "labels": {
+        "P": "SAM3 native binary",
+        "Q": "SAM3 seed with SAM2Matting-SAM3 refinement",
+        "R": "Apple accurate person alpha"
+      },
+      "crops": {
+        "top": [
+          820,
+          15,
+          1350,
+          220
+        ],
+        "right": [
+          1380,
+          170,
+          1614,
+          790
+        ],
+        "face": [
+          855,
+          305,
+          1170,
+          680
+        ],
+        "bottom": [
+          1260,
+          845,
+          1614,
+          1080
+        ],
+        "flowers": [
+          660,
+          670,
+          1060,
+          920
+        ],
+        "artifact-supplement": [
+          700,
+          60,
+          1080,
+          260
+        ],
+        "clothing-supplement": [
+          40,
+          850,
+          560,
+          1080
+        ]
+      },
+      "differences": {
+        "full": {
+          "mean_absolute_alpha_difference": 0.02686418406665325,
+          "rmse_alpha_difference": 0.1349039375782013,
+          "fraction_difference_gt_0_1": 0.04603871219422644,
+          "edge_energy_a": 0.030287688598036766,
+          "edge_energy_b": 0.02945072390139103,
+          "fraction_edge_difference_gt_0_1": 0.05299233558217449
+        },
+        "crops": {
+          "top": {
+            "mean_absolute_alpha_difference": 0.11916421353816986,
+            "rmse_alpha_difference": 0.284172922372818,
+            "fraction_difference_gt_0_1": 0.20385641969627244,
+            "edge_energy_a": 0.04873033985495567,
+            "edge_energy_b": 0.08076781034469604,
+            "fraction_edge_difference_gt_0_1": 0.2057248044178555
+          },
+          "right": {
+            "mean_absolute_alpha_difference": 0.08357922732830048,
+            "rmse_alpha_difference": 0.24183905124664307,
+            "fraction_difference_gt_0_1": 0.14148745519713263,
+            "edge_energy_a": 0.04404386505484581,
+            "edge_energy_b": 0.051139578223228455,
+            "fraction_edge_difference_gt_0_1": 0.14142542045767853
+          },
+          "face": {
+            "mean_absolute_alpha_difference": 0.004182458855211735,
+            "rmse_alpha_difference": 0.03390421345829964,
+            "fraction_difference_gt_0_1": 0.008152380952380953,
+            "edge_energy_a": 0.015295731835067272,
+            "edge_energy_b": 0.01594904065132141,
+            "fraction_edge_difference_gt_0_1": 0.01637248677248677
+          },
+          "bottom": {
+            "mean_absolute_alpha_difference": 0.06275704503059387,
+            "rmse_alpha_difference": 0.211587056517601,
+            "fraction_difference_gt_0_1": 0.10490443562928237,
+            "edge_energy_a": 0.07897376269102097,
+            "edge_energy_b": 0.062404390424489975,
+            "fraction_edge_difference_gt_0_1": 0.12144488520254838
+          },
+          "flowers": {
+            "mean_absolute_alpha_difference": 0.007667574565857649,
+            "rmse_alpha_difference": 0.06261533498764038,
+            "fraction_difference_gt_0_1": 0.01721,
+            "edge_energy_a": 0.034539710730314255,
+            "edge_energy_b": 0.03197051212191582,
+            "fraction_edge_difference_gt_0_1": 0.03211
+          },
+          "artifact-supplement": {
+            "mean_absolute_alpha_difference": 0.11102337390184402,
+            "rmse_alpha_difference": 0.26897910237312317,
+            "fraction_difference_gt_0_1": 0.19856578947368422,
+            "edge_energy_a": 0.04121158644556999,
+            "edge_energy_b": 0.069241002202034,
+            "fraction_edge_difference_gt_0_1": 0.19589473684210526
+          },
+          "clothing-supplement": {
+            "mean_absolute_alpha_difference": 0.016823457553982735,
+            "rmse_alpha_difference": 0.11118461936712265,
+            "fraction_difference_gt_0_1": 0.027483277591973245,
+            "edge_energy_a": 0.05471692606806755,
+            "edge_energy_b": 0.031814269721508026,
+            "fraction_edge_difference_gt_0_1": 0.0424247491638796
+          }
+        }
+      }
+    },
+    "sky": {
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "native_alpha_shape": [
+        576,
+        576
+      ],
+      "display_projection": "Original predictor bilinearly enlarges its native 576x576 alpha to source dimensions.",
+      "labels": {
+        "S": "SAM3 native binary",
+        "T": "SAM3 seed with SAM2Matting-SAM3 refinement"
+      },
+      "crops": {
+        "foliage": [
+          2900,
+          1050,
+          3600,
+          1700
+        ],
+        "wires": [
+          800,
+          650,
+          1600,
+          1300
+        ],
+        "path": [
+          2300,
+          2500,
+          3100,
+          3100
+        ],
+        "far-path-supplement": [
+          3100,
+          2500,
+          4400,
+          3050
+        ]
+      },
+      "differences": {
+        "full": {
+          "mean_absolute_alpha_difference": 0.3158544898033142,
+          "rmse_alpha_difference": 0.5608415007591248,
+          "fraction_difference_gt_0_1": 0.3172771663597767,
+          "edge_energy_a": 0.005452827550470829,
+          "edge_energy_b": 0.00043741855188272893,
+          "fraction_edge_difference_gt_0_1": 0.0020286563399168076
+        },
+        "crops": {
+          "foliage": {
+            "mean_absolute_alpha_difference": 0.34461578726768494,
+            "rmse_alpha_difference": 0.586127758026123,
+            "fraction_difference_gt_0_1": 0.34571648351648354,
+            "edge_energy_a": 0.017024707049131393,
+            "edge_energy_b": 0.0011241851607337594,
+            "fraction_edge_difference_gt_0_1": 0.007120879120879121
+          },
+          "wires": {
+            "mean_absolute_alpha_difference": 0.8148412108421326,
+            "rmse_alpha_difference": 0.9011656045913696,
+            "fraction_difference_gt_0_1": 0.8171403846153846,
+            "edge_energy_a": 0.029198233038187027,
+            "edge_energy_b": 0.0015728776343166828,
+            "fraction_edge_difference_gt_0_1": 0.009561538461538462
+          },
+          "path": {
+            "mean_absolute_alpha_difference": 1.0625792583596194e-06,
+            "rmse_alpha_difference": 1.8096501435138634e-06,
+            "fraction_difference_gt_0_1": 0.0,
+            "edge_energy_a": 0.0,
+            "edge_energy_b": 7.476481300727755e-07,
+            "fraction_edge_difference_gt_0_1": 0.0
+          },
+          "far-path-supplement": {
+            "mean_absolute_alpha_difference": 1.0527191989240237e-06,
+            "rmse_alpha_difference": 4.4420044105208945e-06,
+            "fraction_difference_gt_0_1": 0.0,
+            "edge_energy_a": 0.0,
+            "edge_energy_b": 7.849892540434666e-07,
+            "fraction_edge_difference_gt_0_1": 0.0
+          }
+        }
+      }
+    },
+    "road": {
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "native_alpha_shape": [
+        576,
+        576
+      ],
+      "display_projection": "Original predictor bilinearly enlarges its native 576x576 alpha to source dimensions.",
+      "labels": {
+        "U": "SAM3 native binary",
+        "V": "SAM3 seed with SAM2Matting-SAM3 refinement"
+      },
+      "crops": {
+        "foliage": [
+          2900,
+          1050,
+          3600,
+          1700
+        ],
+        "wires": [
+          800,
+          650,
+          1600,
+          1300
+        ],
+        "path": [
+          2300,
+          2500,
+          3100,
+          3100
+        ],
+        "far-path-supplement": [
+          3100,
+          2500,
+          4400,
+          3050
+        ]
+      },
+      "differences": {
+        "full": {
+          "mean_absolute_alpha_difference": 0.0027128292713314295,
+          "rmse_alpha_difference": 0.0421392023563385,
+          "fraction_difference_gt_0_1": 0.005310039504753863,
+          "edge_energy_a": 0.0028450139798223972,
+          "edge_energy_b": 0.0026117267552763224,
+          "fraction_edge_difference_gt_0_1": 0.005460888387830738
+        },
+        "crops": {
+          "foliage": {
+            "mean_absolute_alpha_difference": 7.21515618806734e-07,
+            "rmse_alpha_difference": 1.1368261993993656e-06,
+            "fraction_difference_gt_0_1": 0.0,
+            "edge_energy_a": 0.0,
+            "edge_energy_b": 5.416225690169085e-07,
+            "fraction_edge_difference_gt_0_1": 0.0
+          },
+          "wires": {
+            "mean_absolute_alpha_difference": 8.681412282385281e-07,
+            "rmse_alpha_difference": 3.6833162084803917e-06,
+            "fraction_difference_gt_0_1": 0.0,
+            "edge_energy_a": 0.0,
+            "edge_energy_b": 6.419178362193634e-07,
+            "fraction_edge_difference_gt_0_1": 0.0
+          },
+          "path": {
+            "mean_absolute_alpha_difference": 0.08440970629453659,
+            "rmse_alpha_difference": 0.2549016773700714,
+            "fraction_difference_gt_0_1": 0.13475833333333334,
+            "edge_energy_a": 0.030046677216887474,
+            "edge_energy_b": 0.028077194467186928,
+            "fraction_edge_difference_gt_0_1": 0.06559375
+          },
+          "far-path-supplement": {
+            "mean_absolute_alpha_difference": 0.011075899004936218,
+            "rmse_alpha_difference": 0.09130121767520905,
+            "fraction_difference_gt_0_1": 0.01881118881118881,
+            "edge_energy_a": 0.009818390011787415,
+            "edge_energy_b": 0.00615618797019124,
+            "fraction_edge_difference_gt_0_1": 0.01586993006993007
+          }
+        }
+      }
+    }
+  }
+}

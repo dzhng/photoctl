@@ -1,0 +1,240 @@
+[
+  {
+    "subject": "hair",
+    "region": "full",
+    "box": [
+      0,
+      0,
+      1614,
+      1080
+    ],
+    "small_coverage": 0.24032998301895453,
+    "large_coverage": 0.2494406581302492,
+    "disagreement_fraction": 0.018597113222268116,
+    "mask_grayscale_mae": 4.74226387167837,
+    "mask_grayscale_rmse": 34.77466444522483,
+    "mask_iou_between_models": 0.926835984138054,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "hair",
+    "region": "top",
+    "box": [
+      820,
+      15,
+      1350,
+      220
+    ],
+    "small_coverage": 0.5595398067188219,
+    "large_coverage": 0.6220340543028072,
+    "disagreement_fraction": 0.06525540727105385,
+    "mask_grayscale_mae": 16.640128854118732,
+    "mask_grayscale_rmse": 65.14010176381579,
+    "mask_iou_between_models": 0.8953258334071516,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "hair",
+    "region": "right",
+    "box": [
+      1380,
+      170,
+      1614,
+      790
+    ],
+    "small_coverage": 0.5111248966087676,
+    "large_coverage": 0.5880548662806727,
+    "disagreement_fraction": 0.08496691480562449,
+    "mask_grayscale_mae": 21.666563275434246,
+    "mask_grayscale_rmse": 74.33016638778453,
+    "mask_iou_between_models": 0.856492584227805,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "hair",
+    "region": "face",
+    "box": [
+      855,
+      305,
+      1170,
+      680
+    ],
+    "small_coverage": 0.45425608465608464,
+    "large_coverage": 0.4632550264550265,
+    "disagreement_fraction": 0.01908994708994709,
+    "mask_grayscale_mae": 4.867936507936508,
+    "mask_grayscale_rmse": 35.23242554130796,
+    "mask_iou_between_models": 0.9592356918182147,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "hair",
+    "region": "bottom",
+    "box": [
+      1260,
+      845,
+      1614,
+      1080
+    ],
+    "small_coverage": 0.24542613294867172,
+    "large_coverage": 0.20358216131746604,
+    "disagreement_fraction": 0.04451256160596225,
+    "mask_grayscale_mae": 11.350703209520374,
+    "mask_grayscale_rmse": 53.79990072879034,
+    "mask_iou_between_models": 0.8196122369446609,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "hair",
+    "region": "flowers",
+    "box": [
+      660,
+      670,
+      1060,
+      920
+    ],
+    "small_coverage": 0.0,
+    "large_coverage": 0.0,
+    "disagreement_fraction": 0.0,
+    "mask_grayscale_mae": 0.0,
+    "mask_grayscale_rmse": 0.0,
+    "mask_iou_between_models": 1.0,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "sky",
+    "region": "full",
+    "box": [
+      0,
+      0,
+      7008,
+      4672
+    ],
+    "small_coverage": 0.3169765986621943,
+    "large_coverage": 0.31475952629480203,
+    "disagreement_fraction": 0.003687994053762432,
+    "mask_grayscale_mae": 0.9404384837094202,
+    "mask_grayscale_rmse": 15.485858495605019,
+    "mask_iou_between_models": 0.9883920237100726,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "sky",
+    "region": "foliage",
+    "box": [
+      2900,
+      1050,
+      3600,
+      1700
+    ],
+    "small_coverage": 0.3409098901098901,
+    "large_coverage": 0.3473736263736264,
+    "disagreement_fraction": 0.007452747252747253,
+    "mask_grayscale_mae": 1.9004505494505495,
+    "mask_grayscale_rmse": 22.01397033953417,
+    "mask_iou_between_models": 0.9785759413697246,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "sky",
+    "region": "wires",
+    "box": [
+      800,
+      650,
+      1600,
+      1300
+    ],
+    "small_coverage": 0.81165,
+    "large_coverage": 0.7912923076923077,
+    "disagreement_fraction": 0.03065769230769231,
+    "mask_grayscale_mae": 7.8177115384615385,
+    "mask_grayscale_rmse": 44.64881232807534,
+    "mask_iou_between_models": 0.9624660965870564,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "sky",
+    "region": "path",
+    "box": [
+      2300,
+      2500,
+      3100,
+      3100
+    ],
+    "small_coverage": 0.0,
+    "large_coverage": 0.0,
+    "disagreement_fraction": 0.0,
+    "mask_grayscale_mae": 0.0,
+    "mask_grayscale_rmse": 0.0,
+    "mask_iou_between_models": 1.0,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "road",
+    "region": "full",
+    "box": [
+      0,
+      0,
+      7008,
+      4672
+    ],
+    "small_coverage": 0.04986543632130794,
+    "large_coverage": 0.04844402385531995,
+    "disagreement_fraction": 0.001502471979186214,
+    "mask_grayscale_mae": 0.3831303546924845,
+    "mask_grayscale_rmse": 9.884242026912512,
+    "mask_iou_between_models": 0.9698939405993917,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "road",
+    "region": "foliage",
+    "box": [
+      2900,
+      1050,
+      3600,
+      1700
+    ],
+    "small_coverage": 0.0,
+    "large_coverage": 0.0,
+    "disagreement_fraction": 0.0,
+    "mask_grayscale_mae": 0.0,
+    "mask_grayscale_rmse": 0.0,
+    "mask_iou_between_models": 1.0,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "road",
+    "region": "wires",
+    "box": [
+      800,
+      650,
+      1600,
+      1300
+    ],
+    "small_coverage": 0.0,
+    "large_coverage": 0.0,
+    "disagreement_fraction": 0.0,
+    "mask_grayscale_mae": 0.0,
+    "mask_grayscale_rmse": 0.0,
+    "mask_iou_between_models": 1.0,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  },
+  {
+    "subject": "road",
+    "region": "path",
+    "box": [
+      2300,
+      2500,
+      3100,
+      3100
+    ],
+    "small_coverage": 0.53921875,
+    "large_coverage": 0.5010395833333333,
+    "disagreement_fraction": 0.038345833333333336,
+    "mask_grayscale_mae": 9.778187500000001,
+    "mask_grayscale_rmse": 49.934335006085746,
+    "mask_iou_between_models": 0.9288973016823441,
+    "interpretation": "distance between masks, not ground truth accuracy"
+  }
+]

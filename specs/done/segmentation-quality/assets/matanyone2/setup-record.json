@@ -1,0 +1,17 @@
+{
+  "research_only": true,
+  "official_source_commit": "0079197acd6d16a741f71558809c06c586c579e0",
+  "checkpoint_url": "https://github.com/pq-yang/MatAnyone2/releases/download/v1.0.0/matanyone2.pth",
+  "checkpoint_bytes": 141429115,
+  "checkpoint_sha256": "5e9821e4087231427376b437c85bb6e072b41e582314f06fd524f75bc4af5914",
+  "runtime_selection": "New Python3.12.14 isolated venv312 with cached torch2.8.0/torchvision0.23.0. Official pyproject declares no torch/torchvision version bounds; official CUDA lock uses2.10.0/0.25.0. Parent approved cached stack as documented runtime difference.",
+  "source_changes": "None; subclass instrumentation invokes original InferenceCore.step and unmodified official wrapper.",
+  "configuration_difference": "Set pretrained_resnet=False to avoid unrelated initialization downloads; proceed only after every checkpoint key/shape matches and strict loading succeeds.",
+  "setup_failures": [
+    "Initial unpinned Python3.11 uv installation selectedtorch2.14 and was terminated before installation to avoid version drift.",
+    "Pinned Python3.11 torch2.10 download progressed exceptionally slowly (3.3MB extracted after3min) and was terminated after cached3.12 env was ready. Partial cache retained.",
+    "Direct IPv4 torch2.10 wheel transfer hit60s timeout at28,500,991/79,423,467bytes. Partial wheel retained and never installed.",
+    "Additional wheel downloader rejected ambiguous macOS11/macOS14 numpy wheel choices; no effect on active cached3.12runtime.",
+    "Metadata read from prior env lacked opencv-python distribution metadata; prior env was not changed."
+  ]
+}

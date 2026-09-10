@@ -1,0 +1,77 @@
+{
+  "rule": "Wider context with original automatic VLM points that fall inside crop, translated only. No synthetic grid prompts or manual points. Diagnostic context placement, not automatic crop selection.",
+  "variants": {
+    "hair-context": {
+      "status": "inferred",
+      "bounds": [
+        590,
+        0,
+        1614,
+        1080
+      ],
+      "points": [
+        [
+          378,
+          108
+        ],
+        [
+          733,
+          346
+        ],
+        [
+          879,
+          594
+        ],
+        [
+          701,
+          886
+        ],
+        [
+          540,
+          648
+        ],
+        [
+          298,
+          572
+        ],
+        [
+          217,
+          810
+        ],
+        [
+          56,
+          54
+        ],
+        [
+          782,
+          1058
+        ]
+      ],
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "scores": [
+        0.8823797106742859,
+        0.8687863349914551,
+        0.22733096778392792,
+        0.9055078029632568
+      ],
+      "selected_index": 3,
+      "encoder_seconds": 3.012952083023265,
+      "decoder_seconds": 0.2104586249915883,
+      "peak_rss_bytes": 6618087424,
+      "distance_only": {
+        "mae": 0.015346025116741657,
+        "changed_gt_0_1": 0.046337890625
+      }
+    }
+  }
+}

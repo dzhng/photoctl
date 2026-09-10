@@ -1,0 +1,294 @@
+{
+  "semantics": "Fractional display-RGB composites, no threshold or foreground decontamination; native guides are binary. Distances measure disagreement, not accuracy.",
+  "states": {
+    "person": {
+      "source": "/private/tmp/openphoto-dxo-source.vH8WZH/source-t14_5.png",
+      "native_alpha_shape": [
+        1080,
+        1614
+      ],
+      "display_projection": "Bilinear to original source coordinates only; model retains official 2048 long-edge cap.",
+      "labels": {
+        "P": "SAM3 native binary",
+        "Q": "TeachDiffusionMatting native text alpha",
+        "R": "Apple accurate person alpha"
+      },
+      "crops": {
+        "top": [
+          820,
+          15,
+          1350,
+          220
+        ],
+        "right": [
+          1380,
+          170,
+          1614,
+          790
+        ],
+        "face": [
+          855,
+          305,
+          1170,
+          680
+        ],
+        "bottom": [
+          1260,
+          845,
+          1614,
+          1080
+        ],
+        "flowers": [
+          660,
+          670,
+          1060,
+          920
+        ],
+        "artifact-supplement": [
+          700,
+          60,
+          1080,
+          260
+        ],
+        "clothing-supplement": [
+          40,
+          850,
+          560,
+          1080
+        ]
+      },
+      "differences": {
+        "full": {
+          "mean_absolute_alpha_difference": 0.13575886189937592,
+          "rmse_alpha_difference": 0.3554842174053192,
+          "fraction_difference_gt_0_1": 0.16209727385377942,
+          "edge_energy_a": 0.030287688598036766,
+          "edge_energy_b": 0.04438425973057747,
+          "fraction_edge_difference_gt_0_1": 0.0666959245490844
+        },
+        "crops": {
+          "top": {
+            "mean_absolute_alpha_difference": 0.3436892628669739,
+            "rmse_alpha_difference": 0.5668134689331055,
+            "fraction_difference_gt_0_1": 0.41458812701334563,
+            "edge_energy_a": 0.04873033985495567,
+            "edge_energy_b": 0.08693715929985046,
+            "fraction_edge_difference_gt_0_1": 0.1471698113207547
+          },
+          "right": {
+            "mean_absolute_alpha_difference": 0.46506550908088684,
+            "rmse_alpha_difference": 0.6693072319030762,
+            "fraction_difference_gt_0_1": 0.5123104494072236,
+            "edge_energy_a": 0.04404386505484581,
+            "edge_energy_b": 0.07972598075866699,
+            "fraction_edge_difference_gt_0_1": 0.11181417149159084
+          },
+          "face": {
+            "mean_absolute_alpha_difference": 0.05148846283555031,
+            "rmse_alpha_difference": 0.21660226583480835,
+            "fraction_difference_gt_0_1": 0.06257777777777777,
+            "edge_energy_a": 0.015295731835067272,
+            "edge_energy_b": 0.040509868413209915,
+            "fraction_edge_difference_gt_0_1": 0.03728253968253968
+          },
+          "bottom": {
+            "mean_absolute_alpha_difference": 0.25502002239227295,
+            "rmse_alpha_difference": 0.5004920363426208,
+            "fraction_difference_gt_0_1": 0.2687462435388869,
+            "edge_energy_a": 0.07897376269102097,
+            "edge_energy_b": 0.033153146505355835,
+            "fraction_edge_difference_gt_0_1": 0.05589614136314461
+          },
+          "flowers": {
+            "mean_absolute_alpha_difference": 0.023288842290639877,
+            "rmse_alpha_difference": 0.11887972801923752,
+            "fraction_difference_gt_0_1": 0.04993,
+            "edge_energy_a": 0.034539710730314255,
+            "edge_energy_b": 0.04816609248518944,
+            "fraction_edge_difference_gt_0_1": 0.06978
+          },
+          "artifact-supplement": {
+            "mean_absolute_alpha_difference": 0.2574976980686188,
+            "rmse_alpha_difference": 0.48029518127441406,
+            "fraction_difference_gt_0_1": 0.33648684210526314,
+            "edge_energy_a": 0.04121158644556999,
+            "edge_energy_b": 0.09247778356075287,
+            "fraction_edge_difference_gt_0_1": 0.17446052631578948
+          },
+          "clothing-supplement": {
+            "mean_absolute_alpha_difference": 0.06635956466197968,
+            "rmse_alpha_difference": 0.22394555807113647,
+            "fraction_difference_gt_0_1": 0.10658026755852842,
+            "edge_energy_a": 0.05471692606806755,
+            "edge_energy_b": 0.055633168667554855,
+            "fraction_edge_difference_gt_0_1": 0.10949832775919732
+          }
+        }
+      }
+    },
+    "sky": {
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "native_alpha_shape": [
+        1365,
+        2048
+      ],
+      "display_projection": "Bilinear to original source coordinates only; model retains official 2048 long-edge cap.",
+      "labels": {
+        "S": "SAM3 native binary",
+        "T": "TeachDiffusionMatting native text alpha"
+      },
+      "crops": {
+        "foliage": [
+          2900,
+          1050,
+          3600,
+          1700
+        ],
+        "wires": [
+          800,
+          650,
+          1600,
+          1300
+        ],
+        "path": [
+          2300,
+          2500,
+          3100,
+          3100
+        ],
+        "far-path-supplement": [
+          3100,
+          2500,
+          4400,
+          3050
+        ]
+      },
+      "differences": {
+        "full": {
+          "mean_absolute_alpha_difference": 0.3169822692871094,
+          "rmse_alpha_difference": 0.562933623790741,
+          "fraction_difference_gt_0_1": 0.31729237647189906,
+          "edge_energy_a": 0.005452827550470829,
+          "edge_energy_b": 0.00015770422760397196,
+          "fraction_edge_difference_gt_0_1": 0.002096826962923
+        },
+        "crops": {
+          "foliage": {
+            "mean_absolute_alpha_difference": 0.3457164764404297,
+            "rmse_alpha_difference": 0.5879765748977661,
+            "fraction_difference_gt_0_1": 0.34571648351648354,
+            "edge_energy_a": 0.017024707049131393,
+            "edge_energy_b": 0.0,
+            "fraction_edge_difference_gt_0_1": 0.0055472527472527474
+          },
+          "wires": {
+            "mean_absolute_alpha_difference": 0.8171404004096985,
+            "rmse_alpha_difference": 0.9039582014083862,
+            "fraction_difference_gt_0_1": 0.8171403846153846,
+            "edge_energy_a": 0.029198233038187027,
+            "edge_energy_b": 0.0,
+            "fraction_edge_difference_gt_0_1": 0.008894230769230769
+          },
+          "path": {
+            "mean_absolute_alpha_difference": 0.0,
+            "rmse_alpha_difference": 0.0,
+            "fraction_difference_gt_0_1": 0.0,
+            "edge_energy_a": 0.0,
+            "edge_energy_b": 0.0,
+            "fraction_edge_difference_gt_0_1": 0.0
+          },
+          "far-path-supplement": {
+            "mean_absolute_alpha_difference": 0.0,
+            "rmse_alpha_difference": 0.0,
+            "fraction_difference_gt_0_1": 0.0,
+            "edge_energy_a": 0.0,
+            "edge_energy_b": 0.0,
+            "fraction_edge_difference_gt_0_1": 0.0
+          }
+        }
+      }
+    },
+    "road": {
+      "source": "/private/tmp/openphoto-zim.gDAkjs/holdout-jpeg-01/source.png",
+      "native_alpha_shape": [
+        1365,
+        2048
+      ],
+      "display_projection": "Bilinear to original source coordinates only; model retains official 2048 long-edge cap.",
+      "labels": {
+        "U": "SAM3 native binary",
+        "V": "TeachDiffusionMatting native text alpha"
+      },
+      "crops": {
+        "foliage": [
+          2900,
+          1050,
+          3600,
+          1700
+        ],
+        "wires": [
+          800,
+          650,
+          1600,
+          1300
+        ],
+        "path": [
+          2300,
+          2500,
+          3100,
+          3100
+        ],
+        "far-path-supplement": [
+          3100,
+          2500,
+          4400,
+          3050
+        ]
+      },
+      "differences": {
+        "full": {
+          "mean_absolute_alpha_difference": 0.044831372797489166,
+          "rmse_alpha_difference": 0.20537406206130981,
+          "fraction_difference_gt_0_1": 0.0519290331597548,
+          "edge_energy_a": 0.0028450139798223972,
+          "edge_energy_b": 0.004275389481335878,
+          "fraction_edge_difference_gt_0_1": 0.013933440060674297
+        },
+        "crops": {
+          "foliage": {
+            "mean_absolute_alpha_difference": 0.0,
+            "rmse_alpha_difference": 0.0,
+            "fraction_difference_gt_0_1": 0.0,
+            "edge_energy_a": 0.0,
+            "edge_energy_b": 0.0,
+            "fraction_edge_difference_gt_0_1": 0.0
+          },
+          "wires": {
+            "mean_absolute_alpha_difference": 0.0,
+            "rmse_alpha_difference": 0.0,
+            "fraction_difference_gt_0_1": 0.0,
+            "edge_energy_a": 0.0,
+            "edge_energy_b": 0.0,
+            "fraction_edge_difference_gt_0_1": 0.0
+          },
+          "path": {
+            "mean_absolute_alpha_difference": 0.5023587346076965,
+            "rmse_alpha_difference": 0.696199893951416,
+            "fraction_difference_gt_0_1": 0.53883125,
+            "edge_energy_a": 0.030046677216887474,
+            "edge_energy_b": 0.026249408721923828,
+            "fraction_edge_difference_gt_0_1": 0.09721041666666666
+          },
+          "far-path-supplement": {
+            "mean_absolute_alpha_difference": 0.04534826800227165,
+            "rmse_alpha_difference": 0.20046019554138184,
+            "fraction_difference_gt_0_1": 0.05755384615384616,
+            "edge_energy_a": 0.009818390011787415,
+            "edge_energy_b": 0.006078486796468496,
+            "fraction_edge_difference_gt_0_1": 0.02018881118881119
+          }
+        }
+      }
+    }
+  }
+}
