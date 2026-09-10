@@ -1,8 +1,14 @@
 {
   "name": "@dzhng/openphoto-img-linux-arm64-gnu",
-  "version": "0.1.0",
-  "os": ["linux"],
-  "cpu": ["arm64"],
+  "version": "0.1.1",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
   "main": "photoctl-image.linux-arm64-gnu.node",
-  "files": ["photoctl-image.linux-arm64-gnu.node"]
+  "files": [
+    "photoctl-image.linux-arm64-gnu.node"
+  ]
 }

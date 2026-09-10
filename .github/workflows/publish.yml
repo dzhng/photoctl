@@ -36,6 +36,7 @@ jobs:
   native:
     needs: models
     strategy:
+      fail-fast: false
       matrix:
         include:
           - runner: ubuntu-latest
@@ -57,6 +58,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Select macOS release toolchain
+        if: runner.os == 'macOS'
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_26.2.app/Contents/Developer
+          swift --version
+          swift package --package-path helpers/mac dump-package > /dev/null
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2

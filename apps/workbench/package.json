@@ -1,10 +1,14 @@
 {
   "name": "@photoctl/workbench",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
-  "bin": { "wb": "dist/cli.js" },
-  "scripts": { "build": "tsc -p tsconfig.json" },
+  "bin": {
+    "wb": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
   "dependencies": {
     "@photoctl/library": "workspace:*",
     "@photoctl/providers": "workspace:*",
