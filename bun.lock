@@ -15,7 +15,7 @@
     },
     "apps/cli": {
       "name": "@dzhng/openphoto",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "bin": {
         "openphoto": "dist/bin.js",
       },
@@ -27,7 +27,7 @@
     },
     "apps/daemon": {
       "name": "@photoctl/daemon",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "bin": {
         "photoctl-daemon": "dist/bin.js",
       },
@@ -40,7 +40,7 @@
     },
     "apps/workbench": {
       "name": "@photoctl/workbench",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "bin": {
         "wb": "dist/cli.js",
       },
@@ -54,7 +54,7 @@
     },
     "packages/commands": {
       "name": "@photoctl/commands",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "dependencies": {
         "@photoctl/importer": "workspace:*",
         "@photoctl/library": "workspace:*",
@@ -70,33 +70,32 @@
     },
     "packages/img": {
       "name": "@photoctl/img",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "optionalDependencies": {
-        "@dzhng/openphoto-img-darwin-arm64": "0.1.0",
-        "@dzhng/openphoto-img-darwin-x64": "0.1.0",
-        "@dzhng/openphoto-img-linux-arm64-gnu": "0.1.0",
-        "@dzhng/openphoto-img-linux-x64-gnu": "0.1.0",
+        "@dzhng/openphoto-img-darwin-arm64": "0.1.2",
+        "@dzhng/openphoto-img-linux-arm64-gnu": "0.1.2",
+        "@dzhng/openphoto-img-linux-x64-gnu": "0.1.2",
       },
     },
     "packages/img-darwin-arm64": {
       "name": "@dzhng/openphoto-img-darwin-arm64",
-      "version": "0.1.0",
+      "version": "0.1.2",
     },
     "packages/img-darwin-x64": {
       "name": "@dzhng/openphoto-img-darwin-x64",
-      "version": "0.1.0",
+      "version": "0.1.2",
     },
     "packages/img-linux-arm64-gnu": {
       "name": "@dzhng/openphoto-img-linux-arm64-gnu",
-      "version": "0.1.0",
+      "version": "0.1.2",
     },
     "packages/img-linux-x64-gnu": {
       "name": "@dzhng/openphoto-img-linux-x64-gnu",
-      "version": "0.1.0",
+      "version": "0.1.2",
     },
     "packages/importer": {
       "name": "@photoctl/importer",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "dependencies": {
         "@photoctl/img": "workspace:*",
         "@photoctl/render": "workspace:*",
@@ -106,7 +105,7 @@
     },
     "packages/library": {
       "name": "@photoctl/library",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "dependencies": {
         "@electric-sql/pglite": "0.5.8",
         "@electric-sql/pglite-pgvector": "0.0.9",
@@ -122,30 +121,29 @@
     },
     "packages/mac-helper": {
       "name": "@photoctl/mac-helper",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "optionalDependencies": {
-        "@dzhng/openphoto-mac-helper-darwin-arm64": "0.1.0",
-        "@dzhng/openphoto-mac-helper-darwin-x64": "0.1.0",
+        "@dzhng/openphoto-mac-helper-darwin-arm64": "0.1.2",
       },
     },
     "packages/mac-helper-darwin-arm64": {
       "name": "@dzhng/openphoto-mac-helper-darwin-arm64",
-      "version": "0.1.0",
+      "version": "0.1.2",
     },
     "packages/mac-helper-darwin-x64": {
       "name": "@dzhng/openphoto-mac-helper-darwin-x64",
-      "version": "0.1.0",
+      "version": "0.1.2",
     },
     "packages/protocol": {
       "name": "@photoctl/protocol",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "dependencies": {
         "zod": "^4.0.0",
       },
     },
     "packages/providers": {
       "name": "@photoctl/providers",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "dependencies": {
         "@photoctl/img": "workspace:*",
         "@photoctl/protocol": "workspace:*",
@@ -158,7 +156,7 @@
     },
     "packages/render": {
       "name": "@photoctl/render",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "dependencies": {
         "@photoctl/img": "workspace:*",
         "@photoctl/protocol": "workspace:*",
@@ -172,7 +170,7 @@
     },
     "packages/test-harness": {
       "name": "@photoctl/test-harness",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "dependencies": {
         "@photoctl/library": "workspace:*",
         "@photoctl/protocol": "workspace:*",

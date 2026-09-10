@@ -1,7 +1,11 @@
 {
   "name": "photoctl",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dzhng/photoctl.git"
+  },
   "type": "module",
   "packageManager": "bun@1.3.14",
   "workspaces": ["apps/*", "packages/*"],
@@ -14,7 +18,7 @@
     "build:swift:release": "if [ \"$(uname -s)\" = Darwin ]; then swift build -c release --package-path helpers/mac && node scripts/package-helper.mjs --release; else echo 'Swift build skipped (non-macOS)'; fi",
     "pack": "bun run build:ts && bun run build:rust:release && bun run build:swift:release && node scripts/pack.mjs",
     "test": "bun run test:ts && bun run test:rust && bun run test:functional && bun run test:macos",
-    "test:ci": "bun run build:ts && vitest run packages/protocol/src/envelope.test.ts packages/protocol/src/frames.test.ts apps/cli/src/output.test.ts packages/providers/src/image-controls.test.ts",
+    "test:ci": "bun run build:ts && vitest run packages/protocol/src/envelope.test.ts packages/protocol/src/frames.test.ts apps/cli/src/output.test.ts packages/providers/src/image-controls.test.ts scripts/pack.test.ts scripts/publish-npm.test.ts",
     "test:ts": "bun run build:rust && vitest run --config vitest.config.ts",
     "test:rust": "cargo test --workspace",
     "test:functional": "docker compose -f test/compose.yaml run --build --rm functional",

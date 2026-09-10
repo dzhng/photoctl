@@ -49,10 +49,6 @@ jobs:
             package: img-darwin-arm64
             addon: photoctl-image.darwin-arm64.node
             helper: mac-helper-darwin-arm64
-          - runner: macos-15-intel
-            package: img-darwin-x64
-            addon: photoctl-image.darwin-x64.node
-            helper: mac-helper-darwin-x64
     runs-on: ${{ matrix.runner }}
 
     steps:
@@ -195,23 +191,11 @@ jobs:
           name: native-img-darwin-arm64
           path: packages/img-darwin-arm64
 
-      - name: Download Darwin x64 runtime
-        uses: actions/download-artifact@v4
-        with:
-          name: native-img-darwin-x64
-          path: packages/img-darwin-x64
-
       - name: Download Darwin ARM64 helper
         uses: actions/download-artifact@v4
         with:
           name: native-mac-helper-darwin-arm64
           path: packages/mac-helper-darwin-arm64
-
-      - name: Download Darwin x64 helper
-        uses: actions/download-artifact@v4
-        with:
-          name: native-mac-helper-darwin-x64
-          path: packages/mac-helper-darwin-x64
 
       - name: Restore helper executable permissions
         run: chmod +x packages/mac-helper-*/photoctl-mac

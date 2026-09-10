@@ -4,13 +4,22 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { expect, test } from "vitest";
 
-test("release publishes native dependencies before making the CLI installable", () => {
+test("release publishes public native dependencies before making the CLI installable", () => {
   const root = mkdtempSync(join(tmpdir(), "openphoto-publish-test-"));
   try {
     mkdirSync(join(root, "packages/img-darwin-arm64"), { recursive: true });
+    mkdirSync(join(root, "packages/img-private"), { recursive: true });
     mkdirSync(join(root, "out/packages"), { recursive: true });
     mkdirSync(join(root, "bin"));
     writeFileSync(join(root, "package.json"), JSON.stringify({ version: "1.2.3" }));
+    writeFileSync(
+      join(root, "packages/img-darwin-arm64/package.json"),
+      JSON.stringify({ name: "@dzhng/openphoto-img-darwin-arm64" }),
+    );
+    writeFileSync(
+      join(root, "packages/img-private/package.json"),
+      JSON.stringify({ name: "@dzhng/openphoto-img-private", private: true }),
+    );
     for (const name of [
       "dzhng-openphoto-img-darwin-arm64-1.2.3.tgz",
       "dzhng-openphoto-1.2.3.tgz",

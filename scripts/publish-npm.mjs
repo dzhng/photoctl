@@ -5,6 +5,9 @@ const directory = "out/packages";
 const { version } = JSON.parse(readFileSync("package.json", "utf8"));
 const tarballs = readdirSync("packages")
   .filter((name) => name.startsWith("img-") || name.startsWith("mac-helper-"))
+  .filter(
+    (name) => !JSON.parse(readFileSync(join("packages", name, "package.json"), "utf8")).private,
+  )
   .map((name) => `dzhng-openphoto-${name}-${version}.tgz`);
 const cliTarball = `dzhng-openphoto-${version}.tgz`;
 tarballs.push(cliTarball);

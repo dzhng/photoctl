@@ -1,6 +1,7 @@
 {
   "name": "@dzhng/openphoto-img-darwin-x64",
-  "version": "0.1.1",
+  "private": true,
+  "version": "0.1.2",
   "os": [
     "darwin"
   ],

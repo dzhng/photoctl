@@ -11,7 +11,8 @@ commands; `openphoto COMMAND --help --human` gives complete usage without a libr
 ## Installation and credentials
 
 The npm package is `@dzhng/openphoto`; it installs the `openphoto` command and
-its platform-specific native dependencies. Run `openphoto configure` to enter an
+its platform-specific native dependencies. Intel Mac binaries are not published.
+Run `openphoto configure` to enter an
 AI Gateway key without terminal echo. `openphoto configure --help` describes
 non-interactive input. Configuration makes no network request.
 

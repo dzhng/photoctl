@@ -81,9 +81,10 @@ try {
   for (const license of ["LICENSE", "README.md"]) {
     if (existsSync(license)) cpSync(license, join(staging, license));
   }
-  pack(staging);
+  pack(staging, cli.directory);
   const platform = `${process.platform}-${process.arch}${process.platform === "linux" ? "-gnu" : ""}`;
   for (const { directory, manifest } of workspace.values()) {
+    if (manifest.private) continue;
     if (
       !manifest.name.startsWith("@dzhng/openphoto-img-") &&
       !manifest.name.startsWith("@dzhng/openphoto-mac-helper-")
@@ -104,37 +105,39 @@ try {
         { stdio: "inherit" },
       );
     }
-    if (manifest.name.startsWith("@dzhng/openphoto-img-")) {
-      const native = join(staging, "native-runtime");
-      mkdirSync(native);
-      cpSync(join(directory, manifest.main), join(native, manifest.main));
-      const notices = {
-        "LICENSE.CDDL": "crates/libraw-sys/vendor/LICENSE.CDDL",
-        NOTICE: "crates/photoctl-image/NOTICE",
-        "highlight.rs": "crates/photoctl-image/src/highlight.rs",
-      };
-      for (const [name, source] of Object.entries(notices)) cpSync(source, join(native, name));
-      writeFileSync(
-        join(native, "package.json"),
-        `${JSON.stringify(
-          {
-            ...manifest,
-            files: [manifest.main, ...Object.keys(notices)],
-          },
-          null,
-          2,
-        )}\n`,
-      );
-      pack(native);
-      rmSync(native, { recursive: true });
-    } else {
-      pack(directory);
-    }
+    const native = join(staging, "native-runtime");
+    mkdirSync(native);
+    cpSync(join(directory, manifest.main), join(native, manifest.main));
+    const notices = manifest.name.startsWith("@dzhng/openphoto-img-")
+      ? {
+          "LICENSE.CDDL": "crates/libraw-sys/vendor/LICENSE.CDDL",
+          NOTICE: "crates/photoctl-image/NOTICE",
+          "highlight.rs": "crates/photoctl-image/src/highlight.rs",
+        }
+      : {};
+    for (const [name, source] of Object.entries(notices)) cpSync(source, join(native, name));
+    writeFileSync(
+      join(native, "package.json"),
+      `${JSON.stringify(
+        {
+          ...manifest,
+          files: [manifest.main, ...Object.keys(notices)],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    pack(native, directory);
+    rmSync(native, { recursive: true });
   }
 } finally {
   rmSync(staging, { recursive: true, force: true });
 }
 
-function pack(directory) {
+function pack(directory, sourceDirectory) {
+  const path = join(directory, "package.json");
+  const manifest = JSON.parse(readFileSync(path, "utf8"));
+  manifest.repository = { ...root.repository, directory: sourceDirectory };
+  writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
   execFileSync("npm", ["pack", "--pack-destination", output], { cwd: directory, stdio: "inherit" });
 }
