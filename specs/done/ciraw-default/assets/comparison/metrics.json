@@ -1,0 +1,34 @@
+[
+  {
+    "name": "DSC00225-preview",
+    "width": 1616,
+    "height": 1077,
+    "meanAbsoluteChannelDelta": 32.88712610815399,
+    "channelFractionOver16": 0.6947476258767938,
+    "identical": false
+  },
+  {
+    "name": "DSC00225-export",
+    "width": 1752,
+    "height": 1168,
+    "meanAbsoluteChannelDelta": 2.8460469509080295,
+    "channelFractionOver16": 0.002186835397510477,
+    "identical": false
+  },
+  {
+    "name": "DSC00229-preview",
+    "width": 1077,
+    "height": 1616,
+    "meanAbsoluteChannelDelta": 31.547026064027015,
+    "channelFractionOver16": 0.6324558117371626,
+    "identical": false
+  },
+  {
+    "name": "DSC00229-export",
+    "width": 1168,
+    "height": 1752,
+    "meanAbsoluteChannelDelta": 2.802322622808115,
+    "channelFractionOver16": 0.004229022017889535,
+    "identical": false
+  }
+]

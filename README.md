@@ -83,6 +83,7 @@ credentials; ordinary tests must not spend a developer's live-provider balance.
 - [CLI discovery record](specs/done/cli-discovery/README.md) — why help works before setup, segmentation memory boundaries and completed follow-up verification.
 - [Segmentation quality record](specs/done/segmentation-quality/README.md) — why ZIM was chosen, the PhotoLab target and remaining quality gaps.
 - [v1 record](specs/done/photoctl/README.md) — why the product has this shape, the invariants it keeps, and the decisions made along the way.
+- [RAW rendering record](specs/done/ciraw-default/README.md) — why reconstructed CIRAW is the default and the retained camera comparisons.
 - [Reference fixtures](fixtures/README.md) — retained inputs and the facts they establish.
 - [Native build guide](crates/photoctl-image/ort/README.md) — runtime acquisition and platform constraints.
 - [LibRaw boundary](crates/libraw-sys/README.md) — where the vendored decoder stops and why.
