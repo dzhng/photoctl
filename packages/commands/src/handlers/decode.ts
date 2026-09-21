@@ -20,7 +20,7 @@ import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
 import { pinnedPreviewSource } from "../graph-source.js";
 import { fileDecodeSource, resolveOnlineOriginalSource } from "../image-source.js";
-import { loadPhoto } from "../photo.js";
+import { isRawPhoto, loadPhoto } from "../photo.js";
 
 export async function decodeCommand(
   args: string[],
@@ -54,6 +54,9 @@ export async function decodeCommand(
     const photo = await loadPhoto(handle, id);
     const resolver = createVolumeResolver(env.volumeMap, handle.path);
     const original = await resolveOnlineOriginalSource(photo, resolver);
+    if (requested === "auto" && isRawPhoto(photo) && !original) {
+      throw new PhotoctlError("file_offline", "The RAW original is unavailable", { id });
+    }
     const libraryId = await readLibraryId(handle);
     const pinned = pinnedPreviewSource(cacheRootForLibrary(libraryId, cacheBase(env, cwd)), id);
     const warnings: Warning[] = [];
@@ -83,14 +86,6 @@ export async function decodeCommand(
         throw new PhotoctlError(code, error.message, { decoder: requested });
       }
       throw error;
-    }
-    if (selected.fellBack) {
-      warnings.push({
-        code: "decoder_fallback",
-        id,
-        message:
-          "A full-resolution RAW decoder is unavailable; decoded the best file preview instead",
-      });
     }
     let image;
     const planned = planSourceTreatment(selected.decoder.id, selected.probe, {

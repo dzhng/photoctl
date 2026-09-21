@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, stat, utimes, writeFile } from "node:fs/promises
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { spawnPhotoctl } from "@photoctl/test-harness";
+import { rawTestHelper, spawnPhotoctl } from "@photoctl/test-harness";
 import sharp from "sharp";
 
 const directories: string[] = [];
@@ -55,6 +55,7 @@ test("show preserves fixture metadata and shot offset across host timezones", as
   const fixture = resolve("fixtures/a7c2.ARW");
   const volumeMount = resolve(".");
   const env = {
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied", [7008, 4672]),
     PHOTOCTL_CACHE: join(parent, "cache"),
     PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:online`,
   };
@@ -98,7 +99,7 @@ test("show preserves fixture metadata and shot offset across host timezones", as
   expect(tokyo.json).toMatchObject({ schema: 1, ok: true, data: expected, warnings: [] });
 }, 30_000);
 
-test("show reports limited offline detail and promotes it when the full source returns", async () => {
+test("RAW detail requires an online original even when a rendered view is cached", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-show-detail-"));
   directories.push(parent);
   const library = join(parent, "library");
@@ -106,6 +107,7 @@ test("show reports limited offline detail and promotes it when the full source r
   const volumeMount = resolve(".");
   const cache = join(parent, "cache");
   const onlineEnv = {
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied", [7008, 4672]),
     PHOTOCTL_CACHE: cache,
     PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:online`,
   };
@@ -123,25 +125,8 @@ test("show reports limited offline detail and promotes it when the full source r
       PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:offline`,
     },
   });
-  expect(offline.code).toBe(0);
-  expect(offline.json).toMatchObject({
-    data: {
-      preview_info: {
-        requested: { region: [0, 0, 1000, 1000], long_edge: "native" },
-        source_tier: "pinned-preview",
-        source_dimensions: { w: 1616, h: 1080 },
-        resolution_limited: true,
-        cache_source: "render_master",
-      },
-    },
-    warnings: [
-      { code: "source_offline", id },
-      { code: "preview_resolution_limited", id },
-    ],
-  });
-  const offlineInfo = (offline.json as { data: { preview_info: { actual: { w: number } } } }).data
-    .preview_info;
-  expect(offlineInfo.actual.w).toBeLessThan(1000);
+  expect(offline.code).toBe(69);
+  expect(offline.json).toMatchObject({ ok: false, code: "file_offline" });
 
   const online = await spawnPhotoctl(["show", id, "--region", "0,0,1000,1000"], {
     libraryDir: library,
@@ -181,19 +166,8 @@ test("show reports limited offline detail and promotes it when the full source r
       PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:offline`,
     },
   });
-  expect(cachedOffline.code).toBe(0);
-  expect(cachedOffline.json).toMatchObject({
-    data: {
-      preview,
-      preview_info: {
-        source_tier: "online-file",
-        source_dimensions: { w: 7008, h: 4672 },
-        resolution_limited: false,
-        cache_source: "exact_view",
-      },
-    },
-    warnings: [{ code: "source_offline", id }],
-  });
+  expect(cachedOffline.code).toBe(69);
+  expect(cachedOffline.json).toMatchObject({ ok: false, code: "file_offline" });
 }, 30_000);
 
 test("export renders the full source as a profiled delivery JPEG", async () => {
@@ -204,6 +178,7 @@ test("export renders the full source as a profiled delivery JPEG", async () => {
   const fixture = resolve("fixtures/a7c2.ARW");
   const volumeMount = resolve(".");
   const env = {
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied", [7008, 4672]),
     PHOTOCTL_CACHE: join(parent, "cache"),
     PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:online`,
   };
@@ -246,7 +221,7 @@ test("export renders the full source as a profiled delivery JPEG", async () => {
   });
 }, 30_000);
 
-test("offline export renders the pinned preview and warns", async () => {
+test("offline RAW export rejects a pinned JPEG substitute", async () => {
   const parent = await mkdtemp(join(tmpdir(), "photoctl-offline-jpeg-"));
   directories.push(parent);
   const library = join(parent, "library");
@@ -273,13 +248,13 @@ test("offline export renders the pinned preview and warns", async () => {
     },
   });
 
-  expect(exported.code).toBe(0);
+  expect(exported.code).toBe(69);
   expect(exported.json).toMatchObject({
     schema: 1,
-    ok: true,
-    summary: { ok: 1, failed: 0 },
-    results: [{ id, ok: true, w: 1616, h: 1080 }],
-    warnings: [{ code: "source_offline", id }],
+    ok: false,
+    code: "file_offline",
+    summary: { ok: 0, failed: 1 },
+    results: [{ id, ok: false, code: "file_offline" }],
   });
 }, 30_000);
 
@@ -407,6 +382,7 @@ test("a bad export id does not starve a later valid photo", async () => {
   const fixture = resolve("fixtures/a7c2.ARW");
   const volumeMount = resolve(".");
   const env = {
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied", [7008, 4672]),
     PHOTOCTL_CACHE: join(parent, "cache"),
     PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:online`,
   };
@@ -462,6 +438,7 @@ test("reimport returns the same photo id and locator", async () => {
   const fixture = resolve("fixtures/a7c2.ARW");
   const volumeMount = resolve(".");
   const env = {
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied", [7008, 4672]),
     PHOTOCTL_CACHE: join(parent, "cache"),
     PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:online`,
   };
@@ -523,29 +500,119 @@ test("reimport repairs a missing pinned preview", async () => {
   const id = (first.json as { data: { ids: string[] } }).data.ids[0];
   const diagnosed = await spawnPhotoctl(["doctor"], { libraryDir: library, env: onlineEnv });
   const libraryId = (diagnosed.json as { data: { library_id: string } }).data.library_id;
-  await rm(join(cache, libraryId, "emb", `${id}.jpg`));
+  const pinned = join(cache, libraryId, "emb", `${id}.jpg`);
+  const originalPreview = await readFile(pinned);
+  await rm(pinned);
 
   const second = await spawnPhotoctl(["import", fixture, "--link"], {
     libraryDir: library,
     env: onlineEnv,
   });
-  const exported = await spawnPhotoctl(["export", id, "--to", join(parent, "output")], {
+  expect(second.json).toMatchObject({
+    schema: 1,
+    ok: true,
+    data: { imported: 0, already_present: 1, ids: [id], previews: { embedded_extracted: 1 } },
+  });
+  expect(await readFile(pinned)).toEqual(originalPreview);
+}, 30_000);
+
+test("ordinary-image show reports limited offline detail and promotes it when the full source returns", async () => {
+  const parent = await mkdtemp(join(tmpdir(), "photoctl-show-detail-"));
+  directories.push(parent);
+  const library = join(parent, "library");
+  const fixture = join(parent, "image.jpg");
+  await sharp({ create: { width: 3200, height: 2400, channels: 3, background: "#7090b0" } })
+    .jpeg()
+    .toFile(fixture);
+  const volumeMount = parent;
+  const cache = join(parent, "cache");
+  const onlineEnv = {
+    PHOTOCTL_CACHE: cache,
+    PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:online`,
+  };
+  expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
+  const imported = await spawnPhotoctl(["import", fixture, "--link"], {
+    libraryDir: library,
+    env: onlineEnv,
+  });
+  const id = (imported.json as { data: { ids: string[] } }).data.ids[0];
+
+  const offline = await spawnPhotoctl(["show", id, "--region", "0,0,1000,1000"], {
     libraryDir: library,
     env: {
       PHOTOCTL_CACHE: cache,
       PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:offline`,
     },
   });
-
-  expect(second.json).toMatchObject({
-    schema: 1,
-    ok: true,
-    data: { imported: 0, already_present: 1, ids: [id], previews: { embedded_extracted: 1 } },
+  expect(offline.code).toBe(0);
+  expect(offline.json).toMatchObject({
+    data: {
+      preview_info: {
+        requested: { region: [0, 0, 1000, 1000], long_edge: "native" },
+        source_tier: "pinned-preview",
+        source_dimensions: { w: 1616, h: 1212 },
+        resolution_limited: true,
+        cache_source: "render_master",
+      },
+    },
+    warnings: [
+      { code: "source_offline", id },
+      { code: "preview_resolution_limited", id },
+    ],
   });
-  expect(exported.code).toBe(0);
-  expect(exported.json).toMatchObject({
-    schema: 1,
-    ok: true,
+  const offlineInfo = (offline.json as { data: { preview_info: { actual: { w: number } } } }).data
+    .preview_info;
+  expect(offlineInfo.actual.w).toBeLessThan(1000);
+
+  const online = await spawnPhotoctl(["show", id, "--region", "0,0,1000,1000"], {
+    libraryDir: library,
+    env: onlineEnv,
+  });
+  expect(online.code).toBe(0);
+  expect(online.json).toMatchObject({
+    data: {
+      preview_info: {
+        actual: { w: 1000, h: 1000 },
+        source_tier: "online-file",
+        source_dimensions: { w: 3200, h: 2400 },
+        pixel_scale: 1,
+        resolution_limited: false,
+        cache_source: "render_master",
+        color_space: "srgb",
+        icc: "sRGB2014",
+        base_to_view: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 },
+        view_to_base: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 },
+        visible_base_polygon: [
+          [0, 0],
+          [1000, 0],
+          [1000, 1000],
+          [0, 1000],
+        ],
+      },
+    },
+    warnings: [],
+  });
+  const preview = (online.json as { data: { preview: string } }).data.preview;
+  await expect(sharp(preview).metadata()).resolves.toMatchObject({ width: 1000, height: 1000 });
+
+  const cachedOffline = await spawnPhotoctl(["show", id, "--region", "0,0,1000,1000"], {
+    libraryDir: library,
+    env: {
+      PHOTOCTL_CACHE: cache,
+      PHOTOCTL_VOLUME_MAP: `${volumeMount}=fixture-volume:offline`,
+    },
+  });
+  expect(cachedOffline.code).toBe(0);
+  expect(cachedOffline.json).toMatchObject({
+    data: {
+      preview,
+      preview_info: {
+        source_tier: "online-file",
+        source_dimensions: { w: 3200, h: 2400 },
+        resolution_limited: false,
+        cache_source: "exact_view",
+      },
+    },
     warnings: [{ code: "source_offline", id }],
   });
 }, 30_000);

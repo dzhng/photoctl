@@ -4,10 +4,11 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import sharp from "sharp";
 import { expect, test } from "vitest";
+import { rawTestHelper } from "@photoctl/test-harness";
 import { initializeLibrary } from "@photoctl/library";
 import { dispatch } from "./dispatch.js";
 
-test("develop renders whole-file, embedded-container, and extensionless inputs", async () => {
+test("develop renders whole-file, RAW, and extensionless inputs", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-develop-formats-"));
   try {
     const whole = join(directory, "whole.png");
@@ -20,7 +21,7 @@ test("develop renders whole-file, embedded-container, and extensionless inputs",
     const cases = [
       { name: "whole-file", source: whole, volumeRoot: directory },
       {
-        name: "embedded-container",
+        name: "RAW",
         source: resolve("fixtures/a7c2.ARW"),
         volumeRoot: resolve("."),
       },
@@ -33,6 +34,7 @@ test("develop renders whole-file, embedded-container, and extensionless inputs",
       try {
         const env = {
           noDaemon: true,
+          macHelperPath: await rawTestHelper(directory, "applied"),
           libraryPath,
           cacheRoot: join(directory, `cache-${entry.name}`),
           volumeMap: `${entry.volumeRoot}=fixture-volume:online`,

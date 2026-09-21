@@ -4,7 +4,6 @@ import type { VolumeResolver } from "@photoctl/library";
 import {
   CirawDecoder,
   FileImageDecoder,
-  LibrawDecoder,
   renderLinearSource,
   renderSourceExecution,
   selectDecoder,
@@ -18,14 +17,13 @@ import {
   type SourceExecutionProvenance,
 } from "@photoctl/render";
 import type { RequestEnv } from "./context.js";
-import type { Warning, SourceTreatment } from "@photoctl/protocol";
+import { PhotoctlError, type Warning, type SourceTreatment } from "@photoctl/protocol";
 import {
-  fileDecodeSource,
   resolveOnlineOriginalSource,
   selectedSourceLocator,
   type StoredFile,
 } from "./image-source.js";
-import type { StoredPhoto } from "./photo.js";
+import { isRawPhoto, type StoredPhoto } from "./photo.js";
 
 export type GraphSourceFallback = "decoder_fallback" | "source_offline" | null;
 
@@ -66,7 +64,7 @@ export function pinnedPreviewSource(cacheRoot: string, photoId: string): ImageSo
   };
 }
 
-/** Resolves the one ordered full-file → embedded → pinned source ladder shared by graph consumers. */
+/** RAW requires reconstructed CIRAW pixels; ordinary images may use their pinned preview. */
 export async function resolveGraphSources(options: {
   photo: StoredPhoto;
   resolver: VolumeResolver;
@@ -76,21 +74,24 @@ export async function resolveGraphSources(options: {
   const pinned = pinnedPreviewSource(options.cacheRoot, options.photo.id);
   const original = await resolveOnlineOriginalSource(options.photo, options.resolver);
   const candidates: GraphSourceCandidate[] = [];
-  if (original?.probe.kind === "raw") {
-    const embedded = fileDecodeSource(options.photo, original);
-    const selected = await selectDecoder({
-      requested: "auto",
-      probe: original.probe,
-      original: original.source,
-      fallback: embedded ?? pinned,
-      decoders: {
-        file: new FileImageDecoder(),
-        ciraw: new CirawDecoder(resolveMacHelperPath(options.env.macHelperPath)),
-        libraw: new LibrawDecoder(),
-      },
-    });
-    if (!selected.fellBack) {
-      candidates.push(
+  if (isRawPhoto(options.photo)) {
+    if (!original) {
+      throw new PhotoctlError("file_offline", "The RAW original is unavailable", {
+        id: options.photo.id,
+      });
+    }
+    try {
+      const selected = await selectDecoder({
+        requested: "auto",
+        probe: original.probe,
+        original: original.source,
+        fallback: pinned,
+        decoders: {
+          file: new FileImageDecoder(),
+          ciraw: new CirawDecoder(resolveMacHelperPath(options.env.macHelperPath)),
+        },
+      });
+      return [
         nativeCandidate(
           selected.decoder,
           selected.probe,
@@ -98,17 +99,12 @@ export async function resolveGraphSources(options: {
           selectedSourceLocator(original),
           original.file,
         ),
-      );
-    }
-    if (embedded) {
-      candidates.push(
-        fileCandidate(
-          embedded,
-          selectedSourceLocator({ ...original, source: embedded }),
-          "decoder_fallback",
-          original.file,
-        ),
-      );
+      ];
+    } catch (error) {
+      if (error instanceof DecoderUnavailableError) {
+        throw new PhotoctlError("decoder_unavailable", error.message, { id: options.photo.id });
+      }
+      throw error;
     }
   } else if (original) {
     candidates.push(

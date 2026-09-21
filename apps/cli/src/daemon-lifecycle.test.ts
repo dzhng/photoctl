@@ -3,17 +3,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createConnection, createServer, type Socket } from "node:net";
 import { afterEach, expect, test } from "vitest";
-import { spawnPhotoctl } from "@photoctl/test-harness";
+import { rawTestHelper, spawnPhotoctl } from "@photoctl/test-harness";
 import { daemonSocketPath, ensureDaemon } from "@photoctl/commands";
 import { acquireLibraryLock, OPEN_LOCK_NAME } from "@photoctl/library";
 import { encodeFrame, FrameDecoder, type DaemonClientFrame } from "@photoctl/protocol";
 
 const directories: string[] = [];
 
+const { version } = JSON.parse(
+  await readFile(new URL("../package.json", import.meta.url), "utf8"),
+) as { version: string };
+
 test("daemon start returns its verified status without probing again", async () => {
-  const { version } = JSON.parse(
-    await readFile(new URL("../package.json", import.meta.url), "utf8"),
-  ) as { version: string };
   const parent = await mkdtemp(join(tmpdir(), "photoctl-daemon-start-snapshot-"));
   directories.push(parent);
   const library = join(parent, "library");
@@ -110,7 +111,7 @@ test("a lost response does not replay a committed command", async () => {
   directories.push(parent);
   const library = join(parent, "library");
   expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
-  const socket = daemonSocketPath(library, "0.1.0");
+  const socket = daemonSocketPath(library, version);
   const committed = join(parent, "committed.json");
   await writeFile(committed, "[]");
   const lock = await acquireLibraryLock(join(library, OPEN_LOCK_NAME));
@@ -140,7 +141,7 @@ test("a lost response does not replay a committed command", async () => {
                 data: {
                   pid: process.pid,
                   socket,
-                  version: "0.1.0",
+                  version: version,
                   uptime_s: 1,
                   queue: 0,
                 },
@@ -299,7 +300,7 @@ test("the first ordinary command starts one daemon and status reports it", async
       socket: expect.stringMatching(/photoctl-[0-9a-f]{8}\.sock$/),
       uptime_s: expect.any(Number),
       queue: 0,
-      version: "0.1.0",
+      version: version,
     },
     warnings: [],
   });
@@ -437,7 +438,7 @@ test("a stale socket payload owned by a dead pid is replaced once", async () => 
   directories.push(parent);
   const library = join(parent, "library");
   expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
-  const socket = daemonSocketPath(library, "0.1.0");
+  const socket = daemonSocketPath(library, version);
   await writeFile(socket, "stale");
   await writeFile(
     join(library, ".photoctl-open.lock"),
@@ -464,7 +465,7 @@ test("a dead socket with a live-looking pid reports the replacement daemon", asy
   directories.push(parent);
   const library = join(parent, "library");
   expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
-  const socket = daemonSocketPath(library, "0.1.0");
+  const socket = daemonSocketPath(library, version);
   await writeFile(
     join(library, ".photoctl-open.lock"),
     JSON.stringify({ pid: process.pid, socket, startedAt: Date.now() }),
@@ -490,7 +491,7 @@ test("an accepting impostor reports an unknown outcome before explicit recovery"
   directories.push(parent);
   const library = join(parent, "library");
   expect((await spawnPhotoctl(["init", "--path", library])).code).toBe(0);
-  const socket = daemonSocketPath(library, "0.1.0");
+  const socket = daemonSocketPath(library, version);
   const impostor = createServer((client) => client.destroy());
   await new Promise<void>((resolveListen, reject) => {
     impostor.once("error", reject);
@@ -556,7 +557,7 @@ test("a live daemon from another photoctl version stops before replacement", asy
 
   expect(diagnosed.code).toBe(0);
   expect(replacement).toEqual(
-    expect.objectContaining({ version: "0.1.0", pid: expect.any(Number) }),
+    expect.objectContaining({ version: version, pid: expect.any(Number) }),
   );
   expect(replacement && "pid" in replacement ? replacement.pid : foreign.endpoint.pid).not.toBe(
     foreign.endpoint.pid,
@@ -602,6 +603,7 @@ test("the imported-image journey runs through one persistent daemon handle", asy
   const output = join(parent, "output");
   const fixture = join(process.cwd(), "fixtures", "a7c2.ARW");
   const env = {
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied"),
     PHOTOCTL_NO_DAEMON: "0",
     PHOTOCTL_CACHE: join(parent, "cache"),
     PHOTOCTL_VOLUME_MAP: `${process.cwd()}=fixture-volume:online`,

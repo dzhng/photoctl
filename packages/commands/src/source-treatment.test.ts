@@ -1,19 +1,19 @@
-import { createHash } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "vitest";
 import { initializeLibrary } from "@photoctl/library";
-import { decodeLibraw } from "@photoctl/img";
+import { rawTestHelper } from "@photoctl/test-harness";
 import { graphNodeDataSchema, graphShowDataSchema, showDataSchema } from "@photoctl/protocol";
 import { artifactPath, readArtifactLinear } from "@photoctl/render";
 import { dispatch } from "./dispatch.js";
 
-test("ordinary RAW rendering uses the measured native treatment while an untouched overview stays cheap", async () => {
+test("RAW overview, detailed preview and reconnection share the required CIRAW treatment", async () => {
   const directory = await mkdtemp(join(tmpdir(), "photoctl-source-treatment-"));
   const { handle } = await initializeLibrary(join(directory, "library"));
   const env = {
     noDaemon: true,
+    macHelperPath: await rawTestHelper(directory, "applied"),
     libraryPath: handle.path,
     cacheRoot: join(directory, "cache"),
     volumeMap: `${process.cwd()}=camera:online`,
@@ -34,13 +34,9 @@ test("ordinary RAW rendering uses the measured native treatment while an untouch
     const id = imported.ids[0];
     const overview = showDataSchema.parse(await run("show", [id]));
     expect(overview.preview_info.source_treatment).toMatchObject({
-      decoderId: "file",
-      status: "not-applicable",
+      decoderId: "ciraw",
+      status: "applied",
     });
-    expect(
-      (await handle.query("SELECT execution_id FROM node_executions WHERE photo_id = $1", [id]))
-        .rows,
-    ).toEqual([]);
     const shown = showDataSchema.parse(await run("show", [id, "--preview-size", "300"]));
     const graph = graphShowDataSchema.parse(await run("graph", ["show", id]));
     const source = graph.nodes.find((node) => node.kind === "source")!;
@@ -56,32 +52,23 @@ test("ordinary RAW rendering uses the measured native treatment while an untouch
     const image = await readArtifactLinear(
       artifactPath(handle.path, execution.output_artifact_hash, "tif"),
     );
-    // This is a policy-wiring check, not cross-platform float equivalence.
-    // Native reconstruction's independent pixel invariants live in @photoctl/img.
-    const expected = await decodeLibraw(
-      resolve("fixtures/camera/DSC00107.ARW"),
-      1,
-      "scene-linear-rec2020",
-      "reconstruct",
+    expect([image.w, image.h]).toEqual([2, 1]);
+    expect(Array.from(image.data)).toEqual(
+      Array.from(new Float32Array([0.1, 0.2, 0.3, 2, 1, 0.5])),
     );
-    expect([image.w, image.h]).toEqual([expected.width, expected.height]);
-    expect(
-      createHash("sha256")
-        .update(Buffer.from(image.data.buffer, image.data.byteOffset, image.data.byteLength))
-        .digest("hex"),
-    ).toBe(
-      createHash("sha256")
-        .update(
-          Buffer.from(expected.data.buffer, expected.data.byteOffset, expected.data.byteLength),
-        )
-        .digest("hex"),
-    );
+    expect(overview.preview_info.source_treatment).toEqual(execution.source_treatment);
     expect(shown.render_hash).toBe(graph.render_hash);
     env.volumeMap = `${process.cwd()}=camera:offline`;
-    const offline = showDataSchema.parse(await run("show", [id, "--preview-size", "300"]));
-    expect(offline.preview_info.source_treatment).toEqual(execution.source_treatment);
-    expect(offline.preview).toBe(shown.preview);
-    expect(offline.render_hash).toBe(shown.render_hash);
+    const offline = await dispatch(
+      { verb: "show", args: [id, "--preview-size", "300"], cwd: directory, env },
+      { version: "test", library: handle },
+    );
+    expect(offline).toMatchObject({ ok: false, code: "file_offline" });
+    const offlineDecode = await dispatch(
+      { verb: "decode", args: [id, "--to", join(directory, "offline.tif")], cwd: directory, env },
+      { version: "test", library: handle },
+    );
+    expect(offlineDecode).toMatchObject({ ok: false, code: "file_offline" });
     env.volumeMap = `${process.cwd()}=camera:online`;
     const reconnected = showDataSchema.parse(await run("show", [id, "--preview-size", "300"]));
     expect(reconnected.preview_info.source_treatment).toEqual(execution.source_treatment);

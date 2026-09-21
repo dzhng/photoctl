@@ -4,7 +4,12 @@ import { join, resolve } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { requestDaemon } from "@photoctl/commands";
 import type { CommandRequest } from "@photoctl/protocol";
-import { measureProcessTiming, seedPhotoRows, spawnPhotoctl } from "@photoctl/test-harness";
+import {
+  measureProcessTiming,
+  seedPhotoRows,
+  rawTestHelper,
+  spawnPhotoctl,
+} from "@photoctl/test-harness";
 
 const directories: string[] = [];
 
@@ -18,6 +23,7 @@ test("eight real clients append every requested tag without losing a row", async
   const library = join(parent, "library");
   const env = {
     PHOTOCTL_NO_DAEMON: "0",
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied"),
     PHOTOCTL_CACHE: join(parent, "cache"),
     PHOTOCTL_VOLUME_MAP: `${resolve(".")}=fixture-volume:online`,
   };

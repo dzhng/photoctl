@@ -41,7 +41,7 @@ creates a library; it does not persist a new default for later invocations.
 Linking retains originals in their existing location; copying makes a
 library-owned copy. RAW/JPEG companion policy controls whether related files
 become one logical photo or separate photos. Offline originals remain cataloged;
-previews may use retained pixels and report their source and resolution limits.
+ordinary-image previews may use retained pixels and report their source and resolution limits.
 
 Photo IDs come from import or list results. Most commands accept an unambiguous
 ID prefix; `show` also accepts a registered file path. Layers and retained graph
@@ -65,6 +65,14 @@ the selected library's daemon; it is an execution choice, not a different
 catalog format. Help never starts or stops a daemon, with or without that flag.
 
 ## Inspect, develop and deliver
+
+Automatic RAW rendering uses Apple's Core Image RAW with highlight reconstruction.
+Preview, export and linear rendering share the same neutral source; no development
+preset or extra highlight compression is applied. Development adjustments remain
+editable. The RAW original must be online, and CIRAW must support reconstruction;
+otherwise the command reports an error instead of substituting a camera JPEG or
+another decoder. Explicit camera-JPEG access and diagnostic decoder selection
+remain available separately.
 
 ```sh
 openphoto show PHOTO --preview-size 1600

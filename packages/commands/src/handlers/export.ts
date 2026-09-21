@@ -48,7 +48,7 @@ import {
   resolveGraphSources,
   type GraphSourceCandidate,
 } from "../graph-source.js";
-import { loadPhoto, type StoredPhoto } from "../photo.js";
+import { isRawPhoto, loadPhoto, type StoredPhoto } from "../photo.js";
 import { createProgressHeartbeat } from "../progress.js";
 import { cameraJpegRendition } from "../original-rendition.js";
 import { resolveOnlineOriginalSource } from "../image-source.js";
@@ -481,7 +481,7 @@ async function evaluateExportImage(
       };
     } catch (error) {
       if (error instanceof PhotoctlError) throw error;
-      if (!(error instanceof SourceEvaluationError)) {
+      if (isRawPhoto(snapshot.photo) || !(error instanceof SourceEvaluationError)) {
         throw new PhotoctlError("decoder_unavailable", errorMessage(error), { id: snapshot.id });
       }
     }

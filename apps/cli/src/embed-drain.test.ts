@@ -1,7 +1,7 @@
 import { cacheRootForLibrary, pinnedEmbeddedJpegPath } from "@photoctl/importer";
 import { initializeLibrary, newLibraryEntityId, openLibrary } from "@photoctl/library";
 import { dispatch, type DaemonStatus } from "@photoctl/commands";
-import { measureProcessTiming, spawnPhotoctl } from "@photoctl/test-harness";
+import { measureProcessTiming, rawTestHelper, spawnPhotoctl } from "@photoctl/test-harness";
 import { afterEach, expect, test } from "vitest";
 import { link, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
@@ -80,6 +80,7 @@ test("rate p95 stays within 2x warm show p50 while thirty embedding batches drai
 
   const timing = await measureProcessTiming();
   const commonEnv = {
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(directory, "applied"),
     PHOTOCTL_NO_DAEMON: "0",
     PHOTOCTL_CACHE: cache,
     PHOTOCTL_VOLUME_MAP: `${process.cwd()}=fixture:online`,

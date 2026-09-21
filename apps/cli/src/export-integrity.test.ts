@@ -10,9 +10,12 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 import { afterEach, expect, test } from "vitest";
+
+import sharp from "sharp";
+import { identifyFile } from "@photoctl/library";
 
 const directories: string[] = [];
 
@@ -43,10 +46,10 @@ test("export falls back when linked bytes change without an mtime change", async
     schema: 1,
     ok: true,
     summary: { ok: 1, failed: 0 },
-    results: [{ id: setup.id, ok: true, w: 1616, h: 1080 }],
+    results: [{ id: setup.id, ok: true, w: 640, h: 480 }],
     warnings: [{ code: "source_offline", id: setup.id }],
   });
-  expect((await readFile(join(setup.output, "a7c2.jpg"))).length).toBeGreaterThan(0);
+  expect((await readFile(join(setup.output, "source.jpg"))).length).toBeGreaterThan(0);
 });
 
 test("export accepts matching linked content after an mtime-only touch", async () => {
@@ -63,14 +66,14 @@ test("export accepts matching linked content after an mtime-only touch", async (
   expect(exported.json).toMatchObject({
     schema: 1,
     ok: true,
-    results: [{ id: setup.id, ok: true, w: 7008, h: 4672, bytes: expect.any(Number) }],
+    results: [{ id: setup.id, ok: true, w: 640, h: 480, bytes: expect.any(Number) }],
     warnings: [],
   });
-}, 30_000); // Full-resolution RAW journey; a hang guard, not an export latency target.
+}, 30_000);
 
 test("export tries later catalogued locators when the first source is gone", async () => {
   const setup = await setupImportedPhoto("multiple-locators");
-  const replacement = join(setup.parent, "volume", "replacement.ARW");
+  const replacement = join(setup.parent, "volume", "replacement.jpg");
   await copyFile(setup.source, replacement);
   const reimported = await spawnPhotoctl(["import", replacement, "--link"], {
     libraryDir: setup.library,
@@ -98,14 +101,14 @@ test("export tries later catalogued locators when the first source is gone", asy
         id: setup.id,
         ok: true,
         file: join(setup.output, "replacement.jpg"),
-        w: 7008,
-        h: 4672,
+        w: 640,
+        h: 480,
         bytes: expect.any(Number),
       },
     ],
     warnings: [],
   });
-}, 30_000); // Includes import, reimport and a full-resolution RAW export.
+}, 30_000);
 
 test("a corrupt pinned preview returns the stable offline envelope", async () => {
   const setup = await setupImportedPhoto("corrupt-pin");
@@ -134,17 +137,30 @@ test("a corrupt pinned preview returns the stable offline envelope", async () =>
   });
 });
 
-test("a changed online source falls back to the pinned preview with a warning", async () => {
-  const setup = await setupImportedPhoto("invalid-online");
+test("a corrupt image with unchanged sampled identity falls back to its pinned preview", async () => {
+  const bytes = await sharp({
+    create: { width: 1024, height: 1024, channels: 3, background: "#7090b0" },
+  })
+    .png({ compressionLevel: 0 })
+    .toBuffer();
+  const setup = await setupImportedPhoto("invalid-online", bytes);
   const before = await stat(setup.source);
+  const identity = await identifyFile(setup.source);
+  expect(before.size).toBeGreaterThan(3 * 1024 * 1024);
   const source = await open(setup.source, "r+");
   try {
-    const fullPreviewEnd = 659_456 + 6_730_200;
-    await source.write(Buffer.alloc(2), 0, 2, fullPreviewEnd - 2);
+    const offset = 1024 * 1024 + 16;
+    const byte = Buffer.alloc(1);
+    await source.read(byte, 0, 1, offset);
+    byte[0] ^= 0xff;
+    await source.write(byte, 0, 1, offset);
   } finally {
     await source.close();
   }
   await utimes(setup.source, before.atime, before.mtime);
+
+  expect((await identifyFile(setup.source)).contentKey).toBe(identity.contentKey);
+  await expect(sharp(setup.source, { failOn: "error" }).stats()).rejects.toThrow();
 
   const exported = await spawnPhotoctl(["export", setup.id, "--to", setup.output], {
     libraryDir: setup.library,
@@ -164,7 +180,7 @@ test("a changed online source falls back to the pinned preview with a warning", 
 test("a destination write failure returns a stable volume error envelope", async () => {
   const setup = await setupImportedPhoto("write-failure");
   await mkdir(setup.output);
-  await mkdir(join(setup.output, "a7c2.jpg"));
+  await mkdir(join(setup.output, "source.jpg"));
 
   const exported = await spawnPhotoctl(["export", setup.id, "--to", setup.output], {
     libraryDir: setup.library,
@@ -182,7 +198,7 @@ test("a destination write failure returns a stable volume error envelope", async
         id: setup.id,
         ok: false,
         code: "volume_readonly",
-        path: join(setup.output, "a7c2.jpg"),
+        path: join(setup.output, "source.jpg"),
       },
     ],
   });
@@ -255,15 +271,21 @@ interface ImportedPhotoSetup {
   env: { PHOTOCTL_CACHE: string; PHOTOCTL_VOLUME_MAP: string };
 }
 
-async function setupImportedPhoto(label: string): Promise<ImportedPhotoSetup> {
+async function setupImportedPhoto(label: string, bytes?: Buffer): Promise<ImportedPhotoSetup> {
   const parent = await mkdtemp(join(tmpdir(), `photoctl-export-${label}-`));
   directories.push(parent);
   const volume = join(parent, "volume");
   const library = join(parent, "library");
   const output = join(parent, "output");
-  const source = join(volume, "a7c2.ARW");
+  const source = join(volume, bytes ? "source.png" : "source.jpg");
   await mkdir(volume);
-  await copyFile(resolve("fixtures/a7c2.ARW"), source);
+  if (bytes) await writeFile(source, bytes);
+  else
+    await sharp({
+      create: { width: 640, height: 480, channels: 3, background: { r: 90, g: 140, b: 180 } },
+    })
+      .jpeg()
+      .toFile(source);
   const env = {
     PHOTOCTL_CACHE: join(parent, "cache"),
     PHOTOCTL_VOLUME_MAP: `${volume}=fixture-volume:online`,

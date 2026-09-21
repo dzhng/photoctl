@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, test } from "vitest";
 import sharp from "sharp";
 import { resampleDisplaySrgb } from "@photoctl/img";
-import { readRawManifests } from "@photoctl/test-harness";
+import { rawTestHelper, readRawManifests } from "@photoctl/test-harness";
 import { CirawDecoder, FileImageDecoder, LibrawDecoder, type ImageSource } from "./decoder.js";
 
 test("the CIRAW adapter returns the shared linear-image contract from the helper wire", async () => {
@@ -178,3 +178,54 @@ test.each(await readRawManifests())(
   },
   30_000,
 );
+
+test("CIRAW rejects a decode that did not apply requested highlight reconstruction", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-ciraw-unsupported-"));
+  try {
+    const decoder = new CirawDecoder(await rawTestHelper(directory, "unsupported"));
+    await expect(
+      decoder.decode(
+        {
+          kind: "online-file",
+          path: join(directory, "source.ARW"),
+          mediaType: "image/x-sony-arw",
+          w: 2,
+          h: 1,
+        },
+        { scale: 1, highlightReconstruction: "reconstruct" },
+      ),
+    ).rejects.toThrow("highlight reconstruction");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("CIRAW capability checks notice helper replacement and removal after a warm probe", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "photoctl-ciraw-probe-"));
+  try {
+    const helper = await rawTestHelper(directory);
+    const input = join(directory, "source.ARW");
+    await writeFile(input, "raw");
+    const source: ImageSource = {
+      kind: "online-file",
+      path: input,
+      mediaType: "image/x-sony-arw",
+      w: 2,
+      h: 1,
+    };
+    expect((await new CirawDecoder(helper).probe(source)).supported).toBe(true);
+    await writeFile(
+      helper,
+      "#!/usr/bin/env node\nconsole.log(JSON.stringify({supported:false,supportedDecoderVersions:[]}));\n",
+    );
+    expect((await new CirawDecoder(helper).probe(source)).supported).toBe(false);
+    await rm(helper);
+    await expect(new CirawDecoder(helper).probe(source)).rejects.toThrow(
+      "CIRAW helper unavailable",
+    );
+    await rawTestHelper(directory);
+    expect((await new CirawDecoder(helper).probe(source)).supported).toBe(true);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

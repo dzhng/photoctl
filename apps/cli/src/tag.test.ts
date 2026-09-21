@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { spawnPhotoctl } from "@photoctl/test-harness";
+import { rawTestHelper, spawnPhotoctl } from "@photoctl/test-harness";
 
 const directories: string[] = [];
 
@@ -15,6 +15,7 @@ test("tag adds an exact value to every resolved photo", async () => {
   directories.push(parent);
   const library = join(parent, "library");
   const env = {
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied"),
     PHOTOCTL_CACHE: join(parent, "cache"),
     PHOTOCTL_VOLUME_MAP: `${resolve(".")}=fixture-volume:online`,
   };
@@ -52,6 +53,7 @@ test("tag commits the found subset and remove is idempotent", async () => {
   directories.push(parent);
   const library = join(parent, "library");
   const env = {
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied"),
     PHOTOCTL_CACHE: join(parent, "cache"),
     PHOTOCTL_VOLUME_MAP: `${resolve(".")}=fixture-volume:online`,
   };

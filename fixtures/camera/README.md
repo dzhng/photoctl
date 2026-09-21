@@ -1,5 +1,8 @@
 # Camera reference originals
 
+The [highlight comparison pairs](highlights/README.md) are separately supplied
+RAW/JPEG originals for comparing highlight detail across development settings.
+
 These are permanent, byte-for-byte development references supplied by the repository
 owner from their Sony ILCE-7CM2 camera. They were copied, not moved, from the mounted
 camera card on 2026-09-06. No license transfer or public-domain dedication is implied;

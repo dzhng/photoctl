@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-21",
+  "host": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "macOS": "26.6.2",
+    "build": "25G83",
+    "node": "v24.14.0"
+  },
+  "gitHead": "3d678e2",
+  "binaries": {
+    "packages/img-darwin-arm64/photoctl-image.darwin-arm64.node": "d7f60a51b21a1b1b4ed968211d30a572af50f71c48c1a3c986a36d18a72e65cd",
+    "helpers/mac/.build/debug/photoctl-mac": "4fc2e0c413180466a28db0ea1db64451415afabf8de6b502737b72a3e5220c16"
+  },
+  "files": [
+    {
+      "file": "DSC00225-ciraw-reconstructed.jpg",
+      "width": 7008,
+      "height": 4672,
+      "orientation": 1,
+      "iccBytes": 480,
+      "sha256": "a8e7e832cef5b11751c74e4bd47b0f37427e234c0310f8c4e36adbb27210e49c"
+    },
+    {
+      "file": "DSC00229-ciraw-reconstructed.jpg",
+      "width": 4672,
+      "height": 7008,
+      "orientation": 1,
+      "iccBytes": 480,
+      "sha256": "4582d543efaad5bdb4b69325a11b11c4edf6821fe34307b1fb8075ec9b502e92"
+    }
+  ]
+}

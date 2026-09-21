@@ -14,7 +14,7 @@ import { parseArguments } from "../arguments.js";
 import { cacheBase, openRequestLibrary, readLibraryId, type RequestEnv } from "../context.js";
 import { errorMessage } from "../errors.js";
 import { graphSourceWarning, resolveGraphSources } from "../graph-source.js";
-import { loadPhoto } from "../photo.js";
+import { isRawPhoto, loadPhoto } from "../photo.js";
 
 export async function renderCommand(
   args: string[],
@@ -68,7 +68,7 @@ export async function renderCommand(
         };
         break;
       } catch (error) {
-        if (!(error instanceof SourceEvaluationError)) {
+        if (isRawPhoto(photo) || !(error instanceof SourceEvaluationError)) {
           throw new PhotoctlError("decoder_unavailable", errorMessage(error), { id });
         }
       }

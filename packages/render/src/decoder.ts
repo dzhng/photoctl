@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
-import { open, mkdtemp, readFile, rm, type FileHandle } from "node:fs/promises";
+import { open, mkdtemp, readFile, rm, stat, type FileHandle } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { promisify } from "node:util";
 import {
   NativeImageUnavailableError,
@@ -127,7 +127,6 @@ export interface DecoderImageProbe {
 export interface DecoderSelection {
   decoder: Decoder;
   source: ImageSource;
-  fellBack: boolean;
   probe?: DecoderProbe;
 }
 
@@ -234,6 +233,7 @@ interface CirawDecodeResult {
 }
 
 export class CirawDecoder implements Decoder {
+  private static lastProbe: { key: string; probe: DecoderProbe } | undefined;
   readonly id = "ciraw" as const;
 
   constructor(private readonly helperPath = "photoctl-mac") {}
@@ -242,14 +242,33 @@ export class CirawDecoder implements Decoder {
     if (source.kind !== "online-file") {
       return { supported: false, notes: ["CIRAW requires an online whole-file source"] };
     }
+    // A warm preview needs capability metadata, not another Core Image initialization.
+    // File stamps keep helper replacement, permissions and source changes observable.
+    let key: string | undefined;
+    try {
+      if (isAbsolute(this.helperPath))
+        key = JSON.stringify(
+          await Promise.all(
+            [source.path, this.helperPath].map(async (path) => {
+              const file = await stat(path);
+              return [path, file.dev, file.ino, file.size, file.mtimeMs, file.ctimeMs];
+            }),
+          ),
+        );
+    } catch {
+      // Unstatable inputs use the ordinary helper execution and error path.
+    }
+    if (key && CirawDecoder.lastProbe?.key === key) return CirawDecoder.lastProbe.probe;
     const result = parseCirawProbe(await this.run(["probe", source.path]));
-    return {
+    const probe: DecoderProbe = {
       supported: result.supported,
       compression: undefined,
       decoderVersion: result.decoderVersion,
       highlightReconstructionMethod: result.highlightReconstructionMethod,
       notes: result.decoderVersion ? [`Core Image RAW decoder ${result.decoderVersion}`] : [],
     };
+    if (key && probe.supported) CirawDecoder.lastProbe = { key, probe };
+    return probe;
   }
 
   async decode(source: ImageSource, options: DecodeOptions): Promise<DecodedImage> {
@@ -271,6 +290,12 @@ export class CirawDecoder implements Decoder {
           options.highlightReconstruction ?? "disabled",
         ]),
       );
+      if (
+        options.highlightReconstruction === "reconstruct" &&
+        result.highlightReconstruction !== "applied"
+      ) {
+        throw new DecoderUnavailableError("CIRAW did not apply requested highlight reconstruction");
+      }
       const bytes = await readFile(output);
       const expectedLength = result.width * result.height * 3 * Float32Array.BYTES_PER_ELEMENT;
       if (bytes.byteLength !== expectedLength) {
@@ -425,7 +450,7 @@ export async function selectDecoder(options: {
 }): Promise<DecoderSelection> {
   const file = options.decoders.file;
   if (options.requested === "file") {
-    return { decoder: file, source: options.fallback, fellBack: false };
+    return { decoder: file, source: options.fallback };
   }
   if (options.requested !== "auto") {
     const decoder = options.decoders[options.requested];
@@ -441,35 +466,18 @@ export async function selectDecoder(options: {
     if (!probe.supported) {
       throw new DecoderUnavailableError(`${options.requested} cannot decode this image`);
     }
-    return { decoder, source: options.original, fellBack: false, probe };
+    return { decoder, source: options.original, probe };
   }
   if (options.original && options.probe?.kind === "raw") {
-    const selected = await firstSupportedDecoder(
-      [options.decoders.libraw, options.decoders.ciraw].filter(
-        (candidate): candidate is Decoder => candidate !== undefined,
-      ),
-      options.original,
-    );
-    if (selected) {
-      return { ...selected, source: options.original, fellBack: false };
+    const selected = await selectDecoder({ ...options, requested: "ciraw" });
+    if (!selected.probe?.highlightReconstructionMethod) {
+      throw new DecoderUnavailableError(
+        "CIRAW highlight reconstruction is unavailable for this RAW",
+      );
     }
-    return { decoder: file, source: options.fallback, fellBack: true };
+    return selected;
   }
-  return { decoder: file, source: options.fallback, fellBack: false };
-}
-
-async function firstSupportedDecoder(
-  [decoder, ...remaining]: Decoder[],
-  source: ImageSource,
-): Promise<{ decoder: Decoder; probe: DecoderProbe } | undefined> {
-  if (!decoder) return undefined;
-  try {
-    const probe = await decoder.probe(source);
-    if (probe.supported) return { decoder, probe };
-  } catch (error) {
-    if (!(error instanceof DecoderUnavailableError)) throw error;
-  }
-  return await firstSupportedDecoder(remaining, source);
+  return { decoder: file, source: options.fallback };
 }
 
 export async function inspectCirawHelper(helperPath = "photoctl-mac"): Promise<{

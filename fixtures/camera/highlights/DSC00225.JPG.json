@@ -1,0 +1,24 @@
+{
+  "file": "DSC00225.JPG",
+  "size": 27864869,
+  "sha256": "81f46a0e1198230797d9f0d1357131bd327b7da0ba3d47087db5509f417f273f",
+  "format": "jpeg",
+  "width": 7008,
+  "height": 4672,
+  "orientation": 1,
+  "exif": {
+    "Make": "SONY",
+    "Model": "ILCE-7CM2",
+    "DateTimeOriginal": "2026:08:23 00:25:02",
+    "ISO": 160,
+    "FNumber": 3.2,
+    "ExposureTime": 0.0125,
+    "ColorSpace": 1
+  },
+  "provenance": {
+    "source": "/Users/david/Desktop/examples/DSC00225.JPG",
+    "acquired": "2026-09-21",
+    "purpose": "Compare RAW highlight separation with the camera JPEG rendition; JPEG matching is not the quality target.",
+    "license": "User-provided for permanent project development; no relicensing asserted."
+  }
+}

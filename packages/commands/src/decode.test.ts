@@ -231,27 +231,7 @@ else {
       },
       daemonContext,
     );
-    expect(fallback).toMatchObject({
-      schema: 1,
-      ok: true,
-      data: {
-        id,
-        decoder: "libraw",
-        file: fallbackOutput,
-        space: "scene-linear-rec2020",
-        treatment: {
-          requested: "reconstruct",
-          status: "applied",
-          method: expect.any(String),
-          scale: 0.25,
-        },
-      },
-      warnings: [],
-    });
-    expect(await sharp(fallbackOutput).metadata()).toMatchObject({
-      format: "tiff",
-      depth: "ushort",
-    });
+    expect(fallback).toMatchObject({ ok: false, code: "decoder_unavailable" });
 
     const offlineOutput = join(directory, "offline.tif");
     const offline = await dispatch(
@@ -269,22 +249,7 @@ else {
       },
       daemonContext,
     );
-    expect(offline).toMatchObject({
-      schema: 1,
-      ok: true,
-      data: {
-        id,
-        decoder: "file",
-        file: offlineOutput,
-        treatment: {
-          requested: "reconstruct",
-          status: "not-applicable",
-          method: null,
-          scale: 0.25,
-        },
-      },
-      warnings: [{ code: "source_offline", id }],
-    });
+    expect(offline).toMatchObject({ ok: false, code: "file_offline" });
 
     const unavailable = await dispatch(
       {

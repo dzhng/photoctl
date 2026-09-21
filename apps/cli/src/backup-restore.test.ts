@@ -1,5 +1,4 @@
 import { LATEST_SCHEMA_VERSION, openLibrary } from "@photoctl/library";
-import { daemonSocketPath } from "@photoctl/commands";
 import { spawnPhotoctl } from "@photoctl/test-harness";
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -193,9 +192,10 @@ test("an automatic backup failure is logged without failing library work", async
   await writeFile(join(library, "backups"), "blocks the backup directory");
   const env = { PHOTOCTL_NO_DAEMON: "0" };
   try {
-    expect((await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env })).code).toBe(0);
+    const started = await spawnPhotoctl(["daemon", "start"], { libraryDir: library, env });
+    expect(started.code).toBe(0);
     expect((await spawnPhotoctl(["doctor"], { libraryDir: library, env })).code).toBe(0);
-    const socket = daemonSocketPath(library, "0.1.0");
+    const socket = (started.json as { data: { socket: string } }).data.socket;
     const log = join(tmpdir(), `${basename(socket, ".sock")}.log`);
     expect(await readFile(log, "utf8")).toContain("Automatic backup failed:");
   } finally {

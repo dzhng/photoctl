@@ -1,0 +1,46 @@
+{
+  "file": "DSC00225.ARW",
+  "size": 48500736,
+  "sha256": "bbe23dbb08edeb705c2d0760e535482b9ac7d038a992d4bb419bf39ecf00d3fd",
+  "content_key": "ck_c59052d3ba883a68",
+  "previews": [
+    {
+      "width": 160,
+      "height": 120,
+      "offset": 43904,
+      "length": 13305
+    },
+    {
+      "width": 1616,
+      "height": 1080,
+      "offset": 196770,
+      "length": 532099
+    },
+    {
+      "width": 7008,
+      "height": 4672,
+      "offset": 729088,
+      "length": 5953836
+    }
+  ],
+  "exif": {
+    "DateTimeOriginal": "2026:08:23 00:25:02",
+    "OffsetTimeOriginal": "+07:00"
+  },
+  "raw": {
+    "width": 7168,
+    "height": 5120,
+    "compression": 7,
+    "sonyRawFileType": 4,
+    "defaultCrop": [
+      7008,
+      4672
+    ]
+  },
+  "provenance": {
+    "source": "/Users/david/Desktop/examples/DSC00225.ARW",
+    "acquired": "2026-09-21",
+    "purpose": "Compare RAW highlight separation with the camera JPEG rendition; JPEG matching is not the quality target.",
+    "license": "User-provided for permanent project development; no relicensing asserted."
+  }
+}

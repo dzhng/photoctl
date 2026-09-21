@@ -2,7 +2,7 @@ import { access, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { spawnPhotoctl } from "@photoctl/test-harness";
+import { rawTestHelper, spawnPhotoctl } from "@photoctl/test-harness";
 
 const directories: string[] = [];
 
@@ -17,6 +17,7 @@ test("the built CLI persists resolved develop state without rendering new pixels
   const cache = join(parent, "cache");
   const env = {
     PHOTOCTL_NO_DAEMON: "1",
+    PHOTOCTL_MAC_HELPER_PATH: await rawTestHelper(parent, "applied"),
     PHOTOCTL_CACHE: cache,
     PHOTOCTL_VOLUME_MAP: `${process.cwd()}=fixture-volume:online`,
   };
@@ -64,7 +65,7 @@ test("the built CLI persists resolved develop state without rendering new pixels
       nodes: [
         { kind: "output", artifact_available: false },
         { kind: "develop", artifact_available: false },
-        { kind: "source", artifact_available: false },
+        { kind: "source", artifact_available: true },
       ],
     },
   });

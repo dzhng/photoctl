@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, expect, test } from "vitest";
+import sharp from "sharp";
 import { renderHuman } from "./output.js";
 
 interface CliResult {
@@ -138,22 +139,26 @@ test("human output includes envelope warnings without changing success", async (
   const parent = await mkdtemp(join(tmpdir(), "photoctl-human-warning-"));
   directories.push(parent);
   const library = join(parent, "library");
+  const source = join(parent, "source.jpg");
+  await sharp({ create: { width: 16, height: 12, channels: 3, background: "#8090a0" } })
+    .jpeg()
+    .toFile(source);
   const online = {
     libraryDir: library,
     env: {
       PHOTOCTL_CACHE: join(parent, "cache"),
-      PHOTOCTL_VOLUME_MAP: `${resolve(".")}=fixture-volume:online`,
+      PHOTOCTL_VOLUME_MAP: `${parent}=fixture-volume:online`,
     },
   };
   expect((await spawnCli(["init", "--path", library], online)).code).toBe(0);
-  const imported = await spawnCli(["import", resolve("fixtures/a7c2.ARW"), "--link"], online);
+  const imported = await spawnCli(["import", source, "--link"], online);
   expect(imported.code).toBe(0);
   const id = (JSON.parse(imported.stdout) as { data: { ids: string[] } }).data.ids[0];
   const offline = {
     libraryDir: library,
     env: {
       PHOTOCTL_CACHE: join(parent, "cache"),
-      PHOTOCTL_VOLUME_MAP: `${resolve(".")}=fixture-volume:offline`,
+      PHOTOCTL_VOLUME_MAP: `${parent}=fixture-volume:offline`,
     },
   };
 

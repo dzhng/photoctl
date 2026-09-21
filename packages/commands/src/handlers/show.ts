@@ -45,7 +45,7 @@ import {
   resolveGraphSources,
   type GraphSourceCandidate,
 } from "../graph-source.js";
-import { loadPhoto, type StoredPhoto } from "../photo.js";
+import { isRawPhoto, loadPhoto, type StoredPhoto } from "../photo.js";
 import { createProgressHeartbeat } from "../progress.js";
 import { resolveOnlineOriginalSource } from "../image-source.js";
 import { cameraJpegRendition } from "../original-rendition.js";
@@ -150,6 +150,7 @@ export async function showCommand(
     const pinned = pinnedPreviewSource(cacheRoot, id);
     const sourceOptions = { photo, resolver, cacheRoot, env };
     const sourceOverview =
+      !isRawPhoto(photo) &&
       document !== undefined &&
       view.region === null &&
       view.longEdge === 1616 &&
@@ -506,7 +507,7 @@ async function materializeWithFallback(
           path: error.path,
         });
       }
-      if (!(error instanceof SourceEvaluationError)) {
+      if (isRawPhoto(context.photo) || !(error instanceof SourceEvaluationError)) {
         throw new PhotoctlError(
           "decoder_unavailable",
           error instanceof Error ? error.message : String(error),

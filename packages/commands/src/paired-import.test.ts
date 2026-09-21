@@ -14,6 +14,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test, vi } from "vitest";
+import { rawTestHelper } from "@photoctl/test-harness";
 import { dispatch } from "./dispatch.js";
 
 test.each(["identity", "missing"])(
@@ -106,6 +107,7 @@ test("paired import is one logical photo with independently identified RAW and J
       cwd: root,
       env: {
         noDaemon: true,
+        macHelperPath: await rawTestHelper(root, "applied"),
         cacheRoot: join(root, "cache"),
         volumeMap: `${drive}=paired-drive:online`,
       },
@@ -580,9 +582,8 @@ test("an online camera JPEG does not make a missing RAW primary available", asyn
       )
     ).rows;
     expect(rawExport).toMatchObject({
-      ok: true,
-      results: [{ id, ok: true, source_original_id: originals[1].id }],
-      warnings: [expect.objectContaining({ code: "source_offline", id })],
+      ok: false,
+      results: [{ id, ok: false, code: "file_offline" }],
     });
     const cameraExport = await dispatch(
       {

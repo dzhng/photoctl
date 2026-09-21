@@ -137,3 +137,10 @@ export async function loadPhoto(
     originals,
   };
 }
+
+/** The primary original determines the document's rendering contract, even while offline. */
+export function isRawPhoto(photo: StoredPhoto): boolean {
+  return (
+    photo.originals.find((original) => original.id === photo.primaryOriginalId)?.kind === "raw"
+  );
+}

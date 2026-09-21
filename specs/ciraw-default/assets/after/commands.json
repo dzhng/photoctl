@@ -1,0 +1,338 @@
+[
+  {
+    "stem": "DSC00225",
+    "id": "01a0c608-fec7-71c0-b842-44308439e488",
+    "show": {
+      "schema": 1,
+      "ok": true,
+      "data": {
+        "id": "01a0c608-fec7-71c0-b842-44308439e488",
+        "primary_original_id": "01a0c608-fec6-707d-9e21-9c3b563ea876",
+        "source_original_id": "01a0c608-fec6-707d-9e21-9c3b563ea876",
+        "originals": [
+          {
+            "id": "01a0c608-fec6-707d-9e21-9c3b563ea876",
+            "kind": "raw",
+            "content_key": "ck_c59052d3ba883a68",
+            "content_hash": null,
+            "bytes": 48500736,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 1
+            },
+            "locators": [
+              {
+                "volume": "camera",
+                "path": "fixtures/camera/highlights/DSC00225.ARW",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 7008,
+          "h": 4672,
+          "orientation": 1,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "E 70-180mm F2.8 A065"
+        },
+        "exposure": {
+          "shutter": "1/80",
+          "f": 3.2,
+          "iso": 160,
+          "focal_mm": 90,
+          "wb": "auto"
+        },
+        "shot": "2026-08-23T00:25:02+07:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/Users/david/dev/photoctl/throwaway/ciraw-implementation/release/cache/01a0c608-fe86-73c0-9769-fe06cd6095a8/view/01a0c608-fec7-71c0-b842-44308439e488/r_c5b21bc6113280ccbb6e9f8cc658d06104997e3bcff04a90fa4acdccc39c765f/v_60d21c10c9e7c8187f3d57663ed93061214e897843d41c225903fa6b514cd47e.jpg",
+        "preview_info": {
+          "source_treatment": {
+            "scale": 1,
+            "method": "ciraw-highlight-v1",
+            "status": "applied",
+            "decoderId": "ciraw",
+            "requested": "reconstruct",
+            "decoderVersion": "8"
+          },
+          "render_hash": "r_c5b21bc6113280ccbb6e9f8cc658d06104997e3bcff04a90fa4acdccc39c765f",
+          "view_hash": "v_60d21c10c9e7c8187f3d57663ed93061214e897843d41c225903fa6b514cd47e",
+          "requested": {
+            "region": null,
+            "long_edge": 1616
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              7008.000000000001,
+              4672
+            ],
+            "w": 1616,
+            "h": 1077
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 7008,
+            "h": 4672
+          },
+          "pixel_scale": 0.2305222602739726,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.23059360730593606,
+            "b": 0,
+            "c": 0,
+            "d": 0.2305222602739726,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 4.336633663366337,
+            "b": 0,
+            "c": 0,
+            "d": 4.337975858867224,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              7008.000000000001,
+              0
+            ],
+            [
+              7008.000000000001,
+              4672
+            ],
+            [
+              0,
+              4672
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "camera",
+            "path": "fixtures/camera/highlights/DSC00225.ARW",
+            "online": true
+          }
+        ],
+        "content_key": "ck_c59052d3ba883a68",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_c5b21bc6113280ccbb6e9f8cc658d06104997e3bcff04a90fa4acdccc39c765f",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "warnings": []
+    },
+    "exported": {
+      "schema": 1,
+      "ok": true,
+      "summary": {
+        "ok": 1,
+        "failed": 0
+      },
+      "results": [
+        {
+          "id": "01a0c608-fec7-71c0-b842-44308439e488",
+          "ok": true,
+          "file": "/Users/david/dev/photoctl/specs/ciraw-default/assets/release/DSC00225-export.jpg",
+          "w": 1752,
+          "h": 1168,
+          "bytes": 1176131,
+          "render_hash": "r_c5b21bc6113280ccbb6e9f8cc658d06104997e3bcff04a90fa4acdccc39c765f",
+          "source_original_id": "01a0c608-fec6-707d-9e21-9c3b563ea876",
+          "skipped": false
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "stem": "DSC00229",
+    "id": "01a0c609-274a-7278-a952-42dc09b6d02e",
+    "show": {
+      "schema": 1,
+      "ok": true,
+      "data": {
+        "id": "01a0c609-274a-7278-a952-42dc09b6d02e",
+        "primary_original_id": "01a0c609-274a-7278-a952-3ff52a7cdc33",
+        "source_original_id": "01a0c609-274a-7278-a952-3ff52a7cdc33",
+        "originals": [
+          {
+            "id": "01a0c609-274a-7278-a952-3ff52a7cdc33",
+            "kind": "raw",
+            "content_key": "ck_855ef11b7a0d5747",
+            "content_hash": null,
+            "bytes": 48640000,
+            "dims": {
+              "w": 7008,
+              "h": 4672,
+              "orientation": 6
+            },
+            "locators": [
+              {
+                "volume": "camera",
+                "path": "fixtures/camera/highlights/DSC00229.ARW",
+                "online": true
+              }
+            ]
+          }
+        ],
+        "dims": {
+          "w": 4672,
+          "h": 7008,
+          "orientation": 6,
+          "note": "oriented, uncropped — the coordinate space"
+        },
+        "crop": null,
+        "camera": {
+          "make": "SONY",
+          "model": "ILCE-7CM2",
+          "lens": "E 70-180mm F2.8 A065"
+        },
+        "exposure": {
+          "shutter": "1/80",
+          "f": 2.8,
+          "iso": 125,
+          "focal_mm": 71,
+          "wb": "auto"
+        },
+        "shot": "2026-08-23T01:33:56+07:00",
+        "rating": 0,
+        "flag": "none",
+        "label": null,
+        "tags": [],
+        "preview": "/Users/david/dev/photoctl/throwaway/ciraw-implementation/release/cache/01a0c608-fe86-73c0-9769-fe06cd6095a8/view/01a0c609-274a-7278-a952-42dc09b6d02e/r_f3b31d01b47897ded3ef22a83e00159e35b365ecfb13a8859733fa6eaeb871cd/v_60d21c10c9e7c8187f3d57663ed93061214e897843d41c225903fa6b514cd47e.jpg",
+        "preview_info": {
+          "source_treatment": {
+            "scale": 1,
+            "method": "ciraw-highlight-v1",
+            "status": "applied",
+            "decoderId": "ciraw",
+            "requested": "reconstruct",
+            "decoderVersion": "8"
+          },
+          "render_hash": "r_f3b31d01b47897ded3ef22a83e00159e35b365ecfb13a8859733fa6eaeb871cd",
+          "view_hash": "v_60d21c10c9e7c8187f3d57663ed93061214e897843d41c225903fa6b514cd47e",
+          "requested": {
+            "region": null,
+            "long_edge": 1616
+          },
+          "actual": {
+            "region": [
+              0,
+              0,
+              4672,
+              7008.000000000001
+            ],
+            "w": 1077,
+            "h": 1616
+          },
+          "source_tier": "online-file",
+          "source_dimensions": {
+            "w": 4672,
+            "h": 7008
+          },
+          "pixel_scale": 0.2305222602739726,
+          "resolution_limited": false,
+          "cache_source": "render_master",
+          "color_space": "srgb",
+          "icc": "sRGB2014",
+          "base_to_view": {
+            "a": 0.2305222602739726,
+            "b": 0,
+            "c": 0,
+            "d": 0.23059360730593606,
+            "e": 0,
+            "f": 0
+          },
+          "view_to_base": {
+            "a": 4.337975858867224,
+            "b": 0,
+            "c": 0,
+            "d": 4.336633663366337,
+            "e": 0,
+            "f": 0
+          },
+          "visible_base_polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              4672,
+              0
+            ],
+            [
+              4672,
+              7008.000000000001
+            ],
+            [
+              0,
+              7008.000000000001
+            ]
+          ]
+        },
+        "locators": [
+          {
+            "volume": "camera",
+            "path": "fixtures/camera/highlights/DSC00229.ARW",
+            "online": true
+          }
+        ],
+        "content_key": "ck_855ef11b7a0d5747",
+        "develop": {},
+        "develop_hash": null,
+        "render_hash": "r_f3b31d01b47897ded3ef22a83e00159e35b365ecfb13a8859733fa6eaeb871cd",
+        "layers": {
+          "count": 0,
+          "stale": 0
+        },
+        "xmp": null
+      },
+      "warnings": []
+    },
+    "exported": {
+      "schema": 1,
+      "ok": true,
+      "summary": {
+        "ok": 1,
+        "failed": 0
+      },
+      "results": [
+        {
+          "id": "01a0c609-274a-7278-a952-42dc09b6d02e",
+          "ok": true,
+          "file": "/Users/david/dev/photoctl/specs/ciraw-default/assets/release/DSC00229-export.jpg",
+          "w": 1168,
+          "h": 1752,
+          "bytes": 1163413,
+          "render_hash": "r_f3b31d01b47897ded3ef22a83e00159e35b365ecfb13a8859733fa6eaeb871cd",
+          "source_original_id": "01a0c609-274a-7278-a952-3ff52a7cdc33",
+          "skipped": false
+        }
+      ],
+      "warnings": []
+    }
+  }
+]

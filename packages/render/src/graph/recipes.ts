@@ -56,7 +56,7 @@ const layerCompositeParametersSchema = z
   .strict();
 
 // Pixel-kernel semantics select derived artifacts/views, never paid execution identities.
-const rendererSemanticRevision = 9;
+const rendererSemanticRevision = 10;
 
 const jsonSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
