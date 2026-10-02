@@ -1,75 +1,79 @@
-# Coding conventions and best practices
+# Working in this repo
 
-Follow the main project readme (located in `README.md` in the root folder) on
-coding conventions and best practices. It also documents how to run tests,
-linters, and the closeout gates.
+Read [`README.md`](README.md) first: what the product is, how the repo fits together, and how to build and check it. Active plans live with their specs, and each one says what to do next. If a folder you're working in has a readme, read it before continuing. The readmes are written for you.
 
-If any folder you're working in contains a `README.md`, read it before
-continuing — the readmes are written for you.
+These are the principles. Commands, flags and paths live with the code that owns them: the readmes, the manifests, and each tool's own usage text.
 
-## Communicating with the user
+## Talking to the user
 
-The user is very technical but doesn't read the code day-to-day. Responding
-in code or pointing at files is fine — just don't assume they already know
-what a given variable, function, or module does; introduce it briefly on
-first mention.
+The user is very technical but doesn't read the code day to day. Pointing at code is fine; introduce a variable, function or module briefly the first time you mention it.
 
-API seams and schemas are the most important things to surface: when work
-touches an interface between components (endpoints, message shapes, database
-schemas, module boundaries), lead with what that contract looks like and how
-it changed.
+Lead with contracts. When work touches an interface between components (a command and its output, a message between the CLI and the daemon, the catalog schema, a module boundary), say what the contract looks like and how it changed before anything else.
 
-## Testing changes
+Answer routine questions from the evidence. Ask the user only when the answer changes a decision that matters and can't be settled any other way.
 
-Before implementation work on behavior changes or bug fixes, invoke
-[`write-tests`](.agents/skills/write-tests/SKILL.md) and follow its red/green
-TDD workflow. Use it for test additions or revisions too.
+## Proving a change
 
-### Run the narrowest runner that answers your question
+Optimize for iteration speed. The measure is the time to feedback you can trust, not the amount of process you ran.
 
-`bun run test` at the repo root is a **closeout gate, not a feedback loop.**
-The functional tests boot the Docker seam and drive the real CLI as real
-processes — so a full run is heavy and saturates the machine. It is
-also the slowest thing in the repo by an order of magnitude, and almost none of
-it is about the file you just edited.
+Run the narrowest check that answers your question: one test, then one file, then the tests your edit can reach, then one package. That is the proof for everyday work, including a commit, a merge and a push.
 
-While iterating, work from the top of this ladder and stop at the first rung
-that covers your change. Tests run under Vitest on Node from the repo root
-(Bun's own test runner never executes this repo's TypeScript):
+**The full gates are for milestones only.** Running everything is slow and saturates the machine, so it happens at a milestone the plan names in advance (a spec's stated checkpoint, a release) and once when a spec is closed. It is not a step before each commit, merge or push, and never a feedback loop. An agent working on one piece of a plan does not run it; whoever integrates the plan does, at the milestone. If you need the full suite more than once in a session, you are using it as a feedback loop.
 
-```bash
-npx vitest run packages/foo/src/foo.test.ts -t 'the case I broke'   # one test
-npx vitest run packages/foo/src/foo.test.ts                          # one file
-npx vitest run --changed                          # every test file whose
-                                                  # import graph reaches your
-                                                  # uncommitted edits
-npx vitest run packages/foo                       # the owning package
-```
+Between milestones, a change is checked by what it can move: its own tests and the output it touches. A failure found later at a milestone is fixed then; that is cheaper than gating every step.
 
-`--changed` is the default reach-for once a change spans more than one file: it
-walks the import graph, so it picks up the tests you would have forgotten, and
-it stays honest about the ones your edit cannot reach. `--changed <ref>`
-compares against a branch or commit instead of the working tree — use it to
-sweep a whole branch (`npx vitest run --changed origin/staging`) without paying
-for the packages the branch never touched. Tests that spawn the CLI run the
-*built* output: rebuild with `bun run build:ts` (and `bun run build:rust` after
-native edits) before trusting a result.
+Every expensive run must answer a question a cheaper one can't. The functional tests, which drive the real CLI as real processes inside a container, and the stages that need the model files are the expensive runs here; do only the ones a change can move. Reuse a result that is still valid, and rerun only what a change could have invalidated. Docs and data that no code reads need no run at all.
 
-The root `bun run test` belongs at the **end of an implementation** — before a
-handback, before a merge, as the last gate of a spec. One run, not one per
-pass. If you need it more than once in a session, you are using it as a
-feedback loop; go back up the ladder.
+Write the test first. Before changing behaviour or fixing a bug, invoke [`write-tests`](.agents/skills/write-tests/SKILL.md) and follow its red/green workflow. Test what the product does and how it fails, not how the code is shaped.
 
-## Visual output
+A test that runs the built product proves only the build it ran. Rebuild before trusting its result.
 
-Whenever doing anything visual, use
-[`screenshot-critique`](.agents/skills/screenshot-critique/SKILL.md) for an
-unprimed second opinion and
-[`compare-screenshots`](.agents/skills/compare-screenshots/SKILL.md) to judge
-before/after shots.
+Ordinary tests never spend a developer's live-provider balance. A test that needs a provider supplies its own fixture credentials.
 
-## Big changes end with their closeout gate
+A change that shouldn't alter behaviour (a refactor, a performance change) must leave the output unchanged, or be a named decision.
 
-A large enough change — a full spec, a major feature — ends by running the
-closeout gate its spec names once, before calling the work done. Do NOT run
-it as a feedback loop; reserve it for the end of the work.
+Never loosen a requirement to make a check pass, and never weaken the product to fit a hosted runner. A narrow pass proves a narrow claim: say what you verified, what you assumed and what is unfinished. A platform nobody verified is not claimed as verified.
+
+Don't wait on a long run. Start it in the background and keep working. Give it a visible sign of progress and a point where you stop, and never repeat a failure unchanged.
+
+## What the photographer sees
+
+Look at the actual image. A passing check is not evidence that a photo looks right.
+
+For any visual change:
+- get an unprimed second opinion with [`screenshot-critique`](.agents/skills/screenshot-critique/SKILL.md);
+- judge before against after, and our output against references, with [`compare-screenshots`](.agents/skills/compare-screenshots/SKILL.md);
+- show the user with [`preview-shots`](.agents/skills/preview-shots/SKILL.md).
+
+## Product rules
+
+The whole workflow works without a screen. People and agents share the same capabilities, and a graphical interface never gets a feature the command line lacks.
+
+Originals are preserved. The library owns editing state, and writing metadata back beside a source photo is always explicit.
+
+Limitations are visible. Continue when usable work is possible, and report a degraded or unavailable input honestly; never change the result silently.
+
+Generate only what must be invented. Deterministic restoration and geometry stay local.
+
+Fidelity is guaranteed by the application. Pixels outside a masked edit are preserved by our code, not by trusting a model to leave them alone.
+
+## One owner per concept
+
+Use what the repo already chose before writing your own. Find the existing owner of a concept before creating another.
+
+Prefer one general rule to a special case, and a simple structure to an abstraction nobody needs yet. When something replaces an old mechanism, delete the old one. When a change exposes a duplicate or a stale owner, invoke [`refactor-clean`](.agents/skills/refactor-clean/SKILL.md).
+
+## Parallel work stays cheap
+
+Every parallel checkout is a full copy, and model files, installed dependencies and build output multiply with each one.
+
+- Fetch only the large files your task needs.
+- Share what doesn't change between checkouts. Don't make another copy.
+- Never share build output between checkouts whose sources differ. They overwrite each other's builds, and the symptom is an error from someone else's change.
+- Remove a checkout and its build output when its branch is merged.
+
+## Skills
+
+Skills hold the procedures behind these principles. Load the one that covers your work before you start. Keep them current: when a pass learns a lesson (a gotcha, a pattern that paid off, a rejected approach), add it to the owning skill in the same commit, following [`write-skills`](.agents/skills/write-skills/SKILL.md).
+
+Before changing this file, invoke [`audit-agents`](.agents/skills/audit-agents/SKILL.md).

@@ -63,9 +63,31 @@ Runtime recipe, and the Swift toolchain on macOS for the Core Image helper.
 `bun run verify` is the complete closeout gate (format, lint, typecheck, build and
 every test stage). Lint also checks that every relative link in the live docs
 resolves; closed specs under `specs/done/` are frozen records and are exempt. The
-scripts in [package.json](package.json) name each stage individually;
-[contributor guidance](AGENTS.md) explains which rung of the test ladder to run
-while iterating.
+scripts in [package.json](package.json) name each stage individually.
+
+While iterating, work down this ladder and stop at the first rung that covers the
+change. Tests run under Vitest on Node from the repo root (Bun's own test runner
+never executes this repo's TypeScript):
+
+```bash
+npx vitest run packages/foo/src/foo.test.ts -t 'the case I broke'   # one test
+npx vitest run packages/foo/src/foo.test.ts                          # one file
+npx vitest run --changed             # every test file whose import graph
+                                     # reaches your uncommitted edits
+npx vitest run packages/foo          # the owning package
+```
+
+`--changed` is the default once a change spans more than one file: it walks the
+import graph, so it picks up the tests you would have forgotten and skips the ones
+your edit cannot reach. `--changed <ref>` compares against a branch or commit
+instead of the working tree (`npx vitest run --changed origin/staging` sweeps a
+whole branch). Tests that spawn the CLI run the built output: rebuild with
+`bun run build:ts` (and `bun run build:rust` after native edits) before trusting a
+result.
+
+The root `bun run test` boots the Docker seam and drives the real CLI as real
+processes, so it is the slowest run in the repo by an order of magnitude and
+saturates the machine. [Contributor guidance](AGENTS.md) says when it runs.
 
 Model-dependent gate stages require the pinned model files and a reachable download
 mirror for Docker. The [Docker build](test/Dockerfile) and
