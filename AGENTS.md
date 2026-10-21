@@ -24,6 +24,8 @@ A change that reaches the whole system (the catalog schema, the pipeline every p
 
 Every expensive run must answer a question a cheaper one can't. The functional tests, which drive the real CLI as real processes inside a container, and the stages that need the model files are the expensive runs here; do only the ones a change can move. Reuse a result that is still valid, and rerun only what a change could have invalidated. Docs and data that no code reads need no run at all.
 
+Default to end-to-end or system-level tests for regression coverage; use a unit test only for specific, complex business logic when fast feedback will materially speed development.
+
 Write the test first. Before changing behaviour or fixing a bug, invoke [`write-tests`](.agents/skills/write-tests/SKILL.md) and follow its red/green workflow. Test what the product does and how it fails, not how the code is shaped.
 
 A test that runs the built product proves only the build it ran. Rebuild before trusting its result.
