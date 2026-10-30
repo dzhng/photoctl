@@ -42,7 +42,7 @@
     "verify": "bun run fmt:check && bun run lint && bun run typecheck && bun run build && bun run test",
     "publish:npm": "node scripts/publish-npm.mjs",
     "version": "node scripts/sync-versions.mjs && bun install --lockfile-only && git add apps/*/package.json packages/*/package.json helpers/mac/Sources/photoctl-mac/ReleaseVersion.swift bun.lock",
-    "prepare": "husky"
+    "prepare": "node scripts/install-git-hooks.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
@@ -52,7 +52,6 @@
     "typescript": "^5.8.0",
     "vitest": "^3.2.0",
     "linguist-languages": "9.5.0",
-    "husky": "9.1.7",
     "lint-staged": "17.6.0"
   },
   "trustedDependencies": [
